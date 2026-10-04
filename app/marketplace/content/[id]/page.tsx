@@ -5,6 +5,7 @@ import type { Metadata } from 'next';
 import { ContentViewTracker } from '@/components/marketplace/ContentViewTracker';
 import { ContentPostMetaLine } from '@/components/creator/ContentPostMetaLine';
 import { getPublicContent } from '@/lib/marketplace-api';
+import { mediaImageResponsive, mediaImageSrc, mediaImageSrcSet } from '@/lib/media-image-url';
 
 export async function generateMetadata({
   params,
@@ -13,9 +14,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const content = await getPublicContent(id);
-  if (!content) return { title: 'Content not found — NoProbleme' };
+  if (!content) return { title: 'Content not found — Skraft' };
   return {
-    title: `${content.title?.trim() || 'Untitled'} — NoProbleme Marketplace`,
+    title: `${content.title?.trim() || 'Untitled'} — Skraft Marketplace`,
     description: content.description ?? content.title ?? 'Portfolio content',
   };
 }
@@ -44,8 +45,10 @@ export default async function MarketplaceContentDetailPage({
           {content.mediaUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={content.mediaUrl}
+              {...mediaImageResponsive(content.mediaUrl, [640, 828, 1080])}
+              sizes="(min-width: 1024px) 760px, 100vw"
               alt=""
+              decoding="async"
               className="h-full w-full object-cover"
             />
           ) : (
@@ -58,11 +61,6 @@ export default async function MarketplaceContentDetailPage({
         <div className="space-y-6 p-6 md:p-8">
           <header className="space-y-3">
             <div className="flex flex-wrap items-center gap-2">
-              {content.genre && (
-                <span className="rounded-full bg-orange-50 px-2.5 py-0.5 text-xs font-medium text-orange-800">
-                  {content.genre}
-                </span>
-              )}
               {content.priceInfo && (
                 <span className="rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-800" title="Price to recreate this edit">
                   {content.priceInfo}
@@ -99,8 +97,11 @@ export default async function MarketplaceContentDetailPage({
               {content.creator.avatarUrl ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={content.creator.avatarUrl}
+                  src={mediaImageSrc(content.creator.avatarUrl, 48)}
+                  srcSet={mediaImageSrcSet(content.creator.avatarUrl, 48)}
                   alt=""
+                  loading="lazy"
+                  decoding="async"
                   className="h-12 w-12 rounded-full object-cover"
                 />
               ) : (
@@ -113,15 +114,6 @@ export default async function MarketplaceContentDetailPage({
                 <p className="text-xs text-orange-600">View creator profile</p>
               </div>
             </Link>
-          )}
-
-          {content.description && (
-            <section>
-              <h2 className="text-sm font-semibold text-gray-900">Description</h2>
-              <p className="mt-2 whitespace-pre-wrap text-sm leading-relaxed text-gray-700">
-                {content.description}
-              </p>
-            </section>
           )}
 
           {(content.tags?.length ?? 0) > 0 && (

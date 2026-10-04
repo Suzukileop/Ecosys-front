@@ -44,7 +44,6 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
       'faq',
       'links',
       'contact',
-      'reputation',
     ],
   },
   {
@@ -55,7 +54,7 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
       'Products and services with pricing, plus the pages a buyer reads before they commit.',
     image: '/landing/hero/presence-storefront-v8.jpg',
     imageAlt: 'Refined boutique with tailored suits, a watch vitrine and perfume shelves',
-    sections: ['about', 'aboutPage', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact', 'reputation'],
+    sections: ['about', 'aboutPage', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact'],
   },
   {
     id: 'business',
@@ -77,7 +76,6 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
       'faq',
       'links',
       'contact',
-      'reputation',
     ],
   },
 ];

@@ -100,6 +100,8 @@ export type PortfolioExperienceBlock = {
   tasks: Array<{ value: string }>;
   tools: Array<{ value: string; description?: string; iconUrl?: string | null }>;
   links: PortfolioExperienceProofLink[];
+  /** Kept out of the generated CV when true. */
+  hideFromCv?: boolean;
 };
 
 export type PortfolioExperienceBlockDraft = {
@@ -115,6 +117,8 @@ export type PortfolioExperienceBlockDraft = {
   tasks: Array<{ value: string }>;
   tools: Array<{ value: string; description?: string; iconUrl?: string | null }>;
   links: PortfolioExperienceProofLink[];
+  /** Kept out of the generated CV when true. */
+  hideFromCv?: boolean;
 };
 
 type ExperienceFieldKey =
@@ -242,6 +246,7 @@ export function toDraft(block: PortfolioExperienceBlock): PortfolioExperienceBlo
       iconUrl: item.iconUrl ?? null,
     })),
     links: block.links.map((link) => ({ ...link })),
+    hideFromCv: Boolean(block.hideFromCv),
   };
 }
 
@@ -272,6 +277,7 @@ export function mapProfileBlockToExperienceBlock(
       platform: link.platform ?? null,
       sortOrder: link.sortOrder ?? index,
     })),
+    hideFromCv: Boolean(block.hideFromCv),
   };
 }
 
@@ -338,6 +344,7 @@ export function cleanDraft(draft: PortfolioExperienceBlockDraft): PortfolioExper
     tasks: normalizeStringList(draft.tasks).map((value) => ({ value })),
     tools: normalizeTools(draft.tools),
     links: normalizeLinks(draft.links),
+    hideFromCv: Boolean(draft.hideFromCv),
   };
 }
 
@@ -357,6 +364,7 @@ function draftsEqual(
     a.employmentType === b.employmentType &&
     a.mediaUrl === b.mediaUrl &&
     a.mediaType === b.mediaType &&
+    a.hideFromCv === b.hideFromCv &&
     JSON.stringify(a.tasks) === JSON.stringify(b.tasks) &&
     JSON.stringify(a.tools) === JSON.stringify(b.tools) &&
     JSON.stringify(a.links) === JSON.stringify(b.links)

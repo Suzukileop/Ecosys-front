@@ -19,19 +19,26 @@ export const PRODUCT_TYPES = [
 
 export const ALL_PRODUCT_TYPES = [...PRODUCT_TYPES, 'PHYSICAL'] as const satisfies readonly ProductType[];
 
+export const STOCK_MAX = 1_000_000;
+
 export const DEMO_TYPES = ['NONE', 'IMAGE', 'VIDEO', 'FILE_EXTRACT'] as const satisfies readonly DemoType[];
 
 export const productEditorSchema = z.object({
   productFormat: z.enum(['virtual', 'physical']),
   type: z.enum(ALL_PRODUCT_TYPES),
   title: z.string().min(1, 'Title is required.').max(200),
-  description: z.string().min(1, 'Description is required.').max(5000),
+  description: z.string().max(5000, 'Keep the description under 5,000 characters.'),
   priceAmount: z
     .string()
     .min(1, 'Price is required.')
     .refine((v) => !Number.isNaN(Number(v)) && Number(v) >= 0, 'Enter a valid price.'),
   compareAtPriceAmount: z.string().optional(),
   currency: z.string().min(3).max(3),
+  stockQuantity: z
+    .string()
+    .optional()
+    .refine((v) => !v?.trim() || /^\d+$/.test(v.trim()), 'Enter a whole number (0 or more).')
+    .refine((v) => !v?.trim() || Number(v.trim()) <= STOCK_MAX, 'Keep stock under 1,000,000 units.'),
   genre: z.string().optional(),
   specialite: z.string().optional(),
   thumbnailUrl: z.string().optional(),

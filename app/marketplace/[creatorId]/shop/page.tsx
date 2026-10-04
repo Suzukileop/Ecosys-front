@@ -29,9 +29,9 @@ export async function generateMetadata({
   const { creatorId } = await params;
   const refreshToken = (await cookies()).get('refresh_token')?.value;
   const profile = await getCreatorProfileServer(creatorId, refreshToken);
-  if (!profile) return { title: 'Shop not found — NoProbleme' };
+  if (!profile) return { title: 'Shop not found — Skraft' };
   return {
-    title: `${(profile.shopName || profile.fullName)}'s shop — NoProbleme`,
+    title: `${(profile.shopName || profile.fullName)}'s shop — Skraft`,
     description:
       profile.shopDescription?.trim() ||
       profile.shopSellingFocus?.trim() ||
@@ -60,6 +60,8 @@ export default async function CreatorShopPage({
           shopSellingFocus={profile.shopSellingFocus}
           shopDescription={profile.shopDescription}
           shopCoverUrl={profile.shopCoverUrl}
+          starCount={profile.starCount}
+          isStarred={profile.isStarred}
         />
       </div>
     </DashboardHomeShell>

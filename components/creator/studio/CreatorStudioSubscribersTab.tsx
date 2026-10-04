@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useCallback, useEffect, useState } from 'react';
 import { CREATOR_PROFILE_SUBSCRIBERS_LABEL } from '@/components/creator/creator-profile-header-types';
+import { AvatarImage } from '@/components/ui/PersonAvatar';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -30,28 +31,27 @@ function SubscriberRow({ follower }: { follower: CreatorProfileFollowerItem }) {
   const displayName = follower.followerFullName ?? 'User';
 
   const identity = (
-    <div className="flex min-w-0 items-center gap-3">
-      <div className="flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-200 text-sm font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-        {follower.followerAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={follower.followerAvatarUrl} alt="" className="h-full w-full object-cover" />
-        ) : (
-          followerInitials(displayName)
-        )}
+    <div className="flex min-w-0 items-center gap-4">
+      <div className="flex h-12 w-12 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-200 text-[15px] font-bold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+        <AvatarImage
+          src={follower.followerAvatarUrl}
+          fallback={followerInitials(displayName)}
+          className="h-full w-full object-cover"
+        />
       </div>
       <div className="min-w-0">
-        <p className="truncate font-semibold text-neutral-900 dark:text-white">{displayName}</p>
-        <p className="text-xs text-neutral-500 dark:text-neutral-400">Registered user</p>
+        <p className="truncate text-[17px] font-semibold leading-snug text-neutral-900 dark:text-white">{displayName}</p>
+        <p className="mt-0.5 text-[14px] text-neutral-500 dark:text-neutral-400">Registered user</p>
       </div>
     </div>
   );
 
   return (
-    <li className="flex flex-col gap-3 border-b border-neutral-200 px-4 py-4 last:border-b-0 dark:border-neutral-800 sm:flex-row sm:items-center sm:justify-between sm:px-5">
+    <li className="flex flex-col gap-3 border-b border-neutral-200 px-5 py-5 last:border-b-0 dark:border-neutral-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
       <Link href={`/marketplace/${follower.followerUserId}`} className="min-w-0 transition hover:opacity-80">
         {identity}
       </Link>
-      <p className="shrink-0 text-sm text-neutral-500 dark:text-neutral-400">{formatFollowDate(follower.followedAt)}</p>
+      <p className="shrink-0 text-[15px] text-neutral-500 dark:text-neutral-400">{formatFollowDate(follower.followedAt)}</p>
     </li>
   );
 }
@@ -98,10 +98,10 @@ export function CreatorStudioSubscribersTab() {
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">{CREATOR_PROFILE_SUBSCRIBERS_LABEL}</h2>
-        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
+        <h2 className="text-[1.5rem] font-bold tracking-[-0.01em] text-neutral-900 dark:text-white">{CREATOR_PROFILE_SUBSCRIBERS_LABEL}</h2>
+        <p className="mt-1.5 text-[16px] text-neutral-500 dark:text-neutral-400">
           {totalElements.toLocaleString()} subscriber{totalElements !== 1 ? 's' : ''} recorded.
         </p>
       </div>
@@ -109,7 +109,7 @@ export function CreatorStudioSubscribersTab() {
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {followers.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-12 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-400">
+        <div className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-6 py-14 text-center text-[16px] leading-relaxed text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900/50 dark:text-neutral-400">
           No subscribers yet. Users who follow your profile will appear here.
         </div>
       ) : (
@@ -124,7 +124,7 @@ export function CreatorStudioSubscribersTab() {
             type="button"
             disabled={loadingMore}
             onClick={() => void loadPage(page + 1, true)}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-800"
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-[15px] font-semibold text-[#111111] transition hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-700 dark:text-white dark:hover:bg-neutral-800"
           >
             {loadingMore ? <LoadingSpinner /> : null}
             Load more

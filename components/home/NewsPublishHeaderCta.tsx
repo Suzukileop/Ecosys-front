@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { APP_FIELD } from '@/components/landing/landingBrand';
 
 export const NEWS_OPEN_PUBLISH_EVENT = 'noproble:open-news-publish';
 /** Marker for the in-feed CTA — header shows a twin once this leaves view. */
@@ -13,7 +14,7 @@ export function dispatchNewsOpenPublish() {
 }
 
 const publishClassName =
-  'inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-orange-500 px-3.5 text-sm font-semibold text-white transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+  'inline-flex h-9 shrink-0 items-center justify-center rounded-lg bg-[#111111] px-3.5 text-[14px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:bg-white dark:text-[#111111]';
 
 /**
  * The short form below `sm` buys back ~55px in a single-row bar where the navigation rail is the
@@ -60,7 +61,7 @@ export function NewsPublishHeaderCta({ className = '', inline = false }: NewsPub
       id={inline ? NEWS_INLINE_PUBLISH_CTA_ID : undefined}
       className={
         inline
-          ? `flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border border-neutral-200 bg-neutral-100 px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:px-5 ${className}`
+          ? `flex w-full min-w-0 items-center justify-between gap-3 rounded-2xl border border-neutral-200 ${APP_FIELD} px-4 py-3 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 sm:px-5 ${className}`
           : `flex min-w-0 max-w-full items-center gap-2.5 sm:gap-3 ${className}`
       }
     >

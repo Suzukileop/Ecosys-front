@@ -9,7 +9,8 @@ export type MarketplaceSort = 'newest' | 'popular' | 'views' | 'price_asc' | 'pr
 export type MarketplaceProductFormat = ProductFormat;
 
 export const MARKETPLACE_PAGE_SIZE_OPTIONS = [10, 50, 100, 200, 500, 1000] as const;
-export const MARKETPLACE_DEFAULT_PAGE_SIZE = MARKETPLACE_PAGE_SIZE_OPTIONS[0];
+export const MARKETPLACE_DEFAULT_PAGE_SIZE = 100;
+export const MARKETPLACE_DEFAULT_FORMAT: MarketplaceProductFormat = 'physical';
 
 export type MarketplaceCatalogParams = {
   q: string;
@@ -44,7 +45,7 @@ function parseSort(value: string | null): MarketplaceSort {
 }
 
 function parseFormat(value: string | null): MarketplaceProductFormat {
-  return value === 'physical' ? 'physical' : 'virtual';
+  return value === 'physical' || value === 'virtual' ? value : MARKETPLACE_DEFAULT_FORMAT;
 }
 
 function parsePageSize(value: string | null): number {
@@ -89,8 +90,8 @@ export function useMarketplaceCatalogParams(basePath = '/marketplace') {
     if (tab === 'favorites') {
       params.set('tab', tab);
     }
-    if (format === 'physical') {
-      params.set('format', 'physical');
+    if (format !== MARKETPLACE_DEFAULT_FORMAT) {
+      params.set('format', format);
     }
     const qs = params.toString();
     router.replace(qs ? `${basePath}?${qs}` : basePath);

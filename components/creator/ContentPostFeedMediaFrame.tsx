@@ -2,8 +2,16 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { contentMediaKind } from '@/components/creator/creator-content-media';
+import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import { ContentPostAudioPlayer, ContentPostVideoPlayer } from '@/components/creator/ContentPostMediaPlayer';
+import { SocialAudioPlayer, SocialVideoPlayer } from '@/components/creator/ContentPostSocialPlayers';
 import type { ContentMediaType } from '@/types/creator-content';
+
+/** Feed frames top out around the post card width; the optimizer picks the closest rung. */
+const FRAME_WIDTHS = [384, 640, 828, 1080, 1200] as const;
+const FRAME_SIZES = '(min-width: 1024px) 720px, 100vw';
+/** The backdrop copy is blurred and scaled 110% — a thumbnail is indistinguishable from the original. */
+const BACKDROP_WIDTH = 64;
 
 /** Facebook-style feed frame: fixed width, clamped aspect, letterboxed content. */
 const MIN_FRAME_HEIGHT = 200;
@@ -18,7 +26,27 @@ function clampAspect(width: number, height: number) {
   return Math.min(MAX_ASPECT, Math.max(MIN_ASPECT, ratio));
 }
 
-function frameHeightForWidth(containerWidth: number, mediaWidth: number, mediaHeight: number) {
+/**
+ * Facebook desktop feed bounds: portrait media stops at 1:1, landscape at 1.91:1; beyond that the
+ * media is letterboxed.
+ */
+const SOCIAL_MIN_ASPECT_IMAGE = 1;
+const SOCIAL_MIN_ASPECT_VIDEO = 1;
+const SOCIAL_MAX_ASPECT = 1.91;
+
+function frameHeightForWidth(
+  containerWidth: number,
+  mediaWidth: number,
+  mediaHeight: number,
+  social = false,
+  video = false
+) {
+  if (social) {
+    const ratio = mediaWidth > 0 && mediaHeight > 0 ? mediaWidth / mediaHeight : 1;
+    const minAspect = video ? SOCIAL_MIN_ASPECT_VIDEO : SOCIAL_MIN_ASPECT_IMAGE;
+    const aspect = Math.min(SOCIAL_MAX_ASPECT, Math.max(minAspect, ratio));
+    return Math.round(containerWidth / aspect);
+  }
   const aspect = clampAspect(mediaWidth, mediaHeight);
   const height = containerWidth / aspect;
   return Math.round(Math.min(MAX_FRAME_HEIGHT, Math.max(MIN_FRAME_HEIGHT, height)));
@@ -31,6 +59,20 @@ type ContentPostFeedMediaFrameProps = {
   locale?: 'fr' | 'en';
   /** Fill parent height (Shorts-style slot) instead of capped feed height */
   layout?: 'feed' | 'fill';
+  /**
+   * `cover` crops images to fill the frame; `backdrop` shows the whole image and fills the
+   * leftover space with a blurred copy of it instead of flat bands.
+   */
+  fit?: 'contain' | 'cover' | 'backdrop' | 'social';
+  /** Shown by the social audio player. */
+  title?: string | null;
+  /** Social video: clicking the picture opens the viewer at the current time. */
+  onExpand?: (currentTime: number) => void;
+  /**
+   * Above the fold: load eagerly at high priority instead of waiting for the lazy observer.
+   * Reserved for the first card of a feed — every other one costs more than it saves.
+   */
+  priority?: boolean;
 };
 
 export function ContentPostFeedMediaFrame({
@@ -39,6 +81,10 @@ export function ContentPostFeedMediaFrame({
   fileName,
   locale = 'en',
   layout = 'feed',
+  fit = 'contain',
+  title,
+  onExpand,
+  priority = false,
 }: ContentPostFeedMediaFrameProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const kind = contentMediaKind(mediaUrl, fileName, mediaType);
@@ -48,43 +94,23 @@ export function ContentPostFeedMediaFrame({
   const updateFrame = useCallback((mediaWidth: number, mediaHeight: number) => {
     const width = containerRef.current?.clientWidth ?? 0;
     if (width <= 0) return;
-    setFrameHeight(frameHeightForWidth(width, mediaWidth, mediaHeight));
-  }, []);
+    setFrameHeight(frameHeightForWidth(width, mediaWidth, mediaHeight, fit === 'social', kind === 'video'));
+  }, [fit, kind]);
 
+  /*
+   * Only audio and PDF need a height up front. Image and video frames learn theirs from the
+   * element the user actually sees (`onLoad` / `onLoadedMetadata`); probing the media here would
+   * fetch it a second time — a second metadata range request for video, and for images a
+   * different srcSet candidate, which is a separate request entirely.
+   */
   useEffect(() => {
     if (fillParent) return;
     if (kind === 'audio') {
-      setFrameHeight(128);
-      return;
-    }
-    if (kind === 'pdf') {
+      setFrameHeight(fit === 'social' ? 176 : 128);
+    } else if (kind === 'pdf') {
       setFrameHeight(240);
-      return;
     }
-
-    let cancelled = false;
-
-    if (kind === 'video') {
-      const video = document.createElement('video');
-      video.preload = 'metadata';
-      video.onloadedmetadata = () => {
-        if (cancelled) return;
-        updateFrame(video.videoWidth, video.videoHeight);
-      };
-      video.src = mediaUrl;
-    } else {
-      const img = new Image();
-      img.onload = () => {
-        if (cancelled) return;
-        updateFrame(img.naturalWidth, img.naturalHeight);
-      };
-      img.src = mediaUrl;
-    }
-
-    return () => {
-      cancelled = true;
-    };
-  }, [kind, mediaUrl, updateFrame, fillParent]);
+  }, [kind, fillParent, fit]);
 
   useEffect(() => {
     const node = containerRef.current;
@@ -108,24 +134,41 @@ export function ContentPostFeedMediaFrame({
     return () => observer.disconnect();
   }, [kind, mediaUrl, updateFrame, fillParent]);
 
-  const mediaClass = 'max-h-full max-w-full object-contain';
+  const mediaClass =
+    fit === 'cover' ? 'h-full w-full object-cover' : 'max-h-full max-w-full object-contain';
+  const responsiveImage = mediaImageResponsive(mediaUrl, FRAME_WIDTHS);
 
   return (
     <div
       ref={containerRef}
-      className={`relative flex w-full items-center justify-center overflow-hidden bg-neutral-100 dark:bg-neutral-950 ${
+      className={`relative flex w-full items-center justify-center overflow-hidden ${
+        fit === 'social'
+          ? kind === 'video'
+            ? 'bg-black'
+            : 'bg-white dark:bg-[#111111]'
+          : 'bg-neutral-100 dark:bg-neutral-950'
+      } ${
         fillParent ? 'h-full min-h-0' : ''
       }`}
       style={fillParent ? undefined : { height: frameHeight }}
     >
       {kind === 'video' ? (
-        <ContentPostVideoPlayer
-          src={mediaUrl}
-          className="absolute inset-0"
-          onLoadedMetadata={updateFrame}
-        />
+        fit === 'social' ? (
+          <SocialVideoPlayer
+            src={mediaUrl}
+            className="absolute inset-0"
+            onLoadedMetadata={updateFrame}
+            onExpand={onExpand}
+          />
+        ) : (
+          <ContentPostVideoPlayer src={mediaUrl} className="absolute inset-0" onLoadedMetadata={updateFrame} />
+        )
       ) : kind === 'audio' ? (
-        <ContentPostAudioPlayer src={mediaUrl} locale={locale} />
+        fit === 'social' ? (
+          <SocialAudioPlayer src={mediaUrl} title={title} />
+        ) : (
+          <ContentPostAudioPlayer src={mediaUrl} locale={locale} />
+        )
       ) : (
         <div className="flex h-full w-full items-center justify-center">
           {kind === 'pdf' ? (
@@ -146,16 +189,34 @@ export function ContentPostFeedMediaFrame({
               </a>
             </div>
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
+            <>
+            {fit === 'backdrop' ? (
+              // eslint-disable-next-line @next/next/no-img-element
+              <img
+                src={mediaImageSrc(mediaUrl, BACKDROP_WIDTH)}
+                alt=""
+                aria-hidden
+                loading="lazy"
+                decoding="async"
+                className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover opacity-70 blur-2xl saturate-150 dark:opacity-50"
+              />
+            ) : null}
+            {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={mediaUrl}
+              src={responsiveImage.src}
+              srcSet={responsiveImage.srcSet}
+              sizes={FRAME_SIZES}
               alt=""
-              className={mediaClass}
+              loading={priority ? 'eager' : 'lazy'}
+              fetchPriority={priority ? 'high' : 'auto'}
+              decoding="async"
+              className={`${mediaClass} ${fit === 'backdrop' ? 'relative drop-shadow-[0_20px_40px_rgba(0,0,0,0.25)]' : ''}`}
               onLoad={(e) => {
                 const img = e.currentTarget;
                 updateFrame(img.naturalWidth, img.naturalHeight);
               }}
             />
+            </>
           )}
         </div>
       )}

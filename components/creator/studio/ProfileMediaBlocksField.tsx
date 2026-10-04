@@ -49,7 +49,7 @@ type ProfileMediaBlocksFieldProps = {
 
 function BlockFieldLabel({ children }: { children: React.ReactNode }) {
   return (
-    <label className="mb-1.5 block text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+    <label className="mb-2 block text-[13px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
       {children}
     </label>
   );
@@ -168,7 +168,7 @@ function ProfileMediaBlockRow({
                     onClick={() =>
                       setValue(`${name}.${index}.status`, option.value, { shouldDirty: true })
                     }
-                    className={`rounded-full border px-3 py-1.5 text-xs font-semibold transition ${
+                    className={`rounded-full border px-3.5 py-1.5 text-sm font-semibold transition ${
                       active
                         ? 'border-neutral-900 bg-neutral-900 text-white'
                         : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
@@ -270,14 +270,14 @@ function ProfileMediaBlockRow({
                   type="button"
                   disabled={taskFields.length >= 12}
                   onClick={() => appendTask({ value: '' })}
-                  className="text-sm font-semibold text-orange-600 hover:text-orange-700 disabled:opacity-40 dark:text-orange-400"
+                  className="text-[15px] font-semibold text-[#111111] underline-offset-4 hover:underline disabled:opacity-40 dark:text-white"
                 >
                   + Add task
                 </button>
               )}
             </div>
             {taskFields.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-neutral-200 px-3 py-3 text-xs text-neutral-500 dark:border-neutral-700">
+              <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
                 No tasks yet — e.g. Directed shoots, Edited trailers, Color graded finals
               </p>
             ) : (
@@ -334,14 +334,14 @@ function ProfileMediaBlockRow({
                   type="button"
                   disabled={linkFields.length >= 5}
                   onClick={() => appendLink(createEmptyExperienceProofLink(linkFields.length))}
-                  className="text-sm font-semibold text-orange-600 hover:text-orange-700 disabled:opacity-40 dark:text-orange-400"
+                  className="text-[15px] font-semibold text-[#111111] underline-offset-4 hover:underline disabled:opacity-40 dark:text-white"
                 >
                   + Add link
                 </button>
               )}
             </div>
             {linkFields.length === 0 ? (
-              <p className="rounded-lg border border-dashed border-neutral-200 px-3 py-3 text-xs text-neutral-500 dark:border-neutral-700">
+              <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
                 No proof links — GitHub repo, Facebook page, case study, reel…
               </p>
             ) : (
@@ -380,7 +380,7 @@ function ProfileMediaBlockRow({
                         )}
                       </div>
                       {blockLinkErrors?.[linkIndex]?.url?.message ? (
-                        <p className="text-xs font-medium text-red-600 dark:text-red-400">
+                        <p className="text-sm font-medium text-red-600 dark:text-red-400">
                           {blockLinkErrors[linkIndex]?.url?.message}
                         </p>
                       ) : null}
@@ -434,7 +434,7 @@ function ProfileMediaBlockRow({
             {uploading && <LoadingSpinner size="sm" />}
             {mediaUrl ? 'Replace image/video' : 'Add image or video'}
           </button>
-          {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
+          {uploadError ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>
       ) : null}
     </div>
@@ -504,7 +504,7 @@ export function ProfileMediaBlocksField({
       <button
         type="button"
         onClick={() => append(createEmptyProfileBlock(fields.length))}
-        className="inline-flex rounded-full bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+        className="inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
       >
         Add block
       </button>

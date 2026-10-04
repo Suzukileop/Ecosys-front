@@ -194,7 +194,6 @@ export const PORTFOLIO_CHROME_SECTIONS = [
   'aboutUs',
   'links',
   'contact',
-  'reputation',
 ] as const;
 
 /** Numbered tabs to switch between list entries (one visible at a time). */

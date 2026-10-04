@@ -25,12 +25,17 @@ function OAuthCallbackContent() {
     const oauthError = searchParams.get('error');
 
     if (oauthError) {
-      setError(decodeURIComponent(oauthError));
+      console.error('[oauth callback]', oauthError);
+      setError(
+        oauthError === 'access_denied'
+          ? 'Sign-in was cancelled.'
+          : 'Unable to complete social sign-in. Please try again.',
+      );
       return;
     }
 
     if (!code) {
-      setError('Missing OAuth callback code.');
+      setError('This sign-in link is invalid or has expired. Please try again.');
       return;
     }
 

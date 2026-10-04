@@ -20,6 +20,20 @@ const config: Config = {
         "accent-3": "#06B6D4",
         "text-primary": "#F0F0FF",
         "text-secondary": "#9CA3AF",
+        // Brand orange: every `orange-*` utility resolves to the #FF5722 button hue.
+        orange: {
+          50: "#FFF3EF",
+          100: "#FFE0D6",
+          200: "#FFC1AD",
+          300: "#FF9575",
+          400: "#FF5722",
+          500: "#FF5722",
+          600: "#F4511E",
+          700: "#E0431A",
+          800: "#B83514",
+          900: "#8F2A10",
+          950: "#4D1608",
+        },
       },
       fontFamily: {
         sans: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
@@ -59,8 +73,34 @@ const config: Config = {
         "orb-3": "orb-move-3 12s ease-in-out infinite",
         "draw-line": "draw-line 2s ease-out forwards",
         "scroll-progress": "scroll-progress 1s linear",
+        "like-pop": "like-pop 0.45s cubic-bezier(0.2, 0.9, 0.3, 1.2)",
+        "like-ring": "like-ring 0.5s ease-out forwards",
+        "like-particle": "like-particle 0.6s cubic-bezier(0.2, 0.7, 0.3, 1) forwards",
+        "like-count": "like-count 0.3s ease-out",
       },
       keyframes: {
+        "like-pop": {
+          "0%": { transform: "scale(1)" },
+          "15%": { transform: "scale(0.7)" },
+          "50%": { transform: "scale(1.3)" },
+          "75%": { transform: "scale(0.95)" },
+          "100%": { transform: "scale(1)" },
+        },
+        "like-ring": {
+          "0%": { transform: "scale(0.3)", opacity: "0.55", borderWidth: "6px" },
+          "100%": { transform: "scale(1.9)", opacity: "0", borderWidth: "0px" },
+        },
+        "like-particle": {
+          "0%": { transform: "translate(-50%, -50%) scale(1)", opacity: "1" },
+          "100%": {
+            transform: "translate(calc(-50% + var(--like-dx)), calc(-50% + var(--like-dy))) scale(0)",
+            opacity: "0",
+          },
+        },
+        "like-count": {
+          from: { transform: "translateY(55%)", opacity: "0" },
+          to: { transform: "translateY(0)", opacity: "1" },
+        },
         "gradient-shift": {
           "0%, 100%": { backgroundPosition: "0% 50%" },
           "50%": { backgroundPosition: "100% 50%" },

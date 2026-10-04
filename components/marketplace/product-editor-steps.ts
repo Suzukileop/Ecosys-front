@@ -6,22 +6,22 @@ export const PRODUCT_EDITOR_STEPS_VIRTUAL = [
   {
     id: 'basics',
     label: 'Basics',
-    description: '',
+    description: 'Name your product and set a price. Everything else can come later.',
   },
   {
     id: 'media',
-    label: 'Thumbnail & demo',
-    description: '',
+    label: 'Cover & demo',
+    description: 'Show buyers what they get: a cover, plus an optional preview.',
   },
   {
     id: 'highlights',
-    label: 'Why your product',
-    description: '',
+    label: 'Highlights',
+    description: 'Give buyers a few clear reasons to choose your product.',
   },
   {
     id: 'settings',
     label: 'Details',
-    description: '',
+    description: 'Technical details help the right buyers find it.',
   },
 ] as const;
 
@@ -29,12 +29,12 @@ export const PRODUCT_EDITOR_STEPS_PHYSICAL = [
   {
     id: 'basics',
     label: 'Basics',
-    description: '',
+    description: 'Name your product and set a price. Everything else can come later.',
   },
   {
     id: 'media',
     label: 'Photos',
-    description: '',
+    description: 'A sharp cover sells the product. Add more angles if you have them.',
   },
 ] as const;
 
@@ -49,14 +49,14 @@ export function stepsForFormat(format: ProductFormat) {
 }
 
 const STEP_FIELDS_VIRTUAL: Record<ProductEditorStepId, readonly string[]> = {
-  basics: ['title', 'type', 'genre', 'description', 'priceAmount', 'currency', 'compareAtPriceAmount'],
+  basics: ['title', 'type', 'genre', 'description', 'tags', 'priceAmount', 'currency', 'compareAtPriceAmount'],
   media: ['thumbnailUrl', 'demoUrl', 'demoSubtitles', 'videoDuration', 'videoResolution'],
   highlights: ['whyProductBlocks'],
   settings: ['fileFormat', 'fileSizeMb', 'language', 'version'],
 };
 
 const STEP_FIELDS_PHYSICAL: Record<'basics' | 'media', readonly string[]> = {
-  basics: ['title', 'description', 'priceAmount', 'currency', 'compareAtPriceAmount'],
+  basics: ['title', 'description', 'tags', 'priceAmount', 'currency', 'compareAtPriceAmount', 'stockQuantity'],
   media: ['thumbnailUrl', 'galleryImages'],
 };
 

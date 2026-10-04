@@ -1,8 +1,10 @@
 import type { Metadata } from 'next';
+import '@/lib/fonts/portfolio-fonts';
 import './globals.css';
 import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/landing/ThemeProvider';
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
+import { ThemeInitScript } from '@/components/ThemeInitScript';
 import { geist } from '@/lib/fonts/geist';
 
 const initThemeScript = `
@@ -22,7 +24,7 @@ const initThemeScript = `
 `;
 
 export const metadata: Metadata = {
-  title: 'NoProbleme — Plateforme SaaS',
+  title: 'Skraft — Plateforme SaaS',
   description: 'Création de contenu assistée par IA',
 };
 
@@ -35,8 +37,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       style={{ ['--font-geist' as string]: 'var(--font-geist-sans)' }}
     >
       <head>
-        {/* eslint-disable-next-line @next/next/no-before-interactive-script-outside-document */}
-        <script dangerouslySetInnerHTML={{ __html: initThemeScript }} />
+        <ThemeInitScript code={initThemeScript} />
       </head>
       <body spellCheck={false} className={`${geist.className} font-sans antialiased`}>
         <ChunkLoadRecovery />

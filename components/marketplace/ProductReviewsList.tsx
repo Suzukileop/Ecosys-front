@@ -21,19 +21,21 @@ const EMPTY_SUMMARY: ProductReviewSummary = {
   rating1Count: 0,
 };
 
+const SKELETON = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
+
 function ReviewCardSkeleton() {
   return (
-    <div className="border-b border-gray-100 py-6 last:border-b-0 dark:border-neutral-800">
+    <div className="py-6">
       <div className="flex items-center gap-3">
-        <div className="h-10 w-10 shrink-0 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
+        <div className={`h-10 w-10 shrink-0 rounded-full ${SKELETON}`} />
         <div className="space-y-2">
-          <div className="h-4 w-32 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
-          <div className="h-3 w-24 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
+          <div className={`h-4 w-32 ${SKELETON}`} />
+          <div className={`h-3 w-24 ${SKELETON}`} />
         </div>
       </div>
       <div className="mt-4 space-y-2">
-        <div className="h-3 w-full animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
-        <div className="h-3 w-4/5 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
+        <div className={`h-3 w-full ${SKELETON}`} />
+        <div className={`h-3 w-4/5 ${SKELETON}`} />
       </div>
     </div>
   );
@@ -157,46 +159,57 @@ export function ProductReviewsList({
   };
 
   return (
-    <section className="space-y-6">
-      <h2 className="text-lg font-semibold text-gray-900 dark:text-white">All customer reviews</h2>
+    <section>
+      <h2 className="text-xl font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">Customer reviews</h2>
 
-      <ProductReviewDistributionChart summary={summary} loading={summaryLoading} />
-
-      {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
-
-      {loading && reviews.length === 0 ? (
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 dark:border-neutral-700 dark:bg-neutral-900">
-          {Array.from({ length: Math.min(Math.max(initialReviewCount, 1), 3) }, (_, index) => (
-            <ReviewCardSkeleton key={index} />
-          ))}
+      {error && (
+        <div className="mt-5">
+          <ErrorAlert message={error} onDismiss={() => setError(null)} />
         </div>
-      ) : reviews.length === 0 ? (
-        <p className="rounded-2xl border border-dashed border-gray-200 py-10 text-center text-sm text-gray-500 dark:border-neutral-700 dark:text-gray-400">
-          No reviews yet. Be the first to share your experience.
-        </p>
+      )}
+
+      {!loading && reviews.length === 0 && summary.reviewCount === 0 ? (
+        <div className="mt-5 rounded-lg border border-dashed border-black/[0.12] px-6 py-12 text-center dark:border-white/[0.14]">
+          <p className="text-base font-medium text-[#111111] dark:text-white">No reviews yet</p>
+          <p className="mt-2 text-[15px] text-neutral-500 dark:text-neutral-400">
+            Be the first to share your experience.
+          </p>
+        </div>
       ) : (
-        <div className="rounded-2xl border border-gray-200 bg-white px-5 dark:border-neutral-700 dark:bg-neutral-900">
-          {reviews.map((review) => (
-            <ProductReviewCard
-              key={review.id}
-              review={review}
-              loginRedirect={loginRedirect}
-              onUpdated={onReviewUpdated}
-              onDeleted={(reviewId) => void onReviewDeleted(reviewId)}
-            />
-          ))}
-          {hasMore && (
-            <div className="border-t border-gray-100 py-4 text-center dark:border-neutral-800">
-              <button
-                type="button"
-                disabled={loadingMore}
-                onClick={() => void onLoadMore()}
-                className="rounded-lg border border-gray-200 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:border-orange-200 hover:bg-orange-50 disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-200"
-              >
-                {loadingMore ? 'Loading…' : 'Load more reviews'}
-              </button>
+        <div className="mt-5 overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
+          <div>
+            <div className="border-b border-black/[0.06] p-6 dark:border-white/[0.08]">
+              <ProductReviewDistributionChart summary={summary} loading={summaryLoading} />
             </div>
-          )}
+
+            <div className="min-w-0 divide-y divide-black/[0.06] px-6 dark:divide-white/[0.08]">
+              {loading && reviews.length === 0
+                ? Array.from({ length: Math.min(Math.max(initialReviewCount, 1), 3) }, (_, index) => (
+                    <ReviewCardSkeleton key={index} />
+                  ))
+                : reviews.map((review) => (
+                    <ProductReviewCard
+                      key={review.id}
+                      review={review}
+                      loginRedirect={loginRedirect}
+                      onUpdated={onReviewUpdated}
+                      onDeleted={(reviewId) => void onReviewDeleted(reviewId)}
+                    />
+                  ))}
+              {hasMore && (
+                <div className="py-5 text-center">
+                  <button
+                    type="button"
+                    disabled={loadingMore}
+                    onClick={() => void onLoadMore()}
+                    className="h-10 rounded-lg border border-black/[0.1] px-5 text-sm font-medium text-[#111111] transition hover:border-black/[0.25] disabled:opacity-60 dark:border-white/[0.14] dark:text-white dark:hover:border-white/[0.3]"
+                  >
+                    {loadingMore ? 'Loading…' : 'Load more reviews'}
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
       )}
     </section>

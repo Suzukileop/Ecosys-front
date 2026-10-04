@@ -2,7 +2,7 @@
 
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCrown, faThumbtack } from '@fortawesome/free-solid-svg-icons';
+import { faCrown, faEye, faEyeSlash, faThumbtack } from '@fortawesome/free-solid-svg-icons';
 import {
   collectProductLabels,
   formatPrice,
@@ -11,6 +11,7 @@ import {
   PRODUCT_TYPE_LABELS,
 } from '@/lib/marketplace-api';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
+import { DEFAULT_PHYSICAL_STOCK, LOW_STOCK_THRESHOLD, physicalStockQuantity } from '@/lib/product-stock';
 import { ProductCardEngagementStrip } from '@/components/marketplace/ProductCardEngagementStrip';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
@@ -29,13 +30,15 @@ type CreatorProductCardProps = {
   flagBusyId?: string | null;
   onTogglePublish?: (product: MarketplaceProductSummary) => void;
   onTogglePin?: (product: MarketplaceProductSummary) => void;
-  onToggleBestseller?: (product: MarketplaceProductSummary) => void;
+  onToggleProfileVisibility?: (product: MarketplaceProductSummary) => void;
+  /** Square, side-border-free card that runs edge to edge on phones. */
+  flushOnMobile?: boolean;
 };
 
 export const creatorProductGridClassName =
   'grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3';
 
-const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-sm';
+const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2.5 py-1 text-[14px] font-medium text-white backdrop-blur-sm';
 const FLAG_BUTTON =
   'inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition disabled:opacity-60 dark:bg-[#111111]/95';
 
@@ -47,7 +50,8 @@ export function CreatorProductCard({
   flagBusyId = null,
   onTogglePublish,
   onTogglePin,
-  onToggleBestseller,
+  onToggleProfileVisibility,
+  flushOnMobile = false,
 }: CreatorProductCardProps) {
   const isVideo = product.type === 'VIDEO';
   const hasVideoThumbnail = isVideoThumbnailUrl(product.thumbnailUrl);
@@ -64,11 +68,23 @@ export function CreatorProductCard({
     !isFreeProduct(product.priceCents) &&
     product.compareAtPriceCents != null &&
     product.compareAtPriceCents > product.priceCents;
-  const canManageFlags = !readOnly && (onTogglePin || onToggleBestseller);
+  const canManageFlags = !readOnly && (onTogglePin || onToggleProfileVisibility);
+  const hiddenFromProfile = product.showOnProfile === false;
+  const shopRankLabel = product.bestsellerRank ? `#${product.bestsellerRank} best seller` : null;
+  const rankLabels = [
+    ...(shopRankLabel ? [shopRankLabel] : []),
+    ...(product.catalogueBestsellers ?? []).map((entry) => `#${entry.rank} in ${entry.catalogueName}`),
+  ];
+  const stockQuantity = physicalStockQuantity(product);
+  const stock = stockQuantity != null && stockQuantity !== DEFAULT_PHYSICAL_STOCK ? stockQuantity : null;
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]">
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-black/[0.04] dark:bg-white/[0.04]">
+    <article
+      className={`group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16] ${
+        flushOnMobile ? 'max-sm:rounded-none max-sm:border-x-0 max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16]' : ''
+      }`}
+    >
+      <div className="relative aspect-[5/4] w-full shrink-0 overflow-hidden bg-black/[0.04] dark:bg-white/[0.04]">
         <Link href={viewHref} className="block h-full w-full">
           {product.thumbnailUrl ? (
             <div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
@@ -116,25 +132,30 @@ export function CreatorProductCard({
                 <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
               </button>
             ) : null}
-            {onToggleBestseller ? (
+            {product.isBestseller ? (
+              <span title={shopRankLabel ?? undefined} className={`${FLAG_BUTTON} text-amber-500`}>
+                <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
+              </span>
+            ) : null}
+            {onToggleProfileVisibility ? (
               <button
                 type="button"
                 disabled={isFlagBusy}
-                title={product.isBestseller ? 'Remove bestseller' : 'Mark as bestseller'}
-                aria-label={product.isBestseller ? 'Remove bestseller' : 'Mark as bestseller'}
-                aria-pressed={Boolean(product.isBestseller)}
+                title={hiddenFromProfile ? 'Show on profile' : 'Hide from profile'}
+                aria-label={hiddenFromProfile ? 'Show product on profile' : 'Hide product from profile'}
+                aria-pressed={hiddenFromProfile}
                 onClick={(e) => {
                   e.preventDefault();
                   e.stopPropagation();
-                  onToggleBestseller(product);
+                  onToggleProfileVisibility(product);
                 }}
                 className={`${FLAG_BUTTON} ${
-                  product.isBestseller
-                    ? 'text-amber-500 opacity-100'
-                    : 'text-neutral-600 opacity-0 hover:text-amber-500 group-hover:opacity-100 dark:text-neutral-300'
+                  hiddenFromProfile
+                    ? 'text-[#111111] opacity-100 dark:text-white'
+                    : 'text-neutral-600 opacity-0 hover:text-[#FF5722] group-hover:opacity-100 dark:text-neutral-300'
                 }`}
               >
-                <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
+                <FontAwesomeIcon icon={hiddenFromProfile ? faEyeSlash : faEye} className="h-3 w-3" />
               </button>
             ) : null}
           </div>
@@ -146,7 +167,7 @@ export function CreatorProductCard({
               </span>
             ) : null}
             {product.isBestseller ? (
-              <span className={`${FLAG_BUTTON} text-amber-500`}>
+              <span title={shopRankLabel ?? undefined} className={`${FLAG_BUTTON} text-amber-500`}>
                 <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
               </span>
             ) : null}
@@ -168,16 +189,37 @@ export function CreatorProductCard({
             </span>
           </div>
         ) : null}
+
+        {stock != null ? (
+          <div className="pointer-events-none absolute bottom-3 left-3">
+            <span className={`${OVERLAY_CHIP} inline-flex items-center gap-1.5`}>
+              <span
+                aria-hidden
+                className={`h-1.5 w-1.5 rounded-full ${
+                  stock === 0 ? 'bg-red-400' : stock <= LOW_STOCK_THRESHOLD ? 'bg-amber-400' : 'bg-emerald-400'
+                }`}
+              />
+              {stock === 0 ? 'Out of stock' : `${stock.toLocaleString('en-US')} in stock`}
+            </span>
+          </div>
+        ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
-        <div className="flex items-center justify-between gap-3 text-[14px] text-neutral-500 dark:text-neutral-400">
+      <div className="flex flex-1 flex-col gap-3.5 p-5 sm:p-6">
+        <div className="flex items-center justify-between gap-3 text-[15px] text-neutral-500 dark:text-neutral-400">
           <span className="inline-flex items-center gap-2">
             <span
               aria-hidden
               className={`h-1.5 w-1.5 rounded-full ${product.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`}
             />
             {product.isPublished ? 'Published' : 'Draft'}
+            {!readOnly && hiddenFromProfile ? (
+              <span className="inline-flex items-center gap-1.5 text-neutral-400 dark:text-neutral-500">
+                <span aria-hidden>·</span>
+                <FontAwesomeIcon icon={faEyeSlash} className="h-3 w-3" aria-hidden />
+                Hidden from profile
+              </span>
+            ) : null}
           </span>
           <div className="flex shrink-0 items-center gap-3">
             <ProductCardEngagementStrip
@@ -199,18 +241,25 @@ export function CreatorProductCard({
 
         <Link
           href={viewHref}
-          className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-0.01em] text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white"
+          className="line-clamp-2 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white"
           title={product.title}
         >
           {product.title}
         </Link>
+
+        {rankLabels.length > 0 ? (
+          <p className="-mt-1.5 flex flex-wrap items-center gap-x-2 text-[14px] font-medium text-amber-600 dark:text-amber-400">
+            <FontAwesomeIcon icon={faCrown} className="h-3 w-3" aria-hidden />
+            {rankLabels.join(' · ')}
+          </p>
+        ) : null}
 
         {labels.length > 0 ? (
           <div className="flex flex-wrap gap-1.5">
             {labels.map((label, index) => (
               <span
                 key={`${label}-${index}`}
-                className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[13px] lowercase text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
+                className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[14px] lowercase text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
               >
                 {label}
               </span>
@@ -221,11 +270,11 @@ export function CreatorProductCard({
         <div className="mt-auto flex items-center justify-between gap-4 border-t border-black/[0.06] pt-4 dark:border-white/[0.06]">
           <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
             {hasDiscount ? (
-              <span className="text-[14px] text-neutral-400 line-through dark:text-neutral-500">
+              <span className="text-[15px] text-neutral-400 line-through dark:text-neutral-500">
                 {formatPrice(product.compareAtPriceCents!, product.currency)}
               </span>
             ) : null}
-            <span className="text-base font-semibold text-[#111111] dark:text-white">
+            <span className="text-[18px] font-semibold text-[#111111] dark:text-white">
               {formatPrice(product.priceCents, product.currency)}
             </span>
           </div>
@@ -234,7 +283,7 @@ export function CreatorProductCard({
               type="button"
               disabled={isPublishing}
               onClick={() => onTogglePublish(product)}
-              className={`shrink-0 rounded-lg px-3.5 py-2 text-[14px] font-medium transition disabled:opacity-60 ${
+              className={`shrink-0 rounded-lg px-4 py-2 text-[15px] font-medium transition disabled:opacity-60 ${
                 product.isPublished
                   ? 'border border-black/[0.12] text-[#111111] hover:border-black/25 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25'
                   : 'bg-[#111111] text-white hover:opacity-85 dark:bg-white dark:text-[#111111]'

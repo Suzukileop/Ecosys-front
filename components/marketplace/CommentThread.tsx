@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,13 +15,14 @@ import {
   unhideComment,
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { AvatarImage } from '@/components/ui/PersonAvatar';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useAuth } from '@/context/AuthContext';
 import type { MarketplaceComment, ReactionType, SocialTargetType } from '@/types/marketplace';
 
 const commentSchema = z.object({
-  comment: z.string().min(1, 'Le commentaire ne peut pas être vide.').max(2000, 'Commentaire trop long.'),
+  comment: z.string().min(1, 'Comment cannot be empty.').max(2000, 'Comment is too long.'),
 });
 
 type CommentFormValues = z.infer<typeof commentSchema>;
@@ -114,32 +115,32 @@ function CommentActionsMenu({
         type="button"
         onClick={() => setOpen((v) => !v)}
         className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-600 dark:hover:bg-neutral-800"
-        aria-label="Actions sur le commentaire"
+        aria-label="Comment actions"
       >
         ···
       </button>
       {open && (
         <>
-          <button type="button" className="fixed inset-0 z-10 cursor-default" aria-label="Fermer" onClick={() => setOpen(false)} />
+          <button type="button" className="fixed inset-0 z-10 cursor-default" aria-label="Close" onClick={() => setOpen(false)} />
           <div className="absolute right-0 top-full z-20 mt-1 min-w-[10rem] overflow-hidden rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900">
             {canReport && (
               <button type="button" onClick={() => { setOpen(false); onReport(); }} className="block w-full px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800">
-                Signaler
+                Report
               </button>
             )}
             {canHide && (
               <button type="button" onClick={() => { setOpen(false); onHide(); }} className="block w-full px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800">
-                Masquer
+                Hide
               </button>
             )}
             {canUnhide && (
               <button type="button" onClick={() => { setOpen(false); onUnhide(); }} className="block w-full px-3 py-2 text-left text-sm text-neutral-700 hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800">
-                Réafficher
+                Unhide
               </button>
             )}
             {canDelete && (
               <button type="button" onClick={() => { setOpen(false); onDelete(); }} className="block w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-500/10">
-                Supprimer
+                Delete
               </button>
             )}
           </div>
@@ -150,97 +151,105 @@ function CommentActionsMenu({
 }
 
 function CommentAvatar({ name, avatarUrl }: { name: string; avatarUrl?: string | null }) {
-  if (avatarUrl) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={avatarUrl} alt="" className="h-8 w-8 shrink-0 rounded-full object-cover" />
-    );
-  }
-
   return (
-    <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-orange-100 text-xs font-bold text-orange-800 dark:bg-orange-500/20 dark:text-orange-300">
-      {name.slice(0, 2).toUpperCase()}
-    </div>
+    <AvatarImage
+      src={avatarUrl}
+      className="h-8 w-8 shrink-0 rounded-full object-cover"
+      fallback={
+        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-black/[0.06] text-xs font-semibold text-neutral-600 dark:bg-white/[0.08] dark:text-neutral-300">
+          {name.slice(0, 2).toUpperCase()}
+        </div>
+      }
+    />
   );
 }
+
+const REPLY_MAX_HEIGHT_PX = 160;
 
 function ReplyForm({
   onSubmit,
   onCancel,
   submitting,
-  compact = false,
+  replyToName,
 }: {
   onSubmit: (text: string) => Promise<void>;
   onCancel: () => void;
   submitting: boolean;
-  compact?: boolean;
+  replyToName: string;
 }) {
+  const textareaRef = useRef<HTMLTextAreaElement | null>(null);
   const {
     register,
     handleSubmit,
     reset,
+    watch,
     formState: { errors },
   } = useForm<CommentFormValues>({
     resolver: zodResolver(commentSchema),
     defaultValues: { comment: '' },
   });
+  const field = register('comment');
+  const hasText = (watch('comment') ?? '').trim().length > 0;
+
+  const fitHeight = () => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, REPLY_MAX_HEIGHT_PX)}px`;
+  };
 
   const submit = async (data: CommentFormValues) => {
     await onSubmit(data.comment.trim());
     reset();
+    requestAnimationFrame(fitHeight);
   };
 
-  if (compact) {
-    return (
-      <form onSubmit={(e) => void handleSubmit(submit)(e)} className="mt-2 flex items-center gap-2">
-        <input
-          type="text"
-          placeholder="Répondre…"
-          className="min-w-0 flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1.5 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-          {...register('comment')}
-        />
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-full bg-orange-500 px-3 py-1.5 text-xs font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
-        >
-          {submitting ? '…' : 'Envoyer'}
-        </button>
-        <button
-          type="button"
-          onClick={onCancel}
-          className="text-xs text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
-        >
-          Annuler
-        </button>
-        {errors.comment && <p className="sr-only">{errors.comment.message}</p>}
-      </form>
-    );
-  }
-
   return (
-    <form onSubmit={(e) => void handleSubmit(submit)(e)} className="mt-2 space-y-2">
+    <form
+      onSubmit={(e) => void handleSubmit(submit)(e)}
+      className="mt-3 rounded-2xl border border-black/[0.08] px-4 pb-3 pt-3 transition-colors focus-within:border-black/20 dark:border-white/[0.1] dark:focus-within:border-white/25"
+    >
+      <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
+        Replying to <span className="font-medium text-[#111111] dark:text-white">{replyToName}</span>
+      </p>
       <textarea
-        rows={2}
-        placeholder="Écrire une réponse…"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
-        {...register('comment')}
+        {...field}
+        ref={(el) => {
+          field.ref(el);
+          textareaRef.current = el;
+        }}
+        rows={1}
+        autoFocus
+        autoComplete="off"
+        placeholder="Post your reply"
+        onInput={fitHeight}
+        onKeyDown={(e) => {
+          if (e.key === 'Escape') {
+            e.preventDefault();
+            onCancel();
+          } else if (e.key === 'Enter' && !e.shiftKey) {
+            e.preventDefault();
+            if (hasText && !submitting) void handleSubmit(submit)();
+          }
+        }}
+        className="mt-1.5 block w-full resize-none bg-transparent text-[15px] leading-[1.5] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
       />
-      {errors.comment && <p className="text-sm text-red-600">{errors.comment.message}</p>}
-      <div className="flex items-center gap-2">
-        <button
-          type="submit"
-          disabled={submitting}
-          className="rounded-lg bg-orange-500 px-3 py-1.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
-        >
-          {submitting ? 'Envoi…' : 'Répondre'}
-        </button>
+      {errors.comment && <p className="sr-only">{errors.comment.message}</p>}
+      <div className="mt-3 flex items-center justify-end gap-1.5">
         <button
           type="button"
           onClick={onCancel}
-          className="text-sm text-neutral-500 hover:text-neutral-700 dark:hover:text-neutral-300"
+          className="h-8 rounded-full px-3.5 text-[14px] font-medium text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
         >
-          Annuler
+          Cancel
+        </button>
+        <button
+          type="submit"
+          disabled={!hasText || submitting}
+          className="inline-flex h-8 items-center gap-2 rounded-full bg-[#111111] px-4 text-[14px] font-semibold text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-35 dark:bg-white dark:text-[#111111]"
+        >
+          {submitting ? <LoadingSpinner size="sm" /> : null}
+          Reply
         </button>
       </div>
     </form>
@@ -301,11 +310,11 @@ function CommentRow({
             <span className="text-sm font-semibold text-gray-900 dark:text-white">{comment.userName}</span>
             {comment.hidden && moderationMode && (
               <span className="rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:bg-amber-500/20 dark:text-amber-300">
-                Masqué
+                Hidden
               </span>
             )}
             <time className="text-xs text-gray-500 dark:text-neutral-400" dateTime={comment.createdAt}>
-              {new Date(comment.createdAt).toLocaleDateString('fr-FR', {
+              {new Date(comment.createdAt).toLocaleDateString('en-US', {
                 year: 'numeric',
                 month: 'short',
                 day: 'numeric',
@@ -334,15 +343,15 @@ function CommentRow({
                 onClick={() => onReply(comment.id)}
                 className="rounded-md px-1.5 py-0.5 text-xs font-semibold text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
               >
-                Répondre
+                Reply
               </button>
             )}
             {!isAuthenticated && depth === 0 && (
               <Link
                 href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}
-                className="text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                className="text-xs font-semibold text-[#111111] underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-500 dark:text-white dark:decoration-neutral-600"
               >
-                Connectez-vous pour réagir
+                Sign in to react
               </Link>
             )}
             <CommentActionsMenu
@@ -358,7 +367,7 @@ function CommentRow({
 
           {isReplying && (
             <ReplyForm
-              compact={isPanel}
+              replyToName={comment.userName}
               submitting={submitting}
               onCancel={onCancelReply}
               onSubmit={(text) => onSubmitReply(comment.id, text)}
@@ -513,7 +522,7 @@ export function CommentThread({
       const page = await listComments(targetType, targetId, 0, 50, moderationMode);
       setComments(page.content);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de charger les commentaires.'));
+      setError(getApiErrorMessage(e, 'Unable to load comments.'));
       setComments([]);
     } finally {
       setLoading(false);
@@ -533,7 +542,7 @@ export function CommentThread({
       setComments((prev) => [created, ...prev]);
       reset();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de publier le commentaire.'));
+      setError(getApiErrorMessage(e, 'Unable to post the comment.'));
     } finally {
       setSubmitting(false);
     }
@@ -548,7 +557,7 @@ export function CommentThread({
       setComments((prev) => appendReply(prev, parentId, created));
       setReplyingTo(null);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de publier la réponse.'));
+      setError(getApiErrorMessage(e, 'Unable to post the reply.'));
     } finally {
       setSubmitting(false);
     }
@@ -571,13 +580,13 @@ export function CommentThread({
   };
 
   const handleDelete = async (commentId: string) => {
-    if (!window.confirm('Supprimer ce commentaire ?')) return;
+    if (!window.confirm('Delete this comment?')) return;
     setError(null);
     try {
       await deleteComment(commentId);
       setComments((prev) => removeCommentTree(prev, commentId));
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de supprimer le commentaire.'));
+      setError(getApiErrorMessage(e, 'Unable to delete the comment.'));
     }
   };
 
@@ -589,7 +598,7 @@ export function CommentThread({
         updateCommentTree(prev, commentId, (comment) => ({ ...comment, hidden: true }))
       );
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de masquer le commentaire.'));
+      setError(getApiErrorMessage(e, 'Unable to hide the comment.'));
     }
   };
 
@@ -601,7 +610,7 @@ export function CommentThread({
         updateCommentTree(prev, commentId, (comment) => ({ ...comment, hidden: false }))
       );
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible de réafficher le commentaire.'));
+      setError(getApiErrorMessage(e, 'Unable to unhide the comment.'));
     }
   };
 
@@ -609,36 +618,37 @@ export function CommentThread({
 
   const commentForm = !commentsEnabled ? (
     <p className="text-sm text-gray-500 dark:text-neutral-400">
-      Les commentaires sont désactivés pour ce contenu.
+      Comments are turned off for this post.
     </p>
   ) : !isAuthenticated ? (
     <p className="text-sm text-gray-600 dark:text-neutral-400">
       <Link
         href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}
-        className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+        className="font-semibold text-[#111111] underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-500 dark:text-white dark:decoration-neutral-600"
       >
-        Connectez-vous
+        Sign in
       </Link>{' '}
-      pour commenter et réagir.
+      to comment and react.
     </p>
   ) : isPanel ? (
     <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="flex items-center gap-2">
       <CommentAvatar name={user?.fullName ?? 'U'} avatarUrl={user?.avatarUrl} />
       <label htmlFor="comment-input" className="sr-only">
-        Votre commentaire
+        Your comment
       </label>
       <input
         id="comment-input"
         type="text"
-        placeholder="Ajouter un commentaire…"
-        className="min-w-0 flex-1 rounded-full border border-neutral-200 bg-neutral-50 px-4 py-2 text-sm text-neutral-900 placeholder:text-neutral-400 focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+        placeholder="Add a comment…"
+        autoComplete="off"
+        className="min-w-0 flex-1 rounded-full border border-black/[0.08] bg-transparent px-4 py-2 text-sm text-[#111111] placeholder:text-neutral-400 transition-colors focus:border-black/25 focus:outline-none dark:border-white/[0.1] dark:text-white dark:focus:border-white/30"
         {...register('comment')}
       />
       <button
         type="submit"
         disabled={submitting}
-        aria-label="Publier le commentaire"
-        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white transition hover:bg-orange-600 disabled:opacity-60"
+        aria-label="Post comment"
+        className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#111111] text-white transition-opacity hover:opacity-85 disabled:opacity-40 dark:bg-white dark:text-[#111111]"
       >
         {submitting ? (
           <LoadingSpinner size="sm" />
@@ -653,28 +663,29 @@ export function CommentThread({
   ) : (
     <form onSubmit={(e) => void handleSubmit(onSubmit)(e)} className="space-y-2">
       <label htmlFor="comment-input" className="sr-only">
-        Votre commentaire
+        Your comment
       </label>
       <textarea
         id="comment-input"
         rows={3}
-        placeholder="Écrire un commentaire…"
-        className="w-full rounded-lg border border-gray-300 px-3 py-2 text-sm focus:border-orange-500 focus:outline-none focus:ring-1 focus:ring-orange-500 dark:border-neutral-700 dark:bg-neutral-800 dark:text-white"
+        placeholder="Write a comment…"
+        autoComplete="off"
+        className="w-full rounded-xl border border-black/[0.08] bg-transparent px-3.5 py-2.5 text-sm text-[#111111] transition-colors focus:border-black/25 focus:outline-none dark:border-white/[0.1] dark:text-white dark:focus:border-white/30"
         {...register('comment')}
       />
       {errors.comment && <p className="text-sm text-red-600">{errors.comment.message}</p>}
       <button
         type="submit"
         disabled={submitting}
-        className="inline-flex items-center rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+        className="inline-flex items-center rounded-full bg-[#111111] px-5 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-85 disabled:opacity-40 dark:bg-white dark:text-[#111111]"
       >
         {submitting ? (
           <>
             <LoadingSpinner size="sm" />
-            <span className="ml-2">Publication…</span>
+            <span className="ml-2">Posting…</span>
           </>
         ) : (
-          'Publier'
+          'Post'
         )}
       </button>
     </form>
@@ -685,7 +696,7 @@ export function CommentThread({
       <LoadingSpinner size="md" />
     </div>
   ) : comments.length === 0 ? (
-    <p className="text-sm text-gray-500 dark:text-neutral-400">Aucun commentaire pour le moment. Soyez le premier !</p>
+    <p className="text-sm text-gray-500 dark:text-neutral-400">No comments yet. Be the first to comment.</p>
   ) : (
     <CommentList
       comments={comments}
@@ -724,10 +735,10 @@ export function CommentThread({
         >
           <header className="flex shrink-0 items-center justify-between border-b border-neutral-200 px-4 py-3 dark:border-neutral-800">
             <h2 id="comments-heading" className="text-sm font-bold text-neutral-900 dark:text-white">
-              Commentaires {totalCount > 0 ? `· ${totalCount}` : ''}
+              Comments {totalCount > 0 ? `· ${totalCount}` : ''}
               {moderationMode && (
-                <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-orange-600 dark:text-orange-400">
-                  Modération
+                <span className="ml-2 text-[10px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
+                  Moderation
                 </span>
               )}
             </h2>
@@ -736,7 +747,7 @@ export function CommentThread({
               type="button"
               onClick={onClose}
               className="inline-flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
-              aria-label="Fermer les commentaires"
+              aria-label="Close comments"
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -767,7 +778,7 @@ export function CommentThread({
       aria-labelledby="comments-heading"
     >
       <h2 id="comments-heading" className="text-sm font-semibold text-gray-900 dark:text-white">
-        Commentaires ({totalCount})
+        Comments ({totalCount})
       </h2>
 
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}

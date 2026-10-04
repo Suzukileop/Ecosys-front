@@ -72,18 +72,18 @@ function BrandWordmarkPattern() {
       <defs>
         <pattern id="geo-wordmark-light" width="300" height="168" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
           <text x="24" y="52" style={textStyle} fill="#F97316" fillOpacity="0.1">
-            No Problem
+            Skraft
           </text>
           <text x="174" y="132" style={textStyle} fill="#737373" fillOpacity="0.07">
-            No Problem
+            Skraft
           </text>
         </pattern>
         <pattern id="geo-wordmark-dark" width="300" height="168" patternUnits="userSpaceOnUse" patternTransform="rotate(-14)">
           <text x="24" y="52" style={textStyle} fill="#FB923C" fillOpacity="0.09">
-            No Problem
+            Skraft
           </text>
           <text x="174" y="132" style={textStyle} fill="#A3A3A3" fillOpacity="0.08">
-            No Problem
+            Skraft
           </text>
         </pattern>
       </defs>
@@ -149,7 +149,7 @@ export function GeometricPatternBackground({ className = '' }: Props) {
         </svg>
       </div>
 
-      {/* Motif wordmark « No Problem » */}
+      {/* Motif wordmark « Skraft » */}
       <div className="geo-bg-wordmark-drift geo-delay-3 absolute -inset-16 opacity-90 dark:opacity-80">
         <BrandWordmarkPattern />
       </div>

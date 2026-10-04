@@ -2,10 +2,9 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Client, IMessage } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
 import { normalizeDirectMessage } from '@/lib/messaging';
-import { getSockJsEndpoint } from '@/lib/ws-url';
+import { createStompWebSocket } from '@/lib/ws-url';
 import type { ConversationReadReceipt, DirectMessage, MessageDeliveryReceipt, TypingIndicator } from '@/types/messaging';
 
 type UseDiscussionsInboxRealtimeOptions = {
@@ -100,7 +99,7 @@ export function useDiscussionsInboxRealtime({
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       connectHeaders: { Authorization: `Bearer ${token}` },
-      webSocketFactory: () => new SockJS(getSockJsEndpoint()) as unknown as WebSocket,
+      webSocketFactory: () => createStompWebSocket(),
       onConnect: () => {
         setConnected(true);
         flushPendingDeliveries();

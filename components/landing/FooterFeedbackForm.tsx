@@ -3,7 +3,9 @@
 import { FormEvent, useState } from 'react';
 import api from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { brandCtaClass, brandFrameRadiusClass } from '@/components/landing/landingBrand';
+
+const FIELD =
+  'w-full rounded-lg border border-white/[0.14] bg-white/[0.03] px-4 text-[15px] text-white outline-none transition-[border-color,box-shadow] placeholder:text-white/35 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)]';
 
 export function FooterFeedbackForm() {
   const [email, setEmail] = useState('');
@@ -33,14 +35,12 @@ export function FooterFeedbackForm() {
   };
 
   return (
-    <div className="w-full max-w-sm md:justify-self-end">
-      <h4 className="mb-3 text-sm font-semibold lp-text">Feedback</h4>
+    <div className="w-full">
+      <h4 className="text-[12px] font-medium uppercase tracking-[0.16em] text-white/40">Feedback</h4>
       {done ? (
-        <p className={`border border-teal-200/80 bg-teal-50/80 px-3 py-3 text-sm text-teal-800 dark:border-teal-800/50 dark:bg-teal-950/40 dark:text-teal-200 ${brandFrameRadiusClass}`}>
-          Thanks — your message was sent.
-        </p>
+        <p className="mt-5 text-[15px] text-white">Thanks — your message was sent.</p>
       ) : (
-        <form onSubmit={onSubmit} className="flex flex-col gap-2.5">
+        <form onSubmit={onSubmit} className="mt-5 flex flex-col gap-3">
           <input
             type="email"
             required
@@ -48,22 +48,24 @@ export function FooterFeedbackForm() {
             onChange={(e) => setEmail(e.target.value)}
             placeholder="you@email.com"
             autoComplete="email"
-            className={`h-10 w-full border border-black/10 bg-white px-3 text-sm lp-text outline-none transition placeholder:text-neutral-400 focus:border-[#F97316]/50 dark:border-white/10 dark:bg-neutral-900 dark:placeholder:text-neutral-500 ${brandFrameRadiusClass}`}
+            aria-label="Your email"
+            className={`${FIELD} h-11`}
           />
           <textarea
             required
             value={message}
             onChange={(e) => setMessage(e.target.value)}
-            placeholder="Your feedback..."
+            placeholder="Tell us what you think…"
+            aria-label="Your feedback"
             rows={3}
             maxLength={2000}
-            className={`w-full resize-none border border-black/10 bg-white px-3 py-2.5 text-sm lp-text outline-none transition placeholder:text-neutral-400 focus:border-[#F97316]/50 dark:border-white/10 dark:bg-neutral-900 dark:placeholder:text-neutral-500 ${brandFrameRadiusClass}`}
+            className={`${FIELD} resize-none py-3`}
           />
-          {error ? <p className="text-xs text-red-500">{error}</p> : null}
+          {error ? <p className="text-[13px] text-[#FF8A65]">{error}</p> : null}
           <button
             type="submit"
             disabled={sending}
-            className={`inline-flex h-10 w-full items-center justify-center px-4 text-xs font-bold uppercase tracking-wide disabled:opacity-60 ${brandCtaClass}`}
+            className="inline-flex h-11 items-center justify-center self-start rounded-full bg-white px-6 text-[14px] font-medium text-[#111111] transition-colors hover:bg-neutral-200 disabled:opacity-60"
           >
             {sending ? 'Sending…' : 'Send feedback'}
           </button>

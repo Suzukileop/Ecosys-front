@@ -13,12 +13,9 @@ import { CreatorStudioHubSkeleton, CreatorStudioTabPanelSkeleton } from '@/compo
 import { uploadUserAvatar } from '@/lib/user-profile-api';
 import { usePendingNavigation } from '@/hooks/usePendingNavigation';
 import { CreatorStudioShell, type CreatorStudioHeaderData } from './CreatorStudioShell';
-import { parseCreatorStudioHeaderLayout, type CreatorStudioHeaderLayout } from './creator-studio-header';
-import {
-  parseCreatorStudioHeaderContentStyle,
-  type CreatorStudioHeaderContentStyle,
-} from './creator-studio-header-content';
-import { parseCreatorStudioTabNavAlign, type CreatorStudioTabNavAlign } from './creator-studio-layout';
+import { parseCreatorStudioHeaderLayout } from './creator-studio-header';
+import { parseCreatorStudioHeaderContentStyle } from './creator-studio-header-content';
+import { parseCreatorStudioTabNavAlign } from './creator-studio-layout';
 import { CreatorStudioContentTab } from './CreatorStudioContentTab';
 import { CreatorStudioServicesTab } from './CreatorStudioServicesTab';
 import { CreatorStudioProductsReadonlyTab } from './CreatorStudioProductsReadonlyTab';
@@ -50,12 +47,7 @@ function CreatorStudioPageInner() {
   const [header, setHeader] = useState<CreatorStudioHeaderData | null>(null);
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
-  const [layoutError, setLayoutError] = useState<string | null>(null);
-  const [savingHeaderLayout, setSavingHeaderLayout] = useState(false);
-  const [savingHeaderContentStyle, setSavingHeaderContentStyle] = useState(false);
-  const [savingTabNavAlign, setSavingTabNavAlign] = useState(false);
-  const [savingContentHeadline, setSavingContentHeadline] = useState(false);
-
+  const [publishOpen, setPublishOpen] = useState(false);
   // Create flow lives in My Product — redirect legacy ?create=1 from profile.
   useEffect(() => {
     if (searchParams.get('tab') !== 'products' || searchParams.get('create') !== '1') return;
@@ -109,7 +101,7 @@ function CreatorStudioPageInner() {
         profileVisits: profile.profileVisits ?? 0,
         isAvailable: profile.isAvailable ?? true,
         availabilityLabel: profile.availabilityLabel ?? null,
-        averageRating: profile.reputation?.averageRating ?? null,
+        starCount: profile.starCount ?? 0,
         locationLabel: formatLocationLabel(
           profile.locationCity,
           profile.locationCountry,
@@ -185,64 +177,6 @@ function CreatorStudioPageInner() {
     }
   };
 
-  const saveHeaderLayout = async (layout: CreatorStudioHeaderLayout) => {
-    if (!header || layout === header.headerLayout || savingHeaderLayout) return;
-    setLayoutError(null);
-    setSavingHeaderLayout(true);
-    try {
-      await api.put('/api/creator/profile', { studioHeaderLayout: layout });
-      setHeader((current) => (current ? { ...current, headerLayout: layout } : current));
-    } catch (e) {
-      setLayoutError(getApiErrorMessage(e, 'Unable to save header style.'));
-    } finally {
-      setSavingHeaderLayout(false);
-    }
-  };
-
-  const saveHeaderContentStyle = async (style: CreatorStudioHeaderContentStyle) => {
-    if (!header || style === header.headerContentStyle || savingHeaderContentStyle) return;
-    setLayoutError(null);
-    setSavingHeaderContentStyle(true);
-    try {
-      await api.put('/api/creator/profile', { studioHeaderContentStyle: style });
-      setHeader((current) => (current ? { ...current, headerContentStyle: style } : current));
-    } catch (e) {
-      setLayoutError(getApiErrorMessage(e, 'Unable to save content display style.'));
-    } finally {
-      setSavingHeaderContentStyle(false);
-    }
-  };
-
-  const saveTabNavAlign = async (align: CreatorStudioTabNavAlign) => {
-    if (!header || align === header.tabNavAlign || savingTabNavAlign) return;
-    setLayoutError(null);
-    setSavingTabNavAlign(true);
-    try {
-      await api.put('/api/creator/profile', { studioTabNavAlign: align });
-      setHeader((current) => (current ? { ...current, tabNavAlign: align } : current));
-    } catch (e) {
-      setLayoutError(getApiErrorMessage(e, 'Unable to save tab alignment.'));
-    } finally {
-      setSavingTabNavAlign(false);
-    }
-  };
-
-  const saveContentHeadline = async (headline: string) => {
-    const next = headline.trim();
-    if (!header || savingContentHeadline) return;
-    if ((header.contentHeadline?.trim() || '') === next) return;
-    setLayoutError(null);
-    setSavingContentHeadline(true);
-    try {
-      await api.put('/api/creator/profile', { studioContentHeadline: next });
-      setHeader((current) => (current ? { ...current, contentHeadline: next } : current));
-    } catch (e) {
-      setLayoutError(getApiErrorMessage(e, 'Unable to save content headline.'));
-    } finally {
-      setSavingContentHeadline(false);
-    }
-  };
-
   if (isLoading || !user) {
     return <CreatorStudioHubSkeleton tab={tab} />;
   }
@@ -266,16 +200,6 @@ function CreatorStudioPageInner() {
         header={header}
         uploadingAvatar={uploadingAvatar}
         onAvatarSelect={onAvatarSelect}
-        savingHeaderLayout={savingHeaderLayout}
-        savingHeaderContentStyle={savingHeaderContentStyle}
-        savingTabNavAlign={savingTabNavAlign}
-        savingContentHeadline={savingContentHeadline}
-        layoutError={layoutError}
-        onDismissLayoutError={() => setLayoutError(null)}
-        onHeaderLayoutChange={saveHeaderLayout}
-        onHeaderContentStyleChange={saveHeaderContentStyle}
-        onTabNavAlignChange={saveTabNavAlign}
-        onContentHeadlineChange={saveContentHeadline}
       >
       {isTabTransitioning ? (
         <CreatorStudioTabPanelSkeleton tab={previewTab} />
@@ -283,12 +207,16 @@ function CreatorStudioPageInner() {
         <>
           {tab === 'content' && (
             <CreatorStudioContentTab
-              contentHeadline={header.contentHeadline}
               specialite={header.specialite}
               specialties={header.specialties}
+              appRole={header.appRole}
+              publishOpen={publishOpen}
+              onPublishOpenChange={setPublishOpen}
             />
           )}
-          {tab === 'services' && <CreatorStudioServicesTab />}
+          {tab === 'services' && (
+            <CreatorStudioServicesTab />
+          )}
           {tab === 'products' && <CreatorStudioProductsReadonlyTab />}
           {tab === 'images' && (
             <CreatorStudioImagesTab onImagesUpdated={() => void loadHeader({ silent: true })} />
@@ -298,9 +226,10 @@ function CreatorStudioPageInner() {
           {tab === 'profile' && (
             <CreatorStudioProfileTab
               variant="portfolio"
-              portfolioNavSide="right"
+              portfolioNavSide="left"
               allowedSections={STORE_INFORMATION_SECTION_IDS}
               sectionsNavTitle="Information"
+              sectionsNavPlacement="top"
               showProfileHero={false}
               onProfileUpdated={() => void loadHeader({ silent: true })}
             />

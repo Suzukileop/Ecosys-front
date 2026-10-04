@@ -1,195 +1,215 @@
 'use client';
 
-import { PROFILE_SPECIALTIES } from '@/lib/specialties';
-
-/** Interests shown in the News discover rail (2-column grid). */
-export const NEWS_INTERESTS = PROFILE_SPECIALTIES.filter((tag) => tag !== 'DevOps');
+import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
+import {
+  faCamera,
+  faChartBar,
+  faCompass,
+  faFileCode,
+  faFileVideo,
+  faFolderOpen,
+  faLightbulb,
+  faNewspaper,
+  faObjectGroup,
+  faPenToSquare,
+} from '@fortawesome/free-regular-svg-icons';
+import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
+/** The eight most in-demand fields, offered as News feed filters. */
+export const NEWS_INTERESTS = [
+  'AI',
+  'Developer',
+  'Video editor',
+  'Data analyst',
+  'UI / UX',
+  'Design',
+  'Marketing',
+  'Photography',
+] as const;
 
 export type NewsInterest = (typeof NEWS_INTERESTS)[number];
 
-/** Shared row height with the “Don’t stay a spectator” bar for vertical alignment. */
-export const NEWS_TOP_ROW_CLASS = 'flex min-h-[3.5rem] shrink-0 items-center';
-
-const COLLAPSED_COUNT = 5;
-const EASE = 'duration-300 ease-out';
-
-/** Same footprint for every catalogue chip (folded list). */
-const CHIP_BASE =
-  'flex h-11 w-full max-w-[10rem] shrink-0 items-center justify-center rounded-xl border px-2.5 text-center text-sm font-semibold leading-snug transition';
-
-function chipTone(active: boolean) {
-  return active
-    ? 'border-orange-500 bg-orange-500 text-white shadow-sm'
-    : 'border-neutral-300 bg-transparent text-neutral-700 hover:border-neutral-400 dark:border-white/[0.08] dark:bg-white/[0.02] dark:text-neutral-200 dark:hover:border-white/[0.16] dark:hover:bg-white/[0.04]';
-}
-
-type NewsDiscoverRailProps = {
-  selected: string | null;
-  onSelect: (value: string | null) => void;
-  search?: string;
-  onSearchChange?: (value: string) => void;
-  /** Bottom search field — hidden on Service Provider catalog. */
-  showSearch?: boolean;
-  expanded: boolean;
-  onExpandedChange: (expanded: boolean) => void;
-  className?: string;
+const INTEREST_ICONS: Record<NewsInterest, IconDefinition> = {
+  AI: faLightbulb,
+  Developer: faFileCode,
+  'Video editor': faFileVideo,
+  'Data analyst': faChartBar,
+  'UI / UX': faObjectGroup,
+  Design: faPenToSquare,
+  Marketing: faNewspaper,
+  Photography: faCamera,
 };
 
-export function NewsDiscoverRail({
-  selected,
-  onSelect,
-  search = '',
-  onSearchChange,
-  showSearch = true,
-  expanded,
-  onExpandedChange,
-  className = '',
-}: NewsDiscoverRailProps) {
-  const visible = expanded ? NEWS_INTERESTS : NEWS_INTERESTS.slice(0, COLLAPSED_COUNT);
+type NewsDiscoverProps = {
+  selected: string | null;
+  onSelect: (value: string | null) => void;
+  search: string;
+  onSearchChange: (value: string) => void;
+};
 
+function chipClass(active: boolean) {
+  return `inline-flex h-10 shrink-0 items-center rounded-full px-4 text-[15px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/30 ${
+    active
+      ? 'bg-[#111111] font-medium text-white dark:bg-white dark:text-[#111111]'
+      : 'border border-black/[0.08] text-neutral-700 hover:border-black/20 hover:text-[#111111] dark:border-white/[0.1] dark:text-neutral-300 dark:hover:border-white/25 dark:hover:text-white'
+  }`;
+}
+
+function SearchField({ search, onSearchChange, id }: Pick<NewsDiscoverProps, 'search' | 'onSearchChange'> & { id: string }) {
   return (
-    <aside
-      className={`flex min-h-0 flex-col overflow-hidden transition-[width,min-width,max-width] ${EASE} ${
-        expanded
-          ? 'w-full xl:w-[24rem] xl:min-w-[24rem] xl:max-w-[24rem]'
-          : 'w-full xl:w-[11rem] xl:min-w-[11rem] xl:max-w-[11rem]'
-      } xl:shrink-0 ${className}`}
-      aria-label="Discover"
-      data-expanded={expanded ? 'true' : 'false'}
-    >
-      <div
-        className={`flex flex-col ${
-          expanded
-            ? 'shrink-0 border-b border-neutral-200/80 dark:border-neutral-800'
-            : 'shrink-0 pr-1'
-        }`}
+    <div className="relative">
+      <label htmlFor={id} className="sr-only">
+        Search content
+      </label>
+      <svg
+        className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        aria-hidden
       >
-        {expanded ? (
-          <div className={`${NEWS_TOP_ROW_CLASS} gap-2`}>
-            <h2 className="min-w-0 flex-1 text-sm font-semibold tracking-tight text-neutral-900 sm:text-base dark:text-white">
-              What are you looking for?
-            </h2>
-            <button
-              type="button"
-              onClick={() => onExpandedChange(false)}
-              className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              aria-expanded
-              aria-label="Collapse catalogue"
-              title="Collapse"
-            >
-              <svg
-                className="h-3.5 w-3.5 rotate-180"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.25}
-                aria-hidden
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        ) : (
-          <div className="relative flex min-h-[3.5rem] shrink-0 items-center justify-center px-1">
-            <p className="px-7 text-center text-xs font-bold uppercase leading-snug tracking-wide text-neutral-950 dark:text-white sm:text-sm">
-              Looking for
-            </p>
-            <button
-              type="button"
-              onClick={() => onExpandedChange(true)}
-              className="absolute right-0 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-600 shadow-sm transition hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300 dark:hover:bg-neutral-800"
-              aria-expanded={false}
-              aria-label="Expand catalogue"
-              title="Expand"
-            >
-              <svg
-                className="h-3.5 w-3.5"
-                fill="none"
-                viewBox="0 0 24 24"
-                stroke="currentColor"
-                strokeWidth={2.25}
-                aria-hidden
-              >
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
-              </svg>
-            </button>
-          </div>
-        )}
+        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z" />
+      </svg>
+      <input
+        id={id}
+        type="search"
+        value={search}
+        onChange={(e) => onSearchChange(e.target.value)}
+        placeholder="Search content…"
+        autoComplete="off"
+        className="h-11 w-full rounded-lg border border-black/[0.08] bg-white pl-10 dark:bg-transparent pr-3 text-[15px] text-[#111111] outline-none transition-colors placeholder:text-neutral-400 focus:border-black/25 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-white/25"
+      />
+    </div>
+  );
+}
 
-        <div className={expanded ? 'mt-2 flex flex-col' : 'mt-1 shrink-0 pb-3'}>
-          {expanded ? (
-            /* One column: 2×10rem chips + gap-x-5 — search shares the same width */
-            <div className="mx-auto flex w-full max-w-[calc(20rem+1.25rem)] flex-col px-0 pb-3">
-              <div className="grid grid-cols-2 gap-x-5 gap-y-3">
-                {visible.map((label) => {
-                  const active = selected === label;
-                  return (
-                    <button
-                      key={label}
-                      type="button"
-                      onClick={() => onSelect(active ? null : label)}
-                      aria-pressed={active}
-                      title={label}
-                      className={`flex h-11 w-full items-center justify-center rounded-xl border px-2.5 text-center text-sm font-semibold leading-snug transition ${chipTone(active)}`}
-                    >
-                      <span className="line-clamp-2 px-0.5">{label}</span>
-                    </button>
-                  );
-                })}
-              </div>
+export function PortfolioCta() {
+  return (
+    <Link
+      href="/dashboard/portfolio"
+      className="group flex items-center gap-3.5 bg-[#EEF0F2] px-6 py-4 md:rounded-lg md:px-4 transition-[filter] hover:brightness-[0.97] dark:hover:brightness-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:bg-[#111111] dark:hover:bg-white/[0.04]"
+    >
+      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#111111] text-white dark:bg-white dark:text-[#111111]">
+        <FontAwesomeIcon icon={faFolderOpen} className="h-4 w-4" />
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="block truncate text-[16px] font-medium text-[#111111] dark:text-white">Build your portfolio</span>
+        <span className="mt-0.5 block truncate text-[14px] text-neutral-500 dark:text-neutral-400">
+          Showcase your best work
+        </span>
+      </span>
+      <FontAwesomeIcon
+        icon={faChevronRight}
+        className="h-3 w-3 shrink-0 text-neutral-400 transition-transform duration-200 group-hover:translate-x-0.5 dark:text-neutral-500"
+      />
+    </Link>
+  );
+}
 
-              {showSearch ? (
-                <div className="relative mt-3 shrink-0">
-                  <label htmlFor="news-discover-search" className="sr-only">
-                    Search content
-                  </label>
-                  <svg
-                    className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400 dark:text-neutral-500"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    aria-hidden
-                  >
-                    <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                      d="M21 21l-4.35-4.35M11 18a7 7 0 100-14 7 7 0 000 14z"
-                    />
-                  </svg>
-                  <input
-                    id="news-discover-search"
-                    type="search"
-                    value={search}
-                    onChange={(e) => onSearchChange?.(e.target.value)}
-                    placeholder="Search content…"
-                    autoComplete="off"
-                    className="h-11 w-full rounded-xl border border-neutral-200 bg-neutral-100 py-2 pl-10 pr-3 text-sm text-neutral-900 placeholder:text-neutral-400 outline-none transition focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-white/[0.08] dark:bg-white/[0.03] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-orange-500/50"
-                  />
-                </div>
-              ) : null}
-            </div>
-          ) : (
-            <div className="mx-auto flex w-[calc(100%-0.35rem)] max-w-[9.5rem] flex-col gap-2.5 pr-1 sm:gap-3">
-              {visible.map((label) => {
-                const active = selected === label;
-                return (
-                  <button
-                    key={label}
-                    type="button"
-                    onClick={() => onSelect(active ? null : label)}
-                    aria-pressed={active}
-                    title={label}
-                    className={`${CHIP_BASE} ${chipTone(active)}`}
-                  >
-                    <span className="line-clamp-2 px-0.5">{label}</span>
-                  </button>
-                );
-              })}
-            </div>
-          )}
+function InterestNavItem({
+  label,
+  icon,
+  active,
+  onClick,
+}: {
+  label: string;
+  icon: IconDefinition;
+  active: boolean;
+  onClick: () => void;
+}) {
+  return (
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      className={`flex min-h-[3.25rem] w-full items-center gap-3.5 rounded-lg px-3 py-3.5 text-left text-[16px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+        active
+          ? 'font-medium text-[#FF5722]'
+          : 'font-normal text-[#222222] hover:bg-black/[0.03] hover:text-[#0A0A0A] dark:text-neutral-300 dark:hover:bg-white/[0.05] dark:hover:text-white'
+      }`}
+    >
+      <FontAwesomeIcon
+        icon={icon}
+        className={`h-[1.05rem] w-[1.05rem] shrink-0 ${active ? '' : 'text-[#555555] dark:text-neutral-400'}`}
+      />
+      <span className="min-w-0 flex-1 truncate">{label}</span>
+    </button>
+  );
+}
+
+/** Desktop right rail — portfolio shortcut on top, then a Discover panel styled like the studio "Manage" nav. */
+export function NewsDiscoverRail(props: NewsDiscoverProps) {
+  return (
+    <ProfileSectionStickyAside className="w-full" surfaceClassName="flex w-full max-w-full min-w-0 flex-col gap-5">
+      <PortfolioCta />
+      <div className="flex min-h-0 flex-col overflow-hidden">
+        <div className="flex h-14 shrink-0 items-center px-5">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#666666] dark:text-neutral-500">
+            Discover
+          </p>
         </div>
+        <div className="px-4 pt-4">
+          <SearchField id="news-discover-search" search={props.search} onSearchChange={props.onSearchChange} />
+        </div>
+        <nav
+          aria-label="Filter by interest"
+          className="flex min-h-0 w-full flex-col gap-2 overflow-y-auto px-2.5 pb-3 pt-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+        >
+          <InterestNavItem
+            label="All"
+            icon={faCompass}
+            active={!props.selected}
+            onClick={() => props.onSelect(null)}
+          />
+          {NEWS_INTERESTS.map((label) => {
+            const active = props.selected === label;
+            return (
+              <InterestNavItem
+                key={label}
+                label={label}
+                icon={INTEREST_ICONS[label]}
+                active={active}
+                onClick={() => props.onSelect(active ? null : label)}
+              />
+            );
+          })}
+        </nav>
       </div>
-    </aside>
+    </ProfileSectionStickyAside>
+  );
+}
+
+/** Mobile / tablet counterpart shown above the feed. */
+export function NewsDiscoverBar(props: NewsDiscoverProps) {
+  return (
+    <div className="space-y-4">
+      <SearchField id="news-discover-search-mobile" search={props.search} onSearchChange={props.onSearchChange} />
+      <div
+        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
+        role="group"
+        aria-label="Filter by interest"
+      >
+        <button type="button" onClick={() => props.onSelect(null)} aria-pressed={!props.selected} className={chipClass(!props.selected)}>
+          All
+        </button>
+        {NEWS_INTERESTS.map((label) => {
+          const active = props.selected === label;
+          return (
+            <button
+              key={label}
+              type="button"
+              onClick={() => props.onSelect(active ? null : label)}
+              aria-pressed={active}
+              className={chipClass(active)}
+            >
+              {label}
+            </button>
+          );
+        })}
+      </div>
+    </div>
   );
 }

@@ -42,8 +42,8 @@ export const GLOBAL_SEARCH_PRODUCT_TYPE_OPTIONS: {
   label: string;
 }[] = [
   { value: 'all', label: 'All products' },
-  { value: 'virtual', label: 'Virtual' },
-  { value: 'physical', label: 'Physical' },
+  { value: 'virtual', label: 'Digital' },
+  { value: 'physical', label: 'Material' },
 ];
 
 export const GLOBAL_SEARCH_CONTENT_MEDIA_OPTIONS: {

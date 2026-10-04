@@ -790,7 +790,7 @@ export function portfolioNavLayoutDesignPatch(
   const brandText =
     opts?.brandText?.trim() ||
     navigation?.customExtraText?.trim() ||
-    'NoProblem';
+    'Skraft';
 
   if (design === 'floating-pill') {
     const contactLabel =

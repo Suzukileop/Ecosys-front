@@ -12,23 +12,22 @@ import { PublicSkillsToolsGrouped } from '@/components/marketplace/PublicSkillsT
 import { geocodePlaceLabel, openStreetMapEmbedUrl, detectUserCoordinatesForDistance, computeReliableDistanceKm } from '@/lib/geolocation';
 import { formatDistanceAwayKm } from '@/lib/countries';
 import { formatPhoneDisplay } from '@/lib/phone';
-import type { ProfileMediaBlock, ProfileStrengthTool } from '@/types/ecosystem';
+import type { ProfileStrengthTool } from '@/types/ecosystem';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
-import { ContentMediaPreview } from '@/components/creator/creator-content-media';
-import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
+import { PublicExperienceShowcase } from '@/components/marketplace/PublicExperienceShowcase';
+import { APP_FIELD } from '@/components/landing/landingBrand';
 import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
 import {
   ProfileSectionNavIcon,
   getProfileSection,
   type ProfileSectionId,
 } from '@/components/creator/studio/profile-section-nav';
-import {
-  profileNavButtonActiveClass,
-  profileNavButtonBaseClass,
-  profileNavButtonInactiveClass,
-} from '@/components/creator/studio/profile-section-ui';
 import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
-import { creatorShowsProviderAboutFields, normalizeCreatorAppRole } from '@/lib/creator-app-role';
+import {
+  creatorShowsCareerSections,
+  creatorShowsProviderAboutFields,
+  normalizeCreatorAppRole,
+} from '@/lib/creator-app-role';
 
 type PublicInfoNavId = Extract<
   ProfileSectionId,
@@ -43,6 +42,12 @@ const PUBLIC_INFO_SECTION_DOM_ID: Record<PublicInfoNavId, string> = {
   contact: 'public-info-contact',
   links: 'public-info-links',
 };
+
+const NAV_BUTTON_BASE =
+  'flex items-center gap-3 rounded-lg px-3 text-left text-base transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:focus-visible:ring-white/25';
+const NAV_BUTTON_ACTIVE = 'font-medium text-[#FF5722]';
+const NAV_BUTTON_INACTIVE =
+  'text-[#111111] hover:bg-black/[0.04] dark:text-neutral-200 dark:hover:bg-white/[0.05]';
 
 const PUBLIC_INFO_LABEL_OVERRIDES: Partial<Record<PublicInfoNavId, string>> = {
   about: 'Profile',
@@ -109,30 +114,34 @@ function resolveDisplayLinks(profile: MarketplaceCreatorPublicProfile) {
 
 function SectionHeading({ children }: { children: ReactNode }) {
   return (
-    <h3 className="mb-4 text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+    <h3 className="mb-10 text-[1.375rem] font-semibold tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[1.5rem]">
       {children}
     </h3>
   );
 }
 
 function InfoPanel({ children }: { children: ReactNode }) {
-  return (
-    <div className="flex flex-col gap-20 overflow-hidden rounded-2xl border border-neutral-200 bg-white px-5 py-10 dark:border-neutral-800 dark:bg-neutral-900/80 sm:gap-24 sm:px-6 sm:py-12">
-      {children}
-    </div>
-  );
+  return <div className="flex flex-col gap-10 sm:gap-12">{children}</div>;
 }
 
 function InfoPanelSection({
   children,
   id,
+  framed = false,
 }: {
   children: ReactNode;
-  bordered?: boolean;
   id?: string;
+  framed?: boolean;
 }) {
   return (
-    <div id={id} className={id ? 'scroll-mt-24' : undefined}>
+    <div
+      id={id}
+      className={`${
+        framed
+          ? 'rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-10'
+          : 'pb-2'
+      } ${id ? 'scroll-mt-24' : ''}`}
+    >
       {children}
     </div>
   );
@@ -278,17 +287,15 @@ function LocationFeaturedBlock({
 
   if (!coords) {
     return (
-      <div className="theme-accent-border flex items-center gap-3 rounded-2xl border border-orange-300/50 bg-orange-50/30 px-4 py-3 dark:border-orange-500/30 dark:bg-orange-500/5">
-        <NeutralIconBadge name="location" size="sm" accent />
+      <div className="flex items-center gap-4 border-t border-black/[0.06] pt-5 dark:border-white/[0.06]">
+        <NeutralIconBadge name="location" size="sm" />
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Location
-          </p>
-          <p className="mt-0.5 text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100">
+          <p className="text-[14px] text-neutral-600 dark:text-neutral-300">Location</p>
+          <p className="mt-1 text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-neutral-100">
             {label}
           </p>
           {loading ? (
-            <p className="mt-0.5 text-[11px] text-neutral-400 dark:text-neutral-500">Loading map…</p>
+            <p className="mt-1 text-[14px] text-neutral-500 dark:text-neutral-400">Loading map…</p>
           ) : null}
         </div>
       </div>
@@ -325,8 +332,8 @@ function LocationFeaturedBlock({
   );
 
   return (
-    <div className="overflow-hidden rounded-2xl border border-neutral-200/80 dark:border-neutral-800">
-      <div className="relative h-52 bg-neutral-100 dark:bg-neutral-900 sm:h-64 lg:h-72">
+    <div>
+      <div className="relative h-60 overflow-hidden rounded-lg border border-black/[0.06] bg-neutral-100 dark:border-white/[0.08] dark:bg-neutral-900 sm:h-72 lg:h-80">
         {!mapImageFailed ? (
           // eslint-disable-next-line @next/next/no-img-element -- external static map host
           <img
@@ -345,12 +352,12 @@ function LocationFeaturedBlock({
           />
         )}
         {distanceEnabled && distanceLabel ? (
-          <div className="absolute left-3 top-3 z-20 flex items-center gap-0.5 rounded-full bg-white py-1 pl-3 pr-1 text-xs font-semibold text-neutral-800 shadow-md dark:bg-neutral-950 dark:text-neutral-100">
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-0.5 rounded-full bg-white py-1 pl-3 pr-1 text-[13px] font-semibold text-neutral-800 shadow-md dark:bg-neutral-950 dark:text-neutral-100">
             <span>{distanceLabel}</span>
             {distanceRefreshButton}
           </div>
         ) : distanceEnabled && distancePending ? (
-          <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-xs font-medium text-neutral-500 shadow-md dark:bg-neutral-950/95 dark:text-neutral-400">
+          <div className="absolute left-3 top-3 z-20 flex items-center gap-1.5 rounded-full bg-white/95 px-3 py-1.5 text-[13px] font-medium text-neutral-700 shadow-md dark:bg-neutral-950/95 dark:text-neutral-300">
             <svg
               className="h-3.5 w-3.5 animate-spin"
               fill="none"
@@ -371,7 +378,7 @@ function LocationFeaturedBlock({
           <button
             type="button"
             onClick={() => void resolveDistance(coords, { force: true })}
-            className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-xs font-semibold text-orange-600 shadow-md transition hover:bg-orange-50 dark:bg-neutral-950 dark:text-orange-400 dark:hover:bg-neutral-900"
+            className="absolute left-3 top-3 z-20 inline-flex items-center gap-1.5 rounded-full bg-white px-3 py-1.5 text-[13px] font-semibold text-neutral-800 shadow-md transition hover:bg-neutral-50 dark:bg-neutral-950 dark:text-neutral-100 dark:hover:bg-neutral-900"
           >
             <svg
               className="h-3.5 w-3.5"
@@ -391,9 +398,9 @@ function LocationFeaturedBlock({
           </button>
         ) : null}
       </div>
-      <div className="flex items-center justify-between gap-3 border-t border-neutral-200/80 px-3.5 py-2.5 dark:border-neutral-800">
+      <div className="flex items-end justify-between gap-4 pt-5">
         <div className="min-w-0">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
+          <p className="text-[14px] text-neutral-600 dark:text-neutral-300">
             Location
             {distanceEnabled && distanceLabel ? (
               <span className="ml-2 inline-flex items-center gap-1 font-medium normal-case tracking-normal text-neutral-600 dark:text-neutral-300">
@@ -424,13 +431,13 @@ function LocationFeaturedBlock({
               </span>
             ) : null}
           </p>
-          <p className="truncate text-sm font-semibold text-neutral-900 dark:text-neutral-100">{label}</p>
+          <p className="mt-1 truncate text-[1.0625rem] font-medium text-[#111111] dark:text-neutral-100">{label}</p>
         </div>
         <a
           href={mapsHref}
           target="_blank"
           rel="noopener noreferrer"
-          className="shrink-0 text-[11px] font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+          className="shrink-0 text-[14px] font-medium text-neutral-600 underline decoration-neutral-300 underline-offset-4 transition-colors hover:text-[#111111] hover:decoration-neutral-500 dark:text-neutral-300 dark:decoration-neutral-600 dark:hover:text-white"
         >
           Open map
         </a>
@@ -442,25 +449,20 @@ function LocationFeaturedBlock({
 function ProfileFactCards({ rows }: { rows: InfoRow[] }) {
   if (rows.length === 0) return null;
   return (
-    <div
-      className={`grid gap-3 ${
+    <dl
+      className={`grid gap-x-10 gap-y-8 ${
         rows.length === 1 ? 'sm:max-w-sm' : rows.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
       }`}
     >
       {rows.map((row) => (
-        <div
-          key={row.key}
-          className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-900/40"
-        >
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            {row.label}
-          </p>
-          <p className="mt-2 text-sm font-semibold leading-snug text-neutral-900 dark:text-neutral-100 sm:text-base">
+        <div key={row.key} className="border-t border-black/[0.06] pt-5 dark:border-white/[0.06]">
+          <dt className="text-[14px] text-neutral-600 dark:text-neutral-300">{row.label}</dt>
+          <dd className="mt-1.5 text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-neutral-100">
             {row.value}
-          </p>
+          </dd>
         </div>
       ))}
-    </div>
+    </dl>
   );
 }
 
@@ -478,78 +480,16 @@ function ContactDirectCard({
   return (
     <a
       href={href}
-      className="group flex min-h-[6.5rem] flex-col justify-between rounded-2xl border border-neutral-200/80 bg-gradient-to-br from-neutral-50/90 to-white p-4 transition hover:border-orange-300/70 hover:from-orange-50/40 hover:to-white hover:shadow-sm dark:border-neutral-800 dark:from-neutral-900/70 dark:to-neutral-900/40 dark:hover:border-orange-500/35 dark:hover:from-orange-500/5 dark:hover:to-neutral-900"
+      className="group flex items-center gap-4 border-t border-black/[0.06] pt-5 dark:border-white/[0.06]"
     >
-      <div className="flex items-center gap-2.5">
-        <NeutralIconBadge name={icon} size="sm" />
-        <span className="text-[10px] font-bold uppercase tracking-[0.12em] text-neutral-400 dark:text-neutral-500">
-          {label}
-        </span>
+      <NeutralIconBadge name={icon} size="sm" />
+      <div className="min-w-0 flex-1">
+        <p className="text-[14px] text-neutral-600 dark:text-neutral-300">{label}</p>
+        <p className="mt-1 break-all text-[1.0625rem] font-medium leading-snug text-[#111111] underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-neutral-400 dark:text-white dark:group-hover:decoration-neutral-500">
+          {value}
+        </p>
       </div>
-      <p className="mt-3 break-all text-base font-semibold leading-snug text-neutral-900 dark:text-white sm:text-lg">
-        {value}
-      </p>
     </a>
-  );
-}
-
-function StoryBlockCard({
-  block,
-  showMedia = true,
-}: {
-  block: ProfileMediaBlock;
-  showMedia?: boolean;
-}) {
-  const tools = Array.from(
-    new Set(
-      (block.tools ?? [])
-        .map((item) => {
-          if (typeof item === 'string') return item.trim();
-          if (item && typeof item === 'object') {
-            return String(item.name ?? item.value ?? '').trim();
-          }
-          return '';
-        })
-        .filter(Boolean)
-    )
-  ).slice(0, 8);
-
-  const toolIconByName = new Map<string, string>();
-  for (const item of block.tools ?? []) {
-    if (typeof item === 'string' || !item || typeof item !== 'object') continue;
-    const name = String(item.name ?? item.value ?? '').trim();
-    const iconUrl = typeof item.iconUrl === 'string' ? item.iconUrl.trim() : '';
-    if (name && iconUrl) toolIconByName.set(name, iconUrl);
-  }
-
-  return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-900/40">
-      {block.title?.trim() ? (
-        <p className="mb-2 font-semibold text-neutral-900 dark:text-white">{block.title.trim()}</p>
-      ) : null}
-      <p className="whitespace-pre-line text-sm leading-relaxed text-neutral-800 dark:text-neutral-100 sm:text-base">
-        {block.text}
-      </p>
-      {tools.length > 0 ? (
-        <div className="mt-3 flex flex-wrap gap-2">
-          {tools.map((tool) => (
-            <span
-              key={tool}
-              className="inline-flex items-center gap-2 rounded-full bg-neutral-100/80 py-1 pl-1 pr-2.5 text-xs font-medium text-neutral-700 dark:bg-white/[0.06] dark:text-neutral-200"
-              title={tool}
-            >
-              <CreatorToolLogo label={tool} iconUrl={toolIconByName.get(tool)} size={20} />
-              <span className="max-w-[8rem] truncate">{tool}</span>
-            </span>
-          ))}
-        </div>
-      ) : null}
-      {showMedia && block.mediaUrl ? (
-        <div className="mt-4 overflow-hidden rounded-xl">
-          <ContentMediaPreview locale="en" mediaUrl={block.mediaUrl} mediaType="FILE" large fluid />
-        </div>
-      ) : null}
-    </div>
   );
 }
 
@@ -662,7 +602,7 @@ function UnifiedLinkIcon({
           </svg>
         )}
       </span>
-      <span className="w-full truncate text-center text-xs font-medium text-neutral-700 dark:text-neutral-200">
+      <span className="w-full truncate text-center text-[14px] font-medium text-neutral-800 dark:text-neutral-200">
         {label}
       </span>
     </a>
@@ -680,18 +620,26 @@ export function CreatorProfileContactSection({
   const contactPhone = profile.contactPhone?.trim() ?? '';
   const hasEmail = Boolean(contactEmail);
   const hasPhone = Boolean(contactPhone);
-  const spokenLanguages = profile.spokenLanguages ?? [];
+  const spokenLanguageNames = useMemo(
+    () =>
+      (profile.spokenLanguages ?? [])
+        .map((item) => (typeof item === 'string' ? item : item?.name ?? '').trim())
+        .filter(Boolean),
+    [profile.spokenLanguages]
+  );
   const legacyLanguages = profile.languages?.trim();
-  const hasLanguages = spokenLanguages.length > 0 || Boolean(legacyLanguages);
+  const hasLanguages = spokenLanguageNames.length > 0 || Boolean(legacyLanguages);
   const hasLocation = Boolean(locationLabel?.trim());
   const memberSinceLabel = formatMemberSince(profile.memberSince);
   const hasGender = Boolean(profile.gender?.trim());
-  const showProviderSections = creatorShowsProviderAboutFields(normalizeCreatorAppRole(profile.appRole));
+  const appRole = normalizeCreatorAppRole(profile.appRole);
+  const showProviderSections = creatorShowsProviderAboutFields(appRole);
+  const showCareerSections = creatorShowsCareerSections(appRole);
 
   const experienceBlocks = profile.experienceBlocks ?? [];
   const faqItems = profile.faqItems ?? [];
-  const hasYears = showProviderSections && profile.yearsOfExperience != null;
-  const hasExperienceBlocks = showProviderSections && experienceBlocks.length > 0;
+  const hasYears = showCareerSections && profile.yearsOfExperience != null;
+  const hasExperienceBlocks = showCareerSections && experienceBlocks.length > 0;
   const hasExperience = hasYears || hasExperienceBlocks;
   const strengths = profile.strengthsToolsMastered ?? [];
   const stackItems =
@@ -700,9 +648,9 @@ export function CreatorProfileContactSection({
     [];
   const skillTags = (profile.specialtyTags ?? []).map((tag) => tag.trim()).filter(Boolean);
   const allowedSpecialties = (profile.specialties ?? []).map((item) => item.trim()).filter(Boolean);
-  const hasStrengths = showProviderSections && strengths.length > 0;
-  const hasStack = showProviderSections && stackItems.length > 0;
-  const hasSkillTags = showProviderSections && skillTags.length > 0 && !hasStack;
+  const hasStrengths = showCareerSections && strengths.length > 0;
+  const hasStack = showCareerSections && stackItems.length > 0;
+  const hasSkillTags = showCareerSections && skillTags.length > 0 && !hasStack;
   const hasFaq = showProviderSections && faqItems.length > 0;
   const hasLinks = displayLinks.length > 0;
   const hasAboutMeta = hasGender || hasLanguages || memberSinceLabel;
@@ -721,7 +669,7 @@ export function CreatorProfileContactSection({
       rows.push({
         key: 'languages',
         label: 'Working languages',
-        value: spokenLanguages.length > 0 ? spokenLanguages.join(', ') : legacyLanguages,
+        value: spokenLanguageNames.length > 0 ? spokenLanguageNames.join(', ') : legacyLanguages,
       });
     }
     if (memberSinceLabel) {
@@ -733,7 +681,7 @@ export function CreatorProfileContactSection({
     hasLanguages,
     memberSinceLabel,
     profile.gender,
-    spokenLanguages,
+    spokenLanguageNames,
     legacyLanguages,
   ]);
 
@@ -787,34 +735,72 @@ export function CreatorProfileContactSection({
     }
   }, [navItems, activeSection]);
 
+  /* While a nav click is smooth-scrolling, the clicked item stays active instead of flickering
+     through the sections in between. */
+  const scrollLockRef = useRef<{ timer: number } | null>(null);
+
   useEffect(() => {
     if (navItems.length === 0) return;
-    const elements = navItems
-      .map((id) => document.getElementById(PUBLIC_INFO_SECTION_DOM_ID[id]))
-      .filter((el): el is HTMLElement => el != null);
-    if (elements.length === 0) return;
+    let frame = 0;
 
-    const observer = new IntersectionObserver(
-      (entries) => {
-        const visible = entries
-          .filter((entry) => entry.isIntersecting)
-          .sort((a, b) => b.intersectionRatio - a.intersectionRatio);
-        const top = visible[0];
-        if (!top?.target?.id) return;
-        const matched = (
-          Object.entries(PUBLIC_INFO_SECTION_DOM_ID) as Array<[PublicInfoNavId, string]>
-        ).find(([, domId]) => domId === top.target.id);
-        if (matched) setActiveSection(matched[0]);
-      },
-      { rootMargin: '-20% 0px -55% 0px', threshold: [0.15, 0.35, 0.55] }
-    );
+    const compute = (scroller: Element | null) => {
+      frame = 0;
+      const sections = navItems
+        .map((id) => ({ id, el: document.getElementById(PUBLIC_INFO_SECTION_DOM_ID[id]) }))
+        .filter((item): item is { id: PublicInfoNavId; el: HTMLElement } => item.el != null);
+      if (sections.length === 0) return;
 
-    for (const el of elements) observer.observe(el);
-    return () => observer.disconnect();
+      /* A section owns the nav from the moment its top crosses the reading line until the next
+         one does — tall sections stay active for their whole height. */
+      const readingLine = Math.max(140, window.innerHeight * 0.3);
+      let current = sections[0].id;
+      for (const { id, el } of sections) {
+        if (el.getBoundingClientRect().top - readingLine <= 0) current = id;
+      }
+
+      const target = scroller ?? document.scrollingElement;
+      const atBottom =
+        target != null && target.scrollHeight - target.scrollTop - target.clientHeight < 4;
+      const last = sections[sections.length - 1];
+      if (atBottom && last.el.getBoundingClientRect().top < window.innerHeight) current = last.id;
+
+      setActiveSection((prev) => (prev === current ? prev : current));
+    };
+
+    const onScroll = (event: Event) => {
+      const lock = scrollLockRef.current;
+      if (lock) {
+        window.clearTimeout(lock.timer);
+        lock.timer = window.setTimeout(() => {
+          scrollLockRef.current = null;
+        }, 140);
+        return;
+      }
+      if (frame) return;
+      const scroller =
+        event.target instanceof Element ? event.target : document.scrollingElement;
+      frame = window.requestAnimationFrame(() => compute(scroller));
+    };
+
+    frame = window.requestAnimationFrame(() => compute(null));
+    document.addEventListener('scroll', onScroll, { capture: true, passive: true });
+    window.addEventListener('resize', onScroll as EventListener, { passive: true });
+    return () => {
+      if (frame) window.cancelAnimationFrame(frame);
+      document.removeEventListener('scroll', onScroll, { capture: true });
+      window.removeEventListener('resize', onScroll as EventListener);
+    };
   }, [navItems]);
 
   const selectSection = (sectionId: PublicInfoNavId) => {
     setActiveSection(sectionId);
+    const previous = scrollLockRef.current;
+    if (previous) window.clearTimeout(previous.timer);
+    scrollLockRef.current = {
+      timer: window.setTimeout(() => {
+        scrollLockRef.current = null;
+      }, 900),
+    };
     const el = document.getElementById(PUBLIC_INFO_SECTION_DOM_ID[sectionId]);
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
@@ -829,8 +815,8 @@ export function CreatorProfileContactSection({
       }
     >
       {layout === 'desktop' ? (
-        <div className="flex h-12 shrink-0 items-center px-3">
-          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-500">
+        <div className="flex h-14 shrink-0 items-center px-5 pt-2">
+          <p className="text-[13px] font-semibold uppercase tracking-[0.14em] text-neutral-600 dark:text-neutral-300">
             Information
           </p>
         </div>
@@ -838,7 +824,7 @@ export function CreatorProfileContactSection({
       <div
         className={
           layout === 'desktop'
-            ? 'flex min-h-0 flex-col gap-1 overflow-y-auto px-2 pb-2 pt-0.5'
+            ? 'flex min-h-0 flex-col gap-1.5 overflow-y-auto px-2 pb-4 pt-1'
             : 'flex gap-1'
         }
       >
@@ -852,9 +838,9 @@ export function CreatorProfileContactSection({
               type="button"
               onClick={() => selectSection(sectionId)}
               aria-current={active ? 'true' : undefined}
-              className={`${profileNavButtonBaseClass} ${
-                layout === 'desktop' ? 'w-full' : 'shrink-0'
-              } ${active ? profileNavButtonActiveClass : profileNavButtonInactiveClass}`}
+              className={`${NAV_BUTTON_BASE} ${
+                layout === 'desktop' ? 'w-full py-3.5' : 'shrink-0 py-2.5'
+              } ${active ? NAV_BUTTON_ACTIVE : NAV_BUTTON_INACTIVE}`}
             >
               <ProfileSectionNavIcon sectionId={sectionId} active={active} />
               <span className="min-w-0 truncate">{label}</span>
@@ -872,25 +858,28 @@ export function CreatorProfileContactSection({
       </h2>
 
       {!hasAnyPublicInfo && !showMembersHint ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-5 py-10 text-center dark:border-neutral-800 dark:bg-neutral-900/50">
-          <p className="text-sm text-neutral-500 dark:text-neutral-400">No public information yet.</p>
+        <div className="py-20 text-center">
+          <p className="text-[1.0625rem] text-neutral-500 dark:text-neutral-400">No public information yet.</p>
         </div>
       ) : (
-        <div className="space-y-4">
+        <div className="space-y-10">
           {navItems.length > 0 ? (
-            <div className="md:hidden overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-100 p-2 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F]">
+            <div className="border-b border-black/[0.06] pb-3 dark:border-white/[0.06] md:hidden">
               {renderNav('mobile')}
             </div>
           ) : null}
 
-          <div className="grid items-start gap-4 md:grid-cols-[minmax(0,1fr)_auto]">
-            <div className="order-2 min-w-0 space-y-4 md:order-none md:col-start-1 md:row-start-1">
+          <div className="grid items-start gap-10 md:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
+            <div className="order-2 min-w-0 space-y-10 md:order-none md:col-start-1 md:row-start-1">
               <InfoPanel>
                 {hasAboutSection ? (
                   <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.about}>
                     <SectionHeading>Profile</SectionHeading>
                     {hasStack || hasSkillTags || hasStrengths ? (
-                      <div id={PUBLIC_INFO_SECTION_DOM_ID.strengths} className="mb-5 scroll-mt-24">
+                      <div
+                        id={PUBLIC_INFO_SECTION_DOM_ID.strengths}
+                        className="mb-14 scroll-mt-24"
+                      >
                         <PublicSkillsToolsGrouped
                           stack={stackItems}
                           skillTags={skillTags}
@@ -900,7 +889,7 @@ export function CreatorProfileContactSection({
                       </div>
                     ) : null}
                     {(hasLocation || profileFactRows.length > 0) && (
-                      <div className="space-y-3">
+                      <div className="space-y-12">
                         {hasLocation ? (
                           <LocationFeaturedBlock
                             label={locationLabel!.trim()}
@@ -917,42 +906,33 @@ export function CreatorProfileContactSection({
                 ) : null}
 
                 {hasExperience ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.experience}>
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.experience} framed>
                     <SectionHeading>Experience</SectionHeading>
-                    {hasYears ? (
-                      <p className="mb-4 text-sm font-medium text-neutral-700 dark:text-neutral-200">
-                        {profile.yearsOfExperience} year
-                        {profile.yearsOfExperience === 1 ? '' : 's'} of experience
-                      </p>
-                    ) : null}
-                    {hasExperienceBlocks ? (
-                      <div className="space-y-3">
-                        {experienceBlocks.map((block) => (
-                          <StoryBlockCard key={block.id} block={block} showMedia={false} />
-                        ))}
-                      </div>
-                    ) : null}
+                    <PublicExperienceShowcase
+                      blocks={hasExperienceBlocks ? experienceBlocks : []}
+                      yearsOfExperience={hasYears ? profile.yearsOfExperience : null}
+                    />
                   </InfoPanelSection>
                 ) : null}
 
                 {hasFaq ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.faq}>
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.faq} framed>
                     <SectionHeading>FAQ</SectionHeading>
-                    <div className="divide-y divide-neutral-200 dark:divide-neutral-800">
+                    <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
                       {faqItems.map((item) => (
-                        <details key={item.id} className="group py-3 first:pt-0 last:pb-0">
-                          <summary className="flex cursor-pointer list-none items-start justify-between gap-4 text-left [&::-webkit-details-marker]:hidden">
-                            <span className="text-sm font-semibold leading-snug text-neutral-900 dark:text-white sm:text-base">
+                        <details key={item.id} className="group py-6 first:pt-0 last:pb-0">
+                          <summary className="flex cursor-pointer list-none items-start justify-between gap-6 text-left [&::-webkit-details-marker]:hidden">
+                            <span className="text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-white">
                               {item.question}
                             </span>
                             <span
-                              className="mt-0.5 shrink-0 text-lg leading-none text-neutral-400 transition group-open:rotate-45 dark:text-neutral-500"
+                              className="mt-0.5 shrink-0 text-xl font-light leading-none text-neutral-400 transition group-open:rotate-45 dark:text-neutral-500"
                               aria-hidden
                             >
                               +
                             </span>
                           </summary>
-                          <p className="mt-2 pr-8 text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
+                          <p className="mt-3 pr-10 text-[1rem] leading-[1.75] text-neutral-600 dark:text-neutral-300">
                             {item.answer}
                           </p>
                         </details>
@@ -962,10 +942,10 @@ export function CreatorProfileContactSection({
                 ) : null}
 
                 {hasDirectContact ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.contact}>
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.contact} framed>
                     <SectionHeading>Contact</SectionHeading>
                     <div
-                      className={`grid gap-3 ${directContacts.length > 1 ? 'sm:grid-cols-2' : 'sm:max-w-md'}`}
+                      className={`grid gap-x-10 gap-y-8 ${directContacts.length > 1 ? 'sm:grid-cols-2' : 'sm:max-w-md'}`}
                     >
                       {directContacts.map((item) => (
                         <ContactDirectCard
@@ -981,9 +961,9 @@ export function CreatorProfileContactSection({
                 ) : null}
 
                 {hasLinks ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.links}>
+                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.links} framed>
                     <SectionHeading>Links</SectionHeading>
-                    <div className="flex flex-wrap items-start justify-center gap-x-8 gap-y-6 sm:gap-x-10">
+                    <div className="flex flex-wrap items-start gap-x-8 gap-y-8 sm:gap-x-10">
                       {displayLinks.map((link) => (
                         <UnifiedLinkIcon key={link.id} link={link} />
                       ))}
@@ -993,10 +973,10 @@ export function CreatorProfileContactSection({
               </InfoPanel>
 
               {showMembersHint ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-neutral-50 px-4 py-3 text-sm text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900/40 dark:text-neutral-400">
+                <p className="border-t border-black/[0.06] pt-6 text-[1rem] text-neutral-600 dark:border-white/[0.06] dark:text-neutral-300">
                   <Link
                     href={`/login?redirect=${encodeURIComponent(`/marketplace/${creatorId}`)}`}
-                    className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                    className="font-medium text-[#111111] underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-500 dark:text-white dark:decoration-neutral-600"
                   >
                     Sign in
                   </Link>{' '}
@@ -1006,7 +986,10 @@ export function CreatorProfileContactSection({
             </div>
 
             {navItems.length > 0 ? (
-              <ProfileSectionStickyAside className="w-[15.5rem] md:col-start-2 md:row-start-1">
+              <ProfileSectionStickyAside
+                className="w-[15.5rem] md:col-start-2 md:row-start-1"
+                surfaceClassName={`flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`}
+              >
                 {renderNav('desktop')}
               </ProfileSectionStickyAside>
             ) : null}

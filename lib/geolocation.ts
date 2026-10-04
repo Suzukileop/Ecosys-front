@@ -1,4 +1,5 @@
 import { nationalityLabel } from '@/lib/countries';
+import { UserFacingError } from '@/lib/api-error';
 
 export type DetectedLocation = {
   lat: number;
@@ -21,10 +22,16 @@ function geolocationErrorMessage(code: number): string {
   }
 }
 
+function toLocationError(err: unknown): UserFacingError {
+  if (err instanceof UserFacingError) return err;
+  console.error('[geolocation]', err);
+  return new UserFacingError('Unable to detect your location.');
+}
+
 /** Requires browser geolocation permission — used for mandatory creator location setup. */
 export async function detectUserLocation(): Promise<DetectedLocation> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
-    throw new Error('Geolocation is not supported by your browser.');
+    throw new UserFacingError('Geolocation is not supported by your browser.');
   }
 
   const timezoneId = Intl.DateTimeFormat().resolvedOptions().timeZone;
@@ -95,7 +102,7 @@ function isFiniteCoords(coords: { lat: number; lng: number }): boolean {
  */
 export async function detectUserCoordinates(): Promise<ViewerCoordinates> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
-    throw new Error('Geolocation is not supported by your browser.');
+    throw new UserFacingError('Geolocation is not supported by your browser.');
   }
 
   const position = await getCurrentPosition({
@@ -104,14 +111,14 @@ export async function detectUserCoordinates(): Promise<ViewerCoordinates> {
     maximumAge: 5 * 60_000,
   }).catch((err) => {
     if (err instanceof GeolocationPositionError) {
-      throw new Error(geolocationErrorMessage(err.code));
+      throw new UserFacingError(geolocationErrorMessage(err.code));
     }
-    throw err instanceof Error ? err : new Error('Unable to detect your location.');
+    throw toLocationError(err);
   });
 
   const coords = toViewerCoordinates(position);
   if (!isFiniteCoords(coords)) {
-    throw new Error('Unable to detect your location.');
+    throw new UserFacingError('Unable to detect your location.');
   }
   return coords;
 }
@@ -157,7 +164,7 @@ export async function detectUserCoordinatesForDistance(
   options?: { timeoutMs?: number; maxAccuracyM?: number; signal?: AbortSignal }
 ): Promise<ViewerCoordinates> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
-    throw new Error('Geolocation is not supported by your browser.');
+    throw new UserFacingError('Geolocation is not supported by your browser.');
   }
 
   const timeoutMs = options?.timeoutMs ?? 18_000;
@@ -186,11 +193,11 @@ export async function detectUserCoordinatesForDistance(
         resolve(coords);
         return;
       }
-      reject(error ?? new Error('Location accuracy is too low to show distance.'));
+      reject(error ?? new UserFacingError('Location accuracy is too low to show distance.'));
     };
 
     const onAbort = () => {
-      finish(null, new Error('Distance measurement cancelled.'));
+      finish(null, new UserFacingError('Distance measurement cancelled.'));
     };
     if (options?.signal?.aborted) {
       onAbort();
@@ -214,7 +221,7 @@ export async function detectUserCoordinatesForDistance(
     const timer = window.setTimeout(() => {
       finish(
         best && goodEnough(best) ? best : null,
-        new Error('Location accuracy is too low to show distance.')
+        new UserFacingError('Location accuracy is too low to show distance.')
       );
     }, timeoutMs);
 
@@ -222,7 +229,7 @@ export async function detectUserCoordinatesForDistance(
       consider,
       (err) => {
         if (err.code === 1) {
-          finish(null, new Error(geolocationErrorMessage(err.code)));
+          finish(null, new UserFacingError(geolocationErrorMessage(err.code)));
         }
       },
       {
@@ -266,9 +273,9 @@ export async function requestDetectedLocation(): Promise<DetectedLocation> {
     return await detectUserLocation();
   } catch (err) {
     if (err instanceof GeolocationPositionError) {
-      throw new Error(geolocationErrorMessage(err.code));
+      throw new UserFacingError(geolocationErrorMessage(err.code));
     }
-    throw err instanceof Error ? err : new Error('Unable to detect your location.');
+    throw toLocationError(err);
   }
 }
 

@@ -4,6 +4,8 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { CREATOR_CONTENT_GENRES } from '@/components/creator/creator-content-form';
 
+const OTHER_GENRE = 'Other';
+
 type ContentCategorySelectProps = {
   id: string;
   value: string;
@@ -25,7 +27,26 @@ export function ContentCategorySelect({
 }: ContentCategorySelectProps) {
   const rootRef = useRef<HTMLDivElement>(null);
   const triggerRef = useRef<HTMLButtonElement>(null);
+  const customInputRef = useRef<HTMLInputElement>(null);
   const [open, setOpen] = useState(false);
+  const trimmedValue = value.trim();
+  const isPresetValue = (CREATOR_CONTENT_GENRES as readonly string[]).includes(trimmedValue);
+  const [otherMode, setOtherMode] = useState(
+    () => trimmedValue === OTHER_GENRE || (Boolean(trimmedValue) && !isPresetValue)
+  );
+  const showCustom = otherMode || trimmedValue === OTHER_GENRE || (Boolean(trimmedValue) && !isPresetValue);
+
+  const pick = (next: string) => {
+    setOpen(false);
+    if (next === OTHER_GENRE) {
+      setOtherMode(true);
+      if (isPresetValue) onChange('');
+      requestAnimationFrame(() => customInputRef.current?.focus());
+      return;
+    }
+    setOtherMode(false);
+    onChange(next);
+  };
   const [menuBox, setMenuBox] = useState<{ top: number; left: number; width: number } | null>(null);
 
   const updateMenuBox = useCallback(() => {
@@ -90,11 +111,12 @@ export function ContentCategorySelect({
       }
       className="max-h-56 overflow-y-auto rounded-xl border border-neutral-200/80 bg-white py-1 shadow-lg [scrollbar-width:thin] [scrollbar-color:theme(colors.neutral.300)_transparent] dark:border-neutral-700 dark:bg-neutral-900 dark:[scrollbar-color:theme(colors.neutral.600)_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-300 hover:[&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[&::-webkit-scrollbar-thumb]:bg-neutral-600 dark:hover:[&::-webkit-scrollbar-thumb]:bg-neutral-500"
     >
-      {value.trim() ? (
-        <li role="option">
+      {trimmedValue || showCustom ? (
+        <li role="option" aria-selected={false}>
           <button
             type="button"
             onClick={() => {
+              setOtherMode(false);
               onChange('');
               setOpen(false);
             }}
@@ -105,15 +127,12 @@ export function ContentCategorySelect({
         </li>
       ) : null}
       {CREATOR_CONTENT_GENRES.map((genre) => {
-        const selected = value === genre;
+        const selected = genre === OTHER_GENRE ? showCustom : !showCustom && value === genre;
         return (
           <li key={genre} role="option" aria-selected={selected}>
             <button
               type="button"
-              onClick={() => {
-                onChange(genre);
-                setOpen(false);
-              }}
+              onClick={() => pick(genre)}
               className={`flex w-full px-3 py-2 text-left text-sm transition hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
                 selected
                   ? 'font-semibold text-orange-600 dark:text-orange-400'
@@ -148,12 +167,12 @@ export function ContentCategorySelect({
       >
         <span
           className={
-            value.trim()
+            trimmedValue || showCustom
               ? 'truncate text-neutral-900 dark:text-white'
               : 'truncate text-neutral-500 dark:text-neutral-400'
           }
         >
-          {value.trim() || placeholder}
+          {showCustom ? OTHER_GENRE : trimmedValue || placeholder}
         </span>
         <svg
           className={`h-4 w-4 shrink-0 text-neutral-400 transition ${open ? 'rotate-180' : ''}`}
@@ -166,6 +185,20 @@ export function ContentCategorySelect({
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
+
+      {showCustom ? (
+        <input
+          ref={customInputRef}
+          id={`${id}-custom`}
+          aria-label="Custom category"
+          value={value === OTHER_GENRE ? '' : value}
+          onChange={(e) => onChange(e.target.value)}
+          disabled={disabled}
+          maxLength={100}
+          placeholder="Type your category"
+          className={`${fieldClass} !mt-2`}
+        />
+      ) : null}
 
       {open && menuBox && typeof document !== 'undefined'
         ? createPortal(list, document.body)

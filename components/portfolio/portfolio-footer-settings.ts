@@ -533,7 +533,7 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
   showLandingMarketplaceLink: boolean;
   /** Landing Links column — Marketplace row. Off by default. */
   showMarketplaceColumnLink: boolean;
-  /** Landing Links column — NoProbleme profile row. Off by default. */
+  /** Landing Links column — Skraft profile row. Off by default. */
   showNopbProfileLink: boolean;
   showProfileVisits: boolean;
   showContactLinks: boolean;
@@ -823,6 +823,7 @@ export function isFooterNopbProfileLink(link: Pick<PortfolioFooterLinkItem, 'id'
     id === 'profile' ||
     href === '__profile__' ||
     href === '{{profile}}' ||
+    label === 'skraft profile' ||
     label === 'noprobleme profile' ||
     label === 'noproblème profile'
   );
@@ -915,7 +916,7 @@ export function resolveFooterInternalLinksColumn(
       );
       links = [
         ...links.slice(0, insertAt),
-        { id: 'profile', label: 'NoProbleme profile', href: '__profile__' },
+        { id: 'profile', label: 'Skraft profile', href: '__profile__' },
         ...links.slice(insertAt),
       ];
     }

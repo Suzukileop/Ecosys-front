@@ -1,15 +1,24 @@
 'use client';
 
-import { useRef, useState, type ReactNode } from 'react';
+import { useRef, type ReactNode } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import {
+  faAddressCard,
+  faEye,
+  faGem,
+  faHandshake,
+  faImage,
+  faPenToSquare,
+  faUser,
+} from '@fortawesome/free-regular-svg-icons';
 import { CreatorProfileHeader, CREATOR_PROFILE_IMAGE_ACCEPT } from '@/components/creator/CreatorProfileHeader';
-import { CreatorStudioLayoutSettings } from '@/components/creator/studio/CreatorStudioLayoutSettings';
+import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
 import { creatorStudioTabNavAlignClass } from '@/components/creator/studio/creator-studio-layout';
 import type { CreatorStudioTabNavAlign } from '@/components/creator/studio/creator-studio-layout';
 import { CREATOR_STUDIO_TABS, type CreatorStudioTab } from './types';
 import type { CreatorStudioHeaderLayout } from './creator-studio-header';
 import type { CreatorStudioHeaderContentStyle } from './creator-studio-header-content';
-import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import {
   creatorCanAccessProfileProducts,
   creatorCanAccessProfileServices,
@@ -30,7 +39,7 @@ export type CreatorStudioHeaderData = {
   profileVisits: number;
   isAvailable: boolean;
   availabilityLabel?: string | null;
-  averageRating?: number | null;
+  starCount?: number;
   locationLabel?: string | null;
   /** App role — drives avatar status ring color. */
   appRole?: string | null;
@@ -47,30 +56,19 @@ type CreatorStudioShellProps = {
   children: ReactNode;
   uploadingAvatar?: boolean;
   onAvatarSelect?: (file: File) => void | Promise<void>;
-  savingHeaderLayout?: boolean;
-  savingHeaderContentStyle?: boolean;
-  savingTabNavAlign?: boolean;
-  savingContentHeadline?: boolean;
-  layoutError?: string | null;
-  onDismissLayoutError?: () => void;
-  onHeaderLayoutChange: (layout: CreatorStudioHeaderLayout) => void | Promise<void>;
-  onHeaderContentStyleChange: (style: CreatorStudioHeaderContentStyle) => void | Promise<void>;
-  onTabNavAlignChange: (align: CreatorStudioTabNavAlign) => void | Promise<void>;
-  onContentHeadlineChange: (headline: string) => void | Promise<void>;
+  /** Primary action shown above the desktop sections rail. */
+  railAction?: ReactNode;
 };
 
-function LayoutSettingsIcon() {
-  return (
-    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  );
-}
+const STUDIO_TAB_ICONS: Record<CreatorStudioTab, IconDefinition> = {
+  content: faPenToSquare,
+  services: faHandshake,
+  products: faGem,
+  images: faImage,
+  visitors: faEye,
+  subscribers: faUser,
+  profile: faAddressCard,
+};
 
 export function CreatorStudioShell({
   tab,
@@ -79,19 +77,9 @@ export function CreatorStudioShell({
   children,
   uploadingAvatar = false,
   onAvatarSelect,
-  savingHeaderLayout = false,
-  savingHeaderContentStyle = false,
-  savingTabNavAlign = false,
-  savingContentHeadline = false,
-  layoutError = null,
-  onDismissLayoutError,
-  onHeaderLayoutChange,
-  onHeaderContentStyleChange,
-  onTabNavAlignChange,
-  onContentHeadlineChange,
+  railAction,
 }: CreatorStudioShellProps) {
   const avatarInputRef = useRef<HTMLInputElement>(null);
-  const [layoutPanelOpen, setLayoutPanelOpen] = useState(false);
 
   const handle = header.email;
   const pickAvatar = () => avatarInputRef.current?.click();
@@ -102,8 +90,10 @@ export function CreatorStudioShell({
     return true;
   });
 
+  const selectTab = (next: CreatorStudioTab) => onTabChange(next);
+
   return (
-    <div className={`${PORTFOLIO_FRAME_CLASS} pb-16 pt-4`}>
+    <div className="mx-auto w-full max-w-[1400px] px-0 pb-16 pt-2 sm:px-8 sm:pt-4 md:px-12 lg:px-16">
       <input
         ref={avatarInputRef}
         type="file"
@@ -135,21 +125,24 @@ export function CreatorStudioShell({
           profileVisits={header.profileVisits}
           profileVisitsHref="/dashboard/creator?tab=visitors"
           profileSubscribersHref="/dashboard/creator?tab=subscribers"
-          averageRating={header.averageRating}
+          starCount={header.starCount}
           locationLabel={header.locationLabel}
           isAvailable={header.isAvailable}
           availabilityLabel={header.availabilityLabel}
+          shopHref="/marketplace/my-products"
+          shopLabel="Manage shop"
           editable
           uploadingAvatar={uploadingAvatar}
           onAvatarPick={pickAvatar}
         />
       </div>
 
-      <div>
-        <div className="mt-12 border-b border-black/[0.06] dark:border-white/[0.08]">
+      <div className="mt-12 grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_15rem] xl:gap-16">
+        <div className="min-w-0 lg:col-start-1 lg:row-start-1">
+        <div className="border-b border-black/[0.06] dark:border-white/[0.08] lg:hidden">
           <div className="flex items-center gap-4">
             <nav
-              className={`flex min-w-0 flex-1 gap-8 overflow-x-auto ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
+              className={`flex min-w-0 flex-1 gap-8 overflow-x-auto px-5 [scrollbar-width:none] sm:px-0 [&::-webkit-scrollbar]:hidden ${creatorStudioTabNavAlignClass(header.tabNavAlign)}`}
               aria-label="Creator studio sections"
             >
               {visibleTabs.map((item) => {
@@ -158,69 +151,77 @@ export function CreatorStudioShell({
                   <button
                     key={item.id}
                     type="button"
-                    onClick={() => {
-                      setLayoutPanelOpen(false);
-                      onTabChange(item.id);
-                    }}
+                    onClick={() => selectTab(item.id)}
+                    aria-current={active ? 'page' : undefined}
                     className={`relative shrink-0 py-4 text-[15px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
-                      active && !layoutPanelOpen
+                      active
                         ? 'text-[#111111] dark:text-white'
                         : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
                     }`}
                   >
                     {item.label}
-                    {active && !layoutPanelOpen && (
-                      <span className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" />
+                    {active && (
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#FF5722]" />
                     )}
                   </button>
                 );
               })}
             </nav>
-            <button
-              type="button"
-              onClick={() => setLayoutPanelOpen((open) => !open)}
-              aria-expanded={layoutPanelOpen}
-              aria-controls="creator-studio-layout-settings"
-              aria-label={layoutPanelOpen ? 'Close layout settings' : 'Layout settings'}
-              title={layoutPanelOpen ? 'Close layout' : 'Layout'}
-              className={`flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
-                layoutPanelOpen
-                  ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]'
-                  : 'text-neutral-500 hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white'
-              }`}
-            >
-              <LayoutSettingsIcon />
-            </button>
           </div>
         </div>
 
-        {layoutPanelOpen ? (
-          <div id="creator-studio-layout-settings" className="py-10">
-            <div className="rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-8">
-              {layoutError ? (
-                <div className="mb-4">
-                  <ErrorAlert message={layoutError} onDismiss={onDismissLayoutError} />
-                </div>
-              ) : null}
-              <CreatorStudioLayoutSettings
-                headerLayout={header.headerLayout}
-                headerContentStyle={header.headerContentStyle}
-                tabNavAlign={header.tabNavAlign}
-                contentHeadline={header.contentHeadline}
-                savingHeader={savingHeaderLayout}
-                savingHeaderContent={savingHeaderContentStyle}
-                savingTabAlign={savingTabNavAlign}
-                savingContentHeadline={savingContentHeadline}
-                onHeaderLayoutChange={onHeaderLayoutChange}
-                onHeaderContentStyleChange={onHeaderContentStyleChange}
-                onTabNavAlignChange={onTabNavAlignChange}
-                onContentHeadlineChange={onContentHeadlineChange}
-              />
+        <div className={`py-10 sm:py-12 lg:pt-0 ${tab === 'content' ? '' : 'px-5 sm:px-0'}`}>{children}</div>
+        </div>
+
+        <div className="hidden self-start lg:col-start-2 lg:row-start-1 lg:block">
+          <ProfileSectionStickyAside
+            className="w-full"
+            surfaceClassName="flex w-full max-w-full min-w-0 flex-col gap-5"
+          >
+            {railAction}
+            <div className="flex min-h-0 flex-col overflow-hidden">
+              <div className="flex h-14 shrink-0 items-center border-b border-black/[0.05] px-5 dark:border-white/[0.05]">
+                <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#666666] dark:text-neutral-500">
+                  Manage
+                </p>
+              </div>
+              <nav
+                className="flex min-h-0 w-full flex-col gap-1.5 overflow-y-auto px-2.5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                aria-label="Creator studio sections"
+              >
+                {visibleTabs.map((item) => {
+                  const active = tab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      type="button"
+                      onClick={() => selectTab(item.id)}
+                      aria-current={active ? 'page' : undefined}
+                      className={`group/item flex min-h-[3.25rem] w-full items-center gap-3.5 rounded-lg px-3 py-3.5 text-left text-[16px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+                        active
+                          ? 'font-medium text-[#0A0A0A] dark:text-white'
+                          : 'font-medium text-[#222222] dark:text-neutral-300'
+                      }`}
+                    >
+                      <FontAwesomeIcon icon={STUDIO_TAB_ICONS[item.id]} className="h-[1.05rem] w-[1.05rem] shrink-0" />
+                      <span className="min-w-0 flex-1">
+                        <span className="relative inline-block whitespace-nowrap align-middle">
+                          {item.label}
+                          <span
+                            aria-hidden
+                            className={`pointer-events-none absolute -bottom-1 left-0 right-0 block h-px origin-left bg-current transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                              active ? 'scale-x-100' : 'scale-x-0 group-hover/item:scale-x-100'
+                            }`}
+                          />
+                        </span>
+                      </span>
+                    </button>
+                  );
+                })}
+              </nav>
             </div>
-          </div>
-        ) : (
-          <div className="py-10 sm:py-12">{children}</div>
-        )}
+          </ProfileSectionStickyAside>
+        </div>
       </div>
     </div>
   );

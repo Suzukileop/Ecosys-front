@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { voteProductReviewHelpful, deleteProductReview } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { StarRating } from '@/components/marketplace/StarRating';
+import { AvatarImage } from '@/components/ui/PersonAvatar';
 import { useAuth } from '@/context/AuthContext';
 import type { ProductReview } from '@/types/marketplace';
 
@@ -63,104 +64,93 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
   };
 
   return (
-    <article className="border-b border-gray-100 py-5 last:border-b-0 dark:border-neutral-800">
-      <div className="flex items-start gap-3">
-        {review.userAvatarUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={review.userAvatarUrl}
-            alt=""
-            className="h-11 w-11 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
-          />
-        ) : (
-          <div className="flex h-11 w-11 items-center justify-center rounded-full bg-orange-100 text-sm font-bold text-orange-800 dark:bg-orange-500/20 dark:text-orange-200">
-            {review.userName.slice(0, 2).toUpperCase()}
-          </div>
-        )}
+    <article className="py-6">
+      <div className="flex items-start gap-3.5">
+        <AvatarImage
+          src={review.userAvatarUrl}
+          className="h-10 w-10 shrink-0 rounded-full object-cover"
+          fallback={
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[13px] font-semibold text-[#111111] dark:bg-white/[0.08] dark:text-white">
+              {review.userName.slice(0, 2).toUpperCase()}
+            </div>
+          }
+        />
 
         <div className="min-w-0 flex-1">
-          <div className="flex flex-wrap items-center gap-x-3 gap-y-1">
-            <p className="font-semibold text-gray-900 dark:text-white">{review.userName}</p>
-            <time className="text-xs text-gray-500 dark:text-gray-400" dateTime={review.createdAt}>
-              {formatReviewDate(review.createdAt)}
-            </time>
-            {isOwnReview && (
-              <button
-                type="button"
-                onClick={() => void onDelete()}
-                disabled={deleting}
-                className="text-xs font-medium text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400 dark:hover:text-red-300"
-              >
-                {deleting ? 'Deleting…' : 'Delete'}
-              </button>
-            )}
+          <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
+            <p className="text-[15px] font-semibold text-[#111111] dark:text-white">{review.userName}</p>
+            <div className="flex items-center gap-3">
+              <time className="text-[13px] text-neutral-400 dark:text-neutral-500" dateTime={review.createdAt}>
+                {formatReviewDate(review.createdAt)}
+              </time>
+              {isOwnReview && (
+                <button
+                  type="button"
+                  onClick={() => void onDelete()}
+                  disabled={deleting}
+                  className="text-[13px] font-medium text-[#E0431A] hover:underline disabled:opacity-50 dark:text-[#FF7A52]"
+                >
+                  {deleting ? 'Deleting…' : 'Delete'}
+                </button>
+              )}
+            </div>
           </div>
 
-          <div className="mt-1">
-            <StarRating rating={review.rating} size="md" />
+          <div className="mt-1.5">
+            <StarRating rating={review.rating} />
           </div>
 
           {review.comment ? (
-            <p className="mt-3 text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-              {review.comment}
-            </p>
+            <p className="mt-3 text-[15px] leading-relaxed text-neutral-700 dark:text-neutral-300">{review.comment}</p>
           ) : (
-            <p className="mt-3 text-sm italic text-gray-500 dark:text-gray-400">No written review.</p>
+            <p className="mt-3 text-[15px] italic text-neutral-400 dark:text-neutral-500">No written review.</p>
           )}
 
-          <div className="mt-4">
-            <p className="text-sm text-gray-600 dark:text-gray-400">
-              Did you find this review helpful?
-            </p>
+          <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
+            <span className="text-[13px] text-neutral-500 dark:text-neutral-400">Helpful?</span>
             {!user ? (
               <Link
                 href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}
-                className="mt-2 inline-block text-sm font-medium text-orange-600 hover:text-orange-700 dark:text-orange-400"
+                className="text-[13px] font-medium text-[#111111] underline-offset-4 hover:underline dark:text-white"
               >
                 Sign in to vote
               </Link>
             ) : isOwnReview ? (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">This is your review.</p>
+              <span className="text-[13px] text-neutral-400 dark:text-neutral-500">This is your review.</span>
             ) : !isClient ? (
-              <p className="mt-2 text-xs text-gray-500 dark:text-gray-400">
+              <span className="text-[13px] text-neutral-400 dark:text-neutral-500">
                 Only client accounts can vote on reviews.
-              </p>
+              </span>
             ) : (
-              <div className="mt-2 flex flex-wrap items-center gap-2">
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void onVote(true)}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
-                    review.userHelpfulVote === true
-                      ? 'border-orange-300 bg-orange-50 text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-200'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-orange-200 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-200'
-                  }`}
-                >
-                  Yes
-                </button>
-                <button
-                  type="button"
-                  disabled={busy}
-                  onClick={() => void onVote(false)}
-                  className={`rounded-full border px-4 py-1.5 text-sm font-medium transition disabled:opacity-50 ${
-                    review.userHelpfulVote === false
-                      ? 'border-gray-400 bg-gray-100 text-gray-900 dark:border-neutral-500 dark:bg-neutral-700 dark:text-white'
-                      : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-200'
-                  }`}
-                >
-                  No
-                </button>
-                {review.helpfulYesCount > 0 && (
-                  <span className="text-xs text-gray-500 dark:text-gray-400">
-                    {review.helpfulYesCount}{' '}
-                    {review.helpfulYesCount === 1 ? 'person' : 'people'} found this helpful
-                  </span>
-                )}
-              </div>
+              <>
+                {([true, false] as const).map((helpful) => {
+                  const active = review.userHelpfulVote === helpful;
+                  return (
+                    <button
+                      key={String(helpful)}
+                      type="button"
+                      disabled={busy}
+                      aria-pressed={active}
+                      onClick={() => void onVote(helpful)}
+                      className={`h-8 rounded-full border px-3.5 text-[13px] font-medium transition disabled:opacity-50 ${
+                        active
+                          ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                          : 'border-black/[0.1] text-neutral-700 hover:border-black/[0.25] dark:border-white/[0.14] dark:text-neutral-200 dark:hover:border-white/[0.3]'
+                      }`}
+                    >
+                      {helpful ? 'Yes' : 'No'}
+                    </button>
+                  );
+                })}
+              </>
             )}
-            {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+            {review.helpfulYesCount > 0 && (
+              <span className="text-[13px] text-neutral-400 dark:text-neutral-500">
+                {review.helpfulYesCount} {review.helpfulYesCount === 1 ? 'person' : 'people'} found this helpful
+              </span>
+            )}
           </div>
+          {error && <p className="mt-2 text-sm text-[#E0431A] dark:text-[#FF7A52]">{error}</p>}
         </div>
       </div>
     </article>

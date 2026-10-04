@@ -102,6 +102,7 @@ export const profileLinkSchema = z
     sortOrder: z.number().int().min(0),
     platform: platformEnum.nullable().optional(),
     iconUrl: z.string().max(500).optional().or(z.literal('')).nullable(),
+    hideFromCv: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     const url = data.url.trim();
@@ -121,7 +122,7 @@ export const profileServiceSchema = z
     deadline: z.string().max(100).optional().or(z.literal('')).nullable(),
     tasks: z.array(z.object({ value: z.string().max(120) })).max(12),
     specialty: z.string().max(80).optional().or(z.literal('')),
-    pricingType: z.enum(['FIXED', 'FROM', 'QUOTE']).optional(),
+    pricingType: z.enum(['FIXED', 'FROM', 'QUOTE', 'FREE']).optional(),
     coverImageUrl: z.string().max(500).optional().or(z.literal('')).nullable(),
     status: z.enum(['ACTIVE', 'PAUSED', 'ARCHIVED']).optional(),
     tags: z.array(z.string().max(40)).max(8).optional(),
@@ -144,14 +145,15 @@ export const profileServiceSchema = z
       ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Title is required.', path: ['title'] });
     }
     const pricingType = data.pricingType ?? (hasPrice ? 'FIXED' : 'QUOTE');
-    if (pricingType !== 'QUOTE' && data.basePriceCents == null) {
+    const needsAmount = pricingType !== 'QUOTE' && pricingType !== 'FREE';
+    if (needsAmount && data.basePriceCents == null) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
-        message: 'Price is required unless pricing is Quote on request.',
+        message: 'Price is required unless pricing is Quote on request or Free.',
         path: ['basePriceCents'],
       });
     }
-    if (pricingType !== 'QUOTE' && !(data.currency ?? '').trim()) {
+    if (needsAmount && !(data.currency ?? '').trim()) {
       ctx.addIssue({
         code: z.ZodIssueCode.custom,
         message: 'Currency is required.',
@@ -461,6 +463,7 @@ export const profileMediaBlockSchema = z
     links: z.array(experienceProofLinkSchema).max(5),
     location: z.string().max(120).optional().or(z.literal('')),
     employmentType: z.string().trim().max(MAX_CUSTOM_EMPLOYMENT_LENGTH).nullable().optional(),
+    hideFromCv: z.boolean().optional(),
   })
   .superRefine((data, ctx) => {
     const text = data.text.trim();
@@ -729,6 +732,7 @@ export function createEmptyProfileBlock(sortOrder: number): ProfileMediaBlockFor
     links: [],
     location: '',
     employmentType: null,
+    hideFromCv: false,
   };
 }
 
@@ -751,6 +755,7 @@ export function createEmptyProfileLink(sortOrder: number): ProfileLinkForm {
     sortOrder,
     platform: null,
     iconUrl: null,
+    hideFromCv: false,
   };
 }
 
@@ -1027,6 +1032,7 @@ export function parseProfileLinks(raw: unknown): ProfileLinkForm[] {
       platform: platformParsed?.success ? platformParsed.data : null,
       iconUrl:
         typeof link.iconUrl === 'string' && link.iconUrl.trim() ? link.iconUrl.trim() : null,
+      hideFromCv: link.hideFromCv === true,
     });
   });
   return links.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -1046,8 +1052,9 @@ export function parseProfileServices(raw: unknown): ProfileServiceForm[] {
     const pricingType =
       pricingRaw.toUpperCase() === 'FROM' ||
       pricingRaw.toUpperCase() === 'QUOTE' ||
-      pricingRaw.toUpperCase() === 'FIXED'
-        ? (pricingRaw.toUpperCase() as 'FIXED' | 'FROM' | 'QUOTE')
+      pricingRaw.toUpperCase() === 'FIXED' ||
+      pricingRaw.toUpperCase() === 'FREE'
+        ? (pricingRaw.toUpperCase() as 'FIXED' | 'FROM' | 'QUOTE' | 'FREE')
         : basePriceCents != null
           ? 'FIXED'
           : 'QUOTE';
@@ -1348,6 +1355,7 @@ export function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
       links: parseExperienceProofLinks(block.links),
       location: block.location != null ? String(block.location) : '',
       employmentType,
+      hideFromCv: block.hideFromCv === true,
     });
   });
   return blocks.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -1524,6 +1532,7 @@ export function serializeProfileBlocks(
           }),
         location,
         employmentType: block.employmentType ?? null,
+        hideFromCv: block.hideFromCv === true ? true : null,
       };
     });
 }
@@ -1542,6 +1551,7 @@ export function serializeProfileLinks(links: ProfileLinkForm[]) {
         sortOrder: index,
         platform: link.type === 'SOCIAL' ? link.platform ?? null : null,
         iconUrl: link.iconUrl?.trim() ? link.iconUrl.trim() : null,
+        hideFromCv: link.hideFromCv === true ? true : null,
       };
     });
 }
@@ -1582,7 +1592,8 @@ export function serializeProfileServices(
         sortOrder: index,
         title: service.title.trim(),
         description: service.description?.trim() ?? '',
-        basePriceCents: pricingType === 'QUOTE' ? null : service.basePriceCents ?? null,
+        basePriceCents:
+          pricingType === 'QUOTE' ? null : pricingType === 'FREE' ? 0 : service.basePriceCents ?? null,
         deadline,
         tasks: service.tasks?.map((item) => item.value.trim()).filter(Boolean) ?? [],
         specialty: matched || null,

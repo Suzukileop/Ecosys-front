@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useCallback, useState, type DragEvent, type ReactNode } from 'react';
+import { UserFacingError } from '@/lib/api-error';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import { faArrowsRotate, faChevronLeft, faChevronRight, faPlus } from '@fortawesome/free-solid-svg-icons';
@@ -503,13 +504,13 @@ export function PortfolioTeamStudio({
     async (draft: TeamDraft) => {
       const cleaned = cleanItems(draft.items);
       if (cleaned.some((member) => !member.name || !member.responsibility)) {
-        throw new Error('Each member needs a name and a role.');
+        throw new UserFacingError('Each member needs a name and a role.');
       }
       const linkError = cleaned
         .flatMap((member) => member.socialLinks)
         .map((link) => getTeamSocialUrlFieldError(link.url, link.platform))
         .find(Boolean);
-      if (linkError) throw new Error(linkError);
+      if (linkError) throw new UserFacingError(linkError);
       await onSave(cleaned);
     },
     [onSave]

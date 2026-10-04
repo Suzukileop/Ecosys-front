@@ -1,13 +1,24 @@
 'use client';
 
 import Link from 'next/link';
-import { useEffect, useRef, useState } from 'react';
-import { useFieldArray, useForm } from 'react-hook-form';
+import {
+  createContext,
+  useContext,
+  useEffect,
+  useId,
+  useRef,
+  useState,
+  type ChangeEvent,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
+import { useFieldArray, useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPen, faTrashCan } from '@fortawesome/free-solid-svg-icons';
-import { PRODUCT_TYPE_LABELS, uploadProductThumbnail } from '@/lib/marketplace-api';
+import { useAuth } from '@/context/AuthContext';
+import { formatPrice, PRODUCT_TYPE_LABELS, uploadProductThumbnail } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
 import {
   detectDemoTypeFromFile,
   detectDemoTypeFromUrl,
@@ -20,33 +31,30 @@ import {
   THUMBNAIL_VIDEO_MAX_SECONDS,
 } from '@/lib/product-thumbnail';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
-import { ProductEditorStepper } from '@/components/marketplace/ProductEditorStepper';
-import { ProductFormatToggle } from '@/components/marketplace/ProductFormatToggle';
 import { ProductSubtitlesField } from '@/components/marketplace/ProductSubtitlesField';
 import { ProductWhyBlocksField } from '@/components/marketplace/ProductWhyBlocksField';
 import {
+  normalizeHashtag,
+  ProductHashtagsField,
+} from '@/components/marketplace/ProductHashtagsField';
+import {
   productEditorSchema,
   PRODUCT_TYPES,
+  STOCK_MAX,
   type ProductFormValues,
 } from '@/components/marketplace/product-editor-schema';
-import {
-  parseDemoSubtitles,
-} from '@/components/creator/studio/profile-form-schema';
+import { parseDemoSubtitles } from '@/components/creator/studio/profile-form-schema';
 import {
   parseProductWhyBlocks,
   serializeProductWhyBlocks,
 } from '@/components/marketplace/product-why-block-schema';
-import {
-  fieldsForStep,
-  stepsForFormat,
-  type ProductEditorStepId,
-  type ProductFormat,
-} from '@/components/marketplace/product-editor-steps';
+import type { ProductFormat } from '@/components/marketplace/product-editor-steps';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type {
-  MarketplaceProductDetail,
-  MarketplaceProductRequest,
-} from '@/types/marketplace';
+import { createUploadPreview, UploadingOverlay, type UploadPreview } from '@/components/ui/UploadingOverlay';
+import { InfoHint } from '@/components/ui/InfoHint';
+import { FormSelect, type FormSelectOption } from '@/components/ui/FormSelect';
+import { CurrencyPicker } from '@/components/ui/CurrencyPicker';
+import type { MarketplaceProductDetail, MarketplaceProductRequest } from '@/types/marketplace';
 
 export type { ProductFormValues } from '@/components/marketplace/product-editor-schema';
 
@@ -63,6 +71,40 @@ const PRODUCT_LANGUAGES = [
   'Dutch',
   'Other',
 ] as const;
+const NOT_SPECIFIED: FormSelectOption = { value: '', label: 'Not specified' };
+const TYPE_OPTIONS: FormSelectOption[] = PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] ?? t }));
+const GENRE_OPTIONS: FormSelectOption[] = GENRES.map((g) => ({ value: g, label: g }));
+const OTHER_GENRE = 'Other';
+const CUSTOM_GENRE_MAX = 60;
+
+function isPresetGenre(value: string | null | undefined): boolean {
+  return Boolean(value) && value !== OTHER_GENRE && (GENRES as readonly string[]).includes(value!);
+}
+const LANGUAGE_OPTIONS: FormSelectOption[] = [NOT_SPECIFIED, ...PRODUCT_LANGUAGES.map((l) => ({ value: l, label: l }))];
+const OTHER_LANGUAGE = 'Other';
+const CUSTOM_LANGUAGE_MAX = 40;
+
+function isCustomLanguage(value: string | null | undefined): boolean {
+  const trimmed = value?.trim();
+  return Boolean(trimmed) && (trimmed === OTHER_LANGUAGE || !(PRODUCT_LANGUAGES as readonly string[]).includes(trimmed!));
+}
+
+type FileSizeUnit = 'MB' | 'GB';
+const MB_PER_GB = 1024;
+
+function fileSizeInUnit(mb: number | null | undefined, unit: FileSizeUnit): string {
+  if (mb == null) return '';
+  return unit === 'GB' ? String(Math.round((mb / MB_PER_GB) * 100) / 100) : String(mb);
+}
+const RESOLUTION_OPTIONS: FormSelectOption[] = [NOT_SPECIFIED, ...VIDEO_RESOLUTIONS.map((r) => ({ value: r, label: r }))];
+const TITLE_MAX = 200;
+const DESCRIPTION_MAX = 5000;
+const GALLERY_MAX = 12;
+const TOOLS_MAX = 10;
+
+const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
+const MEDIA_ACCEPT =
+  'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov';
 
 function secondsToMmSs(seconds: number | null | undefined): string {
   if (!seconds || seconds <= 0) return '';
@@ -85,86 +127,69 @@ function mmSsToSeconds(value: string | undefined): number | undefined {
   return !Number.isNaN(n) && n > 0 ? Math.floor(n) : undefined;
 }
 
-const DESCRIPTION_SOFT_MIN = 40;
+/* ─── Styles ─────────────────────────────────────────────────────────────── */
 
-type ProductEditorFormProps = {
-  initial?: MarketplaceProductDetail;
-  submitLabel: string;
-  cancelHref?: string;
-  onCancel?: () => void;
-  embedded?: boolean;
-  /** When false, parent renders the Virtual/Physical toggle (e.g. page header). */
-  showFormatToggle?: boolean;
-  /** Controlled format when the toggle lives outside this form. */
-  controlledFormat?: ProductFormat;
-  onSubmit: (body: MarketplaceProductRequest) => Promise<void>;
+const LABEL = 'block text-[14px] font-medium text-[#111111] dark:text-white';
+const OPTIONAL = 'ml-1.5 font-normal text-neutral-400 dark:text-neutral-500';
+const HINT = 'mt-2 text-[13px] leading-relaxed text-neutral-500 dark:text-neutral-400';
+const ERROR = 'mt-2 text-[13px] text-[#E0431A] dark:text-[#FF7A52]';
+const FIELD_BASE =
+  'rounded-lg border border-black/[0.1] bg-transparent transition-colors hover:border-black/20 dark:border-white/[0.12] dark:hover:border-white/25';
+const FIELD_FOCUS = 'focus:border-[#111111] focus:outline-none dark:focus:border-white/70';
+const FIELD_FOCUS_WITHIN = 'focus-within:border-[#111111] dark:focus-within:border-white/70';
+const INPUT = `mt-2 block h-11 w-full ${FIELD_BASE} ${FIELD_FOCUS} px-3.5 text-[15px] text-[#111111] placeholder:text-neutral-400 disabled:opacity-50 dark:text-white dark:placeholder:text-neutral-500 dark:[color-scheme:dark]`;
+const TEXTAREA = `mt-2 block w-full ${FIELD_BASE} ${FIELD_FOCUS} resize-y px-3.5 py-3 text-[15px] leading-relaxed text-[#111111] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500`;
+const NO_SPIN =
+  '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
+const PRIMARY_BTN =
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111]';
+const SECONDARY_BTN =
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/[0.1] px-5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30';
+const LINK_BTN =
+  'text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] disabled:opacity-40 dark:text-neutral-400 dark:hover:text-white';
+const PILL_PRIMARY =
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111111] px-6 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_20px_-8px_rgba(0,0,0,0.5)] transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:shadow-[0_8px_24px_-10px_rgba(255,255,255,0.35)]';
+const PILL_GHOST =
+  'inline-flex h-10 items-center justify-center gap-1.5 rounded-full px-4 text-[15px] font-medium text-[#111111] transition-colors hover:bg-black/[0.05] disabled:opacity-40 dark:text-white dark:hover:bg-white/[0.08]';
+const ROUND_ICON_BTN =
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#111111] transition-colors hover:bg-black/[0.06] disabled:opacity-40 dark:text-white dark:hover:bg-white/[0.1]';
+
+type StepKey = 'details' | 'media' | 'pricing';
+
+const STEP_KEYS: StepKey[] = ['details', 'media', 'pricing'];
+
+const STEP_LABELS: Record<StepKey, string> = {
+  details: 'Details',
+  media: 'Media',
+  pricing: 'Price & publish',
 };
 
-function formStyles(embedded: boolean) {
-  if (!embedded) {
-    return {
-      section:
-        'rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none',
-      sectionAccent:
-        'rounded-2xl border border-orange-100 bg-orange-50/50 p-6 shadow-sm dark:border-orange-500/20 dark:bg-orange-500/5 dark:shadow-none',
-      input:
-        'mt-1 w-full rounded-xl border-0 bg-neutral-100 px-3 py-2.5 text-sm text-gray-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:bg-neutral-800 dark:text-white dark:placeholder:text-neutral-400 dark:focus:ring-orange-500/30',
-      label: 'text-sm font-semibold text-neutral-800 dark:text-neutral-200',
-      title: 'text-sm font-semibold text-gray-900 dark:text-white',
-      hint: 'mt-1 text-xs text-gray-500 dark:text-neutral-400',
-      hintSm: 'mt-1 text-xs text-gray-600 dark:text-neutral-400',
-      footerBtnSecondary:
-        'text-sm font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200',
-      footerBtnPrimary:
-        'inline-flex items-center justify-center rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60',
-      tagBtn:
-        'text-sm font-semibold text-orange-600 hover:text-orange-700 disabled:opacity-40 dark:text-orange-400 dark:hover:text-orange-300',
-      removeBtn:
-        'rounded-lg bg-neutral-100 px-3 py-2 text-sm text-gray-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700',
-      uploadLabel:
-        'inline-flex cursor-pointer items-center rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600',
-      uploadLabelOutline:
-        'inline-flex cursor-pointer items-center rounded-xl bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
-      alert:
-        'rounded-lg border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
-      checkboxLabel: 'text-sm font-medium text-gray-700 dark:text-neutral-300',
-      checkboxRow: 'mt-4 flex items-center gap-3 text-sm text-gray-800 dark:text-neutral-200',
-    };
-  }
-  return {
-    section: 'rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-5 dark:border-neutral-800 dark:bg-neutral-950/40',
-    sectionAccent:
-      'rounded-2xl border border-orange-200/60 bg-orange-50/30 p-5 dark:border-orange-500/20 dark:bg-orange-500/5',
-    input:
-      'mt-1 w-full rounded-xl border-0 bg-neutral-100 px-3 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-500 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:bg-neutral-800 dark:text-white dark:placeholder:text-neutral-400 dark:focus:ring-orange-500/30',
-    label: 'text-sm font-semibold text-neutral-800 dark:text-neutral-200',
-    title: 'text-sm font-semibold text-neutral-900 dark:text-white',
-    hint: 'mt-1 text-xs text-neutral-500 dark:text-neutral-400',
-    hintSm: 'mt-1 text-xs text-neutral-500 dark:text-neutral-400',
-    footerBtnSecondary:
-      'text-sm font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200',
-    footerBtnPrimary:
-      'inline-flex items-center justify-center rounded-xl bg-orange-500 px-6 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60',
-    tagBtn: 'text-sm font-semibold text-orange-600 hover:text-orange-500 disabled:opacity-40 dark:text-orange-400',
-    removeBtn:
-      'rounded-lg bg-neutral-100 px-3 py-2 text-sm text-neutral-600 hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-700',
-    uploadLabel:
-      'inline-flex cursor-pointer items-center rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-orange-600',
-    uploadLabelOutline:
-      'inline-flex cursor-pointer items-center rounded-xl bg-neutral-100 px-3 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-200 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700',
-    alert:
-      'rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-700 dark:border-red-500/30 dark:bg-red-500/10 dark:text-red-300',
-    checkboxLabel: 'text-sm font-medium text-neutral-700 dark:text-neutral-300',
-    checkboxRow: 'mt-4 flex items-center gap-3 text-sm text-neutral-800 dark:text-neutral-200',
-  };
+/** Wizard step that owns each field, used to jump back to the first invalid one on submit. */
+const FIELD_STEP: Partial<Record<keyof ProductFormValues, StepKey>> = {
+  title: 'details',
+  description: 'details',
+  type: 'details',
+  genre: 'details',
+  thumbnailUrl: 'details',
+  galleryImages: 'media',
+  demoType: 'media',
+  demoUrl: 'media',
+  demoSubtitles: 'media',
+  whyProductBlocks: 'media',
+};
+
+function initialsOf(name: string): string {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  return (parts[0][0] + (parts.length > 1 ? parts[parts.length - 1][0] : '')).toUpperCase();
 }
+
+/* ─── Form <-> API mapping ───────────────────────────────────────────────── */
 
 export function productToFormValues(product: MarketplaceProductDetail): ProductFormValues {
   const demoUrl = product.demoUrl ?? '';
   const resolvedDemoType =
-    demoUrl.trim() && product.demoType === 'NONE'
-      ? detectDemoTypeFromUrl(demoUrl)
-      : product.demoType;
+    demoUrl.trim() && product.demoType === 'NONE' ? detectDemoTypeFromUrl(demoUrl) : product.demoType;
   const isPhysical = product.type === 'PHYSICAL';
 
   return {
@@ -176,6 +201,7 @@ export function productToFormValues(product: MarketplaceProductDetail): ProductF
     compareAtPriceAmount:
       product.compareAtPriceCents != null ? (product.compareAtPriceCents / 100).toFixed(2) : '',
     currency: product.currency,
+    stockQuantity: product.stockQuantity != null ? String(product.stockQuantity) : '',
     genre: product.genre ?? '',
     specialite: product.specialite ?? '',
     thumbnailUrl: product.thumbnailUrl ?? '',
@@ -196,7 +222,8 @@ export function productToFormValues(product: MarketplaceProductDetail): ProductF
 }
 
 export function formValuesToRequest(
-  data: ProductFormValues
+  data: ProductFormValues,
+  options: { isPublished?: boolean } = {}
 ): MarketplaceProductRequest {
   const isPhysical = data.productFormat === 'physical';
   const priceCents = Math.round(Number(data.priceAmount) * 100);
@@ -210,18 +237,18 @@ export function formValuesToRequest(
   const demoType = !isPhysical && demoUrl ? data.demoType : 'NONE';
   const fileSize = data.fileSizeMb?.trim();
   const whyBlocks = isPhysical ? [] : serializeProductWhyBlocks(data.whyProductBlocks);
-  const demoSubtitles = isPhysical
-    ? []
-    : data.demoSubtitles.map((item) => item.value.trim()).filter(Boolean);
+  const demoSubtitles = isPhysical ? [] : data.demoSubtitles.map((item) => item.value.trim()).filter(Boolean);
   const galleryImageUrls = data.galleryImages.map((item) => item.value.trim()).filter(Boolean);
+  const stockRaw = data.stockQuantity?.trim();
+  const stockQuantity = isPhysical ? (stockRaw ? Number(stockRaw) : 1) : null;
 
   return {
     type: isPhysical ? 'PHYSICAL' : data.type === 'PHYSICAL' ? 'OTHER' : data.type,
-    title: data.title,
-    description: data.description,
+    title: data.title.trim(),
+    description: data.description.trim(),
     priceCents,
-    ...(compareAtPriceCents != null ? { compareAtPriceCents } : {}),
-    currency: data.currency,
+    ...(compareAtPriceCents != null && priceCents > 0 ? { compareAtPriceCents } : {}),
+    currency: data.currency.toUpperCase(),
     ...(!isPhysical && data.genre?.trim() ? { genre: data.genre.trim() } : {}),
     ...(!isPhysical && data.specialite?.trim() ? { specialite: data.specialite.trim() } : {}),
     ...(thumb ? { thumbnailUrl: thumb } : {}),
@@ -230,50 +257,500 @@ export function formValuesToRequest(
     ...(!isPhysical && demoSubtitles.length > 0 ? { demoSubtitles } : {}),
     whyProductBlocks: whyBlocks,
     deliveryMode: 'BOTH',
-    compatibleTools: isPhysical
-      ? []
-      : data.compatibleTools.map((t) => t.value.trim()).filter(Boolean),
+    compatibleTools: isPhysical ? [] : data.compatibleTools.map((t) => t.value.trim()).filter(Boolean),
     ...(!isPhysical && data.fileFormat?.trim() ? { fileFormat: data.fileFormat.trim() } : {}),
-    ...(!isPhysical && fileSize && !Number.isNaN(Number(fileSize))
-      ? { fileSizeMb: Number(fileSize) }
-      : {}),
+    ...(!isPhysical && fileSize && !Number.isNaN(Number(fileSize)) ? { fileSizeMb: Number(fileSize) } : {}),
     ...(!isPhysical && data.language?.trim() ? { language: data.language.trim() } : {}),
     ...(!isPhysical && data.version?.trim() ? { version: data.version.trim() } : {}),
-    tags: isPhysical ? [] : data.tags.map((t) => t.value.trim()).filter(Boolean),
+    tags: data.tags.map((t) => normalizeHashtag(t.value)).filter(Boolean),
     galleryImageUrls,
+    stockQuantity,
     ...(!isPhysical && data.type === 'VIDEO'
       ? {
           videoDurationSeconds: mmSsToSeconds(data.videoDuration),
-          ...(data.videoResolution?.trim()
-            ? { videoResolution: data.videoResolution.trim() }
-            : {}),
+          ...(data.videoResolution?.trim() ? { videoResolution: data.videoResolution.trim() } : {}),
         }
       : {}),
-    isBestseller: false,
-    isPublished: true,
+    isPublished: options.isPublished ?? true,
   };
 }
+
+/* ─── Building blocks ────────────────────────────────────────────────────── */
+
+/** `modal` drops the per-section cards: the dialog surface already frames the form. */
+const EditorVariantContext = createContext<'page' | 'modal'>('page');
+
+function Section({
+  title,
+  description,
+  aside,
+  children,
+}: {
+  title: string;
+  description?: string;
+  aside?: ReactNode;
+  children: ReactNode;
+}) {
+  const inModal = useContext(EditorVariantContext) === 'modal';
+  return (
+    <section
+      className={
+        inModal
+          ? 'py-9 first:pt-8'
+          : 'rounded-xl border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-8'
+      }
+    >
+      <header className={`flex justify-between gap-4 ${inModal ? 'items-center' : 'items-start'}`}>
+        {inModal ? (
+          <div className="flex items-center gap-2">
+            <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">{title}</h2>
+            {description ? (
+              <InfoHint align="start" side="bottom">
+                {description}
+              </InfoHint>
+            ) : null}
+          </div>
+        ) : (
+          <div>
+            <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">{title}</h2>
+            {description ? (
+              <p className="mt-1 text-[14px] text-neutral-500 dark:text-neutral-400">{description}</p>
+            ) : null}
+          </div>
+        )}
+        {aside}
+      </header>
+      <div className={`${inModal ? 'mt-5' : 'mt-6'} space-y-6`}>{children}</div>
+    </section>
+  );
+}
+
+function CollapsibleSection({
+  title,
+  description,
+  summary,
+  defaultOpen = false,
+  children,
+}: {
+  title: string;
+  description: string;
+  summary?: string | null;
+  defaultOpen?: boolean;
+  children: ReactNode;
+}) {
+  const [open, setOpen] = useState(defaultOpen);
+  const inModal = useContext(EditorVariantContext) === 'modal';
+  return (
+    <section
+      className={
+        inModal ? '' : 'rounded-xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]'
+      }
+    >
+      <button
+        type="button"
+        onClick={() => setOpen((value) => !value)}
+        aria-expanded={open}
+        className={`flex w-full items-center justify-between gap-4 text-left ${
+          inModal ? 'py-6' : 'px-6 py-5 sm:px-8 sm:py-6'
+        }`}
+      >
+        <span className="min-w-0">
+          <span className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">
+            {title}
+            <span className="text-[13px] font-normal text-neutral-400 dark:text-neutral-500">Optional</span>
+          </span>
+          {!inModal || summary ? (
+            <span className="mt-1 block text-[14px] text-neutral-500 dark:text-neutral-400">
+              {summary || description}
+            </span>
+          ) : null}
+        </span>
+        <svg
+          className={`h-5 w-5 shrink-0 text-neutral-400 transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
+          viewBox="0 0 24 24"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          aria-hidden
+        >
+          <path d="m6 9 6 6 6-6" />
+        </svg>
+      </button>
+      {open ? (
+        <div
+          className={
+            inModal
+              ? 'space-y-6 pb-9 pt-1'
+              : 'space-y-6 border-t border-black/[0.05] px-6 pb-8 pt-6 dark:border-white/[0.06] sm:px-8'
+          }
+        >
+          {children}
+        </div>
+      ) : null}
+    </section>
+  );
+}
+
+function MediaDrop({
+  url,
+  uploading,
+  disabled,
+  accept,
+  onFile,
+  onRemove,
+  title,
+  hint,
+  className = '',
+  compact = false,
+  preview,
+}: {
+  preview?: UploadPreview | null;
+  url?: string;
+  uploading: boolean;
+  disabled?: boolean;
+  accept: string;
+  onFile: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemove?: () => void;
+  title: string;
+  hint: string;
+  className?: string;
+  compact?: boolean;
+}) {
+  const hasMedia = Boolean(url?.trim());
+  return (
+    <div className={`group relative rounded-xl ${className}`}>
+      <label
+        className={`relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border transition-colors ${
+          hasMedia
+            ? 'border-black/[0.06] shadow-[0_10px_30px_-14px_rgba(0,0,0,0.35)] dark:border-white/[0.08]'
+            : 'border-dashed border-black/[0.14] bg-gradient-to-b from-black/[0.012] to-black/[0.045] hover:border-black/30 hover:to-black/[0.06] dark:border-white/[0.14] dark:from-white/[0.015] dark:to-white/[0.05] dark:hover:border-white/30'
+        } ${uploading || disabled ? 'pointer-events-none' : ''}`}
+      >
+        {hasMedia ? (
+          <>
+            <ProductThumbnailMedia
+              url={url!.trim()}
+              autoPlay={isVideoThumbnailUrl(url!.trim())}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+            <span
+              aria-hidden
+              className="absolute inset-0 flex items-center justify-center bg-black/40 text-[14px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
+            >
+              Replace
+            </span>
+          </>
+        ) : (
+          <span className="flex flex-col items-center px-4 text-center">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#111111] shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] transition-transform duration-200 group-hover:scale-105 dark:border-white/[0.1] dark:bg-white/[0.08] dark:text-white">
+              <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden>
+                <path d="M12 5v14M5 12h14" />
+              </svg>
+            </span>
+            {!compact ? (
+              <>
+                <span className="mt-3 text-[14px] font-medium text-[#111111] dark:text-white">{title}</span>
+                <span className="mt-1 text-[12px] text-neutral-500 dark:text-neutral-400">{hint}</span>
+              </>
+            ) : null}
+          </span>
+        )}
+        {uploading ? <UploadingOverlay preview={preview} compact={compact} /> : null}
+        <input type="file" accept={accept} className="sr-only" disabled={uploading || disabled} onChange={onFile} />
+      </label>
+      {hasMedia && onRemove && !uploading ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label={`Remove ${title.toLowerCase()}`}
+          className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
+        >
+          <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+/** Compact upload row: small thumbnail, label and an explicit action instead of a large drop zone. */
+function MediaRow({
+  url,
+  uploading,
+  disabled,
+  accept,
+  onFile,
+  onRemove,
+  title,
+  hint,
+  preview,
+}: {
+  url?: string;
+  uploading: boolean;
+  disabled?: boolean;
+  accept: string;
+  onFile: (event: ChangeEvent<HTMLInputElement>) => void;
+  onRemove?: () => void;
+  title: string;
+  hint: string;
+  preview?: UploadPreview | null;
+}) {
+  const hasMedia = Boolean(url?.trim());
+  return (
+    <div className="flex items-center gap-3">
+      <label
+        className={`group flex min-w-0 flex-1 cursor-pointer items-center gap-4 rounded-xl border border-black/[0.08] p-2.5 pr-3 transition-colors hover:border-black/20 dark:border-white/[0.1] dark:hover:border-white/25 ${
+          uploading || disabled ? 'pointer-events-none opacity-70' : ''
+        }`}
+      >
+        <span className="relative flex h-14 w-20 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-black/[0.04] text-neutral-400 dark:bg-white/[0.06] dark:text-neutral-500">
+          {hasMedia ? (
+            <ProductThumbnailMedia
+              url={url!.trim()}
+              autoPlay={isVideoThumbnailUrl(url!.trim())}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
+          ) : (
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <rect x="3" y="4" width="18" height="16" rx="2.5" />
+              <circle cx="8.5" cy="9.5" r="1.5" />
+              <path d="m21 16-5-5L5 20" />
+            </svg>
+          )}
+          {uploading ? <UploadingOverlay preview={preview} compact /> : null}
+        </span>
+        <span className="min-w-0 flex-1">
+          <span className="block truncate text-[14px] font-medium text-[#111111] dark:text-white">{title}</span>
+          <span className="block truncate text-[12px] text-neutral-500 dark:text-neutral-400">{hint}</span>
+        </span>
+        <span className="inline-flex h-8 shrink-0 items-center rounded-full border border-black/[0.1] px-3.5 text-[13px] font-medium text-[#111111] transition-colors group-hover:border-black/25 dark:border-white/[0.14] dark:text-white dark:group-hover:border-white/30">
+          {uploading ? 'Uploading…' : hasMedia ? 'Replace' : 'Upload'}
+        </span>
+        <input type="file" accept={accept} className="sr-only" disabled={uploading || disabled} onChange={onFile} />
+      </label>
+      {hasMedia && onRemove && !uploading ? (
+        <button
+          type="button"
+          onClick={onRemove}
+          aria-label="Remove file"
+          className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:hover:bg-white/[0.08] dark:hover:text-white"
+        >
+          <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+            <path d="M6 6l12 12M18 6L6 18" />
+          </svg>
+        </button>
+      ) : null}
+    </div>
+  );
+}
+
+function Switch({ checked, onChange, label }: { checked: boolean; onChange: () => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      aria-label={label}
+      onClick={onChange}
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+        checked ? 'bg-[#111111] dark:bg-white' : 'bg-black/[0.12] dark:bg-white/[0.16]'
+      }`}
+    >
+      <span
+        aria-hidden
+        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
+          checked ? 'translate-x-5 dark:bg-[#111111]' : 'translate-x-0'
+        }`}
+      />
+    </button>
+  );
+}
+
+function ChipsInput({
+  label,
+  values,
+  onChange,
+  max,
+  placeholder,
+  hint,
+}: {
+  label: string;
+  values: string[];
+  onChange: (next: string[]) => void;
+  max: number;
+  placeholder: string;
+  hint: string;
+}) {
+  const [draft, setDraft] = useState('');
+  const commit = () => {
+    const value = draft.trim();
+    if (!value || values.length >= max) return;
+    if (!values.some((v) => v.toLowerCase() === value.toLowerCase())) onChange([...values, value]);
+    setDraft('');
+  };
+  const onKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
+    if ((event.key === 'Enter' || event.key === ',') && draft.trim()) {
+      event.preventDefault();
+      commit();
+    } else if (event.key === 'Backspace' && !draft && values.length > 0) {
+      onChange(values.slice(0, -1));
+    }
+  };
+  return (
+    <div>
+      <div className="flex items-center gap-2">
+        <p className={LABEL}>
+          {label}
+          <span className={OPTIONAL}>
+            {values.length}/{max}
+          </span>
+        </p>
+        <InfoHint align="start">{hint}</InfoHint>
+      </div>
+      <div className={`mt-2 flex min-h-11 flex-wrap items-center gap-1.5 px-2 py-1.5 ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
+        {values.map((value, index) => (
+          <span
+            key={value.toLowerCase()}
+            className="inline-flex h-8 items-center gap-1 rounded-md bg-black/[0.05] pl-2.5 pr-1 text-[14px] text-[#111111] dark:bg-white/[0.08] dark:text-white"
+          >
+            {value}
+            <button
+              type="button"
+              onClick={() => onChange(values.filter((_, i) => i !== index))}
+              aria-label={`Remove ${value}`}
+              className="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:text-[#111111] dark:hover:text-white"
+            >
+              <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                <path d="M6 6l12 12M18 6L6 18" />
+              </svg>
+            </button>
+          </span>
+        ))}
+        <input
+          value={draft}
+          disabled={values.length >= max}
+          onChange={(event) => setDraft(event.target.value)}
+          onKeyDown={onKeyDown}
+          onBlur={commit}
+          placeholder={values.length >= max ? 'Limit reached' : placeholder}
+          aria-label={label}
+          className="h-8 min-w-[8rem] flex-1 bg-transparent px-1.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+        />
+      </div>
+    </div>
+  );
+}
+
+function FormatSelector({
+  value,
+  onChange,
+  disabled,
+  fullWidth = false,
+}: {
+  value: ProductFormat;
+  onChange: (next: ProductFormat) => void;
+  disabled?: boolean;
+  fullWidth?: boolean;
+}) {
+  const options: { id: ProductFormat; title: string; hint: string }[] = [
+    { id: 'virtual', title: 'Digital', hint: 'Files, courses, templates — delivered online' },
+    { id: 'physical', title: 'Material', hint: 'An item you ship to the buyer' },
+  ];
+  return (
+    <div>
+      <div
+        role="radiogroup"
+        aria-label="Product format"
+        className={`${fullWidth ? 'grid w-full grid-cols-2' : 'inline-flex'} rounded-full bg-black/[0.05] p-1 dark:bg-white/[0.06]`}
+      >
+        {options.map((option) => {
+          const active = option.id === value;
+          return (
+            <button
+              key={option.id}
+              type="button"
+              role="radio"
+              aria-checked={active}
+              title={option.hint}
+              disabled={disabled}
+              onClick={() => onChange(option.id)}
+              className={`${fullWidth ? 'h-9' : 'h-8'} rounded-full px-4 text-[14px] font-medium transition-colors disabled:cursor-not-allowed ${
+                active
+                  ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-white dark:text-[#111111]'
+                  : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+              }`}
+            >
+              {option.title}
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
+/* ─── Form ───────────────────────────────────────────────────────────────── */
+
+type ProductEditorFormProps = {
+  initial?: MarketplaceProductDetail;
+  submitLabel: string;
+  cancelHref?: string;
+  onCancel?: () => void;
+  /** @deprecated layout no longer depends on it — kept for call-site compatibility */
+  embedded?: boolean;
+  /** When false, the Digital / Physical choice is not shown (e.g. editing). */
+  showFormatToggle?: boolean;
+  /** Controlled format when the parent owns the choice. */
+  controlledFormat?: ProductFormat;
+  onFormatChange?: (format: ProductFormat) => void;
+  onSubmit: (body: MarketplaceProductRequest) => Promise<void>;
+  /** `modal`: single column with a pinned header (title, format, close) and a pinned action footer. */
+  variant?: 'page' | 'modal';
+  /** Dialog title in the `modal` variant. */
+  heading?: string;
+  /** Lets a host confirm before discarding unsaved input. */
+  onDirtyChange?: (dirty: boolean) => void;
+};
 
 export function ProductEditorForm({
   initial,
   submitLabel,
   cancelHref,
   onCancel,
-  embedded = false,
   showFormatToggle = true,
   controlledFormat,
+  onFormatChange,
   onSubmit,
+  variant = 'page',
+  heading = 'New product',
+  onDirtyChange,
 }: ProductEditorFormProps) {
-  const s = formStyles(embedded);
+  const headingId = useId();
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [uploadingDemo, setUploadingDemo] = useState(false);
   const [uploadingGallery, setUploadingGallery] = useState(false);
-  const [descriptionWarnShort, setDescriptionWarnShort] = useState(false);
-  const [uploadError, setUploadError] = useState<string | null>(null);
-  const [stepIndex, setStepIndex] = useState(0);
-  const [maxStepReached, setMaxStepReached] = useState(0);
-  const submitLockRef = useRef(false);
+  const [thumbPreview, setThumbPreview] = useState<UploadPreview | null>(null);
+  const [demoPreview, setDemoPreview] = useState<UploadPreview | null>(null);
+  const [galleryPending, setGalleryPending] = useState<UploadPreview[]>([]);
+  const [mediaError, setMediaError] = useState<string | null>(null);
+  const [showCompareAt, setShowCompareAt] = useState(Boolean(initial?.compareAtPriceCents));
+  const [pendingAction, setPendingAction] = useState<'publish' | 'draft' | null>(null);
+  const [customGenre, setCustomGenre] = useState(() => Boolean(initial?.genre?.trim()) && !isPresetGenre(initial?.genre));
+  const customGenreInputRef = useRef<HTMLInputElement>(null);
+  const [customLanguage, setCustomLanguage] = useState(() => isCustomLanguage(initial?.language));
+  const customLanguageInputRef = useRef<HTMLInputElement>(null);
+  const [fileSizeUnit, setFileSizeUnit] = useState<FileSizeUnit>(() =>
+    initial?.fileSizeMb != null && initial.fileSizeMb >= MB_PER_GB ? 'GB' : 'MB'
+  );
   const previousFormatRef = useRef<ProductFormat | null>(null);
+  const scrollRef = useRef<HTMLDivElement>(null);
+  const [step, setStep] = useState(0);
+  const { user } = useAuth();
+  const isEdit = Boolean(initial);
+  const inModal = variant === 'modal';
 
   const {
     register,
@@ -282,19 +759,20 @@ export function ProductEditorForm({
     setValue,
     watch,
     trigger,
-    formState: { errors, isSubmitting },
+    formState: { errors, isSubmitting, isDirty },
   } = useForm<ProductFormValues>({
     resolver: zodResolver(productEditorSchema),
     defaultValues: initial
-      ? productToFormValues(initial)
+      ? { ...productToFormValues(initial), fileSizeMb: fileSizeInUnit(initial.fileSizeMb, fileSizeUnit) }
       : {
-          productFormat: 'virtual',
-          type: 'TEMPLATE',
+          productFormat: controlledFormat ?? 'virtual',
+          type: controlledFormat === 'physical' ? 'PHYSICAL' : 'TEMPLATE',
           title: '',
           description: '',
           priceAmount: '',
           compareAtPriceAmount: '',
-          currency: 'EUR',
+          currency: DEFAULT_CURRENCY,
+          stockQuantity: '',
           genre: GENRES[0],
           specialite: '',
           thumbnailUrl: '',
@@ -315,23 +793,38 @@ export function ProductEditorForm({
   });
 
   const productFormat = (watch('productFormat') ?? 'virtual') as ProductFormat;
-  const editorSteps = stepsForFormat(productFormat);
+  const isPhysical = productFormat === 'physical';
   const productType = watch('type');
-  const thumbnailUrl = watch('thumbnailUrl');
-  const demoUrl = watch('demoUrl');
+  const setSelectValue = (name: 'genre' | 'language' | 'videoResolution', next: string) =>
+    setValue(name, next, { shouldDirty: true, shouldValidate: true });
+  const title = watch('title') ?? '';
+  const description = watch('description') ?? '';
+  const thumbnailUrl = watch('thumbnailUrl') ?? '';
+  const demoUrl = watch('demoUrl') ?? '';
   const priceAmount = watch('priceAmount');
-  const descriptionValue = watch('description') ?? '';
-  const descriptionLen = descriptionValue.trim().length;
+  const compareAtAmount = watch('compareAtPriceAmount');
+  const currency = (watch('currency') ?? '').toUpperCase();
+  const currencyOptions =
+    !currency || CURRENCIES.some((option) => option.code === currency)
+      ? CURRENCIES
+      : [...CURRENCIES, { code: currency, name: currency }].sort((a, b) => a.code.localeCompare(b.code));
+  const stockQuantity = watch('stockQuantity');
+  const galleryImages = watch('galleryImages') ?? [];
+  const hashtags = (watch('tags') ?? []).map((tag) => tag.value).filter(Boolean);
+  const tools = (watch('compatibleTools') ?? []).map((tool) => tool.value).filter(Boolean);
+  const watchedGenre = watch('genre');
+  const whyBlocksCount = (watch('whyProductBlocks') ?? []).length;
+  const fileFormat = watch('fileFormat');
+  const language = watch('language');
+
+  const isFree = priceAmount !== '' && !Number.isNaN(Number(priceAmount)) && Number(priceAmount) === 0;
+  const busy = isSubmitting || uploadingThumb || uploadingDemo || uploadingGallery;
+
+  const whyField = useFieldArray({ control, name: 'whyProductBlocks' });
+  const galleryField = useFieldArray({ control, name: 'galleryImages' });
 
   useEffect(() => {
-    if (initial) {
-      setMaxStepReached(stepsForFormat(initial.type === 'PHYSICAL' ? 'physical' : 'virtual').length - 1);
-    }
-  }, [initial]);
-
-  useEffect(() => {
-    if (controlledFormat == null) return;
-    if (controlledFormat === productFormat) return;
+    if (controlledFormat == null || controlledFormat === productFormat) return;
     setValue('productFormat', controlledFormat, { shouldDirty: true });
   }, [controlledFormat, productFormat, setValue]);
 
@@ -342,877 +835,1146 @@ export function ProductEditorForm({
     }
     if (previousFormatRef.current === productFormat) return;
     previousFormatRef.current = productFormat;
-    setStepIndex(0);
-    setMaxStepReached(0);
-    setUploadError(null);
-    if (productFormat === 'physical') {
-      setValue('type', 'PHYSICAL');
-    } else if (productType === 'PHYSICAL') {
-      setValue('type', 'TEMPLATE');
-    }
+    setMediaError(null);
+    if (productFormat === 'physical') setValue('type', 'PHYSICAL');
+    else if (productType === 'PHYSICAL') setValue('type', 'TEMPLATE');
   }, [productFormat, productType, setValue]);
 
   useEffect(() => {
-    // Stay neutral on empty / long enough copy — only nudge after idle if short but started.
-    if (descriptionLen === 0 || descriptionLen >= DESCRIPTION_SOFT_MIN) {
-      setDescriptionWarnShort(false);
-      return;
-    }
-    setDescriptionWarnShort(false);
-    const timer = window.setTimeout(() => {
-      setDescriptionWarnShort(true);
-    }, 2500);
-    return () => window.clearTimeout(timer);
-  }, [descriptionValue, descriptionLen]);
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
-  const isFree =
-    priceAmount !== '' && !Number.isNaN(Number(priceAmount)) && Number(priceAmount) === 0;
+  useEffect(() => {
+    scrollRef.current?.scrollTo({ top: 0 });
+  }, [step]);
 
-  const toolsField = useFieldArray({ control, name: 'compatibleTools' });
-  const tagsField = useFieldArray({ control, name: 'tags' });
-  const whyField = useFieldArray({ control, name: 'whyProductBlocks' });
-  const galleryField = useFieldArray({ control, name: 'galleryImages' });
+  const stepKeys = STEP_KEYS;
+  const stepCount = stepKeys.length;
+  const currentStep = stepKeys[Math.min(step, stepCount - 1)];
+  const isLastStep = currentStep === 'pricing';
 
-  const onThumbnailFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const goToStep = async (target: number) => {
+    const next = Math.max(0, Math.min(stepCount - 1, target));
+    if (next > step && step === 0 && !(await trigger(['title']))) return;
+    setStep(next);
+  };
+
+  const changeFormat = (next: ProductFormat) => {
+    if (onFormatChange) onFormatChange(next);
+    else setValue('productFormat', next, { shouldDirty: true });
+  };
+
+  /* Uploads */
+
+  const onThumbnailFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
-    setUploadError(null);
-
-    if (!isAllowedThumbnailFile(file)) {
-      setUploadError('Formats acceptés : image (JPEG, PNG, WebP) ou vidéo (MP4, WebM, MOV).');
-      event.target.value = '';
+    setMediaError(null);
+    if (!isAllowedThumbnailFile(file) || (isPhysical && !file.type.startsWith('image/'))) {
+      setMediaError(isPhysical ? 'Cover: JPEG, PNG or WebP.' : 'Cover: an image (JPEG, PNG, WebP) or a video (MP4, WebM, MOV).');
       return;
     }
-
-    const isVideo = file.type.startsWith('video/');
-    if (isVideo) {
+    if (file.type.startsWith('video/')) {
       try {
         const duration = await getVideoFileDurationSeconds(file);
         if (duration > THUMBNAIL_VIDEO_MAX_SECONDS) {
-          setUploadError(
-            `La vidéo miniature doit durer ${THUMBNAIL_VIDEO_MAX_SECONDS} secondes maximum (actuellement ${Math.ceil(duration)} s).`
-          );
-          event.target.value = '';
+          setMediaError(`Cover videos can be ${THUMBNAIL_VIDEO_MAX_SECONDS}s max (this one is ${Math.ceil(duration)}s).`);
           return;
         }
         setValue('videoDuration', secondsToMmSs(Math.ceil(duration)));
       } catch (e) {
-        setUploadError(getApiErrorMessage(e, 'Impossible de lire la durée de la vidéo.'));
-        event.target.value = '';
+        setMediaError(getApiErrorMessage(e, 'Could not read the video length.'));
         return;
       }
     }
-
+    const preview = createUploadPreview(file);
+    setThumbPreview(preview);
     setUploadingThumb(true);
     try {
-      const url = await uploadProductThumbnail(file);
-      setValue('thumbnailUrl', url);
+      setValue('thumbnailUrl', await uploadProductThumbnail(file), { shouldDirty: true });
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Échec de l’upload de la miniature.'));
+      setMediaError(getApiErrorMessage(e, 'Cover upload failed.'));
     } finally {
       setUploadingThumb(false);
-      event.target.value = '';
+      URL.revokeObjectURL(preview.url);
+      setThumbPreview(null);
     }
   };
 
-  const onDemoFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onDemoFile = async (event: ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
+    event.target.value = '';
     if (!file) return;
-    setUploadError(null);
-
+    setMediaError(null);
     if (!isAllowedDemoMediaFile(file)) {
-      setUploadError('Accepted formats: image (JPEG, PNG, WebP) or video (MP4, WebM, MOV).');
-      event.target.value = '';
+      setMediaError('Sample: an image (JPEG, PNG, WebP) or a video (MP4, WebM, MOV).');
       return;
     }
-
+    const preview = createUploadPreview(file);
+    setDemoPreview(preview);
     setUploadingDemo(true);
     try {
       const url = await uploadProductThumbnail(file);
-      const detectedType = detectDemoTypeFromFile(file);
-      setValue('demoUrl', url);
-      setValue('demoType', detectedType);
+      setValue('demoUrl', url, { shouldDirty: true });
+      setValue('demoType', detectDemoTypeFromFile(file));
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Demo media upload failed.'));
+      setMediaError(getApiErrorMessage(e, 'Sample upload failed.'));
       setValue('demoUrl', '');
       setValue('demoType', 'NONE');
     } finally {
       setUploadingDemo(false);
-      event.target.value = '';
+      URL.revokeObjectURL(preview.url);
+      setDemoPreview(null);
     }
   };
 
-  const clearDemoMedia = () => {
-    setValue('demoUrl', '');
-    setValue('demoType', 'NONE');
-  };
-
-  const onGalleryFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const onGalleryFiles = async (event: ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(event.target.files ?? []);
+    event.target.value = '';
     if (files.length === 0) return;
-    setUploadError(null);
-
-    const remaining = 12 - galleryField.fields.length;
-    if (remaining <= 0) {
-      setUploadError('You can add up to 12 companion images.');
-      event.target.value = '';
+    setMediaError(null);
+    const selected = files.slice(0, GALLERY_MAX - galleryField.fields.length);
+    if (selected.some((file) => !file.type.startsWith('image/') || !isAllowedThumbnailFile(file))) {
+      setMediaError('Photos: JPEG, PNG or WebP only.');
       return;
     }
-
-    const selected = files.slice(0, remaining);
-    const invalid = selected.some(
-      (file) => !file.type.startsWith('image/') || !isAllowedThumbnailFile(file)
-    );
-    if (invalid) {
-      setUploadError('Companion images: JPEG, PNG or WebP only.');
-      event.target.value = '';
-      return;
-    }
-
+    const previews = selected.map(createUploadPreview);
+    setGalleryPending(previews);
     setUploadingGallery(true);
     try {
       for (const file of selected) {
-        const url = await uploadProductThumbnail(file);
-        galleryField.append({ value: url });
+        galleryField.append({ value: await uploadProductThumbnail(file) });
+        setGalleryPending((pending) => pending.slice(1));
       }
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Image upload failed.'));
+      setMediaError(getApiErrorMessage(e, 'Photo upload failed.'));
     } finally {
       setUploadingGallery(false);
-      event.target.value = '';
+      previews.forEach((preview) => URL.revokeObjectURL(preview.url));
+      setGalleryPending([]);
     }
   };
 
-  const onFormSubmit = async (data: ProductFormValues) => {
-    if (submitLockRef.current) return;
-    await onSubmit(formValuesToRequest(data));
+  /* Submit */
+
+  const submit = (action: 'publish' | 'draft') => {
+    setPendingAction(action);
+    void handleSubmit(async (data) => {
+      const isPublished = isEdit ? initial!.isPublished : action === 'publish';
+      const genre = customGenre ? data.genre?.trim() || OTHER_GENRE : data.genre;
+      const language = customLanguage ? data.language?.trim() || OTHER_LANGUAGE : data.language;
+      const sizeRaw = data.fileSizeMb?.trim();
+      const fileSizeMb =
+        sizeRaw && fileSizeUnit === 'GB' && !Number.isNaN(Number(sizeRaw))
+          ? String(Math.round(Number(sizeRaw) * MB_PER_GB * 10) / 10)
+          : data.fileSizeMb;
+      await onSubmit(formValuesToRequest({ ...data, genre, language, fileSizeMb }, { isPublished }));
+    }, onInvalid)().finally(() => setPendingAction(null));
   };
 
-  const currentStep = editorSteps[Math.min(stepIndex, editorSteps.length - 1)];
-  const isLastStep = stepIndex >= editorSteps.length - 1;
-  const isFirstStep = stepIndex === 0;
-
-  const goToStep = (index: number) => {
-    if (index <= maxStepReached) {
-      setStepIndex(index);
-      setUploadError(null);
-    }
+  const onInvalid = (invalid: FieldErrors<ProductFormValues>) => {
+    if (!inModal) return;
+    const steps = Object.keys(invalid)
+      .map((key) => stepKeys.indexOf(FIELD_STEP[key as keyof ProductFormValues] ?? 'pricing'))
+      .filter((index) => index >= 0);
+    if (steps.length > 0) setStep(Math.min(...steps));
   };
 
-  const goNext = async () => {
-    if (stepIndex >= editorSteps.length - 1) return;
-
-    const stepId = currentStep.id as ProductEditorStepId;
-
-    const valid = await trigger(
-      fieldsForStep(stepId, productType, productFormat) as (keyof ProductFormValues)[]
-    );
-    if (!valid) return;
-    setUploadError(null);
-
-    const next = stepIndex + 1;
-    submitLockRef.current = true;
-    window.setTimeout(() => {
-      setStepIndex(next);
-      setMaxStepReached((prev) => Math.max(prev, next));
-      window.setTimeout(() => {
-        submitLockRef.current = false;
-      }, 400);
-    }, 0);
+  const onFormKeyDown = (event: KeyboardEvent<HTMLFormElement>) => {
+    if (event.key === 'Enter' && (event.target as HTMLElement).tagName === 'INPUT') event.preventDefault();
   };
 
-  const goBack = () => {
-    setStepIndex((prev) => Math.max(0, prev - 1));
-    setUploadError(null);
+  /* Preview + checklist */
+
+  const priceNumber = Number(priceAmount);
+  const priceCents = priceAmount !== '' && !Number.isNaN(priceNumber) && priceNumber >= 0 ? Math.round(priceNumber * 100) : null;
+  const compareNumber = Number(compareAtAmount);
+  const compareCents =
+    !isFree && compareAtAmount && !Number.isNaN(compareNumber) && compareNumber > 0 ? Math.round(compareNumber * 100) : null;
+  const previewCurrency = /^[A-Z]{3}$/.test(currency) ? currency : 'EUR';
+
+  const checklist = [
+    { label: 'Title', done: title.trim().length > 0, required: true },
+    { label: 'Price', done: priceCents != null, required: true },
+    { label: 'Cover', done: thumbnailUrl.trim().length > 0, required: false },
+    { label: 'Description', done: description.trim().length >= 40, required: false },
+    { label: 'Hashtags', done: hashtags.length > 0, required: false },
+  ];
+  const doneCount = checklist.filter((item) => item.done).length;
+
+  const technicalCount = [fileFormat, language, watch('fileSizeMb'), watch('version')].filter((v) => v?.trim()).length + tools.length;
+
+  const renderFormatSelector = showFormatToggle && !isEdit;
+  const formProps = {
+    onSubmit: (event: React.FormEvent<HTMLFormElement>) => {
+      event.preventDefault();
+      if (inModal && !isLastStep) void goToStep(step + 1);
+      else submit('publish');
+    },
+    onKeyDown: onFormKeyDown,
+    noValidate: true,
   };
 
-  const onFormKeyDown = (event: React.KeyboardEvent<HTMLFormElement>) => {
-    if (event.key !== 'Enter' || isLastStep) return;
-    const tag = (event.target as HTMLElement).tagName;
-    // Keep Enter inside text fields (title, captions, etc.) — don't advance the wizard
-    if (tag === 'TEXTAREA' || tag === 'INPUT' || tag === 'SELECT') return;
-    event.preventDefault();
-    void goNext();
-  };
+  const productSection = !inModal ? (
+        <Section title="Product" description="The essentials buyers read first.">
+          <div>
+            <div className="flex items-baseline justify-between gap-3">
+              <label htmlFor="title" className={LABEL}>
+                Title
+              </label>
+              <span className="text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">
+                {title.length}/{TITLE_MAX}
+              </span>
+            </div>
+            <input
+              id="title"
+              maxLength={TITLE_MAX}
+              autoComplete="off"
+              className={INPUT}
+              placeholder={isPhysical ? 'e.g. Organic cotton oversized tee' : 'e.g. Notion template for freelancers'}
+              aria-invalid={Boolean(errors.title)}
+              {...register('title')}
+            />
+            {errors.title ? <p className={ERROR}>{errors.title.message}</p> : null}
+          </div>
 
-  const stepPanelClass = embedded
-    ? 'rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-5 dark:border-neutral-800 dark:bg-neutral-950/40'
-    : 'rounded-2xl border border-gray-100 bg-white p-6 shadow-sm dark:border-neutral-800 dark:bg-neutral-900 dark:shadow-none';
-
-  const renderFormatToggle = showFormatToggle && !embedded;
-
-  return (
-    <form
-      className={embedded ? 'space-y-5' : 'space-y-6'}
-      onSubmit={isLastStep ? handleSubmit(onFormSubmit) : (e) => e.preventDefault()}
-      onKeyDown={onFormKeyDown}
-      noValidate
-    >
-      {renderFormatToggle ? (
-        <div className="flex justify-end">
-          <ProductFormatToggle
-            value={productFormat}
-            disabled={Boolean(initial) || isSubmitting}
-            hideInactive={Boolean(initial)}
-            onChange={(format) => setValue('productFormat', format, { shouldDirty: true })}
-          />
-        </div>
-      ) : null}
-
-      <ProductEditorStepper
-        steps={editorSteps}
-        embedded={embedded}
-        currentIndex={stepIndex}
-        maxReachedIndex={maxStepReached}
-        onStepSelect={goToStep}
-      />
-
-      {uploadError && (
-        <p className={s.alert} role="alert">
-          {uploadError}
-        </p>
-      )}
-
-      <div className={stepPanelClass}>
-        <header className="mb-6 border-b border-neutral-100 pb-5 dark:border-neutral-800">
-          <p className="text-xs font-semibold uppercase tracking-wider text-orange-600 dark:text-orange-400">
-            Step {stepIndex + 1} of {editorSteps.length}
-          </p>
-          <h2 className="mt-1 text-lg font-bold text-neutral-900 dark:text-white sm:text-xl">
-            {currentStep.label}
-          </h2>
-          {currentStep.description ? (
-            <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">{currentStep.description}</p>
-          ) : null}
-        </header>
-
-        {currentStep.id === 'basics' && (
-          <div className="grid gap-8 lg:grid-cols-[minmax(0,1.55fr)_minmax(0,0.9fr)] lg:items-start">
-            <div className="flex flex-col gap-4">
-              <div>
-                <label htmlFor="title" className={s.label}>
-                  Title
-                </label>
-                <input id="title" className={s.input} placeholder="e.g. Learn After Effects from scratch" {...register('title')} />
-                {errors.title && <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.title.message}</p>}
-              </div>
-              {productFormat === 'virtual' ? (
-                <div className="grid gap-4 sm:grid-cols-2">
-                  <div>
-                    <label htmlFor="type" className={s.label}>
-                      Type
-                    </label>
-                    <select id="type" className={s.input} {...register('type')}>
-                      {PRODUCT_TYPES.map((t) => (
-                        <option key={t} value={t}>
-                          {PRODUCT_TYPE_LABELS[t] ?? t}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                  <div>
-                    <label htmlFor="genre" className={s.label}>
-                      Genre
-                    </label>
-                    <select id="genre" className={s.input} {...register('genre')}>
-                      {GENRES.map((g) => (
-                        <option key={g} value={g}>
-                          {g}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
-                </div>
+          <div>
+            <div className="flex items-baseline justify-between gap-3">
+              <label htmlFor="description" className={LABEL}>
+                Description
+                <span className={OPTIONAL}>Recommended</span>
+              </label>
+              {description.length > 0 ? (
+                <span className="text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">
+                  {description.length}/{DESCRIPTION_MAX}
+                </span>
               ) : null}
+            </div>
+            <textarea
+              id="description"
+              rows={5}
+              maxLength={DESCRIPTION_MAX}
+              className={`${TEXTAREA} min-h-[8.5rem]`}
+              placeholder="What buyers get, who it’s for, and why it’s worth it."
+              {...register('description')}
+            />
+            {errors.description ? <p className={ERROR}>{errors.description.message}</p> : null}
+          </div>
+
+          {renderTypeCategory()}
+        </Section>
+  ) : null;
+
+  function renderTypeCategory() {
+    if (isPhysical) return null;
+    return (
+            <div className="grid gap-5 sm:grid-cols-2">
               <div>
-                <label htmlFor="description" className={s.label}>
-                  Description
+                <label htmlFor="type" className={LABEL}>
+                  Type
                 </label>
-                <textarea
-                  id="description"
-                  rows={7}
-                  className={`${s.input} resize-none`}
-                  placeholder="What buyers get, who it’s for, and why it’s worth it…"
-                  {...register('description')}
+                <FormSelect
+                  id="type"
+                  className="mt-2"
+                  value={productType}
+                  options={TYPE_OPTIONS}
+                  onChange={(next) =>
+                    setValue('type', next as ProductFormValues['type'], { shouldDirty: true, shouldValidate: true })
+                  }
                 />
-                <div className="mt-2 flex flex-wrap items-start justify-between gap-2">
-                  <p className="text-xs leading-relaxed text-neutral-500 dark:text-neutral-400">
-                    Tip: top sellers lead with the outcome in 2–3 sentences, then list what’s included.
-                  </p>
-                  <p
-                    className={`shrink-0 text-xs tabular-nums ${
-                      descriptionWarnShort
-                        ? 'text-amber-600 dark:text-amber-400'
-                        : 'text-neutral-400 dark:text-neutral-500'
-                    }`}
-                  >
-                    {descriptionLen} chars
-                    {descriptionWarnShort ? ' · aim for 80+' : ''}
-                  </p>
-                </div>
-                {errors.description && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.description.message}</p>
-                )}
               </div>
-            </div>
-
-            <div className="flex flex-col gap-4 lg:pt-0">
-              <div className="inline-flex items-center gap-3">
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={isFree}
-                  aria-label="Free product"
-                  onClick={() => {
-                    if (isFree) {
-                      setValue('priceAmount', '', { shouldValidate: true });
-                    } else {
-                      setValue('priceAmount', '0', { shouldValidate: true });
-                      setValue('compareAtPriceAmount', '');
+              <div>
+                <label htmlFor="genre" className={LABEL}>
+                  Category
+                </label>
+                <FormSelect
+                  id="genre"
+                  className="mt-2"
+                  value={customGenre ? OTHER_GENRE : watchedGenre ?? ''}
+                  options={GENRE_OPTIONS}
+                  placeholder="Choose a category"
+                  onChange={(next) => {
+                    if (next === OTHER_GENRE) {
+                      setCustomGenre(true);
+                      setSelectValue('genre', '');
+                      window.setTimeout(() => customGenreInputRef.current?.focus(), 0);
+                      return;
                     }
+                    setCustomGenre(false);
+                    setSelectValue('genre', next);
                   }}
-                  className={`relative h-7 w-12 shrink-0 rounded-full transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-900 ${
-                    isFree ? 'bg-orange-500' : 'bg-neutral-200 dark:bg-neutral-600'
-                  }`}
-                >
-                  <span
-                    aria-hidden
-                    className={`absolute top-0.5 left-0.5 h-6 w-6 rounded-full bg-white shadow-sm transition-transform duration-200 ease-out ${
-                      isFree ? 'translate-x-5' : 'translate-x-0'
-                    }`}
-                  />
-                </button>
-                <span className={s.checkboxLabel}>Free product</span>
-              </div>
-
-              <div
-                className={`transition-opacity duration-200 ${
-                  isFree ? 'pointer-events-none opacity-45' : 'opacity-100'
-                }`}
-              >
-                <label htmlFor="priceAmount" className={s.label}>
-                  Sale price
-                </label>
-                <input
-                  id="priceAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  disabled={isFree}
-                  className={`${s.input} disabled:cursor-not-allowed`}
-                  {...register('priceAmount')}
                 />
-                {errors.priceAmount && (
-                  <p className="mt-1 text-xs text-red-600 dark:text-red-400">{errors.priceAmount.message}</p>
-                )}
-              </div>
-
-              <div
-                className={`transition-opacity duration-200 ${
-                  isFree ? 'pointer-events-none opacity-45' : 'opacity-100'
-                }`}
-              >
-                <label htmlFor="currency" className={s.label}>
-                  Currency
-                </label>
-                <input
-                  id="currency"
-                  maxLength={3}
-                  disabled={isFree}
-                  className={`${s.input} uppercase disabled:cursor-not-allowed`}
-                  {...register('currency')}
-                />
-              </div>
-
-              <div
-                className={`overflow-hidden transition-all duration-200 ease-out ${
-                  isFree ? 'max-h-0 opacity-0 pointer-events-none' : 'max-h-28 opacity-100'
-                }`}
-                aria-hidden={isFree}
-              >
-                <label htmlFor="compareAtPriceAmount" className={s.label}>
-                  Original price
-                  <span className="ml-1 font-normal text-neutral-400">(optional)</span>
-                </label>
-                <input
-                  id="compareAtPriceAmount"
-                  type="number"
-                  step="0.01"
-                  min="0"
-                  disabled={isFree}
-                  placeholder="e.g. 149.97"
-                  tabIndex={isFree ? -1 : undefined}
-                  className={s.input}
-                  {...register('compareAtPriceAmount')}
-                />
-              </div>
-            </div>
-          </div>
-        )}
-
-        {currentStep.id === 'media' && productFormat === 'physical' && (
-          <div className="space-y-8">
-            <section>
-              <div className="mb-2 flex justify-end">
-                <span className="shrink-0 rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                  Thumbnail
-                </span>
-              </div>
-              <label
-                className={`group relative flex aspect-[16/10] max-w-xl cursor-pointer flex-col overflow-hidden rounded-2xl bg-neutral-100 transition hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 ${
-                  uploadingThumb || isSubmitting ? 'pointer-events-none opacity-60' : ''
-                }`}
-              >
-                {thumbnailUrl?.trim() ? (
-                  <>
-                    <ProductThumbnailMedia
-                      url={thumbnailUrl.trim()}
-                      autoPlay={false}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <span
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 transition-opacity duration-200 ${
-                        uploadingThumb ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      aria-hidden
-                    >
-                      {uploadingThumb ? (
-                        <span className="text-sm font-semibold text-white">Uploading…</span>
-                      ) : (
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-lg">
-                          <FontAwesomeIcon icon={faPen} className="text-lg" />
-                        </span>
-                      )}
-                    </span>
-                    <span className="sr-only">{uploadingThumb ? 'Uploading cover' : 'Change cover'}</span>
-                  </>
-                ) : (
-                  <span className="flex flex-1 flex-col items-center justify-center px-5 py-8 text-center">
-                    <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
-                      {uploadingThumb ? 'Uploading…' : 'Drop cover image'}
-                    </span>
-                  </span>
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                  className="sr-only"
-                  disabled={uploadingThumb || isSubmitting}
-                  onChange={(e) => void onThumbnailFileChange(e)}
-                />
-              </label>
-            </section>
-
-            <section>
-              <div className="mb-3 flex items-center justify-between gap-3">
-                <p className={s.label}>Companion images</p>
-                <label
-                  className={`${s.tagBtn} cursor-pointer ${
-                    galleryField.fields.length >= 12 || uploadingGallery || isSubmitting
-                      ? 'pointer-events-none opacity-40'
-                      : ''
-                  }`}
-                >
-                  {uploadingGallery ? 'Uploading…' : '+ Add images'}
+                {customGenre ? (
                   <input
-                    type="file"
-                    accept="image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp"
-                    multiple
-                    className="sr-only"
-                    disabled={galleryField.fields.length >= 12 || uploadingGallery || isSubmitting}
-                    onChange={(e) => void onGalleryFileChange(e)}
+                    ref={customGenreInputRef}
+                    aria-label="Custom category"
+                    value={watchedGenre === OTHER_GENRE ? '' : watchedGenre ?? ''}
+                    maxLength={CUSTOM_GENRE_MAX}
+                    autoComplete="off"
+                    placeholder="Name your category, e.g. Photography"
+                    onChange={(event) => setSelectValue('genre', event.target.value)}
+                    className={INPUT}
                   />
-                </label>
-              </div>
-              {galleryField.fields.length === 0 ? (
-                <p className="text-xs text-neutral-500 dark:text-neutral-400">
-                  Add extra photos that show the product from other angles.
-                </p>
-              ) : (
-                <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 lg:grid-cols-4">
-                  {galleryField.fields.map((field, index) => (
-                    <li
-                      key={field.id}
-                      className="group relative aspect-square overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-800"
-                    >
-                      {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img
-                        src={watch(`galleryImages.${index}.value`)}
-                        alt={`Companion ${index + 1}`}
-                        className="h-full w-full object-cover"
-                      />
-                      <button
-                        type="button"
-                        onClick={() => galleryField.remove(index)}
-                        className="absolute right-2 top-2 flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white opacity-0 transition hover:bg-black/75 group-hover:opacity-100"
-                        aria-label={`Remove image ${index + 1}`}
-                      >
-                        <FontAwesomeIcon icon={faTrashCan} className="text-xs" />
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-          </div>
-        )}
-
-        {currentStep.id === 'media' && productFormat === 'virtual' && (
-          <div className="grid gap-x-6 gap-y-5 lg:grid-cols-2">
-            {/* Row 1 — media */}
-            <section>
-              <div className="mb-2 flex justify-end">
-                <span className="shrink-0 rounded-md bg-neutral-100 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-                  Thumbnail
-                </span>
-              </div>
-              <label
-                className={`group relative flex aspect-[16/10] min-h-[10rem] cursor-pointer flex-col overflow-hidden rounded-2xl bg-neutral-100 transition hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 ${
-                  uploadingThumb || isSubmitting ? 'pointer-events-none opacity-60' : ''
-                }`}
-              >
-                {thumbnailUrl?.trim() ? (
-                  <>
-                    <ProductThumbnailMedia
-                      url={thumbnailUrl.trim()}
-                      autoPlay={isVideoThumbnailUrl(thumbnailUrl.trim())}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <span
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 transition-opacity duration-200 ${
-                        uploadingThumb ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      aria-hidden
-                    >
-                      {uploadingThumb ? (
-                        <span className="text-sm font-semibold text-white">Uploading…</span>
-                      ) : (
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-lg">
-                          <FontAwesomeIcon icon={faPen} className="text-lg" />
-                        </span>
-                      )}
-                    </span>
-                    <span className="sr-only">{uploadingThumb ? 'Uploading cover' : 'Change cover'}</span>
-                  </>
-                ) : (
-                  <span className="flex flex-1 flex-col items-center justify-center px-5 py-8 text-center">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-neutral-400 transition group-hover:text-neutral-600 dark:bg-neutral-900 dark:text-neutral-500 dark:group-hover:text-neutral-300">
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M2.25 15.75l5.159-5.159a2.25 2.25 0 013.182 0l5.159 5.159m-1.5-1.5l1.409-1.409a2.25 2.25 0 013.182 0l2.909 2.909M3.75 21h16.5A2.25 2.25 0 0022.5 18.75V5.25A2.25 2.25 0 0020.25 3H3.75A2.25 2.25 0 001.5 5.25v13.5A2.25 2.25 0 003.75 21z"
-                        />
-                      </svg>
-                    </span>
-                    <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
-                      {uploadingThumb ? 'Uploading…' : 'Drop cover image or video'}
-                    </span>
-                  </span>
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.mp4,.webm,.mov"
-                  className="sr-only"
-                  disabled={uploadingThumb || isSubmitting}
-                  onChange={(e) => void onThumbnailFileChange(e)}
-                />
-              </label>
-            </section>
-
-            <section>
-              <div className="mb-2 flex justify-end">
-                <span className="shrink-0 rounded-md bg-orange-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-orange-700 dark:bg-orange-500/10 dark:text-orange-300">
-                  Demo
-                </span>
-              </div>
-              <label
-                className={`group relative flex aspect-[16/10] min-h-[10rem] cursor-pointer flex-col overflow-hidden rounded-2xl bg-neutral-100 transition hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700 ${
-                  uploadingDemo || isSubmitting ? 'pointer-events-none opacity-60' : ''
-                }`}
-              >
-                {demoUrl?.trim() ? (
-                  <>
-                    <ProductThumbnailMedia
-                      url={demoUrl.trim()}
-                      autoPlay={isVideoThumbnailUrl(demoUrl.trim())}
-                      className="absolute inset-0 h-full w-full object-cover"
-                    />
-                    <span
-                      className={`pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 transition-opacity duration-200 ${
-                        uploadingDemo ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-                      }`}
-                      aria-hidden
-                    >
-                      {uploadingDemo ? (
-                        <span className="text-sm font-semibold text-white">Uploading…</span>
-                      ) : (
-                        <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-lg">
-                          <FontAwesomeIcon icon={faPen} className="text-lg" />
-                        </span>
-                      )}
-                    </span>
-                    <span className="sr-only">{uploadingDemo ? 'Uploading demo' : 'Change demo'}</span>
-                  </>
-                ) : (
-                  <span className="flex flex-1 flex-col items-center justify-center px-5 py-8 text-center">
-                    <span className="flex h-12 w-12 items-center justify-center rounded-2xl bg-white text-neutral-400 transition group-hover:text-neutral-600 dark:bg-neutral-900 dark:text-neutral-500 dark:group-hover:text-neutral-300">
-                      <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          d="M5.25 5.653c0-.856.917-1.398 1.667-.986l11.54 6.347a1.125 1.125 0 010 1.972l-11.54 6.347a1.125 1.125 0 01-1.667-.986V5.653z"
-                        />
-                      </svg>
-                    </span>
-                    <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
-                      {uploadingDemo ? 'Uploading…' : 'Drop demo photo or video'}
-                    </span>
-                  </span>
-                )}
-                <input
-                  type="file"
-                  accept="image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov"
-                  className="sr-only"
-                  disabled={uploadingDemo || isSubmitting}
-                  onChange={(e) => void onDemoFileChange(e)}
-                />
-              </label>
-              {/* Fixed-height slot so bottom row stays aligned whether demo exists or not */}
-              <div className="mt-1.5 flex h-6 items-center">
-                {demoUrl?.trim() ? (
-                  <button
-                    type="button"
-                    onClick={clearDemoMedia}
-                    className="inline-flex items-center gap-1.5 text-xs text-neutral-400 transition hover:text-red-500 dark:text-neutral-500 dark:hover:text-red-400"
-                    aria-label="Remove demo"
-                  >
-                    <FontAwesomeIcon icon={faTrashCan} className="text-[11px]" />
-                    <span>Remove</span>
-                  </button>
                 ) : null}
               </div>
-            </section>
+            </div>
+    );
+  }
 
-            {/* Row 2 — complementary fields (same top edge on lg) */}
-            <section className={productType === 'VIDEO' ? '' : 'hidden lg:block'}>
-              {productType === 'VIDEO' ? (
-                <>
-                  <p className={s.label}>Video badges</p>
-                  <div className="mt-3 grid grid-cols-2 gap-3">
-                    <div>
-                      <label htmlFor="videoDuration" className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                        Duration
+  const mediaSection = (
+        <Section
+          title={inModal ? (isPhysical ? 'More photos' : 'Free sample') : 'Media'}
+          description={
+            inModal
+              ? isPhysical
+                ? 'Add more angles so buyers see every detail.'
+                : 'Let buyers peek inside: a trailer, an extract or a few pages.'
+              : isPhysical
+                ? 'A sharp cover sells the product. Add more angles if you have them.'
+                : 'The cover sells the click in listings. The sample shows what’s inside, on your product page.'
+          }
+        >
+          {mediaError ? (
+            <p role="alert" className="rounded-lg bg-[#FF5722]/[0.07] px-4 py-3 text-[14px] text-[#C2410C] dark:text-[#FF9A7A]">
+              {mediaError}
+            </p>
+          ) : null}
+
+          {isPhysical ? (
+            <div className="grid grid-cols-3 gap-3 sm:grid-cols-4">
+              {!inModal ? (
+                <MediaDrop
+                  url={thumbnailUrl}
+                  uploading={uploadingThumb}
+                  preview={thumbPreview}
+                  disabled={isSubmitting}
+                  accept={IMAGE_ACCEPT}
+                  onFile={(e) => void onThumbnailFile(e)}
+                  onRemove={() => setValue('thumbnailUrl', '', { shouldDirty: true })}
+                  title="Cover photo"
+                  hint="JPEG, PNG or WebP"
+                  className="col-span-2 row-span-2 aspect-square"
+                />
+              ) : null}
+              {galleryField.fields.map((field, index) => (
+                <div
+                  key={field.id}
+                  className="group relative aspect-square overflow-hidden rounded-lg border border-black/[0.06] dark:border-white/[0.08]"
+                >
+                  {/* eslint-disable-next-line @next/next/no-img-element */}
+                  <img src={galleryImages[index]?.value} alt={`Photo ${index + 2}`} className="h-full w-full object-cover" />
+                  <button
+                    type="button"
+                    onClick={() => galleryField.remove(index)}
+                    aria-label={`Remove photo ${index + 2}`}
+                    className="absolute right-1.5 top-1.5 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
+                  >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                      <path d="M6 6l12 12M18 6L6 18" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+              {galleryPending.map((preview, index) => (
+                <div key={preview.url} className="relative aspect-square overflow-hidden rounded-lg">
+                  <UploadingOverlay preview={preview} compact={index > 0} label={index > 0 ? 'Waiting…' : 'Uploading…'} />
+                </div>
+              ))}
+              {galleryField.fields.length + galleryPending.length < GALLERY_MAX ? (
+                <label
+                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-black/[0.16] text-neutral-500 transition-colors hover:border-black/30 hover:text-[#111111] dark:border-white/[0.16] dark:text-neutral-400 dark:hover:border-white/30 dark:hover:text-white ${
+                    uploadingGallery || isSubmitting ? 'pointer-events-none opacity-40' : ''
+                  }`}
+                >
+                  <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden>
+                    <path d="M12 5v14M5 12h14" />
+                  </svg>
+                  <span className="text-[12px] font-medium">Add photos</span>
+                  <input
+                    type="file"
+                    accept={IMAGE_ACCEPT}
+                    multiple
+                    className="sr-only"
+                    disabled={uploadingGallery || isSubmitting}
+                    onChange={(e) => void onGalleryFiles(e)}
+                  />
+                </label>
+              ) : null}
+            </div>
+          ) : (
+            <div className={`grid gap-4 ${inModal ? '' : 'sm:grid-cols-2'}`}>
+              {!inModal ? (
+                <div>
+                  <p className={LABEL}>
+                    Cover
+                    <span className={OPTIONAL}>Shown in listings</span>
+                  </p>
+                  <MediaDrop
+                    url={thumbnailUrl}
+                    uploading={uploadingThumb}
+                  preview={thumbPreview}
+                    disabled={isSubmitting}
+                    accept={MEDIA_ACCEPT}
+                    onFile={(e) => void onThumbnailFile(e)}
+                    onRemove={() => setValue('thumbnailUrl', '', { shouldDirty: true })}
+                    title="Add a cover"
+                    hint={`Image or video up to ${THUMBNAIL_VIDEO_MAX_SECONDS}s`}
+                    className="mt-2 aspect-[16/10]"
+                  />
+                </div>
+              ) : null}
+              <div>
+                {!inModal ? (
+                  <p className={LABEL}>
+                    Free sample
+                    <span className={OPTIONAL}>Optional</span>
+                  </p>
+                ) : null}
+                {inModal ? (
+                  <MediaRow
+                    url={demoUrl}
+                    uploading={uploadingDemo}
+                    preview={demoPreview}
+                    disabled={isSubmitting}
+                    accept={MEDIA_ACCEPT}
+                    onFile={(e) => void onDemoFile(e)}
+                    onRemove={() => {
+                      setValue('demoUrl', '', { shouldDirty: true });
+                      setValue('demoType', 'NONE');
+                    }}
+                    title={demoUrl.trim() ? 'Sample added' : 'Add a sample'}
+                    hint="Trailer, extract or inside pages"
+                  />
+                ) : (
+                  <MediaDrop
+                    url={demoUrl}
+                    uploading={uploadingDemo}
+                    preview={demoPreview}
+                    disabled={isSubmitting}
+                    accept={MEDIA_ACCEPT}
+                    onFile={(e) => void onDemoFile(e)}
+                    onRemove={() => {
+                      setValue('demoUrl', '', { shouldDirty: true });
+                      setValue('demoType', 'NONE');
+                    }}
+                    title="Add a sample"
+                    hint="Trailer, extract or inside pages"
+                    className="mt-2 aspect-[16/10]"
+                  />
+                )}
+              </div>
+              {demoUrl.trim() ? (
+                <div className={inModal ? '' : 'sm:col-span-2'}>
+                  <ProductSubtitlesField control={control} register={register} label="Sample captions" />
+                </div>
+              ) : null}
+            </div>
+          )}
+        </Section>
+  );
+
+  const pricingSection = (
+        <Section
+          title="Pricing"
+          aside={
+            <label className="flex shrink-0 items-center gap-3 text-[14px] text-neutral-600 dark:text-neutral-300">
+              Free
+              <Switch
+                label="Free product"
+                checked={isFree}
+                onChange={() => {
+                  if (isFree) {
+                    setValue('priceAmount', '', { shouldValidate: false });
+                  } else {
+                    setValue('priceAmount', '0', { shouldValidate: true });
+                    setValue('compareAtPriceAmount', '');
+                    setShowCompareAt(false);
+                  }
+                }}
+              />
+            </label>
+          }
+        >
+          {isFree ? (
+            <p className="rounded-lg bg-black/[0.03] px-4 py-3 text-[14px] text-neutral-600 dark:bg-white/[0.05] dark:text-neutral-300">
+              Buyers get this product at no cost.
+            </p>
+          ) : (
+            <div className={`grid gap-5 ${showCompareAt ? 'sm:grid-cols-2' : ''}`}>
+              <div>
+                <label htmlFor="priceAmount" className={LABEL}>
+                  Price
+                </label>
+                <div className={`mt-2 flex h-14 items-center ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
+                  <input
+                    id="priceAmount"
+                    type="number"
+                    inputMode="decimal"
+                    step="0.01"
+                    min="0"
+                    placeholder="0.00"
+                    aria-invalid={Boolean(errors.priceAmount)}
+                    className={`h-full min-w-0 flex-1 bg-transparent px-4 text-[22px] font-semibold tracking-[-0.01em] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                    {...register('priceAmount')}
+                  />
+                  <span aria-hidden className="h-5 w-px bg-black/[0.1] dark:bg-white/[0.12]" />
+                  <CurrencyPicker
+                    id="currency"
+                    value={currency || DEFAULT_CURRENCY}
+                    options={currencyOptions}
+                    onChange={(code) => setValue('currency', code, { shouldDirty: true, shouldValidate: true })}
+                  />
+                </div>
+                {errors.priceAmount ? <p className={ERROR}>{errors.priceAmount.message}</p> : null}
+              </div>
+
+              {showCompareAt ? (
+                <div>
+                  <div className="flex items-center justify-between gap-3">
+                    <div className="flex items-center gap-2">
+                      <label htmlFor="compareAtPriceAmount" className={LABEL}>
+                        Compare-at price
                       </label>
-                      <input
-                        id="videoDuration"
-                        placeholder="0:24"
-                        className={`${s.input} mt-1`}
-                        {...register('videoDuration')}
-                      />
+                      <InfoHint align="start">Shown crossed out next to your price to highlight a discount.</InfoHint>
                     </div>
-                    <div>
-                      <label htmlFor="videoResolution" className="text-xs font-medium text-neutral-600 dark:text-neutral-400">
-                        Resolution
-                      </label>
-                      <select id="videoResolution" className={`${s.input} mt-1`} {...register('videoResolution')}>
-                        <option value="">—</option>
-                        {VIDEO_RESOLUTIONS.map((r) => (
-                          <option key={r} value={r}>
-                            {r}
-                          </option>
-                        ))}
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setValue('compareAtPriceAmount', '');
+                        setShowCompareAt(false);
+                      }}
+                      className="text-[13px] text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+                    >
+                      Remove
+                    </button>
+                  </div>
+                  <div className={`mt-2 flex h-14 items-center ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
+                    <input
+                      id="compareAtPriceAmount"
+                      type="number"
+                      inputMode="decimal"
+                      step="0.01"
+                      min="0"
+                      placeholder="e.g. 49.00"
+                      className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                      {...register('compareAtPriceAmount')}
+                    />
+                    <span className="pr-3.5 text-[14px] font-medium text-neutral-400 dark:text-neutral-500">
+                      {currency || '—'}
+                    </span>
+                  </div>
+                </div>
+              ) : (
+                <button type="button" onClick={() => setShowCompareAt(true)} className={`${LINK_BTN} -mt-1 justify-self-start`}>
+                  + Show a discount
+                </button>
+              )}
+            </div>
+          )}
+
+          {isPhysical ? (
+            <div className="border-t border-black/[0.05] pt-6 dark:border-white/[0.06]">
+              <div className="flex items-center gap-2">
+                <label htmlFor="stockQuantity" className={LABEL}>
+                  Stock
+                  <span className={OPTIONAL}>Optional</span>
+                </label>
+                <InfoHint align="start">Units you have on hand. Leave empty for a single unit, set 0 when sold out.</InfoHint>
+              </div>
+              <div className={`mt-2 flex h-11 items-center sm:max-w-[16rem] ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
+                <input
+                  id="stockQuantity"
+                  type="number"
+                  inputMode="numeric"
+                  step="1"
+                  min="0"
+                  max={STOCK_MAX}
+                  placeholder="1"
+                  aria-invalid={Boolean(errors.stockQuantity)}
+                  className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                  {...register('stockQuantity')}
+                />
+                <span className="pr-3.5 text-[14px] text-neutral-400 dark:text-neutral-500">units</span>
+              </div>
+              {errors.stockQuantity ? (
+                <p className={ERROR}>{errors.stockQuantity.message}</p>
+              ) : stockQuantity?.trim() === '0' ? (
+                <p className={HINT}>Buyers will see this product as sold out.</p>
+              ) : null}
+            </div>
+          ) : null}
+        </Section>
+  );
+
+  const hashtagsSection = (
+        <Section title="Hashtags" description="Help buyers find your product in search. Press Enter after each one.">
+          <ProductHashtagsField
+            value={hashtags}
+            onChange={(next) =>
+              setValue(
+                'tags',
+                next.map((tag) => ({ value: tag })),
+                { shouldDirty: true, shouldValidate: true }
+              )
+            }
+            boxClassName={`${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}
+          />
+        </Section>
+  );
+
+  const highlightsSection = !isPhysical ? (
+            <CollapsibleSection
+              title="Highlights"
+              description="A few clear reasons to choose your product, with photos or text."
+              summary={whyBlocksCount > 0 ? `${whyBlocksCount} highlight${whyBlocksCount > 1 ? 's' : ''} added` : null}
+              defaultOpen={isEdit && whyBlocksCount > 0}
+            >
+              <ProductWhyBlocksField
+                fields={whyField.fields}
+                append={whyField.append}
+                remove={whyField.remove}
+                register={register}
+                watch={watch}
+                setValue={setValue}
+                control={control}
+              />
+            </CollapsibleSection>
+  ) : null;
+
+  const technicalSection = !isPhysical ? (
+            <CollapsibleSection
+              title="Technical details"
+              description="Format, language, version and the tools buyers need."
+              summary={technicalCount > 0 ? `${technicalCount} detail${technicalCount > 1 ? 's' : ''} filled` : null}
+              defaultOpen={isEdit && technicalCount > 0}
+            >
+              <div className="grid gap-5 sm:grid-cols-2">
+                <div>
+                  <label htmlFor="fileFormat" className={LABEL}>
+                    File format
+                  </label>
+                  <input id="fileFormat" className={INPUT} placeholder="e.g. ZIP, PDF, MP4" {...register('fileFormat')} />
+                </div>
+                <div>
+                  <label htmlFor="language" className={LABEL}>
+                    Language
+                  </label>
+                  <FormSelect
+                    id="language"
+                    className="mt-2"
+                    value={customLanguage ? OTHER_LANGUAGE : language ?? ''}
+                    options={LANGUAGE_OPTIONS}
+                    onChange={(next) => {
+                      if (next === OTHER_LANGUAGE) {
+                        setCustomLanguage(true);
+                        setSelectValue('language', '');
+                        window.setTimeout(() => customLanguageInputRef.current?.focus(), 0);
+                        return;
+                      }
+                      setCustomLanguage(false);
+                      setSelectValue('language', next);
+                    }}
+                  />
+                  {customLanguage ? (
+                    <input
+                      ref={customLanguageInputRef}
+                      aria-label="Custom language"
+                      value={language === OTHER_LANGUAGE ? '' : language ?? ''}
+                      maxLength={CUSTOM_LANGUAGE_MAX}
+                      autoComplete="off"
+                      placeholder="Name the language, e.g. Japanese"
+                      onChange={(event) => setSelectValue('language', event.target.value)}
+                      className={INPUT}
+                    />
+                  ) : null}
+                </div>
+                <div>
+                  <label htmlFor="fileSizeMb" className={LABEL}>
+                    File size
+                  </label>
+                  <div className={`mt-2 flex h-11 items-center ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
+                    <input
+                      id="fileSizeMb"
+                      type="number"
+                      min="0"
+                      step="0.1"
+                      placeholder={fileSizeUnit === 'GB' ? 'e.g. 1.5' : 'e.g. 250'}
+                      className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                      {...register('fileSizeMb')}
+                    />
+                    <span aria-hidden className="h-5 w-px bg-black/[0.1] dark:bg-white/[0.12]" />
+                    <div className="relative h-full shrink-0">
+                      <select
+                        aria-label="File size unit"
+                        value={fileSizeUnit}
+                        onChange={(event) => setFileSizeUnit(event.target.value as FileSizeUnit)}
+                        className="h-full cursor-pointer appearance-none bg-transparent pl-3 pr-8 text-[14px] font-medium text-[#111111] outline-none dark:text-white dark:[color-scheme:dark]"
+                      >
+                        <option value="MB">MB</option>
+                        <option value="GB">GB</option>
                       </select>
+                      <svg
+                        className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
+                        viewBox="0 0 24 24"
+                        fill="none"
+                        stroke="currentColor"
+                        strokeWidth={1.75}
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        aria-hidden
+                      >
+                        <path d="m6 9 6 6 6-6" />
+                      </svg>
                     </div>
                   </div>
-                </>
-              ) : null}
-            </section>
+                </div>
+                <div>
+                  <label htmlFor="version" className={LABEL}>
+                    Version
+                  </label>
+                  <input id="version" className={INPUT} placeholder="e.g. v1.0" {...register('version')} />
+                </div>
+                {productType === 'VIDEO' ? (
+                  <>
+                    <div>
+                      <label htmlFor="videoDuration" className={LABEL}>
+                        Video duration
+                      </label>
+                      <input id="videoDuration" placeholder="m:ss" className={INPUT} {...register('videoDuration')} />
+                    </div>
+                    <div>
+                      <label htmlFor="videoResolution" className={LABEL}>
+                        Resolution
+                      </label>
+                      <FormSelect
+                        id="videoResolution"
+                        className="mt-2"
+                        value={watch('videoResolution') ?? ''}
+                        options={RESOLUTION_OPTIONS}
+                        onChange={(next) => setSelectValue('videoResolution', next)}
+                      />
+                    </div>
+                  </>
+                ) : null}
+              </div>
 
-            <section>
-              <ProductSubtitlesField
-                control={control}
-                register={register}
-                label="Demo captions"
+              <ChipsInput
+                label="Compatible tools"
+                values={tools}
+                max={TOOLS_MAX}
+                placeholder="e.g. Figma"
+                hint="Press Enter to add. The apps buyers need to use your product."
+                onChange={(next) =>
+                  setValue(
+                    'compatibleTools',
+                    next.map((value) => ({ value })),
+                    { shouldDirty: true }
+                  )
+                }
               />
-            </section>
-          </div>
-        )}
+            </CollapsibleSection>
+  ) : null;
 
-        {currentStep.id === 'highlights' && productFormat === 'virtual' && (
-          <ProductWhyBlocksField
-            fields={whyField.fields}
-            append={whyField.append}
-            remove={whyField.remove}
-            register={register}
-            watch={watch}
-            setValue={setValue}
-            control={control}
+  const creatorName = user?.fullName ?? 'You';
+  const creatorAvatarSrc = user?.avatarUrl ? resolveStorageMediaUrl(user.avatarUrl) || user.avatarUrl : null;
+
+  const composeBlock = inModal ? (
+    <div className="pb-8 pt-6 sm:pb-9 sm:pt-8">
+      <div className="flex gap-4">
+        {creatorAvatarSrc ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img
+            src={creatorAvatarSrc}
+            alt=""
+            className="hidden h-11 w-11 shrink-0 rounded-full object-cover ring-1 ring-black/[0.06] dark:ring-white/[0.1] sm:block"
           />
+        ) : (
+          <span className="hidden h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#111111] text-[14px] font-semibold text-white dark:bg-white dark:text-[#111111] sm:flex">
+            {initialsOf(creatorName)}
+          </span>
         )}
-
-        {currentStep.id === 'settings' && productFormat === 'virtual' && (
-          <div className="grid gap-8 lg:grid-cols-2 lg:items-start">
-            <div className="space-y-4">
-              <div>
-                <label htmlFor="fileFormat" className={s.label}>
-                  File format
-                </label>
-                <input id="fileFormat" className={s.input} placeholder="e.g. ZIP, MP4" {...register('fileFormat')} />
-              </div>
-              <div>
-                <label htmlFor="language" className={s.label}>
-                  Language
-                </label>
-                <select id="language" className={s.input} {...register('language')}>
-                  <option value="">Select a language</option>
-                  {PRODUCT_LANGUAGES.map((lang) => (
-                    <option key={lang} value={lang}>
-                      {lang}
-                    </option>
-                  ))}
-                </select>
-              </div>
-              <div>
-                <label htmlFor="fileSizeMb" className={s.label}>
-                  File size (MB)
-                </label>
-                <input
-                  id="fileSizeMb"
-                  type="number"
-                  min="0"
-                  step="0.1"
-                  className={s.input}
-                  {...register('fileSizeMb')}
-                />
-              </div>
-              <div>
-                <label htmlFor="version" className={s.label}>
-                  Version
-                </label>
-                <input id="version" className={s.input} placeholder="v1.0" {...register('version')} />
-              </div>
-            </div>
-
-            <div className="space-y-6">
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className={s.label}>Compatible tools</p>
-                  <button
-                    type="button"
-                    disabled={toolsField.fields.length >= 10}
-                    onClick={() => toolsField.append({ value: '' })}
-                    className={s.tagBtn}
-                  >
-                    + Add tool
-                  </button>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {toolsField.fields.length === 0 ? (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">No tools yet.</p>
-                  ) : (
-                    toolsField.fields.map((field, index) => (
-                      <div key={field.id} className="flex gap-2">
-                        <input className={`flex-1 ${s.input}`} {...register(`compatibleTools.${index}.value` as const)} />
-                        <button
-                          type="button"
-                          onClick={() => toolsField.remove(index)}
-                          className={s.removeBtn}
-                          aria-label="Remove tool"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-
-              <div>
-                <div className="flex items-center justify-between gap-4">
-                  <p className={s.label}>Tags</p>
-                  <button
-                    type="button"
-                    disabled={tagsField.fields.length >= 15}
-                    onClick={() => tagsField.append({ value: '' })}
-                    className={s.tagBtn}
-                  >
-                    + Add tag
-                  </button>
-                </div>
-                <div className="mt-3 space-y-2">
-                  {tagsField.fields.length === 0 ? (
-                    <p className="text-xs text-neutral-500 dark:text-neutral-400">No tags yet.</p>
-                  ) : (
-                    tagsField.fields.map((field, index) => (
-                      <div key={field.id} className="flex gap-2">
-                        <input className={`flex-1 ${s.input}`} {...register(`tags.${index}.value` as const)} />
-                        <button
-                          type="button"
-                          onClick={() => tagsField.remove(index)}
-                          className={s.removeBtn}
-                          aria-label="Remove tag"
-                        >
-                          ✕
-                        </button>
-                      </div>
-                    ))
-                  )}
-                </div>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
-
-      <div
-        className={`flex flex-wrap items-center justify-between gap-3 ${
-          embedded ? 'border-t border-neutral-200 pt-5 dark:border-neutral-800' : 'pt-2'
-        }`}
-      >
-        <div className="flex items-center gap-4">
-          {!isFirstStep && (
-            <button type="button" onClick={goBack} className={s.footerBtnSecondary}>
-              ← Back
-            </button>
-          )}
-          {onCancel ? (
-            <button type="button" onClick={onCancel} className={s.footerBtnSecondary}>
-              Cancel
-            </button>
-          ) : cancelHref ? (
-            <Link href={cancelHref} className={s.footerBtnSecondary}>
-              Cancel
-            </Link>
+        <div className="min-w-0 flex-1 sm:pt-1">
+          <input
+            id="title"
+            maxLength={TITLE_MAX}
+            autoComplete="off"
+            autoFocus
+            aria-label="Product title"
+            placeholder={isPhysical ? 'Name your product' : 'What are you selling?'}
+            aria-invalid={Boolean(errors.title)}
+            className="block w-full border-0 bg-transparent p-0 text-[24px] font-semibold leading-tight sm:text-[26px] tracking-[-0.02em] text-[#111111] outline-none placeholder:text-neutral-300 dark:text-white dark:placeholder:text-neutral-600"
+            {...register('title')}
+          />
+          {errors.title ? <p className={ERROR}>{errors.title.message}</p> : null}
+          <textarea
+            id="description"
+            rows={2}
+            maxLength={DESCRIPTION_MAX}
+            aria-label="Description"
+            placeholder="What buyers get, who it’s for, and why it’s worth it."
+            className="mt-3 block min-h-[3.5rem] w-full resize-none border-0 bg-transparent p-0 text-[16px] leading-relaxed text-[#111111] outline-none [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+            {...register('description')}
+          />
+          {errors.description ? <p className={ERROR}>{errors.description.message}</p> : null}
+          {title.length > 0 ? (
+            <p className="mt-4 text-right text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">
+              {title.length}/{TITLE_MAX}
+            </p>
           ) : null}
         </div>
-        <div className="flex flex-wrap justify-end gap-3">
-          {isLastStep ? (
-            <button type="submit" disabled={isSubmitting} className={s.footerBtnPrimary}>
-              {isSubmitting ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  <span className="ml-2">Saving…</span>
-                </>
-              ) : (
-                submitLabel
-              )}
-            </button>
+      </div>
+      <div className="mt-8 space-y-7 border-t border-black/[0.06] pt-8 dark:border-white/[0.08] sm:mt-10 sm:space-y-8 sm:pt-10">
+        {renderTypeCategory()}
+        <div>
+          <div className="flex items-center gap-2">
+            <p className={LABEL}>Cover</p>
+            <InfoHint align="start">The first thing buyers see in listings and search.</InfoHint>
+          </div>
+          <div className="mt-2">
+            <MediaRow
+              url={thumbnailUrl}
+              uploading={uploadingThumb}
+                  preview={thumbPreview}
+              disabled={isSubmitting}
+              accept={isPhysical ? IMAGE_ACCEPT : MEDIA_ACCEPT}
+              onFile={(e) => void onThumbnailFile(e)}
+              onRemove={() => setValue('thumbnailUrl', '', { shouldDirty: true })}
+              title={thumbnailUrl.trim() ? 'Cover added' : 'Add a cover'}
+              hint={isPhysical ? 'JPEG, PNG or WebP' : `Image or video up to ${THUMBNAIL_VIDEO_MAX_SECONDS}s`}
+            />
+          </div>
+          {mediaError ? <p role="alert" className={ERROR}>{mediaError}</p> : null}
+        </div>
+      </div>
+    </div>
+  ) : null;
+
+  const listingPreview = (
+    <div className="pb-9 pt-8">
+      <div className="flex gap-4 rounded-2xl bg-black/[0.025] p-3 dark:bg-white/[0.04]">
+        <div className="relative aspect-[4/3] w-32 shrink-0 overflow-hidden rounded-xl bg-gradient-to-br from-black/[0.03] to-black/[0.08] dark:from-white/[0.04] dark:to-white/[0.09] sm:w-44">
+          {thumbnailUrl.trim() ? (
+            <ProductThumbnailMedia
+              url={thumbnailUrl.trim()}
+              autoPlay={isVideoThumbnailUrl(thumbnailUrl.trim())}
+              className="absolute inset-0 h-full w-full object-cover"
+            />
           ) : (
             <button
               type="button"
-              onClick={(event) => {
-                event.preventDefault();
-                event.stopPropagation();
-                void goNext();
-              }}
-              className={s.footerBtnPrimary}
+              onClick={() => setStep(0)}
+              className="absolute inset-0 flex items-center justify-center text-[12px] font-medium text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
             >
-              Continue →
+              + Add a cover
             </button>
           )}
         </div>
+        <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-1 pr-2">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+            {isPhysical ? 'Material' : PRODUCT_TYPE_LABELS[productType] ?? 'Digital'}
+          </p>
+          <p
+            className={`line-clamp-2 text-[16px] font-semibold leading-snug ${
+              title.trim() ? 'text-[#111111] dark:text-white' : 'text-neutral-300 dark:text-neutral-600'
+            }`}
+          >
+            {title.trim() || 'Product title'}
+          </p>
+          {hashtags.length > 0 ? (
+            <p className="truncate text-[13px] text-neutral-500 dark:text-neutral-400">
+              {hashtags.slice(0, 3).map((tag) => `#${tag}`).join('  ')}
+            </p>
+          ) : null}
+          <p className="mt-1 flex items-baseline gap-2">
+            <span className="text-[18px] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
+              {isFree ? 'Free' : priceCents != null ? formatPrice(priceCents, previewCurrency) : '—'}
+            </span>
+            {compareCents != null && priceCents != null && compareCents > priceCents ? (
+              <>
+                <span className="text-[14px] text-neutral-400 line-through dark:text-neutral-500">
+                  {formatPrice(compareCents, previewCurrency)}
+                </span>
+                <span className="rounded-full bg-[#111111] px-2 py-0.5 text-[11px] font-semibold text-white dark:bg-white dark:text-[#111111]">
+                  −{Math.round((1 - priceCents / compareCents) * 100)}%
+                </span>
+              </>
+            ) : null}
+          </p>
+        </div>
       </div>
+    </div>
+  );
+
+  const stepLabels = stepKeys.map((key) => (key === 'media' && isPhysical ? 'Photos' : STEP_LABELS[key]));
+
+  const stepContent =
+    currentStep === 'details' ? (
+      composeBlock
+    ) : currentStep === 'media' ? (
+      <>
+        {mediaSection}
+        {!isPhysical ? (
+          <Section title="Highlights" description="Optional. A few clear reasons to choose your product, with a photo or a short text.">
+            <ProductWhyBlocksField
+              fields={whyField.fields}
+              append={whyField.append}
+              remove={whyField.remove}
+              register={register}
+              watch={watch}
+              setValue={setValue}
+              control={control}
+            />
+          </Section>
+        ) : null}
+      </>
+    ) : (
+      <>
+        {listingPreview}
+        {pricingSection}
+        {hashtagsSection}
+        {technicalSection}
+      </>
+    );
+
+  const sections = (
+    <>
+      {productSection}
+      {mediaSection}
+      {pricingSection}
+      {hashtagsSection}
+      {highlightsSection}
+      {technicalSection}
+    </>
+  );
+
+  if (variant === 'modal') {
+    const missingRequired = checklist.filter((item) => item.required && !item.done).map((item) => item.label);
+    return (
+      <EditorVariantContext.Provider value="modal">
+        <form {...formProps} aria-labelledby={headingId} className="flex min-h-0 flex-1 flex-col">
+          <header className="relative shrink-0 px-4 pb-4 pt-2 sm:px-6 sm:pt-4">
+            <span aria-hidden className="mx-auto mb-2 block h-1 w-9 rounded-full bg-black/[0.12] dark:bg-white/[0.16] sm:hidden" />
+            <div className="flex items-center gap-2 sm:gap-3">
+              {step > 0 ? (
+                <button type="button" onClick={() => void goToStep(step - 1)} aria-label="Previous step" className={`${ROUND_ICON_BTN} -ml-1.5`}>
+                  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M19 12H5m6-6-6 6 6 6" />
+                  </svg>
+                </button>
+              ) : null}
+              <div className="min-w-0">
+                <h2 id={headingId} className="truncate text-[17px] font-semibold leading-tight tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[18px]">
+                  {heading}
+                </h2>
+                <p className="mt-0.5 text-[13px] leading-tight text-neutral-500 dark:text-neutral-400">
+                  <span className="tabular-nums">Step {step + 1} of {stepCount}</span>
+                  <span aria-hidden> · </span>
+                  {stepLabels[step]}
+                </p>
+              </div>
+              {renderFormatSelector && step === 0 ? (
+                <div className="ml-auto hidden sm:block">
+                  <FormatSelector value={productFormat} onChange={changeFormat} disabled={isSubmitting} />
+                </div>
+              ) : null}
+              {onCancel ? (
+                <button
+                  type="button"
+                  onClick={onCancel}
+                  aria-label="Close"
+                  className={`${ROUND_ICON_BTN} -mr-1.5 bg-black/[0.04] dark:bg-white/[0.06] ${renderFormatSelector && step === 0 ? 'ml-auto sm:ml-0' : 'ml-auto'}`}
+                >
+                  <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                    <path d="M6 6l12 12M18 6L6 18" />
+                  </svg>
+                </button>
+              ) : null}
+            </div>
+
+            {renderFormatSelector && step === 0 ? (
+              <div className="mt-4 sm:hidden">
+                <FormatSelector value={productFormat} onChange={changeFormat} disabled={isSubmitting} fullWidth />
+              </div>
+            ) : null}
+
+            <div className="absolute inset-x-0 bottom-0 flex gap-1" aria-label="Steps">
+              {stepLabels.map((label, index) => (
+                <button
+                  key={label}
+                  type="button"
+                  onClick={() => void goToStep(index)}
+                  aria-label={label}
+                  aria-current={index === step ? 'step' : undefined}
+                  className="group flex-1 pt-2"
+                >
+                  <span
+                    className={`block h-[2px] transition-colors duration-300 ${
+                      index < step
+                        ? 'bg-[#111111] dark:bg-white'
+                        : index === step
+                          ? 'bg-[#FF5722]'
+                          : 'bg-black/[0.08] group-hover:bg-black/[0.16] dark:bg-white/[0.1] dark:group-hover:bg-white/[0.2]'
+                    }`}
+                  />
+                </button>
+              ))}
+            </div>
+          </header>
+
+          <div ref={scrollRef} className="min-h-0 flex-1 overflow-y-auto overflow-x-hidden overscroll-contain px-5 sm:px-8">
+            <div className="divide-y divide-black/[0.06] dark:divide-white/[0.08]">{stepContent}</div>
+          </div>
+
+          <footer className="flex shrink-0 items-center gap-3 border-t border-black/[0.06] bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 dark:border-white/[0.08] dark:bg-[#0A0A0A] sm:px-6 sm:pb-3">
+            {!isEdit ? (
+              <button type="button" onClick={() => submit('draft')} disabled={busy} className={`${LINK_BTN} -ml-2 shrink-0 px-2 py-2`}>
+                {pendingAction === 'draft' && isSubmitting ? 'Saving…' : 'Save draft'}
+              </button>
+            ) : null}
+            <div className="ml-auto flex items-center gap-2">
+              {isLastStep && missingRequired.length > 0 ? (
+                <p className="hidden text-[13px] text-neutral-500 dark:text-neutral-400 sm:block">
+                  Add <span className="font-medium text-[#111111] dark:text-white">{missingRequired.join(' and ').toLowerCase()}</span>
+                </p>
+              ) : null}
+              {step > 0 ? (
+                <button type="button" onClick={() => void goToStep(step - 1)} disabled={isSubmitting} className={`${PILL_GHOST} hidden sm:inline-flex`}>
+                  Back
+                </button>
+              ) : null}
+              {!isLastStep ? (
+                <button type="button" onClick={() => void goToStep(step + 1)} disabled={busy} className={PILL_PRIMARY}>
+                  Next
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M5 12h14m-6-6 6 6-6 6" />
+                  </svg>
+                </button>
+              ) : (
+                <button type="button" onClick={() => submit('publish')} disabled={busy} className={PILL_PRIMARY}>
+                  {pendingAction === 'publish' && isSubmitting ? <LoadingSpinner size="sm" /> : null}
+                  {pendingAction === 'publish' && isSubmitting ? 'Publishing…' : submitLabel}
+                </button>
+              )}
+            </div>
+          </footer>
+        </form>
+      </EditorVariantContext.Provider>
+    );
+  }
+
+  return (
+    <form
+      {...formProps}
+      className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-14"
+    >
+      <div className="min-w-0 space-y-6">
+        {renderFormatSelector ? (
+          <FormatSelector value={productFormat} onChange={changeFormat} disabled={isSubmitting} />
+        ) : null}
+        {sections}
+      </div>
+
+      {/* Sticky summary: live preview, readiness and actions. */}
+      <aside className="space-y-5 lg:sticky lg:top-24">
+        <div className="overflow-hidden rounded-xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
+          <div className="relative aspect-[4/3] bg-black/[0.03] dark:bg-white/[0.04]">
+            {thumbnailUrl.trim() ? (
+              <ProductThumbnailMedia
+                url={thumbnailUrl.trim()}
+                autoPlay={isVideoThumbnailUrl(thumbnailUrl.trim())}
+                className="absolute inset-0 h-full w-full object-cover"
+              />
+            ) : (
+              <span className="absolute inset-0 flex items-center justify-center text-[13px] text-neutral-400 dark:text-neutral-500">
+                Your cover appears here
+              </span>
+            )}
+          </div>
+          <div className="space-y-2 p-5">
+            <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+              {isPhysical ? 'Material' : PRODUCT_TYPE_LABELS[productType] ?? 'Digital'}
+            </p>
+            <p
+              className={`line-clamp-2 text-[16px] font-semibold leading-snug ${
+                title.trim() ? 'text-[#111111] dark:text-white' : 'text-neutral-300 dark:text-neutral-600'
+              }`}
+            >
+              {title.trim() || 'Product title'}
+            </p>
+            <p className="flex items-baseline gap-2">
+              {compareCents != null && priceCents != null && compareCents > priceCents ? (
+                <span className="text-[14px] text-neutral-400 line-through dark:text-neutral-500">
+                  {formatPrice(compareCents, previewCurrency)}
+                </span>
+              ) : null}
+              <span className="text-[17px] font-semibold text-[#111111] dark:text-white">
+                {priceCents != null ? formatPrice(priceCents, previewCurrency) : '—'}
+              </span>
+            </p>
+          </div>
+        </div>
+
+        <div className="rounded-xl border border-black/[0.06] bg-white p-5 dark:border-white/[0.08] dark:bg-[#111111]">
+          <div className="flex items-center justify-between">
+            <p className="text-[14px] font-semibold text-[#111111] dark:text-white">Ready to publish</p>
+            <p className="text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
+              {doneCount}/{checklist.length}
+            </p>
+          </div>
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+            <div
+              className="h-full rounded-full bg-[#111111] transition-[width] duration-500 dark:bg-white"
+              style={{ width: `${(doneCount / checklist.length) * 100}%` }}
+            />
+          </div>
+          <ul className="mt-4 space-y-2.5">
+            {checklist.map((item) => (
+              <li key={item.label} className="flex items-center gap-2.5 text-[14px]">
+                <span
+                  aria-hidden
+                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
+                    item.done ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]' : 'border border-black/20 dark:border-white/25'
+                  }`}
+                >
+                  {item.done ? (
+                    <svg className="h-2.5 w-2.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
+                      <path d="m5 12 5 5 9-10" />
+                    </svg>
+                  ) : null}
+                </span>
+                <span className={item.done ? 'text-[#111111] dark:text-white' : 'text-neutral-500 dark:text-neutral-400'}>
+                  {item.label}
+                </span>
+                {!item.required && !item.done ? (
+                  <span className="ml-auto text-[12px] text-neutral-400 dark:text-neutral-500">Recommended</span>
+                ) : null}
+              </li>
+            ))}
+          </ul>
+
+          <div className="mt-6 space-y-2.5">
+            <button type="button" onClick={() => submit('publish')} disabled={busy} className={PRIMARY_BTN}>
+              {pendingAction === 'publish' && isSubmitting ? <LoadingSpinner size="sm" /> : null}
+              {pendingAction === 'publish' && isSubmitting ? 'Saving…' : submitLabel}
+            </button>
+            {!isEdit ? (
+              <button type="button" onClick={() => submit('draft')} disabled={busy} className={SECONDARY_BTN}>
+                {pendingAction === 'draft' && isSubmitting ? 'Saving…' : 'Save as draft'}
+              </button>
+            ) : null}
+            {onCancel ? (
+              <button type="button" onClick={onCancel} className={`${LINK_BTN} block w-full py-1.5 text-center`}>
+                Cancel
+              </button>
+            ) : cancelHref ? (
+              <Link href={cancelHref} className={`${LINK_BTN} block w-full py-1.5 text-center`}>
+                Cancel
+              </Link>
+            ) : null}
+          </div>
+        </div>
+      </aside>
     </form>
   );
 }

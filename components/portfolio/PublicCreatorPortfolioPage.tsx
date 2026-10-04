@@ -665,8 +665,8 @@ function buildHeroStats(
     stats.push({ value: String(languageCount), label: 'Languages' });
   } else if (profile.followerCount != null && profile.followerCount > 0) {
     stats.push({ value: `${profile.followerCount}+`, label: 'Followers' });
-  } else if (profile.averageRating != null) {
-    stats.push({ value: profile.averageRating.toFixed(1), label: 'Rating' });
+  } else if (profile.starCount > 0) {
+    stats.push({ value: String(profile.starCount), label: 'Stars' });
   }
   return stats.slice(0, 3);
 }
@@ -686,8 +686,8 @@ function buildStats(
   if (languageCount > 0) {
     stats.push({ value: String(languageCount), label: 'Languages' });
   }
-  if (profile.averageRating != null) {
-    stats.push({ value: profile.averageRating.toFixed(1), label: 'Rating' });
+  if (profile.starCount > 0) {
+    stats.push({ value: String(profile.starCount), label: 'Stars' });
   }
   return stats;
 }
@@ -3183,9 +3183,7 @@ export function PublicCreatorPortfolioPage({
             aboutUs={aboutUs}
             presentation={aboutUsPresentation}
             sectionTitle={aboutUsSectionTitle}
-            sectionSubtitle={aboutUsSectionSubtitle}
-            founderRating={typeof profile.averageRating === 'number' ? profile.averageRating : 4.5}
-          />
+            sectionSubtitle={aboutUsSectionSubtitle}          />
         );
         return (
           <PortfolioSectionShell

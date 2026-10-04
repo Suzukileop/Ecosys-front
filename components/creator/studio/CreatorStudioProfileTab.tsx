@@ -1,12 +1,12 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFieldArray, useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
-import { getApiErrorMessage } from '@/lib/api-error';
+import { getApiErrorMessage, UserFacingError } from '@/lib/api-error';
 import { ZodError } from 'zod';
 import { formatLocationLabel, requestDetectedLocation } from '@/lib/geolocation';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
@@ -14,7 +14,6 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { CreatorStudioProfileTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { PhoneInput } from '@/components/ui/PhoneInput';
 import { AvailabilityHoursInput } from '@/components/ui/AvailabilityHoursInput';
-import { CreatorReputationPanel } from '@/components/creator/studio/CreatorReputationPanel';
 import { ProfileReadOnlyField } from '@/components/creator/studio/ProfileReadOnlyField';
 import { ContactVisibilitySelect } from '@/components/creator/studio/ContactVisibilitySelect';
 import {
@@ -31,6 +30,7 @@ import { parseAboutSkills, serializeAboutSkills } from '@/lib/about-skills';
 import { collapseRepeatedBio, isRepeatedBioContent } from '@/lib/profile-bio';
 import {
   DEFAULT_CREATOR_APP_ROLE,
+  creatorShowsCareerSections,
   creatorShowsProviderAboutFields,
   dispatchCreatorAppRoleChanged,
   normalizeCreatorAppRole,
@@ -134,6 +134,7 @@ import {
   profileSectionMutedTextClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
+import { APP_FIELD } from '@/components/landing/landingBrand';
 import { CreatorAvailabilityControl, CreatorAvailabilityBadge } from '@/components/creator/studio/CreatorAvailabilityControl';
 import {
   PortfolioGeneralInfoStudio,
@@ -161,7 +162,6 @@ import { PortfolioAboutUsStudio } from '@/components/portfolio/PortfolioAboutUsS
 import { PortfolioShowcaseChrome } from '@/components/portfolio/PortfolioShowcaseChrome';
 import { PortfolioWorksStudio } from '@/components/portfolio/PortfolioWorksStudio';
 import { PortfolioFaqStudio } from '@/components/portfolio/PortfolioFaqStudio';
-import { PortfolioReputationStudio } from '@/components/portfolio/PortfolioReputationStudio';
 import { PortfolioContactStudio } from '@/components/portfolio/PortfolioContactStudio';
 import { PortfolioGalleryStudio } from '@/components/portfolio/PortfolioGalleryStudio';
 import { PortfolioLinksStudio } from '@/components/portfolio/PortfolioLinksStudio';
@@ -264,8 +264,7 @@ function portfolioSectionItemCountLabel(
   section: ProfileSectionId,
   values: ProfileFormValues,
   portfolioItemCount: number,
-  productsItemCount = 0,
-  reviewCount = 0
+  productsItemCount = 0
 ): string | null {
   switch (section) {
     case 'experience': {
@@ -334,8 +333,6 @@ function portfolioSectionItemCountLabel(
         values.contactEmails.filter((entry) => contactEntryFilled(entry.value)).length;
       return formatItemCountLabel(count, 'contact detail');
     }
-    case 'reputation':
-      return formatItemCountLabel(reviewCount, 'review');
     case 'about':
     case 'aboutPage':
     case 'myRole':
@@ -354,12 +351,16 @@ type CreatorStudioProfileTabProps = {
   portfolioNavSide?: 'left' | 'right';
   /** Portfolio layout: shows a Preview action in the profile header. */
   onPortfolioPreview?: () => void;
-  /** Limit sidebar sections (e.g. store Information: about / links / contact / reputation). */
+  /** Limit sidebar sections (e.g. store Information: about / links / contact). */
   allowedSections?: readonly ProfileSectionId[];
   /** Sidebar rail title when using portfolio layout. Default: Portfolio Sections. */
   sectionsNavTitle?: string;
   /** Portfolio card header (avatar, status, edit). Default true. */
   showProfileHero?: boolean;
+  /** `top` swaps the sections rail for a horizontal pill row above the card (pages that already have a sidebar). */
+  sectionsNavPlacement?: 'rail' | 'top';
+  /** Portfolio rail: action pinned under the sections list. `iconsOnly` is true while the rail is collapsed. */
+  sectionsNavFooter?: (iconsOnly: boolean) => ReactNode;
 };
 
 const PORTFOLIO_SECTION_LABELS: Partial<Record<ProfileSectionId, string>> = {
@@ -475,8 +476,11 @@ export function CreatorStudioProfileTab({
   allowedSections,
   sectionsNavTitle,
   showProfileHero = true,
+  sectionsNavPlacement = 'rail',
+  sectionsNavFooter,
 }: CreatorStudioProfileTabProps) {
   const isPortfolioLayout = variant === 'portfolio';
+  const sectionsNavTop = isPortfolioLayout && sectionsNavPlacement === 'top';
   const navTitle = sectionsNavTitle ?? (allowedSections?.length ? 'Information' : 'Portfolio Sections');
   const isStoreInformationNav = sectionsNavTitle === 'Information';
   const sectionLabelOverrides = useMemo((): Partial<Record<ProfileSectionId, string>> => {
@@ -500,9 +504,6 @@ export function CreatorStudioProfileTab({
   const [revealAfterSkeleton] = useState(!initialCachedProfile);
   const [saving, setSaving] = useState(false);
   const [detectingLocation, setDetectingLocation] = useState(false);
-  const [reputation, setReputation] = useState<CreatorProfileDto['reputation']>(
-    initialCachedProfile?.reputation ?? null
-  );
   const [memberSince, setMemberSince] = useState<string | null>(initialCachedProfile?.memberSince ?? null);
   const [responseTimeLabel, setResponseTimeLabel] = useState<string | null>(
     initialCachedProfile?.responseTimeLabel ?? null
@@ -1390,7 +1391,6 @@ export function CreatorStudioProfileTab({
   ]);
 
   const applyProfile = useCallback((p: CreatorProfileDto) => {
-      setReputation(p.reputation ?? null);
       setMemberSince(p.memberSince ?? null);
       setResponseTimeLabel(p.responseTimeLabel ?? null);
       setTypicalResponseTime(p.typicalResponseTime?.trim() ?? '');
@@ -1458,7 +1458,7 @@ export function CreatorStudioProfileTab({
       form.setValue('locationCity', detected.city, { shouldValidate: true });
       form.setValue('locationCountry', detected.country, { shouldValidate: true });
     } catch (e) {
-      setLocationError(e instanceof Error ? e.message : 'Unable to detect location.');
+      setLocationError(getApiErrorMessage(e, 'Unable to detect your location.'));
     } finally {
       setDetectingLocation(false);
     }
@@ -1679,7 +1679,7 @@ export function CreatorStudioProfileTab({
   const timezoneId = values.timezoneId;
   const hasLocation = Boolean(values.locationLat != null && values.locationLng != null && timezoneId);
   const currentSection = getProfileSection(activeSection);
-  const isFormSection = activeSection !== 'reputation' && activeSection !== 'myRole';
+  const isFormSection = activeSection !== 'myRole';
   const availabilityHoursForCompare = formatAvailabilityHours(availabilitySchedule, timezoneId);
   const hasUnsavedChanges =
     savedSnapshot.current != null &&
@@ -1745,6 +1745,66 @@ export function CreatorStudioProfileTab({
     setIsEditing(false);
   };
 
+  const renderSectionPills = () => (
+    <nav
+      aria-label={`${navTitle} sections`}
+      className="order-first -mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {sectionGroups.flat().map((sectionId) => {
+        const section = getProfileSection(sectionId);
+        const active = activeSection === section.id;
+        const label = sectionLabelOverrides[section.id] ?? section.label;
+        return (
+          <button
+            key={section.id}
+            type="button"
+            onClick={() => handleSectionChange(section.id)}
+            aria-current={active ? 'true' : undefined}
+            className={`shrink-0 rounded-full border px-[18px] py-2 text-[15px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+              active
+                ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                : 'border-black/[0.1] text-neutral-600 hover:border-black/30 hover:text-[#111111] dark:border-white/[0.12] dark:text-neutral-300 dark:hover:border-white/30 dark:hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+
+  /** Portfolio on phones: the sections rail becomes a swipeable tab strip under the profile header. */
+  const renderPortfolioMobileTabs = () => (
+    <nav
+      aria-label={`${navTitle} sections`}
+      className="flex gap-6 overflow-x-auto border-b border-black/[0.08] px-5 [scrollbar-width:none] dark:border-white/[0.1] md:hidden [&::-webkit-scrollbar]:hidden"
+    >
+      {sectionGroups.flat().map((sectionId) => {
+        const section = getProfileSection(sectionId);
+        const active = activeSection === section.id;
+        const label = sectionLabelOverrides[section.id] ?? section.label;
+        return (
+          <button
+            key={section.id}
+            type="button"
+            onClick={(event) => {
+              event.currentTarget.scrollIntoView({ behavior: 'smooth', block: 'nearest', inline: 'center' });
+              handleSectionChange(section.id);
+            }}
+            aria-current={active ? 'true' : undefined}
+            className={`relative -mb-px shrink-0 whitespace-nowrap border-b-2 pb-3 pt-1 text-[15px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+              active
+                ? 'border-[#111111] text-[#111111] dark:border-white dark:text-white'
+                : 'border-transparent text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+            }`}
+          >
+            {label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+
   const renderSectionNav = (layout: 'mobile' | 'desktop') => {
     if (isPortfolioLayout && layout === 'desktop') {
       const collapsed = portfolioNavCollapsed;
@@ -1761,7 +1821,7 @@ export function CreatorStudioProfileTab({
             }`}
           >
             {!iconsOnly ? (
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#666666] dark:text-neutral-500">
+              <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-[#666666] dark:text-neutral-400">
                 {navTitle}
               </p>
             ) : null}
@@ -1808,7 +1868,7 @@ export function CreatorStudioProfileTab({
                   aria-label={label}
                   onClick={() => handleSectionChange(section.id)}
                   aria-current={active ? 'true' : undefined}
-                  className={`relative flex items-center rounded-xl text-left text-sm transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
+                  className={`relative flex items-center rounded-xl text-left text-[15px] leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
                     iconsOnly
                       ? 'mx-auto h-10 w-10 shrink-0 justify-center'
                       : 'min-h-11 w-full gap-2.5 px-3 py-3'
@@ -1828,6 +1888,15 @@ export function CreatorStudioProfileTab({
               );
             })}
           </nav>
+          {sectionsNavFooter ? (
+            <div
+              className={`shrink-0 border-t border-black/[0.05] dark:border-white/[0.06] ${
+                iconsOnly ? 'flex w-full justify-center py-3' : 'p-3'
+              }`}
+            >
+              {sectionsNavFooter(iconsOnly)}
+            </div>
+          ) : null}
         </div>
       );
     }
@@ -2199,7 +2268,7 @@ export function CreatorStudioProfileTab({
               type: 'manual',
               message: 'Bio looks duplicated — remove the repeated paragraph before saving.',
             });
-            throw new Error('Bio looks duplicated — remove the repeated paragraph before saving.');
+            throw new UserFacingError('Bio looks duplicated — remove the repeated paragraph before saving.');
           }
           const cleaned = collapseRepeatedBio(String(value));
           form.setValue('bio', cleaned, { shouldDirty: true });
@@ -2644,6 +2713,7 @@ export function CreatorStudioProfileTab({
             status: block.status,
             location: block.location.trim(),
             employmentType: block.employmentType,
+            hideFromCv: Boolean(block.hideFromCv),
             mediaUrl: block.mediaUrl.trim(),
             mediaType: block.mediaUrl.trim() ? block.mediaType : null,
             tasks: (block.tasks ?? [])
@@ -2692,6 +2762,7 @@ export function CreatorStudioProfileTab({
             status: block.status,
             location: block.location,
             employmentType: block.employmentType,
+            hideFromCv: block.hideFromCv,
             mediaUrl: block.mediaUrl,
             mediaType: block.mediaUrl ? block.mediaType ?? null : null,
             tasks: block.tasks,
@@ -3054,6 +3125,7 @@ export function CreatorStudioProfileTab({
         type?: string;
         platform?: string | null;
         iconUrl?: string | null;
+        hideFromCv?: boolean;
       }>
     ) => {
       setSaving(true);
@@ -3090,6 +3162,8 @@ export function CreatorStudioProfileTab({
               type,
               platform: existing?.platform ?? null,
               iconUrl,
+              hideFromCv:
+                link.hideFromCv !== undefined ? link.hideFromCv : existing?.hideFromCv === true,
             };
           })
           .filter((link) => link.url.length > 0);
@@ -3101,16 +3175,25 @@ export function CreatorStudioProfileTab({
           url: link.url,
           platform: link.platform ?? null,
           iconUrl: link.iconUrl ?? null,
+          hideFromCv: link.hideFromCv,
         }));
 
         const savedLinks = serializeProfileLinks(savedSnapshot.current?.profileLinks ?? []).map(
-          ({ label, url, iconUrl }) => ({ label, url, iconUrl: iconUrl ?? null })
+          ({ label, url, iconUrl, hideFromCv }) => ({
+            label,
+            url,
+            iconUrl: iconUrl ?? null,
+            hideFromCv: hideFromCv === true,
+          })
         );
-        const nextLinksComparable = serializeProfileLinks(merged).map(({ label, url, iconUrl }) => ({
-          label,
-          url,
-          iconUrl: iconUrl ?? null,
-        }));
+        const nextLinksComparable = serializeProfileLinks(merged).map(
+          ({ label, url, iconUrl, hideFromCv }) => ({
+            label,
+            url,
+            iconUrl: iconUrl ?? null,
+            hideFromCv: hideFromCv === true,
+          })
+        );
         if (JSON.stringify(nextLinksComparable) === JSON.stringify(savedLinks)) {
           form.setValue('profileLinks', merged, { shouldDirty: false });
           return;
@@ -3200,7 +3283,7 @@ export function CreatorStudioProfileTab({
           Boolean(nextTimezone);
 
         if (!hasCompleteLocation) {
-          throw new Error('Enable device location before saving location fields.');
+          throw new UserFacingError('Enable device location before saving location fields.');
         }
 
         const availabilityHoursForSave = formatAvailabilityHours(
@@ -3223,11 +3306,7 @@ export function CreatorStudioProfileTab({
           title: 'Location updated',
         });
       } catch (e) {
-        if (e instanceof Error && e.message.includes('Enable device location')) {
-          setSubmitError(e.message);
-        } else {
-          setSectionSaveError(e, form, setSubmitError, 'Unable to update location.');
-        }
+        setSectionSaveError(e, form, setSubmitError, 'Unable to update location.');
         throw e;
       } finally {
         setSaving(false);
@@ -3261,14 +3340,6 @@ export function CreatorStudioProfileTab({
   const persistPortfolioGeneralInfo = useCallback(
     async (draft: PortfolioGeneralInfoDraft) => {
       const latest = form.getValues();
-      const nextTimezone = draft.timezone.trim();
-      if (nextTimezone && nextTimezone !== (latest.timezoneId ?? '').trim()) {
-        await persistPortfolioLocation({
-          city: latest.locationCity ?? '',
-          country: latest.locationCountry ?? '',
-          timezone: nextTimezone,
-        });
-      }
 
       setSaving(true);
       setSubmitError(null);
@@ -3290,16 +3361,21 @@ export function CreatorStudioProfileTab({
         }
 
         if (isRepeatedBioContent(draft.bio)) {
-          throw new Error('Bio looks duplicated — remove the repeated paragraph before saving.');
+          throw new UserFacingError('Bio looks duplicated — remove the repeated paragraph before saving.');
         }
 
+        const specialties = parseSpecialtyList(draft.specialties);
+        const specialtiesChanged =
+          specialties.join('|') !==
+          parseSpecialtyList(latest.specialties ?? [], latest.specialite ?? '').join('|');
         await updateCreatorProfile({
+          ...(specialtiesChanged ? { specialties, specialite: specialties[0] ?? '' } : {}),
           bio: collapseRepeatedBio(draft.bio),
           gender: normalizeCreatorGender(draft.gender) ?? undefined,
           nationality: normalizeNationalityCode(draft.nationality) ?? '',
           isAvailable: draft.isAvailable,
           availabilityHours: draft.availability
-            ? formatAvailabilityHours(draft.availability, nextTimezone || latest.timezoneId)
+            ? formatAvailabilityHours(draft.availability, latest.timezoneId)
             : '',
         });
         await loadProfile({ silent: true });
@@ -3311,7 +3387,7 @@ export function CreatorStudioProfileTab({
         setSaving(false);
       }
     },
-    [form, loadProfile, onProfileUpdated, persistPortfolioLocation, updateUser]
+    [form, loadProfile, onProfileUpdated, updateUser]
   );
 
   const persistPortfolioAboutDetails = useCallback(
@@ -3480,17 +3556,6 @@ export function CreatorStudioProfileTab({
     const fieldVariant = isPortfolioLayout ? 'flat' : 'boxed';
 
     switch (activeSection) {
-      case 'reputation':
-        if (isPortfolioLayout) {
-          return (
-            <PortfolioReputationStudio
-              reputation={reputation}
-              visibility={contactVisibility.reputation}
-              onVisibilityChange={(level) => void persistPortfolioVisibility('reputation', level)}
-            />
-          );
-        }
-        return <CreatorReputationPanel reputation={reputation} showHeader={false} />;
       case 'myRole':
         return (
           <ProfileAppRoleField
@@ -3537,10 +3602,12 @@ export function CreatorStudioProfileTab({
                 availability: values.availabilityHours?.trim()
                   ? parseAvailabilityHours(values.availabilityHours)
                   : null,
-                timezone: timezoneId ?? '',
+                specialties: parseSpecialtyList(values.specialties ?? [], values.specialite ?? ''),
               }}
               availabilityLabel={values.availabilityLabel ?? ''}
               hideProviderFields={!showProviderAboutFields}
+              showSpecialty={!creatorShowsCareerSections(watchedAppRole)}
+              appRole={watchedAppRole}
               visibility={{
                 gender: contactVisibility.gender,
                 availability: contactVisibility.availability,
@@ -3585,7 +3652,7 @@ export function CreatorStudioProfileTab({
         }
         if (!isEditing) {
           return (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <ProfileReadOnlyField label="Name" value={values.fullName} />
               <ProfileReadOnlyField
                 label="Username"
@@ -3593,7 +3660,7 @@ export function CreatorStudioProfileTab({
                 emptyLabel="Not set"
               />
               <ProfileReadOnlyField label="Bio" value={values.bio} />
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <ProfileReadOnlyField label="Gender" value={values.gender} emptyLabel="Not set" />
                 <ProfileReadOnlyField
                   label="Nationality"
@@ -3616,7 +3683,7 @@ export function CreatorStudioProfileTab({
                     : null
                 }
               />
-              <div className="grid gap-3 sm:grid-cols-2">
+              <div className="grid gap-4 sm:grid-cols-2">
                 <ProfileReadOnlyField
                   label="Member since"
                   value={formatMemberSince(memberSince)}
@@ -3629,7 +3696,7 @@ export function CreatorStudioProfileTab({
                 />
               </div>
               {hasLocation ? (
-                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-950/50">
+                <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-950/50">
                   <p className={`mb-1 ${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
                     Location
                   </p>
@@ -3649,7 +3716,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
               <label htmlFor="fullName" className={profileFormLabelClass}>
                 Name
@@ -3662,7 +3729,7 @@ export function CreatorStudioProfileTab({
                 {...form.register('fullName')}
               />
               {form.formState.errors.fullName ? (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
                   {form.formState.errors.fullName.message}
                 </p>
               ) : null}
@@ -3682,11 +3749,11 @@ export function CreatorStudioProfileTab({
                   {...form.register('username')}
                 />
               </div>
-              <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500">
+              <p className="mt-2 text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
                 Unique and case-sensitive — leopard and Leopard are different.
               </p>
               {form.formState.errors.username ? (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
                   {form.formState.errors.username.message}
                 </p>
               ) : null}
@@ -3703,12 +3770,12 @@ export function CreatorStudioProfileTab({
                 {...form.register('bio')}
               />
               {form.formState.errors.bio ? (
-                <p className="mt-1 text-sm text-red-600 dark:text-red-400">
+                <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
                   {form.formState.errors.bio.message}
                 </p>
               ) : null}
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="gender" className={profileFormLabelClass}>
                   Gender
@@ -3753,13 +3820,13 @@ export function CreatorStudioProfileTab({
             />
             <ContactVisibilitySelect
               id="visibility-gender"
-              label="Visibilité du genre (profil public)"
+              label="Gender visibility (public profile)"
               value={contactVisibility.gender}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, gender: value }))}
             />
             <div>
               <label className={profileFormLabelClass}>Availability hours</label>
-              <div className="mt-1">
+              <div className="mt-2">
                 <AvailabilityHoursInput
                   value={availabilitySchedule}
                   onChange={handleAvailabilityChange}
@@ -3769,11 +3836,11 @@ export function CreatorStudioProfileTab({
             </div>
             <ContactVisibilitySelect
               id="visibility-availability-about"
-              label="Visibilité de la disponibilité (profil public)"
+              label="Availability visibility (public profile)"
               value={contactVisibility.availability}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, availability: value }))}
             />
-            <div className="grid gap-3 sm:grid-cols-2">
+            <div className="grid gap-4 sm:grid-cols-2">
               <ProfileReadOnlyField
                 label="Member since"
                 value={formatMemberSince(memberSince)}
@@ -3801,28 +3868,28 @@ export function CreatorStudioProfileTab({
             </div>
             <ContactVisibilitySelect
               id="visibility-response-time"
-              label="Visibilité du délai de réponse (profil public)"
+              label="Response time visibility (public profile)"
               value={contactVisibility.responseTime}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, responseTime: value }))}
             />
-            <div className="space-y-3 rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-950/50">
+            <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50/60 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-950/50">
               <p className={profileFormLabelClass}>Location</p>
               <button
                 type="button"
                 onClick={() => void enableLocation()}
                 disabled={detectingLocation}
-                className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+                className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
                 {detectingLocation && <LoadingSpinner size="sm" />}
                 {hasLocation ? 'Refresh location' : 'Enable location (required)'}
               </button>
               {hasLocation ? (
-                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+                <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-[15px] leading-relaxed text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
                   <p className="font-medium">{formatLocationLabel(locationCity, locationCountry)}</p>
                   <p className="mt-1 text-emerald-800/80 dark:text-emerald-300/80">Timezone: {timezoneId}</p>
                 </div>
               ) : (
-                <p className="text-sm text-amber-700 dark:text-amber-300">
+                <p className="text-[15px] leading-relaxed text-amber-700 dark:text-amber-300">
                   You must enable location before saving your information.
                 </p>
               )}
@@ -3832,7 +3899,7 @@ export function CreatorStudioProfileTab({
               ) : null}
               <ContactVisibilitySelect
                 id="visibility-location"
-                label="Visibilité de la localisation (profil public)"
+                label="Location visibility (public profile)"
                 value={contactVisibility.location}
                 onChange={(value) => setContactVisibility((prev) => ({ ...prev, location: value }))}
               />
@@ -3871,9 +3938,9 @@ export function CreatorStudioProfileTab({
         }
         if (!isEditing) {
           return (
-            <div className="space-y-3">
+            <div className="space-y-4">
               {showProviderAboutFields ? (
-                <div className="grid gap-3 sm:grid-cols-2 sm:gap-4">
+                <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                   <ProfileReadOnlyField
                     label="Specialty"
                     value={
@@ -3935,7 +4002,7 @@ export function CreatorStudioProfileTab({
                 readOnly
                 values={serializeAboutSkills(values.aboutSkills)}
               />
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="grid gap-5 sm:grid-cols-2">
                 <AboutStringListField
                   control={form.control}
                   register={form.register}
@@ -3968,9 +4035,9 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             {showProviderAboutFields ? (
-              <div className="grid gap-4 sm:grid-cols-2 sm:gap-6">
+              <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
                 <div>
                   <p className={profileFormLabelClass}>Specialty</p>
                   <SpecialtyMultiSelect
@@ -4035,7 +4102,7 @@ export function CreatorStudioProfileTab({
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutEducation: value }))}
             />
             <div className="grid gap-6 sm:grid-cols-2">
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <AboutSkillsField
                   control={form.control}
                   fields={aboutSkillsFields}
@@ -4051,7 +4118,7 @@ export function CreatorStudioProfileTab({
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutSkills: value }))}
                 />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <AboutStringListField
                   control={form.control}
                   register={form.register}
@@ -4067,7 +4134,7 @@ export function CreatorStudioProfileTab({
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutStrengths: value }))}
                 />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <AboutStringListField
                   control={form.control}
                   register={form.register}
@@ -4085,7 +4152,7 @@ export function CreatorStudioProfileTab({
                   }
                 />
               </div>
-              <div className="space-y-3">
+              <div className="space-y-4">
                 <AboutStringListField
                   control={form.control}
                   register={form.register}
@@ -4117,7 +4184,7 @@ export function CreatorStudioProfileTab({
         }
         if (!isEditing) {
           return (
-            <div className="space-y-4">
+            <div className="space-y-5">
               <ProfileReadOnlyField
                 label="Years of experience"
                 value={values.yearsOfExperience != null ? String(values.yearsOfExperience) : null}
@@ -4140,7 +4207,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <ProfileSectionItemCount
               count={experienceFields.length}
               limit={MAX_EXPERIENCE_ENTRIES}
@@ -4215,7 +4282,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <ProfileStrengthsField
               control={form.control}
               setValue={form.setValue}
@@ -4254,7 +4321,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <ProfileStrengthsField
               control={form.control}
               setValue={form.setValue}
@@ -4346,7 +4413,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <ProfileServicesField
               control={form.control}
               fields={serviceFields}
@@ -4358,7 +4425,7 @@ export function CreatorStudioProfileTab({
             />
             <ContactVisibilitySelect
               id="visibility-services"
-              label="Visibilité des services (profil public)"
+              label="Services visibility (public profile)"
               value={contactVisibility.services}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, services: value }))}
             />
@@ -4392,7 +4459,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <ProfileFaqField
               control={form.control}
               fields={faqFields}
@@ -4403,7 +4470,7 @@ export function CreatorStudioProfileTab({
             />
             <ContactVisibilitySelect
               id="visibility-faq"
-              label="Visibilité de la FAQ (profil public)"
+              label="FAQ visibility (public profile)"
               value={contactVisibility.faq}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, faq: value }))}
             />
@@ -4524,6 +4591,7 @@ export function CreatorStudioProfileTab({
                 type: link.type || 'CUSTOM',
                 platform: link.platform ?? null,
                 iconUrl: link.iconUrl ?? null,
+                hideFromCv: link.hideFromCv === true,
               }))}
               onSave={persistPortfolioLinks}
             />
@@ -4544,7 +4612,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <ProfileLinksField
               control={form.control}
               fields={linkFields}
@@ -4556,7 +4624,7 @@ export function CreatorStudioProfileTab({
             />
             <ContactVisibilitySelect
               id="visibility-links"
-              label="Visibilité des liens (profil public)"
+              label="Links visibility (public profile)"
               value={contactVisibility.links}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, links: value }))}
             />
@@ -4569,7 +4637,7 @@ export function CreatorStudioProfileTab({
         }
         if (!isEditing) {
           return hasLocation ? (
-            <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-4 py-4 dark:border-neutral-800 dark:bg-neutral-950/50">
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-950/50">
               <p className={`${profileSectionBodyTextClass} font-semibold text-neutral-900 dark:text-white`}>
                 {formatLocationLabel(locationCity, locationCountry)}
               </p>
@@ -4585,23 +4653,23 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <button
               type="button"
               onClick={() => void enableLocation()}
               disabled={detectingLocation}
-              className="inline-flex items-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
             >
               {detectingLocation && <LoadingSpinner size="sm" />}
               {hasLocation ? 'Refresh location' : 'Enable location (required)'}
             </button>
             {hasLocation ? (
-              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
+              <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-[15px] leading-relaxed text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
                 <p className="font-medium">{formatLocationLabel(locationCity, locationCountry)}</p>
                 <p className="mt-1 text-emerald-800/80 dark:text-emerald-300/80">Timezone: {timezoneId}</p>
               </div>
             ) : (
-              <p className="text-sm text-amber-700 dark:text-amber-300">
+              <p className="text-[15px] leading-relaxed text-amber-700 dark:text-amber-300">
                 You must enable location before saving your information.
               </p>
             )}
@@ -4630,7 +4698,7 @@ export function CreatorStudioProfileTab({
         }
         if (!isEditing) {
           return (
-            <div className="space-y-3">
+            <div className="space-y-4">
               <ProfileReadOnlyField
                 label="Professional address"
                 value={
@@ -4638,7 +4706,7 @@ export function CreatorStudioProfileTab({
                 }
                 variant={fieldVariant}
               />
-              <div className={isPortfolioLayout ? 'grid gap-0 sm:grid-cols-2' : 'grid gap-3 sm:grid-cols-2'}>
+              <div className={isPortfolioLayout ? 'grid gap-0 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}>
                 <ProfileReadOnlyField
                   label="Phone"
                   value={formatPhoneDisplay(
@@ -4658,7 +4726,7 @@ export function CreatorStudioProfileTab({
           );
         }
         return (
-          <div className="space-y-4">
+          <div className="space-y-5">
             <div>
               <label htmlFor="contactAddress" className={profileFormLabelClass}>
                 Professional address
@@ -4691,12 +4759,12 @@ export function CreatorStudioProfileTab({
                 }}
               />
             </div>
-            <div className="grid gap-4 sm:grid-cols-2">
+            <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="contactPhone" className={profileFormLabelClass}>
                   Phone
                 </label>
-                <div className="mt-1">
+                <div className="mt-2">
                   <PhoneInput
                     id="contactPhone"
                     value={values.contactPhone ?? ''}
@@ -4755,23 +4823,23 @@ export function CreatorStudioProfileTab({
                 />
               </div>
             </div>
-            <div className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-800 dark:bg-neutral-950/40">
+            <div className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-5 dark:border-neutral-800 dark:bg-neutral-950/40">
               <p className={`${profileSectionBodyTextClass} font-semibold text-neutral-900 dark:text-white`}>
-                Visibilité publique
+                Public visibility
               </p>
-              <p className={`mt-1 ${profileSectionMutedTextClass}`}>
-                Public = tout le monde · Membres connectés = utilisateurs connectés · Masqué = jamais affiché
+              <p className={`mt-1.5 ${profileSectionMutedTextClass}`}>
+                Public = everyone · Members only = signed-in users · Hidden = never shown
               </p>
-              <div className="mt-4 space-y-3">
+              <div className="mt-5 space-y-4">
                 <ContactVisibilitySelect
                   id="visibility-address"
-                  label="Adresse"
+                  label="Address"
                   value={contactVisibility.address}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, address: value }))}
                 />
                 <ContactVisibilitySelect
                   id="visibility-phone"
-                  label="Téléphone"
+                  label="Phone"
                   value={contactVisibility.phone}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, phone: value }))}
                 />
@@ -4807,7 +4875,7 @@ export function CreatorStudioProfileTab({
       ) : null}
 
       {loadingProfile ? (
-        <CreatorStudioProfileTabSkeleton />
+        <CreatorStudioProfileTabSkeleton layout={isPortfolioLayout && !sectionsNavTop ? 'rail' : 'pills'} />
       ) : (
         <form
           onSubmit={form.handleSubmit(onSubmit, onInvalidSubmit)}
@@ -4820,7 +4888,9 @@ export function CreatorStudioProfileTab({
         >
           <div
             className={
-              isPortfolioLayout
+              sectionsNavTop
+                ? `grid items-start gap-8${showProfileHero ? ' pt-12 sm:pt-14' : ''}`
+                : isPortfolioLayout
                 ? `grid items-start gap-5 md:gap-6 ${
                     portfolioNavSide === 'right'
                       ? 'md:grid-cols-[minmax(0,1fr)_auto]'
@@ -4830,12 +4900,14 @@ export function CreatorStudioProfileTab({
             }
           >
             {/* Portfolio: sections rail (sticky on scroll) */}
-            {isPortfolioLayout ? (
+            {sectionsNavTop ? (
+              renderSectionPills()
+            ) : isPortfolioLayout ? (
               <ProfileSectionStickyAside
                 className={`${portfolioNavCollapsed ? 'w-[3.25rem]' : 'w-[15.5rem]'}${
                   portfolioNavSide === 'right' ? ' md:col-start-2 md:row-start-1' : ''
                 }`}
-                surfaceClassName="flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg border border-black/10 bg-[#EDEDED] dark:border-0 dark:bg-white/[0.06]"
+                surfaceClassName={`flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`}
               >
                 {renderSectionNav('desktop')}
               </ProfileSectionStickyAside>
@@ -5381,6 +5453,8 @@ export function CreatorStudioProfileTab({
                   />
                 ) : null}
 
+                {isPortfolioLayout && !sectionsNavTop ? renderPortfolioMobileTabs() : null}
+
                 <div
                   className={`flex-1 ${
                     isPortfolioLayout
@@ -5391,8 +5465,8 @@ export function CreatorStudioProfileTab({
                   }`}
                 >
                   {!isPortfolioLayout ? (
-                    <header className="mb-6 border-b border-neutral-200/60 pb-5 dark:border-neutral-700/40">
-                      <div className="flex items-center gap-3.5">
+                    <header className="mb-8 border-b border-neutral-200/60 pb-6 dark:border-neutral-700/40">
+                      <div className="flex items-center gap-4">
                         <ProfileSectionNavIcon sectionId={activeSection} variant="header" />
                         <div className="min-w-0 flex-1">
                           <h2 className={profileSectionHeaderTitleClass}>{sectionDisplayLabel}</h2>
@@ -5412,8 +5486,7 @@ export function CreatorStudioProfileTab({
                 </div>
 
                 {isFormSection ||
-                (isPortfolioLayout &&
-                  (activeSection === 'reputation' || activeSection === 'myRole')) ? (
+                (isPortfolioLayout && activeSection === 'myRole') ? (
                   isPortfolioLayout ? (
                     <PortfolioEditorFooter
                       lastUpdatedLabel={formatLastUpdatedLabel(profileUpdatedAt)}
@@ -5421,8 +5494,7 @@ export function CreatorStudioProfileTab({
                         activeSection,
                         values,
                         portfolioItemCount,
-                        productsItemCount,
-                        reputation?.reviewCount ?? 0
+                        productsItemCount
                       )}
                       metaItems={
                         activeSection === 'about'
@@ -5458,7 +5530,6 @@ export function CreatorStudioProfileTab({
                       onCancel={cancelEdit}
                       hidePrimaryActions={
                         isPortfolioChromeSection ||
-                        activeSection === 'reputation' ||
                         activeSection === 'myRole'
                       }
                       hideTopBorder={
@@ -5473,27 +5544,26 @@ export function CreatorStudioProfileTab({
                         activeSection === 'gallery' ||
                         activeSection === 'links' ||
                         activeSection === 'contact' ||
-                        activeSection === 'reputation' ||
                         activeSection === 'myRole'
                       }
                       onEdit={beginPortfolioEdit}
                     />
                   ) : (
-                    <div className="flex justify-end gap-3 border-t border-neutral-200 bg-neutral-50/50 px-5 py-4 dark:border-neutral-800 dark:bg-neutral-950/30 sm:px-6">
+                    <div className="flex justify-end gap-3 border-t border-neutral-200 bg-neutral-50/50 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-950/30 sm:px-7">
                       {isEditing ? (
                         <>
                           <button
                             type="button"
                             onClick={cancelEdit}
                             disabled={saving}
-                            className="rounded-full border border-neutral-300 px-5 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
+                            className="rounded-full border border-neutral-300 px-5 py-2.5 text-[15px] font-semibold text-neutral-700 hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
                           >
                             Cancel
                           </button>
                           <button
                             type="submit"
                             disabled={saving || !hasUnsavedChanges}
-                            className="inline-flex items-center gap-2 rounded-full bg-[#F97316] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#EA580C] disabled:opacity-60"
+                            className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-6 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
                           >
                             {saving ? <LoadingSpinner size="sm" /> : null}
                             Save information
@@ -5506,7 +5576,7 @@ export function CreatorStudioProfileTab({
                             setAvailabilitySchedule(parseAvailabilityHours(values.availabilityHours));
                             setIsEditing(true);
                           }}
-                          className="inline-flex items-center gap-2 rounded-full bg-[#F97316] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#EA580C]"
+                          className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-6 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
                         >
                           Edit
                         </button>
@@ -5519,16 +5589,12 @@ export function CreatorStudioProfileTab({
 
             {!isPortfolioLayout ? (
               <>
-                <aside className="order-1 overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 md:hidden">
+                <aside className={`order-1 overflow-hidden rounded-lg ${APP_FIELD} dark:border dark:border-neutral-800 dark:bg-neutral-900 md:hidden`}>
                   {renderSectionNav('mobile')}
                 </aside>
                 <ProfileSectionStickyAside>{renderSectionNav('desktop')}</ProfileSectionStickyAside>
               </>
-            ) : (
-              <aside className="order-1 overflow-hidden rounded-lg border border-black/10 bg-[#EDEDED] dark:border-0 dark:bg-white/[0.06] md:hidden">
-                {renderSectionNav('mobile')}
-              </aside>
-            )}
+            ) : null}
           </div>
         </form>
       )}

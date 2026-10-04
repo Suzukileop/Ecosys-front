@@ -1,9 +1,8 @@
 'use client';
 
-import { useMemo, useState, type ReactNode } from 'react';
+import { useMemo, type ReactNode } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { groupBySpecialty } from '@/lib/specialties';
-import { resolveSkillLevelLabel } from '@/components/portfolio/skill-usage-descriptions';
 import type { ProfileStrengthTool } from '@/types/ecosystem';
 
 type PublicSkillsToolsGroupedProps = {
@@ -19,67 +18,40 @@ function MetaChip({
   label,
   iconUrl,
   showLogo,
-  levelLabel,
 }: {
   label: string;
   iconUrl?: string | null;
   showLogo?: boolean;
-  levelLabel?: string | null;
 }) {
   return (
     <span
-      className={`inline-flex max-w-full items-center gap-2 rounded-full border border-neutral-200 bg-neutral-50 py-1.5 text-xs font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 ${
-        showLogo ? 'pl-1.5 pr-3' : 'px-3'
+      className={`inline-flex h-10 max-w-full items-center gap-2 rounded-lg border border-black/[0.08] text-[15px] text-[#111111] transition-colors hover:border-black/[0.18] dark:border-white/[0.1] dark:text-neutral-100 dark:hover:border-white/[0.22] ${
+        showLogo ? 'pl-2 pr-3' : 'px-3'
       }`}
-      title={levelLabel ? `${label} — ${levelLabel}` : label}
+      title={label}
     >
-      {showLogo ? <CreatorToolLogo label={label} iconUrl={iconUrl} size={22} /> : null}
+      {showLogo ? <CreatorToolLogo label={label} iconUrl={iconUrl} size={20} /> : null}
       <span className="min-w-0 truncate">{label}</span>
-      {levelLabel ? (
-        <span className="shrink-0 text-[10px] font-semibold uppercase tracking-wide text-[#EA580C] dark:text-[#FB923C]">
-          {levelLabel}
-        </span>
-      ) : null}
     </span>
   );
 }
 
-function SpecialtyGroup({
-  title,
-  children,
-  defaultOpen = true,
-}: {
-  title: string;
-  children: ReactNode;
-  defaultOpen?: boolean;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
+function SkillRow({ label, children }: { label: string; children: ReactNode }) {
   return (
-    <div className="overflow-hidden rounded-xl border border-neutral-200/80 dark:border-neutral-800">
-      <button
-        type="button"
-        onClick={() => setOpen((prev) => !prev)}
-        aria-expanded={open}
-        className="flex w-full items-center justify-between gap-3 px-3.5 py-2.5 text-left transition hover:bg-neutral-50 dark:hover:bg-neutral-800/50"
-      >
-        <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-          {title}
-        </span>
-        <span
-          className={`text-neutral-400 transition-transform dark:text-neutral-500 ${open ? 'rotate-180' : ''}`}
-          aria-hidden
-        >
-          ▾
-        </span>
-      </button>
-      {open ? <div className="border-t border-neutral-200/80 px-3.5 py-3 dark:border-neutral-800">{children}</div> : null}
+    <div className="rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-8">
+      <p className="mb-5 text-[15px] font-semibold text-[#111111] dark:text-white">{label}</p>
+      <div className="min-w-0">{children}</div>
     </div>
   );
 }
 
+function ChipList({ children }: { children: ReactNode }) {
+  return <div className="flex flex-wrap gap-2">{children}</div>;
+}
+
 /**
- * Public read-only Skills & Tools — same specialty grouping as studio CRUD
- * (`specialtyGroupLabel` / `groupBySpecialty`), with unified chip styling.
+ * Public read-only Stack & Tools — tools keep the studio specialty grouping
+ * (`groupBySpecialty`), proficiency levels are intentionally hidden.
  */
 export function PublicSkillsToolsGrouped({
   stack = [],
@@ -92,9 +64,7 @@ export function PublicSkillsToolsGrouped({
       stack
         .map((item) => ({
           name: (typeof item === 'string' ? item : item.name)?.trim() ?? '',
-          category: typeof item === 'string' ? null : item.category,
           iconUrl: typeof item === 'string' ? null : item.iconUrl,
-          level: typeof item === 'string' ? null : item.level,
         }))
         .filter((item) => item.name),
     [stack]
@@ -127,37 +97,30 @@ export function PublicSkillsToolsGrouped({
   if (!hasStack && normalizedTools.length === 0) return null;
 
   return (
-    <div className="space-y-5">
+    <div className="space-y-8">
       {hasStack ? (
-        <section className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Stack
-          </p>
-          <div className="flex flex-wrap gap-2">
+        <SkillRow label="Stack">
+          <ChipList>
             {normalizedStack.length > 0
               ? normalizedStack.map((item) => (
-                  <MetaChip
-                    key={item.name}
-                    label={item.name}
-                    iconUrl={item.iconUrl}
-                    showLogo
-                    levelLabel={resolveSkillLevelLabel(item)}
-                  />
+                  <MetaChip key={item.name} label={item.name} iconUrl={item.iconUrl} showLogo />
                 ))
               : legacyTags.map((label) => <MetaChip key={label} label={label} />)}
-          </div>
-        </section>
+          </ChipList>
+        </SkillRow>
       ) : null}
 
       {normalizedTools.length > 0 ? (
-        <section className="space-y-2">
-          <p className="text-[10px] font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-            Tools
-          </p>
-          <div className="space-y-2.5">
+        <SkillRow label="Tools">
+          <div className="space-y-6">
             {toolGroups.map(({ group, items }) => (
-              <SpecialtyGroup key={group} title={group} defaultOpen={toolGroups.length <= 2}>
-                <div className="flex flex-wrap gap-2">
+              <div key={group}>
+                {group ? (
+                  <p className="mb-3 text-[15px] capitalize text-neutral-700 dark:text-neutral-300">
+                    {group.toLowerCase()}
+                  </p>
+                ) : null}
+                <ChipList>
                   {items.map((item) => (
                     <MetaChip
                       key={`${group}-${item.name}`}
@@ -166,11 +129,11 @@ export function PublicSkillsToolsGrouped({
                       showLogo
                     />
                   ))}
-                </div>
-              </SpecialtyGroup>
+                </ChipList>
+              </div>
             ))}
           </div>
-        </section>
+        </SkillRow>
       ) : null}
     </div>
   );

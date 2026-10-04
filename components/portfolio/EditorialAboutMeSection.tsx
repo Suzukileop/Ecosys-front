@@ -119,6 +119,12 @@ import { CountryFlag } from '@/components/ui/CountryFlag';
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import type { PortfolioListMarkerStyle } from '@/components/portfolio/portfolio-list-marker';
 import { readPortfolioNavTopClearancePx } from '@/components/portfolio/portfolio-nav-top-clearance';
+import { mediaImageResponsive } from '@/lib/media-image-url';
+
+/** Portraits and photos in this section are user uploads; serve a derivative, not the original. */
+const ABOUT_MEDIA_WIDTHS = [256, 384, 640, 828] as const;
+const ABOUT_MEDIA_SIZES = '(min-width: 1024px) 420px, 90vw';
+
 
 export type EditorialAboutMeSectionProps = {
   title: string;
@@ -1082,7 +1088,8 @@ function AboutMeTraitLayout({
               {avatarUrl?.trim() ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={avatarUrl.trim()}
+                  {...mediaImageResponsive(avatarUrl.trim(), ABOUT_MEDIA_WIDTHS)}
+                  sizes={ABOUT_MEDIA_SIZES}
                   alt={fullName?.trim() || 'Profile'}
                   className={infoPortraitImageClass('h-full w-full object-cover', portraitGrayscale)}
                 />
@@ -2606,7 +2613,8 @@ function AboutPortraitSkillsLayout({
   const portraitMedia = avatarSrc ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={avatarSrc}
+      {...mediaImageResponsive(avatarSrc, ABOUT_MEDIA_WIDTHS)}
+      sizes={ABOUT_MEDIA_SIZES}
       alt={portraitName}
       className={infoPortraitImageClass(
         'pf-about-portrait-img block h-full w-full object-cover object-[50%_18%]',
@@ -3443,7 +3451,8 @@ function AboutBannerLayout({
                   {avatarUrl?.trim() ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
-                      src={avatarUrl.trim()}
+                      {...mediaImageResponsive(avatarUrl.trim(), ABOUT_MEDIA_WIDTHS)}
+                      sizes={ABOUT_MEDIA_SIZES}
                       alt={portraitName}
                       className={infoPortraitImageClass(
                         'pf-about-banner-portrait-img block h-full w-full object-cover object-[50%_18%]',
@@ -3905,7 +3914,8 @@ function AboutSplitLayout({
                 {avatarUrl?.trim() ? (
                   // eslint-disable-next-line @next/next/no-img-element
                   <img
-                    src={avatarUrl.trim()}
+                    {...mediaImageResponsive(avatarUrl.trim(), ABOUT_MEDIA_WIDTHS)}
+                    sizes={ABOUT_MEDIA_SIZES}
                     alt={portraitName}
                     className={infoPortraitImageClass(
                       'block h-full w-full object-cover object-[50%_18%]',
@@ -4768,7 +4778,7 @@ function ManifestoPortraitFrame({
     <div className="pf-about-manifesto-portrait-media">
       {avatarSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatarSrc} alt={fullName?.trim() || 'Profile'} className={imageClass} />
+        <img {...mediaImageResponsive(avatarSrc, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt={fullName?.trim() || 'Profile'} className={imageClass} />
       ) : (
         <div
           className="flex h-full w-full items-center justify-center"
@@ -6530,7 +6540,8 @@ function ValueStepsSquarePortrait({
   const media = avatarSrc ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={avatarSrc}
+      {...mediaImageResponsive(avatarSrc, ABOUT_MEDIA_WIDTHS)}
+      sizes={ABOUT_MEDIA_SIZES}
       alt={fullName?.trim() || 'Profile'}
       className={infoPortraitImageClass('h-full w-full object-cover object-center', portraitGrayscale)}
     />

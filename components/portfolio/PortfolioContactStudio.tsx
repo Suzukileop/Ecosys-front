@@ -5,6 +5,7 @@ import { z } from 'zod';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faEnvelope, faLocationDot, faLock, faPhone } from '@fortawesome/free-solid-svg-icons';
 import { CountryFlag } from '@/components/ui/CountryFlag';
+import { UserFacingError } from '@/lib/api-error';
 import { COUNTRY_DIAL_CODES, type CountryDialCode } from '@/lib/countryDialCodes';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
 import { formatPhoneNumber, parsePhoneNumber, toStoredPhoneNumber } from '@/lib/phone';
@@ -504,7 +505,7 @@ export function PortfolioContactStudio({
         const rows = draft[listKey];
         for (let index = 0; index < rows.length; index += 1) {
           const error = entryError(kind, rows[index].value);
-          if (error) throw new Error(`${KIND_COPY[kind].title} ${index + 1}: ${error}`);
+          if (error) throw new UserFacingError(`${KIND_COPY[kind].title} ${index + 1}: ${error}`);
         }
       }
       const next: PortfolioContactLists = {
@@ -515,7 +516,7 @@ export function PortfolioContactStudio({
       const seen = new Set<string>();
       for (const entry of next.emails) {
         const normalized = entry.value.toLowerCase();
-        if (seen.has(normalized)) throw new Error(`${entry.value} is listed twice.`);
+        if (seen.has(normalized)) throw new UserFacingError(`${entry.value} is listed twice.`);
         seen.add(normalized);
       }
       await onSave(next);

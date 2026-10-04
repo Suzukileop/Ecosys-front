@@ -37,6 +37,7 @@ import {
   type GlobalSearchFilters,
 } from '@/lib/global-search-filters';
 import { detectUserCoordinates, type ViewerCoordinates } from '@/lib/geolocation';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 
 const EMPTY_DATA: GlobalSearchPageData = {
@@ -139,7 +140,7 @@ function GlobalSearchResultsContent() {
       .catch((e) => {
         if (cancelled) return;
         setViewerCoords(null);
-        setGeoError(e instanceof Error ? e.message : 'Unable to detect your location.');
+        setGeoError(getApiErrorMessage(e, 'Unable to detect your location.'));
       });
 
     return () => {
@@ -196,7 +197,7 @@ function GlobalSearchResultsContent() {
         }
       } catch (e) {
         if (!cancelled) {
-          setError(e instanceof Error ? e.message : 'Unable to load search results.');
+          setError(getApiErrorMessage(e, 'Unable to load search results. Please try again.'));
           setData(EMPTY_DATA);
         }
       } finally {

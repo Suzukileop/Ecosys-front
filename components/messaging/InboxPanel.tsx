@@ -78,7 +78,7 @@ export function InboxPanel({
 
   return (
     <div className="flex h-full min-h-0 flex-col">
-      <div className="shrink-0 px-6 pt-7">
+      <div className="shrink-0 px-5 pt-5 lg:px-6 lg:pt-7">
         <div className="flex items-center justify-between gap-4">
           <h2 className="text-[1.5rem] font-bold leading-none tracking-[-0.02em] text-[var(--msg-ink)]">
             Messages
@@ -127,7 +127,7 @@ export function InboxPanel({
           </div>
         ) : null}
 
-        <div className="mt-6 flex items-center gap-2.5 rounded-lg bg-[var(--msg-wash)] px-3.5 py-2.5 ring-1 ring-transparent transition focus-within:bg-transparent focus-within:ring-[var(--msg-hairline-strong)]">
+        <div className="mt-4 flex items-center gap-2.5 rounded-lg bg-[var(--msg-wash)] px-3.5 py-2.5 lg:mt-6 ring-1 ring-transparent transition focus-within:bg-transparent focus-within:ring-[var(--msg-hairline-strong)]">
           <label htmlFor="inbox-search" className="sr-only">
             Search in messages
           </label>
@@ -149,7 +149,7 @@ export function InboxPanel({
             value={search}
             onChange={(e) => onSearchChange(e.target.value)}
             placeholder="Search conversations"
-            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:appearance-none"
+            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[16px] text-[var(--msg-ink)] lg:text-[15px] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 [&::-webkit-search-cancel-button]:appearance-none"
           />
         </div>
 
@@ -189,7 +189,7 @@ export function InboxPanel({
       {pendingInvites}
       {temporaryAvatars}
 
-      <div className="msg-scroll min-h-0 flex-1 overflow-y-auto px-3 py-3">{children}</div>
+      <div className="msg-scroll min-h-0 flex-1 overflow-y-auto px-2 py-2 pb-[calc(0.5rem+env(safe-area-inset-bottom))] lg:px-3 lg:py-3">{children}</div>
 
       {footer}
     </div>

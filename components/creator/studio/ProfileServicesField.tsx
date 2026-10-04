@@ -88,9 +88,9 @@ function ServiceOfferCard({
   });
 
   return (
-    <div className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+    <div className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+        <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
           Service {index + 1}
         </p>
         <div className="flex items-center gap-1">
@@ -98,7 +98,7 @@ function ServiceOfferCard({
             type="button"
             disabled={index === 0}
             onClick={() => move(index, index - 1)}
-            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+            className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
             aria-label="Move up"
           >
             ↑
@@ -107,7 +107,7 @@ function ServiceOfferCard({
             type="button"
             disabled={index === total - 1}
             onClick={() => move(index, index + 1)}
-            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+            className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
             aria-label="Move down"
           >
             ↓
@@ -115,7 +115,7 @@ function ServiceOfferCard({
           <button
             type="button"
             onClick={() => remove(index)}
-            className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+            className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
           >
             Remove
           </button>
@@ -177,7 +177,7 @@ function ServiceOfferCard({
                   <button
                     type="button"
                     onClick={() => field.onChange(free ? null : 0)}
-                    className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition ${
+                    className={`shrink-0 rounded-lg border px-3.5 py-2.5 text-[13px] font-bold uppercase tracking-[0.08em] transition ${
                       free
                         ? 'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-300'
                         : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
@@ -189,7 +189,7 @@ function ServiceOfferCard({
               );
             }}
           />
-          <p className="mt-1 text-xs text-neutral-500 dark:text-neutral-400">
+          <p className="mt-2 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
             Ex. 50 = 50,00 €, or mark as Free. Empty = price on request.
           </p>
         </div>
@@ -214,13 +214,13 @@ function ServiceOfferCard({
             type="button"
             disabled={taskFields.length >= MAX_TASKS_PER_SERVICE}
             onClick={() => appendTask({ value: '' })}
-            className="text-sm font-semibold text-orange-600 hover:text-orange-700 disabled:opacity-40 dark:text-orange-400"
+            className="text-[15px] font-semibold text-[#111111] underline-offset-4 hover:underline disabled:opacity-40 dark:text-white"
           >
             + Add task
           </button>
         </div>
         {taskFields.length === 0 ? (
-          <p className="rounded-lg border border-dashed border-neutral-200 px-3 py-3 text-xs text-neutral-500 dark:border-neutral-700">
+          <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
             No tasks yet — e.g. Concept & moodboard, Full design system, Handoff to developers
           </p>
         ) : (
@@ -275,18 +275,18 @@ export function ProfileServicesField({
             >
               <p className="font-semibold text-neutral-900 dark:text-white">{service.title}</p>
               {service.description?.trim() ? (
-                <p className="mt-2 whitespace-pre-line text-sm text-neutral-600 dark:text-neutral-300">
+                <p className="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
                   {service.description}
                 </p>
               ) : null}
               {tasks.length > 0 ? (
-                <ul className="mt-3 list-disc space-y-1 pl-5 text-sm text-neutral-600 dark:text-neutral-300">
+                <ul className="mt-3 list-disc space-y-1.5 pl-5 text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
                   {tasks.map((task) => (
                     <li key={task}>{task}</li>
                   ))}
                 </ul>
               ) : null}
-              <div className="mt-3 flex flex-wrap gap-3 text-xs text-neutral-500 dark:text-neutral-400">
+              <div className="mt-3.5 flex flex-wrap gap-4 text-sm text-neutral-500 dark:text-neutral-400">
                 {service.basePriceCents != null ? (
                   <span>
                     {isFreePrice(service.basePriceCents)
@@ -328,7 +328,7 @@ export function ProfileServicesField({
         <button
           type="button"
           onClick={() => append(createEmptyProfileService(fields.length))}
-          className="rounded-lg border border-dashed border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
           Add service
         </button>

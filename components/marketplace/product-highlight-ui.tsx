@@ -1,7 +1,8 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import { ContentMediaPreview } from '@/components/creator/creator-content-media';
+import { ContentMediaPreview, contentMediaKind } from '@/components/creator/creator-content-media';
+import { ProductVideoPlayer } from '@/components/marketplace/ProductVideoPlayer';
 
 /** Air below highlight titles — matches ProductDetailBottom section gaps. */
 export const productHighlightTitleGapClass = 'mb-16 sm:mb-20';
@@ -16,7 +17,7 @@ export function ProductHighlightTitle({ children }: { children: ReactNode }) {
     <h2
       className={`product-why-title ${productHighlightTitleGapClass} text-center text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl`}
     >
-      <span className="text-orange-500 dark:text-orange-400">{children}</span>
+      <span className="text-[#FF5722]">{children}</span>
     </h2>
   );
 }
@@ -24,7 +25,7 @@ export function ProductHighlightTitle({ children }: { children: ReactNode }) {
 function HighlightLineIcon({ variant }: { variant: 'star' | 'play' }) {
   return (
     <span
-      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-orange-600 dark:bg-orange-500/15 dark:text-orange-400"
+      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FF5722]/10 text-[#FF5722] dark:bg-[#FF5722]/15"
       aria-hidden
     >
       {variant === 'play' ? (
@@ -80,6 +81,13 @@ type ProductHighlightMediaProps = {
 };
 
 export function ProductHighlightMedia({ mediaUrl, unframed = false }: ProductHighlightMediaProps) {
+  if (contentMediaKind(mediaUrl, null, 'FILE') === 'video') {
+    return (
+      <div className="min-w-0 w-full flex-1">
+        <ProductVideoPlayer src={mediaUrl} />
+      </div>
+    );
+  }
   return (
     <div className={`min-w-0 w-full flex-1 ${unframed ? '' : 'overflow-hidden rounded-2xl'}`}>
       <ContentMediaPreview locale="en" mediaUrl={mediaUrl} mediaType="FILE" large fluid unframed={unframed} />

@@ -34,9 +34,9 @@ export async function generateMetadata({
   const { creatorId } = await params;
   const refreshToken = (await cookies()).get('refresh_token')?.value;
   const profile = await getCreatorProfileServer(creatorId, refreshToken);
-  if (!profile) return { title: 'Creator not found — NoProbleme' };
+  if (!profile) return { title: 'Creator not found — Skraft' };
   return {
-    title: `${profile.fullName} — NoProbleme Marketplace`,
+    title: `${profile.fullName} — Skraft Marketplace`,
     description: profile.bio ?? `Portfolio by ${profile.fullName}`,
   };
 }
@@ -56,6 +56,7 @@ export default async function MarketplaceCreatorPage({
   const productsPage = await listPublicProductsServer({
     creatorId,
     size: 24,
+    profileOnly: true,
   });
 
   const locationLabel = formatPlaceLabel(

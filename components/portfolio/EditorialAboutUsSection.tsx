@@ -22,6 +22,12 @@ import {
 } from '@/components/portfolio/about-us-quote-svgs';
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import { resolveTaskListMarker } from '@/components/portfolio/portfolio-list-marker';
+import { mediaImageResponsive } from '@/lib/media-image-url';
+
+/** Portraits and photos in this section are user uploads; serve a derivative, not the original. */
+const ABOUT_MEDIA_WIDTHS = [256, 384, 640, 828] as const;
+const ABOUT_MEDIA_SIZES = '(min-width: 1024px) 420px, 90vw';
+
 
 function filledImages(imageUrls: Array<string | null | undefined> | undefined): string[] {
   return (imageUrls ?? []).map((url) => (url ?? '').trim()).filter(Boolean).slice(0, 2);
@@ -107,7 +113,8 @@ function AboutUsQuoteFounder({
           {founderLogo ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={founderLogo}
+              {...mediaImageResponsive(founderLogo, ABOUT_MEDIA_WIDTHS)}
+              sizes={ABOUT_MEDIA_SIZES}
               alt=""
               loading="lazy"
               className="h-14 w-14 rounded-full object-cover"
@@ -148,7 +155,8 @@ function AboutUsSplitSingleVisual({ src, dark }: { src: string; dark: boolean })
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className="absolute bottom-0 left-0 top-[5%] z-[1] w-[86%] rounded-[1.75rem] object-cover sm:w-[88%]"
@@ -168,14 +176,16 @@ function AboutUsSplitPairVisual({ front, back, dark }: { front: string; back: st
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={back}
+        {...mediaImageResponsive(back, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className="absolute right-0 top-0 z-[1] h-[48%] w-[40%] rounded-[1.7rem] object-cover"
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={front}
+        {...mediaImageResponsive(front, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className="absolute bottom-0 left-0 z-[2] h-[52%] w-[48%] rounded-[1.7rem] object-cover"
@@ -311,7 +321,7 @@ function AboutUsMediaLeftSingleVisual({ src }: { src: string }) {
   return (
     <div className="h-full min-h-[22rem] overflow-hidden rounded-[1.75rem] lg:min-h-0 lg:rounded-[2rem]">
       {/* eslint-disable-next-line @next/next/no-img-element */}
-      <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+      <img {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-full w-full object-cover" />
     </div>
   );
 }
@@ -492,7 +502,7 @@ function AboutUsFounderCard({
     <div className={`mt-10 flex items-center gap-5 border-t pt-8 ${chrome.divider}`}>
       {photo ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={photo} alt="" loading="lazy" className="h-[5.75rem] w-[5.75rem] rounded-2xl object-cover" />
+        <img {...mediaImageResponsive(photo, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-[5.75rem] w-[5.75rem] rounded-2xl object-cover" />
       ) : (
         <span
           className={`flex h-[5.75rem] w-[5.75rem] items-center justify-center rounded-2xl text-xl font-semibold ${chrome.founderAvatar}`}
@@ -538,7 +548,8 @@ function AboutUsFrameLayered({ src, flip = false, dark }: { src: string; flip?: 
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className={`absolute top-0 z-[1] h-full w-[90%] rounded-[1.7rem] object-cover ${flip ? 'left-0' : 'right-0'}`}
@@ -558,7 +569,8 @@ function AboutUsFrameSlab({ src, dark }: { src: string; dark: boolean }) {
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className="absolute z-[1] rounded-[1.75rem] object-cover"
@@ -578,7 +590,8 @@ function AboutUsFrameDuo({ images, dark }: { images: string[]; dark: boolean }) 
       {secondary ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={secondary}
+          {...mediaImageResponsive(secondary, ABOUT_MEDIA_WIDTHS)}
+          sizes={ABOUT_MEDIA_SIZES}
           alt=""
           loading="lazy"
           className="absolute right-0 top-0 z-[1] h-[46%] w-[44%] rounded-[1.6rem] object-cover"
@@ -591,7 +604,8 @@ function AboutUsFrameDuo({ images, dark }: { images: string[]; dark: boolean }) 
       )}
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={primary}
+        {...mediaImageResponsive(primary, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className="absolute bottom-0 left-0 z-[2] h-[72%] w-[68%] rounded-[1.75rem] object-cover"
@@ -615,7 +629,8 @@ function AboutUsFrameRing({ src, dark }: { src: string; dark: boolean }) {
       />
       {/* eslint-disable-next-line @next/next/no-img-element */}
       <img
-        src={src}
+        {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+        sizes={ABOUT_MEDIA_SIZES}
         alt=""
         loading="lazy"
         className="relative z-[1] h-full w-full rounded-[1.85rem] object-cover"
@@ -810,7 +825,7 @@ function AboutUsSplitCardDesign({
           {src ? (
             <div className={`min-h-[18rem] sm:min-h-[22rem] lg:min-h-[28rem] ${aboutUsSplitOrderClass('media', mediaLeft)}`}>
               {/* eslint-disable-next-line @next/next/no-img-element */}
-              <img src={src} alt="" loading="lazy" className="h-full w-full object-cover" />
+              <img {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-full w-full object-cover" />
             </div>
           ) : null}
 
@@ -1040,7 +1055,7 @@ function AboutUsQuoteSvgFigure({
     >
       {custom ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img src={custom} alt="" loading="lazy" className="h-full w-full object-cover" />
+        <img {...mediaImageResponsive(custom, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt="" loading="lazy" className="h-full w-full object-cover" />
       ) : (
         <div className="flex h-full min-h-[22rem] w-full items-center justify-center p-8 sm:p-10 lg:min-h-[28rem] lg:p-12">
           <AboutUsQuoteSvg id={id} className="max-h-[22rem]" />
@@ -1210,7 +1225,8 @@ function AboutUsSplitQuoteDesign({
           <div className={`min-h-[22rem] lg:min-h-[28rem] ${aboutUsSplitOrderClass('media', mediaLeft)}`}>
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={src}
+              {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+              sizes={ABOUT_MEDIA_SIZES}
               alt=""
               loading="lazy"
               className="h-full w-full rounded-[1.75rem] object-cover lg:rounded-[2rem]"

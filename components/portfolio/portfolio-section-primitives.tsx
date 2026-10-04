@@ -24,6 +24,7 @@ import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferred
 import { GalleryTallRow } from '@/components/portfolio/portfolio-gallery-design-tall-row';
 import { GalleryFramedGrid } from '@/components/portfolio/portfolio-gallery-design-framed-grid';
 import { GalleryFloatingCanvas } from '@/components/portfolio/portfolio-gallery-design-floating-canvas';
+import { mediaImageResponsive, mediaImageSrc, mediaImageSrcSet } from '@/lib/media-image-url';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import { ContentMediaPreview } from '@/components/creator/creator-content-media';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
@@ -3578,8 +3579,10 @@ export function PortfolioFloatingNav({
       avatarSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={avatarSrc}
+          src={mediaImageSrc(avatarSrc, 32)}
+          srcSet={mediaImageSrcSet(avatarSrc, 32)}
           alt=""
+          decoding="async"
           className="h-8 w-8 shrink-0 rounded-full object-cover ring-1 ring-black/10"
         />
       ) : (
@@ -27255,8 +27258,11 @@ function FooterContactCtaBody({
         {showPortrait ? (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={avatarUrl!}
+            {...mediaImageResponsive(avatarUrl!, [384, 640])}
+            sizes="(min-width: 1280px) 288px, 256px"
             alt=""
+            loading="lazy"
+            decoding="async"
             className="hidden aspect-[4/5] w-full max-w-[19rem] shrink-0 rounded-[1.5rem] object-cover lg:block lg:w-64 xl:w-72"
           />
         ) : null}
@@ -28019,7 +28025,7 @@ export function EditorialPortfolioFooter({
 
   const designCredit = presentation.showDesignCredit ? (
     <p className={`tracking-wide ${metaClass}`} style={metaStyle}>
-      Design by NoProblème
+      Design by Skraft
     </p>
   ) : null;
 

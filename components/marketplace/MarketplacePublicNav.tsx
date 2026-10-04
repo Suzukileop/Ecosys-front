@@ -15,7 +15,7 @@ export function MarketplacePublicNav({ transparent = false }: { transparent?: bo
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-sm font-bold text-white">
               NP
             </div>
-            <span className="hidden font-semibold text-gray-900 dark:text-white sm:inline">NoProbleme</span>
+            <span className="hidden font-semibold text-gray-900 dark:text-white sm:inline">Skraft</span>
           </Link>
           <nav className="flex items-center gap-1" aria-label="Marketplace">
             <Link

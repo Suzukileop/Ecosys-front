@@ -1,6 +1,15 @@
-import { redirect } from 'next/navigation';
+import { Suspense } from 'react';
+import type { Metadata } from 'next';
+import { SettingsPage } from '@/components/settings/SettingsPage';
 
-/** Former profile settings page — the sidebar card now opens My Profile. */
-export default function UserSettingsRedirect() {
-  redirect('/dashboard/creator');
+export const metadata: Metadata = {
+  title: 'Settings & privacy',
+};
+
+export default function DashboardSettingsPage() {
+  return (
+    <Suspense fallback={null}>
+      <SettingsPage />
+    </Suspense>
+  );
 }

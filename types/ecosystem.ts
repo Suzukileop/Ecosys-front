@@ -239,28 +239,9 @@ export interface NotificationDto {
   aggregatedNotificationIds?: string[];
 }
 
-export interface CreatorReviewItem {
-  id: string;
-  reviewerName: string;
-  rating: number;
-  comment: string | null;
-  wouldRecommend: boolean;
-  createdAt: string;
-}
-
-export interface CreatorReputationDto {
-  averageRating: number | null;
-  reviewCount: number;
-  recommendPercent: number;
-  /** Legacy recommend-sample size — not used by public Response rate. */
-  completedMissionsCount?: number;
-  /** Discuss inbound reply rate (0–100), or null/undefined when no inbound DMs. */
-  responseRatePercent?: number | null;
-  inboundConversationCount?: number;
-  typicallyRepliesWithinLabel?: string | null;
-  trustBadges: string[];
-  recentReviews: CreatorReviewItem[];
-  ratingDistribution?: Partial<Record<1 | 2 | 3 | 4 | 5, number>>;
+export interface CreatorStarStats {
+  starCount: number;
+  starred: boolean;
 }
 
 export interface ExperienceProofLink {
@@ -316,6 +297,8 @@ export interface ProfileMediaBlock {
   location?: string | null;
   /** Employment / engagement type. */
   employmentType?: ExperienceEmploymentType | null;
+  /** Kept out of the generated CV when true. */
+  hideFromCv?: boolean | null;
 }
 
 export interface ProfileServiceItem {
@@ -329,7 +312,7 @@ export interface ProfileServiceItem {
   tasks?: string[];
   /** Must match one of the creator profile specialties. */
   specialty?: string | null;
-  /** FIXED | FROM | QUOTE */
+  /** FIXED | FROM | QUOTE | FREE */
   pricingType?: string | null;
   coverImageUrl?: string | null;
   /** ACTIVE | PAUSED | ARCHIVED */
@@ -477,6 +460,8 @@ export interface ProfileLink {
   sortOrder: number;
   platform?: string | null;
   iconUrl?: string | null;
+  /** When true the link is left out of the generated CV. */
+  hideFromCv?: boolean | null;
 }
 
 export interface CreatorProfileDto {
@@ -529,7 +514,8 @@ export interface CreatorProfileDto {
   /** Rich stack items (Skills & tools → Stack). */
   profileStack?: ProfileStrengthTool[];
   strengthsToolsMastered?: ProfileStrengthTool[];
-  reputation?: CreatorReputationDto | null;
+  /** Trust stars given by other users. */
+  starCount?: number;
   profileVisits?: number;
   gender?: string | null;
   /** ISO 3166-1 alpha-2 citizenship code. */

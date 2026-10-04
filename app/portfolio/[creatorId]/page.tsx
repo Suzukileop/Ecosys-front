@@ -50,14 +50,14 @@ export async function generateMetadata({
   const { creatorId } = await params;
   const refreshToken = (await cookies()).get('refresh_token')?.value;
   const profile = await getCreatorProfileServer(creatorId, refreshToken);
-  if (!profile) return { title: 'Portfolio not found — NoProbleme' };
+  if (!profile) return { title: 'Portfolio not found — Skraft' };
 
   const title = `${profile.fullName} — Portfolio`;
   const description =
     profile.bio?.trim() ||
     (profile.specialite
       ? `Discover the work of ${profile.fullName} — ${profile.specialite}.`
-      : `Visual portfolio by ${profile.fullName} on NoProbleme.`);
+      : `Visual portfolio by ${profile.fullName} on Skraft.`);
 
   return {
     title,

@@ -2,14 +2,12 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CreatorContentPublishModal } from '@/components/creator/CreatorContentPublishModal';
-import { NewsCreateShortcuts } from '@/components/home/NewsCreateShortcuts';
-import { NewsDiscoverRail } from '@/components/home/NewsDiscoverRail';
-import {
-  NEWS_OPEN_PUBLISH_EVENT,
-  NewsPublishHeaderCta,
-} from '@/components/home/NewsPublishHeaderCta';
-import { PublicContentPostCard } from '@/components/home/PublicContentPostCard';
+import { NewsComposer } from '@/components/home/NewsComposer';
+import { NewsDiscoverRail, PortfolioCta } from '@/components/home/NewsDiscoverRail';
+import { NewsFeedPostCard } from '@/components/home/NewsFeedPostCard';
+import { NEWS_OPEN_PUBLISH_EVENT } from '@/components/home/NewsPublishHeaderCta';
 import { HomeNewsFeedSkeleton } from '@/components/home/HomeNewsSkeleton';
+import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { listPublicContentFeed } from '@/lib/marketplace-api';
@@ -30,7 +28,6 @@ export function HomeNewsFeed() {
   const [interest, setInterest] = useState<string | null>(null);
   const [searchDraft, setSearchDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
-  const [railExpanded, setRailExpanded] = useState(true);
   const sentinelRef = useRef<HTMLDivElement>(null);
 
   const activeQuery = searchQuery.trim() || interest;
@@ -51,7 +48,7 @@ export function HomeNewsFeed() {
         setPage(pageIndex);
         setHasMore(!result.last);
       } catch (e) {
-        setError(getApiErrorMessage(e, 'Impossible de charger les actualités.'));
+        setError(getApiErrorMessage(e, 'Unable to load the news feed.'));
         if (!append) setItems([]);
       } finally {
         setLoading(false);
@@ -107,8 +104,8 @@ export function HomeNewsFeed() {
 
   const handleInterestSelect = useCallback((value: string | null) => {
     setInterest(value);
-    setSearchDraft(value ?? '');
-    setSearchQuery(value ?? '');
+    setSearchDraft('');
+    setSearchQuery('');
     setPage(0);
     setHasMore(false);
   }, []);
@@ -120,79 +117,104 @@ export function HomeNewsFeed() {
     setHasMore(false);
   }, []);
 
-  const publishModal = canPublish ? (
-    <CreatorContentPublishModal
-      open={publishOpen}
-      onClose={() => setPublishOpen(false)}
-      onPublished={handlePublished}
-    />
-  ) : null;
+  const clearFilters = () => {
+    setInterest(null);
+    setSearchDraft('');
+    setSearchQuery('');
+  };
+
+  const discoverProps = {
+    selected: interest,
+    onSelect: handleInterestSelect,
+    search: searchDraft,
+    onSearchChange: handleSearchChange,
+  };
 
   const feedBody = loading ? (
-    <HomeNewsFeedSkeleton split={!railExpanded} />
+    <HomeNewsFeedSkeleton />
   ) : error ? (
-    <ErrorAlert message={error} onDismiss={() => setError(null)} />
+    <div className="px-4 sm:px-8 md:px-0">
+      <ErrorAlert message={error} onDismiss={() => setError(null)} />
+    </div>
   ) : items.length === 0 ? (
-    <div className="rounded-2xl border border-dashed border-neutral-300 bg-white p-10 text-center dark:border-white/[0.08] dark:bg-[#141416]">
-      <p className="text-sm text-neutral-600 dark:text-neutral-300">
-        {activeQuery
-          ? `No publications for “${activeQuery}” right now.`
-          : 'Aucune publication pour le moment. Revenez bientôt !'}
+    <div className="mx-4 rounded-lg border sm:mx-8 md:mx-0 border-dashed border-black/[0.12] px-6 py-16 text-center dark:border-white/[0.12]">
+      <p className="text-[17px] font-semibold text-[#111111] dark:text-white">
+        {activeQuery ? `Nothing for “${activeQuery}” yet` : 'No publications yet'}
       </p>
+      <p className="mx-auto mt-2 max-w-sm text-[16px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+        {activeQuery
+          ? 'Try another interest or a different search.'
+          : 'New work from creators will show up here. Check back soon.'}
+      </p>
+      {activeQuery ? (
+        <button
+          type="button"
+          onClick={clearFilters}
+          className="mt-6 inline-flex items-center rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.06]"
+        >
+          Show everything
+        </button>
+      ) : null}
     </div>
   ) : (
     <>
-      <div className="snap-y snap-proximity">
-        {items.map((post) => (
-          <section
-            key={post.id}
-            className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-8 pt-2"
-          >
-            <PublicContentPostCard
-              post={post}
-              className="w-full"
-              layout={railExpanded ? 'stack' : 'split'}
-            />
-          </section>
+      <div className="space-y-8">
+        {items.map((post, index) => (
+          <NewsFeedPostCard key={post.id} post={post} priority={index === 0} />
         ))}
       </div>
       {hasMore && <div ref={sentinelRef} className="h-8" aria-hidden />}
       {loadingMore && (
-        <section className="pb-8 pt-2">
-          <HomeNewsFeedSkeleton count={1} split={!railExpanded} />
-        </section>
+        <div className="pt-8">
+          <HomeNewsFeedSkeleton count={1} />
+        </div>
       )}
+      {!hasMore && !loadingMore ? (
+        <p className="pt-12 text-center text-[15px] text-neutral-400 dark:text-neutral-500">You&apos;re all caught up.</p>
+      ) : null}
     </>
   );
 
   return (
-    <div className="flex flex-col gap-4">
-      {publishModal}
+    <div className={`${PORTFOLIO_FRAME_CLASS} pb-24 pt-1 sm:pt-3 lg:pt-12`}>
+      {canPublish ? (
+        <CreatorContentPublishModal
+          open={publishOpen}
+          onClose={() => setPublishOpen(false)}
+          onPublished={handlePublished}
+        />
+      ) : null}
 
-      <div className="flex flex-col gap-5 xl:flex-row xl:items-start xl:gap-5">
-        <div className="min-w-0 flex-1 space-y-4">
-          <div
-            className={`mx-auto w-full space-y-4 transition-[max-width] duration-300 ease-out ${
-              railExpanded
-                ? 'max-w-xl xl:max-w-2xl'
-                : 'max-w-[min(100%,88rem)] px-1 sm:px-2'
-            }`}
-          >
-            <NewsCreateShortcuts />
-            <NewsPublishHeaderCta inline className="w-full" />
+      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] xl:gap-16">
+        <div className="-mx-4 min-w-0 max-w-[760px] sm:-mx-8 md:mx-auto md:w-full">
+          <h1 className="sr-only">News</h1>
+          <div className="mb-6 lg:hidden">
+            <PortfolioCta />
           </div>
-          <div className="space-y-2">{feedBody}</div>
+
+          <NewsComposer canPublish={canPublish} onCompose={() => setPublishOpen(true)} />
+
+          {activeQuery && !loading ? (
+            <div className="mx-4 mt-8 flex items-center justify-between gap-4 border-b sm:mx-8 md:mx-0 border-black/[0.06] pb-4 dark:border-white/[0.08]">
+              <p className="min-w-0 truncate text-[15px] text-neutral-500 dark:text-neutral-400">
+                Showing <span className="font-medium text-[#111111] dark:text-white">{activeQuery}</span>
+              </p>
+              <button
+                type="button"
+                onClick={clearFilters}
+                className="shrink-0 text-[15px] font-medium text-[#111111] transition-colors hover:text-neutral-500 dark:text-white dark:hover:text-neutral-300"
+              >
+                Clear
+              </button>
+            </div>
+          ) : null}
+
+          <div className="mt-8">{feedBody}</div>
         </div>
 
-        <NewsDiscoverRail
-          selected={interest}
-          onSelect={handleInterestSelect}
-          search={searchDraft}
-          onSearchChange={handleSearchChange}
-          expanded={railExpanded}
-          onExpandedChange={setRailExpanded}
-          className="order-first xl:order-none xl:sticky xl:top-[4.75rem]"
-        />
+        <div className="hidden self-start lg:block">
+          <NewsDiscoverRail {...discoverProps} />
+        </div>
       </div>
     </div>
   );

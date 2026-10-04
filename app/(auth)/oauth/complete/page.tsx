@@ -27,7 +27,7 @@ function OAuthCompleteContent() {
 
   useEffect(() => {
     if (!code) {
-      setError('Missing registration session.');
+      setError('Your registration session has expired. Please try again.');
       return;
     }
 

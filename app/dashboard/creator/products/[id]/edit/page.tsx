@@ -82,15 +82,23 @@ export default function EditCreatorProductPage({
 
   return (
     <DashboardHomeShell fullWidth>
-      <div className="mx-auto w-full max-w-[1440px] space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-        <div>
+      <div className="mx-auto w-full max-w-[1400px] space-y-8 px-4 py-8 sm:px-8 sm:py-10 md:px-12 lg:px-16">
+        <div className="space-y-5">
           <Link
             href={consultHref}
-            className="inline-flex items-center text-sm font-medium text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
+            className="inline-flex items-center gap-1.5 text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
           >
-            {'< back'}
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m15 18-6-6 6-6" />
+            </svg>
+            Back to product
           </Link>
-          <h1 className="mt-3 text-2xl font-bold text-neutral-900 dark:text-white">Edit product</h1>
+          <div>
+            <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">Edit product</h1>
+            <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
+              Update your listing, then save — the preview on the right shows how it will look.
+            </p>
+          </div>
         </div>
 
         {loadError && <ErrorAlert message={loadError} onDismiss={() => setLoadError(null)} />}
@@ -102,6 +110,7 @@ export default function EditCreatorProductPage({
           product && (
             <ProductEditorForm
               initial={product}
+              showFormatToggle={false}
               submitLabel="Save changes"
               cancelHref={consultHref}
               onSubmit={onSubmit}

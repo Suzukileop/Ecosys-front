@@ -1,20 +1,33 @@
 'use client';
 
 import { Suspense, useState } from 'react';
-import { useForm, type UseFormRegisterReturn } from 'react-hook-form';
+import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { RegisterVisualPanel } from '@/components/auth/RegisterVisualPanel';
+import { InfoHint } from '@/components/ui/InfoHint';
+import { AuthShell } from '@/components/auth/AuthShell';
+import {
+  AuthErrorBanner,
+  AuthPasswordField,
+  AuthSubmitButton,
+  AuthTextField,
+  FieldError,
+} from '@/components/auth/AuthFields';
 import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
-import { brandGradientBg, brandShadow } from '@/components/landing/landingBrand';
 import { AxiosError } from 'axios';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
+
+const PASSWORD_RULES = [
+  { label: '8+ characters', test: (v: string) => v.length >= 8 },
+  { label: 'One uppercase', test: (v: string) => /[A-Z]/.test(v) },
+  { label: 'One number', test: (v: string) => /[0-9]/.test(v) },
+] as const;
 
 const registerSchema = z
   .object({
@@ -42,59 +55,36 @@ const registerSchema = z
 
 type RegisterFormData = z.infer<typeof registerSchema>;
 
-function PasswordField({
-  id,
-  label,
-  error,
-  autoComplete,
-  registration,
-}: {
-  id: string;
-  label: string;
-  error?: string;
-  autoComplete: string;
-  registration: UseFormRegisterReturn;
-}) {
-  const [visible, setVisible] = useState(false);
-
+function PasswordRules({ value, showErrors }: { value: string; showErrors: boolean }) {
   return (
-    <div>
-      <label htmlFor={id} className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-        {label}
-      </label>
-      <div className="relative">
-        <input
-          id={id}
-          {...registration}
-          type={visible ? 'text' : 'password'}
-          autoComplete={autoComplete}
-          className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 pr-11 text-sm text-neutral-900 transition focus:border-[#F97316]/50 focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-          placeholder="••••••••"
-        />
-        <button
-          type="button"
-          onClick={() => setVisible((v) => !v)}
-          className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 transition hover:text-neutral-600 dark:hover:text-neutral-300"
-          aria-label={visible ? 'Hide password' : 'Show password'}
-        >
-          {visible ? (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M3.98 8.223A10.477 10.477 0 001.934 12C3.226 16.338 7.244 19.5 12 19.5c.993 0 1.953-.138 2.863-.395M6.228 6.228A10.45 10.45 0 0112 4.5c4.756 0 8.773 3.162 10.065 7.498a10.523 10.523 0 01-4.293 5.774M6.228 6.228L3 3m3.228 3.228l3.65 3.65m7.894 7.894L21 21m-3.228-3.228l-3.65-3.65m0 0a3 3 0 10-4.243-4.243m4.242 4.242L9.88 9.88" />
-            </svg>
-          ) : (
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M2.036 12.322a1.012 1.012 0 010-.639C3.423 7.51 7.36 4.5 12 4.5c4.638 0 8.573 3.007 9.963 7.178.07.207.07.431 0 .639C20.577 16.49 16.64 19.5 12 19.5c-4.638 0-8.573-3.007-9.963-7.178z" />
-              <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            </svg>
-          )}
-        </button>
-      </div>
-      {error ? (
-        <p className="mt-1 text-xs text-red-500" role="alert">
-          {error}
-        </p>
-      ) : null}
-    </div>
+    <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5" aria-label="Password requirements">
+      {PASSWORD_RULES.map((rule) => {
+        const met = rule.test(value);
+        const tone = met
+          ? 'text-[#111111] dark:text-white'
+          : showErrors
+            ? 'text-[#E0431A] dark:text-[#FF7A52]'
+            : 'text-neutral-400 dark:text-neutral-500';
+        return (
+          <li key={rule.label} className={`inline-flex items-center gap-1.5 text-[13px] transition-colors ${tone}`}>
+            <span
+              aria-hidden
+              className={`inline-flex h-3.5 w-3.5 items-center justify-center rounded-full transition-colors ${
+                met ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]' : 'border border-current'
+              }`}
+            >
+              {met ? (
+                <svg className="h-2 w-2" viewBox="0 0 12 12" fill="none" stroke="currentColor" strokeWidth={2.2}>
+                  <path d="M2.5 6.5l2.2 2.2L9.5 3.8" strokeLinecap="round" strokeLinejoin="round" />
+                </svg>
+              ) : null}
+            </span>
+            {rule.label}
+            <span className="sr-only">{met ? '(met)' : '(not met)'}</span>
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -107,6 +97,7 @@ function RegisterForm() {
   const {
     register,
     handleSubmit,
+    control,
     formState: { errors, isSubmitting },
   } = useForm<RegisterFormData>({
     resolver: zodResolver(registerSchema),
@@ -115,6 +106,8 @@ function RegisterForm() {
       termsAccepted: false,
     },
   });
+
+  const password = useWatch({ control, name: 'password' }) ?? '';
 
   const onSubmit = async (data: RegisterFormData) => {
     setApiError(null);
@@ -132,181 +125,135 @@ function RegisterForm() {
       if (axiosError.response?.status === 429) {
         setApiError('Too many sign-up attempts. Please try again in a minute.');
       } else {
-        setApiError(axiosError.response?.data?.message || 'Something went wrong. Please try again.');
+        setApiError(getApiErrorMessage(error, 'We couldn’t create your account. Please try again.'));
       }
     }
   };
 
   return (
-    <div className="flex h-screen flex-col overflow-hidden bg-white dark:bg-neutral-950">
-      <header className="flex shrink-0 items-center justify-between px-6 pt-4 sm:px-10 lg:px-12">
-        <Link
-          href="/"
-          className="inline-flex items-center gap-2 text-sm font-medium text-neutral-600 transition hover:text-[#F97316] dark:text-neutral-400"
-        >
-          <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-          </svg>
-          Go back
-        </Link>
-        <p className="text-sm text-neutral-600 dark:text-neutral-400">
-          Already have an account?{' '}
-          <Link href="/login" className="font-semibold text-[#F97316] hover:text-[#EA580C]">
-            Log in
-          </Link>
-        </p>
-      </header>
+    <>
+      {apiError ? <AuthErrorBanner message={apiError} onDismiss={() => setApiError(null)} /> : null}
 
-      <div className="flex min-h-0 flex-1 flex-col justify-center overflow-y-auto px-6 py-6 sm:px-10 lg:px-12">
-        <div className="mx-auto w-full max-w-md">
-          <h1 className="mb-4 text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Register</h1>
+      <SocialOAuthButtons signup />
 
-          {apiError ? (
-            <div className="mb-3">
-              <ErrorAlert message={apiError} onDismiss={() => setApiError(null)} />
-            </div>
-          ) : null}
-
-          <form onSubmit={handleSubmit(onSubmit)} className="space-y-3" noValidate>
-            <div>
-              <label htmlFor="fullName" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Full name
-              </label>
-              <input
-                id="fullName"
-                {...register('fullName')}
-                type="text"
-                autoComplete="name"
-                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 transition focus:border-[#F97316]/50 focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                placeholder="Alex Morgan"
-              />
-              {errors.fullName ? (
-                <p className="mt-1 text-xs text-red-500" role="alert">
-                  {errors.fullName.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div>
-              <label htmlFor="username" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Username
-              </label>
-              <input
-                id="username"
-                {...register('username')}
-                type="text"
-                autoComplete="username"
-                spellCheck={false}
-                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 transition focus:border-[#F97316]/50 focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                placeholder="alex_morgan"
-              />
-              <p className="mt-1 text-[11px] text-neutral-400">
-                Unique handle — case-sensitive (leopard ≠ Leopard).
-              </p>
-              {errors.username ? (
-                <p className="mt-1 text-xs text-red-500" role="alert">
-                  {errors.username.message}
-                </p>
-              ) : null}
-            </div>
-
-            <div>
-              <label htmlFor="email" className="mb-1 block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Email
-              </label>
-              <input
-                id="email"
-                {...register('email')}
-                type="email"
-                autoComplete="email"
-                className="w-full rounded-xl border border-neutral-200 bg-white px-4 py-2.5 text-sm text-neutral-900 transition focus:border-[#F97316]/50 focus:outline-none focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
-                placeholder="you@email.com"
-              />
-              {errors.email ? (
-                <p className="mt-1 text-xs text-red-500" role="alert">
-                  {errors.email.message}
-                </p>
-              ) : null}
-            </div>
-
-            <PasswordField
-              id="password"
-              label="Password"
-              autoComplete="new-password"
-              registration={register('password')}
-              error={errors.password?.message}
-            />
-
-            <PasswordField
-              id="confirmPassword"
-              label="Repeat password"
-              autoComplete="new-password"
-              registration={register('confirmPassword')}
-              error={errors.confirmPassword?.message}
-            />
-
-            <label className="flex cursor-pointer items-start gap-3">
-              <input
-                {...register('termsAccepted')}
-                type="checkbox"
-                className="mt-0.5 h-4 w-4 rounded border-neutral-300 text-[#F97316] focus:ring-[#F97316]/30"
-              />
-              <span className="text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-                I accept the{' '}
-                <Link href="/terms" className="font-medium text-[#F97316] underline underline-offset-2">
-                  Terms of Service
-                </Link>{' '}
-                and{' '}
-                <Link href="/privacy" className="font-medium text-[#F97316] underline underline-offset-2">
-                  Privacy Policy
-                </Link>
-                .
-              </span>
-            </label>
-            {errors.termsAccepted ? (
-              <p className="-mt-2 text-xs text-red-500" role="alert">
-                {errors.termsAccepted.message}
-              </p>
-            ) : null}
-
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className={`flex w-full items-center justify-center gap-2 rounded-xl py-3 text-sm font-semibold text-white transition-all disabled:opacity-70 ${brandGradientBg} ${brandShadow}`}
-            >
-              {isSubmitting ? (
-                <>
-                  <LoadingSpinner size="sm" />
-                  Creating account...
-                </>
-              ) : (
-                'Register'
-              )}
-            </button>
-
-            <SocialOAuthButtons signup />
-          </form>
+      {/*
+        `method="post"` guards the window before hydration. React Hook Form calls
+        preventDefault, but only once the page is interactive; a submit before that falls back to
+        the browser's native one, and the default method is GET — which would put the password in
+        the URL, and from there into history, the Referer header and every proxy log in front of
+        the app. A native POST keeps it in the body.
+      */}
+      <form onSubmit={handleSubmit(onSubmit)} method="post" className="space-y-5" noValidate>
+        <div className="grid gap-5 sm:grid-cols-2">
+          <AuthTextField
+            id="fullName"
+            label="Full name"
+            type="text"
+            autoComplete="name"
+            placeholder="Alex Morgan"
+            registration={register('fullName')}
+            error={errors.fullName?.message}
+          />
+          <AuthTextField
+            id="username"
+            label="Username"
+            type="text"
+            autoComplete="username"
+            autoCapitalize="none"
+            spellCheck={false}
+            placeholder="alex_morgan"
+            labelAside={<InfoHint align="end">Unique handle — case-sensitive (leopard ≠ Leopard).</InfoHint>}
+            registration={register('username')}
+            error={errors.username?.message}
+          />
         </div>
-      </div>
-    </div>
+
+        <AuthTextField
+          id="email"
+          label="Email"
+          type="email"
+          autoComplete="email"
+          inputMode="email"
+          placeholder="you@email.com"
+          registration={register('email')}
+          error={errors.email?.message}
+        />
+
+        <AuthPasswordField
+          id="password"
+          label="Password"
+          autoComplete="new-password"
+          registration={register('password')}
+          error={password ? undefined : errors.password?.message}
+        >
+          <PasswordRules value={password} showErrors={Boolean(errors.password)} />
+        </AuthPasswordField>
+
+        <AuthPasswordField
+          id="confirmPassword"
+          label="Repeat password"
+          autoComplete="new-password"
+          registration={register('confirmPassword')}
+          error={errors.confirmPassword?.message}
+        />
+
+        <div>
+          <label className="flex cursor-pointer items-start gap-3">
+            <input
+              {...register('termsAccepted')}
+              type="checkbox"
+              className="mt-[3px] h-4 w-4 shrink-0 cursor-pointer rounded accent-[#111111] dark:accent-white"
+            />
+            <span className="text-[14px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+              I accept the{' '}
+              <Link
+                href="/terms"
+                className="font-medium text-[#111111] underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-[#111111] dark:text-white dark:decoration-white/30 dark:hover:decoration-white"
+              >
+                Terms of Service
+              </Link>{' '}
+              and{' '}
+              <Link
+                href="/privacy"
+                className="font-medium text-[#111111] underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-[#111111] dark:text-white dark:decoration-white/30 dark:hover:decoration-white"
+              >
+                Privacy Policy
+              </Link>
+              .
+            </span>
+          </label>
+          <FieldError>{errors.termsAccepted?.message}</FieldError>
+        </div>
+
+        <div className="pt-2">
+          <AuthSubmitButton busy={isSubmitting} busyLabel="Creating account...">
+            Create account
+          </AuthSubmitButton>
+        </div>
+      </form>
+    </>
   );
 }
 
 export default function RegisterPage() {
   return (
-    <div className="h-screen overflow-hidden lg:grid lg:grid-cols-2">
+    <AuthShell
+      title="Create your account"
+      subtitle="Start selling and sharing your work in minutes."
+      switchPrompt="Already have an account?"
+      switchLabel="Log in"
+      switchHref="/login"
+      image={{ src: '/auth/register.jpg', alt: 'A creator arranging photographs at a studio table' }}
+    >
       <Suspense
         fallback={
-          <div className="flex min-h-screen items-center justify-center bg-white dark:bg-neutral-950">
+          <div className="flex justify-center py-16">
             <LoadingSpinner />
           </div>
         }
       >
         <RegisterForm />
       </Suspense>
-      <div className="hidden h-screen overflow-hidden p-5 lg:block lg:p-7 lg:pl-5 lg:pr-8">
-        <RegisterVisualPanel />
-      </div>
-    </div>
+    </AuthShell>
   );
 }

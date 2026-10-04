@@ -50,6 +50,14 @@ export const DASHBOARD_SIDEBAR_BG = 'bg-white dark:bg-[#0F0F0F]';
 export const DASHBOARD_SIDEBAR_SURFACE = 'bg-white dark:bg-[#0F0F0F]';
 /** Dashboard main canvas — gris visible, contrasté avec le sidebar */
 export const DASHBOARD_MAIN_BG = 'bg-neutral-100 dark:bg-neutral-950';
+/**
+ * App page ground (light) — white, with blocks drawn as `#EEF0F2` panels on it (see the
+ * `[data-app-surfaces]` rule in globals.css). Dark stays black.
+ */
+export const APP_GROUND = 'bg-white';
+/** Grey fields and rails on that ground (header search, section sidebars). */
+export const APP_FIELD = 'bg-[#EEF0F2]';
+export const APP_FIELD_HOVER = 'hover:bg-[#E6E9EC]';
 
 export const brandGradientText =
   'bg-gradient-to-r from-[#F97316] via-[#FB923C] to-[#EA580C] bg-clip-text text-transparent';

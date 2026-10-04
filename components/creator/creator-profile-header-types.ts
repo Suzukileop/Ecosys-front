@@ -32,7 +32,8 @@ export type CreatorProfileHeaderProps = {
   profileVisits: number;
   profileVisitsHref?: string;
   profileSubscribersHref?: string;
-  averageRating?: number | null;
+  /** Trust stars given by other members. */
+  starCount?: number | null;
   locationLabel?: string | null;
   /** ISO nationality shown as a flag next to the display name. */
   nationality?: string | null;
@@ -47,8 +48,13 @@ export type CreatorProfileHeaderProps = {
   uploadingAvatar?: boolean;
   onAvatarPick?: () => void;
   trailingActions?: ReactNode;
+  /** Seller header primary link (public shop or shop management). */
+  shopHref?: string;
+  shopLabel?: string;
   /** When a skills band sits flush under the card, drop bottom radius so they read as one block. */
   flushBottom?: boolean;
+  /** Open layout without the card surface, with larger type (public profile). */
+  flat?: boolean;
 };
 
 export function resolveShowProductCount(props: Pick<CreatorProfileHeaderProps, 'showProductCount' | 'appRole'>): boolean {

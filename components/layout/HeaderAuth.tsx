@@ -76,7 +76,7 @@ export function HeaderAuth() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
               NP
             </div>
-            <span className="font-semibold text-gray-900">NoProbleme</span>
+            <span className="font-semibold text-gray-900">Skraft</span>
           </Link>
           <LoadingSpinner size="sm" />
         </div>
@@ -92,7 +92,7 @@ export function HeaderAuth() {
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
               NP
             </div>
-            <span className="hidden font-semibold text-gray-900 sm:inline">NoProbleme</span>
+            <span className="hidden font-semibold text-gray-900 sm:inline">Skraft</span>
           </Link>
           <nav
             className="flex max-w-full flex-wrap items-center gap-1 overflow-x-auto md:gap-2"

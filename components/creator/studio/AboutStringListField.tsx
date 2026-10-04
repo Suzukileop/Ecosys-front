@@ -49,13 +49,13 @@ export function AboutStringListField({
       return <p className={profileSectionEmptyClass}>Not set</p>;
     }
     return (
-      <ul className="space-y-1.5">
+      <ul className="space-y-2">
         {filled.map((item) => (
           <li
             key={item}
-            className="flex items-start gap-2 text-sm text-neutral-800 dark:text-neutral-200"
+            className="flex items-start gap-2.5 text-base leading-relaxed text-neutral-800 dark:text-neutral-200"
           >
-            <span className="mt-1.5 h-1 w-1 shrink-0 rounded-full bg-[#F97316]" aria-hidden />
+            <span className="mt-2.5 h-1 w-1 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" aria-hidden />
             {item}
           </li>
         ))}
@@ -94,7 +94,7 @@ export function AboutStringListField({
                   type="button"
                   disabled={index === 0}
                   onClick={() => move(index, index - 1)}
-                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                  className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
                   aria-label="Move up"
                 >
                   ↑
@@ -103,7 +103,7 @@ export function AboutStringListField({
                   type="button"
                   disabled={index === fields.length - 1}
                   onClick={() => move(index, index + 1)}
-                  className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                  className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
                   aria-label="Move down"
                 >
                   ↓
@@ -111,7 +111,7 @@ export function AboutStringListField({
                 <button
                   type="button"
                   onClick={() => remove(index)}
-                  className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+                  className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                 >
                   Remove
                 </button>

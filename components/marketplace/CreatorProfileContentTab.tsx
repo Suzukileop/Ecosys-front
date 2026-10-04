@@ -66,20 +66,24 @@ export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProf
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <div>
-        <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Content</h2>
-        <p className="mt-1 text-sm text-neutral-500">{formatContentCountLabel(items.length, creatorName)}</p>
+        <h2 className="text-[1.375rem] font-semibold tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[1.5rem]">
+          Content
+        </h2>
+        <p className="mt-2 text-[1rem] text-neutral-600 dark:text-neutral-300">
+          {formatContentCountLabel(items.length, creatorName)}
+        </p>
       </div>
 
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-neutral-600 dark:text-neutral-400">No public content yet.</p>
+        <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]">
+          <p className="text-[1.0625rem] text-neutral-600 dark:text-neutral-300">No public content yet.</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-3 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4">
+        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
           {items.map((post) => (
             <ContentPostGalleryThumb
               key={post.id}

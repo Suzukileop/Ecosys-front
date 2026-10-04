@@ -27,19 +27,20 @@ function countForStar(summary: ProductReviewSummary, star: (typeof STAR_LEVELS)[
   }
 }
 
+const SKELETON = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
+
 function DistributionSkeleton() {
   return (
-    <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:gap-12" aria-hidden>
-      <div className="flex flex-col items-center gap-3 sm:items-start">
-        <div className="h-14 w-20 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
-        <div className="h-5 w-28 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
-        <div className="h-4 w-24 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
+    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-12" aria-hidden>
+      <div className="shrink-0 space-y-3">
+        <div className={`h-11 w-20 ${SKELETON}`} />
+        <div className={`h-4 w-28 ${SKELETON}`} />
       </div>
-      <div className="flex-1 space-y-3">
+      <div className="min-w-0 flex-1 space-y-3 sm:max-w-md">
         {STAR_LEVELS.map((star) => (
           <div key={star} className="flex items-center gap-3">
-            <div className="h-4 w-3 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
-            <div className="h-2.5 flex-1 animate-pulse rounded-full bg-gray-200 dark:bg-neutral-700" />
+            <div className={`h-3 w-3 ${SKELETON}`} />
+            <div className={`h-1.5 flex-1 rounded-full ${SKELETON}`} />
           </div>
         ))}
       </div>
@@ -62,18 +63,23 @@ export function ProductReviewDistributionChart({
   const average = summary.averageRating ?? 0;
 
   return (
-    <div className="flex flex-col gap-8 sm:flex-row sm:items-center sm:gap-12">
-      <div className="flex shrink-0 flex-col items-center gap-2 sm:items-start">
-        <p className="text-5xl font-bold leading-none tracking-tight text-gray-900 dark:text-white">
-          {average.toFixed(1)}
-        </p>
-        <StarRating rating={average} size="md" />
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          {summary.reviewCount.toLocaleString()} review{summary.reviewCount === 1 ? '' : 's'}
-        </p>
+    <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-12">
+      <div className="shrink-0">
+        <div className="flex items-baseline gap-1.5">
+          <p className="text-[44px] font-semibold leading-none tracking-[-0.03em] text-[#111111] tabular-nums dark:text-white">
+            {average.toFixed(1)}
+          </p>
+          <span className="text-[15px] text-neutral-400 dark:text-neutral-500">/ 5</span>
+        </div>
+        <div className="mt-3 flex items-center gap-2.5">
+          <StarRating rating={average} />
+          <span className="text-sm text-neutral-500 dark:text-neutral-400">
+            {summary.reviewCount.toLocaleString()} review{summary.reviewCount === 1 ? '' : 's'}
+          </span>
+        </div>
       </div>
 
-      <div className="min-w-0 flex-1 space-y-2.5">
+      <dl className="min-w-0 flex-1 space-y-2.5 sm:max-w-md">
         {STAR_LEVELS.map((star) => {
           const count = countForStar(summary, star);
           const percent =
@@ -81,20 +87,23 @@ export function ProductReviewDistributionChart({
 
           return (
             <div key={star} className="flex items-center gap-3">
-              <span className="w-3 shrink-0 text-center text-sm font-medium text-gray-500 dark:text-gray-400">
+              <dt className="w-3 shrink-0 text-center text-[13px] font-medium text-neutral-500 tabular-nums dark:text-neutral-400">
                 {star}
-              </span>
-              <div className="h-2.5 min-w-0 flex-1 overflow-hidden rounded-full bg-gray-200 dark:bg-neutral-700">
+              </dt>
+              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
                 <div
-                  className="h-full rounded-full bg-orange-500 transition-[width] duration-500 ease-out dark:bg-orange-400"
+                  className="h-full rounded-full bg-[#111111] transition-[width] duration-500 ease-out dark:bg-white"
                   style={{ width: `${percent}%` }}
                   role="presentation"
                 />
               </div>
+              <dd className="w-8 shrink-0 text-right text-[13px] text-neutral-400 tabular-nums dark:text-neutral-500">
+                {count.toLocaleString()}
+              </dd>
             </div>
           );
         })}
-      </div>
+      </dl>
     </div>
   );
 }

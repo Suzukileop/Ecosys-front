@@ -4,6 +4,8 @@ import { useEffect, useRef, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
+import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
+import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 export const CONTENT_MEDIA_ACCEPT =
@@ -55,12 +57,7 @@ export function useContentMediaUpload({
       onUrlChange(url);
       setFileName(file.name);
     } catch (e) {
-      const isClientCheck = e instanceof Error && !('isAxiosError' in e);
-      setUploadError(
-        isClientCheck
-          ? e.message
-          : getApiErrorMessage(e, locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed.')
-      );
+      setUploadError(getApiErrorMessage(e, locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed. Please try again.'));
       onUrlChange('');
       setFileName(null);
     } finally {
@@ -95,6 +92,142 @@ type ContentMediaPreviewProps = {
   /** No card chrome (border / fill) — media sits on the page background. */
   unframed?: boolean;
 };
+
+function formatClock(seconds: number): string {
+  if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
+  const total = Math.floor(seconds);
+  const h = Math.floor(total / 3600);
+  const m = Math.floor((total % 3600) / 60);
+  const s = String(total % 60).padStart(2, '0');
+  return h > 0 ? `${h}:${String(m).padStart(2, '0')}:${s}` : `${m}:${s}`;
+}
+
+/** Minimal in-composer player: tap to play, thin draggable scrubber, time and mute only. */
+function ComposeVideoPlayer({ src, locale = 'en' }: { src: string; locale?: 'fr' | 'en' }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  usePauseOffscreenVideo(videoRef);
+  const [playing, setPlaying] = useState(false);
+  const [muted, setMuted] = useState(false);
+  const [current, setCurrent] = useState(0);
+  const [duration, setDuration] = useState(0);
+
+  const togglePlay = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    if (video.paused) void video.play().catch(() => undefined);
+    else video.pause();
+  };
+
+  const toggleMute = () => {
+    const video = videoRef.current;
+    if (!video) return;
+    video.muted = !video.muted;
+    setMuted(video.muted);
+  };
+
+  const seek = (value: number) => {
+    const video = videoRef.current;
+    if (!video || !duration) return;
+    video.currentTime = value;
+    setCurrent(value);
+  };
+
+  const progress = duration > 0 ? (current / duration) * 100 : 0;
+  const playLabel = playing ? 'Pause' : locale === 'fr' ? 'Lire' : 'Play';
+  const muteLabel = muted ? (locale === 'fr' ? 'Activer le son' : 'Unmute') : locale === 'fr' ? 'Couper le son' : 'Mute';
+
+  return (
+    <div className="group/player absolute inset-0 bg-black">
+      <video
+        ref={videoRef}
+        src={src}
+        playsInline
+        preload="metadata"
+        className="absolute inset-0 h-full w-full cursor-pointer object-contain"
+        onClick={togglePlay}
+        onPlay={() => setPlaying(true)}
+        onPause={() => setPlaying(false)}
+        onEnded={() => setPlaying(false)}
+        onLoadedMetadata={(e) => setDuration(e.currentTarget.duration)}
+        onTimeUpdate={(e) => setCurrent(e.currentTarget.currentTime)}
+      />
+
+      <button
+        type="button"
+        onClick={togglePlay}
+        aria-label={playLabel}
+        className={`absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#111111] shadow-lg backdrop-blur-sm transition-opacity duration-200 hover:bg-white ${
+          playing ? 'pointer-events-none opacity-0' : 'opacity-100'
+        }`}
+      >
+        <svg className="ml-0.5 h-5 w-5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+          <path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l10.6-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14Z" />
+        </svg>
+      </button>
+
+      <div
+        className={`absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/70 via-black/30 to-transparent px-3 pb-2.5 pt-8 transition-opacity duration-200 ${
+          playing ? 'opacity-0 group-hover/player:opacity-100 focus-within:opacity-100' : 'opacity-100'
+        }`}
+      >
+        <input
+          type="range"
+          min={0}
+          max={duration || 0}
+          step={0.1}
+          value={current}
+          onChange={(e) => seek(Number(e.target.value))}
+          aria-label={locale === 'fr' ? 'Position de lecture' : 'Seek'}
+          className="block h-1 w-full cursor-pointer appearance-none rounded-full bg-white/25 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+          style={{
+            background: `linear-gradient(to right, #FF5722 ${progress}%, rgba(255,255,255,0.25) ${progress}%)`,
+          }}
+        />
+        <div className="mt-2 flex items-center justify-between text-white">
+          <div className="flex items-center gap-2.5">
+            <button
+              type="button"
+              onClick={togglePlay}
+              aria-label={playLabel}
+              className="flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-white/15"
+            >
+              {playing ? (
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <rect x="6" y="5" width="4" height="14" rx="1" />
+                  <rect x="14" y="5" width="4" height="14" rx="1" />
+                </svg>
+              ) : (
+                <svg className="ml-0.5 h-3.5 w-3.5" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                  <path d="M8 5.14v13.72a1 1 0 0 0 1.52.85l10.6-6.86a1 1 0 0 0 0-1.7L9.52 4.29A1 1 0 0 0 8 5.14Z" />
+                </svg>
+              )}
+            </button>
+            <span className="text-[13px] font-medium tabular-nums text-white/90">
+              {formatClock(current)} <span className="text-white/50">/ {formatClock(duration)}</span>
+            </span>
+          </div>
+          <button
+            type="button"
+            onClick={toggleMute}
+            aria-label={muteLabel}
+            title={muteLabel}
+            className="flex h-7 w-7 items-center justify-center rounded-full transition hover:bg-white/15"
+          >
+            {muted ? (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5 6 9H3v6h3l5 4V5Zm11 4-6 6m0-6 6 6" />
+              </svg>
+            ) : (
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M11 5 6 9H3v6h3l5 4V5Zm4.5 3.5a5 5 0 0 1 0 7m2.8-10.3a9 9 0 0 1 0 13.6" />
+              </svg>
+            )}
+          </button>
+        </div>
+      </div>
+    </div>
+  );
+}
 
 /** Fixed landscape preview for create-content modal — never grows with media aspect. */
 type ContentComposeMediaPreviewProps = {
@@ -140,12 +273,7 @@ export function ContentComposeMediaPreview({
       <div className="relative w-full overflow-hidden rounded-xl bg-neutral-100 dark:bg-neutral-900">
         <div className="relative h-52 w-full sm:h-56">
           {kind === 'video' ? (
-            <video
-              src={mediaUrl}
-              controls
-              className="absolute inset-0 h-full w-full object-cover"
-              preload="metadata"
-            />
+            <ComposeVideoPlayer src={mediaUrl} locale={locale} />
           ) : kind === 'audio' ? (
             <div className="absolute inset-0 flex flex-col items-center justify-center gap-3 bg-neutral-100 px-4 dark:bg-neutral-900">
               <span className="text-2xl" aria-hidden>
@@ -174,7 +302,14 @@ export function ContentComposeMediaPreview({
             </div>
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
-            <img src={mediaUrl} alt="" className="absolute inset-0 h-full w-full object-cover" />
+            <img
+              {...mediaImageResponsive(mediaUrl, [256, 384, 640])}
+              sizes="(min-width: 768px) 360px, 90vw"
+              alt=""
+              loading="lazy"
+              decoding="async"
+              className="absolute inset-0 h-full w-full object-cover"
+            />
           )}
         </div>
 
@@ -224,8 +359,9 @@ export function ContentComposeMediaPreview({
             <div className="relative z-[301] max-h-[min(90dvh,900px)] max-w-[min(96vw,960px)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={mediaUrl}
+                src={mediaImageSrc(mediaUrl, 1920)}
                 alt=""
+                decoding="async"
                 className="max-h-[min(90dvh,900px)] max-w-full rounded-lg object-contain shadow-2xl"
               />
               <button
@@ -258,6 +394,9 @@ export function ContentMediaPreview({
   fit = 'contain',
   unframed = false,
 }: ContentMediaPreviewProps) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  usePauseOffscreenVideo(videoRef);
+
   if (!mediaUrl && hideWhenEmpty) return null;
 
   const kind = contentMediaKind(mediaUrl, fileName, mediaType);
@@ -322,8 +461,11 @@ export function ContentMediaPreview({
     >
       {kind === 'video' ? (
         <video
+          ref={videoRef}
           src={mediaUrl}
           controls
+          preload="metadata"
+          playsInline
           className={
             fluid
               ? mediaMaxClass
@@ -365,8 +507,11 @@ export function ContentMediaPreview({
       ) : (
         // eslint-disable-next-line @next/next/no-img-element
         <img
-          src={mediaUrl}
+          {...mediaImageResponsive(mediaUrl, [640, 828, 1080, 1200])}
+          sizes="(min-width: 1024px) 760px, 100vw"
           alt=""
+          loading="lazy"
+          decoding="async"
           className={
             fluid
               ? mediaMaxClass

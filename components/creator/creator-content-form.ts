@@ -18,9 +18,14 @@ const taggedUserSchema = z.object({
 
 const stringListItemSchema = z.object({ value: z.string() });
 
+export const CREATOR_CONTENT_TITLE_MAX = 3000;
+
 export const creatorContentPublishStep1Schema = z.object({
-  title: z.string().max(200).optional(),
-  mediaUrl: z.string().min(1, 'Upload a media file to continue.'),
+  title: z
+    .string()
+    .max(CREATOR_CONTENT_TITLE_MAX, `Your post is too long (max ${CREATOR_CONTENT_TITLE_MAX} characters).`)
+    .optional(),
+  mediaUrl: z.string(),
   mediaType: z.enum(['FILE', 'GIF']).optional(),
   moodLabel: z.string().max(100).optional().nullable(),
   moodEmoji: z.string().max(20).optional().nullable(),
@@ -37,9 +42,14 @@ export const creatorContentPublishStep2Schema = z.object({
   commentsEnabled: z.boolean(),
 });
 
-export const creatorContentPublishSchema = creatorContentPublishStep1Schema.merge(
-  creatorContentPublishStep2Schema
-);
+export const creatorContentPublishSchema = creatorContentPublishStep1Schema
+  .merge(creatorContentPublishStep2Schema)
+  .superRefine((data, ctx) => {
+    const hasText = Boolean(data.title?.trim() || data.description?.trim());
+    if (!hasText && !data.mediaUrl.trim()) {
+      ctx.addIssue({ code: z.ZodIssueCode.custom, message: 'Write something or add media.', path: ['title'] });
+    }
+  });
 
 export type CreatorContentPublishFormValues = z.infer<typeof creatorContentPublishSchema>;
 

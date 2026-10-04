@@ -17,12 +17,12 @@ const OPTIONS: {
 }[] = [
   {
     id: 'virtual',
-    title: 'Virtual',
+    title: 'Digital',
     subtitle: 'Delivered online',
   },
   {
     id: 'physical',
-    title: 'Physical',
+    title: 'Material',
     subtitle: 'Shipped to buyer',
   },
 ];
@@ -53,17 +53,25 @@ export function ProductFormatToggle({
             onClick={() => {
               if (!selected) onChange(option.id);
             }}
-            className={`min-w-[9.5rem] flex-1 rounded-xl border bg-transparent px-3.5 py-2.5 text-left transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-300 focus-visible:ring-offset-2 disabled:cursor-default dark:focus-visible:ring-offset-neutral-900 sm:flex-none ${
+            className={`flex min-w-[10rem] flex-1 items-start gap-3 rounded-lg border bg-transparent px-4 py-3 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 focus-visible:ring-offset-2 disabled:cursor-default dark:focus-visible:ring-offset-[#111111] sm:flex-none ${
               selected
-                ? 'border-orange-500 dark:border-orange-400'
-                : 'border-neutral-200 hover:border-neutral-300 dark:border-neutral-700 dark:hover:border-neutral-500'
+                ? 'border-[#111111] dark:border-white'
+                : 'border-black/[0.12] hover:border-black/25 dark:border-white/[0.14] dark:hover:border-white/30'
             }`}
           >
-            <span className="block text-sm font-semibold text-neutral-900 dark:text-white">
-              {option.title}
+            <span
+              aria-hidden
+              className={`mt-0.5 flex h-4 w-4 shrink-0 items-center justify-center rounded-full border transition-colors ${
+                selected ? 'border-[#111111] dark:border-white' : 'border-black/25 dark:border-white/30'
+              }`}
+            >
+              {selected ? <span className="h-2 w-2 rounded-full bg-[#111111] dark:bg-white" /> : null}
             </span>
-            <span className="mt-0.5 block text-[11px] leading-snug text-neutral-500 dark:text-neutral-400">
-              {option.subtitle}
+            <span>
+              <span className="block text-[14px] font-semibold text-[#111111] dark:text-white">{option.title}</span>
+              <span className="mt-0.5 block text-[12px] leading-snug text-neutral-500 dark:text-neutral-400">
+                {option.subtitle}
+              </span>
             </span>
           </button>
         );

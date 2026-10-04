@@ -7,7 +7,7 @@ import { normalizeSpringPage } from '@/lib/ecosystem';
 import type { SpringPageRaw } from '@/types/ecosystem';
 import type { TaggedUserRef } from '@/types/creator-content';
 import { CONTENT_MOODS, type ContentMood } from '@/components/creator/creator-content-enrichments';
-import { TITLE_EMOJIS } from '@/components/creator/ContentTitleField';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
 type CreatorContentComposeToolsProps = {
@@ -21,6 +21,9 @@ type CreatorContentComposeToolsProps = {
   onInsertEmoji?: (emoji: string) => void;
   mediaUploading?: boolean;
   hasMedia?: boolean;
+  /** `icons`: X-style row of accent icon buttons (label kept as tooltip / aria-label). */
+  variant?: 'chips' | 'icons';
+  showMood?: boolean;
 };
 
 type Panel = 'mood' | 'tag' | 'emoji' | null;
@@ -30,14 +33,35 @@ function ToolChip({
   onClick,
   active,
   disabled,
+  iconOnly,
   children,
 }: {
   label: string;
   onClick: () => void;
   active?: boolean;
   disabled?: boolean;
+  iconOnly?: boolean;
   children: React.ReactNode;
 }) {
+  if (iconOnly) {
+    return (
+      <button
+        type="button"
+        onClick={onClick}
+        disabled={disabled}
+        title={label}
+        aria-label={label}
+        aria-pressed={active}
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-full outline-none transition-colors duration-150 hover:bg-black/[0.05] hover:text-[#111111] focus-visible:bg-black/[0.05] disabled:opacity-40 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:bg-white/[0.08] ${
+          active
+            ? 'bg-black/[0.05] text-[#111111] dark:bg-white/[0.08] dark:text-white'
+            : 'text-neutral-500 dark:text-neutral-400'
+        }`}
+      >
+        {children}
+      </button>
+    );
+  }
   return (
     <button
       type="button"
@@ -66,7 +90,10 @@ export function CreatorContentComposeTools({
   onInsertEmoji,
   mediaUploading,
   hasMedia,
+  variant = 'chips',
+  showMood = true,
 }: CreatorContentComposeToolsProps) {
+  const iconOnly = variant === 'icons';
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [panel, setPanel] = useState<Panel>(null);
@@ -158,10 +185,22 @@ export function CreatorContentComposeTools({
 
   return (
     <div ref={rootRef} className="relative">
-      <div className="flex flex-wrap items-center gap-1.5">
-        <ToolChip label={copy.media} onClick={onMediaPick} active={hasMedia} disabled={mediaUploading}>
+      <div className={`flex flex-wrap items-center ${iconOnly ? '-ml-2 gap-0.5' : 'gap-1.5'}`}>
+        <ToolChip
+          label={copy.media}
+          onClick={onMediaPick}
+          active={hasMedia}
+          disabled={mediaUploading}
+          iconOnly={iconOnly}
+        >
           {mediaUploading ? (
             <LoadingSpinner size="sm" />
+          ) : iconOnly ? (
+            <svg className="h-[19px] w-[19px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+              <rect x="3" y="4" width="18" height="16" rx="2.5" />
+              <circle cx="8.5" cy="9.5" r="1.5" />
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 15.5l-5-5L5 20" />
+            </svg>
           ) : (
             <svg className="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
@@ -173,25 +212,34 @@ export function CreatorContentComposeTools({
           label={copy.tag}
           onClick={() => toggle('tag')}
           active={panel === 'tag' || taggedUsers.length > 0}
+          iconOnly={iconOnly}
         >
-          <svg className="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+          <svg className={iconOnly ? 'h-[19px] w-[19px]' : 'h-4 w-4 opacity-70'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
             <path strokeLinecap="round" strokeLinejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
         </ToolChip>
 
-        <ToolChip label={copy.mood} onClick={() => toggle('mood')} active={panel === 'mood' || Boolean(moodLabel)}>
-          <span className="text-sm leading-none opacity-80" aria-hidden>
-            {moodEmoji ?? '✦'}
-          </span>
-        </ToolChip>
+        {showMood ? (
+          <ToolChip
+            label={copy.mood}
+            onClick={() => toggle('mood')}
+            active={panel === 'mood' || Boolean(moodLabel)}
+            iconOnly={iconOnly}
+          >
+            <span className={`leading-none ${iconOnly ? 'text-[17px]' : 'text-sm opacity-80'}`} aria-hidden>
+              {moodEmoji ?? '✦'}
+            </span>
+          </ToolChip>
+        ) : null}
 
         {onInsertEmoji && (
           <ToolChip
             label={copy.emoji}
             onClick={() => toggle('emoji')}
             active={panel === 'emoji'}
+            iconOnly={iconOnly}
           >
-            <svg className="h-4 w-4 opacity-70" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+            <svg className={iconOnly ? 'h-[19px] w-[19px]' : 'h-4 w-4 opacity-70'} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
               <path
                 strokeLinecap="round"
                 strokeLinejoin="round"
@@ -209,10 +257,14 @@ export function CreatorContentComposeTools({
           aria-label={
             panel === 'emoji' ? copy.emoji : panel === 'mood' ? copy.mood : copy.tag
           }
-          className={`absolute z-30 mt-2 rounded-xl border border-neutral-200/60 bg-white p-3 shadow-lg dark:border-neutral-700 dark:bg-neutral-900 ${
+          className={`absolute z-30 mt-2 rounded-xl border border-neutral-200/60 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900 ${
             panel === 'emoji'
-              ? 'bottom-full left-0 mb-2 mt-0 w-[min(18rem,calc(100vw-3rem))] sm:left-auto sm:right-0'
-              : 'left-0 right-0 top-full'
+              ? `overflow-hidden p-0 shadow-[0_16px_48px_-16px_rgba(0,0,0,0.35)] ${
+                  iconOnly ? 'left-0 top-full' : 'bottom-full left-0 mb-2 mt-0 sm:left-auto sm:right-0'
+                }`
+              : iconOnly
+                ? 'left-0 top-full w-[min(22rem,calc(100vw-3rem))] p-3'
+                : 'left-0 right-0 top-full p-3'
           }`}
         >
           {panel === 'mood' && (
@@ -250,24 +302,7 @@ export function CreatorContentComposeTools({
             </div>
           )}
 
-          {panel === 'emoji' && onInsertEmoji && (
-            <div className="grid grid-cols-6 gap-0.5">
-              {TITLE_EMOJIS.map((emoji) => (
-                <button
-                  key={emoji}
-                  type="button"
-                  onClick={() => {
-                    onInsertEmoji(emoji);
-                    setPanel(null);
-                  }}
-                  className="flex h-9 w-9 items-center justify-center rounded-lg text-xl transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                  aria-label={`Insert ${emoji}`}
-                >
-                  {emoji}
-                </button>
-              ))}
-            </div>
-          )}
+          {panel === 'emoji' && onInsertEmoji && <EmojiPicker onSelect={onInsertEmoji} />}
 
           {panel === 'tag' && (
             <div className="space-y-2">

@@ -3,6 +3,7 @@
 import { memo, useCallback, useId, useState, type DragEvent } from 'react';
 import { ContentMediaPreview, useContentMediaUpload } from '@/components/creator/creator-content-media';
 import { uploadExperienceMedia } from '@/lib/marketplace-api';
+import { UserFacingError } from '@/lib/api-error';
 import { CreatorToolsPicker } from '@/components/creator/studio/CreatorToolsPicker';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { MAX_CUSTOM_EMPLOYMENT_LENGTH, isKnownEmploymentType } from '@/lib/experience-employment';
@@ -628,12 +629,18 @@ const EntryEditor = memo(function EntryEditor({
             onChange={(location) => patch({ location })}
           />
         </div>
-        <StudioField label="Employment">
-          <EmploymentChoice
-            value={entry.employmentType}
-            onChange={(employmentType) => patch({ employmentType })}
+        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-[minmax(0,1fr)_12rem]">
+          <StudioField label="Employment">
+            <EmploymentChoice
+              value={entry.employmentType}
+              onChange={(employmentType) => patch({ employmentType })}
+            />
+          </StudioField>
+          <CvVisibilityField
+            shown={!entry.hideFromCv}
+            onChange={(shown) => patch({ hideFromCv: !shown })}
           />
-        </StudioField>
+        </div>
       </section>
 
       <section className={STUDIO_BLOCK_CLASS} aria-label="Description">
@@ -647,6 +654,36 @@ const EntryEditor = memo(function EntryEditor({
     </div>
   );
 });
+
+function CvVisibilityField({ shown, onChange }: { shown: boolean; onChange: (shown: boolean) => void }) {
+  const id = useId();
+  return (
+    <StudioField label="CV" htmlFor={id} hint="Choose whether this experience appears in your generated CV.">
+      <div className="flex items-center gap-3 pb-3">
+        <button
+          id={id}
+          type="button"
+          role="switch"
+          aria-checked={shown}
+          onClick={() => onChange(!shown)}
+          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+            shown ? 'bg-[#FF5722]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              shown ? 'translate-x-3.5' : 'translate-x-0.5'
+            }`}
+          />
+        </button>
+        <span className={`truncate text-base font-normal ${shown ? 'text-black dark:text-neutral-100' : EMPTY_CLASS}`}>
+          {shown ? 'Shown in CV' : 'Hidden from CV'}
+        </span>
+      </div>
+    </StudioField>
+  );
+}
 
 function DescriptionField({ value, onChange }: { value: string; onChange: (next: string) => void }) {
   const id = useId();
@@ -768,7 +805,7 @@ export function PortfolioExperienceStudio({
   const save = useCallback(
     async (draft: ExperienceDraft) => {
       if (draft.blocks.some((block) => Object.keys(collectProofLinkUrlErrors(block.links)).length > 0)) {
-        throw new Error('Fix the highlighted links before saving.');
+        throw new UserFacingError('Fix the highlighted links before saving.');
       }
       await onSave({
         blocks: draft.blocks.map(stripKey).map(cleanDraft).filter(blockHasContent),

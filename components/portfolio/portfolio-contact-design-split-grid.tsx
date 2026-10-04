@@ -15,7 +15,7 @@ function prefersReducedMotion(): boolean {
 
 /**
  * Smart email wrapping — plain `break-all` chops anywhere, including mid-character inside
- * the TLD (e.g. "…noprobleme.co" / "m"). Instead, only offer real break opportunities
+ * the TLD (e.g. "…skraft.co" / "m"). Instead, only offer real break opportunities
  * (`<wbr>`) right after "@" and right before each "." in the domain, with the dot kept
  * attached to the segment that follows it — so ".com" always wraps as one intact unit.
  * `break-words` stays on the wrapping `<a>` purely as a last-resort fallback for a domain

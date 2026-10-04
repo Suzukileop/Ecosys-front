@@ -1,15 +1,16 @@
 import api from '@/lib/api';
+import { UserFacingError } from '@/lib/api-error';
 import { parseAboutSkills } from '@/lib/about-skills';
 import { parseEmploymentType } from '@/lib/experience-employment';
 import { normalizeSpringPage } from '@/lib/ecosystem';
 import { parseSpokenLanguageEntries } from '@/lib/spoken-languages';
 import { normalizeCreatorGender } from '@/lib/creator-gender';
-import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+import { normalizeStorageUrlsDeep, resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import {
   parseProductWhyBlocks,
   serializeProductWhyBlocks,
 } from '@/components/marketplace/product-why-block-schema';
-import type { PagedResponse, SpringPageRaw, CreatorReputationDto } from '@/types/ecosystem';
+import type { PagedResponse, SpringPageRaw, CreatorStarStats } from '@/types/ecosystem';
 import type { CreatorContentItemDto } from '@/types/creator-content';
 import type {
   ContentReport,
@@ -110,6 +111,11 @@ export function mapPublicContentFeedItem(raw: RawRecord): PublicContentFeedItem 
     likes: typeof raw.likes === 'number' ? raw.likes : Number(raw.likes ?? 0),
     createdAt: String(raw.createdAt ?? new Date().toISOString()),
     creator: mapContentCreator(raw.creator),
+    /* The two travel together: a payload without `commentCount` did not compute social state at
+       all, so its null `viewerReaction` means "unknown", not "no reaction". */
+    commentCount: raw.commentCount != null ? Number(raw.commentCount) : undefined,
+    viewerReaction:
+      raw.commentCount != null ? (raw.viewerReaction === 'LIKE' ? 'LIKE' : null) : undefined,
   };
 }
 
@@ -175,7 +181,7 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
           raw.serviceCount ??
             (Array.isArray(raw.profileServices) ? raw.profileServices.length : 0)
         ),
-    averageRating: raw.averageRating != null ? Number(raw.averageRating) : null,
+    starCount: Number(raw.starCount ?? 0),
     followerCount: typeof raw.followerCount === 'number' ? raw.followerCount : Number(raw.followerCount ?? 0),
     isFollowing: Boolean(raw.isFollowing),
     nationality: raw.nationality != null ? String(raw.nationality) : null,
@@ -526,7 +532,8 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     contentCount: typeof raw.contentCount === 'number' ? raw.contentCount : Number(raw.contentCount ?? 0),
     productCount: typeof raw.productCount === 'number' ? raw.productCount : Number(raw.productCount ?? 0),
     serviceCount: typeof raw.serviceCount === 'number' ? raw.serviceCount : Number(raw.serviceCount ?? 0),
-    averageRating: raw.averageRating != null ? Number(raw.averageRating) : null,
+    starCount: Number(raw.starCount ?? 0),
+    isStarred: Boolean(raw.isStarred),
     socialLinks,
     studioHeaderLayout: raw.studioHeaderLayout != null ? String(raw.studioHeaderLayout) : 'BANNER',
     studioHeaderContentStyle:
@@ -839,7 +846,7 @@ export async function serverMarketplaceFetch<T>(
     });
     if (res.status === 404) return null;
     if (!res.ok) return null;
-    return (await res.json()) as T;
+    return normalizeStorageUrlsDeep((await res.json()) as T);
   } catch {
     return null;
   }
@@ -931,7 +938,7 @@ export const MAX_EXPERIENCE_MEDIA_BYTES = 100 * 1024 * 1024;
 
 export async function uploadExperienceMedia(file: File): Promise<string> {
   if (file.size > MAX_EXPERIENCE_MEDIA_BYTES) {
-    throw new Error('Experience media must be 100 MB or less.');
+    throw new UserFacingError('Experience media must be 100 MB or less.');
   }
   const form = new FormData();
   form.append('file', file);
@@ -994,6 +1001,23 @@ export async function unpublishProduct(id: string): Promise<MarketplaceProductDe
   return res.data;
 }
 
+export async function recordProductSale(id: string, quantity = 1): Promise<MarketplaceProductDetail> {
+  const res = await api.post<MarketplaceProductDetail>(
+    `/api/creator/products/${encodeURIComponent(id)}/sales`,
+    null,
+    { params: { quantity } }
+  );
+  return res.data;
+}
+
+export async function undoProductSale(id: string, quantity = 1): Promise<MarketplaceProductDetail> {
+  const res = await api.delete<MarketplaceProductDetail>(
+    `/api/creator/products/${encodeURIComponent(id)}/sales`,
+    { params: { quantity } }
+  );
+  return res.data;
+}
+
 export async function pinProduct(id: string): Promise<MarketplaceProductDetail> {
   const res = await api.patch<MarketplaceProductDetail>(
     `/api/creator/products/${encodeURIComponent(id)}/pin`
@@ -1008,16 +1032,16 @@ export async function unpinProduct(id: string): Promise<MarketplaceProductDetail
   return res.data;
 }
 
-export async function markProductBestseller(id: string): Promise<MarketplaceProductDetail> {
+export async function showProductOnProfile(id: string): Promise<MarketplaceProductDetail> {
   const res = await api.patch<MarketplaceProductDetail>(
-    `/api/creator/products/${encodeURIComponent(id)}/bestseller`
+    `/api/creator/products/${encodeURIComponent(id)}/show-on-profile`
   );
   return res.data;
 }
 
-export async function unmarkProductBestseller(id: string): Promise<MarketplaceProductDetail> {
+export async function hideProductFromProfile(id: string): Promise<MarketplaceProductDetail> {
   const res = await api.patch<MarketplaceProductDetail>(
-    `/api/creator/products/${encodeURIComponent(id)}/unbestseller`
+    `/api/creator/products/${encodeURIComponent(id)}/hide-from-profile`
   );
   return res.data;
 }
@@ -1059,7 +1083,10 @@ export function normalizeMarketplaceProduct(
     specialite: (legacy.specialite ?? legacy.niche)?.trim() || null,
     tags,
     isBestseller: Boolean(raw.isBestseller),
+    bestsellerRank: raw.bestsellerRank ?? null,
+    catalogueBestsellers: Array.isArray(raw.catalogueBestsellers) ? raw.catalogueBestsellers : [],
     isPinned: Boolean(raw.isPinned),
+    showOnProfile: raw.showOnProfile !== false,
     galleryImageUrls: Array.isArray((raw as MarketplaceProductDetail).galleryImageUrls)
       ? ((raw as MarketplaceProductDetail).galleryImageUrls ?? [])
           .map((url) => String(url).trim())
@@ -1092,6 +1119,16 @@ export function collectProductLabels(product: Pick<MarketplaceProductSummary, 'g
 
 // --- Public product catalog ---
 
+export async function listPopularProductSearches(
+  format?: 'virtual' | 'physical',
+  limit = 8
+): Promise<string[]> {
+  const res = await api.get<string[]>('/api/marketplace/products/popular-searches', {
+    params: { limit, ...(format ? { format } : {}) },
+  });
+  return Array.isArray(res.data) ? res.data.filter((term) => typeof term === 'string' && term.trim()) : [];
+}
+
 export async function listPublicProducts(
   params?: {
     genre?: string;
@@ -1105,6 +1142,7 @@ export async function listPublicProducts(
     page?: number;
     size?: number;
     favoritesOnly?: boolean;
+    profileOnly?: boolean;
   }
 ): Promise<PagedResponse<MarketplaceProductSummary>> {
   const res = await api.get<SpringPageRaw<MarketplaceProductSummary>>('/api/marketplace/products', {
@@ -1120,6 +1158,7 @@ export async function listPublicProducts(
       ...(params?.maxPriceCents != null ? { maxPriceCents: params.maxPriceCents } : {}),
       ...(params?.sort ? { sort: params.sort } : {}),
       ...(params?.favoritesOnly ? { favoritesOnly: true } : {}),
+      ...(params?.profileOnly ? { profileOnly: true } : {}),
     },
   });
   const page = normalizeSpringPage(res.data);
@@ -1133,6 +1172,47 @@ export async function getPublicProduct(id: string): Promise<MarketplaceProductDe
   return serverMarketplaceFetch<MarketplaceProductDetail>(
     `/api/marketplace/products/${encodeURIComponent(id)}`
   );
+}
+
+const clientProductCache = new Map<string, Promise<MarketplaceProductDetail | null>>();
+
+/** Browser-side product lookup (shared cache), e.g. for product previews in chat. */
+export function fetchPublicProductClient(id: string): Promise<MarketplaceProductDetail | null> {
+  let pending = clientProductCache.get(id);
+  if (!pending) {
+    pending = api
+      .get<MarketplaceProductDetail>(`/api/marketplace/products/${encodeURIComponent(id)}`)
+      .then((res) => res.data)
+      .catch(() => {
+        clientProductCache.delete(id);
+        return null;
+      });
+    clientProductCache.set(id, pending);
+  }
+  return pending;
+}
+
+const PRODUCT_LINK_PATTERN = /(?:https?:\/\/[^\s/]+)?\/marketplace\/products\/([A-Za-z0-9-]{8,})\/?/;
+
+/** Extracts the first marketplace product id linked in a text, and the text without that link. */
+export function extractProductLink(text: string | null | undefined): { productId: string; rest: string } | null {
+  if (!text) return null;
+  const match = PRODUCT_LINK_PATTERN.exec(text);
+  if (!match) return null;
+  const rest = (text.slice(0, match.index) + text.slice(match.index + match[0].length))
+    .replace(/[ \t]+\n/g, '\n')
+    .replace(/\n{3,}/g, '\n\n')
+    .trim();
+  return { productId: match[1], rest };
+}
+
+export const PRODUCT_INQUIRY_DEFAULT_TEXT = 'Hi! Is this still available?';
+
+/** Message body for a product inquiry: the visible text, then the product link rendered as a card. */
+export function composeProductInquiry(text: string, productId: string): string {
+  const origin = typeof window !== 'undefined' ? window.location.origin : '';
+  const body = text.trim() || PRODUCT_INQUIRY_DEFAULT_TEXT;
+  return `${body}\n${origin}/marketplace/products/${productId}`;
 }
 
 export async function listSimilarProducts(
@@ -1609,31 +1689,32 @@ export async function unfollowCreator(creatorId: string): Promise<CreatorFollowS
   };
 }
 
-export async function getCreatorReputation(creatorId: string): Promise<CreatorReputationDto> {
-  const res = await api.get<CreatorReputationDto>(
-    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/reputation`
-  );
-  const data = res.data;
+function toCreatorStarStats(data: Partial<CreatorStarStats> | null | undefined): CreatorStarStats {
   return {
-    ...data,
-    ratingDistribution: data.ratingDistribution ?? {},
-    completedMissionsCount:
-      typeof data.completedMissionsCount === 'number'
-        ? data.completedMissionsCount
-        : Number(data.reviewCount ?? 0),
-    responseRatePercent:
-      data.responseRatePercent == null ? null : Number(data.responseRatePercent),
-    inboundConversationCount: Number(data.inboundConversationCount ?? 0),
-    typicallyRepliesWithinLabel:
-      data.typicallyRepliesWithinLabel != null ? String(data.typicallyRepliesWithinLabel) : null,
+    starCount: Number(data?.starCount ?? 0),
+    starred: Boolean(data?.starred ?? false),
   };
 }
 
-export async function submitCreatorReview(
-  creatorId: string,
-  body: { rating: number; comment?: string; wouldRecommend: boolean }
-): Promise<void> {
-  await api.post(`/api/marketplace/creators/${encodeURIComponent(creatorId)}/reviews`, body);
+export async function getCreatorStars(creatorId: string): Promise<CreatorStarStats> {
+  const res = await api.get<CreatorStarStats>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/stars`
+  );
+  return toCreatorStarStats(res.data);
+}
+
+export async function starCreator(creatorId: string): Promise<CreatorStarStats> {
+  const res = await api.post<CreatorStarStats>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/star`
+  );
+  return toCreatorStarStats(res.data);
+}
+
+export async function unstarCreator(creatorId: string): Promise<CreatorStarStats> {
+  const res = await api.delete<CreatorStarStats>(
+    `/api/marketplace/creators/${encodeURIComponent(creatorId)}/star`
+  );
+  return toCreatorStarStats(res.data);
 }
 
 export type CreatorContactMessageRequest = {
@@ -1729,7 +1810,14 @@ export async function updateAdminReport(
 }
 
 export async function listPublicProductsServer(
-  params?: { genre?: string; q?: string; creatorId?: string; page?: number; size?: number }
+  params?: {
+    genre?: string;
+    q?: string;
+    creatorId?: string;
+    page?: number;
+    size?: number;
+    profileOnly?: boolean;
+  }
 ): Promise<PagedResponse<MarketplaceProductSummary>> {
   const search = new URLSearchParams();
   search.set('page', String(params?.page ?? 0));
@@ -1737,6 +1825,7 @@ export async function listPublicProductsServer(
   if (params?.genre) search.set('genre', params.genre);
   if (params?.q) search.set('q', params.q);
   if (params?.creatorId) search.set('creatorId', params.creatorId);
+  if (params?.profileOnly) search.set('profileOnly', 'true');
 
   const raw = await serverMarketplaceFetch<SpringPageRaw<MarketplaceProductSummary>>(
     `/api/marketplace/products?${search.toString()}`
@@ -1775,6 +1864,6 @@ export const PRODUCT_TYPE_LABELS: Record<string, string> = {
   SOFTWARE: 'Software',
   IMAGE_PACK: 'Image pack',
   FONT: 'Font',
-  PHYSICAL: 'Physical',
+  PHYSICAL: 'Material',
   OTHER: 'Other',
 };

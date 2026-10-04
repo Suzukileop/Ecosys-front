@@ -2,7 +2,7 @@ const block = 'animate-pulse rounded bg-gray-200 dark:bg-neutral-700';
 
 function PurchasePanelSkeleton() {
   return (
-    <aside className="rounded-2xl border border-stone-200 bg-stone-50 p-5 shadow-sm dark:border-neutral-800 dark:bg-[#0F0F0F]">
+    <aside className="rounded-lg border border-black/[0.06] bg-white p-5 dark:border-neutral-800 dark:bg-[#0F0F0F]">
       <div className="flex items-start justify-between gap-3">
         <div className="space-y-2">
           <div className={`h-9 w-28 ${block}`} />
@@ -149,7 +149,7 @@ export function ProductDetailSkeleton() {
               </div>
             </div>
 
-            <div className="flex items-center gap-4 rounded-2xl border border-gray-200 bg-gray-50 p-4 dark:border-neutral-800 dark:bg-[#0F0F0F]">
+            <div className="flex items-center gap-4 rounded-lg border border-black/[0.06] bg-white p-4 dark:border-neutral-800 dark:bg-[#0F0F0F]">
               <div className={`h-14 w-14 shrink-0 rounded-full ${block}`} />
               <div className="space-y-2">
                 <div className={`h-3 w-16 ${block}`} />

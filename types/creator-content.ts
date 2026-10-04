@@ -12,7 +12,7 @@ export interface CreatorContentCreateBody {
   title?: string | null;
   genre?: string | null;
   description?: string | null;
-  mediaUrl: string;
+  mediaUrl?: string | null;
   mediaType?: ContentMediaType;
   textColor?: string | null;
   moodLabel?: string | null;

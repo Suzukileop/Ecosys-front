@@ -1,0 +1,11 @@
+twemoji-15.0.1-sheet-64.png
+
+Emoji graphics: Twemoji
+Copyright 2019 Twitter, Inc and other contributors
+Copyright 2024 jdecked and other contributors (https://github.com/jdecked/twemoji)
+
+Licensed under the Creative Commons Attribution 4.0 International license (CC-BY 4.0).
+https://creativecommons.org/licenses/by/4.0/
+
+Spritesheet packaged by emoji-datasource-twitter 15.0.1 (https://github.com/iamcal/emoji-data, MIT).
+Used by the emoji picker in components/ui/EmojiPicker.tsx (emoji-mart, MIT).

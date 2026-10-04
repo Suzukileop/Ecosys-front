@@ -28,6 +28,11 @@ export function isMarketplaceCreatorProfilePath(pathname: string): boolean {
   return !MARKETPLACE_PRODUCT_SECTIONS.has(segment) && segment !== 'content';
 }
 
+/** `/marketplace/{creatorId}/shop` — a creator's product shop. */
+export function isCreatorShopPath(pathname: string): boolean {
+  return /^\/marketplace\/[^/]+\/shop\/?$/.test(pathname);
+}
+
 /**
  * Safe internal path for profile "back" navigation (`from` query).
  * Rejects protocol-relative / external URLs.

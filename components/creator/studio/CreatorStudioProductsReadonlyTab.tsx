@@ -2,14 +2,13 @@
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import Link from 'next/link';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import { listCreatorProducts } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import {
-  CreatorProductCard,
-  creatorProductGridClassName,
-} from '@/components/creator/CreatorProductCard';
+import { CreatorProductCard } from '@/components/creator/CreatorProductCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { CreatorStudioProductsTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
+import { CreatorStudioProductsPreviewSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { useAuth } from '@/context/AuthContext';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
 
@@ -88,12 +87,12 @@ export function CreatorStudioProductsReadonlyTab() {
   const formatSections = useMemo(() => {
     const physical = {
       key: 'physical' as const,
-      label: 'Physical',
+      label: 'Material',
       products: physicalProducts,
     };
     const virtual = {
       key: 'virtual' as const,
-      label: 'Virtual',
+      label: 'Digital',
       products: virtualProducts,
     };
     return sectionOrder === 'virtual-first' ? [virtual, physical] : [physical, virtual];
@@ -115,35 +114,38 @@ export function CreatorStudioProductsReadonlyTab() {
   }, [user?.id]);
 
   if (loading) {
-    return <CreatorStudioProductsTabSkeleton />;
+    return <CreatorStudioProductsPreviewSkeleton />;
   }
 
   return (
     <div className="space-y-6">
       <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
         <div className="min-w-0">
-          <h2 className="text-lg font-bold text-neutral-900 dark:text-white">Products</h2>
-          <p className="mt-1 text-sm text-neutral-500">
-            Preview of your catalog. Create or manage products in{' '}
-            <Link
-              href="/marketplace/my-products"
-              className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-            >
-              My Product
-            </Link>
-            .
-          </p>
+          <h2 className="text-[1.5rem] font-bold tracking-[-0.01em] text-neutral-900 dark:text-white">
+            Products
+          </h2>
+          <p className="mt-1.5 text-[16px] text-neutral-500 dark:text-neutral-400">Preview of your catalog.</p>
         </div>
+        <Link
+          href="/marketplace/my-products"
+          className="group inline-flex shrink-0 items-center gap-2 text-[16px] font-medium text-[#111111] transition-colors hover:text-neutral-600 dark:text-white dark:hover:text-neutral-300"
+        >
+          Manage products
+          <FontAwesomeIcon
+            icon={faChevronRight}
+            className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5"
+          />
+        </Link>
       </div>
 
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {items.length === 0 ? (
         <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-neutral-600 dark:text-neutral-400">No products listed yet.</p>
+          <p className="text-[16px] text-neutral-600 dark:text-neutral-400">No products listed yet.</p>
           <Link
             href="/marketplace/my-products?create=1"
-            className="mt-6 inline-flex items-center gap-2 rounded-full bg-orange-500 px-6 py-3 text-sm font-semibold text-white hover:bg-orange-600"
+            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#111111] px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
           >
             Create a product
           </Link>
@@ -163,10 +165,10 @@ export function CreatorStudioProductsReadonlyTab() {
                 ) : null}
                 <section className="space-y-4" aria-label={`${section.label} products`}>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-sm font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
+                    <h3 className="text-[15px] font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
                       {section.label}
                     </h3>
-                    <span className="text-xs font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
+                    <span className="text-[14px] font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
                       {section.products.length}
                     </span>
                     {physicalProducts.length > 0 &&
@@ -177,7 +179,7 @@ export function CreatorStudioProductsReadonlyTab() {
                         onClick={swapFormatSections}
                         aria-label="Swap Physical and Virtual sections"
                         title="Swap Physical / Virtual order"
-                        className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-orange-300 hover:text-orange-600 dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-orange-500/50 dark:hover:text-orange-300"
+                        className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-neutral-400 hover:text-[#111111] dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-white"
                       >
                         <svg
                           className="h-4 w-4"
@@ -196,7 +198,7 @@ export function CreatorStudioProductsReadonlyTab() {
                       </button>
                     ) : null}
                   </div>
-                  <div className={creatorProductGridClassName}>
+                  <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
                     {section.products.map((product) => (
                       <CreatorProductCard
                         key={product.id}

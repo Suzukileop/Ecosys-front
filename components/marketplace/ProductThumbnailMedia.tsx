@@ -2,6 +2,10 @@
 
 import { useEffect, useRef } from 'react';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
+import { mediaImageResponsive } from '@/lib/media-image-url';
+
+/** Card and gallery thumbnails; `sizes` lets a caller narrow it further. */
+const THUMBNAIL_WIDTHS = [256, 384, 640, 828] as const;
 
 type ProductThumbnailMediaProps = {
   url: string;
@@ -13,6 +17,8 @@ type ProductThumbnailMediaProps = {
   /** Subtle zoom-in on card hover (catalog cards). */
   zoomOnHover?: boolean;
   loading?: 'lazy' | 'eager';
+  /** Rendered width hint for the `srcSet`; defaults to a two-column card. */
+  sizes?: string;
 };
 
 export function ProductThumbnailMedia({
@@ -23,6 +29,7 @@ export function ProductThumbnailMedia({
   autoPlay = false,
   zoomOnHover = false,
   loading = 'lazy',
+  sizes = '(min-width: 1024px) 420px, 90vw',
 }: ProductThumbnailMediaProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
   const fitClass = fit === 'contain' ? 'object-contain' : 'object-cover';
@@ -74,7 +81,8 @@ export function ProductThumbnailMedia({
   return (
     // eslint-disable-next-line @next/next/no-img-element
     <img
-      src={url}
+      {...mediaImageResponsive(url, THUMBNAIL_WIDTHS)}
+      sizes={sizes}
       alt={alt}
       className={`${fitClass} ${sizeClass} ${hoverClass} ${className}`.trim()}
       loading={loading}

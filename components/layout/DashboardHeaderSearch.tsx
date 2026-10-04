@@ -2,7 +2,7 @@
 
 import { Suspense, useEffect, useState } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
+import { ACCENT_ORANGE, APP_FIELD, APP_FIELD_HOVER } from '@/components/landing/landingBrand';
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal';
 
 /**
@@ -43,6 +43,9 @@ function HeaderSearchButton({
   iconOnly?: boolean;
   fluid?: boolean;
 }) {
+  const pathname = usePathname();
+  const onLegacyGround =
+    pathname.startsWith('/dashboard/discussions') || pathname.startsWith('/dashboard/settings');
   /*
    * `iconOnly` is the bar's form: a bare 36px disc with no plate at rest, so search sits in the
    * right-hand cluster as one control among equals instead of a wide filled pill that outweighs
@@ -81,7 +84,9 @@ function HeaderSearchButton({
          * left of the bar to themselves, and a field stretched across half the width was taking
          * attention the navigation should hold.
          */
-        className={`flex h-10 items-center gap-2 bg-[#EDEDED] py-0 pl-10 pr-4 text-left text-sm transition hover:bg-[#E4E4E4] focus:outline-none focus:ring-2 focus:ring-[#FF5722]/20 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] ${
+        className={`flex h-10 items-center gap-2 py-0 pl-10 pr-4 text-left text-sm transition focus:outline-none ${
+          onLegacyGround ? 'bg-[#EDEDED] hover:bg-[#E4E4E4]' : `${APP_FIELD} ${APP_FIELD_HOVER}`
+        } focus:ring-2 focus:ring-[#FF5722]/20 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] ${
           fluid
             ? 'w-full rounded-lg'
             : compact

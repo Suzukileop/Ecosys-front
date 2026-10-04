@@ -9,10 +9,10 @@ import type { ReportReason } from '@/types/marketplace';
 
 const REPORT_REASONS: { value: ReportReason; label: string }[] = [
   { value: 'SPAM', label: 'Spam' },
-  { value: 'HARASSMENT', label: 'Harcèlement' },
-  { value: 'INAPPROPRIATE', label: 'Contenu inapproprié' },
-  { value: 'COPYRIGHT', label: 'Violation de droits' },
-  { value: 'OTHER', label: 'Autre' },
+  { value: 'HARASSMENT', label: 'Harassment' },
+  { value: 'INAPPROPRIATE', label: 'Inappropriate content' },
+  { value: 'COPYRIGHT', label: 'Copyright violation' },
+  { value: 'OTHER', label: 'Other' },
 ];
 
 type CommentReportModalProps = {
@@ -45,7 +45,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
         setReason('SPAM');
       }, 1200);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Impossible d\'envoyer le signalement.'));
+      setError(getApiErrorMessage(e, 'Unable to send the report.'));
     } finally {
       setSubmitting(false);
     }
@@ -56,7 +56,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
       <button
         type="button"
         className="absolute inset-0 bg-black/50"
-        aria-label="Fermer"
+        aria-label="Close"
         onClick={onClose}
       />
       <div
@@ -66,10 +66,10 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
         className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
       >
         <h2 id="report-comment-title" className="text-lg font-bold text-neutral-900 dark:text-white">
-          Signaler ce commentaire
+          Report this comment
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Notre équipe examinera votre signalement.
+          Our team will review your report.
         </p>
 
         {error && (
@@ -80,13 +80,13 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
 
         {success ? (
           <p className="mt-4 text-sm font-medium text-green-700 dark:text-green-400">
-            Signalement envoyé. Merci.
+            Report sent. Thank you.
           </p>
         ) : (
           <div className="mt-4 space-y-3">
             <div>
               <label htmlFor="report-reason" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Motif
+                Reason
               </label>
               <select
                 id="report-reason"
@@ -103,7 +103,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
             </div>
             <div>
               <label htmlFor="report-details" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Détails (optionnel)
+                Details (optional)
               </label>
               <textarea
                 id="report-details"
@@ -111,7 +111,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
-                placeholder="Précisez le problème…"
+                placeholder="Describe the issue…"
               />
             </div>
           </div>
@@ -124,16 +124,16 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
             disabled={submitting}
             className="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300"
           >
-            Annuler
+            Cancel
           </button>
           {!success && (
             <button
               type="button"
               onClick={() => void submit()}
               disabled={submitting}
-              className="inline-flex items-center rounded-xl bg-orange-600 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-700 disabled:opacity-60"
+              className="inline-flex items-center rounded-xl bg-[#111111] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-85 disabled:opacity-40 dark:bg-white dark:text-[#111111]"
             >
-              {submitting ? <LoadingSpinner size="sm" /> : 'Envoyer'}
+              {submitting ? <LoadingSpinner size="sm" /> : 'Send report'}
             </button>
           )}
         </div>

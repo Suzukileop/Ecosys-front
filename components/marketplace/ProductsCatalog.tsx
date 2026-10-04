@@ -6,18 +6,21 @@ import { listMyFavoriteTargetIds, listMyLikedTargetIds, listPublicProducts } fro
 import { getApiErrorMessage } from '@/lib/api-error';
 import { ProductCard, marketplaceProductGridClassName } from '@/components/marketplace/ProductCard';
 import {
+  MARKETPLACE_DEFAULT_PAGE_SIZE,
   MARKETPLACE_PAGE_SIZE_OPTIONS,
   useMarketplaceCatalogParams,
 } from '@/components/marketplace/useMarketplaceCatalogParams';
-import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { MarketplaceProductGridSkeleton } from '@/components/marketplace/MarketplaceSkeleton';
-import { MarketplaceFilterDropdown } from '@/components/marketplace/MarketplaceFilterDropdown';
+import { MarketplaceCatalogPagination } from '@/components/marketplace/MarketplaceCatalogPagination';
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 import { useAuth } from '@/context/AuthContext';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
-
-const PAGER_BUTTON_CLASS =
-  'inline-flex h-11 items-center rounded-lg border border-black/[0.12] px-4 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25';
+import {
+  clearMarketplaceRestoreRequest,
+  hasMarketplaceRestoreRequest,
+  readMarketplaceReturnPoint,
+  saveMarketplaceReturnPoint,
+} from '@/lib/marketplace-return';
 
 type ProductsCatalogProps = {
   basePath?: string;
@@ -27,6 +30,27 @@ type ProductsCatalogProps = {
 };
 
 const CATALOG_FETCH_DEBOUNCE_MS = 450;
+const BACK_NAVIGATION_WINDOW_MS = 4000;
+
+type CatalogSnapshot = {
+  products: MarketplaceProductSummary[];
+  totalPages: number;
+  totalElements: number;
+};
+
+const catalogCache = new Map<string, CatalogSnapshot>();
+
+let lastPopStateAt = 0;
+if (typeof window !== 'undefined') {
+  window.addEventListener('popstate', () => {
+    lastPopStateAt = Date.now();
+  });
+}
+
+function readSavedScroll(cacheKey: string): number | null {
+  const point = readMarketplaceReturnPoint();
+  return point && point.key === cacheKey ? point.y : null;
+}
 
 export function ProductsCatalog({
   basePath = '/marketplace',
@@ -38,11 +62,19 @@ export function ProductsCatalog({
   const { user, hasRole, isLoading: authLoading } = useAuth();
   const canFavorite = Boolean(user && hasRole('ROLE_CREATOR'));
 
-  const [loading, setLoading] = useState(true);
+  const cacheKey = useMemo(() => JSON.stringify({ apiParams, favoritesOnly }), [apiParams, favoritesOnly]);
+  const initialSnapshot = catalogCache.get(cacheKey);
+
+  const [loading, setLoading] = useState(!initialSnapshot);
   const [error, setError] = useState<string | null>(null);
-  const [products, setProducts] = useState<MarketplaceProductSummary[]>([]);
-  const [totalPages, setTotalPages] = useState(0);
-  const [totalElements, setTotalElements] = useState(0);
+  const [reloadKey, setReloadKey] = useState(0);
+  const [products, setProducts] = useState<MarketplaceProductSummary[]>(initialSnapshot?.products ?? []);
+  const [totalPages, setTotalPages] = useState(initialSnapshot?.totalPages ?? 0);
+  const [totalElements, setTotalElements] = useState(initialSnapshot?.totalElements ?? 0);
+  const pendingScrollRestore = useRef(
+    typeof window !== 'undefined' &&
+      (Date.now() - lastPopStateAt < BACK_NAVIGATION_WINDOW_MS || hasMarketplaceRestoreRequest())
+  );
   const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
   const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
   const favoritesLoaded = useRef(false);
@@ -136,11 +168,39 @@ export function ProductsCatalog({
   }, []);
 
   useLayoutEffect(() => {
+    const cached = catalogCache.get(cacheKey);
+    if (cached) {
+      setLoading(false);
+      setProducts(cached.products);
+      setTotalPages(cached.totalPages);
+      setTotalElements(cached.totalElements);
+      return;
+    }
     setLoading(true);
     setProducts([]);
     setTotalPages(0);
     setTotalElements(0);
-  }, [apiParams, favoritesOnly]);
+  }, [cacheKey]);
+
+  useLayoutEffect(() => {
+    if (!pendingScrollRestore.current || loading || products.length === 0) return;
+    pendingScrollRestore.current = false;
+    const fromBackLink = hasMarketplaceRestoreRequest();
+    clearMarketplaceRestoreRequest();
+    const y = readSavedScroll(cacheKey) ?? (fromBackLink ? 0 : null);
+    if (y == null) return;
+    window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior });
+    const frame = window.requestAnimationFrame(() => window.scrollTo({ top: y, behavior: 'instant' as ScrollBehavior }));
+    return () => window.cancelAnimationFrame(frame);
+  }, [cacheKey, loading, products.length]);
+
+  const rememberScroll = useCallback(() => {
+    saveMarketplaceReturnPoint({
+      key: cacheKey,
+      y: window.scrollY,
+      url: `${window.location.pathname}${window.location.search}`,
+    });
+  }, [cacheKey]);
 
   useEffect(() => {
     let cancelled = false;
@@ -152,6 +212,11 @@ export function ProductsCatalog({
           favoritesOnly: favoritesOnly || undefined,
         });
         if (cancelled) return;
+        catalogCache.set(cacheKey, {
+          products: data.content,
+          totalPages: data.totalPages,
+          totalElements: data.totalElements,
+        });
         setProducts(data.content);
         setTotalPages(data.totalPages);
         setTotalElements(data.totalElements);
@@ -172,16 +237,25 @@ export function ProductsCatalog({
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [apiParams, favoritesOnly]);
+  }, [apiParams, favoritesOnly, reloadKey, cacheKey]);
+
+  const retryLoad = useCallback(() => {
+    setError(null);
+    setLoading(true);
+    setReloadKey((key) => key + 1);
+  }, []);
 
   useEffect(() => {
     onLoadingStateChange?.({ loading, hasContent: products.length > 0 });
   }, [loading, onLoadingStateChange, products.length]);
 
+  const embeddedInset = embedded ? 'mx-5 sm:mx-0' : '';
+  const embeddedPad = embedded ? 'px-5 sm:px-0' : '';
+
   const emptyState = useMemo(
     () => (
       <div
-        className="flex flex-col items-center justify-center rounded-lg border border-black/[0.06] bg-white px-6 py-20 text-center dark:border-white/[0.08] dark:bg-[#111111]"
+        className={`flex flex-col items-center justify-center rounded-lg border border-black/[0.06] bg-white px-6 py-20 text-center dark:border-white/[0.08] dark:bg-[#111111] ${embeddedInset}`}
         style={STUDIO_FLOAT_IN_STYLE}
       >
         <span aria-hidden className="mb-5 h-1.5 w-1.5 rounded-full bg-[#FF5722]" />
@@ -219,27 +293,53 @@ export function ProductsCatalog({
         </p>
       </div>
     ),
-    [favoritesOnly, hasActiveFilters]
+    [favoritesOnly, hasActiveFilters, embeddedInset]
   );
 
   const sectionTitle = favoritesOnly ? 'Favorites' : 'Products';
 
   const catalogBody = (
     <>
-      {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
-
-      <h2 className="flex min-h-8 items-center text-lg font-bold tracking-[-0.01em] text-[#111111] dark:text-neutral-100">
+      <h2 className={`flex min-h-8 items-center text-lg font-bold tracking-[-0.01em] text-[#111111] dark:text-neutral-100 ${embeddedPad}`}>
         {sectionTitle}
-        {!loading ? ` · ${String(totalElements).padStart(2, '0')}` : ''}
+        {!loading && !error ? ` · ${String(totalElements).padStart(2, '0')}` : ''}
       </h2>
 
       {loading ? (
         <MarketplaceProductGridSkeleton />
+      ) : error ? (
+        <div
+          role="alert"
+          className={`flex flex-col items-center justify-center rounded-lg border border-black/[0.06] bg-white px-6 py-20 text-center dark:border-white/[0.08] dark:bg-[#111111] ${embeddedInset}`}
+          style={STUDIO_FLOAT_IN_STYLE}
+        >
+          <span className="mb-5 flex h-11 w-11 items-center justify-center rounded-full bg-black/[0.04] text-neutral-500 dark:bg-white/[0.06] dark:text-neutral-400">
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M12 8v4.5M12 16h.01" />
+              <circle cx="12" cy="12" r="9" />
+            </svg>
+          </span>
+          <h2 className="text-xl font-bold tracking-tight text-[#111111] dark:text-white">
+            {favoritesOnly ? 'Couldn’t load your favorites' : 'Couldn’t load products'}
+          </h2>
+          <p className="mt-2 max-w-md text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">{error}</p>
+          <button
+            type="button"
+            onClick={retryLoad}
+            className="mt-6 inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[14px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
+          >
+            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M20 11a8 8 0 1 0-2.34 5.66" />
+              <path d="M20 4v7h-7" />
+            </svg>
+            Try again
+          </button>
+        </div>
       ) : products.length === 0 ? (
         emptyState
       ) : (
         <>
-          <div className={marketplaceProductGridClassName} style={STUDIO_FLOAT_IN_STYLE}>
+          <div className={marketplaceProductGridClassName} style={STUDIO_FLOAT_IN_STYLE} onClickCapture={rememberScroll}>
             {products.map((product) => (
               <ProductCard
                 key={product.id}
@@ -248,50 +348,24 @@ export function ProductsCatalog({
                 onFavoritedChange={onFavoritedChange}
                 initialLiked={likedIds.has(product.id)}
                 onLikedChange={onLikedChange}
+                flushOnMobile={embedded}
               />
             ))}
           </div>
 
-          <div className="flex flex-wrap items-center justify-between gap-4 border-t border-black/[0.06] pt-8 dark:border-white/[0.06]">
-            <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
-              Page {page + 1}
-              {totalPages > 0 ? ` of ${totalPages}` : ''}
-              {totalElements > 0
-                ? ` · ${totalElements} ${favoritesOnly ? 'favorites' : 'products'}`
-                : ''}
-            </p>
-            <div className="flex flex-wrap items-center gap-3">
-              <MarketplaceFilterDropdown
-                id="catalog-page-size"
-                label="Per page"
-                value={String(size)}
-                onChange={(value) => pushParams({ size: value, page: '0' })}
-                options={MARKETPLACE_PAGE_SIZE_OPTIONS.map((option) => ({
-                  value: String(option),
-                  label: String(option),
-                }))}
-                defaultValue=""
-                clearable={false}
-                placement="top"
-                align="right"
-              />
-              <button
-                type="button"
-                disabled={page <= 0}
-                onClick={() => pushParams({ page: String(page - 1) })}
-                className={PAGER_BUTTON_CLASS}
-              >
-                ← Previous
-              </button>
-              <button
-                type="button"
-                disabled={totalPages > 0 && page >= totalPages - 1}
-                onClick={() => pushParams({ page: String(page + 1) })}
-                className={PAGER_BUTTON_CLASS}
-              >
-                Next →
-              </button>
-            </div>
+          <div className={embeddedPad}>
+          <MarketplaceCatalogPagination
+            page={page}
+            totalPages={totalPages}
+            totalElements={totalElements}
+            pageSize={size}
+            pageSizeOptions={MARKETPLACE_PAGE_SIZE_OPTIONS}
+            noun={favoritesOnly ? 'favorites' : 'products'}
+            onPageChange={(next) => pushParams({ page: String(next) })}
+            onPageSizeChange={(next) =>
+              pushParams({ size: next === MARKETPLACE_DEFAULT_PAGE_SIZE ? undefined : String(next), page: '0' })
+            }
+          />
           </div>
         </>
       )}

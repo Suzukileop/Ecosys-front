@@ -23,25 +23,24 @@ type ProfileAppRoleFieldProps = {
   onChange: (role: CreatorAppRole) => void;
 };
 
-/** Premium single-select role grid — click a card to choose. */
+/** Single-select role list — hairline rows, the chosen role unfolds its full description. */
 export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRoleFieldProps) {
   return (
-    <div className="space-y-5">
-      <p className="text-sm text-neutral-500 dark:text-neutral-400">
+    <div className="space-y-8">
+      <p className="max-w-xl text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
         Choose one role so we can tailor your experience on the platform.
       </p>
 
       <div
-        className="grid grid-cols-1 gap-3 sm:grid-cols-2 lg:grid-cols-3"
+        className="divide-y divide-black/[0.06] border-y border-black/[0.06] dark:divide-white/[0.08] dark:border-white/[0.08]"
         role="radiogroup"
         aria-label="My Role"
       >
         {CREATOR_APP_ROLE_OPTIONS.map((option) => {
           const selected = value === option.value;
           const accent = creatorAppRoleAccent(option.value);
-          const descriptionLines = Array.isArray(option.description)
-            ? option.description
-            : [option.description];
+          const lines = Array.isArray(option.description) ? option.description : [option.description];
+          const [summary, ...details] = lines;
           return (
             <button
               key={option.value}
@@ -52,75 +51,66 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
               onClick={() => {
                 if (!disabled && !selected) onChange(option.value);
               }}
-              className={`group relative flex min-h-[9.5rem] flex-col items-start rounded-2xl bg-white px-4 pb-4 pt-5 text-left transition duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:bg-neutral-950 dark:focus-visible:ring-offset-neutral-900 ${
+              className={`group flex w-full items-start gap-5 py-6 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:gap-6 sm:py-7 ${
                 accent.focusRing
-              } ${
-                selected
-                  ? `border-2 ${accent.borderSelected} shadow-sm`
-                  : `border ${accent.border} hover:brightness-[0.98] dark:hover:brightness-110`
               } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             >
-              {selected ? (
-                <span
-                  className={`absolute right-3 top-3 inline-flex h-6 w-6 items-center justify-center rounded-full shadow-sm ${accent.check}`}
-                  aria-hidden
-                >
-                  <FontAwesomeIcon icon={faCheck} className="h-3 w-3" />
-                </span>
-              ) : null}
-
               <span
-                className={`mb-3 inline-flex h-10 w-10 items-center justify-center rounded-xl transition ${
-                  selected ? accent.iconSelected : accent.iconIdle
+                className={`mt-0.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-opacity duration-200 ${
+                  selected ? accent.iconSelected : `${accent.iconIdle} opacity-70 group-hover:opacity-100`
                 }`}
                 aria-hidden
               >
-                <FontAwesomeIcon
-                  icon={ROLE_ICONS[option.value]}
-                  className="h-4 w-4"
-                  fixedWidth
-                />
+                <FontAwesomeIcon icon={ROLE_ICONS[option.value]} className="h-3.5 w-3.5" fixedWidth />
+              </span>
+
+              <span className="min-w-0 flex-1">
+                <span className="flex flex-wrap items-baseline gap-x-3 gap-y-1">
+                  <span
+                    className={`text-[17px] font-semibold tracking-[-0.01em] transition-colors ${
+                      selected
+                        ? 'text-[#111111] dark:text-white'
+                        : 'text-neutral-700 group-hover:text-[#111111] dark:text-neutral-300 dark:group-hover:text-white'
+                    }`}
+                  >
+                    {option.label}
+                  </span>
+                  {option.value === 'GENERAL_MEMBER' ? (
+                    <span className="text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+                      Default
+                    </span>
+                  ) : null}
+                </span>
+
+                <span className="mt-1.5 block max-w-2xl text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+                  {summary}
+                </span>
+
+                {selected && details.length > 0 ? (
+                  <span className="mt-3 block max-w-2xl space-y-2">
+                    {details.map((line) => (
+                      <span
+                        key={line}
+                        className="flex gap-3 text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400"
+                      >
+                        <span aria-hidden className="mt-[0.7em] h-px w-3 shrink-0 bg-neutral-300 dark:bg-neutral-600" />
+                        {line}
+                      </span>
+                    ))}
+                  </span>
+                ) : null}
               </span>
 
               <span
-                className={`pr-7 text-sm font-semibold tracking-tight ${
+                aria-hidden
+                className={`mt-2.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
                   selected
-                    ? 'text-neutral-900 dark:text-white'
-                    : 'text-neutral-800 dark:text-neutral-100'
+                    ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                    : 'border-neutral-300 group-hover:border-neutral-500 dark:border-neutral-600 dark:group-hover:border-neutral-400'
                 }`}
               >
-                {option.label}
+                {selected ? <FontAwesomeIcon icon={faCheck} className="h-2.5 w-2.5" /> : null}
               </span>
-
-              {option.value === 'GENERAL_MEMBER' ? (
-                <span className="mt-1 text-[11px] font-medium uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
-                  Default
-                </span>
-              ) : null}
-
-              {descriptionLines.length > 1 ? (
-                <ul
-                  className={`mt-2 list-disc space-y-1.5 pl-4 text-sm leading-relaxed ${
-                    selected
-                      ? 'text-neutral-600 dark:text-neutral-300'
-                      : 'text-neutral-500 dark:text-neutral-400'
-                  }`}
-                >
-                  {descriptionLines.map((line) => (
-                    <li key={line}>{line}</li>
-                  ))}
-                </ul>
-              ) : (
-                <span
-                  className={`mt-2 text-sm leading-relaxed ${
-                    selected
-                      ? 'text-neutral-600 dark:text-neutral-300'
-                      : 'text-neutral-500 dark:text-neutral-400'
-                  }`}
-                >
-                  {descriptionLines[0]}
-                </span>
-              )}
             </button>
           );
         })}

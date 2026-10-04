@@ -112,7 +112,7 @@ function ProductPickRow({
       type="button"
       onClick={onPick}
       disabled={disabled}
-      className="flex w-full gap-3 rounded-xl border border-neutral-200 bg-white p-3 text-left transition hover:border-orange-300 hover:bg-orange-50/30 disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-orange-500/40"
+      className="flex w-full gap-4 rounded-xl border border-neutral-200 bg-white p-3.5 text-left transition hover:border-neutral-300 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-800 dark:bg-neutral-900 dark:hover:border-neutral-600 dark:hover:bg-neutral-800/60"
     >
       <div className="h-16 w-24 shrink-0 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-800">
         {product.thumbnailUrl ? (
@@ -123,16 +123,16 @@ function ProductPickRow({
             className="h-full w-full"
           />
         ) : (
-          <span className="flex h-full items-center justify-center text-xs text-neutral-400">—</span>
+          <span className="flex h-full items-center justify-center text-sm text-neutral-400">—</span>
         )}
       </div>
       <div className="min-w-0 flex-1">
-        <p className="truncate font-medium text-neutral-900 dark:text-white">{title}</p>
-        <p className="mt-0.5 text-xs text-neutral-500">
+        <p className="truncate text-base font-medium text-neutral-900 dark:text-white">{title}</p>
+        <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
           {formatPrice(product.priceCents, product.currency)}
         </p>
       </div>
-      <span className="shrink-0 self-center text-sm font-semibold text-orange-600 dark:text-orange-400">
+      <span className="shrink-0 self-center text-[15px] font-semibold text-[#111111] dark:text-white">
         Select
       </span>
     </button>
@@ -310,8 +310,8 @@ export function ProfileProductsPicker({
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {pickerOpen && canAddMore ? (
-        <div className="space-y-3">
-          <p className="text-sm font-semibold text-neutral-900 dark:text-white">Your products</p>
+        <div className="space-y-4">
+          <p className="text-base font-semibold text-neutral-900 dark:text-white">Your products</p>
           {availableToPick.length === 0 ? (
             <p className={profileSectionMutedTextClass}>
               All products are already selected, or you have no products yet.
@@ -334,21 +334,21 @@ export function ProfileProductsPicker({
       <div className="space-y-3">
         {selectedProducts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/80 px-5 py-10 text-center dark:border-neutral-700 dark:bg-neutral-900/40">
-            <p className="text-sm text-neutral-600 dark:text-neutral-400">
+            <p className="text-base text-neutral-600 dark:text-neutral-400">
               No products selected yet.
             </p>
             {products.length > 0 ? (
               <button
                 type="button"
                 onClick={() => setPickerOpen(true)}
-                className="mt-4 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+                className="mt-5 rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
                 Choose from my products
               </button>
             ) : (
               <Link
                 href="/marketplace/my-products"
-                className="mt-4 inline-flex rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600"
+                className="mt-5 inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
                 Create a product
               </Link>

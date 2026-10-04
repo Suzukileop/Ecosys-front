@@ -6,6 +6,7 @@ import type { ScheduledPostDto } from '@/types/scheduler';
 import { mediaKind } from '@/components/ecosystem/EcosystemDemoMedia';
 import { ECOSYSTEM_PLATFORMS, PlatformLogoIcon } from '@/components/ecosystem/PlatformLogoIcon';
 import type { EcosystemPlatform } from '@/types/ecosystem';
+import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import { downloadStorageMedia, resolveStorageMediaUrl, suggestMediaFilename } from '@/lib/storage-media-url';
 import { getAgentContentDisplayTitle, getAgentContentSubtitle } from '@/lib/agent-content-label';
 import { notificationContentTargetId } from '@/lib/notification-highlight';
@@ -223,8 +224,9 @@ function AgentContentLightbox({
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={payload.url}
+            src={mediaImageSrc(payload.url, 1920)}
             alt={payload.title}
+            decoding="async"
             className="mx-auto max-h-[82vh] w-auto max-w-full rounded-lg object-contain shadow-2xl ring-1 ring-white/10"
           />
         )}
@@ -267,10 +269,12 @@ function InlineImagePoster({
       >
         {/* eslint-disable-next-line @next/next/no-img-element */}
         <img
-          src={url}
+          {...mediaImageResponsive(url, [256, 384, 640])}
+          sizes="(min-width: 1024px) 300px, 45vw"
           alt={alt}
           className="h-full w-full object-cover"
           loading="lazy"
+          decoding="async"
           onError={() => setFailed(true)}
         />
         <span className="pointer-events-none absolute inset-0 bg-black/0 transition group-hover/poster:bg-black/10" />

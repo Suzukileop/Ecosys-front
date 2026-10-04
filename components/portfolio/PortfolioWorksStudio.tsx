@@ -23,7 +23,7 @@ import {
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import api from '@/lib/api';
-import { getApiErrorMessage } from '@/lib/api-error';
+import { getApiErrorMessage, UserFacingError } from '@/lib/api-error';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
 import { parseSpecialtyTags } from '@/lib/specialties';
 import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/ecosystem';
@@ -559,10 +559,10 @@ function WorksStudio({
     async (next: WorksDraft) => {
       const filled = next.works.filter(hasContent);
       if (filled.some((work) => !work.title.trim() || !work.imageUrl.trim())) {
-        throw new Error('Each work needs a title and a cover image.');
+        throw new UserFacingError('Each work needs a title and a cover image.');
       }
       if (filled.some((work) => work.link.trim() && getHttpUrlFieldError(work.link.trim()))) {
-        throw new Error('Fix the project link before saving.');
+        throw new UserFacingError('Fix the project link before saving.');
       }
       const cleaned = cleanWorks(filled);
       await updateCreatorProfile({ portfolioWorks: cleaned });

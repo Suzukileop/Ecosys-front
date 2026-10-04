@@ -5,13 +5,13 @@ import { useRouter, useSearchParams } from 'next/navigation';
 import {
   createProductGroup,
   deleteProductGroup,
+  hideProductFromProfile,
   listCreatorBundles,
   listCreatorProductGroups,
   listCreatorProducts,
-  markProductBestseller,
   pinProduct,
   publishProduct,
-  unmarkProductBestseller,
+  showProductOnProfile,
   unpinProduct,
   unpublishProduct,
   updateProductGroup,
@@ -24,19 +24,26 @@ import {
   creatorProductGridClassName,
 } from '@/components/creator/CreatorProductCard';
 import { CreatorProductGroupModal } from '@/components/creator/CreatorProductGroupModal';
-import { CreatorProductsToolbar } from '@/components/creator/CreatorProductsToolbar';
-import { CreatorProductsStatsPanel } from '@/components/creator/CreatorProductsStatsPanel';
+import { CreatorCatalogueAddProductsModal } from '@/components/creator/CreatorCatalogueAddProductsModal';
+import {
+  CreatorProductsToolbar,
+  type CreatorProductsLayout,
+} from '@/components/creator/CreatorProductsToolbar';
+import {
+  CreatorProductsCatalogueStrip,
+  CreatorProductsStatsPanel,
+  CreatorStoreSettingsButton,
+} from '@/components/creator/CreatorProductsStatsPanel';
 import { CreatorProductGroupsExplorePanel } from '@/components/creator/CreatorProductGroupsExplorePanel';
-import { CreatorStudioNewProductPanel } from '@/components/creator/studio/CreatorStudioNewProductPanel';
+import { CreatorProductCreateModal } from '@/components/creator/CreatorProductCreateModal';
 import { CreatorProductsEmptyGuide } from '@/components/creator/studio/CreatorProductsEmptyGuide';
 import { ProfileReadinessWarning } from '@/components/creator/studio/ProfileReadinessWarning';
-import { ProductFormatToggle } from '@/components/marketplace/ProductFormatToggle';
 import type { ProductFormat } from '@/components/marketplace/product-editor-steps';
 import { useCreatorProductsFilter } from '@/components/creator/useCreatorProductsFilter';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioProductsTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { useAuth } from '@/context/AuthContext';
-import { useOutOfViewSticky } from '@/hooks/useOutOfViewSticky';
+import { BackToTopButton, useBackToTop } from '@/components/ui/ScrollUpStickyBar';
 import api from '@/lib/api';
 import {
   getMissingProfileReadinessFields,
@@ -57,7 +64,7 @@ const PRIMARY_BUTTON_CLASS =
 const SECONDARY_BUTTON_CLASS =
   'inline-flex items-center justify-center gap-2 rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25';
 const EMPTY_FRAME_CLASS =
-  'rounded-lg border border-dashed border-black/[0.12] px-6 py-14 text-center dark:border-white/[0.12]';
+  'mx-5 rounded-lg border border-dashed border-black/[0.12] px-6 py-14 text-center dark:border-white/[0.12] sm:mx-0';
 
 function PlusIcon() {
   return (
@@ -72,7 +79,7 @@ function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="inline-flex items-center gap-1.5 text-[15px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+      className="mx-5 inline-flex items-center gap-1.5 text-[15px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white sm:mx-0"
     >
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -84,7 +91,7 @@ function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
 
 function SectionHeading({ label, count, children }: { label: string; count: number; children?: ReactNode }) {
   return (
-    <div className="flex items-center justify-between gap-3">
+    <div className="flex items-center justify-between gap-3 px-5 sm:px-0">
       <h2 className="text-lg font-bold text-[#111111] dark:text-white">
         {label}
         <span className="font-medium tabular-nums text-neutral-400 dark:text-neutral-500">
@@ -99,6 +106,10 @@ function SectionHeading({ label, count, children }: { label: string; count: numb
 
 function formatSectionOrderKey(userId: string) {
   return `creator-product-format-section-order:${userId}`;
+}
+
+function productsLayoutKey(userId: string) {
+  return `creator-products-layout:${userId}`;
 }
 
 function isPhysicalProduct(product: MarketplaceProductSummary) {
@@ -120,6 +131,9 @@ export function CreatorStudioProductsTab() {
   const [editingGroup, setEditingGroup] = useState<MarketplaceProductGroup | null>(null);
   const [groupSaving, setGroupSaving] = useState(false);
   const [groupError, setGroupError] = useState<string | null>(null);
+  const [addToGroupOpen, setAddToGroupOpen] = useState(false);
+  const [addToGroupSaving, setAddToGroupSaving] = useState(false);
+  const [addToGroupError, setAddToGroupError] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [publishingId, setPublishingId] = useState<string | null>(null);
@@ -127,13 +141,27 @@ export function CreatorStudioProductsTab() {
   const [view, setView] = useState<ProductsView>(searchParams.get('create') === '1' ? 'create' : 'list');
   const [productFormat, setProductFormat] = useState<ProductFormat>('virtual');
   const [sectionOrder, setSectionOrder] = useState<FormatSectionOrder>('physical-first');
+  const [layout, setLayout] = useState<CreatorProductsLayout>(() => {
+    if (typeof window === 'undefined' || !user?.id) return 'all';
+    try {
+      return window.localStorage.getItem(productsLayoutKey(user.id)) === 'catalogues' ? 'catalogues' : 'all';
+    } catch {
+      return 'all';
+    }
+  });
+
+  const changeLayout = (next: CreatorProductsLayout) => {
+    setLayout(next);
+    if (!user?.id) return;
+    try {
+      window.localStorage.setItem(productsLayoutKey(user.id), next);
+    } catch {
+      // ignore quota / private mode
+    }
+  };
   const [missingProfileFields, setMissingProfileFields] = useState<ProfileReadinessField[]>([]);
 
-  const showStickySearch = useOutOfViewSticky(
-    toolbarRef,
-    80,
-    items.length > 0 && !exploringGroups && view === 'list'
-  );
+  const sticky = useBackToTop(toolbarRef, items.length > 0 && !exploringGroups);
 
   const {
     query,
@@ -142,8 +170,6 @@ export function CreatorStudioProductsTab() {
     setStatus,
     format,
     setFormat,
-    type,
-    setType,
     sort,
     setSort,
     filtered,
@@ -188,16 +214,37 @@ export function CreatorStudioProductsTab() {
   const formatSections = useMemo(() => {
     const physical = {
       key: 'physical' as const,
-      label: 'Physical',
+      label: 'Material',
       products: displayPhysicalProducts,
     };
     const virtual = {
       key: 'virtual' as const,
-      label: 'Virtual',
+      label: 'Digital',
       products: displayVirtualProducts,
     };
     return sectionOrder === 'virtual-first' ? [virtual, physical] : [physical, virtual];
   }, [displayPhysicalProducts, displayVirtualProducts, sectionOrder]);
+
+  const catalogueSections = useMemo(() => {
+    const grouped = new Set<string>();
+    const sections: {
+      key: string;
+      label: string;
+      group: MarketplaceProductGroup | null;
+      products: MarketplaceProductSummary[];
+    }[] = [];
+    for (const group of groups) {
+      const ids = new Set(group.productIds);
+      const products = displayProducts.filter((product) => ids.has(product.id));
+      products.forEach((product) => grouped.add(product.id));
+      if (products.length > 0) sections.push({ key: group.id, label: group.name, group, products });
+    }
+    const ungrouped = displayProducts.filter((product) => !grouped.has(product.id));
+    if (ungrouped.length > 0) {
+      sections.push({ key: 'ungrouped', label: 'Not in a catalogue', group: null, products: ungrouped });
+    }
+    return sections;
+  }, [displayProducts, groups]);
 
   const swapFormatSections = useCallback(() => {
     setSectionOrder((current) => {
@@ -216,14 +263,29 @@ export function CreatorStudioProductsTab() {
 
   const draftCount = items.filter((p) => !p.isPublished).length;
 
+  const statusItems = useMemo(
+    () =>
+      items.filter((product) =>
+        status === 'published' ? product.isPublished : status === 'draft' ? !product.isPublished : true
+      ),
+    [items, status]
+  );
+
   const formatCounts = useMemo(
     () => ({
-      all: items.length,
-      physical: items.filter((product) => product.type === 'PHYSICAL').length,
-      virtual: items.filter((product) => product.type !== 'PHYSICAL').length,
+      all: statusItems.length,
+      physical: statusItems.filter((product) => product.type === 'PHYSICAL').length,
+      virtual: statusItems.filter((product) => product.type !== 'PHYSICAL').length,
     }),
-    [items]
+    [statusItems]
   );
+
+  const groupCounts = useMemo(() => {
+    const ids = new Set(statusItems.map((product) => product.id));
+    return Object.fromEntries(
+      groups.map((group) => [group.id, group.productIds.filter((id) => ids.has(id)).length])
+    );
+  }, [groups, statusItems]);
 
   const load = useCallback(async () => {
     const seq = ++loadSeq.current;
@@ -331,18 +393,19 @@ export function CreatorStudioProductsTab() {
     }
   };
 
-  const toggleBestseller = async (product: MarketplaceProductSummary) => {
+  const toggleProfileVisibility = async (product: MarketplaceProductSummary) => {
+    const wasVisible = product.showOnProfile !== false;
     try {
       setFlagBusyId(product.id);
       setError(null);
-      const updated = product.isBestseller
-        ? await unmarkProductBestseller(product.id)
-        : await markProductBestseller(product.id);
-      patchProductFlags(product.id, {
-        isBestseller: Boolean(updated.isBestseller),
-      });
+      patchProductFlags(product.id, { showOnProfile: !wasVisible });
+      const updated = wasVisible
+        ? await hideProductFromProfile(product.id)
+        : await showProductOnProfile(product.id);
+      patchProductFlags(product.id, { showOnProfile: updated.showOnProfile !== false });
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Could not update bestseller.'));
+      patchProductFlags(product.id, { showOnProfile: wasVisible });
+      setError(getApiErrorMessage(e, 'Could not update profile visibility.'));
     } finally {
       setFlagBusyId(null);
     }
@@ -389,6 +452,38 @@ export function CreatorStudioProductsTab() {
     }
   };
 
+  const openAddToGroup = () => {
+    setAddToGroupError(null);
+    setAddToGroupOpen(true);
+  };
+
+  const addProductsToGroup = async (productIds: string[]) => {
+    if (!selectedGroup || productIds.length === 0) return;
+    const liveIds = new Set(items.map((product) => product.id));
+    const nextIds = [
+      ...selectedGroup.productIds.filter((id) => liveIds.has(id)),
+      ...productIds.filter((id) => !selectedGroup.productIds.includes(id)),
+    ];
+    try {
+      setAddToGroupSaving(true);
+      setAddToGroupError(null);
+      const updated = await updateProductGroup(selectedGroup.id, {
+        name: selectedGroup.name,
+        productIds: nextIds,
+      });
+      setGroups((prev) => prev.map((group) => (group.id === updated.id ? updated : group)));
+      const addedPublished = items.some((product) => productIds.includes(product.id) && product.isPublished);
+      const addedDraft = items.some((product) => productIds.includes(product.id) && !product.isPublished);
+      if (status === 'published' && !addedPublished && addedDraft) setStatus('draft');
+      else if (status === 'draft' && !addedDraft && addedPublished) setStatus('published');
+      setAddToGroupOpen(false);
+    } catch (e) {
+      setAddToGroupError(getApiErrorMessage(e, 'Could not add products to the catalogue.'));
+    } finally {
+      setAddToGroupSaving(false);
+    }
+  };
+
   const removeGroup = async () => {
     if (!editingGroup) return;
     try {
@@ -406,9 +501,30 @@ export function CreatorStudioProductsTab() {
     }
   };
 
-  const isCreateView = view === 'create';
-  const showStatsColumn = !isCreateView && items.length > 0;
-  const isEmptyGuide = !isCreateView && !loading && items.length === 0 && bundles.length === 0;
+  const selectedGroupIds = new Set(selectedGroup?.productIds ?? []);
+  const selectedGroupTotalCount = items.filter((product) => selectedGroupIds.has(product.id)).length;
+  const selectedGroupStatusCount = selectedGroup ? (groupCounts[selectedGroup.id] ?? 0) : 0;
+  const selectedGroupOtherStatusCount =
+    status === 'all' ? 0 : selectedGroupTotalCount - selectedGroupStatusCount;
+  const selectedGroupEmptyMessage = !selectedGroup
+    ? null
+    : selectedGroupTotalCount === 0
+      ? `“${selectedGroup.name}” is empty.`
+      : selectedGroupStatusCount === 0
+        ? `No ${status === 'draft' ? 'drafts' : 'published products'} in “${selectedGroup.name}” yet.`
+        : `No products in “${selectedGroup.name}” match your search or filters.`;
+
+  const showStatsColumn = items.length > 0;
+  const isEmptyGuide = !loading && items.length === 0 && bundles.length === 0;
+  const greetingName = user?.fullName?.trim().split(/\s+/)[0] || 'there';
+  const profileWarning =
+    missingProfileFields.length > 0 ? (
+      <ProfileReadinessWarning
+        missingFields={missingProfileFields}
+        title="Complete your profile first"
+        description="Add a real profile photo (not the auto-generated avatar), plus address, phone, email, nationality, link, name, role, and location before you can create a product. Don't worry — it's a mark of trust for your clients."
+      />
+    ) : null;
 
   const renderProductCard = (product: MarketplaceProductSummary) => (
     <CreatorProductCard
@@ -419,7 +535,8 @@ export function CreatorStudioProductsTab() {
       flagBusyId={flagBusyId}
       onTogglePublish={(p) => void togglePublish(p)}
       onTogglePin={(p) => void togglePin(p)}
-      onToggleBestseller={(p) => void toggleBestseller(p)}
+      onToggleProfileVisibility={(p) => void toggleProfileVisibility(p)}
+      flushOnMobile
     />
   );
 
@@ -428,52 +545,31 @@ export function CreatorStudioProductsTab() {
       className={
         isEmptyGuide
           ? 'relative flex min-h-0 flex-1 flex-col overflow-hidden'
-          : 'relative min-h-0 flex-1 space-y-10 overflow-y-auto pb-20 pt-8 [scrollbar-width:none] [-ms-overflow-style:none] sm:pt-10 [&::-webkit-scrollbar]:hidden'
+          : 'relative flex-1 space-y-6 pb-20 pt-4 sm:space-y-10 sm:pt-8 xl:pt-10'
       }
     >
-      {!isCreateView && missingProfileFields.length > 0 ? (
-        <ProfileReadinessWarning
-          missingFields={missingProfileFields}
-          title="Complete your profile first"
-          description="Add a real profile photo (not the auto-generated avatar), plus address, phone, email, nationality, link, name, role, and location before you can create a product. Don't worry — it's a mark of trust for your clients."
-        />
+      {isEmptyGuide ? (
+        <div className="mx-auto flex w-full max-w-[1280px] items-center justify-between gap-6 px-5 pt-8 sm:px-0 sm:pt-10">
+          <h1 className="min-w-0 truncate text-[40px] font-semibold leading-none tracking-[-0.035em] text-[#111111] dark:text-white sm:text-[56px]">
+            Hi, {greetingName}
+          </h1>
+          {profileWarning}
+        </div>
+      ) : profileWarning ? (
+        <div className="px-5 sm:px-0">{profileWarning}</div>
       ) : null}
 
-      {isCreateView ? (
-        <div className="space-y-8">
-          <div className="space-y-5">
-            <BackLink label="Back to products" onClick={() => setProductsView('list')} />
-            <div className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
-              <div className="min-w-0 flex-1">
-                <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">
-                  New product
-                </h1>
-                <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-                  Build a listing buyers trust — clear offer, sharp price, ready to sell.
-                </p>
-              </div>
-              <div className="shrink-0">
-                <ProductFormatToggle value={productFormat} onChange={setProductFormat} />
-              </div>
-            </div>
-          </div>
-
-          {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
-
-          <CreatorStudioNewProductPanel
-            productFormat={productFormat}
-            onClose={() => setProductsView('list')}
-            onCreated={(productTitle) => onProductCreated(productTitle)}
-          />
-        </div>
-      ) : (
         <>
-          {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
+          {error && (
+            <div className="px-5 sm:px-0">
+              <ErrorAlert message={error} onDismiss={() => setError(null)} />
+            </div>
+          )}
 
           {loading && items.length === 0 && bundles.length === 0 ? (
-            <CreatorStudioProductsTabSkeleton />
+            <CreatorStudioProductsTabSkeleton insetOnMobile />
           ) : items.length === 0 && bundles.length === 0 ? (
-            <div className="flex min-h-0 flex-1 flex-col pt-2">
+            <div className="mx-auto flex min-h-0 w-full max-w-[1280px] flex-1 flex-col px-5 pt-2 sm:px-0">
               <CreatorProductsEmptyGuide
                 onCreate={() => setProductsView('create')}
                 createDisabled={missingProfileFields.length > 0}
@@ -481,16 +577,16 @@ export function CreatorStudioProductsTab() {
             </div>
           ) : (
             <>
-              <header className="flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+              <header className="flex items-center justify-between gap-4 px-5 sm:items-end sm:px-0">
                 <div className="min-w-0">
-                  <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">
+                  <h1 className="text-[1.5rem] font-bold leading-tight tracking-tight text-[#111111] dark:text-white sm:text-4xl">
                     My products
                   </h1>
-                  <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
+                  <p className="mt-2 hidden text-base text-neutral-500 dark:text-neutral-400 sm:block">
                     Manage your listings, drafts and catalogues in one place.
                   </p>
                   {!loading && draftCount > 0 ? (
-                    <p className="mt-4 inline-flex items-center gap-2 text-[14px] text-neutral-500 dark:text-neutral-400">
+                    <p className="mt-1 inline-flex items-center gap-2 text-[13px] text-neutral-500 dark:text-neutral-400 sm:mt-4 sm:text-[14px]">
                       <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-amber-500" />
                       <span className="font-medium text-[#111111] dark:text-white">
                         {draftCount} draft{draftCount > 1 ? 's' : ''}
@@ -509,13 +605,27 @@ export function CreatorStudioProductsTab() {
                     <PlusIcon />
                     Publish new item
                   </button>
-                ) : null}
+                ) : (
+                  <div className="flex shrink-0 items-center gap-2 xl:hidden">
+                    <CreatorStoreSettingsButton />
+                    <button
+                      type="button"
+                      onClick={() => setProductsView('create')}
+                      disabled={missingProfileFields.length > 0}
+                      aria-label="Publish new item"
+                      className={`${PRIMARY_BUTTON_CLASS} h-9 w-9 !rounded-full !px-0 !py-0 sm:h-10 sm:w-auto sm:!rounded-lg sm:!px-5`}
+                    >
+                      <PlusIcon />
+                      <span className="hidden sm:inline">New item</span>
+                    </button>
+                  </div>
+                )}
               </header>
 
               {bundles.length > 0 && (
                 <section className="space-y-5" aria-label="Bundles">
                   <SectionHeading label="Bundles" count={bundles.length} />
-                  <div className="grid gap-6 md:grid-cols-2">
+                  <div className="grid gap-6 px-5 sm:px-0 md:grid-cols-2">
                     {bundles.map((bundle) => (
                       <CreatorBundleCard
                         key={bundle.id}
@@ -529,13 +639,15 @@ export function CreatorStudioProductsTab() {
               )}
 
               <div className="flex flex-col gap-10 xl:flex-row xl:items-start xl:gap-12">
-                <section className="min-w-0 flex-1 space-y-10">
+                <section className="min-w-0 flex-1 space-y-6 sm:space-y-10">
                   {exploringGroups ? (
                     <>
                       <BackLink label="Back to products" onClick={() => setExploringGroups(false)} />
+                      <div className="px-5 sm:px-0">
                       <CreatorProductGroupsExplorePanel
                         groups={groups}
                         products={items}
+                        groupCounts={groupCounts}
                         selectedGroupId={selectedGroupId}
                         onSelectGroup={(groupId) => {
                           setSelectedGroupId(groupId);
@@ -544,15 +656,18 @@ export function CreatorStudioProductsTab() {
                         onEditGroup={openEditGroupModal}
                         onCreateCatalogue={openCreateGroupModal}
                       />
+                      </div>
                     </>
                   ) : (
                     <>
                       {items.length > 0 && (
-                        <div ref={toolbarRef}>
+                        <BackToTopButton visible={sticky.visible} onClick={sticky.backToTop} />
+                      )}
+                      {items.length > 0 && (
+                        <div ref={toolbarRef} className="scroll-mt-28 px-5 sm:px-0">
                           <CreatorProductsToolbar
                             query={query}
                             status={status}
-                            type={type}
                             sort={sort}
                             format={format}
                             formatCounts={formatCounts}
@@ -562,19 +677,39 @@ export function CreatorStudioProductsTab() {
                             hasActiveFilters={hasActiveFilters}
                             onSearch={setQuery}
                             onStatusChange={setStatus}
-                            onTypeChange={setType}
                             onSortChange={setSort}
                             onFormatChange={(next) => {
                               setSelectedGroupId(null);
                               setFormat(next);
-                              if (next === 'physical') setType('');
+                            }}
+                            layout={groups.length > 0 ? layout : undefined}
+                            onLayoutChange={(next) => {
+                              setSelectedGroupId(null);
+                              changeLayout(next);
                             }}
                           />
                         </div>
                       )}
 
+                      {items.length > 0 ? (
+                        <div className="xl:hidden">
+                          <CreatorProductsCatalogueStrip
+                            groups={groups}
+                            groupCounts={groupCounts}
+                            selectedGroupId={selectedGroupId}
+                            allCount={formatCounts.all}
+                            onSelectGroup={setSelectedGroupId}
+                            onCreateGroup={openCreateGroupModal}
+                            onExplore={() => {
+                              setSelectedGroupId(null);
+                              setExploringGroups(true);
+                            }}
+                          />
+                        </div>
+                      ) : null}
+
                       {items.length === 0 ? (
-                        <p className="text-[15px] text-neutral-500 dark:text-neutral-400">No products yet.</p>
+                        <p className="px-5 text-[15px] text-neutral-500 dark:text-neutral-400 sm:px-0">No products yet.</p>
                       ) : filtered.length === 0 ? (
                         <div className={EMPTY_FRAME_CLASS}>
                           <p className="text-base text-neutral-500 dark:text-neutral-400">No products match your filters.</p>
@@ -585,19 +720,66 @@ export function CreatorStudioProductsTab() {
                       ) : displayProducts.length === 0 ? (
                         <div className={EMPTY_FRAME_CLASS}>
                           <p className="text-base text-neutral-500 dark:text-neutral-400">
-                            {selectedGroup
-                              ? `No products in “${selectedGroup.name}” match the current filters.`
-                              : 'No products match your filters.'}
+                            {selectedGroupEmptyMessage ?? 'No products match your filters.'}
                           </p>
                           {selectedGroup ? (
-                            <button
-                              type="button"
-                              onClick={() => setSelectedGroupId(null)}
-                              className={`${SECONDARY_BUTTON_CLASS} mt-5`}
-                            >
-                              Clear catalogue filter
-                            </button>
+                            <div className="mt-5 flex flex-wrap items-center justify-center gap-3">
+                              {selectedGroupOtherStatusCount > 0 ? (
+                                <button
+                                  type="button"
+                                  onClick={() => setStatus(status === 'draft' ? 'published' : 'draft')}
+                                  className={SECONDARY_BUTTON_CLASS}
+                                >
+                                  {status === 'draft' ? 'See published' : 'See drafts'}
+                                </button>
+                              ) : selectedGroupTotalCount === 0 ? (
+                                <button type="button" onClick={openAddToGroup} className={PRIMARY_BUTTON_CLASS}>
+                                  <PlusIcon />
+                                  Add products
+                                </button>
+                              ) : null}
+                              <button
+                                type="button"
+                                onClick={() => setSelectedGroupId(null)}
+                                className={SECONDARY_BUTTON_CLASS}
+                              >
+                                Show all products
+                              </button>
+                            </div>
                           ) : null}
+                        </div>
+                      ) : layout === 'catalogues' && groups.length > 0 && !selectedGroup ? (
+                        <div className="divide-y divide-black/[0.08] dark:divide-white/[0.08]">
+                          {catalogueSections.map((section) => (
+                            <section
+                              key={section.key}
+                              className="space-y-6 py-12 first:pt-0 last:pb-0 sm:py-20"
+                              aria-label={section.label}
+                            >
+                              <SectionHeading label={section.label} count={section.products.length}>
+                                {section.group ? (
+                                  <button
+                                    type="button"
+                                    onClick={() => setSelectedGroupId(section.group!.id)}
+                                    className="group/open inline-flex items-center gap-1 text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+                                  >
+                                    Open
+                                    <svg
+                                      className="h-3.5 w-3.5 transition-transform group-hover/open:translate-x-0.5"
+                                      fill="none"
+                                      viewBox="0 0 24 24"
+                                      stroke="currentColor"
+                                      strokeWidth={2}
+                                      aria-hidden
+                                    >
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M9 5l7 7-7 7" />
+                                    </svg>
+                                  </button>
+                                ) : null}
+                              </SectionHeading>
+                              <div className={creatorProductGridClassName}>{section.products.map(renderProductCard)}</div>
+                            </section>
+                          ))}
                         </div>
                       ) : format === 'all' && !selectedGroup ? (
                         <div className="space-y-12">
@@ -653,7 +835,30 @@ export function CreatorStudioProductsTab() {
                           {selectedGroup ? (
                             <SectionHeading label={selectedGroup.name} count={displayProducts.length} />
                           ) : null}
-                          <div className={creatorProductGridClassName}>{displayProducts.map(renderProductCard)}</div>
+                          <div className={creatorProductGridClassName}>
+                            {displayProducts.map(renderProductCard)}
+                            {selectedGroup ? (
+                              <button
+                                type="button"
+                                onClick={openAddToGroup}
+                                className="group/add mx-5 flex min-h-[18rem] flex-col sm:mx-0 items-center justify-center gap-3 rounded-lg border border-dashed border-black/[0.14] px-6 py-10 text-center transition-colors duration-200 hover:border-black/30 hover:bg-black/[0.02] dark:border-white/[0.14] dark:hover:border-white/30 dark:hover:bg-white/[0.02]"
+                              >
+                                <span className="flex h-12 w-12 items-center justify-center rounded-full border border-black/[0.1] text-neutral-500 transition-all duration-200 group-hover/add:scale-105 group-hover/add:border-[#111111] group-hover/add:bg-[#111111] group-hover/add:text-white dark:border-white/[0.14] dark:text-neutral-400 dark:group-hover/add:border-white dark:group-hover/add:bg-white dark:group-hover/add:text-[#111111]">
+                                  <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+                                    <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
+                                  </svg>
+                                </span>
+                                <span>
+                                  <span className="block text-[15px] font-semibold text-[#111111] dark:text-white">
+                                    Add products
+                                  </span>
+                                  <span className="mt-0.5 block text-[13px] text-neutral-500 dark:text-neutral-400">
+                                    to {selectedGroup.name}
+                                  </span>
+                                </span>
+                              </button>
+                            ) : null}
+                          </div>
                         </section>
                       )}
                     </>
@@ -661,58 +866,7 @@ export function CreatorStudioProductsTab() {
                 </section>
 
                 {items.length > 0 && (
-                  <aside className="w-full shrink-0 xl:sticky xl:top-8 xl:w-72">
-                    <div
-                      className={`grid transition-[grid-template-rows,opacity] duration-200 ease-out ${
-                        showStickySearch
-                          ? 'grid-rows-[1fr] opacity-100'
-                          : 'pointer-events-none grid-rows-[0fr] opacity-0'
-                      }`}
-                      aria-hidden={!showStickySearch}
-                    >
-                      <div className="min-h-0 overflow-hidden pb-4">
-                        <label htmlFor="creator-products-search-sticky" className="sr-only">
-                          Search products
-                        </label>
-                        <div className="flex h-11 items-center gap-3 rounded-lg bg-black/[0.04] px-4 dark:bg-white/[0.06]">
-                          <svg
-                            className="h-4 w-4 shrink-0 text-neutral-400"
-                            fill="none"
-                            viewBox="0 0 24 24"
-                            stroke="currentColor"
-                            strokeWidth={2}
-                            aria-hidden
-                          >
-                            <path
-                              strokeLinecap="round"
-                              strokeLinejoin="round"
-                              d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-                            />
-                          </svg>
-                          <input
-                            id="creator-products-search-sticky"
-                            value={query}
-                            onChange={(e) => setQuery(e.target.value)}
-                            placeholder="Search…"
-                            tabIndex={showStickySearch ? 0 : -1}
-                            className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] text-[#111111] placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-white dark:placeholder:text-neutral-500"
-                          />
-                          {query ? (
-                            <button
-                              type="button"
-                              onClick={() => setQuery('')}
-                              tabIndex={showStickySearch ? 0 : -1}
-                              className="rounded-full p-1 text-neutral-400 transition hover:text-[#111111] dark:hover:text-white"
-                              aria-label="Clear search"
-                            >
-                              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-                              </svg>
-                            </button>
-                          ) : null}
-                        </div>
-                      </div>
-                    </div>
+                  <aside className="hidden w-72 shrink-0 xl:sticky xl:top-8 xl:block">
                     <button
                       type="button"
                       onClick={() => setProductsView('create')}
@@ -724,6 +878,7 @@ export function CreatorStudioProductsTab() {
                     </button>
                     <CreatorProductsStatsPanel
                       groups={groups}
+                      groupCounts={groupCounts}
                       selectedGroupId={selectedGroupId}
                       exploring={exploringGroups}
                       onSelectGroup={(groupId) => {
@@ -742,7 +897,28 @@ export function CreatorStudioProductsTab() {
             </>
           )}
         </>
-      )}
+
+      <CreatorProductCreateModal
+        open={view === 'create'}
+        productFormat={productFormat}
+        onFormatChange={setProductFormat}
+        onClose={() => setProductsView('list')}
+        onCreated={(productTitle) => onProductCreated(productTitle)}
+      />
+
+      <CreatorCatalogueAddProductsModal
+        open={addToGroupOpen}
+        group={selectedGroup}
+        products={items}
+        saving={addToGroupSaving}
+        error={addToGroupError}
+        onClose={() => setAddToGroupOpen(false)}
+        onAdd={(productIds) => void addProductsToGroup(productIds)}
+        onCreateProduct={() => {
+          setAddToGroupOpen(false);
+          setProductsView('create');
+        }}
+      />
 
       <CreatorProductGroupModal
         open={groupModalOpen}

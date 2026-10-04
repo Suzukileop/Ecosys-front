@@ -1,10 +1,12 @@
 'use client';
 
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
+import { AbbreviatedLine } from '@/components/ui/AbbreviatedLine';
 import { CountryFlag } from '@/components/ui/CountryFlag';
 import { usePresence } from '@/hooks/usePresence';
+import { mediaImageSrc } from '@/lib/media-image-url';
 import {
   PROVIDER_FRAME_CLASS,
   PROVIDER_INK_CLASS,
@@ -66,14 +68,31 @@ function ArrowIcon({ className }: { className?: string }) {
   );
 }
 
+function ChevronIcon({ className }: { className?: string }) {
+  return (
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
+    </svg>
+  );
+}
+
+const DISCUSS_BUTTON_CLASS =
+  'inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full text-[14px] font-medium text-[#111111] transition-colors duration-200 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:text-white dark:hover:bg-white/[0.06] sm:w-auto sm:px-3';
+
 function ChatIcon({ className }: { className?: string }) {
   return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4 5.5A1.5 1.5 0 015.5 4h13A1.5 1.5 0 0120 5.5v9a1.5 1.5 0 01-1.5 1.5H9l-5 4V5.5z"
-      />
+    <svg
+      className={className}
+      fill="none"
+      viewBox="0 0 24 24"
+      stroke="currentColor"
+      strokeWidth={1.6}
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      aria-hidden
+    >
+      <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
+      <path d="M8.6 11.7h.01M12 11.7h.01M15.4 11.7h.01" />
     </svg>
   );
 }
@@ -155,13 +174,28 @@ const AVATAR_COVER_MIN_WIDTH = 200;
  *   low-res photo stops being upscaled into mush.
  * - `wireframe` — nothing usable: the abstract bust.
  */
-function CreatorCardAvatar({ avatarUrl, seed }: { avatarUrl?: string | null; seed: number }) {
+function CreatorCardAvatar({
+  avatarUrl,
+  seed,
+  compact = false,
+}: {
+  avatarUrl?: string | null;
+  seed: number;
+  /**
+   * The 72px pill in the mobile row. `medallion` exists to stop a 96px monogram being blown up
+   * across a 220–290px slot; at this size nothing is upscaled, so insetting the source would only
+   * leave it floating on the ground texture.
+   */
+  compact?: boolean;
+}) {
   const resolved = resolveStorageMediaUrl(avatarUrl);
-  const [fit, setFit] = useState<'pending' | 'cover' | 'medallion' | 'none'>(
-    resolved ? 'pending' : 'none'
-  );
+  const [fit, setFit] = useState<'pending' | 'cover' | 'medallion' | 'none'>(resolved ? 'pending' : 'none');
 
   const onLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
+    if (compact) {
+      setFit('cover');
+      return;
+    }
     const { naturalWidth, naturalHeight } = event.currentTarget;
     const smallest = Math.min(naturalWidth || 0, naturalHeight || 0);
     setFit(smallest >= AVATAR_COVER_MIN_WIDTH ? 'cover' : 'medallion');
@@ -176,18 +210,30 @@ function CreatorCardAvatar({ avatarUrl, seed }: { avatarUrl?: string | null; see
           <div className="absolute inset-0 flex items-center justify-center">
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img
-              src={resolved}
+              /* Stays above AVATAR_COVER_MIN_WIDTH: the optimizer never upscales, so `onLoad`
+                 still sees a small source as small and keeps this presentation. */
+              src={mediaImageSrc(resolved, 256)}
               alt=""
+              loading="lazy"
+              decoding="async"
               onLoad={onLoad}
               onError={() => setFit('none')}
-              className="h-[104px] w-[104px] rounded-full object-cover ring-1 ring-black/[0.06] dark:ring-white/10"
+              className="h-[104px] max-h-[70%] w-[104px] max-w-[70%] rounded-full object-cover ring-1 ring-black/[0.06] dark:ring-white/10"
             />
           </div>
         ) : (
           // eslint-disable-next-line @next/next/no-img-element
           <img
-            src={resolved}
+            /*
+             * One `src`, never a `srcSet`: for an image picked from `w` descriptors the HTML spec
+             * scales the intrinsic size by the selected density, so `naturalWidth` reports the
+             * CSS box, not the source. `onLoad` below needs the real source width — a 96px
+             * monogram has to still read as 96. The optimizer never upscales, so this stays true.
+             */
+            src={mediaImageSrc(resolved, compact ? 256 : 640)}
             alt=""
+            loading="lazy"
+            decoding="async"
             onLoad={onLoad}
             onError={() => setFit('none')}
             className={`absolute inset-0 h-full w-full object-cover object-[center_18%] transition-opacity duration-500 ${
@@ -215,7 +261,7 @@ type CreatorCardProps = {
   isVerified: boolean;
   isAvailable?: boolean;
   serviceCount?: number;
-  averageRating?: number | null;
+  starCount?: number | null;
   nationality?: string | null;
   yearsOfExperience?: number | null;
   distanceKm?: number | null;
@@ -223,6 +269,8 @@ type CreatorCardProps = {
   locationCountry?: string | null;
   /** Larger type for reading-first surfaces such as search results. */
   comfortable?: boolean;
+  /** Square card that runs edge to edge on phones. */
+  flushOnMobile?: boolean;
 };
 
 export function CreatorCard({
@@ -238,17 +286,20 @@ export function CreatorCard({
   isVerified,
   isAvailable = true,
   serviceCount,
-  averageRating,
+  starCount,
   nationality,
   yearsOfExperience,
   distanceKm,
   locationCity,
   locationCountry,
   comfortable = false,
+  flushOnMobile = false,
 }: CreatorCardProps) {
   const { user } = useAuth();
+  const [detailsOpen, setDetailsOpen] = useState(false);
+  const detailsId = useId();
   const labelClass = comfortable ? 'text-[15px] font-medium' : PROVIDER_LABEL_CLASS;
-  const nameSizeClass = comfortable ? 'text-[1.6rem]' : 'text-[1.4rem]';
+  const nameSizeClass = comfortable ? 'text-[1.5rem]' : 'text-[1.25rem]';
   const metaSizeClass = comfortable ? 'text-[15px]' : 'text-[14px]';
   const bioSizeClass = comfortable ? 'text-base' : 'text-[15px]';
   const tagSizeClass = 'text-[14px]';
@@ -262,13 +313,18 @@ export function CreatorCard({
   const statusLabel = online ? 'Online' : 'Offline';
   const seed = seedFromId(resolvedId || 'unknown');
   const services = serviceCount ?? 0;
-  const hasRating = averageRating !== null && averageRating !== undefined;
-  const isNew = !hasRating && !isVerified && services === 0;
+  const stars = Math.max(0, starCount ?? 0);
+  const hasStars = stars > 0;
+  const isNew = !hasStars && !isVerified && services === 0;
   const bioText = bio?.trim() || '';
   const distanceLabel = formatDistanceAwayKm(distanceKm);
   const placeLabel = formatPlaceLabel(locationCity, locationCountry, nationality);
-  const profileHref = resolvedId ? `/marketplace/${resolvedId}` : null;
-  const servicesHref = resolvedId ? `/marketplace/${resolvedId}?tab=services` : null;
+  const profileHref = isOwnCard ? '/dashboard/creator?tab=profile' : resolvedId ? `/marketplace/${resolvedId}` : null;
+  const servicesHref = isOwnCard
+    ? '/dashboard/creator?tab=services'
+    : resolvedId
+      ? `/marketplace/${resolvedId}?tab=services`
+      : null;
   const discussHref =
     !isOwnCard && resolvedId
       ? user
@@ -276,7 +332,11 @@ export function CreatorCard({
         : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(resolvedId)}`)}`
       : null;
   const discussLabel = fullName?.trim() ? `Discuss with ${fullName.trim()}` : 'Discuss';
-  const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId, username) : null;
+  const portfolioHref = isOwnCard
+    ? '/dashboard/portfolio'
+    : resolvedId
+      ? buildCreatorPortfolioPath(resolvedId, username)
+      : null;
   const servicesLabel = services === 1 ? '1 service' : `${services} services`;
   const specialtyChips =
     specialties.filter((item) => item.trim()).length > 0
@@ -297,14 +357,21 @@ export function CreatorCard({
       : isNew
         ? 'New'
         : null;
+  const experienceLabel =
+    yearsOfExperience != null && yearsOfExperience >= 0
+      ? `${yearsOfExperience} ${yearsOfExperience === 1 ? 'yr' : 'yrs'} exp.`
+      : null;
+  const primarySpecialty = specialtyChips[0] ?? '';
+  /* Below `sm` only the identity block stays visible; everything else waits behind "Details". */
+  const mobileDetailsClass = detailsOpen ? 'contents' : 'hidden sm:contents';
 
   return (
     <div className="flex h-full flex-col gap-2.5">
       <article
-        className={`group/card flex h-full min-h-[300px] flex-1 flex-col overflow-hidden ${PROVIDER_FRAME_CLASS} transition-colors duration-200 hover:border-black/[0.12] md:min-h-[280px] md:flex-row md:items-stretch dark:hover:border-white/[0.16]`}
+        className={`group/card flex h-full flex-1 flex-col overflow-hidden ${PROVIDER_FRAME_CLASS} max-sm:border-0 ${flushOnMobile ? 'max-sm:rounded-none max-sm:!border-y max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16]' : ''} transition-colors duration-200 hover:border-black/[0.12] sm:min-h-[300px] md:min-h-[280px] md:flex-row md:items-stretch dark:hover:border-white/[0.16]`}
       >
         <div
-          className={`relative w-full shrink-0 overflow-hidden md:h-auto md:self-stretch ${
+          className={`relative hidden w-full shrink-0 overflow-hidden sm:block md:h-auto md:self-stretch ${
             comfortable ? 'h-[260px] md:w-[290px]' : 'h-[240px] md:w-[220px]'
           }`}
         >
@@ -313,22 +380,80 @@ export function CreatorCard({
 
         <div
           className={`flex min-h-0 min-w-0 flex-1 flex-col ${
-            comfortable ? 'p-7 sm:p-8 md:p-9 lg:p-10' : 'p-6 sm:p-7 lg:p-8'
+            comfortable ? 'px-3 py-4 sm:p-8 md:p-9 lg:p-10' : 'px-3 py-4 sm:p-7 lg:p-8'
           }`}
         >
-          <div className="flex items-start justify-between gap-5">
+          <div className="flex items-center gap-4 sm:hidden">
+            <div className="relative h-[72px] w-[72px] shrink-0">
+              <div className="absolute inset-0 overflow-hidden rounded-full">
+                <CreatorCardAvatar avatarUrl={avatarUrl} seed={seed} compact />
+              </div>
+              {online ? (
+                <span
+                  className="absolute bottom-[5px] right-[5px] h-2 w-2 rounded-full bg-emerald-500/90 ring-[1.5px] ring-white dark:ring-[#111111]"
+                  title={statusLabel}
+                  aria-label={statusLabel}
+                  role="status"
+                />
+              ) : null}
+            </div>
+            <div className="min-w-0 flex-1">
+              <AbbreviatedLine
+                as="h3"
+                text={fullName ?? 'Provider'}
+                href={profileHref}
+                textClassName={`text-[17px] font-semibold leading-snug tracking-[-0.01em] ${PROVIDER_INK_CLASS}`}
+                after={
+                  nationality || isVerified ? (
+                    <>
+                      {nationality ? <NationalityFlag code={nationality} /> : null}
+                      {isVerified ? <VerifiedMark /> : null}
+                    </>
+                  ) : null
+                }
+              />
+              {primarySpecialty ? (
+                <AbbreviatedLine
+                  as="p"
+                  text={primarySpecialty}
+                  className="mt-1"
+                  textClassName="text-[14px] text-neutral-600 dark:text-neutral-300"
+                />
+              ) : null}
+              {experienceLabel || hasStars || isNew ? (
+                <p className="mt-1 flex items-center gap-3 text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
+                  {experienceLabel ? (
+                    <span>{experienceLabel}</span>
+                  ) : isNew ? (
+                    <span className="text-[#FF5722]">New</span>
+                  ) : null}
+                  {hasStars ? (
+                    <span
+                      className={`inline-flex items-center gap-1 font-semibold ${PROVIDER_INK_CLASS}`}
+                      aria-label={`${stars} trust ${stars === 1 ? 'star' : 'stars'}`}
+                    >
+                      <StarIcon className="h-3.5 w-3.5 text-[#FF5722]" />
+                      {stars.toLocaleString('en-US')}
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
+            </div>
+          </div>
+
+          <div className="hidden items-start justify-between gap-5 sm:flex">
             <div className="flex min-w-0 flex-wrap items-center gap-2.5">
               {profileHref ? (
                 <Link href={profileHref} className="min-w-0 focus-visible:outline-none">
                   <h3
-                    className={`${nameSizeClass} font-bold leading-tight tracking-tight ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722]`}
+                    className={`${nameSizeClass} font-semibold leading-tight tracking-tight ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722]`}
                   >
                     {fullName ?? 'Provider'}
                   </h3>
                 </Link>
               ) : (
                 <h3
-                  className={`min-w-0 ${nameSizeClass} font-bold leading-tight tracking-tight ${PROVIDER_INK_CLASS}`}
+                  className={`min-w-0 ${nameSizeClass} font-semibold leading-tight tracking-tight ${PROVIDER_INK_CLASS}`}
                 >
                   {fullName ?? 'Provider'}
                 </h3>
@@ -347,99 +472,128 @@ export function CreatorCard({
               ) : null}
             </div>
 
-            {hasRating ? (
+            {hasStars ? (
               <span
-                className={`inline-flex shrink-0 items-center gap-1.5 text-lg font-semibold tabular-nums ${PROVIDER_INK_CLASS}`}
+                className={`inline-flex shrink-0 items-center gap-1.5 text-[15px] font-semibold tabular-nums ${PROVIDER_INK_CLASS}`}
+                aria-label={`${stars} trust ${stars === 1 ? 'star' : 'stars'}`}
               >
-                <StarIcon className="h-[18px] w-[18px] text-[#FF5722]" />
-                {averageRating.toFixed(1)}
+                <StarIcon className="h-4 w-4 text-[#FF5722]" />
+                {stars.toLocaleString('en-US')}
               </span>
             ) : marker ? (
-              <span className={`shrink-0 ${labelClass} tabular-nums text-neutral-500 dark:text-neutral-400`}>
+              <span
+                className={`shrink-0 ${labelClass} tabular-nums ${
+                  marker === 'New' ? 'text-[#FF5722]' : 'text-neutral-500 dark:text-neutral-400'
+                }`}
+              >
                 {marker}
               </span>
             ) : null}
           </div>
 
-          <div className={`mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${metaSizeClass} text-neutral-500 dark:text-neutral-400`}>
-            {servicesHref ? (
-              <Link
-                href={servicesHref}
-                className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-[#FF5722]"
-              >
-                <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
-                <span>{servicesLabel}</span>
-              </Link>
-            ) : (
-              <span className="inline-flex items-center gap-1.5">
-                <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
-                <span>{servicesLabel}</span>
-              </span>
-            )}
-            {placeLabel ? (
-              <span className="inline-flex min-w-0 items-center gap-1.5">
-                <PinIcon className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
-                <span className="truncate">{placeLabel}</span>
-              </span>
+          <div id={detailsId} className={mobileDetailsClass}>
+            <div
+              className={`mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${metaSizeClass} text-neutral-500 dark:text-neutral-400`}
+            >
+              {servicesHref ? (
+                <Link
+                  href={servicesHref}
+                  className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-[#FF5722]"
+                >
+                  <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                  <span>{servicesLabel}</span>
+                </Link>
+              ) : (
+                <span className="inline-flex items-center gap-1.5">
+                  <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                  <span>{servicesLabel}</span>
+                </span>
+              )}
+              {placeLabel ? (
+                <span className="inline-flex min-w-0 items-center gap-1.5">
+                  <PinIcon className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
+                  <span className="truncate">{placeLabel}</span>
+                </span>
+              ) : null}
+              {isAvailable ? null : (
+                <span className={`${labelClass} text-neutral-400 dark:text-neutral-500`}>Unavailable</span>
+              )}
+            </div>
+
+            {bioText ? (
+              <p className={`mt-5 max-w-[52ch] ${bioSizeClass} leading-[1.75] text-neutral-600 dark:text-neutral-400`}>
+                {bioText}
+              </p>
             ) : null}
-            {isAvailable ? null : (
-              <span className={`${labelClass} text-neutral-400 dark:text-neutral-500`}>Unavailable</span>
+
+            {specialtyChips.length > 0 || tagChips.length > 0 ? (
+              <div className="mt-auto space-y-1.5 pt-6">
+                {specialtyChips.length > 0 ? (
+                  <ProviderSlashList
+                    items={specialtyChips}
+                    className={`${labelClass} leading-relaxed text-[#111111]/85 dark:text-white/85`}
+                  />
+                ) : null}
+                {tagChips.length > 0 ? (
+                  <ProviderSlashList
+                    items={tagChips}
+                    className={`${tagSizeClass} leading-relaxed text-neutral-500 dark:text-neutral-400`}
+                  />
+                ) : null}
+              </div>
+            ) : (
+              <div className="mt-auto" />
             )}
           </div>
 
-          {bioText ? (
-            <p className={`mt-5 max-w-[52ch] ${bioSizeClass} leading-[1.75] text-neutral-600 dark:text-neutral-400`}>
-              {bioText}
-            </p>
-          ) : null}
-
-          {specialtyChips.length > 0 || tagChips.length > 0 ? (
-            <div className="mt-auto space-y-1.5 pt-6">
-              {specialtyChips.length > 0 ? (
-                <ProviderSlashList
-                  items={specialtyChips}
-                  className={`${labelClass} leading-relaxed text-[#111111]/85 dark:text-white/85`}
-                />
-              ) : null}
-              {tagChips.length > 0 ? (
-                <ProviderSlashList
-                  items={tagChips}
-                  className={`${tagSizeClass} leading-relaxed text-neutral-500 dark:text-neutral-400`}
-                />
-              ) : null}
-            </div>
-          ) : (
-            <div className="mt-auto" />
-          )}
-
-          <div className="flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-black/[0.06] pt-5 mt-6 dark:border-white/[0.06]">
+          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-black/[0.06] pt-4 dark:border-white/[0.06] sm:mt-6 sm:pt-5">
             <ProviderTextAction
-              href={servicesHref}
-              disabled={!servicesHref}
-              icon={<ArrowIcon className="h-4 w-4" />}
+              href={portfolioHref}
+              disabled={!portfolioHref}
+              icon={<ArrowIcon className="h-4 w-4 transition-transform duration-200 group-hover/act:translate-x-0.5" />}
+              className="max-sm:text-[14px]"
             >
-              View service
-            </ProviderTextAction>
-            <ProviderTextAction href={portfolioHref} disabled={!portfolioHref}>
               Portfolio
             </ProviderTextAction>
-            {isOwnCard ? null : (
-              <ProviderTextAction
+            <span className={detailsOpen ? 'inline-flex' : 'hidden sm:inline-flex'}>
+              <ProviderTextAction href={servicesHref} disabled={!servicesHref} className="max-sm:text-[14px]">
+                View service
+              </ProviderTextAction>
+            </span>
+            <button
+              type="button"
+              onClick={() => setDetailsOpen((open) => !open)}
+              aria-expanded={detailsOpen}
+              aria-controls={detailsId}
+              className="inline-flex items-center gap-1.5 text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] focus-visible:outline-none dark:text-neutral-400 dark:hover:text-white sm:hidden"
+            >
+              {detailsOpen ? 'Less' : 'Details'}
+              <ChevronIcon className={`h-4 w-4 transition-transform duration-300 ${detailsOpen ? 'rotate-180' : ''}`} />
+            </button>
+            {isOwnCard ? null : discussHref ? (
+              <Link
                 href={discussHref}
-                disabled={!discussHref}
                 title={discussLabel}
                 aria-label={discussLabel}
-                icon={<ChatIcon className="h-4 w-4" />}
-                iconPlacement="leading"
-                className={comfortable ? undefined : 'sm:ml-auto'}
+                className={`${DISCUSS_BUTTON_CLASS} ml-auto ${comfortable ? 'sm:ml-0' : ''}`}
               >
-                Discuss
-              </ProviderTextAction>
+                <ChatIcon className="h-[18px] w-[18px]" />
+                <span className="hidden sm:inline">Discuss</span>
+              </Link>
+            ) : (
+              <span
+                aria-disabled
+                aria-label="Discuss"
+                className={`${DISCUSS_BUTTON_CLASS} pointer-events-none ml-auto opacity-35 ${comfortable ? 'sm:ml-0' : ''}`}
+              >
+                <ChatIcon className="h-[18px] w-[18px]" />
+                <span className="hidden sm:inline">Discuss</span>
+              </span>
             )}
             {presenceUserId && comfortable ? (
               <span
                 role="status"
-                className={`ml-auto inline-flex items-center gap-2 ${labelClass} ${
+                className={`ml-auto hidden items-center gap-2 sm:inline-flex ${labelClass} ${
                   online ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400 dark:text-neutral-500'
                 }`}
               >
@@ -455,7 +609,9 @@ export function CreatorCard({
       </article>
 
       {distanceLabel ? (
-        <p className={`shrink-0 pl-1 ${labelClass} leading-none text-neutral-500 dark:text-neutral-400`}>
+        <p
+          className={`shrink-0 pl-1 ${detailsOpen ? '' : 'hidden sm:block'} ${labelClass} leading-none text-neutral-500 dark:text-neutral-400`}
+        >
           {distanceLabel}
         </p>
       ) : null}

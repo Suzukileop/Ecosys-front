@@ -7,10 +7,10 @@ export function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
   return (
     <div
       role="alert"
-      className="rounded-lg bg-red-50 border border-red-200 p-4 flex items-start gap-3"
+      className="flex items-start gap-3 rounded-lg border border-red-200 bg-red-50 p-4 dark:border-red-500/20 dark:bg-red-500/10"
     >
       <svg
-        className="w-5 h-5 text-red-500 mt-0.5 flex-shrink-0"
+        className="mt-0.5 h-5 w-5 flex-shrink-0 text-red-500 dark:text-red-400"
         fill="currentColor"
         viewBox="0 0 20 20"
         aria-hidden="true"
@@ -21,12 +21,13 @@ export function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
           clipRule="evenodd"
         />
       </svg>
-      <p className="text-sm text-red-700 flex-1">{message}</p>
+      <p className="flex-1 text-sm text-red-700 dark:text-red-300">{message}</p>
       {onDismiss && (
         <button
+          type="button"
           onClick={onDismiss}
-          className="text-red-400 hover:text-red-600 transition"
-          aria-label="Fermer"
+          className="text-red-400 transition hover:text-red-600 dark:hover:text-red-300"
+          aria-label="Dismiss"
         >
           <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden="true">
             <path

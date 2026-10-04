@@ -5,18 +5,15 @@ import { createPortal } from 'react-dom';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faCloudArrowUp, faImage, faTrashCan, faXmark } from '@fortawesome/free-solid-svg-icons';
 import type { ProfileServiceForm } from '@/components/creator/studio/profile-form-schema';
-import {
-  STUDIO_FLOAT_IN_STYLE,
-  STUDIO_INLINE_TEXT_CLASS,
-  STUDIO_LABEL_CLASS,
-  StudioUnderline,
-} from '@/components/portfolio/PortfolioStudioKit';
+import { STUDIO_FLOAT_IN_STYLE, STUDIO_LABEL_CLASS } from '@/components/portfolio/PortfolioStudioKit';
 import {
   currencyPresetFromCode,
   SERVICE_CURRENCY_PRESETS,
   SERVICE_DELIVERY_UNIT_OPTIONS,
   SERVICE_DESCRIPTION_SOFT_LIMIT,
   SERVICE_PRICING_OPTIONS,
+  servicePriceCentsForPricing,
+  servicePricingNeedsAmount,
   SERVICE_STATUS_OPTIONS,
   type ServiceCurrencyPreset,
   type ServiceDeliveryUnit,
@@ -68,10 +65,15 @@ function FieldLabel({ label, required, aside }: { label: string; required?: bool
 }
 
 function FieldError({ error }: { error?: string | null }) {
-  return error ? <p className="mt-2 text-[13px] font-medium text-[#FF5722]">{error}</p> : null;
+  return error ? <p className="mt-2 text-[14px] font-medium text-[#FF5722]">{error}</p> : null;
 }
 
-/** Underlined text field, same treatment as the portfolio information studio. */
+/** Filled values read solid ink / white; placeholders stay light grey so they never pass for a value. */
+const FIELD_INPUT_CLASS =
+  'block w-full border-0 bg-transparent p-0 text-[15px] font-medium text-[#111111] caret-[#FF5722] outline-none focus:ring-0 placeholder:font-normal placeholder:text-neutral-400 disabled:opacity-60 dark:text-white dark:placeholder:text-neutral-600';
+
+const SECTION_CLASS = 'grid grid-cols-1 gap-x-8 gap-y-10 py-10';
+
 function LineField({
   label,
   required,
@@ -89,11 +91,16 @@ function LineField({
 }) {
   return (
     <div data-invalid={Boolean(error)} className={`min-w-0 ${className}`}>
-      <StudioUnderline>
-        <FieldLabel label={label} required={required} aside={aside} />
+      <FieldLabel label={label} required={required} aside={aside} />
+      <div
+        className={`rounded-lg border bg-white px-3.5 py-2.5 transition-[border-color,box-shadow] duration-150 focus-within:border-[#FF5722] focus-within:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:bg-white/[0.02] ${
+          error
+            ? 'border-[#FF5722]'
+            : 'border-black/[0.14] hover:border-black/30 dark:border-white/[0.16] dark:hover:border-white/30'
+        }`}
+      >
         {children}
-        {error ? <span aria-hidden className="absolute inset-x-0 bottom-0 h-px bg-[#FF5722]" /> : null}
-      </StudioUnderline>
+      </div>
       <FieldError error={error} />
     </div>
   );
@@ -131,7 +138,7 @@ function ChoiceField<T extends string>({
               role="radio"
               aria-checked={active}
               onClick={() => onChange(option.value)}
-              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[14px] font-medium transition-colors duration-200 ${
+              className={`inline-flex items-center gap-2 rounded-full border px-4 py-2 text-[15px] font-medium transition-colors duration-200 ${
                 active
                   ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
                   : 'border-black/[0.1] text-neutral-600 hover:border-black/30 hover:text-[#111111] dark:border-white/[0.12] dark:text-neutral-300 dark:hover:border-white/30 dark:hover:text-white'
@@ -193,7 +200,7 @@ export function ServiceFormDrawer({
   const currencyPreset = currencyPresetFromCode(draft.currency);
   const customCurrency = currencyPreset === 'OTHER';
   const pricingType = (draft.pricingType ?? 'FIXED') as ServicePricingType;
-  const showAmount = pricingType !== 'QUOTE';
+  const showAmount = servicePricingNeedsAmount(pricingType);
   const descriptionLength = (draft.description ?? '').length;
   const descriptionOver = descriptionLength > SERVICE_DESCRIPTION_SOFT_LIMIT;
   const coverResolved = resolveStorageMediaUrl(draft.coverImageUrl) || draft.coverImageUrl;
@@ -308,7 +315,7 @@ export function ServiceFormDrawer({
             type="button"
             onClick={onClose}
             disabled={saving}
-            className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.06] hover:text-[#111111] disabled:opacity-40 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+            className="-mr-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border border-transparent text-neutral-500 outline-none transition-[background-color,border-color,color] duration-150 hover:border-black/[0.08] hover:bg-black/[0.06] hover:text-[#111111] focus-visible:border-[#FF5722] disabled:pointer-events-none disabled:opacity-40 dark:text-neutral-400 dark:hover:border-white/[0.12] dark:hover:bg-white/[0.1] dark:hover:text-white"
             aria-label="Close"
           >
             <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />
@@ -319,14 +326,15 @@ export function ServiceFormDrawer({
           ref={bodyRef}
           className="min-h-0 flex-1 overflow-y-auto px-8 pb-12 sm:px-10 [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent]"
         >
-          <section className="grid grid-cols-1 gap-y-10 py-10" aria-label="About the service">
+          <div className="divide-y divide-black/[0.08] dark:divide-white/[0.08]">
+          <section className={SECTION_CLASS} aria-label="About the service">
             <LineField label="Title" required error={show('title')}>
               <input
                 autoFocus={!isEdit}
                 value={draft.title}
                 onChange={(event) => onChange({ ...draft, title: event.target.value })}
                 maxLength={100}
-                className={STUDIO_INLINE_TEXT_CLASS}
+                className={FIELD_INPUT_CLASS}
                 placeholder="e.g. REST API development"
               />
             </LineField>
@@ -345,7 +353,7 @@ export function ServiceFormDrawer({
             <LineField
               label="Description"
               aside={
-                <span className={`text-[13px] tabular-nums ${descriptionOver ? 'font-semibold text-amber-600' : 'text-neutral-400'}`}>
+                <span className={`text-[14px] tabular-nums ${descriptionOver ? 'font-semibold text-amber-600' : 'text-neutral-400'}`}>
                   {descriptionLength} / {SERVICE_DESCRIPTION_SOFT_LIMIT}
                 </span>
               }
@@ -353,17 +361,14 @@ export function ServiceFormDrawer({
               <textarea
                 value={draft.description ?? ''}
                 onChange={(event) => onChange({ ...draft, description: event.target.value })}
-                rows={1}
-                className={`${STUDIO_INLINE_TEXT_CLASS} resize-none leading-relaxed [field-sizing:content]`}
+                rows={3}
+                className={`${FIELD_INPUT_CLASS} min-h-[4.5rem] resize-none leading-relaxed [field-sizing:content]`}
                 placeholder="What the client receives"
               />
             </LineField>
           </section>
 
-          <section
-            className="grid grid-cols-1 gap-x-8 gap-y-10 border-t border-black/[0.06] py-10 dark:border-white/[0.06]"
-            aria-label="Pricing and delivery"
-          >
+          <section className={SECTION_CLASS} aria-label="Pricing">
             <ChoiceField
               label="Pricing"
               required
@@ -373,7 +378,11 @@ export function ServiceFormDrawer({
                 onChange({
                   ...draft,
                   pricingType: next,
-                  basePriceCents: next === 'QUOTE' ? null : draft.basePriceCents,
+                  basePriceCents: servicePricingNeedsAmount(next)
+                    ? draft.pricingType === 'FREE'
+                      ? null
+                      : draft.basePriceCents
+                    : servicePriceCentsForPricing(next, null),
                 })
               }
             />
@@ -386,7 +395,7 @@ export function ServiceFormDrawer({
                     inputMode="decimal"
                     value={eurosInputFromCents(draft.basePriceCents)}
                     onChange={(event) => onChange({ ...draft, basePriceCents: centsFromEurosInput(event.target.value) })}
-                    className={`${STUDIO_INLINE_TEXT_CLASS} tabular-nums`}
+                    className={`${FIELD_INPUT_CLASS} tabular-nums`}
                     placeholder="150"
                   />
                 </LineField>
@@ -403,14 +412,16 @@ export function ServiceFormDrawer({
                         })
                       }
                       maxLength={8}
-                      className={`${STUDIO_INLINE_TEXT_CLASS} uppercase`}
+                      className={`${FIELD_INPUT_CLASS} uppercase`}
                       placeholder="GBP"
                     />
                   </LineField>
                 ) : null}
               </div>
             ) : null}
+          </section>
 
+          <section className={SECTION_CLASS} aria-label="Delivery and status">
             <div className="grid grid-cols-1 gap-x-8 gap-y-10 sm:grid-cols-[minmax(0,2fr)_minmax(0,3fr)]">
               <LineField label="Delivery">
                 <input
@@ -421,7 +432,7 @@ export function ServiceFormDrawer({
                     const raw = event.target.value.trim();
                     onChange({ ...draft, deliveryValue: raw ? Math.max(1, Math.round(Number(raw))) : null });
                   }}
-                  className={`${STUDIO_INLINE_TEXT_CLASS} tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
+                  className={`${FIELD_INPUT_CLASS} tabular-nums [appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none`}
                   placeholder="3"
                 />
               </LineField>
@@ -442,10 +453,7 @@ export function ServiceFormDrawer({
             />
           </section>
 
-          <section
-            className="grid grid-cols-1 gap-y-10 border-t border-black/[0.06] pt-10 dark:border-white/[0.06]"
-            aria-label="Cover and tags"
-          >
+          <section className={SECTION_CLASS} aria-label="Cover and tags">
             <div>
               <FieldLabel label="Cover" />
               <div
@@ -476,7 +484,7 @@ export function ServiceFormDrawer({
                         type="button"
                         disabled={uploadingCover || saving}
                         onClick={() => fileInputRef.current?.click()}
-                        className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3 py-1.5 text-[13px] font-medium text-[#111111] backdrop-blur transition hover:bg-white"
+                        className="inline-flex items-center gap-1.5 rounded-full bg-white/90 px-3.5 py-1.5 text-[14px] font-medium text-[#111111] backdrop-blur transition hover:bg-white"
                       >
                         <FontAwesomeIcon icon={faImage} className="h-3 w-3" />
                         Replace
@@ -524,9 +532,9 @@ export function ServiceFormDrawer({
 
             <LineField
               label="Tags"
-              aside={<span className="text-[13px] tabular-nums text-neutral-400">{tags.length} / {MAX_TAGS}</span>}
+              aside={<span className="text-[14px] tabular-nums text-neutral-400">{tags.length} / {MAX_TAGS}</span>}
             >
-              <div className="flex flex-wrap items-center gap-2 pb-3">
+              <div className="flex flex-wrap items-center gap-2">
                 {tags.map((tag) => (
                   <span
                     key={tag}
@@ -553,7 +561,7 @@ export function ServiceFormDrawer({
                     }}
                     maxLength={40}
                     placeholder={tags.length === 0 ? 'Type and press Enter' : 'Add a tag'}
-                    className="min-w-[8rem] flex-1 border-0 bg-transparent p-0 py-1 text-base text-black caret-[#FF5722] outline-none placeholder:text-neutral-400 focus:ring-0 dark:text-neutral-100 dark:placeholder:text-neutral-600"
+                    className={`${FIELD_INPUT_CLASS} !w-auto min-w-[8rem] flex-1 py-0.5`}
                     onKeyDown={(event) => {
                       if (event.key === 'Enter') {
                         event.preventDefault();
@@ -567,10 +575,11 @@ export function ServiceFormDrawer({
               </div>
             </LineField>
           </section>
+          </div>
         </div>
 
         <div className="flex items-center justify-between gap-4 border-t border-black/[0.06] px-8 py-5 dark:border-white/[0.08] sm:px-10">
-          <p className="text-[13px] font-medium text-[#FF5722]">
+          <p className="text-[14px] font-medium text-[#FF5722]">
             {attempted && hasErrors ? 'Complete the highlighted fields.' : null}
           </p>
           <div className="ml-auto flex items-center gap-2">

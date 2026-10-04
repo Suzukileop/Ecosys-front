@@ -29,11 +29,20 @@ const sizePx = {
   '2xl': 112,
 };
 
-/** Next.js image optimizer blocks private IPs (localhost) unless allowed — skip it for local storage. */
+/**
+ * Whether to serve the original instead of an optimized derivative.
+ *
+ * Only true when the optimizer would refuse the URL. A relative path is same-origin and always
+ * allowed — treating it as unoptimizable (the old `new URL()` throw) shipped the full-size original
+ * to every 32–40 px avatar, which is megabytes for a typical upload.
+ */
 function shouldBypassImageOptimizer(url: string): boolean {
+  if (url.startsWith('/')) return false;
   try {
     const host = new URL(url).hostname;
-    return host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1';
+    const isLocal = host === 'localhost' || host === '127.0.0.1' || host === '[::1]' || host === '::1';
+    /* next.config.mjs sets `dangerouslyAllowLocalIP` and allows localhost:8080/api/storage/** in dev. */
+    return isLocal && process.env.NODE_ENV !== 'development';
   } catch {
     return true;
   }

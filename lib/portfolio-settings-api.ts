@@ -1,4 +1,5 @@
 import api from '@/lib/api';
+import { getApiErrorMessage, UserFacingError } from '@/lib/api-error';
 import {
   isPortfolioSettingsLocalNewer,
   mergePortfolioSettings,
@@ -62,7 +63,7 @@ export function preparePortfolioSettingsForPersist(
   const compact = prunePortfolioSettingsForPersist(stamped);
   const bytes = estimateJsonBytes(compact);
   if (bytes > PORTFOLIO_SETTINGS_MAX_JSON_BYTES) {
-    throw new Error(
+    throw new UserFacingError(
       `Portfolio settings are too large to save (${Math.round(bytes / 1024)} KB). Remove unused custom themes or large background images.`
     );
   }
@@ -85,21 +86,16 @@ export async function updateCreatorPortfolioSettings(
   return res.data ?? {};
 }
 
-function axiosErrorMessage(error: unknown): string {
-  if (!error || typeof error !== 'object') return 'Could not save portfolio settings.';
-  const record = error as {
-    message?: string;
-    response?: { data?: { message?: string; error?: string; code?: string } };
-  };
-  const apiMessage =
-    record.response?.data?.message ||
-    record.response?.data?.error ||
-    (typeof record.message === 'string' ? record.message : null);
-  if (apiMessage?.includes('PORTFOLIO_SETTINGS_TOO_LARGE') || apiMessage?.includes('too large')) {
+function saveErrorMessage(error: unknown): string {
+  const data = (error as { response?: { data?: { message?: unknown; error?: unknown; code?: unknown } } } | null)
+    ?.response?.data;
+  const tooLarge = [data?.message, data?.error, data?.code].some(
+    (value) => typeof value === 'string' && (value.includes('PORTFOLIO_SETTINGS_TOO_LARGE') || value.includes('too large'))
+  );
+  if (tooLarge) {
     return 'Portfolio settings are too large to save. Remove unused custom themes or large images.';
   }
-  if (apiMessage?.trim()) return apiMessage.trim();
-  return 'Could not save portfolio settings. Check your connection and try again.';
+  return getApiErrorMessage(error, 'Could not save portfolio settings. Check your connection and try again.');
 }
 
 export async function updateCreatorPortfolioSettingsWithRetry(
@@ -113,7 +109,7 @@ export async function updateCreatorPortfolioSettingsWithRetry(
     } catch (error) {
       lastError = error;
       // Don't retry client validation / payload size errors.
-      if (error instanceof Error && error.message.includes('too large')) {
+      if (error instanceof UserFacingError) {
         throw error;
       }
       if (i < attempts - 1) {
@@ -121,7 +117,7 @@ export async function updateCreatorPortfolioSettingsWithRetry(
       }
     }
   }
-  throw new Error(axiosErrorMessage(lastError));
+  throw new UserFacingError(saveErrorMessage(lastError));
 }
 
 /** Push localStorage settings to backend when the server copy is still empty. */

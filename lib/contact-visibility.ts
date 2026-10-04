@@ -23,7 +23,6 @@ export type ContactVisibilitySettings = {
   gallery: ContactVisibilityLevel;
   portfolio: ContactVisibilityLevel;
   location: ContactVisibilityLevel;
-  reputation: ContactVisibilityLevel;
   aboutSkills: ContactVisibilityLevel;
   aboutStrengths: ContactVisibilityLevel;
   aboutSystemsTools: ContactVisibilityLevel;
@@ -54,7 +53,6 @@ export const DEFAULT_CONTACT_VISIBILITY: ContactVisibilitySettings = {
   gallery: 'PUBLIC',
   portfolio: 'PUBLIC',
   location: 'PUBLIC',
-  reputation: 'PUBLIC',
   aboutSkills: 'PUBLIC',
   aboutStrengths: 'PUBLIC',
   aboutSystemsTools: 'PUBLIC',
@@ -109,7 +107,6 @@ export function parseContactVisibility(raw: unknown): ContactVisibilitySettings 
     gallery: level('gallery'),
     portfolio: level('portfolio'),
     location: level('location'),
-    reputation: level('reputation'),
     aboutSkills: level('aboutSkills'),
     aboutStrengths: level('aboutStrengths'),
     aboutSystemsTools: level('aboutSystemsTools'),

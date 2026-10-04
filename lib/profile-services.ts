@@ -1,6 +1,6 @@
 import type { ProfileServiceItem } from '@/types/ecosystem';
 
-export type ServicePricingType = 'FIXED' | 'FROM' | 'QUOTE';
+export type ServicePricingType = 'FIXED' | 'FROM' | 'QUOTE' | 'FREE';
 export type ServiceStatus = 'ACTIVE' | 'PAUSED' | 'ARCHIVED';
 export type ServiceDeliveryUnit = 'DAYS' | 'WEEKS';
 export type ServiceCurrencyPreset = 'EUR' | 'USD' | 'OTHER';
@@ -9,7 +9,23 @@ export const SERVICE_PRICING_OPTIONS: { value: ServicePricingType; label: string
   { value: 'FIXED', label: 'Fixed price' },
   { value: 'FROM', label: 'Starting at' },
   { value: 'QUOTE', label: 'Quote on request' },
+  { value: 'FREE', label: 'Free' },
 ];
+
+/** Pricing types that need an amount (and currency) from the creator. */
+export function servicePricingNeedsAmount(type: ServicePricingType | string | null | undefined): boolean {
+  return type !== 'QUOTE' && type !== 'FREE';
+}
+
+/** Price to persist for a pricing type — QUOTE has none, FREE is always 0. */
+export function servicePriceCentsForPricing(
+  type: ServicePricingType | string | null | undefined,
+  cents: number | null | undefined
+): number | null {
+  if (type === 'QUOTE') return null;
+  if (type === 'FREE') return 0;
+  return cents ?? null;
+}
 
 export const SERVICE_STATUS_OPTIONS: { value: ServiceStatus; label: string }[] = [
   { value: 'ACTIVE', label: 'Active' },
@@ -40,6 +56,7 @@ export function normalizeServicePricingType(
   if (key === 'FIXED' || key === 'FIXE' || key === 'FIXED_PRICE') return 'FIXED';
   if (key === 'FROM' || key === 'A_PARTIR_DE' || key === 'STARTING_AT' || key === 'STARTING') return 'FROM';
   if (key === 'QUOTE' || key === 'SUR_DEVIS' || key === 'ON_REQUEST' || key === 'DEVIS') return 'QUOTE';
+  if (key === 'FREE' || key === 'GRATUIT' || key === 'FREE_OF_CHARGE') return 'FREE';
   return basePriceCents != null ? 'FIXED' : 'QUOTE';
 }
 
@@ -96,6 +113,7 @@ export function formatServicePrice(service: {
 }): string {
   const type = normalizeServicePricingType(service.pricingType, service.basePriceCents);
   if (type === 'QUOTE') return 'On request';
+  if (type === 'FREE') return 'Free';
   const cents = service.basePriceCents;
   if (cents == null || Number.isNaN(cents)) return 'On request';
   if (cents === 0) return type === 'FROM' ? 'Starting at Free' : 'Free';

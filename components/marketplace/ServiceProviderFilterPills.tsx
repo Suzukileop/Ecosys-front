@@ -1,13 +1,19 @@
 'use client';
 
 import { useEffect, useMemo, useRef, useState } from 'react';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faBriefcase, faEarthAfrica, faLocationCrosshairs } from '@fortawesome/free-solid-svg-icons';
+import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { NATIONALITY_SELECT_OPTIONS } from '@/lib/countries';
 import {
   PROVIDER_HAIRLINE_CLASS,
   PROVIDER_INK_CLASS,
   PROVIDER_SURFACE_CLASS,
-  ProviderSwitch,
 } from '@/components/marketplace/ProviderDirectoryPrimitives';
+
+const TRIGGER_CLASS = `group/sel flex h-10 w-full items-center rounded-lg border transition-colors duration-200 sm:inline-flex sm:w-auto ${PROVIDER_SURFACE_CLASS}`;
+const TRIGGER_IDLE_CLASS = `${PROVIDER_HAIRLINE_CLASS} hover:border-black/15 dark:hover:border-white/20`;
+const TRIGGER_ACTIVE_CLASS = 'border-[#111111]/25 dark:border-white/25';
 
 const nationalityOptions = [
   { value: '', label: 'All nationalities' },
@@ -64,10 +70,12 @@ function FilterDropdown({
   value,
   onChange,
   options,
+  icon,
   searchable = false,
 }: {
   id: string;
   label: string;
+  icon: IconDefinition;
   value: string;
   onChange: (value: string) => void;
   options: { value: string; label: string }[];
@@ -92,7 +100,10 @@ function FilterDropdown({
   };
 
   const openMenu = () => {
-    const index = Math.max(0, options.findIndex((option) => option.value === value));
+    const index = Math.max(
+      0,
+      options.findIndex((option) => option.value === value),
+    );
     setCursor(index);
     setOpen(true);
   };
@@ -144,28 +155,32 @@ function FilterDropdown({
   };
 
   return (
-    <div ref={rootRef} className="relative min-w-0" onKeyDown={onKeyDown}>
-      <div
-        className={`group/sel inline-flex h-10 items-center rounded-lg border transition-colors duration-200 ${PROVIDER_SURFACE_CLASS} ${
-          selected
-            ? 'border-[#111111]/25 dark:border-white/25'
-            : `${PROVIDER_HAIRLINE_CLASS} hover:border-black/15 dark:hover:border-white/20`
-        }`}
-      >
+    <div ref={rootRef} className="min-w-0 sm:relative" onKeyDown={onKeyDown}>
+      <div className={`${TRIGGER_CLASS} ${selected ? TRIGGER_ACTIVE_CLASS : TRIGGER_IDLE_CLASS}`}>
         <button
           id={id}
           type="button"
           aria-haspopup="listbox"
           aria-expanded={open}
+          aria-label={selected ? `${label}: ${selected.label}` : label}
           onClick={() => (open ? close() : openMenu())}
-          className="inline-flex h-full items-center gap-2 pl-4 pr-3 text-[14px] outline-none"
+          className="flex h-full min-w-0 flex-1 items-center gap-2 pl-3 pr-2.5 text-[14px] outline-none sm:pl-4 sm:pr-3"
         >
-          <span className="text-neutral-500 dark:text-neutral-400">{label}</span>
+          <FontAwesomeIcon
+            icon={icon}
+            className={`h-3.5 w-3.5 shrink-0 ${selected ? 'text-[#FF5722]' : 'text-[#222222] dark:text-neutral-300'}`}
+            aria-hidden
+          />
+          <span className={`truncate text-[#222222] dark:text-neutral-300 ${selected ? 'hidden sm:inline' : ''}`}>
+            {label}
+          </span>
           {selected ? (
-            <span className={`max-w-[11rem] truncate font-medium ${PROVIDER_INK_CLASS}`}>{selected.label}</span>
+            <span className={`min-w-0 truncate font-medium sm:max-w-[11rem] ${PROVIDER_INK_CLASS}`}>
+              {selected.label}
+            </span>
           ) : null}
           <ChevronDownIcon
-            className={`h-3.5 w-3.5 transition-transform duration-300 ${open ? 'rotate-180' : ''} ${
+            className={`ml-auto h-3.5 w-3.5 shrink-0 transition-transform duration-300 sm:ml-0 ${open ? 'rotate-180' : ''} ${
               selected ? 'text-[#FF5722]' : 'text-neutral-400 group-hover/sel:text-[#FF5722]'
             }`}
           />
@@ -176,7 +191,7 @@ function FilterDropdown({
             aria-label={`Clear ${label.toLowerCase()}`}
             title="Clear"
             onClick={() => onChange('')}
-            className="mr-2 inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-black/[0.06] hover:text-[#111111] dark:hover:bg-white/10 dark:hover:text-white"
+            className="mr-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full sm:mr-2 text-neutral-400 transition-colors hover:bg-black/[0.06] hover:text-[#111111] dark:hover:bg-white/10 dark:hover:text-white"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -185,7 +200,7 @@ function FilterDropdown({
 
       {open ? (
         <div
-          className="absolute left-0 top-full z-50 mt-2 w-72 overflow-hidden rounded-xl border border-black/[0.06] bg-white/90 shadow-2xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#141414]/95"
+          className="absolute inset-x-0 top-full z-50 mt-2 overflow-hidden sm:right-auto sm:w-72 rounded-xl border border-black/[0.06] bg-white/90 shadow-2xl backdrop-blur-xl dark:border-white/[0.08] dark:bg-[#141414]/95"
           style={{ animation: 'pf-float-in 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
         >
           {searchable ? (
@@ -270,12 +285,14 @@ export function ServiceProviderFilterPills({
 
   return (
     <div
-      className={`flex flex-wrap items-center gap-3 ${className}`}
+      data-surface-tray
+      className={`relative grid grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto] gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3 ${className}`}
       aria-label="Provider filters"
     >
       <FilterDropdown
         id={`${idPrefix}-years`}
-        label="Experience"
+        label="Years"
+        icon={faBriefcase}
         value={yearsValue}
         onChange={(raw) => {
           const parsed = raw ? Number.parseInt(raw, 10) : null;
@@ -290,13 +307,33 @@ export function ServiceProviderFilterPills({
       <FilterDropdown
         id={`${idPrefix}-nationality`}
         label="Nationality"
+        icon={faEarthAfrica}
         value={nationality}
         onChange={onNationalityChange}
         searchable
         options={nationalityOptions}
       />
 
-      <ProviderSwitch checked={closestFirst} onChange={onClosestFirstChange} label="Closest first" />
+      <button
+        type="button"
+        role="switch"
+        aria-checked={closestFirst}
+        aria-label="Closest first"
+        title="Closest first"
+        onClick={() => onClosestFirstChange(!closestFirst)}
+        className={`${TRIGGER_CLASS} ${closestFirst ? TRIGGER_ACTIVE_CLASS : TRIGGER_IDLE_CLASS} !w-10 shrink-0 justify-center gap-2 px-0 text-[14px] outline-none sm:!w-auto sm:px-4`}
+      >
+        <FontAwesomeIcon
+          icon={faLocationCrosshairs}
+          className={`h-3.5 w-3.5 shrink-0 ${closestFirst ? 'text-[#FF5722]' : 'text-[#222222] group-hover/sel:text-[#FF5722] dark:text-neutral-300'}`}
+          aria-hidden
+        />
+        <span
+          className={`hidden truncate sm:inline ${closestFirst ? `font-medium ${PROVIDER_INK_CLASS}` : 'text-[#222222] dark:text-neutral-300'}`}
+        >
+          Closest first
+        </span>
+      </button>
     </div>
   );
 }

@@ -10,17 +10,21 @@ import {
   setReaction,
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { setPendingProductDraft } from '@/lib/chat-product-draft';
 import { emitProductLikesUpdated } from '@/lib/productLikesBus';
+import { getStockStatus, LOW_STOCK_THRESHOLD, STOCK_TONE_DOT } from '@/lib/product-stock';
 import { PurchaseAccessActions } from '@/components/marketplace/PurchaseAccessButton';
-import { ShareButtons } from '@/components/marketplace/ShareButtons';
+import { ShareMenu } from '@/components/marketplace/ShareButtons';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComment } from '@fortawesome/free-solid-svg-icons';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { DeliveryMode, ProductOwnership, SocialTargetType } from '@/types/marketplace';
+import type { DeliveryMode, ProductOwnership, ProductType, SocialTargetType } from '@/types/marketplace';
 
 type ProductDetailPurchasePanelProps = {
   productId: string;
+  productType: ProductType;
+  stockQuantity?: number | null;
   creatorId: string;
   creatorName?: string | null;
   priceLabel: string;
@@ -34,8 +38,21 @@ type ProductDetailPurchasePanelProps = {
   targetType: SocialTargetType;
 };
 
+const LABEL = 'text-[13px] font-medium text-neutral-500 dark:text-neutral-400';
+const DIVIDER = 'border-t border-black/[0.06] dark:border-white/[0.08]';
+const OUTLINE_BUTTON =
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/[0.1] px-4 text-[15px] font-medium text-[#111111] transition hover:border-black/[0.25] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722] disabled:opacity-60 dark:border-white/[0.14] dark:text-white dark:hover:border-white/[0.3]';
+
+const DELIVERY_LABELS: Record<DeliveryMode, string> = {
+  STREAM_ONLY: 'Instant streaming',
+  DOWNLOAD: 'Instant download',
+  BOTH: 'Instant delivery',
+};
+
 export function ProductDetailPurchasePanel({
   productId,
+  productType,
+  stockQuantity,
   creatorId,
   creatorName,
   priceLabel,
@@ -50,6 +67,8 @@ export function ProductDetailPurchasePanel({
 }: ProductDetailPurchasePanelProps) {
   const { user } = useAuth();
   const isOwner = Boolean(user?.id && user.id === creatorId);
+  const isPhysical = productType === 'PHYSICAL';
+  const stock = getStockStatus({ type: productType, stockQuantity });
 
   const [likes, setLikes] = useState(0);
   const [userLiked, setUserLiked] = useState(false);
@@ -63,7 +82,6 @@ export function ProductDetailPurchasePanel({
 
   const load = useCallback(async () => {
     try {
-      setLoading(true);
       const init = await getProductInit(productId).catch(() => null);
       if (init) {
         const counts = init.reactionCounts;
@@ -133,56 +151,65 @@ export function ProductDetailPurchasePanel({
   };
 
   const signInHref = `/login?redirect=${encodeURIComponent(loginRedirect)}`;
-  const messageHref = isAuthenticated
-    ? `/dashboard/discussions?user=${encodeURIComponent(creatorId)}`
-    : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(creatorId)}`)}`;
-  const messageLabel = creatorName?.trim() ? `Message ${creatorName.trim()}` : 'Message creator';
+  const discussionPath = `/dashboard/discussions?user=${encodeURIComponent(creatorId)}&product=${encodeURIComponent(productId)}`;
+  const messageHref = isAuthenticated ? discussionPath : `/login?redirect=${encodeURIComponent(discussionPath)}`;
+  const creatorLabel = creatorName?.trim() || 'the creator';
+  const messageLabel = `Discuss this product with ${creatorLabel}`;
+
+  const availability = isPhysical
+    ? stock.tone === 'out'
+      ? 'Out of stock'
+      : stock.quantity != null && stock.quantity > 1 && stock.quantity <= LOW_STOCK_THRESHOLD
+        ? `Only ${stock.quantity} left`
+        : 'In stock'
+    : `Unlimited · ${DELIVERY_LABELS[deliveryMode] ?? 'Instant delivery'}`;
+  const availabilityDot = isPhysical
+    ? STOCK_TONE_DOT[stock.tone === 'out' ? 'out' : stock.tone === 'low' && (stock.quantity ?? 0) > 1 ? 'low' : 'ok']
+    : null;
 
   return (
-    <aside className="rounded-2xl bg-white p-5 dark:bg-[#0F0F0F]">
-      <div className="flex items-start justify-between gap-3">
-        <div className="space-y-1">
-          <p className="text-3xl font-bold tracking-tight text-gray-900 dark:text-white">{priceLabel}</p>
+    <>
+    <aside className="rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
+      <div className="px-6 pb-6 pt-6">
+        <p className={LABEL}>Price</p>
+        <div className="mt-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
+          <p className="text-[34px] font-semibold leading-none tracking-[-0.03em] text-[#111111] tabular-nums dark:text-white">
+            {priceLabel}
+          </p>
           {comparePriceLabel && (
-            <p className="text-sm text-gray-400 line-through dark:text-gray-500">was: {comparePriceLabel}</p>
+            <p className="text-[15px] text-neutral-400 line-through tabular-nums dark:text-neutral-500">
+              {comparePriceLabel}
+            </p>
           )}
         </div>
         {discountPercent != null && discountPercent > 0 && (
-          <span className="inline-flex shrink-0 rounded-md bg-red-500 px-2 py-0.5 text-xs font-bold text-white">
-            -{discountPercent}%
-          </span>
+          <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            Save {discountPercent}% today
+          </p>
         )}
       </div>
 
+      <div className={`${DIVIDER} flex items-center justify-between gap-3 px-6 py-4`}>
+        <p className={LABEL}>Availability</p>
+        <span className="inline-flex items-center gap-2 text-[15px] font-medium text-[#111111] dark:text-white">
+          {availabilityDot && <span className={`h-2 w-2 rounded-full ${availabilityDot}`} aria-hidden />}
+          {availability}
+        </span>
+      </div>
+
       {owned && ownership?.purchaseId ? (
-        <div className="mt-5 space-y-3">
-          <p className="rounded-xl bg-emerald-50 px-4 py-3 text-sm text-emerald-800 dark:bg-emerald-500/10 dark:text-emerald-200">
+        <div className={`${DIVIDER} space-y-2.5 p-6`}>
+          <p className="rounded-md bg-emerald-500/10 px-3.5 py-2.5 text-sm text-emerald-800 dark:text-emerald-300">
             You own this product. Download it anytime from here or your library.
           </p>
-          <PurchaseAccessActions
-            purchaseId={ownership.purchaseId}
-            deliveryMode={deliveryMode}
-          />
-          <Link
-            href="/marketplace/purchases"
-            className="flex w-full items-center justify-center rounded-xl bg-white px-4 py-3 text-sm font-semibold text-orange-800 transition hover:bg-orange-50 dark:bg-neutral-800 dark:text-orange-200 dark:hover:bg-orange-500/10"
-          >
+          <PurchaseAccessActions purchaseId={ownership.purchaseId} deliveryMode={deliveryMode} />
+          <Link href="/marketplace/purchases" className={OUTLINE_BUTTON}>
             View in my library
           </Link>
         </div>
-      ) : !isOwner ? (
-        <Link
-          href={messageHref}
-          title={messageLabel}
-          aria-label={messageLabel}
-          className="mt-5 inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-bold text-white transition hover:bg-orange-600"
-        >
-          <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
-          Discuss
-        </Link>
       ) : null}
 
-      <div className="mt-4">
+      <div className={`${DIVIDER} p-6`}>
         {loading ? (
           <div className="flex justify-center py-2">
             <LoadingSpinner size="sm" />
@@ -190,70 +217,96 @@ export function ProductDetailPurchasePanel({
         ) : !isAuthenticated ? (
           <Link
             href={signInHref}
-            className="block text-center text-sm font-medium text-orange-700 hover:text-orange-800 dark:text-orange-400"
+            className="block text-center text-sm font-medium text-[#111111] underline-offset-4 hover:underline dark:text-white"
           >
             Sign in to like or save
           </Link>
         ) : (
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-2 gap-2.5">
             <button
               type="button"
               disabled={busy}
               onClick={() => void onLike()}
-              className={`flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-medium transition dark:bg-neutral-800 ${
-                userLiked
-                  ? 'text-orange-800 dark:text-orange-200'
-                  : 'text-gray-700 dark:text-gray-200'
-              }`}
+              aria-pressed={userLiked}
+              className={`${OUTLINE_BUTTON} ${userLiked ? '!border-[#FF5722]/50 !text-[#FF5722]' : ''}`}
             >
               <HeartIcon filled={userLiked} />
-              <span>{likes}</span>
+              <span className="tabular-nums">{likes}</span>
             </button>
             <button
               type="button"
               disabled={busy}
               onClick={() => void onFavorite()}
-              className={`flex items-center justify-center gap-1.5 rounded-xl bg-white px-3 py-2.5 text-sm font-medium transition dark:bg-neutral-800 ${
-                favorited
-                  ? 'text-amber-900 dark:text-amber-200'
-                  : 'text-gray-700 dark:text-gray-200'
-              }`}
+              aria-pressed={favorited}
+              className={`${OUTLINE_BUTTON} ${favorited ? '!border-[#FF5722]/50 !text-[#FF5722]' : ''}`}
             >
               <BookmarkIcon filled={favorited} />
               <span>{favorited ? 'Saved' : 'Save'}</span>
             </button>
           </div>
         )}
+
+        <div className="mt-2.5">
+          <ShareMenu
+            targetType={targetType}
+            targetId={productId}
+            shareUrl={shareUrl}
+            shareTitle={shareTitle}
+            isAuthenticated={isAuthenticated}
+            buttonClassName={`${OUTLINE_BUTTON} !justify-between`}
+          />
+        </div>
       </div>
 
-      <div className="mt-5">
-        <p className="mb-2 text-sm text-gray-500 dark:text-gray-400">Share</p>
-        <ShareButtons
-          targetType={targetType}
-          targetId={productId}
-          shareUrl={shareUrl}
-          shareTitle={shareTitle}
-          isAuthenticated={isAuthenticated}
-          size="lg"
-        />
+      <div className={`${DIVIDER} p-6`}>
+        <Link
+          href={`/marketplace/${encodeURIComponent(creatorId)}/shop`}
+          className={`group ${OUTLINE_BUTTON} !justify-between`}
+        >
+          <span>Visit the shop</span>
+          <svg
+            className="h-4 w-4 shrink-0 opacity-60 transition-transform duration-200 group-hover:translate-x-0.5 group-hover:opacity-100"
+            viewBox="0 0 24 24"
+            fill="none"
+            stroke="currentColor"
+            strokeWidth={1.75}
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            aria-hidden="true"
+          >
+            <path d="m9 6 6 6-6 6" />
+          </svg>
+        </Link>
+        {error && <p className="mt-3 text-sm text-[#E0431A] dark:text-[#FF7A52]">{error}</p>}
       </div>
-
-      <Link
-        href={`/marketplace/${encodeURIComponent(creatorId)}/shop`}
-        className="mt-5 flex w-full items-center justify-center rounded-xl border border-neutral-200 bg-white px-4 py-3 text-sm font-semibold text-neutral-900 transition hover:border-orange-300 hover:bg-orange-50 hover:text-orange-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-white dark:hover:border-orange-500/40 dark:hover:bg-orange-500/10 dark:hover:text-orange-200"
-      >
-        Visit my shop
-      </Link>
-
-      {error && <p className="mt-3 text-sm text-red-600 dark:text-red-400">{error}</p>}
     </aside>
+
+    {isOwner ? null : (
+      <div className="mt-4 rounded-lg border border-black/[0.06] bg-white p-5 dark:border-white/[0.08] dark:bg-[#111111]">
+        <p className="text-[15px] font-semibold text-[#111111] dark:text-white">Questions before you buy?</p>
+        <p className="mt-1 text-[13px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+          Chat with {creatorLabel}. This product is attached to your message.
+        </p>
+        <Link
+          href={messageHref}
+          onClick={() => setPendingProductDraft(creatorId, productId)}
+          title={messageLabel}
+          aria-label={messageLabel}
+          className="mt-4 inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#FF5722] px-4 text-[15px] font-medium text-white transition hover:bg-[#F4511E] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#111111]"
+        >
+          <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
+          {isPhysical && stock.tone === 'out' ? 'Ask about restock' : 'Discuss'}
+        </Link>
+      </div>
+    )}
+    </>
   );
 }
 
 function HeartIcon({ filled }: { filled: boolean }) {
   return (
     <svg
-      className={`h-4 w-4 ${filled ? 'fill-orange-500 text-orange-500' : 'fill-none text-current'}`}
+      className={`h-4 w-4 ${filled ? 'fill-current' : 'fill-none'}`}
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={2}
@@ -271,17 +324,13 @@ function HeartIcon({ filled }: { filled: boolean }) {
 function BookmarkIcon({ filled }: { filled: boolean }) {
   return (
     <svg
-      className={`h-4 w-4 ${filled ? 'fill-amber-500 text-amber-500' : 'fill-none text-current'}`}
+      className={`h-4 w-4 ${filled ? 'fill-current' : 'fill-none'}`}
       viewBox="0 0 24 24"
       stroke="currentColor"
       strokeWidth={2}
       aria-hidden
     >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z"
-      />
+      <path strokeLinecap="round" strokeLinejoin="round" d="M5 5a2 2 0 012-2h10a2 2 0 012 2v16l-7-3.5L5 21V5z" />
     </svg>
   );
 }

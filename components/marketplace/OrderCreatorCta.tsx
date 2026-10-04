@@ -22,7 +22,7 @@ function MessageIcon({ className }: { className?: string }) {
 
 /** Primary CTA — highest-intent action on a public creator profile. */
 const primaryButtonClass =
-  'inline-flex items-center justify-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+  'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200 dark:focus-visible:ring-white/30';
 
 export function OrderCreatorCta({ creatorId, creatorName, isAuthenticated }: OrderCreatorCtaProps) {
   const profileUrl = `/marketplace/${creatorId}`;

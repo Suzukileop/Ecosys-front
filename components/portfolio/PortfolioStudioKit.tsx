@@ -1,9 +1,10 @@
 'use client';
 
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
-import { faCheck, faChevronLeft, faChevronRight, faCircleInfo, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { faCheck, faChevronLeft, faChevronRight, faCircleExclamation, faCircleInfo, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 
 export const STUDIO_ACCENT = '#FF5722';
 
@@ -67,20 +68,34 @@ export function StudioField({
   label,
   htmlFor,
   aside,
+  hint,
   className = '',
   children,
 }: {
   label: string;
   htmlFor?: string;
   aside?: ReactNode;
+  /** Guidance shown in a "!" tooltip next to the label instead of inline copy. */
+  hint?: string;
   className?: string;
   children: ReactNode;
 }) {
   return (
     <StudioUnderline className={className}>
-      <label htmlFor={htmlFor} className={`${STUDIO_LABEL_CLASS} mb-2.5`}>
-        {label}
-      </label>
+      {hint ? (
+        <div className="mb-2.5 flex items-center gap-2">
+          <label htmlFor={htmlFor} className={STUDIO_LABEL_CLASS}>
+            {label}
+          </label>
+          <StudioInfoTip label={`About ${label}`} glyph="exclamation" align="left">
+            {hint}
+          </StudioInfoTip>
+        </div>
+      ) : (
+        <label htmlFor={htmlFor} className={`${STUDIO_LABEL_CLASS} mb-2.5`}>
+          {label}
+        </label>
+      )}
       {aside ? <div className="absolute -top-2 right-0 z-10">{aside}</div> : null}
       {children}
     </StudioUnderline>
@@ -155,7 +170,18 @@ export function StudioIconAction({
 }
 
 /** Small info glyph: help text shows on hover, keyboard focus, or tap. */
-export function StudioInfoTip({ label = 'More info', children }: { label?: string; children: ReactNode }) {
+export function StudioInfoTip({
+  label = 'More info',
+  glyph = 'info',
+  align = 'right',
+  children,
+}: {
+  label?: string;
+  glyph?: 'info' | 'exclamation';
+  /** Edge of the trigger the tooltip anchors to. */
+  align?: 'left' | 'right';
+  children: ReactNode;
+}) {
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLSpanElement>(null);
 
@@ -177,11 +203,15 @@ export function StudioInfoTip({ label = 'More info', children }: { label?: strin
         onClick={() => setOpen(!open)}
         className="inline-flex h-6 w-6 items-center justify-center rounded-full text-neutral-400 transition-colors duration-200 hover:text-black focus-visible:text-black dark:text-neutral-500 dark:hover:text-white dark:focus-visible:text-white"
       >
-        <FontAwesomeIcon icon={faCircleInfo} className="h-3.5 w-3.5" fixedWidth />
+        <FontAwesomeIcon
+          icon={glyph === 'exclamation' ? faCircleExclamation : faCircleInfo}
+          className="h-3.5 w-3.5"
+          fixedWidth
+        />
       </button>
       <span
         role="tooltip"
-        className={`${STUDIO_GLASS_PANEL_CLASS} absolute bottom-full right-0 z-50 mb-2 w-64 p-3 text-[13px] leading-relaxed text-neutral-700 transition-opacity duration-200 dark:text-neutral-300 ${
+        className={`${STUDIO_GLASS_PANEL_CLASS} absolute bottom-full ${align === 'left' ? 'left-0' : 'right-0'} z-50 mb-2 w-64 p-3 text-[13px] leading-relaxed text-neutral-700 transition-opacity duration-200 dark:text-neutral-300 ${
           open
             ? 'visible opacity-100'
             : 'invisible opacity-0 group-hover/tip:visible group-hover/tip:opacity-100 group-has-[:focus-visible]/tip:visible group-has-[:focus-visible]/tip:opacity-100'
@@ -466,8 +496,7 @@ export function useInlineStudio<T extends object>({
       window.dispatchEvent(new Event(STUDIO_SETTLED_EVENT));
       showToast('success', 'Changes saved');
     } catch (e) {
-      const isValidation = e instanceof Error && !('isAxiosError' in e);
-      showToast('error', isValidation ? e.message : 'Could not save changes');
+      showToast('error', getApiErrorMessage(e, 'Could not save changes'));
     } finally {
       savingRef.current = false;
       setSaving(false);

@@ -1,120 +1,79 @@
-const block = 'animate-pulse rounded bg-neutral-200 dark:bg-neutral-700';
+import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
+
+const block = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
 
 function SkeletonLine({ className = '' }: { className?: string }) {
   return <div className={`${block} ${className}`} aria-hidden />;
 }
 
-function HomeNewsPostCardSkeleton({ split = false }: { split?: boolean }) {
-  if (split) {
-    return (
-      <div className="flex h-full min-h-0 w-full items-center justify-center">
-        <div className="mx-auto flex h-full min-h-0 w-full max-w-[min(100%,88rem)] flex-col gap-4 px-1 sm:px-2 lg:flex-row lg:items-stretch lg:gap-5">
-          <article className="flex min-h-0 w-full shrink-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:h-full lg:w-[calc((100%-1.5rem)/2)] lg:max-w-[calc((100%-1.5rem)/2)]">
-            <div className="shrink-0 p-4">
-              <div className="flex items-center gap-3">
-                <div className={`h-10 w-10 shrink-0 rounded-full ${block}`} />
-                <div className="min-w-0 flex-1 space-y-2">
-                  <SkeletonLine className="h-4 w-36" />
-                  <SkeletonLine className="h-3 w-24" />
-                </div>
-              </div>
-            </div>
-            <div className={`relative mx-4 mb-2 min-h-[min(60vw,20rem)] flex-1 rounded-xl lg:min-h-0 ${block}`} />
-            <div className="shrink-0 border-t border-neutral-200 p-4 dark:border-neutral-800">
-              <div className="flex items-center gap-3">
-                <SkeletonLine className="h-8 w-14 rounded-lg" />
-                <SkeletonLine className="h-8 w-14 rounded-lg" />
-                <SkeletonLine className="ml-auto h-4 w-20" />
-              </div>
-            </div>
-          </article>
-          <div className="flex min-h-0 flex-1 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:h-full">
-            <div className="min-h-0 flex-1 space-y-4 p-5">
-              <SkeletonLine className="h-7 w-2/3 max-w-xs" />
-              <SkeletonLine className="h-3 w-20" />
-              <SkeletonLine className="h-4 w-full" />
-              <SkeletonLine className="h-4 w-5/6" />
-            </div>
-            <div className="mt-auto shrink-0 p-4">
-              <SkeletonLine className="h-11 w-full rounded-xl" />
-            </div>
-          </div>
+function HomeNewsPostCardSkeleton() {
+  return (
+    <article className="overflow-hidden border border-black/[0.06] md:rounded-lg bg-[#EEF0F2] dark:border-white/[0.08] dark:bg-[#111111]">
+      <div className="flex items-center gap-3.5 px-6 pt-6 sm:px-7 sm:pt-7">
+        <div className={`h-11 w-11 shrink-0 rounded-full ${block}`} />
+        <div className="min-w-0 flex-1 space-y-2">
+          <SkeletonLine className="h-4 w-40" />
+          <SkeletonLine className="h-3.5 w-28" />
         </div>
       </div>
-    );
-  }
-
-  return (
-    <div className="flex h-full min-h-0 w-full items-center justify-center">
-      <article className="flex min-h-0 w-full max-w-xl flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 lg:h-full">
-        <div className="shrink-0 space-y-3 p-4">
-          <div className="flex items-center gap-3">
-            <div className={`h-10 w-10 shrink-0 rounded-full ${block}`} />
-            <div className="min-w-0 flex-1 space-y-2">
-              <SkeletonLine className="h-4 w-36" />
-              <SkeletonLine className="h-3 w-24" />
-            </div>
-          </div>
-          <SkeletonLine className="h-6 w-2/3 max-w-xs" />
-          <SkeletonLine className="h-3 w-20" />
-        </div>
-
-        <div className={`relative mx-4 mb-2 min-h-[min(60vw,20rem)] flex-1 rounded-xl lg:min-h-0 ${block}`} />
-
-        <div className="shrink-0 border-t border-neutral-200 p-4 dark:border-neutral-800">
-          <div className="flex items-center gap-3">
-            <SkeletonLine className="h-8 w-14 rounded-lg" />
-            <SkeletonLine className="h-8 w-14 rounded-lg" />
-            <SkeletonLine className="h-8 w-14 rounded-lg" />
-            <SkeletonLine className="ml-auto h-4 w-20" />
-          </div>
-        </div>
-      </article>
-    </div>
+      <div className="space-y-3 px-6 pt-5 sm:px-7">
+        <SkeletonLine className="h-6 w-20 rounded-full" />
+        <SkeletonLine className="h-6 w-2/3" />
+        <SkeletonLine className="h-4 w-full" />
+      </div>
+      <div className={`mt-6 aspect-[4/3] w-full rounded-none ${block}`} />
+      <div className="mt-6 flex items-center gap-6 border-t border-black/[0.06] px-6 py-4 dark:border-white/[0.08] sm:px-7">
+        <SkeletonLine className="h-5 w-16" />
+        <SkeletonLine className="h-5 w-24" />
+        <SkeletonLine className="ml-auto h-5 w-16" />
+      </div>
+    </article>
   );
 }
 
-export function HomeNewsHeaderSkeleton({ split = false }: { split?: boolean }) {
-  const alignShell = split
-    ? 'mx-auto w-full max-w-[min(100%,88rem)] px-1 sm:px-2'
-    : 'mx-auto w-full max-w-xl xl:max-w-2xl';
-
+export function HomeNewsFeedSkeleton({ count = 2 }: { count?: number; split?: boolean }) {
   return (
-    <div className={`${alignShell} py-1`} aria-hidden>
-      <div className="inline-flex max-w-full flex-col items-start gap-3 rounded-2xl border border-neutral-200/70 bg-white/90 px-4 py-2.5 shadow-sm dark:border-neutral-800/70 dark:bg-neutral-950/90 sm:flex-row sm:items-center sm:gap-4 sm:px-5">
-        <SkeletonLine className="h-5 w-44 max-w-full" />
-        <SkeletonLine className="h-9 w-36 rounded-full" />
-      </div>
-    </div>
-  );
-}
-
-export function HomeNewsFeedSkeleton({
-  count = 2,
-  split = false,
-}: {
-  count?: number;
-  split?: boolean;
-}) {
-  return (
-    <div className="snap-y snap-proximity" aria-busy="true" aria-label="Chargement des actualités">
+    <div className="space-y-8" aria-busy="true" aria-label="Loading news">
       {Array.from({ length: count }, (_, index) => (
-        <section
-          key={index}
-          className="flex min-h-0 snap-center snap-always scroll-mt-6 items-center justify-center pb-10 pt-2"
-        >
-          <HomeNewsPostCardSkeleton split={split} />
-        </section>
+        <HomeNewsPostCardSkeleton key={index} />
       ))}
+    </div>
+  );
+}
+
+export function HomeNewsHeaderSkeleton() {
+  return (
+    <div
+      aria-hidden
+      className="border border-black/[0.06] bg-[#EEF0F2] dark:border-white/[0.08] dark:bg-[#111111] md:rounded-lg"
+    >
+      <div className="flex items-center gap-3.5 px-5 pt-5 sm:px-6">
+        <SkeletonLine className="h-11 w-11 shrink-0 !rounded-full" />
+        <SkeletonLine className="h-11 flex-1 !rounded-full" />
+      </div>
+      <div className="mt-4 flex items-center justify-between border-t border-black/[0.06] px-4 py-2.5 dark:border-white/[0.08]">
+        <SkeletonLine className="h-6 w-56 max-w-[60%]" />
+        <SkeletonLine className="h-9 w-24 !rounded-full" />
+      </div>
     </div>
   );
 }
 
 export function HomeNewsPageSkeleton() {
   return (
-    <>
-      <HomeNewsHeaderSkeleton />
-      <HomeNewsFeedSkeleton />
-    </>
+    <div className={`${PORTFOLIO_FRAME_CLASS} pb-24 pt-8 sm:pt-12`}>
+      <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] xl:gap-16">
+        <div className="-mx-4 min-w-0 max-w-[760px] sm:-mx-8 md:mx-auto md:w-full">
+          <HomeNewsHeaderSkeleton />
+          <div className="mt-8">
+            <HomeNewsFeedSkeleton />
+          </div>
+        </div>
+        <div className="hidden space-y-5 lg:block" aria-hidden>
+          <SkeletonLine className="h-[4.5rem] w-full rounded-lg" />
+          <SkeletonLine className="h-[34rem] w-full rounded-lg" />
+        </div>
+      </div>
+    </div>
   );
 }

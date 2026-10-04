@@ -4,6 +4,8 @@ import { useCallback, useEffect, useState } from 'react';
 import { getReactionCounts, removeReaction, setReaction } from '@/lib/marketplace-api';
 import { emitProductLikesUpdated } from '@/lib/productLikesBus';
 import { useAuth } from '@/context/AuthContext';
+import { LikeBurst } from '@/components/ui/LikeBurst';
+import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 
 type ProductLikeButtonProps = {
   productId: string;
@@ -32,6 +34,7 @@ export function ProductLikeButton({
   const [likes, setLikes] = useState(initialLikes);
   const [liked, setLiked] = useState(initialLiked ?? false);
   const [busy, setBusy] = useState(false);
+  const [burstKey, setBurstKey] = useState(0);
 
   const canLike = Boolean(user);
 
@@ -89,56 +92,72 @@ export function ProductLikeButton({
       e.stopPropagation();
       if (!canLike || busy) return;
 
+      const wasLiked = liked;
+      const optimisticLikes = wasLiked ? Math.max(0, likes - 1) : likes + 1;
       setBusy(true);
+      setLikedState(!wasLiked);
+      setLikes(optimisticLikes);
+      if (!wasLiked) setBurstKey((k) => k + 1);
       try {
-        if (liked) {
-          await removeReaction('PRODUCT', productId);
-          setLikedState(false);
-          setLikes((prev) => {
-            const nextLikes = Math.max(0, prev - 1);
-            emitProductLikesUpdated({ productId, likes: nextLikes, userLiked: false });
-            return nextLikes;
-          });
-        } else {
-          await setReaction('PRODUCT', productId, 'LIKE');
-          setLikedState(true);
-          setLikes((prev) => {
-            const nextLikes = prev + 1;
-            emitProductLikesUpdated({ productId, likes: nextLikes, userLiked: true });
-            return nextLikes;
-          });
-        }
+        if (wasLiked) await removeReaction('PRODUCT', productId);
+        else await setReaction('PRODUCT', productId, 'LIKE');
+        emitProductLikesUpdated({ productId, likes: optimisticLikes, userLiked: !wasLiked });
+      } catch {
+        setLikedState(wasLiked);
+        setLikes(likes);
+        pushFlashFeedback({
+          variant: 'error',
+          title: wasLiked ? 'Unable to remove your like' : 'Unable to like this product',
+        });
       } finally {
         setBusy(false);
       }
     },
-    [busy, canLike, liked, productId, setLikedState]
+    [busy, canLike, liked, likes, productId, setLikedState]
   );
 
-  const label = compact ? formatCount(likes) : `${formatCount(likes)} ${likes <= 1 ? 'like' : 'likes'}`;
+  const countLabel = formatCount(likes);
+  const suffix = compact ? '' : ` ${likes <= 1 ? 'like' : 'likes'}`;
+  const animate = liked && burstKey > 0;
 
   const heartIcon = (
-    <svg
-      className={`${compact ? 'h-4 w-4' : 'h-4 w-4'} ${
-        liked
-          ? light
-            ? 'fill-white text-white'
-            : 'fill-gray-500 text-gray-500 dark:fill-gray-400 dark:text-gray-400'
-          : light
-            ? 'text-white/70'
-            : 'text-gray-400 dark:text-gray-500'
-      }`}
-      fill={liked ? 'currentColor' : 'none'}
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.75}
-    >
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-      />
-    </svg>
+    <span className="relative inline-flex h-4 w-4 items-center justify-center">
+      {animate ? <LikeBurst key={burstKey} burstKey={burstKey} /> : null}
+      <svg
+        key={liked ? `on-${burstKey}` : 'off'}
+        className={`relative h-4 w-4 transition-transform duration-150 group-active/like:scale-90 ${
+          animate ? 'motion-safe:animate-like-pop' : ''
+        } ${
+          liked
+            ? light
+              ? 'text-white'
+              : 'text-[#FF5722]'
+            : light
+              ? 'text-white/70'
+              : 'text-gray-400 group-hover/like:text-[#FF5722] dark:text-gray-500'
+        }`}
+        fill={liked ? 'currentColor' : 'none'}
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={1.75}
+        aria-hidden
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+        />
+      </svg>
+    </span>
+  );
+
+  const label = (
+    <span className="inline-flex overflow-hidden tabular-nums">
+      <span key={`count-${likes}`} className={`inline-block ${burstKey > 0 ? 'motion-safe:animate-like-count' : ''}`}>
+        {countLabel}
+      </span>
+      {suffix}
+    </span>
   );
 
   const contentClass = compact
@@ -162,10 +181,9 @@ export function ProductLikeButton({
     <button
       type="button"
       onClick={(e) => void toggle(e)}
-      disabled={busy}
-      className={`${contentClass} transition disabled:opacity-60 ${
-        liked || light ? '' : 'hover:text-gray-600 dark:hover:text-gray-300'
-      }`}
+      className={`group/like ${contentClass} transition-colors ${
+        liked && !light ? 'text-[#FF5722] dark:text-[#FF5722]' : ''
+      } ${liked || light ? '' : 'hover:text-[#FF5722] dark:hover:text-[#FF5722]'}`}
       aria-label={liked ? 'Unlike' : 'Like this product'}
       aria-pressed={liked}
     >

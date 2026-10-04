@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -13,11 +14,19 @@ type ContentPostVideoPlayerProps = {
   src: string;
   className?: string;
   onLoadedMetadata?: (width: number, height: number) => void;
+  /** `cover` fills the frame (cropping), `contain` letterboxes. */
+  fit?: 'contain' | 'cover';
 };
 
-export function ContentPostVideoPlayer({ src, className = '', onLoadedMetadata }: ContentPostVideoPlayerProps) {
+export function ContentPostVideoPlayer({
+  src,
+  className = '',
+  onLoadedMetadata,
+  fit = 'contain',
+}: ContentPostVideoPlayerProps) {
   const shellRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  usePauseOffscreenVideo(videoRef);
   const touchHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [playing, setPlaying] = useState(false);
@@ -42,7 +51,7 @@ export function ContentPostVideoPlayer({ src, className = '', onLoadedMetadata }
   const togglePlay = useCallback(() => {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) void video.play();
+    if (video.paused) void video.play().catch(() => undefined);
     else video.pause();
   }, []);
 
@@ -90,7 +99,7 @@ export function ContentPostVideoPlayer({ src, className = '', onLoadedMetadata }
         src={src}
         playsInline
         preload="metadata"
-        className="max-h-full max-w-full object-contain"
+        className={fit === 'cover' ? 'h-full w-full object-cover' : 'max-h-full max-w-full object-contain'}
         onLoadedMetadata={(e) => {
           const v = e.currentTarget;
           setDuration(v.duration);
@@ -234,7 +243,7 @@ export function ContentPostAudioPlayer({ src, locale = 'en' }: ContentPostAudioP
   const togglePlay = () => {
     const audio = audioRef.current;
     if (!audio) return;
-    if (audio.paused) void audio.play();
+    if (audio.paused) void audio.play().catch(() => undefined);
     else audio.pause();
   };
 

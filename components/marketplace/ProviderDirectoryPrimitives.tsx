@@ -161,8 +161,20 @@ export function ProviderChip({
   title?: string;
 }) {
   return (
-    <button type="button" onClick={onClick} aria-pressed={active} title={title} className={providerPillClass(active)}>
+    <button
+      type="button"
+      onClick={onClick}
+      aria-pressed={active}
+      title={title}
+      className={`relative ${providerPillClass(false)} ${active ? 'border-black/30 dark:border-white/30' : ''}`}
+    >
       {children}
+      <span
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-4 -bottom-[7px] h-[2px] rounded-full bg-[#FF5722] transition-[opacity,transform] duration-300 ${
+          active ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0'
+        }`}
+      />
     </button>
   );
 }

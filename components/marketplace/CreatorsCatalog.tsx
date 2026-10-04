@@ -1,6 +1,6 @@
 'use client';
 
-import { Suspense, useCallback, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import api from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -23,14 +23,21 @@ import {
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { RotatingHeadline } from '@/components/ui/RotatingHeadline';
+import { BackToTopButton, useBackToTop } from '@/components/ui/ScrollUpStickyBar';
 import { normalizeCreatorSummary } from '@/lib/marketplace-api';
 import { detectUserCoordinates, type ViewerCoordinates } from '@/lib/geolocation';
 import { normalizeNationalityCode } from '@/lib/countries';
-import {
-  findServiceProviderCategoryLabel,
-  SERVICE_PROVIDER_POPULAR_TAGS,
-} from '@/lib/service-provider-categories';
+import { findServiceProviderCategoryLabel, SERVICE_PROVIDER_POPULAR_TAGS } from '@/lib/service-provider-categories';
 import type { MarketplaceCreatorsPage, MarketplaceCreatorSummary } from '@/types/marketplace';
+
+const PROVIDER_HEADLINES = [
+  'Find your next expert',
+  'Find the missing skills for your team',
+  'Hire production-ready specialists',
+  'Connect with elite digital builders',
+  'Work with the top tier of freelance talent',
+] as const;
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -54,6 +61,22 @@ function ArrowIcon({ className }: { className?: string }) {
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
     </svg>
+  );
+}
+
+const PHONE_QUERY = '(max-width: 639px)';
+
+function subscribePhone(onChange: () => void) {
+  const media = window.matchMedia(PHONE_QUERY);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
+
+function useIsPhone() {
+  return useSyncExternalStore(
+    subscribePhone,
+    () => window.matchMedia(PHONE_QUERY).matches,
+    () => false,
   );
 }
 
@@ -85,6 +108,27 @@ function CreatorsCatalogContent() {
   const [geoLoading, setGeoLoading] = useState(false);
   const [geoError, setGeoError] = useState<string | null>(null);
   const [categoriesOpen, setCategoriesOpen] = useState(false);
+  const isPhone = useIsPhone();
+  const [searchActive, setSearchActive] = useState(false);
+  const searchRef = useRef<HTMLElement>(null);
+  const searchInputRef = useRef<HTMLInputElement>(null);
+  const backToTop = useBackToTop(searchRef);
+
+  useEffect(() => {
+    if (!searchActive) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (!searchRef.current?.contains(event.target as Node)) setSearchActive(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setSearchActive(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [searchActive]);
 
   useEffect(() => {
     setLocalQ(q);
@@ -103,7 +147,7 @@ function CreatorsCatalogContent() {
       .catch((e) => {
         if (cancelled) return;
         setViewerCoords(null);
-        setGeoError(e instanceof Error ? e.message : 'Unable to detect your location.');
+        setGeoError(getApiErrorMessage(e, 'Unable to detect your location.'));
       })
       .finally(() => {
         if (!cancelled) setGeoLoading(false);
@@ -173,7 +217,7 @@ function CreatorsCatalogContent() {
       setPageData({
         ...res.data,
         content: (res.data.content ?? []).map((row) =>
-          normalizeCreatorSummary(row as unknown as Record<string, unknown>)
+          normalizeCreatorSummary(row as unknown as Record<string, unknown>),
         ),
       });
     } catch (e) {
@@ -182,7 +226,18 @@ function CreatorsCatalogContent() {
     } finally {
       setLoading(false);
     }
-  }, [q, genre, verifiedOnly, availableOnly, nationality, minYearsExperience, closestFirst, viewerCoords, geoError, page]);
+  }, [
+    q,
+    genre,
+    verifiedOnly,
+    availableOnly,
+    nationality,
+    minYearsExperience,
+    closestFirst,
+    viewerCoords,
+    geoError,
+    page,
+  ]);
 
   useEffect(() => {
     void load();
@@ -195,19 +250,21 @@ function CreatorsCatalogContent() {
 
   const onSearchSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    searchInputRef.current?.blur();
+    setSearchActive(false);
     pushParams({ q: localQ.trim() || undefined, page: '0' });
   };
 
   const hasActiveFilters = Boolean(
     q.trim() ||
-      genre ||
-      verifiedOnly ||
-      availableOnly ||
-      closestFirst ||
-      nationality ||
-      minYearsExperience != null ||
-      page > 0 ||
-      localQ.trim()
+    genre ||
+    verifiedOnly ||
+    availableOnly ||
+    closestFirst ||
+    nationality ||
+    minYearsExperience != null ||
+    page > 0 ||
+    localQ.trim(),
   );
 
   const resetSearchAndFilters = () => {
@@ -218,8 +275,10 @@ function CreatorsCatalogContent() {
   };
 
   const emptyState = (
-    <div className={`flex flex-col items-center justify-center ${PROVIDER_FRAME_CLASS} px-6 py-24 text-center`}>
-      <h3 className={`text-xl font-bold tracking-tight ${PROVIDER_INK_CLASS}`}>No provider matches this search</h3>
+    <div className={`mx-5 flex flex-col items-center justify-center ${PROVIDER_FRAME_CLASS} px-6 py-24 text-center sm:mx-0`}>
+      <h3 className={`text-lg font-semibold tracking-tight sm:text-xl ${PROVIDER_INK_CLASS}`}>
+        No provider matches this search
+      </h3>
       <p className={`mt-3 max-w-md text-[15px] leading-relaxed ${PROVIDER_MUTED_CLASS}`}>
         Try a different keyword, or widen the filters.
       </p>
@@ -236,55 +295,74 @@ function CreatorsCatalogContent() {
     </div>
   );
 
-  const selectedPopular = (SERVICE_PROVIDER_POPULAR_TAGS as readonly string[]).includes(genre)
-    ? genre
-    : null;
+  const selectedPopular = (SERVICE_PROVIDER_POPULAR_TAGS as readonly string[]).includes(genre) ? genre : null;
   const selectedCategory = findServiceProviderCategoryLabel(genre);
   const categoriesMenuId = useServiceProviderCategoriesMenuId();
 
   return (
-    <div className="mx-auto w-full max-w-[1600px] px-4 py-12 sm:px-6 sm:py-16 2xl:px-0" style={STUDIO_FLOAT_IN_STYLE}>
-      <main className="flex flex-col gap-12 sm:gap-16">
-        <header className="max-w-3xl">
-          <h1 className={`text-4xl font-bold tracking-tight sm:text-5xl ${PROVIDER_INK_CLASS}`}>
-            Discover Top-Tier Experts
-          </h1>
-          <p className={`mt-4 max-w-2xl text-base leading-relaxed sm:text-lg ${PROVIDER_MUTED_CLASS}`}>
-            Professionals who offer services on the platform. Explore a profile, read the work, and
-            start the conversation.
+    <div
+      className="mx-auto w-full max-w-[1600px] px-0 pb-12 pt-3 sm:px-6 sm:py-16 2xl:px-0"
+      style={STUDIO_FLOAT_IN_STYLE}
+    >
+      <main className="flex flex-col gap-6 sm:gap-16">
+        <header className="flex flex-col gap-2 px-5 sm:gap-4 sm:px-0 md:flex-row md:items-end md:justify-between md:gap-12">
+          <RotatingHeadline
+            phrases={PROVIDER_HEADLINES}
+            className={`text-[1.5rem] font-semibold leading-[1.15] tracking-[-0.03em] sm:text-4xl ${PROVIDER_INK_CLASS}`}
+          />
+          <p
+            className={`hidden text-[15px] leading-relaxed sm:block md:whitespace-nowrap md:text-right ${PROVIDER_MUTED_CLASS}`}
+          >
+            Explore a profile, read the work, and start the conversation.
           </p>
         </header>
 
-        <section className="relative z-20 space-y-6" aria-label="Search providers">
+        <section
+          ref={searchRef}
+          className="relative z-20 scroll-mt-6 space-y-4 sm:space-y-6"
+          aria-label="Search providers"
+        >
           <form
             onSubmit={onSearchSubmit}
-            className={`flex flex-col gap-4 ${PROVIDER_FRAME_CLASS} p-3 lg:flex-row lg:items-center lg:gap-3`}
+            data-surface-tray
+            className="flex flex-col gap-3 bg-[#EEF0F2] px-5 py-3.5 dark:bg-white/[0.04] sm:rounded-xl sm:p-3 lg:flex-row lg:items-center lg:gap-3"
           >
-            <div className="relative min-w-0 flex-1">
-              <SearchIcon className="pointer-events-none absolute top-1/2 left-3 h-5 w-5 -translate-y-1/2 text-neutral-400" />
+            <div className="relative min-w-0 flex-1 rounded-lg bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition focus-within:ring-2 focus-within:ring-[#FF5722]/20 dark:bg-[#111111]">
+              <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 h-[1.1rem] w-[1.1rem] -translate-y-1/2 text-[#222222] dark:text-neutral-300" />
               <label htmlFor="cq" className="sr-only">
                 Search providers
               </label>
               <input
+                ref={searchInputRef}
                 id="cq"
                 value={localQ}
                 onChange={(e) => setLocalQ(e.target.value)}
-                placeholder="Search by name, specialty, or keyword"
-                className={`h-11 w-full border-0 bg-transparent pr-11 pl-11 text-[15px] ${PROVIDER_INK_CLASS} placeholder:text-neutral-400 focus:outline-none focus:ring-0`}
+                onFocus={() => setSearchActive(true)}
+                enterKeyHint="search"
+                autoComplete="off"
+                placeholder={isPhone ? 'Search by name, specialty…' : 'Search by name, specialty, or keyword'}
+                className={`h-11 w-full border-0 bg-transparent pl-10 pr-20 text-[16px] font-medium sm:pr-11 sm:text-[14px] ${PROVIDER_INK_CLASS} placeholder:font-normal placeholder:text-[#222222] focus:outline-none focus:ring-0 dark:placeholder:text-neutral-300`}
               />
+              <button
+                type="submit"
+                aria-label="Search"
+                className="absolute right-1 top-1/2 inline-flex h-9 w-9 -translate-y-1/2 items-center justify-center rounded-full bg-[#111111] text-white transition-transform active:scale-95 dark:bg-white dark:text-[#111111] sm:hidden"
+              >
+                <ArrowIcon className="h-4 w-4" />
+              </button>
               <button
                 type="button"
                 onClick={resetSearchAndFilters}
                 disabled={!hasActiveFilters}
                 title="Reset search and filters"
                 aria-label="Reset search and filters"
-                className="absolute top-1/2 right-2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-400 transition-colors duration-200 hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-none"
+                className="absolute top-1/2 right-11 sm:right-2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-400 transition-colors duration-200 hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-none"
               >
                 <ResetIcon className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-3 border-t border-black/[0.06] px-1 pt-3 lg:border-t-0 lg:border-l lg:pt-0 lg:pl-3 dark:border-white/[0.06]">
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 px-1 sm:gap-3 lg:border-l lg:border-black/[0.06] lg:pl-3 dark:lg:border-white/[0.08]">
               <ProviderSwitch
                 checked={verifiedOnly}
                 onChange={(next) => pushParams({ verified: next ? '1' : undefined, page: '0' })}
@@ -295,82 +373,92 @@ function CreatorsCatalogContent() {
                 onChange={(next) => pushParams({ available: next ? '1' : undefined, page: '0' })}
                 label="Available only"
               />
-              <ProviderTextAction
-                type="submit"
-                variant="primary"
-                icon={<ArrowIcon className="h-4 w-4" />}
-                className="ml-auto lg:ml-1"
-              >
-                Search
-              </ProviderTextAction>
+              <span className="hidden sm:contents">
+                <ProviderTextAction
+                  type="submit"
+                  variant="primary"
+                  icon={<ArrowIcon className="h-4 w-4 text-[#FF5722]" />}
+                  className="ml-auto lg:ml-1"
+                >
+                  Search
+                </ProviderTextAction>
+              </span>
             </div>
           </form>
 
-          <ServiceProviderCategoriesShell open={categoriesOpen} onOpenChange={setCategoriesOpen}>
-            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:gap-5">
-              <p className={`shrink-0 text-[15px] font-medium ${PROVIDER_MUTED_CLASS}`}>Popular</p>
-              <div className="flex min-w-0 flex-wrap items-center gap-2">
-                {SERVICE_PROVIDER_POPULAR_TAGS.map((label) => (
-                  <ProviderChip
-                    key={label}
-                    title={label}
-                    active={selectedPopular === label}
-                    onClick={() => {
-                      const next = selectedPopular === label ? undefined : label;
-                      setCategoriesOpen(false);
-                      pushParams({ genre: next, page: '0' });
-                    }}
-                  >
-                    {label}
-                  </ProviderChip>
-                ))}
-                {selectedCategory && !selectedPopular ? (
-                  <ProviderChip
-                    active
-                    title="Clear category"
-                    onClick={() => pushParams({ genre: undefined, page: '0' })}
-                  >
-                    {selectedCategory}
-                    <span aria-hidden className="opacity-60">
-                      ×
-                    </span>
-                  </ProviderChip>
-                ) : null}
-                <ServiceProviderCategoriesButton
-                  open={categoriesOpen}
-                  onOpenChange={setCategoriesOpen}
-                  hasActiveCategory={Boolean(selectedCategory)}
-                  menuId={categoriesMenuId}
-                />
+          {/* Mobile keeps the suggestions out of the way until the search is in use. */}
+          <div className={`px-5 sm:px-0 ${searchActive || categoriesOpen || genre ? 'block' : 'hidden sm:block'}`}>
+            <ServiceProviderCategoriesShell open={categoriesOpen} onOpenChange={setCategoriesOpen}>
+              <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-5">
+                <p className={`shrink-0 text-[12px] font-semibold uppercase tracking-[0.14em] sm:text-[14px] sm:font-medium sm:normal-case sm:tracking-normal ${PROVIDER_MUTED_CLASS}`}>Popular</p>
+                <div className="-mx-5 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-5 pb-2.5 [scrollbar-width:none] [&>*]:shrink-0 sm:mx-0 sm:pb-0 sm:flex-wrap sm:gap-x-2 sm:gap-y-3 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+                  {SERVICE_PROVIDER_POPULAR_TAGS.map((label) => (
+                    <ProviderChip
+                      key={label}
+                      title={label}
+                      active={selectedPopular === label}
+                      onClick={() => {
+                        const next = selectedPopular === label ? undefined : label;
+                        setCategoriesOpen(false);
+                        pushParams({ genre: next, page: '0' });
+                      }}
+                    >
+                      {label}
+                    </ProviderChip>
+                  ))}
+                  {selectedCategory && !selectedPopular ? (
+                    <ProviderChip
+                      active
+                      title="Clear category"
+                      onClick={() => pushParams({ genre: undefined, page: '0' })}
+                    >
+                      {selectedCategory}
+                      <span aria-hidden className="opacity-60">
+                        ×
+                      </span>
+                    </ProviderChip>
+                  ) : null}
+                  <ServiceProviderCategoriesButton
+                    open={categoriesOpen}
+                    onOpenChange={setCategoriesOpen}
+                    hasActiveCategory={Boolean(selectedCategory)}
+                    menuId={categoriesMenuId}
+                  />
+                </div>
               </div>
-            </div>
-            <ServiceProviderCategoriesPanel
-              open={categoriesOpen}
-              menuId={categoriesMenuId}
-              selectedLabel={selectedCategory}
-              onClose={() => setCategoriesOpen(false)}
-              onSelect={(label) => {
-                const next = selectedCategory === label ? undefined : label;
-                pushParams({ genre: next, page: '0' });
-              }}
-            />
-          </ServiceProviderCategoriesShell>
+              <ServiceProviderCategoriesPanel
+                open={categoriesOpen}
+                menuId={categoriesMenuId}
+                selectedLabel={selectedCategory}
+                onClose={() => setCategoriesOpen(false)}
+                onSelect={(label) => {
+                  const next = selectedCategory === label ? undefined : label;
+                  pushParams({ genre: next, page: '0' });
+                }}
+              />
+            </ServiceProviderCategoriesShell>
+          </div>
         </section>
 
         <section className="space-y-8" aria-labelledby="providers-heading">
-          <div className="flex flex-col gap-4 border-b border-black/[0.06] pb-6 lg:flex-row lg:items-center lg:justify-between dark:border-white/[0.06]">
-            <h2 id="providers-heading" className={`text-lg font-bold tracking-[-0.01em] ${PROVIDER_INK_CLASS}`}>
+          <div className="flex flex-col gap-3 border-b border-black/[0.06] px-5 pb-4 sm:gap-4 sm:px-0 sm:pb-6 lg:flex-row lg:items-center lg:justify-between dark:border-white/[0.06]">
+            <h2
+              id="providers-heading"
+              className={`flex items-baseline gap-2 text-[17px] font-semibold tracking-[-0.01em] sm:text-lg ${PROVIDER_INK_CLASS}`}
+            >
               Service providers
-              {pageData ? ` · ${String(pageData.totalElements ?? creators.length).padStart(2, '0')}` : null}
+              {pageData ? (
+                <span className="text-[13px] font-medium tabular-nums text-neutral-400 dark:text-neutral-500 sm:text-[14px]">
+                  {String(pageData.totalElements ?? creators.length).padStart(2, '0')}
+                </span>
+              ) : null}
             </h2>
             <ServiceProviderFilterPills
               idPrefix="catalog-sp"
               minYearsExperience={minYearsExperience}
               nationality={nationality}
               closestFirst={closestFirst}
-              onYearsChange={(years) =>
-                pushParams({ minYears: years != null ? String(years) : undefined, page: '0' })
-              }
+              onYearsChange={(years) => pushParams({ minYears: years != null ? String(years) : undefined, page: '0' })}
               onNationalityChange={(code) => pushParams({ nationality: code || undefined, page: '0' })}
               onClosestFirstChange={(enabled) => {
                 if (!enabled) {
@@ -383,8 +471,16 @@ function CreatorsCatalogContent() {
             />
           </div>
 
-          {geoError ? <ErrorAlert message={geoError} onDismiss={() => setGeoError(null)} /> : null}
-          {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
+          {geoError ? (
+            <div className="px-5 sm:px-0">
+              <ErrorAlert message={geoError} onDismiss={() => setGeoError(null)} />
+            </div>
+          ) : null}
+          {error ? (
+            <div className="px-5 sm:px-0">
+              <ErrorAlert message={error} onDismiss={() => setError(null)} />
+            </div>
+          ) : null}
 
           {loading || (closestFirst && geoLoading) ? (
             <div className="flex min-h-[40vh] items-center justify-center">
@@ -394,7 +490,7 @@ function CreatorsCatalogContent() {
             emptyState
           ) : (
             <>
-              <div className="provider-spotlight-grid grid grid-cols-1 items-stretch gap-6 xl:grid-cols-2">
+              <div className="provider-spotlight-grid grid grid-cols-1 items-stretch gap-3 sm:gap-6 xl:grid-cols-2">
                 {creators.map((c) => (
                   <CreatorCard
                     key={c.id ?? c.userId ?? c.fullName}
@@ -410,19 +506,20 @@ function CreatorsCatalogContent() {
                     isVerified={c.isVerified}
                     isAvailable={c.isAvailable}
                     serviceCount={c.serviceCount}
-                    averageRating={c.averageRating}
+                    starCount={c.starCount}
                     nationality={c.nationality}
                     yearsOfExperience={c.yearsOfExperience}
                     distanceKm={c.distanceKm}
                     locationCity={c.locationCity}
                     locationCountry={c.locationCountry}
+                    flushOnMobile
                   />
                 ))}
               </div>
 
-              <div className="flex flex-wrap items-center justify-between gap-6 border-t border-black/[0.06] pt-8 dark:border-white/[0.06]">
-                <p className={`text-[15px] tabular-nums ${PROVIDER_MUTED_CLASS}`}>
-                  Page <span className={`font-semibold ${PROVIDER_INK_CLASS}`}>{currentPage}</span> of {pageCount}
+              <div className="flex flex-wrap items-center justify-between gap-6 border-t border-black/[0.06] px-5 pt-6 dark:border-white/[0.06] sm:px-0 sm:pt-8">
+                <p className={`text-[14px] tabular-nums sm:text-[15px] ${PROVIDER_MUTED_CLASS}`}>
+                  Page <span className={`font-medium ${PROVIDER_INK_CLASS}`}>{currentPage}</span> of {pageCount}
                 </p>
                 <div className="flex items-center gap-3">
                   <ProviderTextAction
@@ -446,6 +543,8 @@ function CreatorsCatalogContent() {
           )}
         </section>
       </main>
+
+      <BackToTopButton visible={backToTop.visible} onClick={backToTop.backToTop} />
     </div>
   );
 }

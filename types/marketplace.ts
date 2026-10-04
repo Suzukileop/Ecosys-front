@@ -29,7 +29,8 @@ export interface MarketplaceCreatorSummary {
   portfolioCount?: number;
   productCount?: number;
   serviceCount?: number;
-  averageRating: number | null;
+  /** Trust stars given by other users. */
+  starCount: number;
   followerCount?: number;
   isFollowing?: boolean;
   nationality?: string | null;
@@ -83,7 +84,10 @@ export interface MarketplaceCreatorPublicProfile {
   contentCount?: number;
   productCount?: number;
   serviceCount?: number;
-  averageRating: number | null;
+  /** Trust stars given by other users. */
+  starCount: number;
+  /** Whether the signed-in viewer has starred this account. */
+  isStarred?: boolean;
   /** Backend field: recent public portfolio posts */
   recentPosts?: MarketplaceContentItem[];
   /** Only present when the backend exposes links for an authenticated user. */
@@ -203,6 +207,12 @@ export interface PublicContentFeedItem {
   likes: number;
   createdAt: string;
   creator: MarketplaceContentCreator;
+  /**
+   * Supplied by the feed so a card renders its social bar without a request of its own.
+   * `undefined` on payloads that do not carry them — the card then fetches, as it used to.
+   */
+  commentCount?: number;
+  viewerReaction?: 'LIKE' | null;
 }
 
 export type PublicContentFeedPage = PagedResponse<PublicContentFeedItem>;
@@ -237,6 +247,13 @@ export interface ProductWhyBlock {
 
 export type DeliveryMode = 'STREAM_ONLY' | 'DOWNLOAD' | 'BOTH';
 
+export interface CatalogueBestseller {
+  catalogueId: string;
+  catalogueName: string;
+  /** 1 = most sold in the catalogue. */
+  rank: number;
+}
+
 export interface MarketplaceProductSummary {
   id: string;
   type: ProductType;
@@ -261,10 +278,19 @@ export interface MarketplaceProductSummary {
   reviewCount?: number;
   videoDurationSeconds?: number | null;
   videoResolution?: string | null;
+  /** Computed from units sold: true when the product is in its shop's top 3. */
   isBestseller?: boolean;
+  /** 1–3 within the shop by units sold, null outside the top 3. */
+  bestsellerRank?: number | null;
+  /** Catalogues where the product is in the top 3 by units sold. */
+  catalogueBestsellers?: CatalogueBestseller[];
   isPinned?: boolean;
+  /** When false, the product stays in the marketplace but is hidden from the creator's public profile. */
+  showOnProfile?: boolean;
   tags?: string[];
   galleryImageUrls?: string[];
+  /** Units on hand — physical products only; null when untracked or digital. */
+  stockQuantity?: number | null;
   createdAt: string;
   updatedAt?: string;
 }
@@ -312,10 +338,10 @@ export interface MarketplaceProductRequest {
   tags?: string[];
   videoDurationSeconds?: number | null;
   videoResolution?: string | null;
-  isBestseller?: boolean;
   isPinned?: boolean;
   isPublished?: boolean;
   galleryImageUrls?: string[];
+  stockQuantity?: number | null;
 }
 
 export interface ProductReview {

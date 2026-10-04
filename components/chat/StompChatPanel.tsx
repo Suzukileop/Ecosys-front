@@ -2,11 +2,10 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Client, IMessage } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import api, { getAccessToken } from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { stripNicheConfirmedTag } from '@/lib/ecosystem-chat';
-import { getSockJsEndpoint } from '@/lib/ws-url';
+import { createStompWebSocket } from '@/lib/ws-url';
 import { ChatMessageDto } from '@/types/ecosystem';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -80,7 +79,7 @@ export function StompChatPanel({ roomId, title = 'Discussion', showComposer = tr
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : undefined,
-      webSocketFactory: () => new SockJS(getSockJsEndpoint()) as unknown as WebSocket,
+      webSocketFactory: () => createStompWebSocket(),
       onConnect: () => {
         setConnected(true);
         setError(null);

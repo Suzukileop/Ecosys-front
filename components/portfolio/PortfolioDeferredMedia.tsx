@@ -1,7 +1,12 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
+import { mediaImageResponsive } from '@/lib/media-image-url';
+import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+
+/** Gallery/Team frames run from thumbnail to full-bleed; `sizes` tells the browser which to take. */
+const DEFERRED_MEDIA_WIDTHS = [384, 640, 828, 1080, 1920] as const;
 
 /**
  * Gallery/Team media. Native img/video (not next/image fill): fill requires a
@@ -13,6 +18,7 @@ export function PortfolioDeferredMedia({
   alt,
   className = '',
   style,
+  sizes,
   eager = false,
   highPriority = false,
   kind = 'image',
@@ -44,6 +50,8 @@ export function PortfolioDeferredMedia({
   const mountImmediately = eager || highPriority;
   const wrapRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
+  /* `autoPlayVideo` clips already have their own observer below; a second one would fight it. */
+  usePauseOffscreenVideo(videoRef, !autoPlayVideo);
   const imageRef = useRef<HTMLImageElement>(null);
   const [inView, setInView] = useState(mountImmediately);
   const [loaded, setLoaded] = useState(false);
@@ -112,6 +120,7 @@ export function PortfolioDeferredMedia({
   const mediaClass = fillParent
     ? `absolute inset-0 h-full w-full ${className}`.trim()
     : `relative block h-auto w-full ${className}`.trim();
+  const responsiveImage = mediaImageResponsive(resolved, DEFERRED_MEDIA_WIDTHS);
 
   if (!resolved) {
     return (
@@ -147,7 +156,9 @@ export function PortfolioDeferredMedia({
         // eslint-disable-next-line @next/next/no-img-element
         <img
           ref={imageRef}
-          src={resolved}
+          src={responsiveImage.src}
+          srcSet={responsiveImage.srcSet}
+          sizes={sizes ?? '100vw'}
           alt={alt}
           className={mediaClass}
           style={fitStyle}

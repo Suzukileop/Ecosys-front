@@ -91,14 +91,14 @@ export function ConversationHeader({
   );
 
   return (
-    <header className="relative flex h-[4.75rem] shrink-0 items-center justify-between gap-2 border-b border-[var(--msg-hairline)] px-5 sm:px-7">
+    <header className="relative flex h-[calc(3.75rem+env(safe-area-inset-top))] shrink-0 items-center justify-between gap-2 border-b border-[var(--msg-hairline)] px-3 pt-[env(safe-area-inset-top)] sm:px-7 lg:h-[4.75rem] lg:pt-0">
       <div className={`flex min-w-0 items-center gap-2 ${titleCentered ? 'z-10 shrink-0' : 'flex-1'}`}>
         {onBack ? (
           <button
             type="button"
             onClick={onBack}
             title="Back to inbox"
-            className="-ml-2 inline-flex h-10 w-10 shrink-0 items-center justify-center text-[var(--msg-ink-faint)] transition-colors duration-300 hover:text-[var(--msg-ink)] focus-visible:text-[var(--msg-ink)] focus-visible:outline-none lg:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center text-[var(--msg-ink)] transition-colors duration-300 hover:text-[var(--msg-ink)] focus-visible:text-[var(--msg-ink)] focus-visible:outline-none lg:hidden"
             aria-label="Back to inbox"
           >
             <svg

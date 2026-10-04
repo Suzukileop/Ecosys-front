@@ -1,6 +1,7 @@
 'use client';
 
-import { useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 
 export type ComposerPendingFile = {
   id: string;
@@ -22,6 +23,8 @@ type MessageComposerProps = {
   uploading?: boolean;
   placeholder?: string;
   readOnlyLabel?: string | null;
+  /** Rendered above the text field; when present the message can be sent without text. */
+  attachment?: ReactNode;
 };
 
 function formatSize(bytes: number): string {
@@ -39,11 +42,13 @@ function ComposerIconButton({
   label,
   onClick,
   disabled,
+  active = false,
   children,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
+  active?: boolean;
   children: ReactNode;
 }) {
   return (
@@ -53,7 +58,10 @@ function ComposerIconButton({
       disabled={disabled}
       title={label}
       aria-label={label}
-      className="inline-flex h-9 w-9 items-center justify-center text-[var(--msg-ink-faint)] transition-colors duration-300 hover:text-[var(--msg-ink)] focus-visible:text-[var(--msg-ink)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30"
+      aria-expanded={active || undefined}
+      className={`inline-flex h-9 w-9 items-center justify-center transition-colors duration-300 hover:text-[var(--msg-ink)] focus-visible:text-[var(--msg-ink)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30 ${
+        active ? 'text-[var(--msg-ink)]' : 'text-[var(--msg-ink-faint)]'
+      }`}
     >
       {children}
     </button>
@@ -74,9 +82,49 @@ export function MessageComposer({
   uploading = false,
   placeholder = 'Write your message…',
   readOnlyLabel = null,
+  attachment = null,
 }: MessageComposerProps) {
   const [dragging, setDragging] = useState(false);
+  const [emojiOpen, setEmojiOpen] = useState(false);
   const dragDepthRef = useRef(0);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const emojiRootRef = useRef<HTMLDivElement>(null);
+  const valueRef = useRef(value);
+  valueRef.current = value;
+
+  useEffect(() => {
+    if (!emojiOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (emojiRootRef.current && !emojiRootRef.current.contains(event.target as Node)) setEmojiOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key !== 'Escape') return;
+      setEmojiOpen(false);
+      textareaRef.current?.focus();
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [emojiOpen]);
+
+  const insertEmoji = (emoji: string) => {
+    const current = valueRef.current;
+    const field = textareaRef.current;
+    const start = field?.selectionStart ?? current.length;
+    const end = field?.selectionEnd ?? current.length;
+    const next = current.slice(0, start) + emoji + current.slice(end);
+    valueRef.current = next;
+    onChange(next);
+    const caret = start + emoji.length;
+    requestAnimationFrame(() => {
+      const el = textareaRef.current;
+      if (!el) return;
+      el.setSelectionRange(caret, caret);
+    });
+  };
 
   if (readOnlyLabel) {
     return (
@@ -87,7 +135,10 @@ export function MessageComposer({
   }
 
   const canSend =
-    !disabled && !sending && !uploading && (value.trim().length > 0 || pendingFiles.length > 0);
+    !disabled &&
+    !sending &&
+    !uploading &&
+    (value.trim().length > 0 || pendingFiles.length > 0 || Boolean(attachment));
 
   const handleDragEnter = (e: DragEvent) => {
     if (!onFilesDropped || disabled || sending) return;
@@ -130,7 +181,7 @@ export function MessageComposer({
      * for the length of the drag. That is the one moment the composer is allowed an accent.
      */
     <div
-      className={`relative shrink-0 border-t px-5 pb-4 pt-3 transition-colors duration-300 sm:px-6 ${
+      className={`relative shrink-0 border-t px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2.5 transition-colors duration-300 sm:px-6 lg:pb-4 lg:pt-3 ${
         dragging ? 'border-[var(--msg-coral)]' : 'border-[var(--msg-hairline)]'
       }`}
       onDragEnter={handleDragEnter}
@@ -146,6 +197,8 @@ export function MessageComposer({
           <p className="msg-micro text-[var(--msg-coral)]">Drop files to attach</p>
         </div>
       ) : null}
+
+      {attachment}
 
       {pendingFiles.length > 0 ? (
         <div className="mb-3 flex flex-wrap gap-2">
@@ -205,6 +258,7 @@ export function MessageComposer({
         Your message
       </label>
       <textarea
+        ref={textareaRef}
         id="conversation-composer-input"
         rows={2}
         value={value}
@@ -217,7 +271,7 @@ export function MessageComposer({
           }
         }}
         placeholder={placeholder}
-        className="msg-scroll min-h-[3.25rem] w-full resize-none border-0 bg-transparent p-0 text-[0.9375rem] font-light leading-[1.65] text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 disabled:opacity-50"
+        className="msg-scroll max-h-40 min-h-[2.75rem] w-full resize-none border-0 bg-transparent p-0 text-[16px] font-light lg:min-h-[3.25rem] lg:text-[0.9375rem] leading-[1.65] text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 disabled:opacity-50"
       />
 
       <div className="mt-1 flex items-center justify-between gap-2">
@@ -259,6 +313,38 @@ export function MessageComposer({
               </svg>
             </ComposerIconButton>
           ) : null}
+
+          <div ref={emojiRootRef} className="relative">
+            <ComposerIconButton
+              label="Emoji"
+              onClick={() => setEmojiOpen((open) => !open)}
+              disabled={disabled || sending || uploading}
+              active={emojiOpen}
+            >
+              <svg
+                className="h-5 w-5"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="1"
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <circle cx="12" cy="12" r="9" />
+                <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.75h.01M15 9.75h.01" />
+              </svg>
+            </ComposerIconButton>
+            {emojiOpen ? (
+              <div
+                role="dialog"
+                aria-label="Emoji"
+                className="absolute bottom-full left-0 z-40 mb-2 overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_16px_48px_-16px_rgba(0,0,0,0.35)] dark:border-white/[0.1] dark:bg-[#111111]"
+              >
+                <EmojiPicker onSelect={insertEmoji} />
+              </div>
+            ) : null}
+          </div>
         </div>
 
         {/*

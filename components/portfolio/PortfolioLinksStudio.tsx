@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useCallback, useState } from 'react';
+import { UserFacingError } from '@/lib/api-error';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
   faArrowDown,
@@ -32,7 +33,14 @@ import {
 } from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-type LinkItem = { id?: string; url: string; type: string; platform: string | null; iconUrl: string | null };
+type LinkItem = {
+  id?: string;
+  url: string;
+  type: string;
+  platform: string | null;
+  iconUrl: string | null;
+  hideFromCv: boolean;
+};
 type LinkRow = LinkItem & { key: string };
 type LinksDraft = { items: LinkRow[] };
 type RowChangeHandler = (key: string, patch: Partial<LinkItem>) => void;
@@ -51,17 +59,52 @@ function normalizeUrl(raw: string): string {
 function cleanItems(rows: LinkRow[]): LinkItem[] {
   return rows
     .filter((row) => row.url.trim())
-    .map(({ id, url, type, platform, iconUrl }) => ({
+    .map(({ id, url, type, platform, iconUrl, hideFromCv }) => ({
       id,
       url: normalizeUrl(url),
       type: type || 'CUSTOM',
       platform,
       iconUrl: iconUrl?.trim() || null,
+      hideFromCv,
     }));
 }
 
 function linksSignature(_key: keyof LinksDraft, value: LinksDraft[keyof LinksDraft]): string {
-  return JSON.stringify(cleanItems(value).map(({ url, iconUrl }) => ({ url, iconUrl })));
+  return JSON.stringify(cleanItems(value).map(({ url, iconUrl, hideFromCv }) => ({ url, iconUrl, hideFromCv })));
+}
+
+function CvSwitch({ shown, onChange, label }: { shown: boolean; onChange: (shown: boolean) => void; label: string }) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={shown}
+      aria-label={label}
+      title={shown ? 'Shown in CV' : 'Hidden from CV'}
+      onClick={() => onChange(!shown)}
+      className="mr-2 inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40"
+    >
+      <span
+        className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 ${
+          shown ? 'bg-[#FF5722]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
+        }`}
+      >
+        <span
+          aria-hidden
+          className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            shown ? 'translate-x-3.5' : 'translate-x-0.5'
+          }`}
+        />
+      </span>
+      <span
+        className={`text-[13px] font-medium ${
+          shown ? 'text-[#111111] dark:text-neutral-100' : 'text-neutral-500 dark:text-neutral-400'
+        }`}
+      >
+        CV
+      </span>
+    </button>
+  );
 }
 
 const ROW_ACTION_CLASS =
@@ -149,6 +192,11 @@ const LinkRowView = memo(function LinkRowView({
       </div>
 
       <div className="flex items-center gap-0.5">
+        <CvSwitch
+          shown={!row.hideFromCv}
+          onChange={(shown) => onChange(row.key, { hideFromCv: !shown })}
+          label={`Show ${hostname || `link ${index + 1}`} in CV`}
+        />
         <div className="flex opacity-100 transition-opacity duration-300 sm:opacity-0 sm:group-hover/row:opacity-100 sm:group-focus-within/row:opacity-100">
           {row.iconUrl ? (
             <button
@@ -236,7 +284,14 @@ function LinksList({ getDraft, change }: { getDraft: () => LinksDraft; change: S
 
   const add = () => {
     if (rows.length >= MAX_PROFILE_LINKS) return;
-    const row: LinkRow = { key: nextRowKey(), url: '', type: 'CUSTOM', platform: null, iconUrl: null };
+    const row: LinkRow = {
+      key: nextRowKey(),
+      url: '',
+      type: 'CUSTOM',
+      platform: null,
+      iconUrl: null,
+      hideFromCv: false,
+    };
     setFreshKey(row.key);
     commitRows([...rows, row]);
   };
@@ -293,7 +348,7 @@ export function PortfolioLinksStudio({
     async (draft: LinksDraft) => {
       const cleaned = cleanItems(draft.items);
       const invalid = cleaned.map((item) => getHttpUrlFieldError(item.url)).find(Boolean);
-      if (invalid) throw new Error(invalid);
+      if (invalid) throw new UserFacingError(invalid);
       await onSave(cleaned);
     },
     [onSave]

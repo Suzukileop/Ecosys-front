@@ -1,10 +1,16 @@
 'use client';
 
 import { usePathname } from 'next/navigation';
-import { isContentCreatorsPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
+import {
+  isContentCreatorsPath,
+  isCreatorShopPath,
+  isMarketplaceCreatorProfilePath,
+  isServiceProvidersCatalogPath,
+} from '@/lib/marketplace-nav';
 import { DashboardShell } from '@/components/layout/DashboardShell';
 import { MarketplacePublicNav } from '@/components/marketplace/MarketplacePublicNav';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
+import { APP_GROUND } from '@/components/landing/landingBrand';
 
 type MarketplaceShellProps = {
   children: React.ReactNode;
@@ -20,7 +26,13 @@ function isMarketplaceHubPath(pathname: string): boolean {
 }
 
 function getPatternVariant(pathname: string): 'hub' | 'product' | null {
-  if (isProductDetailPath(pathname)) return 'product';
+  if (
+    isProductDetailPath(pathname) ||
+    isMarketplaceCreatorProfilePath(pathname) ||
+    isCreatorShopPath(pathname)
+  ) {
+    return null;
+  }
   if (isServiceProvidersCatalogPath(pathname) || isMarketplaceHubPath(pathname)) return null;
   if (isContentCreatorsPath(pathname)) return 'hub';
   return null;
@@ -37,8 +49,11 @@ export function MarketplaceShell({ children, authenticated }: MarketplaceShellPr
   if (!authenticated) {
     return (
       <div
+        data-app-surfaces=""
         className={
-          hasPattern ? 'relative min-h-screen' : 'min-h-screen bg-gray-50 dark:bg-neutral-950'
+          hasPattern
+            ? 'relative min-h-screen'
+            : `min-h-screen ${APP_GROUND} dark:bg-black`
         }
       >
         {patternVariant && <MarketplacePatternBackground variant={patternVariant} />}

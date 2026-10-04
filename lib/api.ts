@@ -1,6 +1,8 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
 import { getAccessToken, setAccessToken } from './accessToken';
 import { refreshAccessToken, invalidateSessionCache } from './sessionRefresh';
+import { reportNetworkFailure } from '@/stores/serverStatusStore';
+import { normalizeStorageUrlsDeep } from './storage-media-url';
 
 export { setAccessToken, getAccessToken };
 
@@ -29,11 +31,19 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
 
 // Response interceptor: handle 401 with silent token refresh
 api.interceptors.response.use(
-  (response) => response,
+  (response) => {
+    response.data = normalizeStorageUrlsDeep(response.data);
+    return response;
+  },
   async (error: AxiosError) => {
     const originalRequest = error.config as InternalAxiosRequestConfig & {
       _retry?: boolean;
     };
+
+    if (!error.response && error.code !== AxiosError.ERR_CANCELED && !axios.isCancel(error)) {
+      void reportNetworkFailure();
+      return Promise.reject(error);
+    }
 
     if (error.response?.status === 429) {
       const retryAfter = error.response.headers['retry-after'] ?? '60';

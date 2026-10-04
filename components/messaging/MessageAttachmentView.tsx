@@ -10,6 +10,7 @@ import {
   markAttachmentLoadFailed,
 } from '@/lib/messaging-attachments';
 import { ChatShortVideoPlayer } from '@/components/messaging/ChatShortVideoPlayer';
+import { storageWidthUrl } from '@/lib/media-image-url';
 import type { MessageAttachment } from '@/types/messaging';
 
 type MessageAttachmentViewProps = {
@@ -146,8 +147,11 @@ function MediaLightbox({
           ) : (
             // eslint-disable-next-line @next/next/no-img-element
             <img
-              src={src}
+              /* Attachments are read through short-lived signed URLs, so `/_next/image` is out:
+                 its cache would be keyed on a URL that expires. The backend resizes instead. */
+              src={storageWidthUrl(src, 1280)}
               alt={fileName}
+              decoding="async"
               className={`max-h-[min(72vh,760px)] w-full object-contain transition-opacity duration-300 ${
                 mediaReady ? 'msg-media-reveal opacity-100' : 'opacity-0'
               }`}
@@ -338,12 +342,13 @@ function InlineMediaAttachment({
               ) : null}
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
-                src={previewUrl}
+                src={storageWidthUrl(previewUrl, 640)}
                 alt={attachment.fileName}
                 className={`block max-h-[min(420px,70vh)] w-full cursor-pointer object-cover transition-opacity duration-300 ${
                   revealed ? 'msg-media-reveal opacity-100' : 'opacity-0'
                 }`}
                 loading="lazy"
+                decoding="async"
                 onLoad={() => setRevealed(true)}
               />
             </button>

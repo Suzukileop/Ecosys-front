@@ -5,6 +5,7 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faBriefcase, faCube, faHandshake } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { useAuth } from '@/context/AuthContext';
+import { APP_FIELD, APP_FIELD_HOVER } from '@/components/landing/landingBrand';
 
 type Shortcut = {
   id: 'service' | 'portfolio' | 'produit';
@@ -54,7 +55,7 @@ export function NewsCreateShortcuts({ className = '' }: NewsCreateShortcutsProps
         <Link
           key={item.id}
           href={item.href}
-          className="group relative flex min-h-[7.5rem] flex-col items-center justify-center gap-2.5 rounded-2xl border border-neutral-200 bg-neutral-100 px-3 py-5 text-center shadow-sm transition hover:bg-neutral-50 hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/80 sm:min-h-[8.25rem]"
+          className={`group relative flex min-h-[7.5rem] flex-col items-center justify-center gap-2.5 rounded-2xl border border-neutral-200 ${APP_FIELD} px-3 py-5 text-center shadow-sm transition ${APP_FIELD_HOVER} hover:shadow-md dark:border-neutral-800 dark:bg-neutral-900 dark:hover:bg-neutral-800/80 sm:min-h-[8.25rem]`}
         >
           <FontAwesomeIcon
             icon={item.icon}

@@ -12,17 +12,19 @@ type ProductReviewComposerProps = {
   onSubmitted?: () => void;
 };
 
+const SKELETON = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
+
 function ReviewComposerSkeleton() {
   return (
     <div className="space-y-4" aria-hidden>
-      <div className="h-4 w-36 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
+      <div className={`h-4 w-36 ${SKELETON}`} />
       <div className="flex gap-1.5">
         {Array.from({ length: 5 }, (_, index) => (
-          <div key={index} className="h-6 w-6 animate-pulse rounded bg-gray-200 dark:bg-neutral-700" />
+          <div key={index} className={`h-6 w-6 ${SKELETON}`} />
         ))}
       </div>
-      <div className="h-24 w-full animate-pulse rounded-lg bg-gray-200 dark:bg-neutral-700" />
-      <div className="h-9 w-28 animate-pulse rounded-lg bg-gray-200 dark:bg-neutral-700" />
+      <div className={`h-24 w-full rounded-lg ${SKELETON}`} />
+      <div className={`h-10 w-28 rounded-lg ${SKELETON}`} />
     </div>
   );
 }
@@ -69,7 +71,8 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
   }, [productId, isClient, user, authLoading]);
 
   useEffect(() => {
-    void loadStatus();
+    const t = setTimeout(() => void loadStatus(), 0);
+    return () => clearTimeout(t);
   }, [loadStatus]);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -106,7 +109,7 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
 
   if (!user) {
     return (
-      <p className="text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
         Sign in as a client to rate this product.
       </p>
     );
@@ -114,7 +117,7 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
 
   if (!isClient) {
     return (
-      <p className="text-sm text-gray-500 dark:text-gray-400">
+      <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
         Only client accounts can leave product reviews.
       </p>
     );
@@ -127,8 +130,8 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
         <div className="space-y-1">
-          <p className="text-sm font-semibold text-gray-900 dark:text-white">Post a review</p>
-          <p className="text-xs text-gray-500 dark:text-gray-400">
+          <p className="text-base font-semibold text-[#111111] dark:text-white">Write a review</p>
+          <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
             {canPostReviewToday
               ? `${remainingToday} of ${dailyReviewLimit} reviews remaining today. Your latest review sets your rating for this product.`
               : `Daily limit reached (${dailyReviewLimit}/${dailyReviewLimit}). You can post again tomorrow.`}
@@ -140,13 +143,13 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
           onChange={(e) => setComment(e.target.value)}
           rows={4}
           placeholder="Describe your experience with this product…"
-          className="w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white"
+          className="w-full rounded-lg border border-black/[0.1] bg-transparent px-3.5 py-3 text-[15px] text-[#111111] outline-none transition placeholder:text-neutral-400 focus:border-[#FF5722] focus:ring-2 focus:ring-[#FF5722]/20 disabled:opacity-60 dark:border-white/[0.14] dark:text-white"
           disabled={submitting || !canPostReviewToday}
         />
         <button
           type="submit"
           disabled={submitting || !canPostReviewToday}
-          className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600 disabled:opacity-60"
+          className="inline-flex h-11 items-center justify-center rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
         >
           {submitting ? 'Posting…' : 'Post review'}
         </button>

@@ -73,7 +73,7 @@ export function ProductDetailGallery({
           disabled={!canOpenLightbox}
           onClick={openLightbox}
           className={`relative aspect-video w-full text-left ${
-            canOpenLightbox ? 'cursor-zoom-in' : 'cursor-default'
+            canOpenLightbox ? 'cursor-pointer' : 'cursor-default'
           }`}
           aria-label={canOpenLightbox ? `Open ${title} media` : undefined}
         >

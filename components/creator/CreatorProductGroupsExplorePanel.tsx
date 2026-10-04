@@ -8,6 +8,8 @@ import type { MarketplaceProductGroup, MarketplaceProductSummary } from '@/types
 type CreatorProductGroupsExplorePanelProps = {
   groups: MarketplaceProductGroup[];
   products: MarketplaceProductSummary[];
+  /** Per-catalogue counts matching what the list shows when the catalogue is opened. */
+  groupCounts?: Record<string, number>;
   selectedGroupId?: string | null;
   onSelectGroup: (groupId: string) => void;
   onEditGroup?: (group: MarketplaceProductGroup) => void;
@@ -29,6 +31,7 @@ function resolveGroupThumbnail(
 export function CreatorProductGroupsExplorePanel({
   groups,
   products,
+  groupCounts,
   selectedGroupId = null,
   onSelectGroup,
   onEditGroup,
@@ -53,15 +56,19 @@ export function CreatorProductGroupsExplorePanel({
           const selected = selectedGroupId === group.id;
           const thumbnailUrl = resolveGroupThumbnail(group, productsById);
           const hasVideoThumb = isVideoThumbnailUrl(thumbnailUrl);
+          const count =
+            groupCounts?.[group.id] ??
+            (group.productIds ?? []).filter((id) => productsById.has(id)).length;
 
           return (
             <div key={group.id} className="relative pr-2 pt-2">
-              {/* Decorative back card — catalogue stack hint */}
-              <div
-                aria-hidden
-                className="pointer-events-none absolute inset-x-0 bottom-1 top-2 rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]"
-                style={{ transform: 'translate(8px, -8px)' }}
-              />
+              {count > 1 ? (
+                <div
+                  aria-hidden
+                  className="pointer-events-none absolute inset-x-0 bottom-1 top-2 rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]"
+                  style={{ transform: 'translate(8px, -8px)' }}
+                />
+              ) : null}
 
               <article
                 className={`group relative z-10 flex flex-col overflow-hidden rounded-lg border bg-white transition-colors duration-300 dark:bg-[#111111] ${
@@ -86,15 +93,20 @@ export function CreatorProductGroupsExplorePanel({
                         />
                       </div>
                     ) : (
-                      <div className="flex h-full items-center justify-center text-[14px] text-neutral-400 dark:text-neutral-500">
-                        No preview
+                      <div className="flex h-full flex-col items-center justify-center gap-2 text-neutral-400 dark:text-neutral-500">
+                        <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+                          <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m16.5 0H3.75m16.5 0l-1.5-3h-13.5l-1.5 3" />
+                        </svg>
+                        <span className="text-[14px]">{count === 0 ? 'Empty catalogue' : 'No preview'}</span>
                       </div>
                     )}
-                    <div className="pointer-events-none absolute bottom-3 right-3">
-                      <span className="rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium tabular-nums text-white backdrop-blur-sm">
-                        {group.productCount} item{group.productCount !== 1 ? 's' : ''}
-                      </span>
-                    </div>
+                    {count > 0 ? (
+                      <div className="pointer-events-none absolute bottom-3 right-3">
+                        <span className="rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium tabular-nums text-white backdrop-blur-sm">
+                          {count} item{count !== 1 ? 's' : ''}
+                        </span>
+                      </div>
+                    ) : null}
                   </div>
 
                   <div className="flex flex-1 items-center justify-between gap-3 px-5 py-4">

@@ -21,6 +21,9 @@ type SpecialtyMultiSelectProps = {
   showTags?: boolean;
   /** `studio`: hairline input, quiet chips and a glass list for the portfolio inline editor. */
   variant?: 'default' | 'studio';
+  /** Hide the inline "Add 1 to N…" guidance when the parent shows it elsewhere. */
+  showHint?: boolean;
+  placeholder?: string;
 };
 
 const VARIANT_CLASSES = {
@@ -65,6 +68,8 @@ export function SpecialtyMultiSelect({
   disabled = false,
   showTags = true,
   variant = 'default',
+  showHint = true,
+  placeholder = 'e.g. Motion Designer, DevOps Engineer',
 }: SpecialtyMultiSelectProps) {
   const ui = VARIANT_CLASSES[variant];
   const [specialtyDraft, setSpecialtyDraft] = useState('');
@@ -164,9 +169,12 @@ export function SpecialtyMultiSelect({
 
   return (
     <div className="space-y-4">
-      <p className={ui.hint}>
-        Add 1 to {MAX_PROFILE_SPECIALTIES} specialties. Click a chip to place it first.
-      </p>
+      {showHint ? (
+        <p className={ui.hint}>
+          Add 1 to {MAX_PROFILE_SPECIALTIES} specialties. Click a chip to place it first.
+        </p>
+      ) : null}
+      {specialties.length > 0 ? (
       <div className="flex flex-wrap gap-2">
         {specialties.map((label) => {
           const isPrimary = primary === label;
@@ -196,6 +204,7 @@ export function SpecialtyMultiSelect({
           );
         })}
       </div>
+      ) : null}
       <div ref={boxRef} className="relative">
         <div className="flex gap-2">
           <input
@@ -203,7 +212,7 @@ export function SpecialtyMultiSelect({
             value={specialtyDraft}
             maxLength={MAX_SPECIALTY_LENGTH}
             disabled={disabled || atSpecialtyCap}
-            placeholder="e.g. Motion Designer, DevOps Engineer"
+            placeholder={placeholder}
             role="combobox"
             aria-expanded={showSuggestions}
             aria-controls={listId}

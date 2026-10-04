@@ -1,8 +1,8 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';
+import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';import { contentMediaKind } from '@/components/creator/creator-content-media';
 import {
   ContentPostLightbox,
   type ContentPostLightboxPost,
@@ -12,10 +12,15 @@ import {
   toContentDetailsDraft,
   type ContentDetailsDraft,
 } from '@/components/creator/ContentPostDetailsBlock';
+import { ContentPostClampedTitle } from '@/components/creator/ContentPostClampedTitle';
 import { ContentPostSocialBar } from '@/components/creator/ContentPostSocialBar';
 import { ContentPostOverflowMenu } from '@/components/creator/studio/ContentPostOverflowMenu';
 import { CommentThread } from '@/components/marketplace/CommentThread';
-import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
+import {
+  COMMENTS_INLINE_CLASS,
+  COMMENTS_SHEET_CLASS,
+  PostCommentsSurface,
+} from '@/components/creator/PostCommentsSurface';
 import {
   archiveContent,
   moveContentToTrash,
@@ -33,6 +38,7 @@ import { listComments } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { useAuth } from '@/context/AuthContext';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
+import { creatorPostAvatarRingClass } from '@/lib/creator-app-role';
 import type {
   ContentPostBucket,
   CreatorContentCreateBody,
@@ -48,6 +54,8 @@ type CreatorContentPostCardProps = {
   onChanged: () => void;
   onError: (message: string) => void;
   className?: string;
+  /** Post author; defaults to the signed-in user (studio). The message CTA only shows to other viewers. */
+  authorId?: string | null;
 };
 
 function toLightboxPost(
@@ -104,7 +112,6 @@ function normalizeList(values: string[]): string[] {
 function isDetailsDraftUnchanged(post: CreatorContentItemDto, draft: ContentDetailsDraft): boolean {
   const original = toContentDetailsDraft(post);
   const sameTitle = draft.title.trim() === original.title.trim();
-  const sameGenre = draft.genre.trim() === original.genre.trim();
   const sameDescription = draft.description.trim() === original.description.trim();
   const samePrice = draft.priceInfo.trim() === original.priceInfo.trim();
 
@@ -119,20 +126,22 @@ function isDetailsDraftUnchanged(post: CreatorContentItemDto, draft: ContentDeta
     draftTools.length === originalTools.length &&
     draftTools.every((t, i) => t === originalTools[i]);
 
-  return sameTitle && sameGenre && sameDescription && samePrice && sameTags && sameTools;
+  return sameTitle && sameDescription && samePrice && sameTags && sameTools;
 }
 
 function buildUpdateBody(
   post: CreatorContentItemDto,
   draft: ContentDetailsDraft
 ): CreatorContentCreateBody | null {
-  const mediaUrl = post.mediaUrl?.trim();
-  if (!mediaUrl) return null;
+  const mediaUrl = post.mediaUrl?.trim() || null;
+  const title = draft.title.trim() || null;
+  const description = draft.description.trim() || null;
+  if (!mediaUrl && !title && !description) return null;
 
   return {
-    title: draft.title.trim() || null,
-    genre: draft.genre.trim() || null,
-    description: draft.description.trim() || null,
+    title,
+    genre: null,
+    description,
     mediaUrl,
     mediaType: post.mediaType ?? 'FILE',
     textColor: post.textColor ?? null,
@@ -156,21 +165,24 @@ export function CreatorContentPostCard({
   onChanged,
   onError,
   className = '',
+  authorId,
 }: CreatorContentPostCardProps) {
   const { user } = useAuth();
   const { appRole } = useCreatorAppRole();
   const [post, setPost] = useState(postProp);
   const [commentsOpen, setCommentsOpen] = useState(false);
+  const closeComments = useCallback(() => setCommentsOpen(false), []);
+  const [infoOpen, setInfoOpen] = useState(false);
   const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [commentsBusy, setCommentsBusy] = useState(false);
   const [isPublic, setIsPublic] = useState(postProp.isPublic);
   const [commentsEnabled, setCommentsEnabled] = useState(postProp.commentsEnabled !== false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
+  const [lightboxVideoTime, setLightboxVideoTime] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editDraft, setEditDraft] = useState<ContentDetailsDraft | null>(null);
   const [editSaving, setEditSaving] = useState(false);
-  const [descExpanded, setDescExpanded] = useState(false);
 
   useEffect(() => {
     setPost(postProp);
@@ -227,7 +239,7 @@ export function CreatorContentPostCard({
 
     const body = buildUpdateBody(post, editDraft);
     if (!body) {
-      const message = 'This content has no media and cannot be updated.';
+      const message = 'Write something or keep the media before saving.';
       onError(message);
       pushFlashFeedback({
         variant: 'error',
@@ -380,24 +392,39 @@ export function CreatorContentPostCard({
     post.taggedUsers?.length ? `with ${post.taggedUsers.map((u) => u.fullName).join(', ')}` : null,
   ]
     .filter(Boolean)
-    .join(' Â· ');
+    .join(' · ');
   const title = post.title?.trim() || '';
-  const genre = post.genre?.trim() || '';
-  const description = post.description?.trim() || '';
-  const descriptionLong = description.length > 280 || description.split('\n').length > 4;
   const tags = normalizeList(post.tags ?? []);
   const tools = (post.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean);
   const priceLabel = post.priceInfo?.trim() || '';
   const profileHref = user?.id ? `/marketplace/${user.id}` : '/dashboard/creator?tab=profile';
   const showPinned = post.pinned && (bucket === 'active' || bucket === 'pinned');
   const canComment = bucket !== 'trash' && commentsEnabled;
+  const mediaKind = post.mediaUrl ? contentMediaKind(post.mediaUrl, null, post.mediaType) : null;
+  const playableMedia = !editing && (mediaKind === 'video' || mediaKind === 'audio');
+  const discussHref =
+    authorId && authorId !== user?.id && bucket !== 'archived' && bucket !== 'trash'
+      ? `/dashboard/discussions?user=${encodeURIComponent(authorId)}`
+      : null;
+  const messageHref = discussHref && !user ? `/login?redirect=${encodeURIComponent(discussHref)}` : discussHref;
+
+  const statusLabel =
+    bucket === 'archived' ? 'Archived' : bucket === 'trash' ? 'In trash' : !isPublic ? 'Private' : null;
+  const hasInfo = !editing && Boolean(priceLabel || tools.length > 0);
+  const hasTextBlock = Boolean(statusLabel || showPinned || title || tags.length > 0 || hasInfo);
+  const showRail = bucket !== 'trash' && !editing;
+  const mediaSpacing = editing ? 'mt-6' : hasTextBlock ? 'mt-3' : 'mt-4';
 
   return (
     <article
-      className={`overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-shadow duration-300 hover:shadow-[0_12px_40px_-24px_rgba(0,0,0,0.18)] dark:border-white/[0.08] dark:bg-[#111111] ${className}`}
+      className={`overflow-hidden border-y border-neutral-200 !bg-white transition-shadow duration-300 hover:shadow-[0_16px_48px_-28px_rgba(0,0,0,0.22)] dark:border-white/[0.08] dark:!bg-[#111111] sm:rounded-lg sm:border ${className}`}
     >
-      <header className="flex items-center gap-3.5 px-6 pt-6">
-        <Link href={profileHref} className="shrink-0" aria-label={creatorName}>
+      <header className="flex items-center gap-3.5 px-6 pt-6 sm:px-7 sm:pt-7">
+        <Link
+          href={profileHref}
+          className={`inline-flex shrink-0 ${creatorPostAvatarRingClass(appRole)}`}
+          aria-label={creatorName}
+        >
           {user?.avatarUrl ? (
             // eslint-disable-next-line @next/next/no-img-element
             <img src={user.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
@@ -410,41 +437,25 @@ export function CreatorContentPostCard({
         <div className="min-w-0 flex-1">
           <Link
             href={profileHref}
-            className="block truncate text-[15px] font-semibold leading-tight text-[#111111] hover:underline dark:text-white"
+            className="block truncate text-base font-semibold leading-tight text-[#111111] hover:underline dark:text-white"
           >
             {creatorName}
           </Link>
-          <p className="mt-1 truncate text-[13.5px] leading-tight text-neutral-500 dark:text-neutral-400">
+          <p className="mt-1.5 truncate text-[14px] leading-tight text-neutral-500 dark:text-neutral-400">
             {moodLine || specialtyLine || 'Creator'}
+            <span aria-hidden className="mx-1.5 text-neutral-300 dark:text-neutral-600">·</span>
+            <time dateTime={post.createdAt} title={new Date(post.createdAt).toLocaleString()}>
+              {formatPostTime(post.createdAt)}
+            </time>
           </p>
         </div>
-        <div className="flex shrink-0 items-center gap-3">
-          {showPinned ? (
-            <span className="inline-flex items-center gap-1.5 text-[13px] text-neutral-500 dark:text-neutral-400" title="Pinned">
-              <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7" />
-              </svg>
-              Pinned
-            </span>
-          ) : null}
-          {bucket === 'archived' || bucket === 'trash' || !isPublic ? (
-            <span className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[12.5px] text-neutral-500 dark:border-white/[0.1] dark:text-neutral-400">
-              {bucket === 'archived' ? 'Archived' : bucket === 'trash' ? 'In trash' : 'Private'}
-            </span>
-          ) : null}
-          <time
-            dateTime={post.createdAt}
-            title={new Date(post.createdAt).toLocaleString()}
-            className="text-[13px] text-neutral-400 dark:text-neutral-500"
-          >
-            {formatPostTime(post.createdAt)}
-          </time>
-          <div className="-mr-2">{cardControls}</div>
-        </div>
+        <div className="-mr-2 shrink-0">{cardControls}</div>
       </header>
 
+      <div className="flex flex-col pb-4 pl-6 pr-6 sm:pb-6 sm:pl-7 sm:pr-7">
+      <div className="min-w-0 flex-1">
       {editing && editDraft ? (
-        <div className="px-6 pt-6">
+        <div className="pt-6">
           <ContentPostDetailsBlock
             post={post}
             bucket={bucket}
@@ -469,118 +480,190 @@ export function CreatorContentPostCard({
               disabled={editSaving}
               className="rounded-lg bg-[#111111] px-5 py-2 text-[15px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-40 dark:bg-white dark:text-[#111111]"
             >
-              {editSaving ? 'Savingâ€¦' : 'Save'}
+              {editSaving ? 'Saving…' : 'Save'}
             </button>
           </div>
         </div>
-      ) : genre || title || description || tags.length > 0 ? (
-        <div className="px-6 pt-5">
-          {genre ? (
-            <p className="mb-2 text-[13px] font-medium text-neutral-500 dark:text-neutral-400">{genre}</p>
-          ) : null}
-          {title ? (
-            <h3 className="text-[1.125rem] font-semibold leading-snug tracking-[-0.01em] text-[#111111] dark:text-white">
-              {title}
-            </h3>
-          ) : null}
-          {description || tags.length > 0 ? (
-            <p
-              className={`whitespace-pre-wrap text-[15px] leading-[1.65] text-neutral-600 dark:text-neutral-300 ${
-                title ? 'mt-2' : ''
-              } ${descriptionLong && !descExpanded ? 'line-clamp-4' : ''}`}
-            >
-              {description}
-              {tags.length > 0 ? (
-                <>
-                  {description ? ' ' : null}
-                  {tags.map((tag) => (
-                    <span key={tag} className="mr-1.5 font-medium text-[#111111] dark:text-white">
-                      #{tag}
-                    </span>
-                  ))}
-                </>
+      ) : hasTextBlock ? (
+        <div className="pt-4">
+          {statusLabel || showPinned ? (
+            <div className="mb-4 flex flex-wrap items-center gap-2">
+              {showPinned ? (
+                <span className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] px-3 py-1 text-[13px] font-medium text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300">
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7" />
+                  </svg>
+                  Pinned
+                </span>
               ) : null}
-            </p>
+              {statusLabel ? (
+                <span className="rounded-full border border-black/[0.08] px-3 py-1 text-[13px] text-neutral-500 dark:border-white/[0.1] dark:text-neutral-400">
+                  {statusLabel}
+                </span>
+              ) : null}
+            </div>
           ) : null}
-          {descriptionLong ? (
-            <button
-              type="button"
-              onClick={() => setDescExpanded((v) => !v)}
-              className="mt-1.5 text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+
+          {title ? <ContentPostClampedTitle title={title} lines={post.mediaUrl ? 2 : 10} /> : null}
+
+          {tags.length > 0 || hasInfo ? (
+            <div className="mt-4 flex items-start justify-between gap-4">
+              <p className="flex min-w-0 flex-wrap gap-2">
+                {tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className="rounded-full border border-black/[0.1] px-3 py-1 text-[13.5px] leading-tight text-[#111111] dark:border-white/[0.14] dark:text-neutral-200"
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </p>
+              {hasInfo ? (
+                <button
+                  type="button"
+                  onClick={() => setInfoOpen((open) => !open)}
+                  aria-expanded={infoOpen}
+                  aria-controls={`post-info-${post.id}`}
+                  className="-my-1 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[13.5px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+                >
+                  {infoOpen ? 'Less info' : 'More info'}
+                  <svg
+                    className={`h-3.5 w-3.5 transition-transform duration-300 ${infoOpen ? 'rotate-180' : ''}`}
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    aria-hidden
+                  >
+                    <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
+                  </svg>
+                </button>
+              ) : null}
+            </div>
+          ) : null}
+
+          {hasInfo ? (
+            <div
+              id={`post-info-${post.id}`}
+              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+                infoOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
+              }`}
             >
-              {descExpanded ? 'Show less' : 'View more'}
-            </button>
+              <div className="overflow-hidden">
+                <dl className="grid grid-cols-2 gap-6 pt-4">
+                  {priceLabel ? (
+                    <div className="min-w-0">
+                      <dt className="text-[13.5px] text-neutral-500 dark:text-neutral-400">Estimated cost</dt>
+                      <dd className="mt-1 truncate text-[1.0625rem] font-semibold tabular-nums text-[#111111] dark:text-white">
+                        {priceLabel}
+                      </dd>
+                    </div>
+                  ) : null}
+                  {tools.length > 0 ? (
+                    <div className="col-start-2 min-w-0 text-right">
+                      <dt className="text-[13.5px] text-neutral-500 dark:text-neutral-400">Made with</dt>
+                      <dd className="mt-1 text-[1.0625rem] font-semibold text-[#111111] dark:text-white">
+                        {tools.join(', ')}
+                      </dd>
+                    </div>
+                  ) : null}
+                </dl>
+              </div>
+            </div>
           ) : null}
         </div>
       ) : null}
 
-      <div className="px-6 pt-5">
-        <div
-          role="button"
-          tabIndex={0}
-          aria-label="Open media fullscreen"
-          onClick={() => {
-            if (!editing) setLightboxOpen(true);
-          }}
-          onKeyDown={(e) => {
-            if (editing) return;
-            if (e.key === 'Enter' || e.key === ' ') {
-              e.preventDefault();
+      {post.mediaUrl && playableMedia ? (
+        <div className={`${mediaSpacing} -mx-6 overflow-hidden !bg-white dark:!bg-[#111111] sm:mx-0 sm:rounded-xl`}>
+          <ContentPostFeedMediaFrame
+            mediaUrl={post.mediaUrl}
+            mediaType={post.mediaType}
+            layout="feed"
+            fit="social"
+            title={title || null}
+            onExpand={(time) => {
+              setLightboxVideoTime(time);
               setLightboxOpen(true);
-            }
-          }}
-          className={`group/media overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-900 ${
-            editing ? 'cursor-default' : 'cursor-zoom-in'
-          }`}
-        >
-          {post.mediaUrl ? (
-            <div className="pointer-events-none w-full transition-transform duration-500 ease-out group-hover/media:scale-[1.015]">
-              <ContentPostFeedMediaFrame mediaUrl={post.mediaUrl} mediaType={post.mediaType} layout="feed" />
-            </div>
-          ) : (
-            <div className="flex min-h-[12rem] items-center justify-center text-[14px] text-neutral-400">No preview</div>
-          )}
+            }}
+          />
+        </div>
+      ) : post.mediaUrl ? (
+      <div
+        role="button"
+        tabIndex={0}
+        aria-label="Open media fullscreen"
+        onClick={() => {
+          if (!editing) setLightboxOpen(true);
+        }}
+        onKeyDown={(e) => {
+          if (editing) return;
+          if (e.key === 'Enter' || e.key === ' ') {
+            e.preventDefault();
+            setLightboxOpen(true);
+          }
+        }}
+        className={`${mediaSpacing} -mx-6 overflow-hidden !bg-white dark:!bg-[#111111] sm:mx-0 sm:rounded-xl ${
+          editing ? 'cursor-default' : 'cursor-pointer'
+        }`}
+      >
+        <div className="pointer-events-none w-full">
+          <ContentPostFeedMediaFrame mediaUrl={post.mediaUrl} mediaType={post.mediaType} layout="feed" fit="social" />
         </div>
       </div>
-
-      {!editing && (priceLabel || tools.length > 0) ? (
-        <dl className="flex flex-wrap gap-x-8 gap-y-2 px-6 pt-4 text-[14px]">
-          {priceLabel ? (
-            <div className="flex items-baseline gap-2">
-              <dt className="text-neutral-500 dark:text-neutral-400">Estimated cost</dt>
-              <dd className="font-medium tabular-nums text-[#111111] dark:text-white">{priceLabel}</dd>
-            </div>
-          ) : null}
-          {tools.length > 0 ? (
-            <div className="flex min-w-0 items-baseline gap-2">
-              <dt className="shrink-0 text-neutral-500 dark:text-neutral-400">Made with</dt>
-              <dd className="min-w-0 font-medium text-[#111111] dark:text-white">{tools.join(', ')}</dd>
-            </div>
-          ) : null}
-        </dl>
       ) : null}
 
-      {bucket !== 'trash' ? (
-        <div className="mt-5 border-t border-black/[0.06] px-6 py-3.5 dark:border-white/[0.08]">
+      {!editing && messageHref ? (
+        <div className="pt-5">
+          <Link
+            href={messageHref}
+            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-black/[0.1] py-3 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/20 hover:bg-black/[0.02] dark:border-white/[0.14] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
+          >
+            <svg
+              className="h-[18px] w-[18px]"
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={1.6}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
+              <path d="M8.6 11.7h.01M12 11.7h.01M15.4 11.7h.01" />
+            </svg>
+            {priceLabel ? 'Ask for a quote' : `Message ${creatorName.trim().split(/\s+/)[0] || 'creator'}`}
+          </Link>
+        </div>
+      ) : null}
+
+      </div>
+
+      {showRail ? (
+        <aside
+          className="mt-4 flex shrink-0"
+          aria-label="Post actions"
+        >
           <ContentPostSocialBar
-            variant="timeline"
+            variant="rail"
             postId={post.id}
             initialLikes={post.likes}
             createdAt={post.createdAt}
             commentsOpen={commentsOpen && canComment}
             onCommentsToggle={(open) => {
-              if (canComment && !editing) setCommentsOpen(open);
+              if (canComment) setCommentsOpen(open);
             }}
             commentCount={commentCount}
-            commentsDisabled={!canComment || editing}
+            commentsDisabled={!canComment}
+            shareUrl={`/marketplace/content/${encodeURIComponent(post.id)}`}
+            shareTitle={title || undefined}
           />
-        </div>
-      ) : (
-        <div className="h-6" />
-      )}
+        </aside>
+      ) : null}
+      </div>
 
-      {commentsOpen && canComment && !editing ? (
-        <div className="border-t border-black/[0.06] px-2 pb-2 dark:border-white/[0.08]" style={STUDIO_FLOAT_IN_STYLE}>
+      <PostCommentsSurface open={commentsOpen && canComment && !editing} onClose={closeComments}>
+        {(mode) => (
           <CommentThread
             variant="panel"
             targetType="POST"
@@ -589,17 +672,21 @@ export function CreatorContentPostCard({
             loginRedirect="/dashboard/creator?tab=content"
             commentsEnabled={commentsEnabled}
             moderationMode
-            onClose={() => setCommentsOpen(false)}
+            onClose={closeComments}
             onCountChange={setCommentCount}
-            className="!h-auto !min-h-0 !max-h-[520px] !rounded-none !border-0 !bg-transparent !shadow-none"
+            className={mode === 'sheet' ? COMMENTS_SHEET_CLASS : COMMENTS_INLINE_CLASS}
           />
-        </div>
-      ) : null}
+        )}
+      </PostCommentsSurface>
 
       <ContentPostLightbox
         post={lightboxPost}
         open={lightboxOpen}
-        onClose={() => setLightboxOpen(false)}
+        initialVideoTime={lightboxVideoTime}
+        onClose={() => {
+          setLightboxOpen(false);
+          setLightboxVideoTime(0);
+        }}
         bucket={bucket}
         moderationMode
         loginRedirect="/dashboard/creator?tab=content"

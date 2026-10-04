@@ -202,7 +202,7 @@ export function ProfileStrengthsField({
   const renderReadOnlyList = (heading: string) => {
     const listBlock =
       selectedValues.length === 0 ? (
-        <p className={profileSectionEmptyClass}>Aucun élément ajouté pour le moment.</p>
+        <p className={profileSectionEmptyClass}>No items added yet.</p>
       ) : (
         <div className="space-y-3">
           {selectedValues.map((item) => {
@@ -216,17 +216,17 @@ export function ProfileStrengthsField({
               >
                 <div className="flex items-center gap-3">
                   <CreatorToolLogo label={item} iconUrl={data?.iconUrl} size={28} />
-                  <p className="truncate text-[15px] font-semibold text-neutral-900 dark:text-neutral-50">
+                  <p className="truncate text-base font-semibold text-neutral-900 dark:text-neutral-50">
                     {item}
                   </p>
                 </div>
                 {data?.category?.trim() ? (
-                  <p className="mt-1 text-xs font-medium uppercase tracking-[0.12em] text-neutral-500">
+                  <p className="mt-1.5 text-[13px] font-medium uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
                     {data.category.trim()}
                   </p>
                 ) : null}
                 {body ? (
-                  <p className={`mt-2 text-sm ${profileSectionMutedTextClass}`}>{body}</p>
+                  <p className={`mt-2.5 ${profileSectionMutedTextClass}`}>{body}</p>
                 ) : null}
               </div>
             );
@@ -248,11 +248,11 @@ export function ProfileStrengthsField({
       {selectedValues.length > 0 && (
         <div className="space-y-3">
           <div>
-            <p className={`mb-1 ${profileSectionSubheadingClass}`}>Sélection</p>
+            <p className={`mb-1.5 ${profileSectionSubheadingClass}`}>Selection</p>
             <p className={profileSectionMutedTextClass}>
               {showUseCases
-                ? "Affinez chaque outil : niveau, cas d'usage et description. Sans logo uploadé, la première lettre s'affiche."
-                : 'Affinez chaque élément : niveau et description. Sans logo uploadé, la première lettre s’affiche.'}
+                ? 'Refine each tool: level, use cases and description. Without an uploaded logo, the first letter is shown.'
+                : 'Refine each item: level and description. Without an uploaded logo, the first letter is shown.'}
             </p>
           </div>
           {selectedValues.map((label) => {
@@ -264,7 +264,7 @@ export function ProfileStrengthsField({
             return (
               <div
                 key={label}
-                className="rounded-2xl border border-neutral-200 bg-white p-3.5 dark:border-neutral-700 dark:bg-neutral-950"
+                className="rounded-2xl border border-neutral-200 bg-white p-4 dark:border-neutral-700 dark:bg-neutral-950"
               >
                 <div className="flex items-start justify-between gap-3">
                   <div className="flex min-w-0 items-center gap-2.5">
@@ -278,17 +278,17 @@ export function ProfileStrengthsField({
                     onClick={() =>
                       syncSelectedValues(selectedValues.filter((value) => value !== label))
                     }
-                    className="shrink-0 rounded-full px-2 text-xs font-semibold text-red-600 hover:text-red-700 dark:text-red-400"
+                    className="shrink-0 rounded-full px-2 text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400"
                   >
-                    Retirer
+                    Remove
                   </button>
                 </div>
 
                 <div className="mt-3 grid gap-3 sm:grid-cols-2">
                   {isStackMode ? (
                     <label className="block sm:col-span-2">
-                      <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                        Catégorie
+                      <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+                        Category
                       </span>
                       <input
                         type="text"
@@ -297,14 +297,14 @@ export function ProfileStrengthsField({
                         onChange={(event) =>
                           updateItem(label, { category: event.target.value.slice(0, 80) })
                         }
-                        placeholder="ex. Frontend, Backend, DevOps"
-                        className={`mt-1.5 ${profileFormInputClass}`}
+                        placeholder="e.g. Frontend, Backend, DevOps"
+                        className={`mt-2 ${profileFormInputClass}`}
                       />
                     </label>
                   ) : null}
                   <label className="block sm:col-span-2">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                      Niveau
+                    <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+                      Level
                     </span>
                     <select
                       value={item.level ?? ''}
@@ -313,9 +313,9 @@ export function ProfileStrengthsField({
                           level: (event.target.value || null) as StrengthToolLevel | null,
                         })
                       }
-                      className={`mt-1.5 ${profileFormInputClass}`}
+                      className={`mt-2 ${profileFormInputClass}`}
                     >
-                      <option value="">Non renseigné</option>
+                      <option value="">Not set</option>
                       {LEVEL_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
                           {option.label}
@@ -326,7 +326,7 @@ export function ProfileStrengthsField({
                 </div>
 
                 <label className="mt-3 block">
-                  <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
+                  <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
                     Description
                   </span>
                   <textarea
@@ -335,32 +335,32 @@ export function ProfileStrengthsField({
                     value={description}
                     onChange={(event) => updateItem(label, { description: event.target.value })}
                     placeholder={autoPreview}
-                    className={`mt-1.5 ${profileFormInputClass} min-h-[4.5rem] resize-y`}
+                    className={`mt-2 ${profileFormInputClass} min-h-[5rem] resize-y`}
                   />
                 </label>
-                <p className={`mt-1.5 text-xs ${profileSectionMutedTextClass}`}>
+                <p className="mt-2 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
                   {description.trim()
                     ? `${description.trim().length}/${MAX_DESCRIPTION}`
-                    : `Auto : ${autoPreview}`}
+                    : `Auto: ${autoPreview}`}
                 </p>
 
                 {showUseCases ? (
                   <div className="mt-3">
-                    <span className="text-[11px] font-bold uppercase tracking-[0.14em] text-neutral-500">
-                      Cas d&apos;usage
+                    <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
+                      Use cases
                     </span>
-                    <div className="mt-2 flex flex-wrap gap-1.5">
+                    <div className="mt-2.5 flex flex-wrap gap-2">
                       {useCases.map((useCase) => (
                         <span
                           key={useCase}
-                          className="inline-flex items-center gap-1 rounded-full border border-neutral-200 bg-neutral-50 px-2.5 py-1 text-xs font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
+                          className="inline-flex items-center gap-1.5 rounded-full border border-neutral-200 bg-neutral-50 px-3 py-1 text-sm font-medium text-neutral-800 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100"
                         >
                           {useCase}
                           <button
                             type="button"
                             onClick={() => removeUseCase(label, useCase)}
                             className="text-neutral-400 hover:text-red-500"
-                            aria-label={`Retirer ${useCase}`}
+                            aria-label={`Remove ${useCase}`}
                           >
                             ×
                           </button>
@@ -387,8 +387,8 @@ export function ProfileStrengthsField({
                         }}
                         placeholder={
                           useCases.length >= MAX_USE_CASES
-                            ? 'Maximum 8 cas d’usage'
-                            : 'Ajouter un cas d’usage'
+                            ? 'Maximum 8 use cases'
+                            : 'Add a use case'
                         }
                         className={profileFormInputClass}
                       />
@@ -396,9 +396,9 @@ export function ProfileStrengthsField({
                         type="button"
                         onClick={() => addUseCase(label)}
                         disabled={!useCaseDraft.trim() || useCases.length >= MAX_USE_CASES}
-                        className="rounded-xl bg-neutral-900 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-neutral-800 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
+                        className="rounded-xl bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
                       >
-                        Ajouter
+                        Add
                       </button>
                     </div>
                   </div>
@@ -409,13 +409,13 @@ export function ProfileStrengthsField({
         </div>
       )}
 
-      <div className="rounded-2xl border border-dashed border-neutral-200 p-4 dark:border-neutral-700">
-        <p className="text-[15px] font-semibold text-neutral-900 dark:text-neutral-100">{addLabel}</p>
-        <p className={`mt-1 ${profileSectionMutedTextClass}`}>
-          Nom + logo optionnel ({selectedValues.length}/{MAX_STRENGTHS}). Logo auto si le nom est
-          reconnu ; sinon première lettre. Upload = priorité.
+      <div className="rounded-2xl border border-dashed border-neutral-200 p-5 dark:border-neutral-700">
+        <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{addLabel}</p>
+        <p className={`mt-1.5 ${profileSectionMutedTextClass}`}>
+          Name + optional logo ({selectedValues.length}/{MAX_STRENGTHS}). Logo is detected automatically
+          if the name is recognized; otherwise the first letter is shown. Uploads take priority.
         </p>
-        <div className="mt-3 flex flex-col gap-2 sm:flex-row sm:items-center">
+        <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <input
             ref={iconInputRef}
             type="file"
@@ -450,33 +450,33 @@ export function ProfileStrengthsField({
                 addCustomTool();
               }
             }}
-            placeholder={isStackMode ? 'Nom de l’élément' : 'Nom de l’outil'}
+            placeholder={isStackMode ? 'Item name' : 'Tool name'}
             className={profileFormInputClass}
           />
           <button
             type="button"
             onClick={addCustomTool}
             disabled={!customDraft.trim() || selectedValues.length >= MAX_STRENGTHS}
-            className="rounded-xl bg-orange-500 px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-xl bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
           >
-            Ajouter
+            Add
           </button>
         </div>
         {customIconUrl ? (
           <button
             type="button"
             onClick={() => setCustomIconUrl(null)}
-            className="mt-2 text-xs font-medium text-neutral-500 hover:text-neutral-700 dark:text-neutral-400"
+            className="mt-2.5 text-sm font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
           >
-            Retirer le logo
+            Remove logo
           </button>
         ) : draftAutoIcon ? (
-          <p className="mt-2 text-xs font-medium text-emerald-700 dark:text-emerald-400">
-            Logo auto détecté : {draftAutoIcon.matchedName}. Tu peux uploader un logo custom pour
-            le remplacer.
+          <p className="mt-2.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
+            Logo detected automatically: {draftAutoIcon.matchedName}. You can upload a custom logo to
+            replace it.
           </p>
         ) : null}
-        {uploadError ? <p className="mt-2 text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}
+        {uploadError ? <p className="mt-2.5 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
       </div>
     </section>
   );
@@ -499,19 +499,19 @@ export function ProfileStrengthsField({
 
   if (mode === 'stack') {
     return (
-      <div className="space-y-6">{renderEditor('Stack', 'Ajouter un élément de stack', false)}</div>
+      <div className="space-y-6">{renderEditor('Stack', 'Add a stack item', false)}</div>
     );
   }
   if (mode === 'tools') {
     return (
-      <div className="space-y-6">{renderEditor('Tools', 'Ajouter un outil', false)}</div>
+      <div className="space-y-6">{renderEditor('Tools', 'Add a tool', false)}</div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {renderEditor('Stack', 'Ajouter un élément de stack', false)}
-      {renderEditor('Tools', 'Ajouter un outil', false)}
+      {renderEditor('Stack', 'Add a stack item', false)}
+      {renderEditor('Tools', 'Add a tool', false)}
     </div>
   );
 }

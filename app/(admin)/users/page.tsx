@@ -9,7 +9,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import api from '@/lib/api';
 import { PageResponse, Role, UpdateRoleData, User } from '@/types/auth';
-import { AxiosError } from 'axios';
+import { getApiErrorMessage } from '@/lib/api-error';
 
 const ALL_ROLES: Role[] = ['ROLE_CREATOR', 'ROLE_AGENT', 'ROLE_ADMIN'];
 
@@ -56,8 +56,7 @@ export default function AdminUsersPage() {
       setTotalPages(response.data.totalPages);
       setTotalElements(response.data.totalElements);
     } catch (err) {
-      const axiosError = err as AxiosError<{ message: string }>;
-      setError(axiosError.response?.data?.message || 'Erreur lors du chargement des utilisateurs.');
+      setError(getApiErrorMessage(err, 'Unable to load users. Please try again.'));
     } finally {
       setIsLoading(false);
     }
@@ -94,7 +93,7 @@ export default function AdminUsersPage() {
   const handleSaveRoles = async () => {
     if (!editingUser) return;
     if (selectedRoles.length === 0) {
-      setRoleError('Au moins un rôle est requis.');
+      setRoleError('Select at least one role.');
       return;
     }
     setIsSavingRoles(true);
@@ -107,8 +106,7 @@ export default function AdminUsersPage() {
       );
       closeEditModal();
     } catch (err) {
-      const axiosError = err as AxiosError<{ message: string }>;
-      setRoleError(axiosError.response?.data?.message || 'Erreur lors de la mise à jour des rôles.');
+      setRoleError(getApiErrorMessage(err, 'Unable to update roles. Please try again.'));
     } finally {
       setIsSavingRoles(false);
     }
@@ -130,8 +128,7 @@ export default function AdminUsersPage() {
       );
       setConfirmToggle(null);
     } catch (err) {
-      const axiosError = err as AxiosError<{ message: string }>;
-      setError(axiosError.response?.data?.message || 'Erreur lors de la modification du statut.');
+      setError(getApiErrorMessage(err, 'Unable to change this account’s status. Please try again.'));
       setConfirmToggle(null);
     } finally {
       setIsToggling(false);

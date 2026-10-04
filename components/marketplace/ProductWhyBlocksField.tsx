@@ -1,5 +1,6 @@
 'use client';
 
+import { useState, type ChangeEvent } from 'react';
 import type { Control, FieldArrayWithId, UseFormRegister, UseFormSetValue, UseFormWatch } from 'react-hook-form';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPen, faTrashCan } from '@fortawesome/free-solid-svg-icons';
@@ -9,6 +10,7 @@ import {
 } from '@/components/creator/creator-content-media';
 import { inferProfileMediaType } from '@/components/creator/studio/profile-form-schema';
 import { InlineBulletLinesField } from '@/components/marketplace/InlineBulletLinesField';
+import { createUploadPreview, UploadingOverlay, type UploadPreview } from '@/components/ui/UploadingOverlay';
 import {
   createEmptyProductWhyBlock,
   type ProductWhyBlockForm,
@@ -71,7 +73,8 @@ function MediaWhyBlock({
   onRemove: () => void;
 }) {
   const mediaUrl = watch(`whyProductBlocks.${index}.mediaUrl`) ?? '';
-  const { inputRef, uploading, uploadError, pickFile, onFileChange } = useContentMediaUpload({
+  const [localPreview, setLocalPreview] = useState<UploadPreview | null>(null);
+  const { inputRef, uploading, uploadError, pickFile, uploadFile } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: (url) => {
       setValue(`whyProductBlocks.${index}.mediaUrl`, url, { shouldDirty: true });
@@ -81,33 +84,44 @@ function MediaWhyBlock({
     },
   });
 
+  const onFileChange = async (event: ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    event.target.value = '';
+    if (!file) return;
+    const preview = createUploadPreview(file);
+    setLocalPreview(preview);
+    try {
+      await uploadFile(file);
+    } finally {
+      URL.revokeObjectURL(preview.url);
+      setLocalPreview(null);
+    }
+  };
+
   return (
     <section className="w-full">
+      <div className="group/block relative">
       <button
         type="button"
         onClick={pickFile}
         disabled={uploading}
-        className="group relative flex aspect-[16/10] min-h-[10rem] w-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-neutral-100 transition hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700"
+        className="group relative flex aspect-[2/1] min-h-[9rem] w-full cursor-pointer flex-col overflow-hidden rounded-2xl bg-neutral-100 transition hover:bg-neutral-200/80 dark:bg-neutral-800 dark:hover:bg-neutral-700"
       >
         {mediaUrl ? (
           <>
             <div className="absolute inset-0 [&_img]:h-full [&_img]:w-full [&_img]:object-cover [&_video]:h-full [&_video]:w-full [&_video]:object-cover">
               <ContentMediaPreview locale="en" mediaUrl={mediaUrl} mediaType="FILE" large fluid />
             </div>
-            <span
-              className={`pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 transition-opacity duration-200 ${
-                uploading ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'
-              }`}
-              aria-hidden
-            >
-              {uploading ? (
-                <span className="text-sm font-semibold text-white">Uploading…</span>
-              ) : (
+            {!uploading ? (
+              <span
+                className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/45 opacity-0 transition-opacity duration-200 group-hover:opacity-100"
+                aria-hidden
+              >
                 <span className="flex h-12 w-12 items-center justify-center rounded-full bg-white/95 text-neutral-900 shadow-lg">
                   <FontAwesomeIcon icon={faPen} className="text-lg" />
                 </span>
-              )}
-            </span>
+              </span>
+            ) : null}
           </>
         ) : (
           <span className="flex flex-1 flex-col items-center justify-center px-5 py-8 text-center">
@@ -120,28 +134,27 @@ function MediaWhyBlock({
                 />
               </svg>
             </span>
-            <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">
-              {uploading ? 'Uploading…' : 'Drop photo or video'}
-            </span>
+            <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">Drop photo or video</span>
           </span>
         )}
+        {uploading ? <UploadingOverlay preview={localPreview} /> : null}
       </button>
-      <input ref={inputRef} type="file" accept={MEDIA_ACCEPT} className="sr-only" onChange={onFileChange} />
-
-      <div className="mt-1.5 mb-5 flex h-6 items-center">
+      {!uploading ? (
         <button
           type="button"
           onClick={onRemove}
-          className="inline-flex items-center gap-1.5 text-xs text-neutral-400 transition hover:text-red-500 dark:text-neutral-500 dark:hover:text-red-400"
           aria-label="Remove highlight"
+          title="Remove highlight"
+          className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-[opacity,background-color] hover:bg-black/75 focus-visible:opacity-100 sm:opacity-0 sm:group-hover/block:opacity-100"
         >
-          <FontAwesomeIcon icon={faTrashCan} className="text-[11px]" />
-          <span>Remove</span>
+          <FontAwesomeIcon icon={faTrashCan} className="text-[12px]" />
         </button>
+      ) : null}
       </div>
-      {uploadError ? <p className="mb-2 text-xs text-red-600">{uploadError}</p> : null}
+      <input ref={inputRef} type="file" accept={MEDIA_ACCEPT} className="sr-only" onChange={(e) => void onFileChange(e)} />
+      {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
 
-      <div>
+      <div className="mt-6">
         <CaptionLines index={index} register={register} control={control} />
       </div>
     </section>
@@ -186,31 +199,27 @@ export function ProductWhyBlocksField({
 
   return (
     <div className="w-full space-y-8">
-      <div className="flex flex-wrap justify-end gap-2">
+      <div className="flex flex-wrap gap-2">
         <button
           type="button"
           disabled={!canAdd}
           onClick={() => append(createEmptyProductWhyBlock(fields.length, 'media'))}
-            className="rounded-xl border border-neutral-200 bg-white px-5 py-2.5 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 disabled:opacity-40 dark:border-transparent dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-100"
+          className="inline-flex h-10 items-center rounded-lg border border-black/[0.1] px-4 text-[14px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:opacity-40 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30"
         >
-          + Photo & captions
+          + Photo highlight
         </button>
         <button
           type="button"
           disabled={!canAdd}
           onClick={() => append(createEmptyProductWhyBlock(fields.length, 'text'))}
-          className="rounded-xl bg-neutral-200 px-5 py-2.5 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-300 disabled:opacity-40 dark:bg-neutral-700 dark:text-neutral-100 dark:hover:bg-neutral-600"
+          className="inline-flex h-10 items-center rounded-lg border border-black/[0.1] px-4 text-[14px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:opacity-40 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30"
         >
-          + Text only
+          + Text highlight
         </button>
       </div>
 
-      {fields.length === 0 ? (
-        <p className="text-sm text-neutral-500 dark:text-neutral-400">
-          No highlights yet — choose a type above to start.
-        </p>
-      ) : (
-        <div className="grid grid-cols-1 gap-x-6 gap-y-8 lg:grid-cols-2 lg:items-start">
+      {fields.length === 0 ? null : (
+        <div className="flex flex-col divide-y divide-black/[0.06] dark:divide-white/[0.08] [&>*]:py-7 [&>*:first-child]:pt-0 [&>*:last-child]:pb-0">
           {fields.map((field, index) => {
             const kind = watch(`whyProductBlocks.${index}.kind`) ?? 'media';
             return (

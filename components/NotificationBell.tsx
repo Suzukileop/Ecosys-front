@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
-import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
+import { HeaderCountBadge } from '@/components/layout/HeaderCountBadge';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
@@ -179,19 +179,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           <path d="M18.4 15.4a1.9 1.9 0 0 1-.55-1.33V10.9a5.9 5.9 0 0 0-4.1-5.6v-.4a1.75 1.75 0 1 0-3.5 0v.4a5.9 5.9 0 0 0-4.1 5.6v3.17c0 .5-.2.98-.55 1.33L4.5 16.7h15l-1.1-1.3Z" />
           <path d="M14.1 19.2a2.35 2.35 0 0 1-4.2 0" />
         </svg>
-        {badgeCount > 0 ? (
-          /*
-           * A 5px signal, not a counted pill. The exact number was never actionable from the bar —
-           * you open the panel to read it — and a filled red capsule is the loudest object in a
-           * composition whose whole language is hairlines. The count still reaches assistive tech
-           * through `aria-label`, so nothing is actually lost.
-           */
-          <span
-            aria-hidden
-            style={{ backgroundColor: ACCENT_ORANGE }}
-            className="absolute right-2 top-1.5 block h-[5px] w-[5px] rounded-full"
-          />
-        ) : null}
+        <HeaderCountBadge count={badgeCount} />
       </button>
 
       {open && (

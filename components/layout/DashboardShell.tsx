@@ -1,21 +1,27 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import { Suspense, useCallback, useEffect } from 'react';
+import { Suspense, useCallback, useEffect, useState } from 'react';
 import { usePathname, useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AppLoadingScreen } from '@/components/ui/LoadingSpinner';
 import { FlashToastHost } from '@/components/ui/FlashToastHost';
 import { DashboardTopHeader } from '@/components/layout/DashboardTopHeader';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
-import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
-import { DASHBOARD_MAIN_BG } from '@/components/landing/landingBrand';
+import {
+  isContentCreatorsPath,
+  isCreatorShopPath,
+  isMarketplaceCreatorProfilePath,
+  isServiceProvidersCatalogPath,
+} from '@/lib/marketplace-nav';
+import { APP_GROUND } from '@/components/landing/landingBrand';
 import {
   MESSAGING_DETAILS_OPEN_EVENT,
   PORTFOLIO_SETTINGS_OPEN_EVENT,
   setSidebarCollapsed,
 } from '@/lib/dashboard-chrome';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
+import { recheckServer, useServerStatusStore } from '@/stores/serverStatusStore';
 import { usePresenceHeartbeat } from '@/hooks/usePresenceHeartbeat';
 import {
   creatorCanAccessMyProducts,
@@ -33,9 +39,14 @@ function isCreatorStudioPath(pathname: string): boolean {
   return true;
 }
 
-/** Product consult / edit / new — same hub motif as My Product. */
+/** Product edit / new — hub motif background. */
 function isCreatorProductsWorkspacePath(pathname: string): boolean {
-  return pathname.startsWith('/dashboard/creator/products');
+  return pathname.startsWith('/dashboard/creator/products') && !isCreatorProductConsultPath(pathname);
+}
+
+/** Product consult page — plain surface, same as My Product. */
+function isCreatorProductConsultPath(pathname: string): boolean {
+  return /^\/dashboard\/creator\/products\/[^/]+\/?$/.test(pathname) && !pathname.endsWith('/new');
 }
 
 function isNewsFeedPath(pathname: string): boolean {
@@ -60,26 +71,146 @@ function isMyServicePath(pathname: string): boolean {
   );
 }
 
-function SessionErrorScreen({ onRetry }: { onRetry: () => void }) {
+const SESSION_AUTO_RETRY_SECONDS = 15;
+
+type SessionErrorScreenProps = {
+  onRetry: () => void | Promise<unknown>;
+  code?: string;
+  status?: string;
+  title?: string;
+  description?: string;
+};
+
+function SessionErrorScreen({
+  onRetry,
+  code = '503',
+  status = 'Service unavailable',
+  title = 'Lost connection to the server',
+  description = 'We couldn’t verify your session. The server may be restarting — your work is safe and we’ll reconnect you automatically.',
+}: SessionErrorScreenProps) {
+  const [retrying, setRetrying] = useState(false);
+  const [countdown, setCountdown] = useState(SESSION_AUTO_RETRY_SECONDS);
+
+  const retry = useCallback(async () => {
+    if (retrying) return;
+    setRetrying(true);
+    try {
+      await onRetry();
+    } finally {
+      setRetrying(false);
+      setCountdown(SESSION_AUTO_RETRY_SECONDS);
+    }
+  }, [onRetry, retrying]);
+
+  useEffect(() => {
+    if (retrying) return;
+    const t =
+      countdown <= 0
+        ? window.setTimeout(() => void retry(), 0)
+        : window.setTimeout(() => setCountdown((c) => c - 1), 1000);
+    return () => window.clearTimeout(t);
+  }, [countdown, retrying, retry]);
+
+  const progress = retrying ? 100 : ((SESSION_AUTO_RETRY_SECONDS - countdown) / SESSION_AUTO_RETRY_SECONDS) * 100;
+
   return (
-    <div className="flex min-h-screen flex-col items-center justify-center gap-6 bg-white dark:bg-neutral-950">
-      <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-50 text-2xl dark:bg-orange-500/10">
-        ⚠️
-      </div>
-      <div className="text-center">
-        <p className="text-lg font-semibold text-gray-900 dark:text-white">
-          Server temporarily unavailable
-        </p>
-        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
-          Could not verify your session. Your connection may be rate-limited.
-        </p>
-      </div>
-      <button
-        onClick={onRetry}
-        className="rounded-lg bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-orange-600 active:scale-95 transition"
-      >
-        Try again
-      </button>
+    <div className="relative flex min-h-screen flex-col bg-[#F8F8F8] px-6 dark:bg-black">
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0 opacity-[0.5] [background-image:radial-gradient(rgba(0,0,0,0.07)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)] dark:[background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)]"
+      />
+
+      <main className="relative flex flex-1 items-center justify-center py-16">
+        <div className="w-full max-w-[480px]">
+          <div className="overflow-hidden rounded-2xl border border-black/[0.06] bg-white shadow-[0_24px_64px_-32px_rgba(0,0,0,0.18)] dark:border-white/[0.08] dark:bg-[#111111]">
+            <div className="flex items-center justify-center border-b border-black/[0.05] bg-[#FAFAFA] px-8 py-10 dark:border-white/[0.06] dark:bg-white/[0.02]">
+              <svg viewBox="0 0 280 64" className="h-16 w-full max-w-[280px]" fill="none" aria-hidden>
+                <g className="text-[#111111] dark:text-white" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeLinejoin="round">
+                  <rect x="8" y="14" width="44" height="30" rx="4" />
+                  <path d="M20 52h20M30 44v8" />
+                  <rect x="228" y="10" width="44" height="18" rx="3" />
+                  <rect x="228" y="34" width="44" height="18" rx="3" />
+                  <path d="M238 19h.01M238 43h.01" strokeWidth="2.4" />
+                </g>
+                <g className="text-neutral-300 dark:text-neutral-700" stroke="currentColor" strokeWidth="1.6" strokeLinecap="round" strokeDasharray="2 6">
+                  <path d="M64 31h56">
+                    <animate attributeName="stroke-dashoffset" from="16" to="0" dur="0.9s" repeatCount="indefinite" />
+                  </path>
+                  <path d="M160 31h56">
+                    <animate attributeName="stroke-dashoffset" from="16" to="0" dur="0.9s" repeatCount="indefinite" />
+                  </path>
+                </g>
+                <circle cx="140" cy="31" r="13" className="fill-white stroke-black/10 dark:fill-[#111111] dark:stroke-white/15" strokeWidth="1.2" />
+                <path d="m135.5 26.5 9 9m0-9-9 9" className="text-amber-500" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+              </svg>
+            </div>
+
+            <div className="px-8 pb-8 pt-7 sm:px-10">
+              <div className="flex items-center gap-2.5">
+                <span className="rounded-md bg-black/[0.05] px-2 py-0.5 font-mono text-[12px] font-medium text-neutral-600 dark:bg-white/[0.08] dark:text-neutral-300">
+                  {code}
+                </span>
+                <span className="relative flex h-2 w-2">
+                  <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-amber-400 opacity-60" />
+                  <span className="relative inline-flex h-2 w-2 rounded-full bg-amber-400" />
+                </span>
+                <span className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400">{status}</span>
+              </div>
+
+              <h1 className="mt-4 text-[1.625rem] font-bold leading-tight tracking-[-0.02em] text-[#111111] dark:text-white">
+                {title}
+              </h1>
+              <p className="mt-2.5 text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+                {description}
+              </p>
+
+              <div className="mt-7 flex flex-col gap-2.5 sm:flex-row">
+                <button
+                  type="button"
+                  onClick={() => void retry()}
+                  disabled={retrying}
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-2.5 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:focus-visible:ring-white/30"
+                >
+                  <svg
+                    className={`h-4 w-4 ${retrying ? 'animate-spin' : ''}`}
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    stroke="currentColor"
+                    strokeWidth={2}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M20 11a8 8 0 1 0-2.34 5.66" />
+                    <path d="M20 4v7h-7" />
+                  </svg>
+                  {retrying ? 'Reconnecting…' : 'Try again'}
+                </button>
+                <button
+                  type="button"
+                  onClick={() => window.location.reload()}
+                  className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-black/[0.1] px-5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/20 hover:bg-black/[0.02] dark:border-white/[0.14] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
+                >
+                  Reload page
+                </button>
+              </div>
+            </div>
+
+            <div className="border-t border-black/[0.05] px-8 py-4 dark:border-white/[0.06] sm:px-10">
+              <div className="flex items-center justify-between text-[13px] text-neutral-400 dark:text-neutral-500" aria-live="polite">
+                <span>{retrying ? 'Checking the connection…' : 'Auto-retry'}</span>
+                <span className="tabular-nums">{retrying ? '' : `${countdown}s`}</span>
+              </div>
+              <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.06]">
+                <div
+                  className={`h-full rounded-full bg-[#111111] transition-[width] duration-1000 ease-linear dark:bg-white ${retrying ? 'animate-pulse' : ''}`}
+                  style={{ width: `${progress}%` }}
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+      </main>
     </div>
   );
 }
@@ -97,6 +228,8 @@ export function DashboardShell({
   const router = useRouter();
   const { isLoading, user, sessionStatus, restoreSession } = useAuth();
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
+  const serverUnreachable = useServerStatusStore((state) => state.unreachable);
+  const serverOffline = useServerStatusStore((state) => state.offline);
   usePresenceHeartbeat(Boolean(user) && sessionStatus === 'authenticated');
 
   useEffect(() => {
@@ -114,24 +247,25 @@ export function DashboardShell({
   const creatorStudioPattern = isCreatorStudioPath(pathname);
   const creatorProductsPattern = isCreatorProductsWorkspacePath(pathname);
   const newsFeedPattern = isNewsFeedPath(pathname);
+  const settingsPage = pathname.startsWith('/dashboard/settings');
   const myProductPattern = isMyProductPath(pathname);
   const myServicePattern = isMyServicePath(pathname);
+  const publicCreatorProfile = isMarketplaceCreatorProfilePath(pathname);
   const contentCreatorsPattern =
-    isContentCreatorsPath(pathname) && !isServiceProvidersCatalogPath(pathname);
+    isContentCreatorsPath(pathname) &&
+    !isServiceProvidersCatalogPath(pathname) &&
+    !publicCreatorProfile &&
+    !isCreatorShopPath(pathname);
   const serviceProvidersCatalog = isServiceProvidersCatalogPath(pathname);
   const portfolioWorkspace = pathname.startsWith('/dashboard/portfolio');
-  const searchResults =
-    pathname.startsWith('/dashboard/search') || pathname.startsWith('/dashboard/notifications');
   const marketplaceDirectory = serviceProvidersCatalog || pathname === '/marketplace';
   const usePatternBackground =
     transparentContent ||
     creatorProductsPattern ||
-    newsFeedPattern ||
     contentCreatorsPattern;
   const useTransparentHeader =
     transparentHeader ||
     creatorProductsPattern ||
-    newsFeedPattern ||
     contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
   const discussionsLayout = pathname.startsWith('/dashboard/discussions');
@@ -195,43 +329,45 @@ export function DashboardShell({
     return <SessionErrorScreen onRetry={handleRetry} />;
   }
 
-  // Avoid painting an empty/half dashboard while auth is still resolving (account switch).
-  if (isLoading || (!user && sessionStatus !== 'unauthenticated')) {
-    return (
-      <div className="flex min-h-screen items-center justify-center bg-white dark:bg-neutral-950">
-        <LoadingSpinner size="lg" />
-      </div>
+  // The page underneath is unmounted, so it refetches its data when the server comes back.
+  if (serverUnreachable) {
+    return serverOffline ? (
+      <SessionErrorScreen
+        onRetry={recheckServer}
+        code="OFFLINE"
+        status="No internet connection"
+        title="You’re offline"
+        description="Check your Wi‑Fi or mobile data. We’ll pick up right where you left off as soon as you’re back online."
+      />
+    ) : (
+      <SessionErrorScreen
+        onRetry={recheckServer}
+        title="We can’t reach the server"
+        description="Skraft is temporarily unavailable, possibly restarting. Nothing is lost — this page will come back on its own as soon as the server responds."
+      />
     );
   }
 
+  // Avoid painting an empty/half dashboard while auth is still resolving (account switch).
+  if (isLoading || (!user && sessionStatus !== 'unauthenticated')) {
+    return <AppLoadingScreen />;
+  }
+
   /*
-   * Per-route page ground. Three of these are deliberate departures from `neutral-100`:
-   *
-   * - My Portfolio sits on mineral sand `#E6E5E3` in light (and absolute black in dark), so the
-   *   workspace chrome and the content plates share one quiet ground. Messages keeps `#F8F8F8`.
-   * - The providers directory sits one step lower, on the mineral ground `#E6E5E3` of the SKKY
-   *   charter, so its cards lift off the page without a shadow.
-   *
-   * These pages paint their own surfaces, so what this really covers is the strip of page around
-   * them — an error row, the moment before the panels mount — which would otherwise flash
-   * `neutral-100` in the middle of the charter.
+   * One page ground (`APP_GROUND`, white) across the app, with blocks drawn as grey panels on it;
+   * the header bar and search field follow it. Messages and Settings keep the `#F8F8F8` ground
+   * and white panels they were built against.
    */
+  const appSurfaces = !discussionsLayout && !settingsPage;
   const shellBg = usePatternBackground
     ? 'bg-transparent'
-    : portfolioWorkspace ||
-        searchResults ||
-        discussionsLayout ||
-        marketplaceDirectory ||
-        myProductPattern ||
-        myServicePattern ||
-        creatorStudioPattern
+    : discussionsLayout || settingsPage
       ? 'bg-[#F8F8F8] dark:bg-black'
-      : DASHBOARD_MAIN_BG;
+      : `${APP_GROUND} dark:bg-black`;
 
   return (
     <>
       {(creatorProductsPattern ||
-        newsFeedPattern ||
         contentCreatorsPattern) && (
         <MarketplacePatternBackground variant="hub" />
       )}
@@ -249,6 +385,7 @@ export function DashboardShell({
         <DashboardTopHeader transparent={useTransparentHeader} />
         <div
           data-dashboard-content
+          data-app-surfaces={appSurfaces ? '' : undefined}
           className={`relative z-10 min-w-0 flex-1 ${
             discussionsLayout
               ? 'flex min-h-0 flex-col overflow-hidden p-0'
@@ -258,12 +395,10 @@ export function DashboardShell({
               ? 'max-w-full min-w-0 px-0 pb-0 pt-0'
               : fillMainLayout
               ? 'flex min-h-0 flex-col overflow-hidden px-0 pb-4 pt-4'
-              : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : 'pt-6'} ${
-                  marketplaceDirectory || creatorStudioPattern
+              : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : creatorStudioPattern ? 'pt-0 sm:pt-6' : newsFeedPattern || serviceProvidersCatalog ? 'pt-2 lg:pt-6' : 'pt-6'} ${
+                  marketplaceDirectory || creatorStudioPattern || newsFeedPattern || settingsPage
                     ? 'px-0'
-                    : newsFeedPattern
-                      ? 'px-4 sm:px-5'
-                      : 'px-6'
+                    : 'px-6'
                 }`
           } ${shellBg}`}
         >

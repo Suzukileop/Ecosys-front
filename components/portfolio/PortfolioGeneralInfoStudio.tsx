@@ -20,7 +20,10 @@ import {
   useStudioFold,
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
+import { SpecialtyMultiSelect } from '@/components/creator/studio/SpecialtyMultiSelect';
 import { CREATOR_GENDER_VALUES } from '@/lib/creator-gender';
+import { normalizeCreatorAppRole } from '@/lib/creator-app-role';
+import { MAX_PROFILE_SPECIALTIES } from '@/lib/specialties';
 import { NATIONALITY_SELECT_OPTIONS, nationalityFlag } from '@/lib/countries';
 import { resolveAvailabilityStatusLabel } from '@/lib/availability-status';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
@@ -39,12 +42,12 @@ export type PortfolioGeneralInfoDraft = {
   nationality: string;
   isAvailable: boolean;
   availability: AvailabilitySchedule | null;
-  timezone: string;
+  specialties: string[];
 };
 
 type DraftKey = keyof PortfolioGeneralInfoDraft;
 type TextKey = 'fullName' | 'username' | 'bio';
-type ChoiceKey = 'gender' | 'nationality' | 'timezone';
+type ChoiceKey = 'gender' | 'nationality';
 type ChangeHandler = StudioChangeHandler<PortfolioGeneralInfoDraft>;
 
 export type GeneralInfoVisibilityKey = 'gender' | 'availability' | 'location';
@@ -57,26 +60,64 @@ const NATIONALITY_OPTIONS: ChoiceOption[] = NATIONALITY_SELECT_OPTIONS.map((opti
   label: `${nationalityFlag(option.code)}  ${option.label}`,
 }));
 
-let timezoneOptionsCache: ChoiceOption[] | null = null;
-function timezoneOptions(current: string): ChoiceOption[] {
-  if (!timezoneOptionsCache) {
-    const supportedValuesOf = (Intl as unknown as { supportedValuesOf?: (key: string) => string[] })
-      .supportedValuesOf;
-    const zones = typeof supportedValuesOf === 'function' ? supportedValuesOf('timeZone') : [];
-    timezoneOptionsCache = zones.map((zone) => ({ value: zone, label: zone.replace(/_/g, ' ') }));
-  }
-  if (current && !timezoneOptionsCache.some((option) => option.value === current)) {
-    return [{ value: current, label: current.replace(/_/g, ' ') }, ...timezoneOptionsCache];
-  }
-  return timezoneOptionsCache;
-}
-
 function fieldSignature(key: DraftKey, value: PortfolioGeneralInfoDraft[DraftKey]): string {
   if (key === 'availability') {
     return value ? formatAvailabilityHours(value as AvailabilitySchedule) : '';
   }
+  if (key === 'specialties') {
+    return ((value as string[] | null) ?? []).join('|');
+  }
   return String(value ?? '');
 }
+
+const NO_TAGS: string[] = [];
+const noopTags = () => {};
+
+type SpecialtyCopy = { label: string; noun: string; placeholder: string };
+
+function specialtyCopyForRole(appRole: unknown): SpecialtyCopy {
+  switch (normalizeCreatorAppRole(appRole)) {
+    case 'SELLER':
+      return { label: 'What you sell', noun: 'categories', placeholder: 'e.g. Streetwear, Handmade jewelry' };
+    case 'RH_RECRUITER':
+      return { label: 'Looking for', noun: 'profiles', placeholder: 'e.g. Data Scientist, DevOps Engineer' };
+    default:
+      return { label: 'Specialty', noun: 'specialties', placeholder: 'e.g. Motion Designer, DevOps Engineer' };
+  }
+}
+
+const SpecialtyField = memo(function SpecialtyField({
+  defaultValue,
+  appRole,
+  onChange,
+}: {
+  defaultValue: string[];
+  appRole: unknown;
+  onChange: ChangeHandler;
+}) {
+  const [value, setValue] = useState(defaultValue);
+  const copy = specialtyCopyForRole(appRole);
+  return (
+    <StudioField
+      label={copy.label}
+      hint={`Add 1 to ${MAX_PROFILE_SPECIALTIES} ${copy.noun}. Click a chip to place it first.`}
+    >
+      <SpecialtyMultiSelect
+        variant="studio"
+        showHint={false}
+        placeholder={copy.placeholder}
+        specialties={value}
+        tags={NO_TAGS}
+        showTags={false}
+        onSpecialtiesChange={(next) => {
+          setValue(next);
+          onChange('specialties', next);
+        }}
+        onTagsChange={noopTags}
+      />
+    </StudioField>
+  );
+});
 
 const InlineTextField = memo(function InlineTextField({
   name,
@@ -334,6 +375,23 @@ const StatusField = memo(function StatusField({
   );
 });
 
+/** Read-only: the timezone always follows the detected location. */
+function TimezoneField({ timezone }: { timezone: string }) {
+  const value = timezone.trim();
+  return (
+    <StudioField label="Timezone">
+      <div className="pb-3">
+        <p className={`truncate text-base ${value ? 'font-normal text-black dark:text-neutral-100' : 'font-normal text-neutral-400 dark:text-neutral-600'}`}>
+          {value ? value.replace(/_/g, ' ') : 'Not detected yet'}
+        </p>
+        <p className="mt-1 text-[12px] text-neutral-500 dark:text-neutral-400">
+          {value ? 'Detected from your location' : 'Detect your location below to set it'}
+        </p>
+      </div>
+    </StudioField>
+  );
+}
+
 const AvailabilityField = memo(function AvailabilityField({
   defaultValue,
   timezone,
@@ -392,6 +450,8 @@ export function PortfolioGeneralInfoStudio({
   initial,
   availabilityLabel,
   hideProviderFields,
+  showSpecialty = false,
+  appRole,
   location,
   visibility,
   onVisibilityChange,
@@ -400,6 +460,10 @@ export function PortfolioGeneralInfoStudio({
   initial: PortfolioGeneralInfoDraft;
   availabilityLabel: string;
   hideProviderFields: boolean;
+  /** Roles without an About section (Seller, RH / Recruiter / Client) edit their specialty here. */
+  showSpecialty?: boolean;
+  /** Drives the specialty field's label and placeholder. */
+  appRole?: unknown;
   location: {
     city: string;
     country: string;
@@ -414,7 +478,6 @@ export function PortfolioGeneralInfoStudio({
 }) {
   const studio = useInlineStudio({ initial, onSave, signature: fieldSignature });
   const { baseline, change, commit } = studio;
-  const tzOptions = useMemo(() => timezoneOptions(baseline.timezone), [baseline.timezone]);
 
   return (
     <>
@@ -447,6 +510,7 @@ export function PortfolioGeneralInfoStudio({
             onChange={change}
             onCommit={commit}
           />
+          {showSpecialty ? <SpecialtyField defaultValue={baseline.specialties} appRole={appRole} onChange={change} /> : null}
         </section>
 
         <section className={`${STUDIO_BLOCK_CLASS} sm:grid-cols-2 lg:grid-cols-3`} aria-label="Status and identity details">
@@ -482,7 +546,7 @@ export function PortfolioGeneralInfoStudio({
           <section className={`${STUDIO_BLOCK_CLASS} sm:grid-cols-2`} aria-label="Time">
             <AvailabilityField
               defaultValue={baseline.availability}
-              timezone={baseline.timezone}
+              timezone={location.timezone}
               onChange={change}
               aside={
                 <PortfolioFieldVisibilityMenu
@@ -492,16 +556,7 @@ export function PortfolioGeneralInfoStudio({
                 />
               }
             />
-            <ChoiceField
-              name="timezone"
-              label="Timezone"
-              defaultValue={baseline.timezone}
-              options={tzOptions}
-              placeholder="Select a timezone"
-              searchable
-              align="end"
-              onChange={change}
-            />
+            <TimezoneField timezone={location.timezone} />
           </section>
         ) : null}
 

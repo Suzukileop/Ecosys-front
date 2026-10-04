@@ -1,16 +1,17 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import Link from 'next/link';
 import {
   listPublicCreatorProductGroups,
   listPublicProducts,
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { mediaImageResponsive, mediaImageSrc, mediaImageSrcSet } from '@/lib/media-image-url';
 import { CreatorProductsStatsPanel } from '@/components/creator/CreatorProductsStatsPanel';
 import { CreatorProductGroupsExplorePanel } from '@/components/creator/CreatorProductGroupsExplorePanel';
 import { useCreatorProductsFilter } from '@/components/creator/useCreatorProductsFilter';
 import { ProductCard } from '@/components/marketplace/ProductCard';
+import { CreatorStarButton, StarGlyph } from '@/components/marketplace/CreatorStarButton';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioProductsTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import type {
@@ -45,6 +46,8 @@ type CreatorPublicShopViewProps = {
   shopSellingFocus?: string | null;
   shopDescription?: string | null;
   shopCoverUrl?: string | null;
+  starCount?: number;
+  isStarred?: boolean;
 };
 
 export function CreatorPublicShopView({
@@ -55,7 +58,10 @@ export function CreatorPublicShopView({
   shopSellingFocus,
   shopDescription,
   shopCoverUrl,
+  starCount = 0,
+  isStarred,
 }: CreatorPublicShopViewProps) {
+  const [trustStars, setTrustStars] = useState(starCount);
   const [items, setItems] = useState<MarketplaceProductSummary[]>([]);
   const [groups, setGroups] = useState<MarketplaceProductGroup[]>([]);
   const [selectedGroupId, setSelectedGroupId] = useState<string | null>(null);
@@ -108,12 +114,12 @@ export function CreatorPublicShopView({
   const formatSections = useMemo(() => {
     const physical = {
       key: 'physical' as const,
-      label: 'Physical',
+      label: 'Material',
       products: displayPhysicalProducts,
     };
     const virtual = {
       key: 'virtual' as const,
-      label: 'Virtual',
+      label: 'Digital',
       products: displayVirtualProducts,
     };
     return sectionOrder === 'virtual-first' ? [virtual, physical] : [physical, virtual];
@@ -186,7 +192,7 @@ export function CreatorPublicShopView({
 
   return (
     <div className="min-h-0 flex-1 space-y-6 overflow-y-auto [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-      <section className="relative overflow-hidden rounded-2xl border border-neutral-200 dark:border-neutral-800">
+      <section className="relative overflow-hidden rounded-lg border border-black/[0.06] dark:border-neutral-800">
         <div className="relative min-h-[280px] w-full sm:min-h-[340px] lg:min-h-[400px]">
           {shopCoverUrl ? (
             isVideoThumbnailUrl(shopCoverUrl) ? (
@@ -201,8 +207,10 @@ export function CreatorPublicShopView({
             ) : (
               // eslint-disable-next-line @next/next/no-img-element
               <img
-                src={shopCoverUrl}
+                {...mediaImageResponsive(shopCoverUrl, [828, 1080, 1920])}
+                sizes="100vw"
                 alt=""
+                decoding="async"
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )
@@ -221,8 +229,10 @@ export function CreatorPublicShopView({
               {avatarUrl?.trim() ? (
                 // eslint-disable-next-line @next/next/no-img-element
                 <img
-                  src={avatarUrl.trim()}
+                  src={mediaImageSrc(avatarUrl.trim(), 128)}
+                  srcSet={mediaImageSrcSet(avatarUrl.trim(), 128)}
                   alt=""
+                  decoding="async"
                   className="h-full w-full object-cover"
                 />
               ) : (
@@ -248,12 +258,28 @@ export function CreatorPublicShopView({
               </p>
             ) : null}
 
-            <Link
-              href={`/marketplace/${creatorId}`}
-              className="mt-5 text-sm font-semibold text-white/80 underline-offset-4 transition hover:text-white hover:underline"
-            >
-              View profile
-            </Link>
+            <div className="mt-6 flex flex-wrap items-center justify-center gap-x-4 gap-y-3">
+              <p
+                className="inline-flex items-center gap-1.5 text-sm text-white/80"
+                aria-label={`${trustStars} trust ${trustStars === 1 ? 'star' : 'stars'}`}
+              >
+                <StarGlyph filled={trustStars > 0} className="h-4 w-4 text-[#FF5722]" />
+                <span className="font-semibold tabular-nums text-white">
+                  {new Intl.NumberFormat('en-US').format(trustStars)}
+                </span>
+                {trustStars === 1 ? 'trust star' : 'trust stars'}
+              </p>
+              <CreatorStarButton
+                creatorId={creatorId}
+                initialStarred={isStarred}
+                initialStarCount={starCount}
+                onStarChange={(_, count) => setTrustStars(count)}
+                size="sm"
+                tone="onDark"
+                showCount={false}
+                loginRedirect={`/marketplace/${creatorId}/shop`}
+              />
+            </div>
           </div>
         </div>
       </section>
@@ -264,7 +290,7 @@ export function CreatorPublicShopView({
         <section className="min-w-0 flex-1 space-y-5">
           {items.length > 0 || groups.length > 0 ? (
             <nav
-              className="inline-flex max-w-full items-center gap-1.5 rounded-xl border border-neutral-200 bg-white p-1.5 dark:border-neutral-800 dark:bg-[#0F0F0F]"
+              className="inline-flex max-w-full items-center gap-1.5 rounded-lg border border-black/[0.06] bg-white p-1.5 dark:border-neutral-800 dark:bg-[#0F0F0F]"
               aria-label="Shop browse"
             >
               {navItems.map((item) => {
@@ -301,13 +327,13 @@ export function CreatorPublicShopView({
               }}
             />
           ) : items.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center dark:border-neutral-700 dark:bg-[#0F0F0F]">
+            <div className="rounded-lg border border-dashed border-black/[0.12] bg-white p-12 text-center dark:border-neutral-700 dark:bg-[#0F0F0F]">
               <p className="text-neutral-600 dark:text-neutral-400">
                 No published products in this shop yet.
               </p>
             </div>
           ) : filtered.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center dark:border-neutral-700 dark:bg-[#0F0F0F]">
+            <div className="rounded-lg border border-dashed border-black/[0.12] bg-white p-10 text-center dark:border-neutral-700 dark:bg-[#0F0F0F]">
               <p className="text-neutral-600 dark:text-neutral-400">
                 {browseMode === 'bestseller'
                   ? 'No best sellers yet.'
@@ -317,7 +343,7 @@ export function CreatorPublicShopView({
               </p>
             </div>
           ) : displayProducts.length === 0 ? (
-            <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-10 text-center dark:border-neutral-700 dark:bg-[#0F0F0F]">
+            <div className="rounded-lg border border-dashed border-black/[0.12] bg-white p-10 text-center dark:border-neutral-700 dark:bg-[#0F0F0F]">
               <p className="text-neutral-600 dark:text-neutral-400">
                 This catalogue has no matching products.
               </p>
@@ -438,7 +464,7 @@ export function CreatorPublicShopView({
                   value={query}
                   onChange={(e) => setQuery(e.target.value)}
                   placeholder="Search…"
-                  className="w-full rounded-xl border border-neutral-200 bg-white py-2.5 pl-9 pr-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-800 dark:bg-[#0F0F0F] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-orange-500/50"
+                  className="w-full rounded-lg border border-black/[0.06] bg-white py-2.5 pl-9 pr-3 text-sm text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:border-orange-400 focus:ring-2 focus:ring-orange-500/20 dark:border-neutral-800 dark:bg-[#0F0F0F] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-orange-500/50"
                 />
               </label>
 

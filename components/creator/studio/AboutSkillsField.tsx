@@ -82,10 +82,10 @@ export function AboutSkillsField({
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+              className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
                   Skill {index + 1}
                 </p>
                 <div className="flex items-center gap-1">
@@ -93,7 +93,7 @@ export function AboutSkillsField({
                     type="button"
                     disabled={index === 0}
                     onClick={() => move(index, index - 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
                     aria-label="Move up"
                   >
                     ↑
@@ -102,7 +102,7 @@ export function AboutSkillsField({
                     type="button"
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, index + 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
                     aria-label="Move down"
                   >
                     ↓
@@ -110,7 +110,7 @@ export function AboutSkillsField({
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+                    className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                   >
                     Remove
                   </button>

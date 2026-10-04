@@ -3,8 +3,7 @@
 import { useEffect, useState } from 'react';
 import { ContentPostLightbox } from '@/components/creator/ContentPostLightbox';
 import { ContentPostSidePanel } from '@/components/creator/ContentPostSidePanel';
-import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';
-import { ContentPostSocialBar } from '@/components/creator/ContentPostSocialBar';
+import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';import { ContentPostSocialBar } from '@/components/creator/ContentPostSocialBar';
 import { ContentPostStudioHeader } from '@/components/creator/ContentPostStudioHeader';
 import { listComments } from '@/lib/marketplace-api';
 import { useAuth } from '@/context/AuthContext';
@@ -58,11 +57,10 @@ export function PublicContentPostCard({
     : '/marketplace';
 
   const title = post.title?.trim() || 'Untitled';
-  const genre = post.genre?.trim() || null;
   const openLightbox = () => setLightboxOpen(true);
   const isSplit = layout === 'split';
 
-  const mediaBlock = (
+  const mediaBlock = post.mediaUrl ? (
     <div
       role="button"
       tabIndex={0}
@@ -76,21 +74,11 @@ export function PublicContentPostCard({
       }}
       className="relative w-full cursor-pointer bg-neutral-100 dark:bg-neutral-950"
     >
-      {post.mediaUrl ? (
-        <div className="pointer-events-none w-full">
-          <ContentPostFeedMediaFrame
-            mediaUrl={post.mediaUrl}
-            mediaType={post.mediaType}
-            layout="feed"
-          />
-        </div>
-      ) : (
-        <div className="flex min-h-[12rem] items-center justify-center text-xs text-neutral-400">
-          No preview
-        </div>
-      )}
+      <div className="pointer-events-none w-full">
+        <ContentPostFeedMediaFrame mediaUrl={post.mediaUrl} mediaType={post.mediaType} layout="feed" />
+      </div>
     </div>
-  );
+  ) : null;
 
   return (
     <div
@@ -125,11 +113,6 @@ export function PublicContentPostCard({
               >
                 {title}
               </h3>
-              {genre ? (
-                <p className="mt-1 text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500">
-                  {genre}
-                </p>
-              ) : null}
             </div>
           ) : null}
         </div>

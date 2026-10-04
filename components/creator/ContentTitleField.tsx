@@ -1,12 +1,7 @@
 'use client';
 
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
-
-export const TITLE_EMOJIS = [
-  '😀', '😊', '😂', '🥰', '😍', '🤩', '😎', '🤔', '😢', '😡',
-  '👍', '👏', '🙏', '💪', '🔥', '❤️', '✨', '🎉', '🎨', '💡',
-  '🚀', '⭐', '✅', '👀', '💯', '🌟', '🎵', '📸', '🏆', '💬',
-] as const;
+import { EmojiPicker } from '@/components/ui/EmojiPicker';
 
 type ContentTitleFieldProps = {
   id: string;
@@ -19,6 +14,8 @@ type ContentTitleFieldProps = {
   size?: 'default' | 'compose';
   /** Inline emoji button (prefer tools bar in compose). Default: hidden for compose. */
   showEmojiButton?: boolean;
+  maxLength?: number;
+  autoFocus?: boolean;
 };
 
 export type ContentTitleFieldHandle = {
@@ -37,6 +34,8 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
       rows = 2,
       size = 'default',
       showEmojiButton,
+      maxLength,
+      autoFocus,
     },
     ref
   ) {
@@ -50,13 +49,14 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
     const insertEmoji = (emoji: string) => {
       const el = textareaRef.current;
       const current = el?.value ?? value;
+      const start = el?.selectionStart ?? current.length;
+      const end = el?.selectionEnd ?? current.length;
+      if (maxLength != null && current.length - (end - start) + emoji.length > maxLength) return;
       if (!el) {
         onChange(current + emoji);
         setOpen(false);
         return;
       }
-      const start = el.selectionStart ?? current.length;
-      const end = el.selectionEnd ?? current.length;
       const next = current.slice(0, start) + emoji + current.slice(end);
       onChange(next);
       setOpen(false);
@@ -74,7 +74,7 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
         focus: () => textareaRef.current?.focus(),
       }),
       // eslint-disable-next-line react-hooks/exhaustive-deps -- insertEmoji always reads live textarea/value
-      [value, onChange]
+      [value, onChange, maxLength]
     );
 
     useEffect(() => {
@@ -89,18 +89,20 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
     return (
       <div ref={rootRef} className="relative shrink-0">
         <label htmlFor={id} className="sr-only">
-          Post headline
+          {placeholder}
         </label>
         <textarea
           ref={textareaRef}
           id={id}
           rows={rows}
+          autoFocus={autoFocus}
           value={value}
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
+          maxLength={maxLength}
           className={`w-full resize-none border-0 bg-transparent px-0 focus:outline-none focus:ring-0 ${
             isCompose
-              ? 'min-h-[4.5rem] py-1 text-2xl font-semibold leading-snug tracking-tight text-neutral-950 placeholder:font-medium placeholder:text-neutral-300 dark:text-white dark:placeholder:text-neutral-600'
+              ? 'min-h-[6.5rem] py-2 text-[20px] font-normal leading-[1.45] text-[#111111] caret-[#FF5722] [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500'
               : `py-0.5 text-base font-medium text-neutral-900 placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${
                   emojiVisible ? 'pr-10' : ''
                 }`
@@ -129,26 +131,15 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
             {open && (
               <div
                 id={pickerId}
-                className="absolute bottom-full right-0 z-20 mb-1 w-64 rounded-xl border border-neutral-200/70 bg-white p-2 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
+                className="absolute bottom-full right-0 z-20 mb-1 overflow-hidden rounded-xl border border-neutral-200/70 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
               >
-                <div className="grid grid-cols-6 gap-0.5">
-                  {TITLE_EMOJIS.map((emoji) => (
-                    <button
-                      key={emoji}
-                      type="button"
-                      onClick={() => insertEmoji(emoji)}
-                      className="flex h-9 w-9 items-center justify-center rounded-lg text-xl transition hover:bg-neutral-100 dark:hover:bg-neutral-800"
-                    >
-                      {emoji}
-                    </button>
-                  ))}
-                </div>
+                <EmojiPicker onSelect={insertEmoji} />
               </div>
             )}
           </>
         )}
 
-        {error && <p className="mt-1 text-xs text-red-600">{error}</p>}
+        {error && <p className="mt-1 text-[14px] font-medium text-[#FF5722]">{error}</p>}
       </div>
     );
   }

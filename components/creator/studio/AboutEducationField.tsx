@@ -50,24 +50,24 @@ export function AboutEducationField({
       return <p className={profileSectionEmptyClass}>Not set</p>;
     }
     return (
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         {filled.map((item) => (
           <div
             key={item.id}
-            className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-700/40 dark:bg-[#141414]"
+            className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-5 dark:border-neutral-700/40 dark:bg-[#141414]"
           >
             {item.schoolYear.trim() ? (
-              <p className="text-xs font-medium text-neutral-500 dark:text-neutral-400">
+              <p className="text-sm font-medium text-neutral-500 dark:text-neutral-400">
                 {item.schoolYear}
               </p>
             ) : null}
             {item.title.trim() ? (
-              <p className="mt-1 text-[15px] font-bold text-neutral-900 dark:text-white">
+              <p className="mt-1.5 text-base font-bold text-neutral-900 dark:text-white">
                 {item.title}
               </p>
             ) : null}
             {item.institution.trim() ? (
-              <p className="mt-0.5 text-sm text-neutral-600 dark:text-neutral-400">
+              <p className="mt-1 text-[15px] text-neutral-600 dark:text-neutral-400">
                 {item.institution}
               </p>
             ) : null}
@@ -95,10 +95,10 @@ export function AboutEducationField({
           {fields.map((field, index) => (
             <div
               key={field.id}
-              className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+              className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
+                <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
                   Entry {index + 1}
                 </p>
                 <div className="flex items-center gap-1">
@@ -106,7 +106,7 @@ export function AboutEducationField({
                     type="button"
                     disabled={index === 0}
                     onClick={() => move(index, index - 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
                     aria-label="Move up"
                   >
                     ↑
@@ -115,7 +115,7 @@ export function AboutEducationField({
                     type="button"
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, index + 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
                     aria-label="Move down"
                   >
                     ↓
@@ -123,7 +123,7 @@ export function AboutEducationField({
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+                    className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                   >
                     Remove
                   </button>

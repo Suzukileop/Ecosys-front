@@ -1,6 +1,7 @@
 'use client';
 
 import { memo, useCallback, useState } from 'react';
+import { UserFacingError } from '@/lib/api-error';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faArrowDown, faArrowUp } from '@fortawesome/free-solid-svg-icons';
 import { MAX_FAQ } from '@/components/creator/studio/ProfileFaqField';
@@ -220,7 +221,7 @@ export function PortfolioFaqStudio({
     async (draft: FaqDraft) => {
       const cleaned = cleanItems(draft.items);
       if (cleaned.some((item) => !item.question || !item.answer)) {
-        throw new Error('Each question needs an answer.');
+        throw new UserFacingError('Each question needs an answer.');
       }
       await onSave(cleaned);
     },

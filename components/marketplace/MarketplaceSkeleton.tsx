@@ -120,7 +120,7 @@ function TabNavSkeleton() {
 export function MarketplaceHubSkeleton() {
   return (
     <main
-      className="mx-auto w-full min-w-0 max-w-[1280px] space-y-10 px-4 pb-16 pt-4 sm:px-0 sm:pt-8"
+      className="mx-auto w-full min-w-0 max-w-[1600px] space-y-10 px-4 pb-16 pt-4 sm:px-6 sm:pt-8 2xl:px-0"
       aria-busy="true"
       aria-label="Loading marketplace"
     >

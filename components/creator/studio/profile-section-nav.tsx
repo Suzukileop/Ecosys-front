@@ -17,9 +17,9 @@ import {
   faPenToSquare,
   faRectangleList,
   faShareFromSquare,
-  faThumbsUp,
   faUser,
 } from '@fortawesome/free-regular-svg-icons';
+import { normalizeCreatorAppRole, type CreatorAppRole } from '@/lib/creator-app-role';
 
 export type ProfileSectionId =
   | 'about'
@@ -37,8 +37,7 @@ export type ProfileSectionId =
   | 'gallery'
   | 'links'
   | 'location'
-  | 'contact'
-  | 'reputation';
+  | 'contact';
 
 export type ProfileSection = {
   id: ProfileSectionId;
@@ -127,50 +126,41 @@ export const PROFILE_SECTIONS: ProfileSection[] = [
     label: 'Contact',
     description: 'Professional email, phone, and address — control what visitors can see.',
   },
-  {
-    id: 'reputation',
-    label: 'Reputation',
-    description: 'Ratings and feedback from users who interacted with your creator profile.',
-  },
 ];
 
-/** Sidebar order: presentation → offers & showcase → reach & contact → reputation last */
+/** Sidebar order: presentation → offers & showcase → reach & contact */
 export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
   ['about', 'aboutPage', 'aboutUs', 'myRole', 'experience', 'strengths', 'tools'],
   ['services', 'products', 'portfolio', 'faq', 'team', 'gallery', 'links'],
-  ['contact', 'reputation'],
+  ['contact'],
 ];
 
-/** Store “Information” tab: only identity / contact / trust sections. */
+/** Store “Information” tab: only identity / contact sections. */
 export const STORE_INFORMATION_SECTION_IDS: ProfileSectionId[] = [
   'about',
   'myRole',
+  'experience',
   'strengths',
   'tools',
   'links',
   'contact',
   'faq',
-  'reputation',
 ];
 
-/** Hidden from Information for RH / Recruiter / Client. */
-export const RH_RECRUITER_HIDDEN_INFORMATION_SECTIONS: readonly ProfileSectionId[] = [
-  'strengths',
-  'tools',
-  'faq',
-];
+/** Career sections (experience, stack, tools) mean nothing for a shop or a recruiter. */
+const HIDDEN_INFORMATION_SECTIONS_BY_ROLE: Partial<Record<CreatorAppRole, readonly ProfileSectionId[]>> = {
+  SELLER: ['experience', 'strengths', 'tools'],
+  RH_RECRUITER: ['experience', 'strengths', 'tools', 'faq'],
+};
 
 export function filterStoreInformationSectionsForRole(
   role: string | null | undefined,
   sections: readonly ProfileSectionId[] = STORE_INFORMATION_SECTION_IDS
 ): ProfileSectionId[] {
-  const normalized = String(role ?? '')
-    .trim()
-    .toUpperCase()
-    .replace(/[\s-]+/g, '_');
-  if (normalized !== 'RH_RECRUITER') return [...sections];
-  const hidden = new Set(RH_RECRUITER_HIDDEN_INFORMATION_SECTIONS);
-  return sections.filter((id) => !hidden.has(id));
+  const hidden = HIDDEN_INFORMATION_SECTIONS_BY_ROLE[normalizeCreatorAppRole(role)];
+  if (!hidden) return [...sections];
+  const hiddenSet = new Set(hidden);
+  return sections.filter((id) => !hiddenSet.has(id));
 }
 
 export function filterProfileSectionGroups(
@@ -203,7 +193,6 @@ const PROFILE_SECTION_ICONS: Record<ProfileSectionId, IconDefinition> = {
   links: faShareFromSquare,
   location: faCompass,
   contact: faEnvelope,
-  reputation: faThumbsUp,
 };
 
 export function getProfileSection(id: ProfileSectionId): ProfileSection {

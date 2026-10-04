@@ -760,8 +760,8 @@ export function PortfolioProfileHero({
     <div className="relative">
       {/* No banner: the avatar floats half outside the card's top edge. */}
       <div className="px-5 pb-5 sm:px-7 sm:pb-6">
-        <div className="-mt-12 flex flex-col gap-4 sm:-mt-14 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-          <div className="flex min-w-0 items-end gap-4">
+        <div className="-mt-12 flex flex-col items-center gap-5 text-center sm:-mt-14 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:text-left">
+          <div className="flex min-w-0 max-w-full flex-col items-center gap-3 sm:flex-row sm:items-end sm:gap-4">
             <div
               className="relative shrink-0 rounded-full bg-white p-1 dark:bg-[#0F0F0F]"
               title={statusLabel}
@@ -786,11 +786,11 @@ export function PortfolioProfileHero({
               )}
             </div>
 
-            <div className="min-w-0 pb-1.5">
+            <div className="min-w-0 max-w-full sm:pb-1.5">
               <h2 className="truncate text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl">
                 {displayName}
               </h2>
-              <p className="mt-2 flex items-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-600 dark:text-neutral-400">
+              <p className="mt-2 flex items-center justify-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-600 dark:text-neutral-400 sm:justify-start">
                 <span
                   className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500 [animation-duration:3s]"
                   aria-hidden
@@ -804,30 +804,32 @@ export function PortfolioProfileHero({
             </div>
           </div>
 
-          <div className="flex flex-wrap items-center gap-2 sm:shrink-0 sm:flex-nowrap sm:pb-1.5">
-            {showHeaderCtas && onPreview ? (
-              <button
-                type="button"
-                onClick={onPreview}
-                className="inline-flex h-9 items-center gap-2 rounded-lg border border-black/15 px-3.5 text-[0.9rem] font-medium text-[#222222] transition-colors duration-200 hover:border-black/30 hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:border-white/15 dark:text-neutral-200 dark:hover:border-white/35 dark:hover:text-white"
-              >
-                <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12 18 19.5 12 19.5 2.25 12 2.25 12z" />
-                  <circle cx="12" cy="12" r="3" />
-                </svg>
-                Preview
-              </button>
-            ) : null}
+          <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:shrink-0 sm:flex-row sm:flex-nowrap sm:gap-2 sm:pb-1.5">
             {showHeaderCtas ? (
-              <Link
-                href={PORTFOLIO_UPGRADE_PATH}
-                className="inline-flex h-9 items-center gap-1.5 rounded-lg bg-neutral-950 px-3.5 text-[0.9rem] font-medium text-white shadow-sm transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200"
-              >
-                <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                  <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-                </svg>
-                Upgrade
-              </Link>
+              <div className={`grid w-full gap-2 sm:flex sm:w-auto ${onPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
+                {onPreview ? (
+                  <button
+                    type="button"
+                    onClick={onPreview}
+                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/15 px-3.5 text-[0.9rem] font-medium text-[#222222] transition-colors duration-200 hover:border-black/30 hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:border-white/15 dark:text-neutral-200 dark:hover:border-white/35 dark:hover:text-white sm:h-9"
+                  >
+                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12 18 19.5 12 19.5 2.25 12 2.25 12z" />
+                      <circle cx="12" cy="12" r="3" />
+                    </svg>
+                    Preview
+                  </button>
+                ) : null}
+                <Link
+                  href={PORTFOLIO_UPGRADE_PATH}
+                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-neutral-950 px-3.5 text-[0.9rem] font-medium text-white shadow-sm transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 sm:h-9"
+                >
+                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
+                    <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
+                  </svg>
+                  Upgrade
+                </Link>
+              </div>
             ) : null}
             {actions}
           </div>
@@ -2623,7 +2625,7 @@ export function PortfolioAboutReadOnly({
 
       {/* Block 3 — Time */}
       {!hideProviderFields ? (
-      <section className={`${editorialBlockClass} sm:grid-cols-2`} aria-label="Time">
+      <section className={`${editorialBlockClass} sm:grid-cols-2 max-sm:border-b-0 max-sm:pb-0`} aria-label="Time">
       <PortfolioFlatField
         variant="editorial"
         className={fieldEditing('availabilityHours') ? 'sm:col-span-2' : ''}
@@ -2662,7 +2664,10 @@ export function PortfolioAboutReadOnly({
       ) : null}
 
       {/* Block 4 — Location */}
-      <section className={editorialBlockClass} aria-label="Location">
+      <section
+        className={`${editorialBlockClass} ${hideProviderFields ? '' : 'max-sm:pt-7'}`}
+        aria-label="Location"
+      >
       <div className="min-w-0">
         <div className="flex items-start justify-between gap-4">
           <span className={editorialLabelClass}>Location</span>

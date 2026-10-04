@@ -1,65 +1,43 @@
 import type { Metadata } from 'next';
-import dynamic from 'next/dynamic';
-import { Navbar } from '@/components/landing/Navbar';
-import { Hero } from '@/components/landing/Hero';
-import { SocialProofMarquee } from '@/components/landing/SocialProofBand';
-import { LandingRevealSections } from '@/components/landing/LandingRevealSections';
-import { landingRoboto } from '@/components/landing/landingFont';
+import { SiteNav } from '@/components/landing/home/SiteNav';
+import { HeroSection } from '@/components/landing/home/HeroSection';
+import { AudienceSection } from '@/components/landing/home/AudienceSection';
+import { FeatureRows } from '@/components/landing/home/FeatureRows';
+import { PlansOverview } from '@/components/landing/home/PlansOverview';
+import { PricingSection } from '@/components/landing/home/PricingSection';
+import { FaqSection } from '@/components/landing/home/FaqSection';
+import { ClosingCta } from '@/components/landing/home/ClosingCta';
+import { SiteFooter } from '@/components/landing/home/SiteFooter';
 
-const ProblemSolution = dynamic(() =>
-  import('@/components/landing/ProblemSolution').then((m) => ({ default: m.ProblemSolution }))
-);
-const Features = dynamic(() =>
-  import('@/components/landing/Features').then((m) => ({ default: m.Features }))
-);
-const Testimonials = dynamic(() =>
-  import('@/components/landing/Testimonials').then((m) => ({ default: m.Testimonials }))
-);
-const Pricing = dynamic(() =>
-  import('@/components/landing/Pricing').then((m) => ({ default: m.Pricing }))
-);
-const FAQ = dynamic(() => import('@/components/landing/FAQ').then((m) => ({ default: m.FAQ })));
-const FinalCTA = dynamic(() =>
-  import('@/components/landing/FinalCTA').then((m) => ({ default: m.FinalCTA }))
-);
-const Footer = dynamic(() =>
-  import('@/components/landing/Footer').then((m) => ({ default: m.Footer }))
-);
+const DESCRIPTION =
+  'Create your portfolio, sell physical and digital products, and talk to clients directly — all in one place, with no middleman.';
 
 export const metadata: Metadata = {
-  title: 'NoProbleme — Create viral videos with AI',
-  description:
-    'Analyze any viral video, generate AI templates, and automate your presence on TikTok, Instagram, and YouTube.',
+  title: 'Skraft — Build, showcase and sell',
+  description: DESCRIPTION,
   openGraph: {
-    title: 'NoProbleme — Create viral videos with AI',
-    description:
-      'Analyze any viral video, generate AI templates, and automate your presence on TikTok, Instagram, and YouTube.',
+    title: 'Skraft — Build, showcase and sell',
+    description: DESCRIPTION,
     type: 'website',
     locale: 'en_US',
+    images: [{ url: '/landing/v2/hero.jpg', width: 1024, height: 576 }],
   },
 };
 
 export default function LandingPage() {
   return (
-    <main className={`min-h-screen overflow-x-clip ${landingRoboto.variable}`}>
-      <div className="lp-brand-zone">
-        <div className={`lp-roboto-zone ${landingRoboto.className}`}>
-          <Navbar brand />
-          <Hero />
-          <LandingRevealSections>
-            <SocialProofMarquee />
-            <ProblemSolution />
-            <Features withAnchor />
-          </LandingRevealSections>
-        </div>
-        <LandingRevealSections>
-          <Testimonials />
-          <Pricing />
-          <FAQ />
-          <FinalCTA />
-          <Footer />
-        </LandingRevealSections>
-      </div>
-    </main>
+    <>
+      <SiteNav />
+      <main className="overflow-x-clip">
+        <HeroSection />
+        <AudienceSection />
+        <FeatureRows />
+        <PlansOverview />
+        <PricingSection />
+        <FaqSection />
+        <ClosingCta />
+      </main>
+      <SiteFooter />
+    </>
   );
 }

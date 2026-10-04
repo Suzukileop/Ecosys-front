@@ -1,14 +1,11 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { usePathname } from 'next/navigation';
 import { NotificationBell } from '@/components/NotificationBell';
 import { MessagesHeaderButton } from '@/components/messaging/MessagesHeaderButton';
-import {
-  isMarketplaceCreatorProfilePath,
-  isServiceProvidersCatalogPath,
-  sanitizeMarketplaceReturnTo,
-} from '@/lib/marketplace-nav';
+import { isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
+import { APP_GROUND } from '@/components/landing/landingBrand';
 import Link from 'next/link';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
 import { DashboardMobileNav } from '@/components/layout/DashboardMobileNav';
@@ -17,17 +14,9 @@ import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { ProfileDropdown } from '@/components/layout/ProfileDropdown';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
-import {
-  NEWS_INLINE_PUBLISH_CTA_ID,
-  NewsPublishHeaderCta,
-} from '@/components/home/NewsPublishHeaderCta';
 
 /** One curve for every micro-interaction in the bar. */
 const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
-
-function isNewsFeedPath(pathname: string): boolean {
-  return pathname === '/dashboard/home' || pathname.startsWith('/dashboard/home/');
-}
 
 /**
  * Opens the menu below `lg`. Three rules that resolve to a cross when the menu is up, on the same
@@ -125,14 +114,8 @@ export function DashboardTopHeader({
   transparent?: boolean;
 }) {
   const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
   const [scrolled, setScrolled] = useState(false);
-  const [newsCtaVisible, setNewsCtaVisible] = useState(false);
-  const showCreatorsBack = isMarketplaceCreatorProfilePath(pathname);
-  const profileReturnTo = sanitizeMarketplaceReturnTo(searchParams.get('from'));
   const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
-  const isNewsPage = isNewsFeedPath(pathname);
   const isPortfolioPage =
     pathname.startsWith('/dashboard/portfolio') ||
     pathname.startsWith('/dashboard/search') ||
@@ -148,8 +131,6 @@ export function DashboardTopHeader({
     isDiscussionsPage;
 
   const showSolidBg = !transparent || scrolled;
-  const showNewsPublishCta = isNewsPage && newsCtaVisible;
-
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navPath, setNavPath] = useState(pathname);
 
@@ -184,35 +165,6 @@ export function DashboardTopHeader({
     if (mobileNavOpen) setMobileNavOpen(false);
   }
 
-  /* Groups the route-specific controls ahead of the utility cluster on the right. */
-  /*
-  * The Explore / My Services and Explore / My Product pills used to live here too. They are now
-  * children of their own nav entries (see `navConfig`), so the only thing left that can claim
-  * space in the bar is the News publish CTA.
-  */
-  const hasRouteActions = showNewsPublishCta;
-
-  const handleCreatorProfileBack = () => {
-    if (profileReturnTo) {
-      router.push(profileReturnTo);
-      return;
-    }
-    try {
-      const referrer = document.referrer;
-      if (referrer) {
-        const refUrl = new URL(referrer);
-        if (refUrl.origin === window.location.origin) {
-          router.back();
-          return;
-        }
-      }
-    } catch {
-      /* ignore invalid referrer */
-    }
-    // Fallback only when we cannot resolve a previous in-app page.
-    router.push('/marketplace/creators');
-  };
-
   useEffect(() => {
     if (!transparent) {
       setScrolled(false);
@@ -234,45 +186,48 @@ export function DashboardTopHeader({
     };
   }, [transparent, pathname]);
 
+  /*
+   * Phones only: the bar slides away while reading down and returns on the first scroll up.
+   * Window scroll only — fill-viewport routes scroll an inner panel, and hiding the bar there
+   * would leave its slot empty above the panel.
+   */
+  const [autoHidden, setAutoHidden] = useState(false);
   useEffect(() => {
-    if (!isNewsPage) {
-      setNewsCtaVisible(false);
-      return;
-    }
-
-    const update = () => {
-      const inlineCta = document.getElementById(NEWS_INLINE_PUBLISH_CTA_ID);
-      // Measured, not a constant: the bar is two tiers now and its height moves with the viewport
-      // and with the subnav itself, so a hardcoded clearance would swap the twin in at the wrong
-      // moment — and would drift again the next time a tier changes.
-      const header = document.querySelector('header');
-      const headerClearance = header ? header.getBoundingClientRect().bottom + 8 : 80;
-      if (!inlineCta) {
-        setNewsCtaVisible(getDashboardScrollY() > headerClearance);
+    const phone = window.matchMedia('(max-width: 767px)');
+    let lastY = window.scrollY;
+    let frame = 0;
+    const evaluate = () => {
+      frame = 0;
+      const y = Math.max(0, window.scrollY);
+      const delta = y - lastY;
+      if (!phone.matches || y < 24) {
+        setAutoHidden(false);
+        lastY = y;
         return;
       }
-      setNewsCtaVisible(inlineCta.getBoundingClientRect().bottom < headerClearance);
+      if (Math.abs(delta) < 8) return;
+      const barHeight = headerRef.current?.offsetHeight ?? 64;
+      setAutoHidden(delta > 0 && y > barHeight);
+      lastY = y;
     };
-
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    const content = document.querySelector('[data-dashboard-content]');
-    content?.addEventListener('scroll', update, { passive: true });
-    // Feed can mount after header — re-check shortly.
-    const retry = window.setTimeout(update, 120);
-
+    const onScroll = () => {
+      if (!frame) frame = window.requestAnimationFrame(evaluate);
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    phone.addEventListener('change', onScroll);
     return () => {
-      window.clearTimeout(retry);
-      window.removeEventListener('scroll', update);
-      content?.removeEventListener('scroll', update);
+      window.removeEventListener('scroll', onScroll);
+      phone.removeEventListener('change', onScroll);
+      if (frame) window.cancelAnimationFrame(frame);
     };
-  }, [isNewsPage, pathname]);
+  }, []);
+  const barHidden = autoHidden && !mobileNavOpen;
 
   return (
     <>
     <header
       ref={headerRef}
-      /*
+      data-dashboard-header      /*
        * Flush. The bar spans the viewport, sits on the top edge, and carries no rule underneath —
        * it shares the page's own tone in light, so a hairline would only draw a line across one
        * continuous sheet.
@@ -284,7 +239,9 @@ export function DashboardTopHeader({
        * through them razor-sharp. As a sibling layer it blurs the page, and the popovers — siblings
        * of it, not descendants — keep a working backdrop of their own.
        */
-      className="sticky top-0 z-40"
+      className={`sticky top-0 z-40 transition-transform duration-300 ${EASE} motion-reduce:transition-none ${
+        barHidden ? '-translate-y-full' : ''
+      }`}
     >
       {/*
        * The bar's surface. Separate from <header> so the bar is not a backdrop root — see above.
@@ -301,9 +258,11 @@ export function DashboardTopHeader({
       <span
         aria-hidden
         className={`pointer-events-none absolute inset-0 -z-10 block transition-colors duration-[520ms] ${EASE} ${
+          isDiscussionsPage || pathname.startsWith('/dashboard/settings') ? 'bg-[#F8F8F8]' : APP_GROUND
+        } ${
           isPortfolioPage
-            ? 'bg-[#F8F8F8] dark:bg-black'
-            : 'bg-[#F8F8F8] dark:bg-black/85 dark:supports-[backdrop-filter]:bg-black/30 dark:supports-[backdrop-filter]:backdrop-blur-xl'
+            ? 'dark:bg-black'
+            : 'dark:bg-black/85 dark:supports-[backdrop-filter]:bg-black/30 dark:supports-[backdrop-filter]:backdrop-blur-xl'
         }`}
       />
       {/*
@@ -332,19 +291,6 @@ export function DashboardTopHeader({
           */}
         <div className="flex shrink-0 items-center gap-4 pt-px lg:gap-16">
           <MobileNavTrigger open={mobileNavOpen} onToggle={() => setMobileNavOpen((v) => !v)} />
-          {showCreatorsBack ? (
-            <button
-              type="button"
-              onClick={handleCreatorProfileBack}
-              aria-label="Go back"
-              title="Go back"
-              className={`-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 dark:text-neutral-300`}
-            >
-              <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
-              </svg>
-            </button>
-          ) : null}
           <Link
             href="/dashboard/home"
             className={`shrink-0 text-[0.95rem] font-semibold tracking-[-0.01em] text-[#222222] transition-opacity duration-[420ms] ${EASE} hover:opacity-60 dark:text-white`}
@@ -377,26 +323,9 @@ export function DashboardTopHeader({
           * The separating rule that used to sit before the avatar is gone: the brief is right that
           * four controls on an even rhythm read as a set, and a rule inside the group breaks the
           * very symmetry it was meant to organise. Grouping now comes from spacing alone — one
-          * `gap-1` throughout, and a wider margin ahead of any route action.
+          * `gap-1` between the icons, a wider margin ahead of the avatar and of any route action.
           */}
         <div className="flex shrink-0 items-center gap-1">
-          {hasRouteActions ? (
-            /*
-             * The only block in the row allowed to shrink. Priority when the row is
-             * over-subscribed runs: account controls and wordmark never clip, the nav keeps a
-             * floor, and the page action gives way and scrolls inside itself. Kept from when the
-             * Explore/My Product toggle lived here and pushed the avatar off the right edge at
-             * 430px — the News CTA is shorter, but it is still the block that has to give.
-             *
-             * This only works because the cluster around it is `min-w-0` rather than `shrink-0`:
-             * a `shrink-0` parent is sized to its contents, so there is no shrink pressure inside
-             * it and this block's own `shrink` was inert. The four controls stay `shrink-0`
-             * individually, so they are still the things that never give.
-             */
-            <div className="pf-scrollbar-hide mr-2 flex min-w-0 shrink items-center gap-2 overflow-x-auto sm:mr-3">
-              {showNewsPublishCta ? <NewsPublishHeaderCta /> : null}
-            </div>
-          ) : null}
           {/*
            * Chat and bell are `lg` and up only. They stay mounted rather than unmounted — each owns
            * a poll and a dismiss baseline, and tearing those down on every resize past the
@@ -406,11 +335,15 @@ export function DashboardTopHeader({
             <MessagesHeaderButton />
             <NotificationBell compact />
           </span>
-          <HeaderAccountMenu />
+          <div className="lg:ml-3">
+            <HeaderAccountMenu />
+          </div>
         </div>
       </div>
 
     </header>
+
+    {mobileNavOpen ? null : <MessagesHeaderButton floating />}
 
     {/* Sibling of <header>, never a child: the bar's glass is a `backdrop-filter` layer, and a
         `backdrop-filter` ancestor becomes the containing block for `position: fixed` descendants —

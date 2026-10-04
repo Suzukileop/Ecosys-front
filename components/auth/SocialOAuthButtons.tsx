@@ -47,23 +47,25 @@ export function SocialOAuthButtons({ signup = false }: { signup?: boolean }) {
   }, []);
 
   return (
-    <div className="space-y-3">
-      <div className="relative flex items-center py-1">
-        <div className="grow border-t border-neutral-200 dark:border-neutral-700" />
-        <span className="mx-3 shrink-0 text-xs text-neutral-500">or continue with</span>
-        <div className="grow border-t border-neutral-200 dark:border-neutral-700" />
-      </div>
-
+    <div>
       <button
         type="button"
         disabled={!googleEnabled}
         onClick={() => startGoogleOAuth(signup)}
-        title={googleEnabled ? (signup ? 'Sign up with Google' : 'Sign in with Google') : 'Google sign-in is not configured'}
-        className="flex w-full items-center justify-center gap-2 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
+        title={googleEnabled ? undefined : 'Google sign-in is not configured'}
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-lg border border-black/[0.12] bg-white px-4 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 hover:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#FF5722]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.14] dark:bg-[#111111] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
       >
         <GoogleIcon />
-        Google
+        {signup ? 'Sign up with Google' : 'Continue with Google'}
       </button>
+
+      <div className="my-7 flex items-center gap-4" aria-hidden>
+        <div className="h-px grow bg-black/[0.08] dark:bg-white/[0.1]" />
+        <span className="shrink-0 text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
+          or with email
+        </span>
+        <div className="h-px grow bg-black/[0.08] dark:bg-white/[0.1]" />
+      </div>
     </div>
   );
 }

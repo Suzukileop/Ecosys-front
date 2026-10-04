@@ -84,6 +84,62 @@ export function creatorAppRoleLabel(role: CreatorAppRole | null | undefined): st
   return CREATOR_APP_ROLE_OPTIONS.find((option) => option.value === normalized)?.label ?? 'General Member';
 }
 
+/** Call-to-action label for starting a new post, worded for each role. */
+export function creatorComposeLabel(role: CreatorAppRole | null | undefined): string {
+  switch (normalizeCreatorAppRole(role)) {
+    case 'SERVICE_PROVIDER':
+      return 'Share your work';
+    case 'FREELANCER_STUDENT':
+      return 'Share a project';
+    case 'SELLER':
+      return 'Showcase a product';
+    case 'RH_RECRUITER':
+      return 'Post an opportunity';
+    case 'GENERAL_MEMBER':
+    default:
+      return 'Share an update';
+  }
+}
+
+/** Headline above the studio Content tab, worded for each role. */
+export function creatorStudioContentHeadline(role: CreatorAppRole | null | undefined): string {
+  switch (normalizeCreatorAppRole(role)) {
+    case 'SERVICE_PROVIDER':
+      return 'Show clients what you can deliver.';
+    case 'FREELANCER_STUDENT':
+      return 'Show the world what you are building.';
+    case 'SELLER':
+      return 'Show off what you sell.';
+    case 'RH_RECRUITER':
+      return 'Tell talent who you are looking for.';
+    case 'GENERAL_MEMBER':
+    default:
+      return 'Show them what you are capable of.';
+  }
+}
+
+/** Prompt shown in the empty post composer, worded for each role. */
+export function creatorComposePlaceholder(role: CreatorAppRole | null | undefined): string {
+  switch (normalizeCreatorAppRole(role)) {
+    case 'SERVICE_PROVIDER':
+      return 'What have you delivered lately?';
+    case 'FREELANCER_STUDENT':
+      return 'What are you building?';
+    case 'SELLER':
+      return 'What are you selling?';
+    case 'RH_RECRUITER':
+      return 'Who are you looking for?';
+    case 'GENERAL_MEMBER':
+    default:
+      return 'What are you working on?';
+  }
+}
+
+/** Portfolio details (category, price to recreate, tools…) only make sense for roles that show work. */
+export function creatorComposeShowsDetails(role: CreatorAppRole | null | undefined): boolean {
+  return normalizeCreatorAppRole(role) !== 'RH_RECRUITER';
+}
+
 /** Tailwind ring color for the floating avatar status ring. */
 export function creatorAppRoleRingClass(role: CreatorAppRole | null | undefined): string {
   switch (normalizeCreatorAppRole(role)) {
@@ -99,6 +155,11 @@ export function creatorAppRoleRingClass(role: CreatorAppRole | null | undefined)
     default:
       return 'ring-gray-400';
   }
+}
+
+/** Role-colored ring with a gap, for small avatars sitting on post cards (white / #111111 surfaces). */
+export function creatorPostAvatarRingClass(role: CreatorAppRole | null | undefined): string {
+  return `rounded-full ring-2 ring-offset-[3px] ring-offset-white dark:ring-offset-[#111111] ${creatorAppRoleRingClass(role)}`;
 }
 
 /** Border / accent classes for My Role cards (match avatar ring colors). */
@@ -162,37 +223,28 @@ export function creatorAppRoleAccent(role: CreatorAppRole | null | undefined): C
   }
 }
 
+/*
+ * Role-based menu hiding. Every menu is currently shown to every role, so these lists are empty;
+ * add a role to a list to hide the matching menu (and redirect its routes) for that role again.
+ */
+
 /** Hide Products sidebar (explore catalog). */
-export const APP_ROLES_WITHOUT_PRODUCTS_MENU: readonly CreatorAppRole[] = [
-  'SERVICE_PROVIDER',
-  'RH_RECRUITER',
-];
+export const APP_ROLES_WITHOUT_PRODUCTS_MENU: readonly CreatorAppRole[] = [];
 
 /** Hide My Product management (toggle + /my-products). */
-export const APP_ROLES_WITHOUT_MY_PRODUCTS: readonly CreatorAppRole[] = [
-  'SERVICE_PROVIDER',
-  'FREELANCER_STUDENT',
-  'RH_RECRUITER',
-];
+export const APP_ROLES_WITHOUT_MY_PRODUCTS: readonly CreatorAppRole[] = [];
 
 /** Hide Products tab in creator profile. */
-export const APP_ROLES_WITHOUT_PROFILE_PRODUCTS: readonly CreatorAppRole[] = [
-  'SERVICE_PROVIDER',
-  'FREELANCER_STUDENT',
-  'RH_RECRUITER',
-];
+export const APP_ROLES_WITHOUT_PROFILE_PRODUCTS: readonly CreatorAppRole[] = [];
 
 /** Hide Service Provider sidebar. */
-export const APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU: readonly CreatorAppRole[] = ['SELLER'];
+export const APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU: readonly CreatorAppRole[] = [];
 
 /** Hide My Services management (toggle + /my-services). */
-export const APP_ROLES_WITHOUT_MY_SERVICES: readonly CreatorAppRole[] = ['SELLER', 'RH_RECRUITER'];
+export const APP_ROLES_WITHOUT_MY_SERVICES: readonly CreatorAppRole[] = [];
 
 /** Hide Services tab in creator profile. */
-export const APP_ROLES_WITHOUT_PROFILE_SERVICES: readonly CreatorAppRole[] = [
-  'SELLER',
-  'RH_RECRUITER',
-];
+export const APP_ROLES_WITHOUT_PROFILE_SERVICES: readonly CreatorAppRole[] = [];
 
 /** @deprecated Use APP_ROLES_WITHOUT_PRODUCTS_MENU */
 export const APP_ROLES_WITHOUT_PRODUCTS = APP_ROLES_WITHOUT_PRODUCTS_MENU;
@@ -240,6 +292,12 @@ export function creatorCanAccessProfileServices(role: CreatorAppRole | null | un
  */
 export function creatorShowsProviderAboutFields(role: CreatorAppRole | null | undefined): boolean {
   return normalizeCreatorAppRole(role) !== 'RH_RECRUITER';
+}
+
+/** Experience, stack and tools — shown for members, students and freelancers only. */
+export function creatorShowsCareerSections(role: CreatorAppRole | null | undefined): boolean {
+  const normalized = normalizeCreatorAppRole(role);
+  return normalized !== 'SELLER' && normalized !== 'RH_RECRUITER';
 }
 
 export function dispatchCreatorAppRoleChanged(role: CreatorAppRole): void {

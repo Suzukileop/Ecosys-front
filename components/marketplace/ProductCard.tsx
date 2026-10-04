@@ -6,6 +6,7 @@ import { faComment, faCrown, faThumbtack } from '@fortawesome/free-solid-svg-ico
 import { collectProductLabels, formatPrice, formatVideoDuration, isFreeProduct } from '@/lib/marketplace-api';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { useAuth } from '@/context/AuthContext';
+import { setPendingProductDraft } from '@/lib/chat-product-draft';
 import { ProductCardEngagementStrip } from '@/components/marketplace/ProductCardEngagementStrip';
 import { ProductFavoriteButton } from '@/components/marketplace/ProductFavoriteButton';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
@@ -23,6 +24,8 @@ type ProductCardProps = {
   onFavoritedChange?: (productId: string, favorited: boolean) => void;
   initialLiked?: boolean;
   onLikedChange?: (productId: string, liked: boolean) => void;
+  /** Square, side-border-free card that runs edge to edge on phones. */
+  flushOnMobile?: boolean;
 };
 
 const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-sm';
@@ -35,6 +38,7 @@ export function ProductCard({
   onFavoritedChange,
   initialLiked,
   onLikedChange,
+  flushOnMobile = false,
 }: ProductCardProps) {
   const { user } = useAuth();
   const targetHref = href ?? `/marketplace/products/${product.id}`;
@@ -45,9 +49,9 @@ export function ProductCard({
   const shopName = product.shopName?.trim() || null;
   const authorName = product.creatorName?.trim() || null;
 
-  const messageHref = user
-    ? `/dashboard/discussions?user=${encodeURIComponent(product.creatorId)}`
-    : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(product.creatorId)}`)}`;
+  const isOwnProduct = Boolean(user?.id && user.id === product.creatorId);
+  const discussionPath = `/dashboard/discussions?user=${encodeURIComponent(product.creatorId)}&product=${encodeURIComponent(product.id)}`;
+  const messageHref = user ? discussionPath : `/login?redirect=${encodeURIComponent(discussionPath)}`;
   const messageLabel = authorName ? `Message ${authorName}` : 'Message creator';
 
   const hasDiscount =
@@ -61,7 +65,11 @@ export function ProductCard({
     product.videoDurationSeconds > 0;
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]">
+    <article
+      className={`group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16] ${
+        flushOnMobile ? 'max-sm:rounded-none max-sm:border-x-0 max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16]' : ''
+      }`}
+    >
       <Link
         href={targetHref}
         className="relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-black/[0.04] dark:bg-white/[0.04]"
@@ -186,15 +194,20 @@ export function ProductCard({
               onLikedChange={(liked) => onLikedChange?.(product.id, liked)}
               views={product.views ?? 0}
             />
-            <Link
-              href={messageHref}
-              onClick={(e) => e.stopPropagation()}
-              title={messageLabel}
-              aria-label={messageLabel}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-black/[0.12] text-[#111111] transition-colors hover:border-[#111111] hover:bg-[#111111] hover:text-white dark:border-white/[0.12] dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-[#111111]"
-            >
-              <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
-            </Link>
+            {!isOwnProduct && (
+              <Link
+                href={messageHref}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setPendingProductDraft(product.creatorId, product.id);
+                }}
+                title={messageLabel}
+                aria-label={messageLabel}
+                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-black/[0.12] text-[#111111] transition-colors hover:border-[#111111] hover:bg-[#111111] hover:text-white dark:border-white/[0.12] dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-[#111111]"
+              >
+                <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
+              </Link>
+            )}
           </div>
         </div>
       </div>

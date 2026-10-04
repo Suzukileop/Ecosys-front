@@ -1,7 +1,7 @@
 import type { PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
 import type { PortfolioFooterSectionLinkOption } from '@/components/portfolio/portfolio-footer-design-layout';
 
-export const PORTFOLIO_STUDIO_PREVIEW_SOURCE = 'noprobleme-portfolio-studio';
+export const PORTFOLIO_STUDIO_PREVIEW_SOURCE = 'skraft-portfolio-studio';
 export const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
 
 export type PortfolioStudioPreviewMeta = {

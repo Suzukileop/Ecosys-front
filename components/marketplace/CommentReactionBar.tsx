@@ -117,7 +117,7 @@ export function CommentReactionBar({
         onClick={() => void applyReaction('LIKE')}
         className={buttonClass(userReaction === 'LIKE')}
         aria-pressed={userReaction === 'LIKE'}
-        aria-label="J'aime"
+        aria-label="Like"
       >
         <svg
           className="h-3.5 w-3.5"
@@ -140,7 +140,7 @@ export function CommentReactionBar({
         onClick={() => void applyReaction('DISLIKE')}
         className={buttonClass(userReaction === 'DISLIKE')}
         aria-pressed={userReaction === 'DISLIKE'}
-        aria-label="Je n'aime pas"
+        aria-label="Dislike"
       >
         <svg
           className="h-3.5 w-3.5"

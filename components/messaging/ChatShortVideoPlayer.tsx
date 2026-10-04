@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
 
 type ChatShortVideoPlayerProps = {
   src: string;
@@ -26,6 +27,7 @@ export function ChatShortVideoPlayer({
   className = '',
 }: ChatShortVideoPlayerProps) {
   const videoRef = useRef<HTMLVideoElement>(null);
+  usePauseOffscreenVideo(videoRef);
   const [playing, setPlaying] = useState(false);
   const [muted, setMuted] = useState(false);
   const [progress, setProgress] = useState(0);
@@ -44,7 +46,7 @@ export function ChatShortVideoPlayer({
     const v = videoRef.current;
     if (!v) return;
     if (v.paused) {
-      void v.play();
+      void v.play().catch(() => undefined);
     } else {
       v.pause();
     }

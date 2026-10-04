@@ -27,8 +27,7 @@ export function SearchServiceProviderRow({ creator }: { creator: MarketplaceCrea
   const profileHref = resolvedId ? `/marketplace/${resolvedId}` : null;
   const servicesHref = resolvedId ? `/marketplace/${resolvedId}?tab=services` : null;
   const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId, creator.username) : null;
-  const rating = creator.averageRating;
-  const hasRating = rating !== null && rating !== undefined;
+  const starCount = Math.max(0, creator.starCount ?? 0);
 
   const specialties = (creator.specialties ?? []).filter((item) => item.trim());
   const expertise =
@@ -66,13 +65,13 @@ export function SearchServiceProviderRow({ creator }: { creator: MarketplaceCrea
         </div>
       </div>
 
-      {hasRating ? (
+      {starCount > 0 ? (
         <span
           className="inline-flex shrink-0 items-center gap-1.5 text-lg font-semibold tabular-nums text-[#111111] dark:text-white"
-          aria-label={`Rating ${rating.toFixed(1)} out of 5`}
+          aria-label={`${starCount} trust ${starCount === 1 ? 'star' : 'stars'}`}
         >
           <StarIcon className="h-[18px] w-[18px] text-[#FF5722]" />
-          {rating.toFixed(1)}
+          {starCount.toLocaleString('en-US')}
         </span>
       ) : null}
 

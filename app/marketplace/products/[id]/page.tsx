@@ -2,7 +2,9 @@ import { cookies } from 'next/headers';
 import Link from 'next/link';
 import { notFound } from 'next/navigation';
 import type { Metadata } from 'next';
+import { MarketplaceBackLink } from '@/components/marketplace/MarketplaceBackLink';
 import { ProductDemoSection } from '@/components/marketplace/ProductDemoSection';
+import { ProductHashtagList } from '@/components/marketplace/ProductHashtagList';
 import { ProductDetailGallery } from '@/components/marketplace/ProductDetailGallery';
 import { ProductDetailMediaEngagement } from '@/components/marketplace/ProductDetailMediaEngagement';
 import { ProductDetailBottom } from '@/components/marketplace/ProductDetailBottom';
@@ -10,11 +12,18 @@ import { ProductWhyHighlights } from '@/components/marketplace/ProductWhyHighlig
 import { ProductDetailPurchasePanel } from '@/components/marketplace/ProductDetailPurchasePanel';
 import { PRODUCT_PURCHASE_ANCHOR_ID } from '@/components/marketplace/ProductDetailPurchaseCta';
 import { ProductDetailRatingBadge } from '@/components/marketplace/ProductDetailRatingBadge';
+import { CreatorPhysicalProductGallery } from '@/components/creator/CreatorPhysicalProductGallery';
 import {
   formatPrice,
   getPublicProduct,
   PRODUCT_TYPE_LABELS,
 } from '@/lib/marketplace-api';
+
+const EYEBROW = 'text-sm font-medium text-neutral-500 dark:text-neutral-400';
+const CHIP =
+  'rounded-full border border-black/[0.08] px-3.5 py-1.5 text-[13px] font-medium text-neutral-700 dark:border-white/[0.12] dark:text-neutral-200';
+const ACCENT_CHIP =
+  'rounded-full bg-[#FF5722]/10 px-3.5 py-1.5 text-[13px] font-medium text-[#FF5722] dark:bg-[#FF5722]/15';
 
 export async function generateMetadata({
   params,
@@ -23,9 +32,9 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { id } = await params;
   const product = await getPublicProduct(id);
-  if (!product) return { title: 'Product not found — NoProbleme' };
+  if (!product) return { title: 'Product not found — Skraft' };
   return {
-    title: `${product.title} — NoProbleme Marketplace`,
+    title: `${product.title} — Skraft Marketplace`,
     description: product.description ?? product.title,
   };
 }
@@ -50,138 +59,108 @@ export default async function MarketplaceProductDetailPage({
   const productUrl = `/marketplace/products/${product.id}`;
   const reviewCount = product.reviewCount ?? 0;
 
+  const isPhysical = product.type === 'PHYSICAL';
+  const hasWhyBlocks = Boolean(product.whyProductBlocks && product.whyProductBlocks.length > 0);
+  const hasDemo = Boolean(product.demoUrl && product.demoType !== 'NONE');
+
   return (
-    <>
-    <main className="relative z-10 mx-auto max-w-7xl px-4 py-8 lg:py-10">
-      <Link
-        href="/marketplace"
-        className="inline-flex items-center gap-1 text-sm font-medium text-gray-900 transition hover:text-orange-600 dark:text-white dark:hover:text-orange-400"
-      >
-        ← Back to marketplace
-      </Link>
+    <main className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6">
+      <MarketplaceBackLink className="group inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white" />
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:gap-10">
-        <div className="order-1 lg:col-span-5">
-          <ProductDetailGallery
-            title={product.title}
-            thumbnailUrl={product.thumbnailUrl}
-            videoDurationSeconds={product.videoDurationSeconds}
-            videoResolution={product.videoResolution}
-            isBestseller={product.isBestseller}
-            galleryImageUrls={product.galleryImageUrls}
-            enableLightbox={product.type === 'PHYSICAL'}
-          />
-
-          <div className="mt-4 space-y-4">
-            <div className="flex items-end justify-between gap-4">
-              <ProductDetailRatingBadge
-                productId={product.id}
-                initialRating={product.averageRating ?? null}
-                initialReviewCount={reviewCount}
-              />
-              <ProductDetailMediaEngagement
-                productId={product.id}
-                initialViews={product.views}
-                initialLikes={product.likes}
-              />
-            </div>
-
-            {product.creatorName && (
-              <ProductDetailCreatorCard
-                creatorId={product.creatorId}
-                creatorName={product.creatorName}
-                creatorAvatarUrl={product.creatorAvatarUrl}
-                specialite={product.specialite}
-              />
-            )}
-          </div>
+      <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-10">
+        <div className="order-1 min-w-0 lg:col-span-8 lg:row-start-1">
+          {isPhysical ? (
+            <CreatorPhysicalProductGallery
+              title={product.title}
+              thumbnailUrl={product.thumbnailUrl}
+              galleryImageUrls={product.galleryImageUrls}
+              isBestseller={product.isBestseller}
+            />
+          ) : (
+            <ProductDetailGallery
+              title={product.title}
+              thumbnailUrl={product.thumbnailUrl}
+              videoDurationSeconds={product.videoDurationSeconds}
+              videoResolution={product.videoResolution}
+              isBestseller={product.isBestseller}
+              galleryImageUrls={product.galleryImageUrls}
+            />
+          )}
         </div>
 
-        <div className="order-3 space-y-6 lg:order-2 lg:col-span-4">
-          <header className="space-y-4">
-            <h1 className="text-2xl font-bold leading-tight text-gray-900 dark:text-white md:text-3xl">
-              {product.title}
-            </h1>
-
-            {product.description && (
-              <p className="whitespace-pre-wrap text-sm leading-relaxed text-gray-700 dark:text-gray-300">
-                {product.description}
-              </p>
-            )}
-
-            {(product.compatibleTools.length > 0 ||
-              product.tags.length > 0 ||
-              typeLabel ||
-              product.genre ||
-              product.specialite) && (
-              <div className="space-y-3">
-                {/* Type / genre / specialite — moved above compatible tools */}
-                {(typeLabel || product.genre || product.specialite) && (
-                  <div className="flex flex-wrap gap-2">
-                    {typeLabel && (
-                      <span className="rounded-full bg-orange-50 px-3 py-1 text-xs font-semibold text-orange-800 dark:bg-orange-500/10 dark:text-orange-200">
-                        {typeLabel}
-                      </span>
-                    )}
-                    {product.genre && (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold capitalize text-gray-700 dark:bg-neutral-800 dark:text-gray-300">
-                        {product.genre}
-                      </span>
-                    )}
-                    {product.specialite && (
-                      <span className="rounded-full bg-gray-100 px-3 py-1 text-xs font-semibold capitalize text-gray-700 dark:bg-neutral-800 dark:text-gray-300">
-                        {product.specialite}
-                      </span>
-                    )}
-                  </div>
-                )}
-
-                {product.compatibleTools.length > 0 && (
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Compatible tools
-                    </p>
-                    <ul className="flex flex-wrap gap-2">
-                      {product.compatibleTools.map((tool) => (
-                        <li
-                          key={tool}
-                          className="rounded-full bg-gray-50 px-3 py-1 text-xs font-medium text-gray-700 dark:bg-neutral-800 dark:text-gray-300"
-                        >
-                          {tool}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
-
-                {product.tags.length > 0 && (
-                  <div>
-                    <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">
-                      Tags
-                    </p>
-                    <ul className="flex flex-wrap gap-2">
-                      {product.tags.map((tag) => (
-                        <li
-                          key={tag}
-                          className="rounded-full bg-orange-50 px-3 py-1 text-xs font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-200"
-                        >
-                          {tag}
-                        </li>
-                      ))}
-                    </ul>
-                  </div>
-                )}
+        <div className="order-3 min-w-0 space-y-8 lg:col-span-8 lg:row-start-2">
+          <header className="space-y-5">
+            {!isPhysical && (
+              <div className="flex flex-wrap gap-2">
+                <span className={ACCENT_CHIP}>{typeLabel}</span>
+                {product.genre && <span className={`${CHIP} capitalize`}>{product.genre}</span>}
+                {product.specialite && <span className={`${CHIP} capitalize`}>{product.specialite}</span>}
               </div>
             )}
 
+            <div className="space-y-3">
+              <h1 className="break-words text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-[#111111] dark:text-white md:text-[40px]">
+                {product.title}
+              </h1>
+              <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
+                <ProductDetailRatingBadge
+                  productId={product.id}
+                  initialRating={product.averageRating ?? null}
+                  initialReviewCount={reviewCount}
+                />
+                <ProductDetailMediaEngagement
+                  productId={product.id}
+                  initialViews={product.views}
+                  initialLikes={product.likes}
+                />
+              </div>
+            </div>
+
+            {product.description && (
+              <p className="max-w-3xl whitespace-pre-wrap text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
+                {product.description}
+              </p>
+            )}
           </header>
 
+          {product.creatorName && (
+            <ProductDetailCreatorCard
+              creatorId={product.creatorId}
+              creatorName={product.creatorName}
+              creatorAvatarUrl={product.creatorAvatarUrl}
+              specialite={product.specialite}
+            />
+          )}
+
+          {!isPhysical && product.compatibleTools.length > 0 && (
+            <div className="border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
+              <p className={EYEBROW}>Compatible tools</p>
+              <ul className="mt-3 flex flex-wrap gap-2">
+                {product.compatibleTools.map((tool) => (
+                  <li key={tool} className={CHIP}>
+                    {tool}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {product.tags.length > 0 && (
+            <div className="border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
+              <p className={EYEBROW}>Hashtags</p>
+              <div className="mt-3">
+                <ProductHashtagList tags={product.tags} />
+              </div>
+            </div>
+          )}
         </div>
 
-        <div className="order-2 lg:order-3 lg:col-span-3">
-          <div id={PRODUCT_PURCHASE_ANCHOR_ID} className="scroll-mt-28 lg:sticky lg:top-24">
+        <div className="order-2 min-w-0 lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1">
+          <div id={PRODUCT_PURCHASE_ANCHOR_ID} className="scroll-mt-28">
             <ProductDetailPurchasePanel
               productId={product.id}
+              productType={product.type}
+              stockQuantity={product.stockQuantity}
               creatorId={product.creatorId}
               creatorName={product.creatorName}
               priceLabel={priceLabel}
@@ -202,36 +181,30 @@ export default async function MarketplaceProductDetailPage({
         </div>
       </div>
 
-      <div className="mt-12 pt-10">
+      <div className="mt-16 border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:mt-20 md:pt-20">
         <ProductDetailBottom
           product={product}
           reviewCount={reviewCount}
           loginRedirect={productUrl}
-          purchaseCta={{
-            isAuthenticated,
-            creatorId: product.creatorId,
-            creatorName: product.creatorName,
-          }}
           middle={
+            hasWhyBlocks || hasDemo ? (
             <>
-              {product.whyProductBlocks && product.whyProductBlocks.length > 0 && (
-                <ProductWhyHighlights blocks={product.whyProductBlocks} />
-              )}
+              {hasWhyBlocks && <ProductWhyHighlights blocks={product.whyProductBlocks!} />}
 
-              {product.demoUrl && product.demoType !== 'NONE' && (
+              {hasDemo && (
                 <ProductDemoSection
-                  demoUrl={product.demoUrl}
+                  demoUrl={product.demoUrl!}
                   demoType={product.demoType}
                   demoSubtitles={product.demoSubtitles}
                   demoDescription={product.demoDescription}
                 />
               )}
             </>
+            ) : null
           }
         />
       </div>
     </main>
-    </>
   );
 }
 
@@ -250,28 +223,31 @@ function ProductDetailCreatorCard({
   return (
     <Link
       href={`/marketplace/${creatorId}`}
-      className="flex items-center gap-4 rounded-2xl bg-white p-4 transition hover:bg-orange-50/40 dark:bg-[#0F0F0F] dark:hover:bg-orange-500/5"
+      className="group flex items-center gap-4 rounded-lg border border-black/[0.06] bg-white px-5 py-4 transition hover:border-black/[0.14] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]"
     >
       {creatorAvatarUrl ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={creatorAvatarUrl}
-          alt=""
-          className="h-14 w-14 rounded-full object-cover ring-2 ring-white dark:ring-neutral-800"
-        />
+        <img src={creatorAvatarUrl} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
       ) : (
-        <div className="flex h-14 w-14 items-center justify-center rounded-full bg-orange-100 text-base font-bold text-orange-800 dark:bg-orange-500/20 dark:text-orange-200">
+        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-[#111111] dark:bg-white/[0.08] dark:text-white">
           {creatorName.slice(0, 2).toUpperCase()}
         </div>
       )}
-      <div>
-        {specialty ? (
-          <p className="text-xs font-medium uppercase tracking-wide text-gray-500 dark:text-gray-400">
-            {specialty}
-          </p>
-        ) : null}
-        <p className="text-base font-semibold text-gray-900 dark:text-white">{creatorName}</p>
+      <div className="min-w-0 flex-1">
+        <p className="text-[13px] text-neutral-500 dark:text-neutral-400">Sold by</p>
+        <p className="truncate text-[15px] font-semibold text-[#111111] dark:text-white">
+          {creatorName}
+          {specialty ? (
+            <span className="font-normal capitalize text-neutral-500 dark:text-neutral-400"> · {specialty}</span>
+          ) : null}
+        </p>
       </div>
+      <span className="shrink-0 text-sm font-medium text-[#111111] dark:text-white">
+        View profile
+        <span aria-hidden className="ml-1 inline-block transition-transform duration-300 group-hover:translate-x-0.5">
+          →
+        </span>
+      </span>
     </Link>
   );
 }

@@ -2,7 +2,9 @@
 
 import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react';
 import Link from 'next/link';
-import { ACCENT_ORANGE, brandCtaClass } from '@/components/landing/landingBrand';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faRightLeft } from '@fortawesome/free-solid-svg-icons';
+import { ACCENT_ORANGE, APP_FIELD, APP_GROUND, brandCtaClass } from '@/components/landing/landingBrand';
 import { useAuth } from '@/context/AuthContext';
 import { CreatorStudioProfileTab } from '@/components/creator/studio/CreatorStudioProfileTab';
 import { PortfolioPresencePicker } from '@/components/portfolio/PortfolioPresencePicker';
@@ -16,6 +18,7 @@ import {
   updateCreatorPortfolioSettings,
 } from '@/lib/portfolio-settings-api';
 import { PortfolioLivePreview } from '@/components/portfolio/PortfolioLivePreview';
+import { GenerateCvLink } from '@/components/portfolio/cv/GenerateCvLink';
 import { buildCreatorPortfolioUrl } from '@/lib/portfolio-url';
 import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 
@@ -98,10 +101,11 @@ function CopyLiveLinkHero({ shareUrl }: { shareUrl: string }) {
   );
 }
 
-const TABS: { id: PortfolioTabId; label: string; live?: boolean }[] = [
+/** `desktopOnly`: phones reach Live preview from the profile header's Preview button instead. */
+const TABS: { id: PortfolioTabId; label: string; mobileLabel?: string; live?: boolean; desktopOnly?: boolean }[] = [
   { id: 'information', label: 'Information' },
-  { id: 'templates', label: 'Explore templates' },
-  { id: 'preview', label: 'Live preview', live: true },
+  { id: 'templates', label: 'Explore templates', mobileLabel: 'Templates' },
+  { id: 'preview', label: 'Live preview', live: true, desktopOnly: true },
 ];
 
 const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -181,7 +185,7 @@ function PortfolioWorkspaceSegmentedNav({
             left: plate.left,
             width: plate.width,
             transitionTimingFunction: EASE,
-            opacity: plate.ready ? 1 : 0,
+            opacity: plate.ready && plate.width > 0 ? 1 : 0,
           }}
           className="pointer-events-none absolute top-1 bottom-1 rounded-md bg-black/[0.06] transition-[left,width,opacity] duration-[420ms] dark:bg-white/[0.08]"
         />
@@ -198,11 +202,18 @@ function PortfolioWorkspaceSegmentedNav({
               role="tab"
               aria-selected={active}
               onClick={() => onTabChange(item.id)}
-              className={`relative z-[1] inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 py-2 text-[0.9rem] font-medium normal-case tracking-normal transition-colors duration-[320ms] ${EASE_CLS} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 sm:px-4 ${
-                active ? NAV_ACTIVE : NAV_IDLE
-              }`}
+              className={`relative z-[1] shrink-0 items-center gap-1.5 whitespace-nowrap rounded-md px-3.5 py-2 text-[0.9rem] font-medium normal-case tracking-normal transition-colors duration-[320ms] ${EASE_CLS} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 sm:px-4 ${
+                item.desktopOnly ? 'hidden sm:inline-flex' : 'inline-flex'
+              } ${active ? NAV_ACTIVE : NAV_IDLE}`}
             >
-              <span>{item.label}</span>
+              {item.mobileLabel ? (
+                <>
+                  <span className="sm:hidden">{item.mobileLabel}</span>
+                  <span className="hidden sm:inline">{item.label}</span>
+                </>
+              ) : (
+                <span>{item.label}</span>
+              )}
               {item.live ? (
                 <span
                   aria-hidden
@@ -217,9 +228,12 @@ function PortfolioWorkspaceSegmentedNav({
         <button
           type="button"
           onClick={onChangePresence}
-          className={`relative z-[1] inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-3.5 py-2 text-[0.9rem] font-medium normal-case tracking-normal transition-colors duration-[320ms] ${EASE_CLS} ${NAV_IDLE} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 sm:px-4`}
+          aria-label="Switch format"
+          title="Switch format"
+          className={`relative z-[1] inline-flex shrink-0 items-center whitespace-nowrap rounded-md px-3 py-2 text-[0.9rem] font-medium normal-case tracking-normal transition-colors duration-[320ms] ${EASE_CLS} ${NAV_IDLE} focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 sm:px-4`}
         >
-          Switch format
+          <FontAwesomeIcon icon={faRightLeft} className="h-[15px] w-[15px] sm:hidden" fixedWidth aria-hidden />
+          <span className="hidden sm:inline">Switch format</span>
         </button>
       </div>
     </div>
@@ -276,7 +290,7 @@ export function MyPortfolioWorkspace() {
   if (isLoading) {
     return (
       <div className={PORTFOLIO_FRAME_CLASS}>
-        <div className="rounded-lg border border-black/[0.08] bg-[#F8F8F8] px-6 py-16 text-center text-sm text-[#666666] dark:border-white/[0.06] dark:bg-[#0F0F0F] dark:text-neutral-400">
+        <div className={`rounded-lg border border-black/[0.08] ${APP_GROUND} px-6 py-16 text-center text-sm text-[#666666] dark:border-white/[0.06] dark:bg-[#0F0F0F] dark:text-neutral-400`}>
           Loading…
         </div>
       </div>
@@ -285,7 +299,7 @@ export function MyPortfolioWorkspace() {
 
   if (!isCreator || !user) {
     return (
-      <div className="mx-4 rounded-2xl border border-dashed border-black/[0.08] bg-[#EBEAE8]/80 px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#0D0D0D]/80 sm:mx-5">
+      <div className={`mx-4 rounded-2xl border border-dashed border-black/[0.08] ${APP_FIELD} px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#0D0D0D]/80 sm:mx-5`}>
         <p className="text-sm text-[#666666] dark:text-neutral-400">
           A creator account is required to manage your portfolio.
         </p>
@@ -352,11 +366,12 @@ export function MyPortfolioWorkspace() {
               allowedSections={selectedPresence.sections}
               sectionsNavTitle={selectedPresence.title}
               onPortfolioPreview={() => setTab('preview')}
+              sectionsNavFooter={(iconsOnly) => <GenerateCvLink iconsOnly={iconsOnly} />}
             />
           ) : tab === 'preview' ? (
             <PortfolioLivePreview creatorId={user.id} username={user.username} />
           ) : (
-            <div className="rounded-2xl border border-black/[0.04] bg-[#EBEAE8] px-6 py-20 text-center dark:border-white/[0.04] dark:bg-[#0D0D0D]">
+            <div className={`rounded-2xl border border-black/[0.04] ${APP_FIELD} px-6 py-20 text-center dark:border-white/[0.04] dark:bg-[#0D0D0D]`}>
               <p className="text-base font-semibold text-[#111111] dark:text-white">
                 {TABS.find((t) => t.id === tab)?.label}
               </p>

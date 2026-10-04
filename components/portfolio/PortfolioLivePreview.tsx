@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import { APP_GROUND } from '@/components/landing/landingBrand';
 import { PortfolioSettingsModal } from '@/components/portfolio/PortfolioSettingsModal';
 import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-settings';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
@@ -593,8 +594,8 @@ export function PortfolioLivePreview({
       ref={previewRootRef}
       className={`portfolio-live-preview relative max-w-full min-w-0 ${
         focusActive
-          ? 'flex h-full flex-col overflow-x-clip bg-[#F8F8F8] dark:bg-black'
-          : 'sticky z-20 flex flex-col gap-2 overflow-x-clip bg-[#F8F8F8] px-3 pb-2 dark:bg-black sm:px-4'
+          ? `flex h-full flex-col overflow-x-clip ${APP_GROUND} dark:bg-black`
+          : `sticky z-20 flex flex-col gap-2 overflow-x-clip ${APP_GROUND} px-3 pb-2 dark:bg-black sm:px-4`
       }`}
       style={focusActive ? undefined : { top: dockTop, height: dockHeight }}
     >
@@ -644,7 +645,7 @@ export function PortfolioLivePreview({
 
       {/* Physical screen — rounded device frame on mineral ground. */}
       <div
-        className={`portfolio-live-preview-frame relative min-h-0 flex-1 border border-black/[0.06] bg-[#F8F8F8] dark:border-white/[0.08] dark:bg-black ${
+        className={`portfolio-live-preview-frame relative min-h-0 flex-1 border border-black/[0.06] ${APP_GROUND} dark:border-white/[0.08] dark:bg-black ${
           settingsOpen || focusActive
             ? ''
             : 'overflow-hidden rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.10)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)]'
@@ -658,7 +659,7 @@ export function PortfolioLivePreview({
           <div
             ref={previewColumnRef}
             className={`relative min-w-0 max-w-full flex-1 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              previewWidth != null ? 'bg-[#F8F8F8] dark:bg-black' : ''
+              previewWidth != null ? `${APP_GROUND} dark:bg-black` : ''
             }`}
           >
             <div className="flex h-full w-full items-stretch justify-center">

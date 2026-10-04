@@ -1,6 +1,6 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useEffect, type ReactNode } from 'react';
 
 type MessageLayoutProps = {
   inbox: ReactNode;
@@ -31,6 +31,14 @@ export function MessageLayout({
   const mobileShowInbox = !showConversationMobile && !detailsOpen;
   const mobileShowConversation = showConversationMobile && !detailsOpen;
   const mobileShowDetails = Boolean(details) && detailsOpen;
+  const mobileFullscreen = mobileShowConversation || mobileShowDetails;
+
+  useEffect(() => {
+    const root = document.documentElement;
+    if (mobileFullscreen) root.setAttribute('data-chat-fullscreen', '');
+    else root.removeAttribute('data-chat-fullscreen');
+    return () => root.removeAttribute('data-chat-fullscreen');
+  }, [mobileFullscreen]);
 
   /*
    * One panel treatment, written once. The hairline is the *only* thing marking a
@@ -39,12 +47,14 @@ export function MessageLayout({
    * above the ground instead of making them white.
    */
   const panelClass =
-    'border border-[var(--msg-hairline)] bg-[var(--msg-panel)] rounded-[var(--msg-radius)]';
+    'bg-[var(--msg-panel)] lg:border lg:border-[var(--msg-hairline)] lg:rounded-[var(--msg-radius)]';
+  /* Phones: an open thread (and its details) takes the whole screen, over the app bar. */
+  const mobileFullscreenClass = 'max-lg:fixed max-lg:inset-0 max-lg:z-[70] max-lg:h-[100dvh]';
 
   return (
     <div className="msg-shell msg-mineral flex min-h-0 flex-1 flex-col bg-[var(--msg-ground)]">
       <div
-        className={`mx-auto flex min-h-0 w-full flex-1 gap-4 px-4 pb-6 pt-4 transition-[max-width] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:gap-5 sm:px-0 ${
+        className={`mx-auto flex min-h-0 w-full flex-1 gap-4 px-0 pb-0 pt-0 transition-[max-width] lg:pb-6 lg:pt-4 duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:gap-5 sm:px-0 ${
           detailsOpen ? 'max-w-[1600px]' : 'max-w-[1280px]'
         }`}
       >
@@ -59,7 +69,7 @@ export function MessageLayout({
 
         <section
           className={`min-h-0 min-w-0 flex-1 flex-col overflow-hidden ${panelClass} lg:flex ${
-            mobileShowConversation ? 'flex' : 'hidden'
+            mobileShowConversation ? `flex ${mobileFullscreenClass}` : 'hidden'
           }`}
           aria-label="Conversation"
         >
@@ -88,7 +98,7 @@ export function MessageLayout({
               aria-hidden={!mobileShowDetails}
               inert={!mobileShowDetails ? true : undefined}
               className={`min-h-0 w-full min-w-0 flex-1 flex-col overflow-hidden ${panelClass} lg:hidden ${
-                mobileShowDetails ? 'flex' : 'hidden'
+                mobileShowDetails ? `flex ${mobileFullscreenClass}` : 'hidden'
               }`}
             >
               {details}

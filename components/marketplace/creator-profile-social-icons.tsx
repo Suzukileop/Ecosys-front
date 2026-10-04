@@ -16,7 +16,7 @@ const NEUTRAL_ICON_SHELL =
   'flex shrink-0 items-center justify-center rounded-xl border border-neutral-200/80 bg-neutral-100 text-neutral-600 dark:border-neutral-700 dark:bg-neutral-800 dark:text-neutral-300';
 
 const ACCENT_ICON_SHELL =
-  'flex shrink-0 items-center justify-center rounded-xl border border-orange-200/80 bg-orange-50 text-orange-600 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-400';
+  'flex shrink-0 items-center justify-center rounded-lg border border-black/[0.08] bg-transparent text-[#111111] transition-colors hover:border-black/[0.2] dark:border-white/[0.12] dark:text-white dark:hover:border-white/[0.25]';
 
 const ICON_PATHS: Record<NeutralIconName, ReactNode> = {
   clock: (

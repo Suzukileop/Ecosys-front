@@ -2,14 +2,9 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import Link from 'next/link';
+import { useAuth } from '@/context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import {
-  faClock,
-  faComment,
-  faEllipsisVertical,
-  faGripVertical,
-  faPlus,
-} from '@fortawesome/free-solid-svg-icons';
+import { faClock, faComment, faEllipsisVertical, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
 import {
   createEmptyProfileService,
   parseProfileServices,
@@ -22,14 +17,12 @@ import { ProfileReadinessWarning } from '@/components/creator/studio/ProfileRead
 import { MarketplaceFilterDropdown } from '@/components/marketplace/MarketplaceFilterDropdown';
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { CreatorStudioServicesTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
+import { BackToTopButton, useBackToTop } from '@/components/ui/ScrollUpStickyBar';
 import { getApiErrorMessage } from '@/lib/api-error';
 import api from '@/lib/api';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
-import {
-  getMissingProfileReadinessFields,
-  type ProfileReadinessField,
-} from '@/lib/creator-profile-readiness';
+import { getMissingProfileReadinessFields, type ProfileReadinessField } from '@/lib/creator-profile-readiness';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import type { CreatorProfileDto } from '@/types/ecosystem';
 import {
@@ -38,6 +31,8 @@ import {
   MAX_PROFILE_SERVICES,
   normalizeServiceCurrency,
   normalizeServiceStatus,
+  servicePriceCentsForPricing,
+  servicePricingNeedsAmount,
   serviceStatusLabel,
   solidCoverHueFromTitle,
   type ServicePricingType,
@@ -78,6 +73,21 @@ function statusDotClass(status: ServiceStatus) {
   }
 }
 
+const AUTO_SCROLL_EDGE_PX = 96;
+const AUTO_SCROLL_MAX_SPEED = 18;
+
+function findScrollParent(node: HTMLElement | null): HTMLElement | null {
+  let el = node?.parentElement ?? null;
+  while (el && el !== document.body) {
+    const { overflowY } = window.getComputedStyle(el);
+    if ((overflowY === 'auto' || overflowY === 'scroll') && el.scrollHeight > el.clientHeight) {
+      return el;
+    }
+    el = el.parentElement;
+  }
+  return null;
+}
+
 function ServiceCover({
   title,
   coverImageUrl,
@@ -102,9 +112,7 @@ function ServiceCover({
       style={{ backgroundColor: `hsl(${hue} 48% 42%)` }}
       aria-hidden
     >
-      <span className="relative text-4xl font-bold tracking-tight text-white/90 sm:text-5xl">
-        {initial}
-      </span>
+      <span className="relative text-4xl font-bold tracking-tight text-white/90 sm:text-5xl">{initial}</span>
     </div>
   );
 }
@@ -112,10 +120,10 @@ function ServiceCover({
 type Draft = ProfileServiceForm;
 
 const menuItemClass =
-  'block w-full rounded-md px-3 py-2 text-left text-[14px] text-neutral-700 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-300 dark:hover:bg-white/[0.07] dark:hover:text-white';
+  'block w-full rounded-md px-3 py-2 text-left text-[15px] text-neutral-700 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-300 dark:hover:bg-white/[0.07] dark:hover:text-white';
 
 const menuDangerItemClass =
-  'block w-full rounded-md px-3 py-2 text-left text-[14px] text-red-600 transition-colors hover:bg-red-500/[0.08] dark:text-red-400';
+  'block w-full rounded-md px-3 py-2 text-left text-[15px] text-red-600 transition-colors hover:bg-red-500/[0.08] dark:text-red-400';
 
 function ServiceContextMenu({
   service,
@@ -181,7 +189,7 @@ function ServiceContextMenu({
         >
           {confirmRemove ? (
             <>
-              <p className="px-3 py-2 text-[14px] text-neutral-500 dark:text-neutral-400">
+              <p className="px-3 py-2 text-[15px] leading-snug text-neutral-500 dark:text-neutral-400">
                 Delete this service permanently?
               </p>
               <button
@@ -195,11 +203,7 @@ function ServiceContextMenu({
               >
                 Delete forever
               </button>
-              <button
-                type="button"
-                className={menuItemClass}
-                onClick={() => setConfirmRemove(false)}
-              >
+              <button type="button" className={menuItemClass} onClick={() => setConfirmRemove(false)}>
                 Cancel
               </button>
             </>
@@ -261,11 +265,7 @@ function ServiceContextMenu({
                 </button>
               ) : null}
               <div className="mx-2 my-1 h-px bg-black/[0.06] dark:bg-white/[0.06]" aria-hidden />
-              <button
-                type="button"
-                className={menuDangerItemClass}
-                onClick={() => setConfirmRemove(true)}
-              >
+              <button type="button" className={menuDangerItemClass} onClick={() => setConfirmRemove(true)}>
                 Remove
               </button>
             </>
@@ -276,7 +276,17 @@ function ServiceContextMenu({
   );
 }
 
-export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageHeader?: boolean }) {
+export function CreatorStudioServicesTab({
+  showPageHeader = false,
+  createRequest = 0,
+  onCreateDisabledChange,
+}: {
+  showPageHeader?: boolean;
+  /** Incremented by the parent to open the "New service" drawer (studio rail action). */
+  createRequest?: number;
+  onCreateDisabledChange?: (disabled: boolean) => void;
+}) {
+  const { user } = useAuth();
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
   const [uploadingCover, setUploadingCover] = useState(false);
@@ -289,6 +299,10 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
   const [statusFilter, setStatusFilter] = useState<StatusFilter>('ALL');
   const [specialtyFilter, setSpecialtyFilter] = useState('ALL');
   const [dragId, setDragId] = useState<string | null>(null);
+  const [overId, setOverId] = useState<string | null>(null);
+  const overIdRef = useRef<string | null>(null);
+  const pointerYRef = useRef(0);
+  const listRef = useRef<HTMLDivElement>(null);
   const [dropHint, setDropHint] = useState(false);
   const [openMenuId, setOpenMenuId] = useState<string | null>(null);
   const [missingProfileFields, setMissingProfileFields] = useState<ProfileReadinessField[]>([]);
@@ -309,9 +323,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
       setSpecialties(nextSpecialties);
       setKeywordTags(parseSpecialtyTags(profile.specialtyTags));
       setServices(parseProfileServices(profile.profileServices));
-      setMissingProfileFields(
-        getMissingProfileReadinessFields(profile, { requireSpecialties: true })
-      );
+      setMissingProfileFields(getMissingProfileReadinessFields(profile, { requireSpecialties: true }));
     } catch (err) {
       setError(getApiErrorMessage(err));
     } finally {
@@ -382,12 +394,16 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
       return;
     }
     const pricingType = (draft.pricingType ?? 'FIXED') as ServicePricingType;
-    if (pricingType !== 'QUOTE' && draft.basePriceCents == null) {
-      setError('Price is required unless pricing is Quote on request.');
+    const needsAmount = servicePricingNeedsAmount(pricingType);
+    if (needsAmount && draft.basePriceCents == null) {
+      setError('Price is required unless pricing is Quote on request or Free.');
       return;
     }
-    const currencyRaw = (draft.currency ?? '').trim().toUpperCase().replace(/[^A-Z0-9]/g, '');
-    if (pricingType !== 'QUOTE' && !currencyRaw) {
+    const currencyRaw = (draft.currency ?? '')
+      .trim()
+      .toUpperCase()
+      .replace(/[^A-Z0-9]/g, '');
+    if (needsAmount && !currencyRaw) {
       setError('Currency is required.');
       return;
     }
@@ -397,7 +413,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
       description: draft.description?.trim() ?? '',
       specialty: draft.specialty.trim(),
       pricingType,
-      basePriceCents: pricingType === 'QUOTE' ? null : draft.basePriceCents,
+      basePriceCents: servicePriceCentsForPricing(pricingType, draft.basePriceCents),
       deadline: draft.deadline?.trim() ?? '',
       coverImageUrl: draft.coverImageUrl?.trim() ?? '',
       status: draft.status ?? 'ACTIVE',
@@ -412,23 +428,23 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
           : null,
     };
     const exists = services.some((item) => item.id === cleaned.id);
-    const next = exists
-      ? services.map((item) => (item.id === cleaned.id ? cleaned : item))
-      : [...services, cleaned];
+    const next = exists ? services.map((item) => (item.id === cleaned.id ? cleaned : item)) : [...services, cleaned];
     await persist(next.map((item, index) => ({ ...item, sortOrder: index })));
   };
 
   const archiveOrDelete = async (serviceId: string, hardDelete: boolean) => {
     if (hardDelete) {
-      await persist(services.filter((item) => item.id !== serviceId).map((item, index) => ({
-        ...item,
-        sortOrder: index,
-      })));
+      await persist(
+        services
+          .filter((item) => item.id !== serviceId)
+          .map((item, index) => ({
+            ...item,
+            sortOrder: index,
+          })),
+      );
       return;
     }
-    const next = services.map((item) =>
-      item.id === serviceId ? { ...item, status: 'ARCHIVED' as const } : item
-    );
+    const next = services.map((item) => (item.id === serviceId ? { ...item, status: 'ARCHIVED' as const } : item));
     await persist(next);
   };
 
@@ -476,6 +492,16 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
   const reorderBlockedByFilters = statusFilter !== 'ALL' || specialtyFilter !== 'ALL';
   const canReorder = !reorderBlockedByFilters && !draft;
   const hasAnyServices = services.length > 0;
+  const showGreeting = showPageHeader && !hasAnyServices && !draft;
+  const greetingName = user?.fullName?.trim().split(/\s+/)[0] || 'there';
+  const profileWarning =
+    missingProfileFields.length > 0 ? (
+      <ProfileReadinessWarning
+        missingFields={missingProfileFields}
+        title="Complete your profile first"
+        description="Add a real profile photo (not the auto-generated avatar), plus address, phone, email, nationality, link, name, role, location, and specialties before publishing a service. Don't worry — it's a mark of trust for your clients."
+      />
+    ) : null;
 
   useEffect(() => {
     if (!reorderBlockedByFilters) setDropHint(false);
@@ -487,9 +513,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
       list = list.filter((item) => normalizeServiceStatus(item.status) === statusFilter);
     }
     if (specialtyFilter !== 'ALL') {
-      list = list.filter(
-        (item) => specialtyKey(item.specialty ?? '') === specialtyKey(specialtyFilter)
-      );
+      list = list.filter((item) => specialtyKey(item.specialty ?? '') === specialtyKey(specialtyFilter));
     }
     return list.sort((a, b) => a.sortOrder - b.sortOrder);
   }, [services, statusFilter, specialtyFilter]);
@@ -539,23 +563,133 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
     }
   };
 
+  const reorderRef = useRef(reorderServices);
+  reorderRef.current = reorderServices;
+
+  useEffect(() => {
+    if (!dragId) return;
+    const fromId = dragId;
+    const list = listRef.current;
+    const scroller = findScrollParent(list);
+    let frame = 0;
+    let done = false;
+
+    const updateTarget = () => {
+      if (!list) return;
+      const y = pointerYRef.current;
+      const cards = Array.from(list.querySelectorAll<HTMLElement>('[data-service-id]'));
+      let target: string | null = null;
+      for (const card of cards) {
+        target = card.dataset.serviceId ?? null;
+        if (y < card.getBoundingClientRect().bottom) break;
+      }
+      if (target && target !== overIdRef.current) {
+        overIdRef.current = target;
+        setOverId(target);
+      }
+    };
+
+    const tick = () => {
+      const y = pointerYRef.current;
+      const top = scroller ? scroller.getBoundingClientRect().top : 0;
+      const bottom = scroller ? scroller.getBoundingClientRect().bottom : window.innerHeight;
+      let delta = 0;
+      if (y < top + AUTO_SCROLL_EDGE_PX) {
+        delta = -Math.ceil(((top + AUTO_SCROLL_EDGE_PX - y) / AUTO_SCROLL_EDGE_PX) * AUTO_SCROLL_MAX_SPEED);
+      } else if (y > bottom - AUTO_SCROLL_EDGE_PX) {
+        delta = Math.ceil(((y - (bottom - AUTO_SCROLL_EDGE_PX)) / AUTO_SCROLL_EDGE_PX) * AUTO_SCROLL_MAX_SPEED);
+      }
+      if (delta) {
+        if (scroller) scroller.scrollBy(0, delta);
+        else window.scrollBy(0, delta);
+        updateTarget();
+      }
+      frame = requestAnimationFrame(tick);
+    };
+
+    const finish = (commit: boolean) => {
+      if (done) return;
+      done = true;
+      const toId = overIdRef.current;
+      overIdRef.current = null;
+      setOverId(null);
+      setDragId(null);
+      if (commit && toId && toId !== fromId) void reorderRef.current(fromId, toId);
+    };
+
+    const onMove = (event: PointerEvent) => {
+      pointerYRef.current = event.clientY;
+      updateTarget();
+    };
+    const onUp = () => finish(true);
+    const onCancel = () => finish(false);
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') finish(false);
+    };
+
+    const body = document.body;
+    const prevUserSelect = body.style.userSelect;
+    const prevCursor = body.style.cursor;
+    body.style.userSelect = 'none';
+    body.style.cursor = 'grabbing';
+
+    window.addEventListener('pointermove', onMove);
+    window.addEventListener('pointerup', onUp);
+    window.addEventListener('pointercancel', onCancel);
+    window.addEventListener('keydown', onKey);
+    window.addEventListener('scroll', updateTarget, true);
+    frame = requestAnimationFrame(tick);
+
+    return () => {
+      cancelAnimationFrame(frame);
+      window.removeEventListener('pointermove', onMove);
+      window.removeEventListener('pointerup', onUp);
+      window.removeEventListener('pointercancel', onCancel);
+      window.removeEventListener('keydown', onKey);
+      window.removeEventListener('scroll', updateTarget, true);
+      body.style.userSelect = prevUserSelect;
+      body.style.cursor = prevCursor;
+    };
+  }, [dragId]);
+
+  const createDisabled =
+    loading ||
+    saving ||
+    Boolean(draft) ||
+    specialties.length === 0 ||
+    services.length >= MAX_PROFILE_SERVICES ||
+    missingProfileFields.length > 0;
+
+  useEffect(() => {
+    onCreateDisabledChange?.(createDisabled);
+  }, [createDisabled, onCreateDisabledChange]);
+
+  const toolbarRef = useRef<HTMLDivElement>(null);
+  const backToTop = useBackToTop(toolbarRef, !loading && hasAnyServices);
+
+  const handledCreateRequestRef = useRef(createRequest);
+  useEffect(() => {
+    if (loading || createRequest === handledCreateRequestRef.current) return;
+    handledCreateRequestRef.current = createRequest;
+    openCreate();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [createRequest, loading]);
+
+  const pageInset = showPageHeader ? 'px-5 sm:px-0' : '';
+  const pageInsetMargin = showPageHeader ? 'mx-5 sm:mx-0' : '';
+
   if (loading) {
     return (
-      <div className="flex justify-center py-16">
-        <LoadingSpinner size="lg" />
+      <div className={showPageHeader ? 'pt-4 sm:pt-10' : ''}>
+        <div className={pageInset}>
+          <CreatorStudioServicesTabSkeleton />
+        </div>
       </div>
     );
   }
 
-  const publishDisabled =
-    saving || services.length >= MAX_PROFILE_SERVICES || missingProfileFields.length > 0;
+  const publishDisabled = saving || services.length >= MAX_PROFILE_SERVICES || missingProfileFields.length > 0;
   const showPublish = specialties.length > 0 && hasAnyServices;
-  const publishButton = (
-    <button type="button" onClick={openCreate} disabled={publishDisabled} className={primaryButtonClass}>
-      <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
-      New service
-    </button>
-  );
   const specialtyOptions = [
     { value: 'ALL', label: 'All specialties' },
     ...usedSpecialties.map((item) => ({ value: item, label: item })),
@@ -563,33 +697,54 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
 
   return (
     <div
-      className={`relative flex min-h-0 w-full flex-1 flex-col space-y-10 overflow-y-auto overscroll-contain pb-24 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
-        showPageHeader ? 'pt-8 sm:pt-10' : ''
+      className={`relative flex w-full flex-col space-y-6 pb-24 sm:space-y-10 ${
+        showPageHeader
+          ? 'min-h-0 flex-1 overflow-y-auto overscroll-contain pt-4 [scrollbar-width:none] [-ms-overflow-style:none] sm:pt-10 [&::-webkit-scrollbar]:hidden'
+          : ''
       }`}
     >
-      {showPageHeader ? (
-        <header className="flex flex-wrap items-end justify-between gap-x-6 gap-y-4">
-          <div className="min-w-0">
-            <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">
-              My services
-            </h1>
-            <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-              The offers clients can book or request a quote for.
-            </p>
-          </div>
-          {showPublish ? publishButton : null}
-        </header>
-      ) : null}
+      {showGreeting ? (
+        <div className="flex items-center justify-between gap-6">
+          <h1 className="min-w-0 truncate text-[40px] font-semibold leading-none tracking-[-0.035em] text-[#111111] dark:text-white sm:text-[56px]">
+            Hi, {greetingName}
+          </h1>
+          {profileWarning}
+        </div>
+      ) : (
+        <>
+          {showPageHeader ? (
+            <header className={`flex items-center justify-between gap-x-6 gap-y-4 sm:flex-wrap sm:items-end ${pageInset}`}>
+              <div className="min-w-0">
+                <h1 className="text-[1.5rem] font-bold leading-tight tracking-[-0.01em] text-[#111111] dark:text-white">
+                  My services
+                </h1>
+                <p className="mt-2 hidden text-[16px] text-neutral-500 dark:text-neutral-400 sm:block">
+                  The offers clients can book or request a quote for.
+                </p>
+              </div>
+              {showPublish ? (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  disabled={publishDisabled}
+                  aria-label="New service"
+                  className={`${primaryButtonClass} h-9 w-9 shrink-0 !rounded-full !px-0 !py-0 sm:h-auto sm:w-auto sm:!rounded-lg sm:!px-5 sm:!py-2.5`}
+                >
+                  <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">New service</span>
+                </button>
+              ) : null}
+            </header>
+          ) : null}
+          {profileWarning ? <div className={pageInset}>{profileWarning}</div> : null}
+        </>
+      )}
 
-      {missingProfileFields.length > 0 ? (
-        <ProfileReadinessWarning
-          missingFields={missingProfileFields}
-          title="Complete your profile first"
-          description="Add a real profile photo (not the auto-generated avatar), plus address, phone, email, nationality, link, name, role, location, and specialties before publishing a service. Don't worry — it's a mark of trust for your clients."
-        />
+      {error ? (
+        <div className={pageInset}>
+          <ErrorAlert message={error} onDismiss={() => setError(null)} />
+        </div>
       ) : null}
-
-      {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       <ServiceFormDrawer
         open={Boolean(draft && editingId)}
@@ -606,6 +761,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
       />
 
       {!hasAnyServices && !draft ? (
+        <div className={pageInset}>
         <CreatorServicesEmptyGuide
           onCreate={openCreate}
           createDisabled={
@@ -615,9 +771,13 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
             services.length >= MAX_PROFILE_SERVICES
           }
         />
+        </div>
       ) : (
         <section className="space-y-6" aria-label="Your services">
-          <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2 border-b border-black/[0.06] dark:border-white/[0.06]">
+          <div
+            ref={toolbarRef}
+            className={`flex scroll-mt-6 items-center justify-between gap-x-4 gap-y-2 border-b border-black/[0.06] dark:border-white/[0.06] sm:flex-wrap sm:gap-x-6 ${pageInset}`}
+          >
             <div
               className="-mb-px flex min-w-0 gap-6 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
               role="group"
@@ -639,7 +799,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
                     type="button"
                     onClick={() => setStatusFilter(option.value)}
                     aria-pressed={selected}
-                    className={`relative inline-flex shrink-0 items-center gap-1.5 py-3.5 text-base transition-colors ${
+                    className={`relative inline-flex shrink-0 items-center gap-2 py-3.5 text-[15px] transition-colors ${
                       selected
                         ? 'font-medium text-[#111111] dark:text-white'
                         : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
@@ -652,10 +812,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
                       </span>
                     ) : null}
                     {selected ? (
-                      <span
-                        className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#FF5722]"
-                        aria-hidden
-                      />
+                      <span className="absolute inset-x-0 bottom-0 h-0.5 rounded-full bg-[#FF5722]" aria-hidden />
                     ) : null}
                   </button>
                 );
@@ -674,16 +831,28 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
                   align="right"
                 />
               ) : null}
-              {!showPageHeader && showPublish ? publishButton : null}
+              {!showPageHeader && showPublish ? (
+                <button
+                  type="button"
+                  onClick={openCreate}
+                  disabled={publishDisabled}
+                  aria-label="New service"
+                  title="New service"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center gap-2 rounded-lg border border-[#111111] bg-transparent text-[14px] font-medium text-[#111111] transition-colors duration-200 hover:bg-[#111111] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-transparent disabled:hover:text-[#111111] dark:border-white dark:text-white dark:hover:bg-white dark:hover:text-[#111111] dark:focus-visible:ring-offset-[#0A0A0A] dark:disabled:hover:bg-transparent dark:disabled:hover:text-white sm:w-auto sm:pl-3.5 sm:pr-4"
+                >
+                  <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" />
+                  <span className="hidden sm:inline">New service</span>
+                </button>
+              ) : null}
             </div>
           </div>
 
           {visibleServices.length === 0 && !draft ? (
-            <div className="rounded-lg border border-dashed border-black/[0.12] px-6 py-16 text-center dark:border-white/[0.12]">
-              <p className="text-lg font-semibold text-[#111111] dark:text-white">
+            <div className={`rounded-lg border border-dashed border-black/[0.12] px-6 py-12 text-center dark:border-white/[0.12] sm:py-16 ${pageInsetMargin}`}>
+              <p className="text-[18px] font-semibold text-[#111111] dark:text-white">
                 No services match these filters
               </p>
-              <p className="mt-2 text-[15px] text-neutral-500 dark:text-neutral-400">
+              <p className="mt-2 text-[16px] leading-relaxed text-neutral-500 dark:text-neutral-400">
                 Change the status or specialty filter to see other offers.
               </p>
               <button
@@ -692,121 +861,106 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
                   setStatusFilter('ALL');
                   setSpecialtyFilter('ALL');
                 }}
-                className="mt-6 inline-flex items-center rounded-lg border border-black/[0.12] px-4 py-2 text-[14px] font-medium text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.06]"
+                className="mt-6 inline-flex items-center rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.06]"
               >
                 Reset filters
               </button>
             </div>
           ) : (
-            <div className="relative z-10 flex flex-col gap-4 overflow-visible">
-              {visibleServices.map((service) => {
+            <div ref={listRef} className="relative z-10 flex flex-col gap-3 overflow-visible sm:gap-4">
+              {visibleServices.map((service, index) => {
                 const status = normalizeServiceStatus(service.status);
                 const deliveryLabel = formatServiceDelivery(service);
                 const priceLabel = formatServicePrice(service);
                 const tags = (service.tags ?? []).filter((tag) => tag.trim());
                 const isDragging = dragId === service.id;
+                const dragIndex = dragId ? visibleServices.findIndex((item) => item.id === dragId) : -1;
+                const dropSide =
+                  dragId && overId === service.id && dragId !== service.id
+                    ? index > dragIndex
+                      ? 'after'
+                      : 'before'
+                    : null;
                 return (
                   <article
                     key={service.id}
-                    draggable={canReorder}
-                    onDragStart={(event) => {
-                      if (!canReorder) {
-                        event.preventDefault();
-                        setDropHint(true);
-                        return;
-                      }
-                      setDragId(service.id);
-                      setDropHint(false);
-                      event.dataTransfer.effectAllowed = 'move';
-                      event.dataTransfer.setData('text/plain', service.id);
-                    }}
-                    onDragEnd={() => {
-                      setDragId(null);
-                    }}
-                    onDragOver={(event) => {
-                      if (!canReorder) {
-                        event.preventDefault();
-                        setDropHint(true);
-                        return;
-                      }
-                      event.preventDefault();
-                      event.dataTransfer.dropEffect = 'move';
-                    }}
-                    onDrop={(event) => {
-                      event.preventDefault();
-                      if (!canReorder) {
-                        setDropHint(true);
-                        return;
-                      }
-                      const fromId = event.dataTransfer.getData('text/plain') || dragId;
-                      setDragId(null);
-                      if (fromId) void reorderServices(fromId, service.id);
-                    }}
-                    className={`group relative overflow-visible rounded-lg border border-black/[0.06] bg-white p-4 transition-colors duration-200 hover:border-black/[0.14] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16] sm:p-5 ${
-                      isDragging ? 'opacity-60' : ''
-                    } ${canReorder ? 'cursor-grab active:cursor-grabbing' : ''} ${
-                      openMenuId === service.id ? 'z-30' : 'z-0'
-                    }`}
+                    data-service-id={service.id}
+                    className={`group relative overflow-visible rounded-xl bg-white p-3 transition-[background-color,opacity,box-shadow] duration-300 dark:bg-[#111111] sm:p-4 ${
+                      showPageHeader ? 'max-sm:rounded-none max-sm:px-5' : ''
+                    } ${
+                      isDragging
+                        ? 'opacity-50 shadow-[0_18px_40px_-16px_rgba(0,0,0,0.3)] ring-1 ring-black/15 dark:ring-white/20'
+                        : 'dark:hover:bg-[#161616]'
+                    } ${openMenuId === service.id || isDragging ? 'z-30' : 'z-0'}`}
                   >
+                    {dropSide ? (
+                      <span
+                        aria-hidden
+                        className={`pointer-events-none absolute inset-x-0 h-[2px] rounded-full bg-[#111111] dark:bg-white ${
+                          dropSide === 'before' ? '-top-[9px]' : '-bottom-[9px]'
+                        }`}
+                      />
+                    ) : null}
                     <div className="flex flex-col gap-5 md:flex-row md:gap-6">
                       {!draft && hasAnyServices ? (
                         <button
                           type="button"
-                          tabIndex={-1}
-                          aria-label="Reorder"
-                          className="absolute left-7 top-1/2 z-10 hidden -translate-y-1/2 items-center justify-center rounded-md border border-black/[0.06] bg-white/95 px-1.5 py-2 text-neutral-400 backdrop-blur group-hover:flex dark:border-white/[0.08] dark:bg-[#111111]/90 dark:text-neutral-500 md:flex md:opacity-0 md:transition-opacity md:group-hover:opacity-100"
-                          onMouseDown={(event) => {
+                          aria-label={`Reorder ${service.title}. Drag, or use arrow keys.`}
+                          title="Drag to reorder"
+                          className={`absolute left-6 top-1/2 z-10 flex -translate-y-1/2 touch-none select-none items-center justify-center rounded-md bg-black/55 px-1.5 py-2 text-white/80 backdrop-blur-md transition-opacity hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:left-7 ${
+                            canReorder ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed'
+                          } ${isDragging ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
+                          onPointerDown={(event) => {
+                            if (event.button !== 0) return;
                             event.preventDefault();
-                            if (reorderBlockedByFilters) setDropHint(true);
+                            if (!canReorder) {
+                              setDropHint(true);
+                              return;
+                            }
+                            setDropHint(false);
+                            pointerYRef.current = event.clientY;
+                            overIdRef.current = service.id;
+                            setOverId(service.id);
+                            setDragId(service.id);
                           }}
-                          onClick={() => {
-                            if (reorderBlockedByFilters) setDropHint(true);
+                          onKeyDown={(event) => {
+                            if (event.key !== 'ArrowUp' && event.key !== 'ArrowDown') return;
+                            event.preventDefault();
+                            if (!canReorder) {
+                              setDropHint(true);
+                              return;
+                            }
+                            const neighbour = visibleServices[event.key === 'ArrowUp' ? index - 1 : index + 1];
+                            if (neighbour) void reorderServices(service.id, neighbour.id);
                           }}
                         >
                           <FontAwesomeIcon icon={faGripVertical} className="h-4 w-4" />
                         </button>
                       ) : null}
-                      <div className="relative aspect-[16/9] w-full shrink-0 overflow-hidden rounded-md bg-neutral-100 dark:bg-neutral-900 md:aspect-[4/3] md:w-[240px] lg:w-[280px]">
+                      <div className="relative aspect-[16/10] w-full shrink-0 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-900 md:aspect-[4/3] md:w-[260px] lg:w-[300px]">
                         <ServiceCover
                           title={service.title}
                           coverImageUrl={service.coverImageUrl}
-                          className="h-full w-full"
+                          className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                         />
+                        <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-white backdrop-blur-md">
+                          <span className={`h-1.5 w-1.5 rounded-full ${statusDotClass(status)}`} aria-hidden />
+                          {serviceStatusLabel(status)}
+                        </span>
                       </div>
-                      <div className="flex min-h-0 min-w-0 flex-1 flex-col">
+                      <div className="flex min-h-0 min-w-0 flex-1 flex-col px-1 pb-1 md:py-1.5 md:pr-1">
                         <div className="flex items-start justify-between gap-4">
                           <div className="min-w-0 flex-1">
-                            <h3 className="text-lg font-semibold leading-snug tracking-tight text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white dark:group-hover:text-[#FF5722]">
+                            {service.specialty ? (
+                              <p className="truncate text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
+                                {service.specialty}
+                              </p>
+                            ) : null}
+                            <h3 className="mt-1.5 line-clamp-2 text-[20px] font-semibold leading-snug tracking-[-0.015em] text-[#111111] dark:text-white">
                               {service.title}
                             </h3>
-                            <div className="mt-1.5 flex flex-wrap items-center gap-x-2.5 gap-y-1 text-[14px] text-neutral-500 dark:text-neutral-400">
-                              {service.specialty ? (
-                                <>
-                                  <span className="truncate">{service.specialty}</span>
-                                  <span className="text-neutral-300 dark:text-neutral-600" aria-hidden>
-                                    ·
-                                  </span>
-                                </>
-                              ) : null}
-                              <span className="inline-flex items-center gap-1.5">
-                                <span
-                                  className={`h-1.5 w-1.5 rounded-full ${statusDotClass(status)}`}
-                                  aria-hidden
-                                />
-                                {serviceStatusLabel(status)}
-                              </span>
-                            </div>
                           </div>
-                          <div className="flex shrink-0 items-center gap-2">
-                            <p
-                              className={`whitespace-nowrap tabular-nums ${
-                                priceLabel === 'On request'
-                                  ? 'text-[15px] font-medium text-neutral-500 dark:text-neutral-400'
-                                  : 'text-lg font-semibold text-[#111111] dark:text-white'
-                              }`}
-                            >
-                              {priceLabel}
-                            </p>
+                          <div className="-mr-1 -mt-1 shrink-0">
                             <ServiceContextMenu
                               service={service}
                               disabled={saving || Boolean(draft)}
@@ -816,44 +970,51 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
                               onDeactivate={() => void setServiceStatus(service.id, 'PAUSED')}
                               onArchive={() => void archiveOrDelete(service.id, false)}
                               onRemove={() => void archiveOrDelete(service.id, true)}
-                              onOpenChange={(open) =>
-                                setOpenMenuId(open ? service.id : null)
-                              }
+                              onOpenChange={(open) => setOpenMenuId(open ? service.id : null)}
                             />
                           </div>
                         </div>
 
                         {service.description ? (
-                          <p className="mt-3 line-clamp-2 text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-400">
+                          <p className="mt-3 line-clamp-2 text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
                             {service.description}
                           </p>
                         ) : null}
 
-                        {deliveryLabel || tags.length > 0 ? (
-                          <div className="mt-auto flex flex-wrap items-center gap-x-4 gap-y-2 pt-4 text-[14px]">
-                            {deliveryLabel ? (
-                              <p className="inline-flex items-center gap-2 text-neutral-600 dark:text-neutral-300">
-                                <FontAwesomeIcon
-                                  icon={faClock}
-                                  className="h-3.5 w-3.5 text-neutral-400 dark:text-neutral-500"
-                                />
-                                {deliveryLabel}
-                              </p>
-                            ) : null}
-                            {tags.length > 0 ? (
-                              <div className="flex flex-wrap gap-1.5">
-                                {tags.map((tag) => (
-                                  <span
-                                    key={tag}
-                                    className="inline-flex rounded-md border border-black/[0.08] px-2 py-0.5 text-[13px] text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
-                                  >
-                                    {tag}
-                                  </span>
-                                ))}
-                              </div>
-                            ) : null}
+                        {tags.length > 0 ? (
+                          <div className="mt-4 flex flex-wrap gap-1.5">
+                            {tags.map((tag) => (
+                              <span
+                                key={tag}
+                                className="inline-flex rounded-full bg-black/[0.05] px-3 py-1 text-[13px] text-neutral-700 dark:bg-white/[0.07] dark:text-neutral-300"
+                              >
+                                {tag}
+                              </span>
+                            ))}
                           </div>
                         ) : null}
+
+                        <div className="mt-auto pt-5">
+                          <div className="flex items-end justify-between gap-4 border-t border-black/[0.06] pt-4 dark:border-white/[0.07]">
+                            {deliveryLabel ? (
+                              <p className="inline-flex items-center gap-2 text-[14px] text-neutral-500 dark:text-neutral-400">
+                                <FontAwesomeIcon icon={faClock} className="h-3.5 w-3.5" />
+                                {deliveryLabel}
+                              </p>
+                            ) : (
+                              <span />
+                            )}
+                            <p
+                              className={`whitespace-nowrap tabular-nums ${
+                                priceLabel === 'On request'
+                                  ? 'text-[15px] font-medium text-neutral-500 dark:text-neutral-400'
+                                  : 'text-[22px] font-semibold leading-none tracking-[-0.02em] text-[#111111] dark:text-white'
+                              }`}
+                            >
+                              {priceLabel === 'On request' ? 'Price on request' : priceLabel}
+                            </p>
+                          </div>
+                        </div>
                       </div>
                     </div>
                   </article>
@@ -865,7 +1026,7 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
           {dropHint && reorderBlockedByFilters ? (
             <p
               role="status"
-              className="inline-flex w-full items-center justify-center gap-2 rounded-lg border border-black/[0.06] bg-white px-4 py-2.5 text-[14px] text-neutral-600 dark:border-white/[0.08] dark:bg-[#111111] dark:text-neutral-300"
+              className={`flex items-center justify-center gap-2 rounded-lg border border-black/[0.06] bg-white px-4 py-3 text-[15px] text-neutral-600 dark:border-white/[0.08] dark:bg-[#111111] dark:text-neutral-300 ${pageInsetMargin}`}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
               Reset filters to reorder your services
@@ -873,6 +1034,8 @@ export function CreatorStudioServicesTab({ showPageHeader = false }: { showPageH
           ) : null}
         </section>
       )}
+
+      <BackToTopButton visible={backToTop.visible} onClick={backToTop.backToTop} />
     </div>
   );
 }
@@ -917,9 +1080,7 @@ export function PublicServiceCard({ service, discussHref, discussLabel }: Public
       </div>
       <div className="flex flex-1 flex-col gap-4 p-5">
         <div className="space-y-2">
-          <h3 className="text-base font-semibold leading-snug text-neutral-900 dark:text-white">
-            {service.title}
-          </h3>
+          <h3 className="text-base font-semibold leading-snug text-neutral-900 dark:text-white">{service.title}</h3>
           {service.specialty ? (
             <span className="inline-flex rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
               {service.specialty}
@@ -936,9 +1097,7 @@ export function PublicServiceCard({ service, discussHref, discussLabel }: Public
             <p className="text-xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white">
               {formatServicePrice(service)}
             </p>
-            {deliveryLabel ? (
-              <p className="text-xs text-neutral-500 dark:text-neutral-400">{deliveryLabel}</p>
-            ) : null}
+            {deliveryLabel ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{deliveryLabel}</p> : null}
           </div>
           {discussHref ? (
             <Link

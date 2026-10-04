@@ -1,6 +1,8 @@
 'use client';
 
 import { Avatar } from '@/components/ui/Avatar';
+import { AvatarImage } from '@/components/ui/PersonAvatar';
+import { mediaImageSrc, mediaImageSrcSet } from '@/lib/media-image-url';
 import type { GlobalSearchItem } from '@/lib/global-search';
 
 function HashIcon({ className }: { className?: string }) {
@@ -25,21 +27,16 @@ function isPeopleCategory(category: GlobalSearchItem['category']) {
 
 export function GlobalSearchResultThumbnail({ item }: { item: GlobalSearchItem }) {
   if (isPeopleCategory(item.category)) {
-    const avatarUrl = item.avatarUrl?.trim();
-    if (avatarUrl) {
-      return (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img
-          src={avatarUrl}
-          alt=""
-          className="h-11 w-11 shrink-0 rounded-full bg-neutral-100 object-cover ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700"
-        />
-      );
-    }
     return (
-      <div className="shrink-0">
-        <Avatar name={item.title} size="md" tone="muted" />
-      </div>
+      <AvatarImage
+        src={item.avatarUrl}
+        className="h-11 w-11 shrink-0 rounded-full bg-neutral-100 object-cover ring-1 ring-neutral-200 dark:bg-neutral-800 dark:ring-neutral-700"
+        fallback={
+          <div className="shrink-0">
+            <Avatar name={item.title} size="md" tone="muted" />
+          </div>
+        }
+      />
     );
   }
 
@@ -47,8 +44,11 @@ export function GlobalSearchResultThumbnail({ item }: { item: GlobalSearchItem }
     return (
       // eslint-disable-next-line @next/next/no-img-element
       <img
-        src={item.thumbnailUrl}
+        src={mediaImageSrc(item.thumbnailUrl, 48)}
+        srcSet={mediaImageSrcSet(item.thumbnailUrl, 48)}
         alt=""
+        loading="lazy"
+        decoding="async"
         className="h-11 w-11 shrink-0 rounded-xl object-cover ring-1 ring-neutral-200 dark:ring-neutral-700"
       />
     );

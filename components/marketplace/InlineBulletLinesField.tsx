@@ -24,7 +24,7 @@ type InlineBulletLinesFieldProps<T extends FieldValues> = {
 };
 
 /**
- * Inline orange-bullet lines: one fillable row by default, Enter adds the next line.
+ * Inline bullet lines: one fillable row by default, Enter adds the next line.
  */
 export function InlineBulletLinesField<T extends FieldValues>({
   control,
@@ -50,21 +50,21 @@ export function InlineBulletLinesField<T extends FieldValues>({
   return (
     <div className="flex min-h-0 flex-col">
       <div className="flex items-center justify-between gap-3">
-        <p className="text-base font-semibold text-neutral-800 dark:text-neutral-200">{label}</p>
+        <p className="text-[14px] font-medium text-[#111111] dark:text-white">{label}</p>
         <div className="flex shrink-0 items-center gap-3">
           <button
             type="button"
             disabled={fields.length >= maxItems}
             onClick={() => append({ value: '' } as never)}
-            className="text-sm font-medium text-orange-600 transition hover:text-orange-700 disabled:opacity-40 dark:text-orange-400 dark:hover:text-orange-300"
+            className="text-[13px] font-medium text-neutral-500 transition-colors hover:text-[#111111] disabled:opacity-40 dark:text-neutral-400 dark:hover:text-white"
           >
-            + new text
+            Add line
           </button>
           {onRemoveSection ? (
             <button
               type="button"
               onClick={onRemoveSection}
-              className="text-neutral-400 transition hover:text-red-500 dark:text-neutral-500 dark:hover:text-red-400"
+              className="text-neutral-400 transition-colors hover:text-[#111111] dark:text-neutral-500 dark:hover:text-white"
               aria-label="Remove section"
             >
               <FontAwesomeIcon icon={faTrashCan} className="text-[12px]" />
@@ -73,17 +73,12 @@ export function InlineBulletLinesField<T extends FieldValues>({
         </div>
       </div>
 
-      <ul className="mt-3 space-y-1.5">
+      <ul className="mt-2">
         {fields.map((field, index) => (
-          <li key={field.id} className="group/line flex items-start gap-2.5 py-2">
-            <span
-              className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center text-base font-semibold leading-none text-orange-500"
-              aria-hidden
-            >
-              +
-            </span>
+          <li key={field.id} className="group/line flex items-center gap-3 py-2">
+            <span className="h-1 w-1 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" aria-hidden />
             <input
-              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-base leading-relaxed text-neutral-800 placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-neutral-200 dark:placeholder:text-neutral-500"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] leading-relaxed text-[#111111] placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-white dark:placeholder:text-neutral-500"
               placeholder={`${placeholderPrefix} ${index + 1}`}
               {...register(`${String(name)}.${index}.value` as Path<T>)}
               onKeyDown={(event) => {
@@ -100,10 +95,12 @@ export function InlineBulletLinesField<T extends FieldValues>({
               <button
                 type="button"
                 onClick={() => remove(index)}
-                className="mt-0.5 shrink-0 px-0.5 text-sm font-medium text-red-500 opacity-70 transition hover:opacity-100 dark:text-red-400"
+                className="shrink-0 text-neutral-400 opacity-0 transition-[opacity,color] hover:text-[#111111] focus-visible:opacity-100 group-hover/line:opacity-100 dark:text-neutral-500 dark:hover:text-white"
                 aria-label={`Remove line ${index + 1}`}
               >
-                ✕
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+                  <path d="M6 6l12 12M18 6L6 18" />
+                </svg>
               </button>
             ) : null}
           </li>

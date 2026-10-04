@@ -1,7 +1,7 @@
 'use client';
 
-import { useEffect, useRef, useState } from 'react';
-import { ContentCategorySelect } from '@/components/creator/ContentCategorySelect';
+import { useEffect, useRef } from 'react';
+import { CREATOR_CONTENT_TITLE_MAX } from '@/components/creator/creator-content-form';
 import type { ContentPostBucket, CreatorContentItemDto } from '@/types/creator-content';
 
 type ContentPostDetailsBlockProps = {
@@ -77,59 +77,6 @@ function currencyGlyph(currency: string | null): string | null {
   if (currency === 'JPY') return '¥';
   if (currency === 'Ar') return 'Ar';
   return currency.length <= 3 ? currency : currency.slice(0, 3);
-}
-
-function needsShowMoreInline(description: string) {
-  const singleLine = description.replace(/\s+/g, ' ').trim();
-  return singleLine.length > 72 || description.includes('\n');
-}
-
-function DescriptionText({
-  description,
-  descExpanded,
-  isSidebar,
-  onClampedChange,
-}: {
-  description: string;
-  descExpanded: boolean;
-  isSidebar: boolean;
-  onClampedChange: (clamped: boolean) => void;
-}) {
-  const ref = useRef<HTMLParagraphElement>(null);
-
-  useEffect(() => {
-    const el = ref.current;
-    if (!el || descExpanded) {
-      onClampedChange(false);
-      return;
-    }
-
-    const measure = () => {
-      onClampedChange(el.scrollHeight > el.clientHeight + 1);
-    };
-
-    measure();
-    const observer = new ResizeObserver(measure);
-    observer.observe(el);
-    return () => observer.disconnect();
-  }, [description, descExpanded, isSidebar, onClampedChange]);
-
-  const displayText = descExpanded ? description : description.replace(/\s*\n+\s*/g, ' ');
-
-  return (
-    <p
-      ref={ref}
-      className={`text-sm text-neutral-700 dark:text-neutral-300 ${
-        descExpanded
-          ? 'whitespace-pre-wrap leading-relaxed'
-          : isSidebar
-            ? 'line-clamp-3 leading-relaxed'
-            : 'truncate'
-      }`}
-    >
-      {displayText}
-    </p>
-  );
 }
 
 function bucketBadge(bucket?: ContentPostBucket) {
@@ -281,10 +228,8 @@ export function ContentPostDetailsBlock({
   onDraftChange,
   disabled = false,
 }: ContentPostDetailsBlockProps) {
-  const [descExpanded, setDescExpanded] = useState(false);
-  const [descClamped, setDescClamped] = useState(false);
   const isSidebar = variant === 'sidebar';
-  const titleInputRef = useRef<HTMLInputElement>(null);
+  const titleInputRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
     if (editing) {
@@ -296,29 +241,17 @@ export function ContentPostDetailsBlock({
   if (editing && draft && onDraftChange) {
     return (
       <div className={isSidebar ? 'space-y-6' : 'space-y-4'}>
-        {isSidebar ? (
-          <ContentCategorySelect
-            id="content-edit-genre"
-            value={draft.genre}
-            onChange={(next) => onDraftChange({ ...draft, genre: next })}
-            disabled={disabled}
-            labelClass="text-[14px] font-semibold text-neutral-500 dark:text-neutral-400"
-            fieldClass={`${editInputClass} mt-0 text-[15px] font-medium text-neutral-700 dark:text-neutral-200`}
-            placeholder="Branding, Motion, Tech…"
-          />
-        ) : null}
-
         {!hideTitle && (
           <div className="flex flex-wrap items-center gap-2">
-            <input
+            <textarea
               ref={titleInputRef}
-              type="text"
+              rows={1}
               value={draft.title}
               disabled={disabled}
-              maxLength={300}
+              maxLength={CREATOR_CONTENT_TITLE_MAX}
               onChange={(e) => onDraftChange({ ...draft, title: e.target.value })}
               placeholder="Post headline"
-              className={`${editInputClass} font-bold leading-tight text-neutral-900 dark:text-white ${
+              className={`${editInputClass} resize-none whitespace-pre-wrap font-bold leading-tight text-neutral-900 [field-sizing:content] dark:text-white ${
                 isSidebar ? 'text-xl' : 'text-lg'
               }`}
               style={post.textColor ? { color: post.textColor } : undefined}
@@ -326,28 +259,6 @@ export function ContentPostDetailsBlock({
             {bucketBadge(bucket)}
           </div>
         )}
-
-        {!isSidebar ? (
-          <ContentCategorySelect
-            id="content-edit-genre"
-            value={draft.genre}
-            onChange={(next) => onDraftChange({ ...draft, genre: next })}
-            disabled={disabled}
-            labelClass="text-[11px] font-semibold uppercase tracking-wide text-neutral-400 dark:text-neutral-500"
-            fieldClass={`${editInputClass} mt-0 text-sm font-medium text-neutral-700 dark:text-neutral-200`}
-            placeholder="Branding, Motion, Tech…"
-          />
-        ) : null}
-
-        <textarea
-          value={draft.description}
-          disabled={disabled}
-          maxLength={2000}
-          rows={4}
-          onChange={(e) => onDraftChange({ ...draft, description: e.target.value })}
-          placeholder="Description"
-          className={`${editInputClass} resize-y text-sm leading-relaxed text-neutral-500 dark:text-neutral-400`}
-        />
 
         {isSidebar && (
           <div>
@@ -408,26 +319,17 @@ export function ContentPostDetailsBlock({
   }
 
   const title = post.title?.trim() || 'Untitled';
-  const genre = post.genre?.trim() ?? '';
-  const description = post.description?.trim() ?? '';
   const tags = (post.tags ?? []).filter(Boolean);
   const tools = (post.toolsUsed ?? []).filter(Boolean);
   const hasPrice = Boolean(post.priceInfo?.trim());
   const hasMetaGrid = tags.length > 0 || tools.length > 0;
-  const showMoreInline = needsShowMoreInline(description);
-  const showToggle = isSidebar ? descClamped || descExpanded : showMoreInline || descExpanded;
 
   return (
     <div>
       <div className={isSidebar ? 'space-y-6' : 'space-y-4'}>
         {isSidebar && !hideTitle && (
           <div>
-            {genre ? (
-              <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-orange-500 dark:text-orange-400">
-                {genre}
-              </p>
-            ) : null}
-            <div className="mt-2 flex flex-wrap items-center gap-2">
+            <div className="flex flex-wrap items-center gap-2">
               <h3
                 className="text-[1.65rem] font-bold leading-tight text-neutral-900 dark:text-white"
                 style={post.textColor ? { color: post.textColor } : undefined}
@@ -450,31 +352,6 @@ export function ContentPostDetailsBlock({
               </h3>
               {bucketBadge(bucket)}
             </div>
-            {genre && (
-              <p className="mt-1.5 text-[11px] font-semibold uppercase tracking-wide text-orange-500 dark:text-orange-400">
-                {genre}
-              </p>
-            )}
-          </div>
-        )}
-
-        {description && (
-          <div>
-            <DescriptionText
-              description={description}
-              descExpanded={descExpanded}
-              isSidebar={isSidebar}
-              onClampedChange={setDescClamped}
-            />
-            {showToggle && (
-              <button
-                type="button"
-                onClick={() => setDescExpanded((v) => !v)}
-                className="mt-1.5 text-xs font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
-              >
-                {descExpanded ? 'Show less' : 'Show more'}
-              </button>
-            )}
           </div>
         )}
 
@@ -537,20 +414,12 @@ export function ContentPostDetailsBlock({
   );
 }
 
-export function ContentPostCardFooter({
-  genre,
-  priceInfo,
-}: {
-  genre?: string | null;
-  priceInfo?: string | null;
-}) {
-  const genreLabel = genre?.trim() ? genre.trim().toUpperCase() : null;
+export function ContentPostCardFooter({ priceInfo }: { priceInfo?: string | null }) {
   const priceLabel = priceInfo?.trim() ? priceInfo.trim() : null;
-  const parts = [genreLabel, priceLabel].filter(Boolean);
 
   return (
     <div className="border-t border-neutral-200 py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 dark:border-neutral-800">
-      {parts.length > 0 ? parts.join(' · ') : 'No genre · No price'}
+      {priceLabel ?? 'No price'}
     </div>
   );
 }

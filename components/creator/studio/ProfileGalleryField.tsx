@@ -82,7 +82,7 @@ export function ProfileGalleryField({
         append(created);
       }
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Échec du téléversement.'));
+      setUploadError(getApiErrorMessage(e, 'Upload failed.'));
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -92,7 +92,7 @@ export function ProfileGalleryField({
   if (readOnly) {
     const filled = values.filter((item) => item.mediaUrl.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>Aucun média dans la galerie.</p>;
+      return <p className={profileSectionEmptyClass}>No media in the gallery.</p>;
     }
     return (
       <div className="grid gap-3 sm:grid-cols-2">
@@ -119,26 +119,26 @@ export function ProfileGalleryField({
       <ProfileSectionItemCount count={fields.length} limit={MAX_GALLERY} unit="gallery items" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>Aucun média dans la galerie.</p>
+        <p className={profileSectionEmptyClass}>No media in the gallery.</p>
       ) : (
         fields.map((field, index) => {
           const mediaUrl = watch(`galleryItems.${index}.mediaUrl`) ?? '';
           return (
             <div
               key={field.id}
-              className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800"
+              className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800"
             >
               <div className="flex items-center justify-between gap-2">
-                <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-                  Média {index + 1}
+                <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
+                  Media {index + 1}
                 </p>
                 <div className="flex items-center gap-1">
                   <button
                     type="button"
                     disabled={index === 0}
                     onClick={() => move(index, index - 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Monter"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
+                    aria-label="Move up"
                   >
                     ↑
                   </button>
@@ -146,23 +146,23 @@ export function ProfileGalleryField({
                     type="button"
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, index + 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Descendre"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
+                    aria-label="Move down"
                   >
                     ↓
                   </button>
                   <button
                     type="button"
                     onClick={() => remove(index)}
-                    className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+                    className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                   >
-                    Retirer
+                    Remove
                   </button>
                 </div>
               </div>
 
               <div>
-                <p className={profileFormLabelClass}>Média</p>
+                <p className={profileFormLabelClass}>Media</p>
                 {mediaUrl ? (
                   <div className="mt-2 space-y-2">
                     <ContentMediaPreview
@@ -178,14 +178,14 @@ export function ProfileGalleryField({
                         setValue(`galleryItems.${index}.mediaUrl`, '', { shouldDirty: true });
                         setValue(`galleryItems.${index}.mediaType`, null, { shouldDirty: true });
                       }}
-                      className="text-sm font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
+                      className="text-[15px] font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
                     >
-                      Retirer le média
+                      Remove media
                     </button>
                   </div>
                 ) : (
-                  <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">
-                    Aucun fichier — utilisez « Ajouter des médias » ci-dessous, ou retirez cet élément.
+                  <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
+                    No file — use “Add media” below, or remove this item.
                   </p>
                 )}
               </div>
@@ -208,12 +208,12 @@ export function ProfileGalleryField({
             type="button"
             onClick={() => inputRef.current?.click()}
             disabled={uploading}
-            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
+            className="inline-flex items-center gap-2 rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            Ajouter des médias
+            Add media
           </button>
-          {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
+          {uploadError ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>
       ) : null}
     </div>

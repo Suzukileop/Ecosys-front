@@ -1,12 +1,12 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import { ProductDetailInfoTabs } from '@/components/marketplace/ProductDetailInfoTabs';
-import { ProductDetailPurchaseCta } from '@/components/marketplace/ProductDetailPurchaseCta';
+import { useAuth } from '@/context/AuthContext';
+import { ProductDetailCharacteristics } from '@/components/marketplace/ProductDetailInfoTabs';
+import { ProductReviewComposer } from '@/components/marketplace/ProductReviewComposer';
 import { ProductReviewsList } from '@/components/marketplace/ProductReviewsList';
 import { ProductSimilarList } from '@/components/marketplace/ProductSimilarList';
 import { emitRatingUpdated } from '@/lib/ratingBus';
-import { productDetailSectionGapClass } from '@/components/marketplace/product-highlight-ui';
 import type { MarketplaceProductDetail } from '@/types/marketplace';
 
 type ProductDetailBottomProps = {
@@ -14,20 +14,18 @@ type ProductDetailBottomProps = {
   reviewCount: number;
   loginRedirect: string;
   middle?: ReactNode;
-  purchaseCta?: {
-    isAuthenticated: boolean;
-    creatorId: string;
-    creatorName?: string | null;
-  };
 };
+
+const SECTION_DIVIDER = 'border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:pt-20';
 
 export function ProductDetailBottom({
   product,
   reviewCount,
   loginRedirect,
   middle,
-  purchaseCta,
 }: ProductDetailBottomProps) {
+  const { user } = useAuth();
+  const isOwner = Boolean(user?.id && user.id === product.creatorId);
   const [listRefreshKey, setListRefreshKey] = useState(0);
 
   function handleReviewSubmitted() {
@@ -36,32 +34,27 @@ export function ProductDetailBottom({
   }
 
   return (
-    <div className={productDetailSectionGapClass}>
-      <ProductDetailInfoTabs
-        product={product}
-        reviewCount={reviewCount}
-        onReviewSubmitted={handleReviewSubmitted}
-      />
+    <div className="space-y-16 md:space-y-20">
+      <ProductDetailCharacteristics product={product} reviewCount={reviewCount} />
 
-      {middle}
+      {middle ? <div className={`space-y-16 md:space-y-20 ${SECTION_DIVIDER}`}>{middle}</div> : null}
 
-      {purchaseCta ? (
-        <ProductDetailPurchaseCta
-          isAuthenticated={purchaseCta.isAuthenticated}
-          creatorId={purchaseCta.creatorId}
-          creatorName={purchaseCta.creatorName}
-        />
-      ) : null}
-
-      <section className="pt-10">
-        <div className="grid gap-10 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
-          <ProductReviewsList
-            productId={product.id}
-            loginRedirect={loginRedirect}
-            refreshKey={listRefreshKey}
-            initialReviewCount={product.reviewCount}
-            initialAverageRating={product.averageRating}
-          />
+      <section className={SECTION_DIVIDER}>
+        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
+          <div className="min-w-0 space-y-6">
+            <ProductReviewsList
+              productId={product.id}
+              loginRedirect={loginRedirect}
+              refreshKey={listRefreshKey}
+              initialReviewCount={product.reviewCount}
+              initialAverageRating={product.averageRating}
+            />
+            {!isOwner && (
+              <div className="rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111]">
+                <ProductReviewComposer productId={product.id} onSubmitted={handleReviewSubmitted} />
+              </div>
+            )}
+          </div>
           <ProductSimilarList productId={product.id} genre={product.genre} />
         </div>
       </section>

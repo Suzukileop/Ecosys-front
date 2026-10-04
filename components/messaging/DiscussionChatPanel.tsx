@@ -3,9 +3,12 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { Client, IMessage, type StompSubscription } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { clearPendingProductDraft, peekPendingProductDraft } from '@/lib/chat-product-draft';
+import { composeProductInquiry, PRODUCT_INQUIRY_DEFAULT_TEXT } from '@/lib/marketplace-api';
+import { motion } from 'framer-motion';
+import { ComposerProductAttachment } from '@/components/messaging/conversation/MessageProductPreview';
 import { isConversationAccessDenied } from '@/lib/messaging-access';
 import {
   cancelOutgoingGuestInvite,
@@ -19,9 +22,10 @@ import {
   revokeConversationGuest,
   deleteConversationMessage,
   sendFileMessage,
+  sendTextMessage,
   startCall,
 } from '@/lib/messaging';
-import { getSockJsEndpoint } from '@/lib/ws-url';
+import { createStompWebSocket } from '@/lib/ws-url';
 import type {
   CallSession,
   CallType,
@@ -208,6 +212,7 @@ export function DiscussionChatPanel({
   const { user } = useAuth();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [input, setInput] = useState('');
+  const [attachedProductId, setAttachedProductId] = useState<string | null>(null);
   const [loadingHistory, setLoadingHistory] = useState(true);
   const [sending, setSending] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -582,6 +587,15 @@ export function DiscussionChatPanel({
     return () => window.clearInterval(interval);
   }, [conversationId, loadActiveGuests, loadParticipants, loadPendingGuestInvites, loadingHistory]);
 
+  // Real-time link down (proxy / tunnel refusing the socket): keep the open thread fresh by polling.
+  useEffect(() => {
+    if (!conversationId || connected || loadingHistory || sending || uploading) return;
+    const interval = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void loadHistory();
+    }, 4000);
+    return () => window.clearInterval(interval);
+  }, [conversationId, connected, loadingHistory, sending, uploading, loadHistory]);
+
   // Reset + load before paint so the previous thread never flashes under the new header.
   useLayoutEffect(() => {
     leavingRef.current = false;
@@ -592,6 +606,7 @@ export function DiscussionChatPanel({
       return [];
     });
     setInput('');
+    setAttachedProductId(null);
     setError(null);
     setSending(false);
     setUploading(false);
@@ -719,7 +734,7 @@ export function DiscussionChatPanel({
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       connectHeaders: token ? { Authorization: `Bearer ${token}` } : undefined,
-      webSocketFactory: () => new SockJS(getSockJsEndpoint()) as unknown as WebSocket,
+      webSocketFactory: () => createStompWebSocket(),
       onConnect: () => {
         if (disposed) return;
         setConnected(true);
@@ -1001,6 +1016,18 @@ export function DiscussionChatPanel({
     [conversationId]
   );
 
+  useEffect(() => {
+    if (!user?.id || !partnerUserId || readOnlyGuestHistory) return;
+    const productId = peekPendingProductDraft(partnerUserId);
+    if (!productId) return;
+    const t = setTimeout(() => {
+      clearPendingProductDraft();
+      setAttachedProductId(productId);
+      setInput(PRODUCT_INQUIRY_DEFAULT_TEXT);
+    }, 0);
+    return () => clearTimeout(t);
+  }, [conversationId, partnerUserId, readOnlyGuestHistory, user?.id]);
+
   const handleInputChange = (value: string) => {
     setInput(value);
     if (!connected) return;
@@ -1074,13 +1101,34 @@ export function DiscussionChatPanel({
   }, []);
 
   const sendMessage = async () => {
-    const text = input.trim();
+    const productId = attachedProductId;
+    const text = productId ? composeProductInquiry(input, productId) : input.trim();
     const files = pendingFiles;
     const client = clientRef.current;
     if ((!text && files.length === 0) || sending || uploading) return;
 
     if (files.length === 0) {
-      if (!client?.connected) return;
+      if (!client?.connected) {
+        const sendForConversationId = conversationId;
+        try {
+          setSending(true);
+          setError(null);
+          const msg = await sendTextMessage(sendForConversationId, text);
+          if (!mountedRef.current || conversationIdRef.current !== sendForConversationId) return;
+          setInput('');
+          setAttachedProductId(null);
+          setMessages((prev) => [...prev.filter((m) => m.id !== msg.id), msg].sort(sortBySentAt));
+          forceStickToBottomRef.current = true;
+          shouldStickToBottomRef.current = true;
+          requestAnimationFrame(() => scrollToBottom('smooth'));
+          scheduleInboxRefresh();
+        } catch (e) {
+          if (mountedRef.current) setError(getApiErrorMessage(e, 'Unable to send message.'));
+        } finally {
+          if (mountedRef.current) setSending(false);
+        }
+        return;
+      }
       try {
         setSending(true);
         publishTyping(false);
@@ -1089,6 +1137,7 @@ export function DiscussionChatPanel({
           body: JSON.stringify({ content: text }),
         });
         setInput('');
+        setAttachedProductId(null);
         if (sendFallbackTimerRef.current) clearTimeout(sendFallbackTimerRef.current);
         sendFallbackTimerRef.current = setTimeout(() => {
           setSending(false);
@@ -1129,6 +1178,7 @@ export function DiscussionChatPanel({
     }));
 
     setInput('');
+    setAttachedProductId(null);
     setPendingFiles([]);
     if (fileInputRef.current) fileInputRef.current.value = '';
     publishTyping(false);
@@ -1450,7 +1500,10 @@ export function DiscussionChatPanel({
   );
 
   return (
-    <section
+    <motion.section
+      initial={{ opacity: 0, y: 8 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
       className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--cw-surface,#fff)]"
       aria-labelledby="discussion-chat-heading"
       aria-busy={loadingHistory}
@@ -1633,8 +1686,26 @@ export function DiscussionChatPanel({
                 ? 'Read-only temporary session history.'
                 : 'Read-only conversation.'
           }
+          attachment={
+            attachedProductId ? (
+              <motion.div
+                key={attachedProductId}
+                initial={{ opacity: 0, y: 10, height: 0 }}
+                animate={{ opacity: 1, y: 0, height: 'auto' }}
+                transition={{ duration: 0.36, ease: [0.22, 1, 0.36, 1] }}
+                className="overflow-hidden"
+              >
+                <div className="mb-3">
+                  <ComposerProductAttachment
+                    productId={attachedProductId}
+                    onRemove={() => setAttachedProductId(null)}
+                  />
+                </div>
+              </motion.div>
+            ) : null
+          }
         />
       </div>
-    </section>
+    </motion.section>
   );
 }

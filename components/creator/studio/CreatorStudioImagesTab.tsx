@@ -14,10 +14,7 @@ import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 function formatAddedAt(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleString(undefined, {
-    dateStyle: 'medium',
-    timeStyle: 'short',
-  });
+  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function ImageTile({
@@ -32,34 +29,43 @@ function ImageTile({
   const busy = restoringId === item.id;
 
   return (
-    <li className="overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900">
-      <div className="relative aspect-square bg-neutral-100 dark:bg-neutral-950">
+    <li className="group">
+      <div
+        className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-900 ${
+          item.current
+            ? 'ring-2 ring-[#111111] ring-offset-4 ring-offset-[#F8F8F8] dark:ring-white dark:ring-offset-black'
+            : ''
+        }`}
+      >
         {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img src={item.url} alt="" className="h-full w-full object-cover" />
+        <img
+          src={item.url}
+          alt=""
+          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+        />
+        {!item.current ? (
+          <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/45 to-transparent p-4 pt-12 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+            <button
+              type="button"
+              disabled={busy || restoringId != null}
+              onClick={() => onRestore(item.id)}
+              className="rounded-full bg-white px-5 py-2.5 text-[15px] font-medium text-[#111111] shadow-sm transition-transform hover:scale-[1.03] disabled:opacity-60"
+            >
+              {busy ? 'Applying…' : 'Use as profile photo'}
+            </button>
+          </div>
+        ) : null}
+      </div>
+      <div className="mt-4 flex items-center justify-between gap-3">
+        <time dateTime={item.createdAt} className="truncate text-[15px] text-neutral-500 dark:text-neutral-400">
+          {formatAddedAt(item.createdAt)}
+        </time>
         {item.current ? (
-          <span className="absolute left-2 top-2 rounded-full bg-orange-500 px-2.5 py-0.5 text-[11px] font-bold uppercase tracking-wide text-white shadow-sm">
+          <span className="inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-[#111111] dark:text-white">
+            <span className="h-1.5 w-1.5 rounded-full bg-[#111111] dark:bg-white" aria-hidden />
             Current
           </span>
         ) : null}
-      </div>
-      <div className="flex items-center justify-between gap-3 px-3 py-3">
-        <p className="min-w-0 truncate text-xs text-neutral-500 dark:text-neutral-400">
-          {formatAddedAt(item.createdAt)}
-        </p>
-        {!item.current ? (
-          <button
-            type="button"
-            disabled={busy || restoringId != null}
-            onClick={() => onRestore(item.id)}
-            className="shrink-0 rounded-full border border-neutral-200 bg-white px-3 py-1.5 text-xs font-semibold text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-100 dark:hover:bg-neutral-800"
-          >
-            {busy ? 'Restoring…' : 'Use'}
-          </button>
-        ) : (
-          <span className="shrink-0 text-xs font-medium text-neutral-400 dark:text-neutral-500">
-            Active
-          </span>
-        )}
       </div>
     </li>
   );
@@ -123,23 +129,26 @@ export function CreatorStudioImagesTab({ onImagesUpdated }: CreatorStudioImagesT
   }
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-10">
       <div>
-        <h1 className="text-2xl font-bold tracking-tight text-neutral-900 dark:text-white">Images</h1>
-        <p className="mt-1 max-w-2xl text-sm text-neutral-500 dark:text-neutral-400">
-          Every profile photo you upload is saved here. Replacing your avatar only sets a new current
-          one — previous photos stay in this library.
+        <h2 className="text-[1.5rem] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
+          Profile
+        </h2>
+        <p className="mt-2 max-w-xl text-base leading-relaxed text-neutral-500 dark:text-neutral-400">
+          Every photo you have used. Pick one to make it your profile photo again.
         </p>
       </div>
 
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white px-5 py-10 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400">
-          No profile photos yet. Upload one from the profile header.
+        <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]">
+          <p className="text-base text-neutral-500 dark:text-neutral-400">
+            No profile photos yet. Upload one from the profile header.
+          </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-2 gap-3 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5">
+        <ul className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-12">
           {items.map((item) => (
             <ImageTile
               key={item.id}

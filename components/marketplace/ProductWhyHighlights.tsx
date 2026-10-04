@@ -45,7 +45,7 @@ export function ProductWhyHighlights({ blocks, className = '' }: ProductWhyHighl
               className="flex flex-col items-stretch gap-6 sm:flex-row sm:items-start sm:gap-8 lg:gap-10"
             >
               <ProductHighlightLines lines={lines} idPrefix={block.id} icon="star" />
-              {block.mediaUrl?.trim() ? <ProductHighlightMedia mediaUrl={block.mediaUrl.trim()} /> : null}
+              {block.mediaUrl?.trim() ? <ProductHighlightMedia mediaUrl={block.mediaUrl.trim()} unframed /> : null}
             </article>
           );
         })}

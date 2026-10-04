@@ -11,7 +11,7 @@ export const CREATOR_STUDIO_TABS: { id: CreatorStudioTab; label: string }[] = [
   { id: 'content', label: 'Content' },
   { id: 'services', label: 'Services' },
   { id: 'products', label: 'Products' },
-  { id: 'images', label: 'Images' },
+  { id: 'images', label: 'Profile' },
   { id: 'visitors', label: 'Visitors' },
   { id: 'subscribers', label: 'Subscribers' },
   { id: 'profile', label: 'Information' },

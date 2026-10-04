@@ -19,6 +19,7 @@ import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { clearPendingProductDraft, setPendingProductDraft } from '@/lib/chat-product-draft';
 import { listCreatorProfileFollowers, type CreatorProfileFollowerItem } from '@/lib/creator-profile-followers-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import {
@@ -158,6 +159,8 @@ function DiscussionsPageContent() {
   const { user, hasRole } = useAuth();
   const isCreator = hasRole('ROLE_CREATOR');
   const targetUserId = searchParams.get('user');
+  const targetProductId = searchParams.get('product');
+  const currentUserId = user?.id ?? null;
   const targetConversationId = searchParams.get('conversation');
   const filterParam = searchParams.get('filter');
 
@@ -581,6 +584,15 @@ function DiscussionsPageContent() {
 
   useEffect(() => {
     if (!targetUserId) return;
+    if (targetUserId === currentUserId) {
+      clearPendingProductDraft();
+      router.replace('/dashboard/discussions', { scroll: false });
+      return;
+    }
+    if (targetProductId) setPendingProductDraft(targetUserId, targetProductId);
+    // This page remounts once the session resolves; opening from the anonymous instance would
+    // rewrite the URL and consume the draft in a tree that is about to be discarded.
+    if (!currentUserId) return;
 
     let cancelled = false;
     (async () => {
@@ -619,7 +631,7 @@ function DiscussionsPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [targetUserId, refreshConversations, router]);
+  }, [targetUserId, targetProductId, currentUserId, refreshConversations, router]);
 
   const selectedConversation = useMemo(
     () =>
@@ -639,10 +651,11 @@ function DiscussionsPageContent() {
     if (temporaryInbox.some((entry) => entry.conversationId === openContext.id && entry.canOpen)) {
       return;
     }
-    if (!conversations.some((conversation) => conversation.id === openContext.id)) {
+    const known = (conversation: ConversationSummary) => conversation.id === openContext.id;
+    if (!conversations.some(known) && !archivedConversations.some(known)) {
       setOpenContext(null);
     }
-  }, [conversations, temporaryInbox, openContext, loadingList, openingUser]);
+  }, [conversations, archivedConversations, temporaryInbox, openContext, loadingList, openingUser]);
 
   const permanentConversations = useMemo(
     () =>
@@ -1197,6 +1210,10 @@ function DiscussionsPageContent() {
       }
       incomingReadReceipt={lastReadConversationId === activeChatContext.id ? lastReadReceipt : null}
     />
+  ) : openingUser || (targetUserId && targetUserId !== user?.id && !error) ? (
+    <div className="flex h-full min-h-[40vh] items-center justify-center" aria-busy="true">
+      <LoadingSpinner />
+    </div>
   ) : (
     <EmptyConversation onNewMessage={() => setNewMessageOpen(true)} />
   );

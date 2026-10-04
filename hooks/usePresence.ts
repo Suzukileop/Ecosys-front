@@ -2,10 +2,9 @@
 
 import { useEffect, useMemo, useState } from 'react';
 import { Client, IMessage } from '@stomp/stompjs';
-import SockJS from 'sockjs-client';
 import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
 import { fetchPresenceStatuses, type PresenceStatus } from '@/lib/presence-api';
-import { getSockJsEndpoint } from '@/lib/ws-url';
+import { createStompWebSocket } from '@/lib/ws-url';
 
 export type PresenceMap = Record<string, PresenceStatus>;
 
@@ -115,7 +114,7 @@ export function usePresence(userIds: string[], options: UsePresenceOptions = {})
       heartbeatIncoming: 4000,
       heartbeatOutgoing: 4000,
       connectHeaders: { Authorization: `Bearer ${token}` },
-      webSocketFactory: () => new SockJS(getSockJsEndpoint()) as unknown as WebSocket,
+      webSocketFactory: () => createStompWebSocket(),
       onConnect: () => {
         for (const userId of stableIds) {
           stomp.subscribe(`/topic/presence/${userId}`, (frame: IMessage) => {

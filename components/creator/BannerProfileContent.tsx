@@ -51,11 +51,11 @@ function StatsInline(props: CreatorProfileHeaderProps) {
         href={props.profileVisitsHref}
         layout="inline"
       />
-      {props.averageRating != null && props.averageRating > 0 && (
+      {props.starCount != null && props.starCount > 0 && (
         <>
           <span aria-hidden>·</span>
-          <span className="font-medium text-amber-600 dark:text-amber-400">
-            ⭐ {props.averageRating.toFixed(1)}/5
+          <span>
+            {props.starCount.toLocaleString('en-US')} {props.starCount === 1 ? 'Star' : 'Stars'}
           </span>
         </>
       )}

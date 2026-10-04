@@ -26,7 +26,7 @@ export function SearchServiceProviderGrid({
           isVerified={c.isVerified}
           isAvailable={c.isAvailable}
           serviceCount={c.serviceCount}
-          averageRating={c.averageRating}
+          starCount={c.starCount}
           nationality={c.nationality}
           yearsOfExperience={c.yearsOfExperience}
           distanceKm={c.distanceKm}

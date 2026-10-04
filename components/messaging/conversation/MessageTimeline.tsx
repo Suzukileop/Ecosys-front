@@ -7,7 +7,9 @@ import { buildMessageTimeline } from '@/components/messaging/conversation/timeli
 import { MessageAttachmentView, attachmentIsVisualMedia } from '@/components/messaging/MessageAttachmentView';
 import { MessageActionsMenu } from '@/components/messaging/MessageActionsMenu';
 import type { MessageStatusType } from '@/components/messaging/MessageStatusIndicator';
+import { MessageProductPreview } from '@/components/messaging/conversation/MessageProductPreview';
 import { isGuestSessionTrace } from '@/lib/guest-session-trace';
+import { extractProductLink } from '@/lib/marketplace-api';
 import type { DirectMessage } from '@/types/messaging';
 
 type MessageTimelineProps = {
@@ -88,7 +90,9 @@ export function MessageTimeline({
           const status = getOutgoingStatus(m);
           const visualAttachments = (m.attachments ?? []).filter(attachmentIsVisualMedia);
           const fileAttachments = (m.attachments ?? []).filter((a) => !attachmentIsVisualMedia(a));
-          const hasCaption = Boolean(m.content?.trim());
+          const productLink = extractProductLink(m.content);
+          const caption = productLink ? productLink.rest : m.content;
+          const hasCaption = Boolean(caption?.trim());
 
           return (
             <div
@@ -122,8 +126,9 @@ export function MessageTimeline({
                     )
                   }
                   media={
-                    visualAttachments.length > 0 ? (
+                    visualAttachments.length > 0 || productLink ? (
                       <>
+                        {productLink && <MessageProductPreview productId={productLink.productId} />}
                         {visualAttachments.map((att) => (
                           <div key={att.id} className="overflow-hidden bg-transparent">
                             <MessageAttachmentView
@@ -151,9 +156,9 @@ export function MessageTimeline({
                           />
                         </div>
                       ))}
-                      {hasCaption ? m.content : null}
+                      {hasCaption ? caption : null}
                     </>
-                  ) : visualAttachments.length === 0 ? (
+                  ) : visualAttachments.length === 0 && !productLink ? (
                     'Message'
                   ) : null}
                 </MessageCard>

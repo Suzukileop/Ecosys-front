@@ -133,7 +133,7 @@ export function ProfileLanguagesField({
 
   if (readOnly) {
     if (selected.length === 0) {
-      return <p className={profileSectionEmptyClass}>Aucune langue renseignée.</p>;
+      return <p className={profileSectionEmptyClass}>No languages added.</p>;
     }
     return (
       <div className="flex flex-wrap gap-2">
@@ -146,7 +146,7 @@ export function ProfileLanguagesField({
             >
               {language.value}
               {levelLabel ? (
-                <span className="ml-1.5 text-xs font-semibold text-neutral-500 dark:text-neutral-400">
+                <span className="ml-1.5 text-sm font-semibold text-neutral-500 dark:text-neutral-400">
                   · {levelLabel}
                 </span>
               ) : null}
@@ -158,32 +158,32 @@ export function ProfileLanguagesField({
   }
 
   return (
-    <div className="space-y-4">
+    <div className="space-y-5">
       <div>
-        <p className={profileSectionSubheadingClass}>Langues de travail</p>
-        <p className={`mt-1 ${profileSectionMutedTextClass}`}>
-          Sélectionnez les langues dans lesquelles vous travaillez et indiquez votre niveau.{' '}
-          {selected.length}/{MAX_LANGUAGES} ajoutées.
+        <p className={profileSectionSubheadingClass}>Working languages</p>
+        <p className={`mt-1.5 ${profileSectionMutedTextClass}`}>
+          Select the languages you work in and set your level.{' '}
+          {selected.length}/{MAX_LANGUAGES} added.
         </p>
       </div>
 
       {selected.length > 0 ? (
-        <div className="space-y-2">
+        <div className="space-y-2.5">
           {selected.map((language) => (
             <div
               key={spokenLanguageMatchKey(language.value)}
-              className="flex flex-col gap-2 rounded-xl border border-neutral-200 p-3 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-700"
+              className="flex flex-col gap-2.5 rounded-xl border border-neutral-200 p-4 sm:flex-row sm:items-center sm:justify-between dark:border-neutral-700"
             >
-              <div className="flex items-center gap-2">
-                <span className="text-sm font-semibold text-neutral-900 dark:text-neutral-100">
+              <div className="flex items-center gap-2.5">
+                <span className="text-base font-semibold text-neutral-900 dark:text-neutral-100">
                   {language.value}
                 </span>
                 <button
                   type="button"
                   onClick={() => removeLanguage(language.value)}
-                  className="text-xs font-medium text-neutral-500 hover:text-neutral-800 dark:hover:text-neutral-200"
+                  className="text-sm font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 >
-                  Retirer
+                  Remove
                 </button>
               </div>
               <select
@@ -196,7 +196,7 @@ export function ProfileLanguagesField({
                 }
                 className={`${profileFormInputClass} w-full sm:max-w-[220px]`}
               >
-                <option value="">Niveau (optionnel)</option>
+                <option value="">Level (optional)</option>
                 {levelOptions.map((option) => (
                   <option key={option.code} value={option.code}>
                     {option.label}
@@ -256,7 +256,7 @@ export function ProfileLanguagesField({
               addCustom();
             }
           }}
-          placeholder="Autre langue…"
+          placeholder="Other language…"
           className={`${profileFormInputClass} min-w-0 flex-1`}
         />
         <button
@@ -267,9 +267,9 @@ export function ProfileLanguagesField({
             selected.length >= MAX_LANGUAGES ||
             selectedKeys.has(spokenLanguageMatchKey(customDraft))
           }
-          className="inline-flex shrink-0 justify-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
+          className="inline-flex shrink-0 items-center justify-center rounded-full border border-neutral-200 px-5 py-2.5 text-[15px] font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
         >
-          Ajouter
+          Add
         </button>
       </div>
     </div>

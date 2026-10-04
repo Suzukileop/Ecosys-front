@@ -34,16 +34,18 @@ function MyProductsPageInner() {
 export default function MarketplaceMyProductsPage() {
   return (
     <DashboardHomeShell fullWidth fillViewport>
-      <div className="mx-auto flex min-h-0 w-full max-w-[1280px] flex-1 flex-col overflow-hidden px-4 sm:px-6 lg:px-8 xl:px-0">
-        <Suspense
-          fallback={
-            <div className="pt-8 sm:pt-10">
-              <CreatorStudioProductsTabSkeleton />
-            </div>
-          }
-        >
-          <MyProductsPageInner />
-        </Suspense>
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
+        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-0 sm:px-6 2xl:px-0">
+          <Suspense
+            fallback={
+              <div className="pt-8 sm:pt-10">
+                <CreatorStudioProductsTabSkeleton insetOnMobile />
+              </div>
+            }
+          >
+            <MyProductsPageInner />
+          </Suspense>
+        </div>
       </div>
     </DashboardHomeShell>
   );

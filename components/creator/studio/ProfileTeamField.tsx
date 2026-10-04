@@ -87,18 +87,18 @@ function TeamMemberCard({
   });
 
   return (
-    <div className="space-y-3 rounded-xl border border-neutral-200 p-4 dark:border-neutral-800">
+    <div className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2">
-        <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-          Membre {index + 1}
+        <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
+          Member {index + 1}
         </p>
         <div className="flex items-center gap-1">
           <button
             type="button"
             disabled={index === 0}
             onClick={() => move(index, index - 1)}
-            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
-            aria-label="Monter"
+            className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
+            aria-label="Move up"
           >
             ↑
           </button>
@@ -106,25 +106,25 @@ function TeamMemberCard({
             type="button"
             disabled={index === total - 1}
             onClick={() => move(index, index + 1)}
-            className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
-            aria-label="Descendre"
+            className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
+            aria-label="Move down"
           >
             ↓
           </button>
           <button
             type="button"
             onClick={() => remove(index)}
-            className="rounded-lg border border-red-200 px-2 py-1 text-xs text-red-700 dark:border-red-500/30 dark:text-red-400"
+            className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
           >
-            Retirer
+            Remove
           </button>
         </div>
       </div>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor={`team-name-${fieldId}`} className={profileFormLabelClass}>
-            Nom
+            Name
           </label>
           <input
             id={`team-name-${fieldId}`}
@@ -135,12 +135,12 @@ function TeamMemberCard({
         </div>
         <div>
           <label htmlFor={`team-role-${fieldId}`} className={profileFormLabelClass}>
-            Responsabilité
+            Responsibility
           </label>
           <input
             id={`team-role-${fieldId}`}
             type="text"
-            placeholder="ex. Directeur artistique"
+            placeholder="e.g. Art director"
             className={profileFormInputClass}
             {...register(`teamMembers.${index}.responsibility`)}
           />
@@ -155,9 +155,9 @@ function TeamMemberCard({
             <button
               type="button"
               onClick={() => setValue(`teamMembers.${index}.imageUrl`, '', { shouldDirty: true })}
-              className="text-sm font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
+              className="text-[15px] font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
             >
-              Retirer la photo
+              Remove photo
             </button>
           </div>
         ) : null}
@@ -173,20 +173,20 @@ function TeamMemberCard({
             type="button"
             onClick={pickFile}
             disabled={uploading}
-            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-white dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-900"
+            className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-[15px] font-semibold text-neutral-800 hover:bg-white dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-900"
           >
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            {imageUrl ? 'Remplacer la photo' : 'Ajouter une photo'}
+            {imageUrl ? 'Replace photo' : 'Add photo'}
           </button>
-          {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
+          {uploadError ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>
       </div>
 
       <div>
-        <label className={`${profileFormLabelClass} mb-2 block`}>Réseaux / contact</label>
+        <label className={`${profileFormLabelClass} mb-2 block`}>Social / contact</label>
         {socialFields.length === 0 ? (
-          <p className="mb-3 rounded-lg border border-dashed border-neutral-200 px-3 py-3 text-xs text-neutral-500 dark:border-neutral-700">
-            Aucun réseau ajouté — LinkedIn, email, site web…
+          <p className="mb-3 rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
+            No links added yet — LinkedIn, email, website…
           </p>
         ) : (
           <div className="mb-3 space-y-3">
@@ -198,7 +198,7 @@ function TeamMemberCard({
                 <div>
                   <label
                     htmlFor={`team-url-${socialField.id}`}
-                    className="mb-1 block text-xs font-medium text-neutral-500"
+                    className="mb-1.5 block text-sm font-medium text-neutral-500 dark:text-neutral-400"
                   >
                     URL / email
                   </label>
@@ -208,7 +208,7 @@ function TeamMemberCard({
                     inputMode="url"
                     autoComplete="url"
                     className={profileFormInputClass}
-                    placeholder="https://… ou email"
+                    placeholder="https://… or email"
                     aria-invalid={memberErrors?.socialLinks?.[socialIndex]?.url ? true : undefined}
                     {...register(`teamMembers.${index}.socialLinks.${socialIndex}.url`, {
                       onChange: (event) => {
@@ -222,7 +222,7 @@ function TeamMemberCard({
                     })}
                   />
                   {memberErrors?.socialLinks?.[socialIndex]?.url?.message ? (
-                    <p className="mt-1 text-xs font-medium text-red-600 dark:text-red-400">
+                    <p className="mt-1.5 text-sm font-medium text-red-600 dark:text-red-400">
                       {memberErrors.socialLinks[socialIndex]?.url?.message}
                     </p>
                   ) : null}
@@ -232,8 +232,8 @@ function TeamMemberCard({
                     type="button"
                     disabled={socialIndex === 0}
                     onClick={() => moveSocial(socialIndex, socialIndex - 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Monter le lien"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
+                    aria-label="Move link up"
                   >
                     ↑
                   </button>
@@ -241,8 +241,8 @@ function TeamMemberCard({
                     type="button"
                     disabled={socialIndex === socialFields.length - 1}
                     onClick={() => moveSocial(socialIndex, socialIndex + 1)}
-                    className="rounded-lg border border-neutral-200 px-2 py-1 text-xs disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Descendre le lien"
+                    className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
+                    aria-label="Move link down"
                   >
                     ↓
                   </button>
@@ -250,8 +250,8 @@ function TeamMemberCard({
                     type="button"
                     onClick={() => removeSocial(socialIndex)}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                    aria-label="Retirer le lien"
-                    title="Retirer"
+                    aria-label="Remove link"
+                    title="Remove"
                   >
                     ×
                   </button>
@@ -264,15 +264,15 @@ function TeamMemberCard({
           type="button"
           disabled={socialFields.length >= MAX_SOCIAL_LINKS}
           onClick={() => appendSocial(createEmptyTeamSocialLink(socialFields.length))}
-          className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/80 px-4 py-3 text-sm font-semibold text-neutral-600 transition hover:border-orange-400/60 hover:bg-orange-50 hover:text-orange-700 disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-900/40 dark:text-neutral-300 dark:hover:border-orange-400/50 dark:hover:bg-orange-500/10 dark:hover:text-orange-300"
+          className="inline-flex w-full items-center justify-center gap-2.5 rounded-xl border-2 border-dashed border-neutral-300 bg-neutral-50/80 px-4 py-3.5 text-[15px] font-semibold text-neutral-600 transition hover:border-neutral-400 hover:bg-neutral-100 hover:text-[#111111] disabled:cursor-not-allowed disabled:opacity-40 dark:border-neutral-600 dark:bg-neutral-900/40 dark:text-neutral-300 dark:hover:border-neutral-500 dark:hover:bg-neutral-800/60 dark:hover:text-white"
         >
           <span
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-orange-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-orange-400"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-[#111111] dark:border-neutral-700 dark:bg-neutral-900 dark:text-white"
             aria-hidden
           >
             +
           </span>
-          Ajouter un lien
+          Add link
         </button>
       </div>
     </div>
@@ -294,7 +294,7 @@ export function ProfileTeamField({
   if (readOnly) {
     const filled = values.filter((item) => item.name.trim() && item.responsibility.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>Aucun membre d&apos;équipe ajouté.</p>;
+      return <p className={profileSectionEmptyClass}>No team members added.</p>;
     }
     return (
       <div className="space-y-3">
@@ -318,10 +318,10 @@ export function ProfileTeamField({
                 </div>
               )}
               <div className="min-w-0 flex-1">
-                <p className="font-semibold text-neutral-900 dark:text-white">{member.name}</p>
-                <p className="text-sm text-neutral-600 dark:text-neutral-300">{member.responsibility}</p>
+                <p className="text-base font-semibold text-neutral-900 dark:text-white">{member.name}</p>
+                <p className="mt-0.5 text-[15px] text-neutral-600 dark:text-neutral-300">{member.responsibility}</p>
                 {links.length > 0 ? (
-                  <ul className="mt-2 flex flex-wrap gap-2 text-xs text-neutral-500 dark:text-neutral-400">
+                  <ul className="mt-2.5 flex flex-wrap gap-2.5 text-sm text-neutral-500 dark:text-neutral-400">
                     {links.map((link) => (
                       <li key={link.id}>
                         <span className="font-medium">{link.platform}</span>
@@ -342,7 +342,7 @@ export function ProfileTeamField({
       <ProfileSectionItemCount count={fields.length} limit={MAX_TEAM} unit="team members" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>Aucun membre d&apos;équipe ajouté.</p>
+        <p className={profileSectionEmptyClass}>No team members added.</p>
       ) : (
         fields.map((field, index) => (
           <TeamMemberCard
@@ -364,9 +364,9 @@ export function ProfileTeamField({
         <button
           type="button"
           onClick={() => append(createEmptyTeamMember(fields.length))}
-          className="rounded-lg border border-dashed border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
+          className="rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
-          Ajouter un membre
+          Add member
         </button>
       ) : null}
     </div>

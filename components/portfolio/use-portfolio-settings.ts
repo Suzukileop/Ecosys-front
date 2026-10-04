@@ -1,6 +1,7 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState } from 'react';
+import { getApiErrorMessage } from '@/lib/api-error';
 import {
   createDefaultPortfolioSettings,
   isPortfolioSettingsLocalNewer,
@@ -212,10 +213,10 @@ export function usePortfolioSettings(
             pushFlashFeedback({
               variant: 'error',
               title: 'Settings not saved',
-              description:
-                error instanceof Error
-                  ? error.message
-                  : 'Your changes are kept on this device. We will retry automatically.',
+              description: getApiErrorMessage(
+                error,
+                'Your changes are kept on this device. We will retry automatically.'
+              ),
               durationMs: 6000,
             });
           }
