@@ -8,6 +8,7 @@ import {
   type PortfolioContactHeaderTitleSize,
   type PortfolioContactHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-contact-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ channels';
 const DEFAULT_LEAD_TEXT = 'Pick whichever way works best for you.';
@@ -59,7 +60,8 @@ export function ContactHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_CONTACT_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

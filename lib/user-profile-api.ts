@@ -1,11 +1,5 @@
 import api from '@/lib/api';
 import type { User } from '@/types/auth';
-import type { CreatorProfileDto } from '@/types/ecosystem';
-
-export async function getUserProfile(): Promise<User> {
-  const res = await api.get<User>('/api/user/profile');
-  return res.data;
-}
 
 export async function updateUserProfile(body: {
   fullName?: string;

@@ -3,7 +3,7 @@
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import type { FaqItem } from '@/types/ecosystem';
+import type { FaqItem } from '@/types/profile';
 
 /**
  * Kinetic Split — one of two deliberately un-templated FAQ designs (the

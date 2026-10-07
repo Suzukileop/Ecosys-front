@@ -14,6 +14,7 @@ import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { Avatar } from '@/components/ui/Avatar';
 import { brandGradientBg, brandShadow } from '@/components/landing/landingBrand';
 import { useAuth } from '@/context/AuthContext';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 function OAuthCompleteContent() {
   const searchParams = useSearchParams();
@@ -50,7 +51,7 @@ function OAuthCompleteContent() {
       await clearRefreshCookie();
       const authResponse = await completeOAuthRegistration(code, 'CREATOR');
       await applyAuthResponse(authResponse);
-      window.location.replace('/dashboard/home');
+      window.location.replace(SIGNED_IN_HOME);
     } catch {
       setError('Unable to complete registration. Please try again.');
       setIsSubmitting(false);

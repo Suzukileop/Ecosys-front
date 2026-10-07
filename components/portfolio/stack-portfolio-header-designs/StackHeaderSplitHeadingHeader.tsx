@@ -8,6 +8,7 @@ import {
   type PortfolioStackHeaderTitleSize,
   type PortfolioStackHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-stack-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_LABEL_TEXT = 'Stack';
 const DEFAULT_TITLE_TEXT = 'Core stack';
@@ -61,7 +62,8 @@ export function StackHeaderSplitHeadingHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_STACK_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerSplitHeadingTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSplitHeadingLabelText || DEFAULT_LABEL_TEXT).trim();
   const ink = stackHeaderPaletteTokenColor(presentation.headerSplitHeadingTitleColor ?? 'principal');

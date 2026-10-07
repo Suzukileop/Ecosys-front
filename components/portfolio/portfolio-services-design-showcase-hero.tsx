@@ -10,7 +10,7 @@ import {
   useState,
   type RefObject,
 } from 'react';
-import type { ProfileServiceItem } from '@/types/ecosystem';
+import type { ProfileServiceItem } from '@/types/profile';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
 import {
   handleServicesOrderCtaClick,
@@ -181,41 +181,70 @@ function ServicesHeroCtaPill({ tokens }: { tokens: HeroTokens }) {
   );
 }
 
+/**
+ * Prev/next chevron. It is positioned against the *thumbnail frame* (its parent is the
+ * frame's `relative` box), centred with flexbox — never with a Tailwind `-translate-y-1/2`.
+ * That matters: GSAP's magnetic `quickTo(x/y)` rewrites the element's inline `transform`, which
+ * wipes a CSS translate-based centring and used to leave the chevron stranded ~40px low after
+ * the first hover. With flex centring the only transform on the button is the magnetic pull,
+ * so the chevron stays on the image's vertical centre whatever the image or title size.
+ *
+ * `outside` hugs the frame's left/right edge (desktop + tablet); `inside` sits on top of the
+ * image as a small glass disc (phones, where there is no room beside a centred image).
+ */
 function ServicesHeroArrow({
   innerRef,
   direction,
   onClick,
   ariaLabel,
   tokens,
+  placement = 'outside',
 }: {
-  innerRef: RefObject<HTMLButtonElement | null>;
+  innerRef?: RefObject<HTMLButtonElement | null>;
   direction: 'left' | 'right';
   onClick: () => void;
   ariaLabel: string;
   tokens: HeroTokens;
+  placement?: 'outside' | 'inside';
 }) {
+  const inside = placement === 'inside';
+  const wrapperPlacement = inside
+    ? direction === 'left'
+      ? 'left-2'
+      : 'right-2'
+    : direction === 'left'
+      ? 'right-full pr-1 lg:pr-3'
+      : 'left-full pl-1 lg:pl-3';
   return (
-    <button
-      ref={innerRef}
-      type="button"
-      onClick={onClick}
-      aria-label={ariaLabel}
-      className={`absolute top-1/2 z-[3] flex h-20 w-20 -translate-y-1/2 items-center justify-center opacity-60 will-change-transform hover:opacity-100 ${
-        direction === 'left' ? 'left-1 md:left-3' : 'right-1 md:right-3'
-      }`}
-      style={{ color: tokens.ink, transition: 'opacity 0.25s ease' }}
-      data-pf-no-color-transition=""
-    >
-      <svg viewBox="0 0 32 32" className="h-9 w-9" fill="none" aria-hidden>
-        <path
-          d={direction === 'left' ? 'M20 6L10 16l10 10' : 'M12 6l10 10-10 10'}
-          stroke="currentColor"
-          strokeWidth="1.75"
-          strokeLinecap="round"
-          strokeLinejoin="round"
-        />
-      </svg>
-    </button>
+    <div className={`pointer-events-none absolute inset-y-0 z-[3] flex items-center ${wrapperPlacement}`}>
+      <button
+        ref={innerRef}
+        type="button"
+        onClick={onClick}
+        aria-label={ariaLabel}
+        className={`pointer-events-auto flex items-center justify-center will-change-transform ${
+          inside
+            ? 'h-11 w-11 rounded-full backdrop-blur-md'
+            : 'h-16 w-16 opacity-60 hover:opacity-100 lg:h-20 lg:w-20'
+        }`}
+        style={{
+          color: tokens.ink,
+          transition: 'opacity 0.25s ease',
+          ...(inside ? { backgroundColor: `color-mix(in srgb, ${tokens.bg} 55%, transparent)` } : null),
+        }}
+        data-pf-no-color-transition=""
+      >
+        <svg viewBox="0 0 32 32" className={inside ? 'h-6 w-6' : 'h-9 w-9'} fill="none" aria-hidden>
+          <path
+            d={direction === 'left' ? 'M20 6L10 16l10 10' : 'M12 6l10 10-10 10'}
+            stroke="currentColor"
+            strokeWidth="1.75"
+            strokeLinecap="round"
+            strokeLinejoin="round"
+          />
+        </svg>
+      </button>
+    </div>
   );
 }
 
@@ -414,13 +443,15 @@ export function ServicesShowcaseHero({
         className="relative left-1/2 hidden min-h-[80vh] w-screen -translate-x-1/2 select-none overflow-hidden md:flex md:flex-col"
         data-pf-no-color-transition=""
       >
-        {/* Title band. */}
-        <div className="flex items-start justify-between gap-6 px-[6%] pt-16 lg:pt-20">
-          <div ref={titleParallaxRef} className="max-w-[46%] will-change-transform">
+        {/* Title band. Tablet (md to lg): centred over the image; desktop: left title, counter
+            right. A two-line minimum height keeps the thumbnail (and so the chevrons) from
+            hopping when a short title is followed by a long one. */}
+        <div className="flex flex-col items-center gap-3 px-[6%] pt-14 text-center lg:flex-row lg:items-start lg:justify-between lg:gap-6 lg:pt-20 lg:text-left">
+          <div ref={titleParallaxRef} className="max-w-[90%] will-change-transform lg:max-w-[46%]">
             <div
               ref={titleWordsRef}
               className="font-sans text-[clamp(2.25rem,4.5vw,5rem)] font-black leading-[0.95] tracking-[-0.02em]"
-              style={{ color: tokens.ink }}
+              style={{ color: tokens.ink, minHeight: 'calc(clamp(2.25rem, 4.5vw, 5rem) * 0.95 * 2)' }}
             >
               <SplitWords text={activeItem.title} />
             </div>
@@ -438,7 +469,7 @@ export function ServicesShowcaseHero({
           ref={thumbWrapRef}
           className="relative flex flex-1 items-center justify-center overflow-hidden px-[8%] py-10 will-change-transform lg:py-14"
         >
-          <div className="relative aspect-[4/3] w-[46%] max-w-[760px]">
+          <div className="relative aspect-[4/3] w-[62%] max-w-[560px] lg:w-[46%] lg:max-w-[760px]">
             <div
               ref={thumbInnerRef}
               className="absolute inset-0 origin-center will-change-transform"
@@ -457,37 +488,40 @@ export function ServicesShowcaseHero({
                 <div className="h-full w-full" style={{ background: fallbackGradient }} aria-hidden />
               )}
             </div>
-          </div>
 
-          {count > 1 ? (
-            <>
-              <ServicesHeroArrow
-                innerRef={leftArrowRef}
-                direction="left"
-                onClick={() => goTo(safeIndex - 1)}
-                ariaLabel="Previous service"
-                tokens={tokens}
-              />
-              <ServicesHeroArrow
-                innerRef={rightArrowRef}
-                direction="right"
-                onClick={() => goTo(safeIndex + 1)}
-                ariaLabel="Next service"
-                tokens={tokens}
-              />
-            </>
-          ) : null}
+            {count > 1 ? (
+              <>
+                <ServicesHeroArrow
+                  innerRef={leftArrowRef}
+                  direction="left"
+                  onClick={() => goTo(safeIndex - 1)}
+                  ariaLabel="Previous service"
+                  tokens={tokens}
+                />
+                <ServicesHeroArrow
+                  innerRef={rightArrowRef}
+                  direction="right"
+                  onClick={() => goTo(safeIndex + 1)}
+                  ariaLabel="Next service"
+                  tokens={tokens}
+                />
+              </>
+            ) : null}
+          </div>
         </div>
 
         {/* Description + CTA band. */}
-        <div className="flex items-end justify-between gap-6 px-[6%] pb-16 lg:pb-20">
+        <div className="flex flex-col-reverse items-center gap-6 px-[6%] pb-14 text-center lg:flex-row lg:items-end lg:justify-between lg:pb-20 lg:text-right">
           <ServicesHeroCtaPill tokens={tokens} />
           {activeItem.description?.trim() ? (
-            <div ref={descParallaxRef} className="max-w-[22rem] text-right will-change-transform">
+            <div ref={descParallaxRef} className="max-w-[26rem] will-change-transform lg:max-w-[22rem]">
               <div
                 ref={descWordsRef}
                 className="text-[0.92rem] font-normal leading-[1.6]"
-                style={{ color: tokens.muted }}
+                style={{
+                  color: tokens.muted,
+                  minHeight: 'calc(0.92rem * var(--pf-services-font-scale, 1) * 1.6 * 3)',
+                }}
               >
                 <SplitWords text={activeItem.description} />
               </div>
@@ -502,18 +536,45 @@ export function ServicesShowcaseHero({
         className="relative left-1/2 block w-screen -translate-x-1/2 md:hidden"
         data-pf-no-color-transition=""
       >
-        <div className="relative aspect-[4/5] w-full overflow-hidden">
-          {activeItem.coverImageUrl ? (
-            <PortfolioDeferredMedia
-              src={activeItem.coverImageUrl}
-              alt={activeItem.title}
-              className="h-full w-full"
-              objectFit="cover"
-              eager
-            />
-          ) : (
-            <div className="h-full w-full" style={{ background: fallbackGradient }} aria-hidden />
-          )}
+        {/* Phones: the image is a centred, softly rounded card (same slight tilt as the
+            desktop stage) instead of a full-bleed slab, with glass chevrons on top of it. */}
+        <div className="px-6 pt-8">
+          <div className="relative mx-auto aspect-[4/5] w-full max-w-[22rem]">
+            <div
+              className="absolute inset-0 overflow-hidden rounded-[1.25rem]"
+              style={{ transform: 'rotate(-2deg)' }}
+            >
+              {activeItem.coverImageUrl ? (
+                <PortfolioDeferredMedia
+                  src={activeItem.coverImageUrl}
+                  alt={activeItem.title}
+                  className="h-full w-full"
+                  objectFit="cover"
+                  eager
+                />
+              ) : (
+                <div className="h-full w-full" style={{ background: fallbackGradient }} aria-hidden />
+              )}
+            </div>
+            {count > 1 ? (
+              <>
+                <ServicesHeroArrow
+                  direction="left"
+                  placement="inside"
+                  onClick={() => goTo(safeIndex - 1)}
+                  ariaLabel="Previous service"
+                  tokens={tokens}
+                />
+                <ServicesHeroArrow
+                  direction="right"
+                  placement="inside"
+                  onClick={() => goTo(safeIndex + 1)}
+                  ariaLabel="Next service"
+                  tokens={tokens}
+                />
+              </>
+            ) : null}
+          </div>
         </div>
         <div className="px-6 pb-10 pt-7 text-center">
           <h3
@@ -539,8 +600,4 @@ export function ServicesShowcaseHero({
       </div>
     </>
   );
-}
-
-export function isServicesShowcaseHeroDesign(presentation: PortfolioServicesPresentationSettings): boolean {
-  return presentation.sectionDesign === 'showcase-hero';
 }

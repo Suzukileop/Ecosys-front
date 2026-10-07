@@ -1,6 +1,6 @@
 export const CREATOR_GENDER_VALUES = ['Male', 'Female'] as const;
 
-export type CreatorGender = (typeof CREATOR_GENDER_VALUES)[number];
+type CreatorGender = (typeof CREATOR_GENDER_VALUES)[number];
 
 export function normalizeCreatorGender(raw: unknown): CreatorGender | null {
   if (raw == null) return null;

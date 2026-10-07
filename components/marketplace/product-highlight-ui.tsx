@@ -5,10 +5,7 @@ import { ContentMediaPreview, contentMediaKind } from '@/components/creator/crea
 import { ProductVideoPlayer } from '@/components/marketplace/ProductVideoPlayer';
 
 /** Air below highlight titles — matches ProductDetailBottom section gaps. */
-export const productHighlightTitleGapClass = 'mb-16 sm:mb-20';
-
-/** Use the same value on ProductDetailBottom (`space-y-16 sm:space-y-20`). */
-export const productDetailSectionGapClass = 'space-y-16 sm:space-y-20';
+const productHighlightTitleGapClass = 'mb-16 sm:mb-20';
 
 export const PRODUCT_DEMO_SECTION_TITLE = 'See it in action';
 

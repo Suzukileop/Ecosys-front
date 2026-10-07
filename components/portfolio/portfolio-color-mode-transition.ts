@@ -1,7 +1,7 @@
 'use client';
 
 /** Kept in sync with `--pf-color-mode-duration` in globals.css (+ small buffer). */
-export const PORTFOLIO_COLOR_MODE_TRANSITION_MS = 650;
+const PORTFOLIO_COLOR_MODE_TRANSITION_MS = 650;
 
 function portfolioThemeRootEl(): HTMLElement | null {
   if (typeof document === 'undefined') return null;

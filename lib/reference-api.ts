@@ -4,7 +4,7 @@ import {
   type SpokenLanguageLevel,
 } from '@/lib/spoken-languages';
 
-export type LanguageProficiencyLevelOption = {
+type LanguageProficiencyLevelOption = {
   code: SpokenLanguageLevel;
   label: string;
   sortOrder: number;

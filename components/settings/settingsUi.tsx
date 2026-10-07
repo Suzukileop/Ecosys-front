@@ -91,7 +91,7 @@ export function SettingRow({
   );
 }
 
-export function Toggle({
+function Toggle({
   checked,
   onChange,
   disabled,

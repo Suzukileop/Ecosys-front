@@ -2,7 +2,11 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';import { contentMediaKind } from '@/components/creator/creator-content-media';
+import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';
+import { contentMediaKind } from '@/components/creator/creator-content-media';
+import { ContentPostImageCollage } from '@/components/creator/ContentPostImageCollage';
+import { EmbeddedOriginal, postGallery } from '@/components/home/NewsFeedPostParts';
+import { MediaImage } from '@/components/ui/MediaImage';
 import {
   ContentPostLightbox,
   type ContentPostLightboxPost,
@@ -68,6 +72,7 @@ function toLightboxPost(
     genre: post.genre,
     description: post.description,
     mediaUrl: post.mediaUrl,
+    mediaUrls: post.mediaUrls,
     mediaType: post.mediaType ?? null,
     textColor: post.textColor,
     moodLabel: post.moodLabel,
@@ -143,6 +148,8 @@ function buildUpdateBody(
     genre: null,
     description,
     mediaUrl,
+    /* Sent back as-is so editing the text of a collage post keeps its gallery. */
+    mediaUrls: post.mediaUrls && post.mediaUrls.length > 1 ? post.mediaUrls : undefined,
     mediaType: post.mediaType ?? 'FILE',
     textColor: post.textColor ?? null,
     moodLabel: post.moodLabel ?? null,
@@ -180,6 +187,7 @@ export function CreatorContentPostCard({
   const [commentsEnabled, setCommentsEnabled] = useState(postProp.commentsEnabled !== false);
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxVideoTime, setLightboxVideoTime] = useState(0);
+  const [lightboxIndex, setLightboxIndex] = useState(0);
   const [editing, setEditing] = useState(false);
   const [editDraft, setEditDraft] = useState<ContentDetailsDraft | null>(null);
   const [editSaving, setEditSaving] = useState(false);
@@ -397,14 +405,14 @@ export function CreatorContentPostCard({
   const tags = normalizeList(post.tags ?? []);
   const tools = (post.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean);
   const priceLabel = post.priceInfo?.trim() || '';
-  const profileHref = user?.id ? `/marketplace/${user.id}` : '/dashboard/creator?tab=profile';
+  const profileHref = user?.id ? `/providers/${user.id}` : '/profile?tab=profile';
   const showPinned = post.pinned && (bucket === 'active' || bucket === 'pinned');
   const canComment = bucket !== 'trash' && commentsEnabled;
   const mediaKind = post.mediaUrl ? contentMediaKind(post.mediaUrl, null, post.mediaType) : null;
   const playableMedia = !editing && (mediaKind === 'video' || mediaKind === 'audio');
   const discussHref =
     authorId && authorId !== user?.id && bucket !== 'archived' && bucket !== 'trash'
-      ? `/dashboard/discussions?user=${encodeURIComponent(authorId)}`
+      ? `/messages?user=${encodeURIComponent(authorId)}`
       : null;
   const messageHref = discussHref && !user ? `/login?redirect=${encodeURIComponent(discussHref)}` : discussHref;
 
@@ -417,7 +425,7 @@ export function CreatorContentPostCard({
 
   return (
     <article
-      className={`overflow-hidden border-y border-neutral-200 !bg-white transition-shadow duration-300 hover:shadow-[0_16px_48px_-28px_rgba(0,0,0,0.22)] dark:border-white/[0.08] dark:!bg-[#111111] sm:rounded-lg sm:border ${className}`}
+      className={`overflow-hidden !bg-[#FFFFFF] dark:!bg-[#111111] sm:rounded-xl ${className}`}
     >
       <header className="flex items-center gap-3.5 px-6 pt-6 sm:px-7 sm:pt-7">
         <Link
@@ -425,14 +433,17 @@ export function CreatorContentPostCard({
           className={`inline-flex shrink-0 ${creatorPostAvatarRingClass(appRole)}`}
           aria-label={creatorName}
         >
-          {user?.avatarUrl ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={user.avatarUrl} alt="" className="h-11 w-11 rounded-full object-cover" />
-          ) : (
-            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
-              {creatorName.trim().slice(0, 1).toUpperCase() || '?'}
-            </span>
-          )}
+          <MediaImage
+            src={user?.avatarUrl}
+            width={44}
+            referrerPolicy="no-referrer"
+            fallback={
+              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+                {creatorName.trim().slice(0, 1).toUpperCase() || '?'}
+              </span>
+            }
+            className="h-11 w-11 rounded-full bg-neutral-200 object-cover dark:bg-neutral-800"
+          />
         </Link>
         <div className="min-w-0 flex-1">
           <Link
@@ -574,7 +585,30 @@ export function CreatorContentPostCard({
         </div>
       ) : null}
 
-      {post.mediaUrl && playableMedia ? (
+      {post.repostOf ? (
+        <EmbeddedOriginal
+          original={post.repostOf}
+          onOpen={() => {
+            setLightboxIndex(0);
+            setLightboxOpen(true);
+          }}
+          onExpandVideo={(time) => {
+            setLightboxVideoTime(time);
+            setLightboxOpen(true);
+          }}
+        />
+      ) : postGallery(post) ? (
+        <div className={`${mediaSpacing} -mx-6 overflow-hidden sm:mx-0 sm:rounded-xl`}>
+          <ContentPostImageCollage
+            urls={postGallery(post)!}
+            onOpen={(index) => {
+              if (editing) return;
+              setLightboxIndex(index);
+              setLightboxOpen(true);
+            }}
+          />
+        </div>
+      ) : post.mediaUrl && playableMedia ? (
         <div className={`${mediaSpacing} -mx-6 overflow-hidden !bg-white dark:!bg-[#111111] sm:mx-0 sm:rounded-xl`}>
           <ContentPostFeedMediaFrame
             mediaUrl={post.mediaUrl}
@@ -669,7 +703,7 @@ export function CreatorContentPostCard({
             targetType="POST"
             targetId={post.id}
             isAuthenticated
-            loginRedirect="/dashboard/creator?tab=content"
+            loginRedirect="/profile?tab=content"
             commentsEnabled={commentsEnabled}
             moderationMode
             onClose={closeComments}
@@ -680,16 +714,17 @@ export function CreatorContentPostCard({
       </PostCommentsSurface>
 
       <ContentPostLightbox
-        post={lightboxPost}
+        post={post.repostOf ?? lightboxPost}
         open={lightboxOpen}
         initialVideoTime={lightboxVideoTime}
+        initialIndex={lightboxIndex}
         onClose={() => {
           setLightboxOpen(false);
           setLightboxVideoTime(0);
         }}
         bucket={bucket}
         moderationMode
-        loginRedirect="/dashboard/creator?tab=content"
+        loginRedirect="/profile?tab=content"
         specialite={specialite}
         specialties={specialties}
         appRole={appRole}

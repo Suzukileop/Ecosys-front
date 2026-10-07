@@ -1,13 +1,23 @@
 'use client';
 
-import { useCallback, useEffect, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { LikeBurst } from '@/components/ui/LikeBurst';
 import { ContentPostShareDialog } from '@/components/creator/ContentPostShareDialog';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import { getReactionCounts, listComments, removeReaction, setReaction } from '@/lib/marketplace-api';
+import { ContentPostRepostDialog } from '@/components/creator/ContentPostRepostDialog';
+import {
+  addFavorite,
+  getReactionCounts,
+  listComments,
+  removeFavorite,
+  removeReaction,
+  setReaction,
+  undoRepostContent,
+} from '@/lib/marketplace-api';
+import { getApiErrorMessage } from '@/lib/api-error';
 import { useAuth } from '@/context/AuthContext';
-import type { ReactionType } from '@/types/marketplace';
+import type { PublicContentFeedItem, ReactionType } from '@/types/marketplace';
 
 type ContentPostSocialBarProps = {
   postId: string;
@@ -33,10 +43,39 @@ type ContentPostSocialBarProps = {
   /** Timeline: path shared via the native sheet or copied to the clipboard. */
   shareUrl?: string;
   shareTitle?: string;
+  /**
+   * Rail: the post the repost button acts on — the original when this card is itself a repost.
+   * Leave unset to hide the button (own posts, surfaces that do not repost).
+   */
+  repostTarget?: PublicContentFeedItem;
+  initialRepostCount?: number;
+  initialViewerReposted?: boolean | null;
+  /** Rail: show the save (bookmark) button. */
+  saveable?: boolean;
+  initialViewerSaved?: boolean | null;
+  onReposted?: (repost: PublicContentFeedItem) => void;
+  onRepostUndone?: () => void;
 };
 
 function formatCount(value: number) {
   return new Intl.NumberFormat('en-US').format(value);
+}
+
+/**
+ * Broadcast whenever the viewer reposts / un-reposts a post, so every card showing that post (the
+ * original, the viewer's own repost of it) follows instead of keeping a stale button.
+ */
+export const REPOST_CHANGE_EVENT = 'news-repost-change';
+export type RepostChangeDetail = { originalId: string; reposted: boolean; source: string };
+
+function announceRepostChange(detail: RepostChangeDetail) {
+  window.dispatchEvent(new CustomEvent<RepostChangeDetail>(REPOST_CHANGE_EVENT, { detail }));
+}
+
+/** The server no longer has that repost (already undone elsewhere) — the viewer's goal is met. */
+function isRepostAlreadyGone(error: unknown): boolean {
+  const data = (error as { response?: { data?: { code?: string; error?: string } } })?.response?.data;
+  return data?.code === 'REPOST_NOT_FOUND' || data?.error === 'REPOST_NOT_FOUND';
 }
 
 export function ContentPostCommentsButton({
@@ -92,8 +131,15 @@ export function ContentPostSocialBar({
   messageHref,
   shareUrl,
   shareTitle,
+  repostTarget,
+  initialRepostCount = 0,
+  initialViewerReposted,
+  saveable = false,
+  initialViewerSaved,
+  onReposted,
+  onRepostUndone,
 }: ContentPostSocialBarProps) {
-  const { user, isLoading } = useAuth();
+  const { user, isLoading, hasRole } = useAuth();
   const socialStateSupplied = initialCommentCount !== undefined;
   const [likes, setLikes] = useState(initialLikes);
   const [userReaction, setUserReaction] = useState<ReactionType | null>(initialViewerReaction ?? null);
@@ -101,6 +147,18 @@ export function ContentPostSocialBar({
   const [busy, setBusy] = useState(false);
   const [burstKey, setBurstKey] = useState(0);
   const [shareOpen, setShareOpen] = useState(false);
+  const [saved, setSaved] = useState(initialViewerSaved === true);
+  const [savedBusy, setSavedBusy] = useState(false);
+  const [reposted, setReposted] = useState(initialViewerReposted === true);
+  const [repostCount, setRepostCount] = useState(initialRepostCount);
+  const [repostBusy, setRepostBusy] = useState(false);
+  const [repostOpen, setRepostOpen] = useState(false);
+  const instanceId = useId();
+  /* Mirrors `reposted` for the cross-card listener, which must not re-subscribe on every toggle. */
+  const repostedRef = useRef(reposted);
+  useEffect(() => {
+    repostedRef.current = reposted;
+  }, [reposted]);
 
   const canInteract = Boolean(user) && !isLoading;
 
@@ -108,6 +166,9 @@ export function ContentPostSocialBar({
   if (likesSource.initialLikes !== initialLikes || likesSource.postId !== postId) {
     setLikesSource({ initialLikes, postId });
     setLikes(initialLikes);
+    setSaved(initialViewerSaved === true);
+    setReposted(initialViewerReposted === true);
+    setRepostCount(initialRepostCount);
     if (socialStateSupplied) {
       /* Reused for another post: adopt that post's supplied state instead of keeping the old. */
       setCommentCount(initialCommentCount ?? 0);
@@ -126,6 +187,7 @@ export function ContentPostSocialBar({
         if (!cancelled) {
           setLikes(counts.likes);
           setUserReaction(counts.userReaction === 'LIKE' ? 'LIKE' : null);
+          setSaved(counts.favorited);
         }
       })
       .catch(() => {
@@ -165,6 +227,83 @@ export function ContentPostSocialBar({
     }
   }, [busy, canInteract, postId, userReaction]);
 
+  const toggleSaved = useCallback(async () => {
+    if (!canInteract || savedBusy) return;
+    const wasSaved = saved;
+    setSavedBusy(true);
+    setSaved(!wasSaved);
+    try {
+      if (wasSaved) await removeFavorite('POST', postId);
+      else await addFavorite('POST', postId);
+      pushFlashFeedback({
+        variant: 'success',
+        title: wasSaved ? 'Removed from saved' : 'Saved',
+        description: wasSaved ? undefined : 'Find it any time under News > Saved.',
+      });
+    } catch {
+      setSaved(wasSaved);
+      pushFlashFeedback({ variant: 'error', title: wasSaved ? 'Unable to unsave this post' : 'Unable to save this post' });
+    } finally {
+      setSavedBusy(false);
+    }
+  }, [canInteract, postId, saved, savedBusy]);
+
+  const isCreator = hasRole('ROLE_CREATOR');
+  const onRepostClick = useCallback(async () => {
+    if (!repostTarget || repostBusy) return;
+    if (!canInteract) {
+      pushFlashFeedback({ variant: 'info', title: 'Sign in to repost' });
+      return;
+    }
+    if (!isCreator) {
+      pushFlashFeedback({
+        variant: 'info',
+        title: 'Only creators can repost',
+        description: 'Become a creator to share other people\u2019s work on your profile.',
+      });
+      return;
+    }
+    if (!reposted) {
+      setRepostOpen(true);
+      return;
+    }
+    setRepostBusy(true);
+    try {
+      let alreadyGone = false;
+      try {
+        await undoRepostContent(repostTarget.id);
+      } catch (e) {
+        if (!isRepostAlreadyGone(e)) throw e;
+        alreadyGone = true;
+      }
+      setReposted(false);
+      if (!alreadyGone) setRepostCount((count) => Math.max(0, count - 1));
+      announceRepostChange({ originalId: repostTarget.id, reposted: false, source: instanceId });
+      onRepostUndone?.();
+      pushFlashFeedback({ variant: 'success', title: 'Repost removed' });
+    } catch (e) {
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to remove your repost') });
+    } finally {
+      setRepostBusy(false);
+    }
+  }, [canInteract, instanceId, isCreator, onRepostUndone, repostBusy, repostTarget, reposted]);
+
+  /* Another card for the same post changed the repost: follow it. */
+  const repostTargetId = repostTarget?.id;
+  useEffect(() => {
+    if (!repostTargetId) return undefined;
+    const onChange = (event: Event) => {
+      const detail = (event as CustomEvent<RepostChangeDetail>).detail;
+      if (!detail || detail.source === instanceId || detail.originalId !== repostTargetId) return;
+      if (repostedRef.current === detail.reposted) return;
+      repostedRef.current = detail.reposted;
+      setReposted(detail.reposted);
+      setRepostCount((count) => Math.max(0, count + (detail.reposted ? 1 : -1)));
+    };
+    window.addEventListener(REPOST_CHANGE_EVENT, onChange);
+    return () => window.removeEventListener(REPOST_CHANGE_EVENT, onChange);
+  }, [instanceId, repostTargetId]);
+
   const displayCommentCount = commentCountProp ?? commentCount;
 
   if (variant === 'rail') {
@@ -179,7 +318,7 @@ export function ContentPostSocialBar({
 
     return (
       <div
-        className="flex w-full items-center gap-5 sm:gap-6"
+        className="flex w-full items-center justify-between gap-2"
         onClick={(e) => e.stopPropagation()}
       >
         <button
@@ -216,7 +355,7 @@ export function ContentPostSocialBar({
           </span>
           <span
             key={`count-${likes}`}
-            className={`${labelClass} ${liked ? '!text-[#FF5722]' : ''} ${burstKey > 0 ? 'motion-safe:animate-like-count' : ''}`}
+            className={`${labelClass} ${liked ? 'gn-like !text-[#FF5722]' : ''} ${burstKey > 0 ? 'motion-safe:animate-like-count' : ''}`}
           >
             {formatCount(likes)}
           </span>
@@ -235,7 +374,7 @@ export function ContentPostSocialBar({
             <span
               className={`${circleClass} ${
                 commentsOpen
-                  ? 'border-[#111111] text-[#111111] dark:border-white dark:text-white sm:bg-[#111111] sm:text-white dark:sm:bg-white dark:sm:text-[#111111]'
+                  ? 'gn-disc-on border-[#111111] text-[#111111] dark:border-white dark:text-white sm:bg-[#111111] sm:text-white dark:sm:bg-white dark:sm:text-[#111111]'
                   : idleCircle
               }`}
             >
@@ -256,21 +395,96 @@ export function ContentPostSocialBar({
           </button>
         ) : null}
 
-        {shareUrl ? (
+        {repostTarget ? (
           <button
             type="button"
-            onClick={() => setShareOpen(true)}
-            aria-label="Share"
-            aria-haspopup="dialog"
-            className={`${itemClass} ml-auto`}
+            disabled={repostBusy}
+            onClick={() => void onRepostClick()}
+            aria-pressed={reposted}
+            aria-label={reposted ? 'Undo repost' : 'Repost'}
+            aria-haspopup={reposted ? undefined : 'dialog'}
+            title={reposted ? 'You reposted this - click to undo' : 'Repost'}
+            className={itemClass}
           >
-            <span className={`${circleClass} ${idleCircle}`}>
-              <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} aria-hidden>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.27 3.13a59.77 59.77 0 0118.22 8.87 59.77 59.77 0 01-18.22 8.88L6 12zm0 0h7.5" />
+            <span
+              className={`${circleClass} ${
+                reposted
+                  ? 'gn-disc-on border-[#111111] text-[#111111] dark:border-white dark:text-white sm:bg-[#111111] sm:text-white dark:sm:bg-white dark:sm:text-[#111111]'
+                  : idleCircle
+              }`}
+            >
+              <svg
+                className="h-[18px] w-[18px]"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth={reposted ? 2 : 1.6}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                aria-hidden
+              >
+                <path d="m17 2 4 4-4 4" />
+                <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+                <path d="m7 22-4-4 4-4" />
+                <path d="M21 13v1a4 4 0 0 1-4 4H3" />
               </svg>
             </span>
-            <span className={`${labelClass} hidden sm:inline`}>Share</span>
+            <span className={labelClass}>{formatCount(repostCount)}</span>
           </button>
+        ) : null}
+
+        {saveable || shareUrl ? (
+          <div className="contents">
+            {saveable ? (
+              <button
+                type="button"
+                disabled={!canInteract || savedBusy}
+                onClick={() => void toggleSaved()}
+                aria-pressed={saved}
+                aria-label={saved ? 'Remove from saved' : 'Save'}
+                title={saved ? 'Saved' : 'Save'}
+                className={itemClass}
+              >
+                <span
+                  className={`${circleClass} ${
+                    saved
+                      ? 'gn-disc-soft border-[#111111]/40 text-[#111111] dark:border-white/50 dark:text-white sm:bg-black/[0.06] dark:sm:bg-white/[0.1]'
+                      : idleCircle
+                  }`}
+                >
+                  <svg
+                    className="h-[18px] w-[18px]"
+                    viewBox="0 0 24 24"
+                    fill={saved ? 'currentColor' : 'none'}
+                    stroke="currentColor"
+                    strokeWidth={1.6}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    aria-hidden
+                  >
+                    <path d="M6.5 3.5h11a1 1 0 0 1 1 1V20l-6.5-4.2L5.5 20V4.5a1 1 0 0 1 1-1Z" />
+                  </svg>
+                </span>
+              </button>
+            ) : null}
+
+            {shareUrl ? (
+              <button
+                type="button"
+                onClick={() => setShareOpen(true)}
+                aria-label="Share"
+                aria-haspopup="dialog"
+                className={itemClass}
+              >
+                <span className={`${circleClass} ${idleCircle}`}>
+                  <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.27 3.13a59.77 59.77 0 0118.22 8.87 59.77 59.77 0 01-18.22 8.88L6 12zm0 0h7.5" />
+                  </svg>
+                </span>
+                <span className={`${labelClass} hidden sm:inline`}>Share</span>
+              </button>
+            ) : null}
+          </div>
         ) : null}
 
         {shareUrl ? (
@@ -280,6 +494,22 @@ export function ContentPostSocialBar({
             postId={postId}
             shareUrl={shareUrl}
             shareTitle={shareTitle}
+          />
+        ) : null}
+
+        {repostTarget ? (
+          <ContentPostRepostDialog
+            open={repostOpen}
+            original={repostTarget}
+            onClose={() => setRepostOpen(false)}
+            onReposted={(repost) => {
+              setRepostOpen(false);
+              setReposted(true);
+              setRepostCount((count) => count + 1);
+              announceRepostChange({ originalId: repostTarget.id, reposted: true, source: instanceId });
+              onReposted?.(repost);
+              pushFlashFeedback({ variant: 'success', title: 'Reposted to your profile' });
+            }}
           />
         ) : null}
       </div>

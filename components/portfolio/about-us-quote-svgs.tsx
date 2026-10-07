@@ -4,13 +4,6 @@ export const ABOUT_US_QUOTE_SVG_IDS = ['globe', 'team', 'handshake', 'spark'] as
 
 export type AboutUsQuoteSvgId = (typeof ABOUT_US_QUOTE_SVG_IDS)[number];
 
-export const DEFAULT_ABOUT_US_QUOTE_SVG_IDS: [
-  AboutUsQuoteSvgId,
-  AboutUsQuoteSvgId,
-  AboutUsQuoteSvgId,
-  AboutUsQuoteSvgId,
-] = ['globe', 'team', 'handshake', 'spark'];
-
 export const DEFAULT_ABOUT_US_QUOTE_SVG_URLS: [string, string, string, string] = ['', '', '', ''];
 
 export const PORTFOLIO_ABOUT_US_QUOTE_SVG_OPTIONS: {

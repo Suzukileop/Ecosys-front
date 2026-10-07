@@ -151,7 +151,7 @@ export function ProductDetailPurchasePanel({
   };
 
   const signInHref = `/login?redirect=${encodeURIComponent(loginRedirect)}`;
-  const discussionPath = `/dashboard/discussions?user=${encodeURIComponent(creatorId)}&product=${encodeURIComponent(productId)}`;
+  const discussionPath = `/messages?user=${encodeURIComponent(creatorId)}&product=${encodeURIComponent(productId)}`;
   const messageHref = isAuthenticated ? discussionPath : `/login?redirect=${encodeURIComponent(discussionPath)}`;
   const creatorLabel = creatorName?.trim() || 'the creator';
   const messageLabel = `Discuss this product with ${creatorLabel}`;
@@ -203,7 +203,7 @@ export function ProductDetailPurchasePanel({
             You own this product. Download it anytime from here or your library.
           </p>
           <PurchaseAccessActions purchaseId={ownership.purchaseId} deliveryMode={deliveryMode} />
-          <Link href="/marketplace/purchases" className={OUTLINE_BUTTON}>
+          <Link href="/purchases" className={OUTLINE_BUTTON}>
             View in my library
           </Link>
         </div>
@@ -260,7 +260,7 @@ export function ProductDetailPurchasePanel({
 
       <div className={`${DIVIDER} p-6`}>
         <Link
-          href={`/marketplace/${encodeURIComponent(creatorId)}/shop`}
+          href={`/providers/${encodeURIComponent(creatorId)}/shop`}
           className={`group ${OUTLINE_BUTTON} !justify-between`}
         >
           <span>Visit the shop</span>

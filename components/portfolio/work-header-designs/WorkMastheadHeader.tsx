@@ -9,6 +9,7 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 // Three short, punchy default lines — that's what makes the mast stack
 // dramatically. Each line is its own field now (not one string split on
@@ -53,7 +54,8 @@ export function WorkMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const centered = presentation.headerAlignment === 'center';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = workPaletteTokenColor(presentation.mastheadHeadlineColor ?? 'principal');
   const headlineWeight = HEADLINE_WEIGHT[presentation.mastheadHeadlineWeight ?? 'regular'];
 

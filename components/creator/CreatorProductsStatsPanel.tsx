@@ -26,7 +26,7 @@ function GearIcon() {
 export function CreatorStoreSettingsButton() {
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
-  const storefrontHref = user?.id ? `/marketplace/${user.id}` : '/dashboard/portfolio';
+  const storefrontHref = user?.id ? `/providers/${user.id}` : '/studio';
 
   return (
     <>
@@ -178,7 +178,7 @@ export function CreatorProductsStatsPanel({
   const { user } = useAuth();
   const [settingsOpen, setSettingsOpen] = useState(false);
 
-  const storefrontHref = user?.id ? `/marketplace/${user.id}` : '/dashboard/portfolio';
+  const storefrontHref = user?.id ? `/providers/${user.id}` : '/studio';
 
   const visibleGroups = useMemo(() => groups.slice(0, SIDEBAR_GROUPS_LIMIT), [groups]);
   const hasMoreGroups = groups.length > SIDEBAR_GROUPS_LIMIT;

@@ -60,7 +60,7 @@ export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
   },
 ];
 
-export function portfolioNavLayoutDesignId(
+function portfolioNavLayoutDesignId(
   settings: Pick<PortfolioNavSettings, 'navLayoutDesign'>
 ): PortfolioNavLayoutDesign {
   return settings.navLayoutDesign ?? 'classic';
@@ -116,16 +116,6 @@ export function portfolioNavUsesHalfPanelLeftLayout(
   settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled'>
 ): boolean {
   return settings.enabled && portfolioNavLayoutDesignId(settings) === 'half-panel-left';
-}
-
-export function portfolioNavUsesOverlayMenuLayout(
-  settings: Pick<PortfolioNavSettings, 'navLayoutDesign' | 'enabled'>
-): boolean {
-  return (
-    portfolioNavUsesCaseOverlayLayout(settings) ||
-    portfolioNavUsesDutenPanelLayout(settings) ||
-    portfolioNavUsesHalfPanelLeftLayout(settings)
-  );
 }
 
 export function portfolioNavUsesStructuredBarLayout(

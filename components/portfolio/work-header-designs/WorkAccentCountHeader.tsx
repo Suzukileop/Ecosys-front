@@ -9,6 +9,7 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ projects';
 const DEFAULT_LEAD_TEXT = 'A selection of recent work.';
@@ -60,7 +61,8 @@ export function WorkAccentCountHeader({
   projectCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.accentCountAlignment ?? 'left';
   const lead = (presentation.accentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.accentCountBadgeText || DEFAULT_BADGE_TEXT;

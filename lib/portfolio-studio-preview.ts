@@ -2,7 +2,7 @@ import type { PortfolioNavChromeLink } from '@/components/portfolio/portfolio-na
 import type { PortfolioFooterSectionLinkOption } from '@/components/portfolio/portfolio-footer-design-layout';
 
 export const PORTFOLIO_STUDIO_PREVIEW_SOURCE = 'skraft-portfolio-studio';
-export const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
+const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
 
 export type PortfolioStudioPreviewMeta = {
   availableTools: string[];
@@ -15,7 +15,7 @@ export type PortfolioStudioPreviewMeta = {
   profileAvatarUrl: string | null;
 };
 
-export type PortfolioStudioPreviewMessage =
+type PortfolioStudioPreviewMessage =
   | {
       source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;
       type: 'ready';

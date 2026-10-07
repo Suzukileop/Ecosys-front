@@ -12,7 +12,7 @@ import {
 } from 'react';
 import { createPortal } from 'react-dom';
 import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';
-import { contentMediaKind } from '@/components/creator/creator-content-media';
+import { contentMediaKind, isCollageImage } from '@/components/creator/creator-content-media';
 import { ContentPostStudioHeader } from '@/components/creator/ContentPostStudioHeader';
 import { ContentPostSocialBar } from '@/components/creator/ContentPostSocialBar';
 import { SocialVideoPlayer } from '@/components/creator/ContentPostSocialPlayers';
@@ -421,6 +421,8 @@ type ContentPostLightboxProps = {
   appRole?: string | null;
   /** Video resume position when opened from a playing feed video. */
   initialVideoTime?: number;
+  /** Multi-image posts: which image of the gallery the viewer opens on. */
+  initialIndex?: number;
 };
 
 export function ContentPostLightbox({
@@ -436,6 +438,7 @@ export function ContentPostLightbox({
   specialties,
   appRole,
   initialVideoTime,
+  initialIndex = 0,
 }: ContentPostLightboxProps) {
   const { isAuthenticated } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -448,6 +451,7 @@ export function ContentPostLightbox({
   const compact = useCompactViewer();
   const [stageExpanded, setStageExpanded] = useState(false);
   const stageRef = useRef<HTMLElement>(null);
+  const [galleryIndex, setGalleryIndex] = useState(initialIndex);
   const stageDragRef = useRef<{ startY: number; base: number } | null>(null);
   const [stageDragHeight, setStageDragHeight] = useState<number | null>(null);
 
@@ -461,7 +465,7 @@ export function ContentPostLightbox({
   const onStageHandleMove = (e: ReactPointerEvent<HTMLDivElement>) => {
     const drag = stageDragRef.current;
     if (!drag) return;
-    const next = Math.min(window.innerHeight, Math.max(160, drag.base + e.clientY - drag.startY));
+    const next = Math.min(window.innerHeight - 24, Math.max(160, drag.base + e.clientY - drag.startY));
     setStageDragHeight(next);
   };
 
@@ -495,6 +499,38 @@ export function ContentPostLightbox({
     setStageExpanded(false);
   }, [open, post?.id]);
 
+  /* Reopened (or reused for another post): start on the requested image. */
+  const [galleryKey, setGalleryKey] = useState(`${open}:${post?.id}:${initialIndex}`);
+  const nextGalleryKey = `${open}:${post?.id}:${initialIndex}`;
+  if (galleryKey !== nextGalleryKey) {
+    setGalleryKey(nextGalleryKey);
+    if (open) setGalleryIndex(initialIndex);
+  }
+
+  /** Multi-image posts only; a single media (or a video / PDF) never gets arrows. */
+  const gallery =
+    post?.mediaUrls && post.mediaUrls.length > 1 && post.mediaUrls.every((url) => isCollageImage(url))
+      ? post.mediaUrls
+      : null;
+  const galleryLength = gallery?.length ?? 0;
+  const stepGallery = useCallback(
+    (delta: number) => {
+      if (galleryLength < 2) return;
+      setGalleryIndex((current) => (current + delta + galleryLength) % galleryLength);
+    },
+    [galleryLength]
+  );
+
+  useEffect(() => {
+    if (!open || galleryLength < 2) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') stepGallery(1);
+      else if (e.key === 'ArrowLeft') stepGallery(-1);
+    };
+    document.addEventListener('keydown', onKey);
+    return () => document.removeEventListener('keydown', onKey);
+  }, [open, galleryLength, stepGallery]);
+
   const handleClose = useCallback(() => {
     if (document.fullscreenElement) void document.exitFullscreen();
     onClose();
@@ -518,10 +554,11 @@ export function ContentPostLightbox({
 
   if (!mounted || !open || !post) return null;
 
-  const profileHref = post.creator?.id ? `/marketplace/${post.creator.id}` : '/marketplace';
+  const profileHref = post.creator?.id ? `/providers/${post.creator.id}` : '/marketplace';
   const commentsEnabled = post.commentsEnabled !== false && bucket !== 'trash';
   const title = post.title?.trim() || '';
-  const stageKind = post.mediaUrl ? contentMediaKind(post.mediaUrl, null, post.mediaType) : null;
+  const activeMediaUrl = gallery ? gallery[Math.min(galleryIndex, gallery.length - 1)]! : post.mediaUrl;
+  const stageKind = activeMediaUrl ? contentMediaKind(activeMediaUrl, null, gallery ? 'FILE' : post.mediaType) : null;
   const mobileStageClass =
     stageKind === 'video'
       ? 'aspect-video w-full'
@@ -546,7 +583,7 @@ export function ContentPostLightbox({
       <section
         ref={stageRef}
         className={`relative shrink-0 overflow-hidden bg-black pt-[env(safe-area-inset-top)] ${
-          stageFull ? 'h-[100dvh] w-full' : mobileStageClass
+          stageFull ? 'min-h-0 w-full flex-1' : mobileStageClass
         } lg:aspect-auto lg:h-auto lg:w-auto lg:min-w-0 lg:flex-1 lg:pt-0`}
         style={{
           transform: shown ? 'scale(1)' : 'scale(0.985)',
@@ -557,10 +594,10 @@ export function ContentPostLightbox({
           ...(stageDragHeight != null ? { height: stageDragHeight, aspectRatio: 'auto' } : null),
         }}
       >
-        {post.mediaUrl ? (
+        {activeMediaUrl ? (
           <LightboxStageMedia
-            mediaUrl={post.mediaUrl}
-            mediaType={post.mediaType}
+            mediaUrl={activeMediaUrl}
+            mediaType={gallery ? 'FILE' : post.mediaType}
             title={post.title}
             initialVideoTime={initialVideoTime}
             onBackdropClick={handleClose}
@@ -569,6 +606,35 @@ export function ContentPostLightbox({
         ) : (
           <LightboxTextArticle post={post} onBackdropClick={handleClose} />
         )}
+
+        {gallery ? (
+          <>
+            <span
+              className={`pointer-events-none absolute left-3 z-10 rounded-full bg-black/50 px-3 py-1.5 text-[13px] font-medium tabular-nums text-white ring-1 ring-white/10 backdrop-blur-xl sm:left-5 ${
+                moderationMode && post.pinned ? 'top-16 sm:top-16' : 'top-[calc(0.75rem+env(safe-area-inset-top))] sm:top-5'
+              }`}
+              aria-live="polite"
+            >
+              {Math.min(galleryIndex, gallery.length - 1) + 1} / {gallery.length}
+            </span>
+            {(['prev', 'next'] as const).map((direction) => (
+              <button
+                key={direction}
+                type="button"
+                onClick={() => stepGallery(direction === 'next' ? 1 : -1)}
+                aria-label={direction === 'next' ? 'Next photo' : 'Previous photo'}
+                data-pf-no-color-transition
+                className={`absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white ring-1 ring-white/10 backdrop-blur-xl transition-colors hover:bg-black/70 sm:h-11 sm:w-11 ${
+                  direction === 'next' ? 'right-3 sm:right-5' : 'left-3 sm:left-5'
+                }`}
+              >
+                <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d={direction === 'next' ? 'm9 6 6 6-6 6' : 'm15 6-6 6 6 6'} />
+                </svg>
+              </button>
+            ))}
+          </>
+        ) : null}
 
         {moderationMode && post.pinned && (bucket === 'active' || bucket === 'pinned') ? (
           <span className="pointer-events-none absolute left-5 top-5 z-10 inline-flex items-center gap-1.5 rounded-full bg-black/50 px-3 py-1.5 text-[13px] font-medium text-white ring-1 ring-white/10 backdrop-blur-xl">
@@ -580,6 +646,22 @@ export function ContentPostLightbox({
         ) : null}
 
         <div className="absolute right-3 top-[calc(0.75rem+env(safe-area-inset-top))] z-10 flex items-center gap-2 sm:right-5 sm:top-5">
+          {stageExpandable ? (
+            <button
+              type="button"
+              onClick={toggleStage}
+              aria-label={stageFull ? 'Exit full screen' : 'Full screen'}
+              className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white ring-1 ring-white/10 backdrop-blur-xl transition-colors hover:bg-black/70 lg:hidden"
+            >
+              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                {stageFull ? (
+                  <path d="M9 4v4a1 1 0 01-1 1H4M15 4v4a1 1 0 001 1h4M9 20v-4a1 1 0 00-1-1H4M15 20v-4a1 1 0 011-1h4" />
+                ) : (
+                  <path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" />
+                )}
+              </svg>
+            </button>
+          ) : null}
           <button
             type="button"
             onClick={() => {
@@ -613,8 +695,39 @@ export function ContentPostLightbox({
         </div>
       </section>
 
+      {stageExpandable ? (
+        <div
+          role="slider"
+          aria-label={stageFull ? 'Drag up to show details' : 'Drag down to view full screen'}
+          aria-valuemin={0}
+          aria-valuemax={1}
+          aria-valuenow={stageFull ? 1 : 0}
+          tabIndex={0}
+          onPointerDown={onStageHandleDown}
+          onPointerMove={onStageHandleMove}
+          onPointerUp={onStageHandleUp}
+          onPointerCancel={onStageHandleUp}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' || e.key === ' ') {
+              e.preventDefault();
+              toggleStage();
+            }
+          }}
+          className={`flex h-6 shrink-0 touch-none cursor-grab items-center justify-center outline-none active:cursor-grabbing lg:hidden ${
+            stageFull ? 'box-content bg-black pb-[env(safe-area-inset-bottom)]' : 'bg-white dark:bg-[#111111]'
+          }`}
+        >
+          <span
+            aria-hidden
+            className={`h-1 w-10 rounded-full ${stageFull ? 'bg-white/50' : 'bg-black/[0.15] dark:bg-white/25'}`}
+          />
+        </div>
+      ) : null}
+
       <aside
-        className="flex min-h-0 flex-1 flex-col bg-white dark:bg-[#111111] lg:w-[420px] lg:flex-none xl:w-[460px]"
+        className={`min-h-0 flex-1 flex-col bg-white dark:bg-[#111111] lg:flex lg:w-[420px] lg:flex-none xl:w-[460px] ${
+          stageFull ? 'hidden' : 'flex'
+        }`}
         style={{
           transform: shown ? 'translateX(0)' : 'translateX(24px)',
           transition: `transform 520ms ${EASE}`,

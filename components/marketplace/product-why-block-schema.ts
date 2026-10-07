@@ -2,7 +2,7 @@ import { z } from 'zod';
 import { inferProfileMediaType } from '@/components/creator/studio/profile-form-schema';
 import type { ProductWhyBlock } from '@/types/marketplace';
 
-export const opinionItemSchema = z.object({
+const opinionItemSchema = z.object({
   value: z.string().max(500),
 });
 

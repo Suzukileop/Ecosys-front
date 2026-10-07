@@ -31,19 +31,6 @@ import { applyToolsPaletteToSettings } from '@/components/portfolio/portfolio-to
 import type { PortfolioAboutUsPresentationSettings } from '@/components/portfolio/portfolio-about-us-settings';
 import type { PortfolioInfoPresentationSettings } from '@/components/portfolio/portfolio-info-settings';
 
-/**
- * Per-section flag: when true, the section’s colors follow the Hero semantic
- * palette (defined only in Hero settings). When false, the section keeps its
- * own stored hex colors.
- */
-export type PortfolioSectionPaletteLink = {
-  useHeroPalette: boolean;
-};
-
-export const DEFAULT_SECTION_PALETTE_LINK: PortfolioSectionPaletteLink = {
-  useHeroPalette: false,
-};
-
 export function mergeUseHeroPalette(base: boolean, record: Record<string, unknown>): boolean {
   return typeof record.useHeroPalette === 'boolean' ? record.useHeroPalette : base;
 }

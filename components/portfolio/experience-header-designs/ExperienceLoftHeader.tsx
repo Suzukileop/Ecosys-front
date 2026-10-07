@@ -13,6 +13,7 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Loft design header — Editorial split heading: title left, "Experience" label right.
@@ -50,7 +51,8 @@ export function ExperienceLoftHeader({
     DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
   );
 
-  const animationsEnabled = presentation.loftHeaderAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationsEnabled = presentation.loftHeaderAnimationEnabled !== false && !motionOff;
 
   // Load-in entry reveal only — title rises from a mask, label fades in from the right.
   useEffect(() => {

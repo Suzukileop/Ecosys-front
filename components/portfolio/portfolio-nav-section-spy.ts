@@ -9,10 +9,8 @@ const ACTIVATION_GAP_PX = 24;
 const NAVIGATE_LOCK_MS = 720;
 const SCROLL_SETTLE_MS = 100;
 
-export { readPortfolioNavTopClearancePx };
-
 /** Y-position (viewport px) where the active section switches — below the fixed nav. */
-export function resolvePortfolioNavActivationLinePx(): number {
+function resolvePortfolioNavActivationLinePx(): number {
   const clearance = readPortfolioNavTopClearancePx();
   const viewportBand =
     typeof window !== 'undefined' ? window.innerHeight * 0.28 : 0;
@@ -23,7 +21,7 @@ export function resolvePortfolioNavActivationLinePx(): number {
  * Stable scroll-spy: last section (DOM order) whose top has crossed the activation line.
  * Avoids IntersectionObserver ratio flicker between adjacent sections.
  */
-export function resolveActivePortfolioSectionId(
+function resolveActivePortfolioSectionId(
   sectionIds: readonly string[],
   activationLinePx = resolvePortfolioNavActivationLinePx()
 ): string | null {
@@ -40,12 +38,12 @@ export function resolveActivePortfolioSectionId(
   return active;
 }
 
-export type PortfolioSectionSpyOptions = {
+type PortfolioSectionSpyOptions = {
   isLocked?: () => boolean;
   activationLinePx?: number;
 };
 
-export function subscribePortfolioSectionActiveId(
+function subscribePortfolioSectionActiveId(
   sectionIds: readonly string[],
   onActiveId: (id: string) => void,
   options?: PortfolioSectionSpyOptions

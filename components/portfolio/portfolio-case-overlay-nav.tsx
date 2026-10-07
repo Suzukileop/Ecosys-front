@@ -235,7 +235,6 @@ function CaseOverlayRow({
   labelCase,
   accent,
   ink,
-  mutedInk,
   divider,
   onNavigate,
 }: {

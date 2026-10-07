@@ -1,8 +1,8 @@
-import type { KnownExperienceEmploymentType } from '@/types/ecosystem';
+import type { KnownExperienceEmploymentType } from '@/types/profile';
 
 export const MAX_CUSTOM_EMPLOYMENT_LENGTH = 40;
 
-export const EMPLOYMENT_TYPE_LABELS: Record<KnownExperienceEmploymentType, string> = {
+const EMPLOYMENT_TYPE_LABELS: Record<KnownExperienceEmploymentType, string> = {
   FULL_TIME: 'Full-time',
   PART_TIME: 'Part-time',
   CONTRACT: 'Contract',

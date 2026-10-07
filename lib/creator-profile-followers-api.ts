@@ -1,5 +1,5 @@
 import api from '@/lib/api';
-import type { PagedResponse } from '@/types/ecosystem';
+import type { PagedResponse } from '@/types/profile';
 
 export interface CreatorProfileFollowerItem {
   id: string;

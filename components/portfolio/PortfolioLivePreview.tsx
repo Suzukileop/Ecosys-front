@@ -1,8 +1,8 @@
 'use client';
 
 import { useCallback, useEffect, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
+import dynamic from 'next/dynamic';
 import { APP_GROUND } from '@/components/landing/landingBrand';
-import { PortfolioSettingsModal } from '@/components/portfolio/PortfolioSettingsModal';
 import { usePortfolioSettings } from '@/components/portfolio/use-portfolio-settings';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { enterBrowserFullscreen, exitBrowserFullscreen, getBrowserFullscreenElement } from '@/lib/browser-fullscreen';
@@ -18,6 +18,12 @@ import {
   withPortfolioStudioEmbed,
   type PortfolioStudioPreviewMeta,
 } from '@/lib/portfolio-studio-preview';
+
+const loadSettingsPanel = () => import('@/components/portfolio/PortfolioSettingsModal');
+
+const PortfolioSettingsModal = dynamic(() => loadSettingsPanel().then((m) => m.PortfolioSettingsModal), {
+  ssr: false,
+});
 
 type PreviewDevice = 'mobile' | 'tablet' | 'desktop';
 
@@ -295,6 +301,8 @@ export function PortfolioLivePreview({
 }) {
   const [frameKey, setFrameKey] = useState(0);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [settingsMounted, setSettingsMounted] = useState(false);
+  if (settingsOpen && !settingsMounted) setSettingsMounted(true);
   const [focusActive, setFocusActive] = useState(false);
   const [previewMeta, setPreviewMeta] = useState<PortfolioStudioPreviewMeta>(
     EMPTY_PORTFOLIO_STUDIO_PREVIEW_META
@@ -450,6 +458,17 @@ export function PortfolioLivePreview({
     setSettingsOpen(false);
   }, [flushPendingSave]);
 
+  // The settings panel stays out of the first load, then downloads while the browser is idle
+  // so opening it is instant.
+  useEffect(() => {
+    if (typeof window.requestIdleCallback === 'function') {
+      const id = window.requestIdleCallback(() => void loadSettingsPanel());
+      return () => window.cancelIdleCallback(id);
+    }
+    const id = window.setTimeout(() => void loadSettingsPanel(), 2000);
+    return () => window.clearTimeout(id);
+  }, []);
+
   // Exclusive-open with the main dashboard sidebar — opening Settings collapses it,
   // and expanding it back closes Settings, so only one is ever open at a time.
   useEffect(() => {
@@ -595,12 +614,12 @@ export function PortfolioLivePreview({
       className={`portfolio-live-preview relative max-w-full min-w-0 ${
         focusActive
           ? `flex h-full flex-col overflow-x-clip ${APP_GROUND} dark:bg-black`
-          : `sticky z-20 flex flex-col gap-2 overflow-x-clip ${APP_GROUND} px-3 pb-2 dark:bg-black sm:px-4`
+          : `sticky z-20 flex flex-col gap-2 overflow-x-clip ${APP_GROUND} px-0 pb-2 dark:bg-black sm:px-4`
       }`}
       style={focusActive ? undefined : { top: dockTop, height: dockHeight }}
     >
       {/* Floating chrome — above the canvas, never part of the previewed page. */}
-      <div className="portfolio-live-preview-chrome grid min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-0.5 py-0">
+      <div className="portfolio-live-preview-chrome grid min-w-0 shrink-0 grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] items-center gap-2 px-3 py-0 sm:px-0.5">
         <p className="min-w-0 truncate text-[0.9rem] font-medium normal-case tracking-normal text-[#222222]/70 dark:text-white/55">
           Live preview
         </p>
@@ -645,22 +664,20 @@ export function PortfolioLivePreview({
 
       {/* Physical screen — rounded device frame on mineral ground. */}
       <div
-        className={`portfolio-live-preview-frame relative min-h-0 flex-1 border border-black/[0.06] ${APP_GROUND} dark:border-white/[0.08] dark:bg-black ${
+        className={`portfolio-live-preview-frame relative min-h-0 flex-1 bg-[#FFFFFF] dark:bg-black ${
           settingsOpen || focusActive
             ? ''
-            : 'overflow-hidden rounded-2xl shadow-[0_16px_48px_rgba(0,0,0,0.10)] dark:shadow-[0_16px_48px_rgba(0,0,0,0.45)]'
-        } ${focusActive ? 'rounded-none border-0' : ''}`}
+            : 'overflow-hidden'
+        } ${focusActive ? '' : 'border border-black/[0.16] dark:border-white/[0.18]'}`}
       >
         <div
-          className={`portfolio-live-preview-stage flex h-full min-h-0 min-w-0 w-full max-w-full bg-transparent max-lg:overflow-hidden transition-[gap] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-            settingsOpen ? 'max-lg:gap-0 lg:gap-3' : 'gap-0'
-          }`}
+          className="portfolio-live-preview-stage flex h-full min-h-0 min-w-0 w-full max-w-full gap-0 bg-transparent max-lg:overflow-hidden"
         >
           <div
             ref={previewColumnRef}
             className={`relative min-w-0 max-w-full flex-1 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              previewWidth != null ? `${APP_GROUND} dark:bg-black` : ''
-            }`}
+              previewWidth != null ? 'bg-[#FFFFFF] dark:bg-black' : ''
+            } ${settingsOpen && !focusActive ? 'lg:border-r lg:border-black/[0.1] dark:lg:border-white/[0.12]' : ''}`}
           >
             <div className="flex h-full w-full items-stretch justify-center">
               <div
@@ -703,7 +720,7 @@ export function PortfolioLivePreview({
             data-open={settingsOpen ? 'true' : 'false'}
             className={`portfolio-studio-settings-pane flex h-full min-w-0 shrink-0 flex-col bg-transparent transition-[width,min-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-lg:absolute max-lg:inset-y-0 max-lg:right-0 max-lg:z-20 ${
               settingsOpen
-                ? 'w-full overflow-hidden max-lg:shadow-[-24px_0_48px_rgba(0,0,0,0.35)] lg:w-[min(28%,22rem)] lg:max-w-[22rem]'
+                ? 'w-full overflow-hidden lg:w-[min(31%,25rem)] lg:max-w-[25rem]'
                 : 'pointer-events-none w-0 overflow-hidden'
             }`}
           >
@@ -712,37 +729,39 @@ export function PortfolioLivePreview({
                 settingsOpen ? 'opacity-100 delay-75' : 'invisible opacity-0'
               }`}
             >
-              <PortfolioSettingsModal
-                variant="dock"
-                open={settingsOpen}
-                onClose={closeSettings}
-                settings={settings}
-                persistStatus={persistStatus}
-                onChange={updateSection}
-                onThemeChange={setThemeId}
-                onNavigationChange={updateNavigation}
-                onGlobalChange={updateGlobal}
-                onColorModeChange={setColorMode}
-                onGlobalPaletteChange={patchGlobalPalette}
-                onGlobalPalettePairChange={setGlobalPalettePair}
-                onSaveCustomTheme={saveCustomTheme}
-                onRenameCustomTheme={renameCustomTheme}
-                onDuplicateTheme={duplicateTheme}
-                onResetBuiltinTheme={resetBuiltinTheme}
-                onDeleteCustomTheme={deleteCustomTheme}
-                onReset={resetSettings}
-                onUndo={undoSettings}
-                onRedo={redoSettings}
-                canUndo={canUndo}
-                canRedo={canRedo}
-                availableTools={previewMeta.availableTools}
-                availableWorks={previewMeta.availableWorks}
-                availableServices={previewMeta.availableServices}
-                navSocialLinkOptions={previewMeta.navSocialLinkOptions}
-                sectionLinkOptions={previewMeta.sectionLinkOptions}
-                profileAvatarUrl={previewMeta.profileAvatarUrl}
-                onPreviewSectionFocus={focusPreviewSection}
-              />
+              {settingsMounted ? (
+                <PortfolioSettingsModal
+                  variant="dock"
+                  open={settingsOpen}
+                  onClose={closeSettings}
+                  settings={settings}
+                  persistStatus={persistStatus}
+                  onChange={updateSection}
+                  onThemeChange={setThemeId}
+                  onNavigationChange={updateNavigation}
+                  onGlobalChange={updateGlobal}
+                  onColorModeChange={setColorMode}
+                  onGlobalPaletteChange={patchGlobalPalette}
+                  onGlobalPalettePairChange={setGlobalPalettePair}
+                  onSaveCustomTheme={saveCustomTheme}
+                  onRenameCustomTheme={renameCustomTheme}
+                  onDuplicateTheme={duplicateTheme}
+                  onResetBuiltinTheme={resetBuiltinTheme}
+                  onDeleteCustomTheme={deleteCustomTheme}
+                  onReset={resetSettings}
+                  onUndo={undoSettings}
+                  onRedo={redoSettings}
+                  canUndo={canUndo}
+                  canRedo={canRedo}
+                  availableTools={previewMeta.availableTools}
+                  availableWorks={previewMeta.availableWorks}
+                  availableServices={previewMeta.availableServices}
+                  navSocialLinkOptions={previewMeta.navSocialLinkOptions}
+                  sectionLinkOptions={previewMeta.sectionLinkOptions}
+                  profileAvatarUrl={previewMeta.profileAvatarUrl}
+                  onPreviewSectionFocus={focusPreviewSection}
+                />
+              ) : null}
             </div>
           </aside>
         </div>

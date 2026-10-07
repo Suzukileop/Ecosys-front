@@ -2,7 +2,6 @@
 
 import { useCallback, useEffect, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
 import {
   dismissNotificationBadge,
@@ -18,18 +17,16 @@ import {
 } from '@/lib/notifications';
 import { NotificationFilterTabs } from '@/components/notifications/NotificationFilterTabs';
 import { NotificationGroupedList } from '@/components/notifications/NotificationGroupedList';
-import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { BackToTopButton } from '@/components/ui/BackToTopButton';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import { NotificationDto } from '@/types/ecosystem';
+import { NotificationDto } from '@/types/profile';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 export function NotificationsPageClient() {
   const router = useRouter();
-  const { hasRole } = useAuth();
-  const isAgent = hasRole('ROLE_AGENT') || hasRole('ROLE_ADMIN');
 
   const [items, setItems] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -86,7 +83,7 @@ export function NotificationsPageClient() {
         );
       }
 
-      const { href, unavailableVisitor } = resolveNotificationNavigation(n, isAgent);
+      const { href, unavailableVisitor } = resolveNotificationNavigation(n);
       if (unavailableVisitor) {
         const fallback = visitorPublicProfileUnavailableMessage(
           n.actorFullName ?? extractVisitorNameFromVisitMessage(n.message),
@@ -95,18 +92,13 @@ export function NotificationsPageClient() {
           variant: 'info',
           title: fallback.title,
           description: fallback.description,
-          actionHref: '/dashboard/creator?tab=visitors',
+          actionHref: '/profile?tab=visitors',
           actionLabel: 'Open Visitors',
         });
         return;
       }
 
-      if (href) {
-        if (n.type === 'CONTENT_DELIVERED' && n.refId) {
-          dispatchAgentContentSync(n.refId, n.refSecondaryId);
-        }
-        router.push(href);
-      }
+      if (href) router.push(href);
     } catch (e) {
       setError(getApiErrorMessage(e));
     }
@@ -117,7 +109,7 @@ export function NotificationsPageClient() {
       router.back();
       return;
     }
-    router.push('/dashboard/home');
+    router.push(SIGNED_IN_HOME);
   };
 
   const markAll = async () => {
@@ -184,7 +176,6 @@ export function NotificationsPageClient() {
           ) : (
             <NotificationGroupedList
               items={filteredItems}
-              isAgent={isAgent}
               onItemClick={(n) => void openNotification(n)}
               emptyMessage={filter === 'unread' ? 'You’re all caught up.' : 'No notifications yet.'}
               variant="page"

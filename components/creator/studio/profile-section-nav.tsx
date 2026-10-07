@@ -39,13 +39,13 @@ export type ProfileSectionId =
   | 'location'
   | 'contact';
 
-export type ProfileSection = {
+type ProfileSection = {
   id: ProfileSectionId;
   label: string;
   description: string;
 };
 
-export const PROFILE_SECTIONS: ProfileSection[] = [
+const PROFILE_SECTIONS: ProfileSection[] = [
   {
     id: 'about',
     label: 'General Info',
@@ -139,7 +139,6 @@ export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
 export const STORE_INFORMATION_SECTION_IDS: ProfileSectionId[] = [
   'about',
   'myRole',
-  'experience',
   'strengths',
   'tools',
   'links',

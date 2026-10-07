@@ -16,7 +16,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 
-export interface FooterDesignCenteredMinimalProps {
+interface FooterDesignCenteredMinimalProps {
   creatorName: string;
   creatorId: string;
   avatarUrl?: string | null;

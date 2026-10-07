@@ -3,7 +3,7 @@
 import { CreatorCard } from '@/components/CreatorCard';
 import type { MarketplaceCreatorSummary } from '@/types/marketplace';
 
-/** Same card as `/marketplace/creators` — one provider per row in search. */
+/** Same card as `/providers` — one provider per row in search. */
 export function SearchServiceProviderGrid({
   creators,
 }: {

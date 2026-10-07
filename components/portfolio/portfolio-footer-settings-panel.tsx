@@ -80,6 +80,7 @@ import {
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderPaletteToken,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 function FooterMinimalCtaWireframe() {
   return (
@@ -336,8 +337,8 @@ export type FooterSubSection = 'general' | 'design' | 'background' | 'header';
 const FOOTER_SUB_SECTIONS: { id: FooterSubSection; label: string; description: string }[] = [
   { id: 'general', label: 'General', description: 'Section visibility and defaults.' },
   { id: 'design', label: 'Design', description: 'Layout and visual style.' },
-  { id: 'background', label: 'Background', description: 'Fill behind this section.' },
   { id: 'header', label: 'Header', description: 'Title, subtitle, fonts, and colors.' },
+  { id: 'background', label: 'Background', description: 'Fill behind this section.' },
 ];
 
 /** Map legacy subsection ids (saved UI state / search) onto the current Footer menu. */
@@ -385,6 +386,8 @@ function FooterToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -411,6 +414,8 @@ function FooterVisibilityRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
       <span
@@ -464,9 +469,11 @@ function FooterOptionGrid<T extends string>({
   /** Keeps `label` as the accessible name only — for a pill that sits right under its toggle. */
   hideLabel?: boolean;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      {hideLabel ? null : <FooterGroupLabel>{label}</FooterGroupLabel>}
+      {hideLabel ? null : (rows ? null : <FooterGroupLabel>{label}</FooterGroupLabel>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -483,7 +490,7 @@ function FooterOptionGrid<T extends string>({
               aria-checked={active}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               {option.label}
@@ -492,6 +499,7 @@ function FooterOptionGrid<T extends string>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -525,7 +533,7 @@ function FooterHeaderSizePill({
               aria-checked={active}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-2 text-center font-semibold leading-none transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
               style={{ fontSize: `${option.fontPx}px` }}
             >
@@ -561,7 +569,7 @@ function FooterHeaderPaletteSwatches({
               aria-checked={active}
               onClick={() => onChange(option.value)}
               className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               <span
@@ -739,9 +747,11 @@ function FooterManualColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      {rows ? null : (<p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>)}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input
           type="color"
@@ -762,6 +772,7 @@ function FooterManualColorField({
         />
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -780,6 +791,7 @@ function FooterColorField({
   label: string;
   value: string;
 }) {
+  const rows = useSettingsRows();
   if (footer.useHeroPalette === false) {
     return (
       <FooterManualColorField
@@ -796,8 +808,9 @@ function FooterColorField({
   const resolved = resolveHeroPaletteColor(palette, token);
 
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div className="space-y-2">
-      <div className="flex items-start justify-between gap-3">
+      {rows ? null : (<div className="flex items-start justify-between gap-3">
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
         <span
           className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
@@ -805,7 +818,7 @@ function FooterColorField({
           title={resolved}
           aria-hidden
         />
-      </div>
+      </div>)}
       <select
         value={token}
         onChange={(event) =>
@@ -821,6 +834,7 @@ function FooterColorField({
         ))}
       </select>
     </div>
+    </SettingRow>
   );
 }
 
@@ -1020,7 +1034,7 @@ function FooterLayoutOptionField({
               aria-checked={active}
               onClick={() => setValue(option.value)}
               className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               <span
@@ -1363,7 +1377,7 @@ export function FooterSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {FOOTER_SUB_SECTIONS.map((section) => (
           <button
             key={section.id}
@@ -1566,8 +1580,10 @@ export function FooterSettingsPanel({
           {designCatalogOpen ? null : (
             <>
               <FooterContactLinkOptionsContext.Provider value={contactLinkOptions}>
+<SettingsRowsScope title="Layout options">
                 <FooterLayoutSettingsBand footer={footer} sectionLinkOptions={sectionLinkOptions} onChange={onChange} />
-              </FooterContactLinkOptionsContext.Provider>
+              </SettingsRowsScope>
+</FooterContactLinkOptionsContext.Provider>
               {footer.design === 'contact-card' ? (
                 <FooterContactCardColorBand footer={footer} onChange={onChange} />
               ) : null}

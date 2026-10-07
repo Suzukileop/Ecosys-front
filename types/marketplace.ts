@@ -10,7 +10,7 @@ import type {
   ProfileSkillEntry,
   ProfileStrengthTool,
   ProfileTeamMember,
-} from '@/types/ecosystem';
+} from '@/types/profile';
 
 export interface MarketplaceCreatorSummary {
   /** Prefer `id`; backend may expose `userId` instead. */
@@ -127,12 +127,12 @@ export interface MarketplaceCreatorPublicProfile {
   strengthsToolsMastered?: ProfileStrengthTool[];
   profileVisits?: number;
   gender?: string | null;
-  spokenLanguages?: import('@/types/ecosystem').ProfileSpokenLanguage[];
+  spokenLanguages?: import('@/types/profile').ProfileSpokenLanguage[];
   aboutSkills?: ProfileSkillEntry[];
   aboutStrengths?: string[];
   aboutSystemsTools?: string[];
   aboutInterests?: string[];
-  aboutEducation?: import('@/types/ecosystem').ProfileEducationEntry[];
+  aboutEducation?: import('@/types/profile').ProfileEducationEntry[];
   profileServices?: ProfileServiceItem[];
   faqItems?: FaqItem[];
   teamMembers?: ProfileTeamMember[];
@@ -144,7 +144,7 @@ export interface MarketplaceCreatorPublicProfile {
   responseTimeSampleCount?: number | null;
   portfolioPosts?: MarketplaceContentItem[];
   /** Manual portfolio works (preferred over curated content posts when present). */
-  portfolioWorks?: import('@/types/ecosystem').ProfilePortfolioWork[];
+  portfolioWorks?: import('@/types/profile').ProfilePortfolioWork[];
   /** Public portfolio presentation settings (theme, layout, motion, etc.). */
   portfolioSettings?: Record<string, unknown> | null;
   shopName?: string | null;
@@ -213,6 +213,21 @@ export interface PublicContentFeedItem {
    */
   commentCount?: number;
   viewerReaction?: 'LIKE' | null;
+  /**
+   * Full ordered gallery of a multi-image post (`mediaUrl` is its first entry). Holds just the cover
+   * for single-media posts and is empty for text posts; absent on payloads that predate galleries.
+   */
+  mediaUrls?: string[];
+  /**
+   * The original when this post is a repost — then `title` is the reposter's own note and the media
+   * belongs to the original. Never nested twice.
+   */
+  repostOf?: PublicContentFeedItem | null;
+  /** Reposts of the original (for a repost card: of the post it points at). */
+  repostCount?: number;
+  /** Whether the viewer already reposted the original; `undefined` when the route does not know. */
+  viewerReposted?: boolean | null;
+  viewerSaved?: boolean | null;
 }
 
 export type PublicContentFeedPage = PagedResponse<PublicContentFeedItem>;
@@ -312,8 +327,6 @@ export interface MarketplaceProductDetail extends MarketplaceProductSummary {
   galleryImageUrls?: string[];
 }
 
-export type MarketplaceProductsPage = PagedResponse<MarketplaceProductSummary>;
-
 export interface MarketplaceProductRequest {
   type: ProductType;
   title: string;
@@ -391,20 +404,6 @@ export interface MarketplaceBundleSummary {
   createdAt: string;
 }
 
-export interface MarketplaceBundleDetail extends MarketplaceBundleSummary {
-  products: MarketplaceProductSummary[];
-}
-
-export interface MarketplaceBundleRequest {
-  title: string;
-  description?: string;
-  priceCents: number;
-  currency?: string;
-  discountPercent?: number;
-  productIds: string[];
-  isPublished?: boolean;
-}
-
 /** Named organizational group of creator products (not a sellable bundle). */
 export interface MarketplaceProductGroup {
   id: string;
@@ -423,7 +422,7 @@ export interface MarketplaceProductGroupRequest {
   sortOrder?: number;
 }
 
-/** Raw shape from GET /api/marketplace/purchases/me */
+/** Raw shape from GET /api/purchases/me */
 export interface OwnedProductRaw {
   purchaseId: string;
   productId: string;
@@ -517,14 +516,6 @@ export interface MarketplaceComment {
   replies?: MarketplaceComment[];
 }
 
-export interface FavoriteItem {
-  targetType: SocialTargetType;
-  targetId: string;
-  title: string | null;
-  thumbnailUrl: string | null;
-  createdAt: string;
-}
-
 export interface ContentReport {
   id: string;
   targetType: SocialTargetType;
@@ -542,8 +533,6 @@ export interface ReportUpdateRequest {
   status: ReportStatus;
   adminNotes?: string;
 }
-
-export type MarketplacePurchasesPage = PagedResponse<MarketplacePurchase>;
 
 export interface MarketplacePurchaseResponse {
   id: string;

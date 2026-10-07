@@ -25,7 +25,7 @@ function isPeopleCategory(category: GlobalSearchItem['category']) {
   return category === 'users' || category === 'creators' || category === 'serviceProviders';
 }
 
-export function GlobalSearchResultThumbnail({ item }: { item: GlobalSearchItem }) {
+function GlobalSearchResultThumbnail({ item }: { item: GlobalSearchItem }) {
   if (isPeopleCategory(item.category)) {
     return (
       <AvatarImage
@@ -113,12 +113,12 @@ export function getGlobalSearchItemHref(item: GlobalSearchItem): string {
   switch (item.category) {
     case 'creators':
     case 'serviceProviders':
-      return `/marketplace/${item.id}`;
+      return `/providers/${item.id}`;
     case 'products':
       return `/marketplace/products/${item.id}`;
     case 'content':
       return `/marketplace/content/${item.id}`;
     default:
-      return '/dashboard/discussions';
+      return '/messages';
   }
 }

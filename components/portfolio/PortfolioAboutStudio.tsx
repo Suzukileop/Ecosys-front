@@ -41,7 +41,7 @@ import {
 } from '@/lib/spoken-languages';
 import { fetchLanguageProficiencyLevels } from '@/lib/reference-api';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
-import type { ProfileEducationEntry, ProfileSkillEntry } from '@/types/ecosystem';
+import type { ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
 
 export type PortfolioAboutDraft = {
   specialties: string[];
@@ -59,7 +59,7 @@ type DraftKey = keyof PortfolioAboutDraft;
 type ListKey = 'aboutStrengths' | 'aboutSystemsTools' | 'aboutInterests';
 type ChangeHandler = StudioChangeHandler<PortfolioAboutDraft>;
 
-export type AboutVisibilityKey =
+type AboutVisibilityKey =
   | 'yearsOfExperience'
   | 'spokenLanguages'
   | 'aboutEducation'

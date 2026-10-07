@@ -37,7 +37,7 @@ import {
 } from 'react';
 import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
 import type { PortfolioGalleryPresentationSettings } from '@/components/portfolio/portfolio-gallery-settings';
-import type { ProfileGalleryItem } from '@/types/ecosystem';
+import type { ProfileGalleryItem } from '@/types/profile';
 
 /* ---------------------------------------------------------------------- */
 /* Scale — the single place this design is sized from                      */

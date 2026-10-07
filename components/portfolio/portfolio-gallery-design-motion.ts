@@ -8,8 +8,8 @@ if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
 }
 
-export const GALLERY_REVEAL_ATTR = 'data-gallery-reveal';
-export const GALLERY_REVEAL_MEDIA_ATTR = 'data-gallery-reveal-media';
+const GALLERY_REVEAL_ATTR = 'data-gallery-reveal';
+const GALLERY_REVEAL_MEDIA_ATTR = 'data-gallery-reveal-media';
 
 /**
  * Clear by property list, never `clearProps: 'all'` — "all" empties the element's whole inline
@@ -127,7 +127,7 @@ export function useGalleryReveal<T extends HTMLElement = HTMLDivElement>(
   return ref;
 }
 
-export const GALLERY_PARALLAX_ATTR = 'data-gallery-parallax';
+const GALLERY_PARALLAX_ATTR = 'data-gallery-parallax';
 /** Travel, in px, at the very edge of the mosaic. Any more and it stops reading as depth. */
 const GALLERY_PARALLAX_SHIFT = 10;
 /**

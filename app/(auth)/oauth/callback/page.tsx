@@ -7,6 +7,7 @@ import { completeOAuthCallback } from '@/lib/auth';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { useAuth } from '@/context/AuthContext';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 const OAUTH_DONE_KEY = 'oauth-exchange-done';
 
@@ -17,7 +18,7 @@ function OAuthCallbackContent() {
 
   useEffect(() => {
     if (user) {
-      window.location.replace('/dashboard/home');
+      window.location.replace(SIGNED_IN_HOME);
       return;
     }
 
@@ -29,7 +30,9 @@ function OAuthCallbackContent() {
       setError(
         oauthError === 'access_denied'
           ? 'Sign-in was cancelled.'
-          : 'Unable to complete social sign-in. Please try again.',
+          : oauthError === 'temporarily_unavailable'
+            ? 'Social sign-in is temporarily unavailable. Please try again in a few minutes.'
+            : 'Unable to complete social sign-in. Please try again.',
       );
       return;
     }
@@ -40,14 +43,14 @@ function OAuthCallbackContent() {
     }
 
     if (sessionStorage.getItem(OAUTH_DONE_KEY) === code) {
-      window.location.replace('/dashboard/home');
+      window.location.replace(SIGNED_IN_HOME);
       return;
     }
 
     completeOAuthCallback(code, applyAuthResponse)
       .then(() => {
         sessionStorage.setItem(OAUTH_DONE_KEY, code);
-        window.location.replace('/dashboard/home');
+        window.location.replace(SIGNED_IN_HOME);
       })
       .catch(() => {
         setError('Unable to complete social sign-in. Please try again.');

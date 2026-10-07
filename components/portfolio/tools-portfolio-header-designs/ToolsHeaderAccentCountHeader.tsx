@@ -8,6 +8,7 @@ import {
   type PortfolioToolsHeaderTitleSize,
   type PortfolioToolsHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-tools-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ tools';
 const DEFAULT_LEAD_TEXT = 'A curated set of apps that keep me productive.';
@@ -59,7 +60,8 @@ export function ToolsHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_TOOLS_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

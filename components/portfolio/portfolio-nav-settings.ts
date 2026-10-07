@@ -1,4 +1,3 @@
-import { applyNavPaletteToSettings } from '@/components/portfolio/portfolio-nav-palette-settings';
 import { portfolioNavUsesEditorialBarLayout } from '@/components/portfolio/portfolio-nav-layout-design';
 import {
   resolveHeroPaletteColor,
@@ -7,33 +6,30 @@ import {
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
 
 export type PortfolioNavPlacement = PortfolioNavSettings['placement'];
-export type PortfolioNavMode = PortfolioNavSettings['navMode'];
-export type PortfolioNavBarDesign = PortfolioNavSettings['barDesign'];
-export type PortfolioNavContentMode = PortfolioNavSettings['contentMode'];
-export type PortfolioNavButtonDesign = PortfolioNavSettings['buttonDesign'];
+type PortfolioNavMode = PortfolioNavSettings['navMode'];
+type PortfolioNavBarDesign = PortfolioNavSettings['barDesign'];
+type PortfolioNavContentMode = PortfolioNavSettings['contentMode'];
+type PortfolioNavButtonDesign = PortfolioNavSettings['buttonDesign'];
 export type PortfolioNavActiveStyle = PortfolioNavSettings['activeStyle'];
-export type PortfolioNavDisplayMode = PortfolioNavSettings['displayMode'];
-export type PortfolioNavPresence = PortfolioNavSettings['presence'];
-export type PortfolioNavMenuHandleContent = PortfolioNavSettings['menuHandleContent'];
+type PortfolioNavDisplayMode = PortfolioNavSettings['displayMode'];
+type PortfolioNavPresence = PortfolioNavSettings['presence'];
 export type PortfolioNavMenuControlIcon = PortfolioNavSettings['menuControlIcon'];
 export type PortfolioNavMenuControlAlign = PortfolioNavSettings['menuControlAlign'];
-export type PortfolioNavCaseOverlayMenuSide = 'left' | 'right';
-export type PortfolioNavCaseOverlayMenuTrigger = 'text' | 'icon';
-export type PortfolioNavLabelCase = PortfolioNavSettings['labelCase'];
-export type PortfolioNavLabelFontSize = PortfolioNavSettings['labelFontSize'];
-export type PortfolioNavBarWidth = PortfolioNavSettings['barWidth'];
-export type PortfolioNavBarThickness = PortfolioNavSettings['barThickness'];
-export type PortfolioNavBarPadding = PortfolioNavSettings['barPadding'];
-export type PortfolioNavBarHeight = PortfolioNavSettings['navBarHeight'];
-export type PortfolioNavButtonPadding = PortfolioNavSettings['buttonPadding'];
-export type PortfolioNavEffectStrength = PortfolioNavSettings['barBlurStrength'];
-export type PortfolioNavEdgeOffset = PortfolioNavSettings['edgeOffset'];
-export type PortfolioNavItemGap = PortfolioNavSettings['itemGap'];
-export type PortfolioNavBarSurface = PortfolioNavSettings['navBarSurface'];
+type PortfolioNavLabelCase = PortfolioNavSettings['labelCase'];
+type PortfolioNavLabelFontSize = PortfolioNavSettings['labelFontSize'];
+type PortfolioNavBarWidth = PortfolioNavSettings['barWidth'];
+type PortfolioNavBarThickness = PortfolioNavSettings['barThickness'];
+type PortfolioNavBarPadding = PortfolioNavSettings['barPadding'];
+type PortfolioNavBarHeight = PortfolioNavSettings['navBarHeight'];
+type PortfolioNavButtonPadding = PortfolioNavSettings['buttonPadding'];
+type PortfolioNavEffectStrength = PortfolioNavSettings['barBlurStrength'];
+type PortfolioNavEdgeOffset = PortfolioNavSettings['edgeOffset'];
+type PortfolioNavItemGap = PortfolioNavSettings['itemGap'];
+type PortfolioNavBarSurface = PortfolioNavSettings['navBarSurface'];
 
-export type PortfolioNavMobileLayout = PortfolioNavSettings['mobileLayout'];
-export type PortfolioNavMobileBrand = PortfolioNavSettings['mobileBrand'];
-export type PortfolioNavMobileDrawerSide = PortfolioNavSettings['mobileDrawerSide'];
+type PortfolioNavMobileLayout = PortfolioNavSettings['mobileLayout'];
+type PortfolioNavMobileBrand = PortfolioNavSettings['mobileBrand'];
+type PortfolioNavMobileDrawerSide = PortfolioNavSettings['mobileDrawerSide'];
 
 export const PORTFOLIO_NAV_MODE_OPTIONS: {
   value: PortfolioNavMode;
@@ -49,57 +45,6 @@ export const PORTFOLIO_NAV_MODE_OPTIONS: {
     value: 'pages',
     label: 'Page',
     description: 'Each section is its own page — switch only with the nav bar (no scroll between sections).',
-  },
-];
-
-export const PORTFOLIO_NAV_PLACEMENT_OPTIONS: {
-  value: PortfolioNavPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'top-center', label: 'Top center', description: 'Horizontal pill centered at the top.' },
-  { value: 'top-left', label: 'Top left', description: 'Items align to the left inside the bar.' },
-  { value: 'top-right', label: 'Top right', description: 'Items align to the right inside the bar.' },
-  { value: 'bottom-center', label: 'Bottom center', description: 'Horizontal bar centered above the bottom edge.' },
-  { value: 'bottom-left', label: 'Bottom left', description: 'Items align to the left at the bottom.' },
-  { value: 'bottom-right', label: 'Bottom right', description: 'Items align to the right at the bottom.' },
-  { value: 'left-center', label: 'Left center', description: 'Vertical stack on the left, centered on screen.' },
-  { value: 'right-center', label: 'Right center', description: 'Vertical stack on the right, centered on screen.' },
-];
-
-export const PORTFOLIO_NAV_BAR_DESIGN_OPTIONS: {
-  value: PortfolioNavBarDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'classic',
-    label: 'Classic pill',
-    description: 'Soft floating capsule — polished editorial default.',
-  },
-  {
-    value: 'rail',
-    label: 'Editorial rail',
-    description: 'Structured panel with dividers and a slim accent on the active item.',
-  },
-  {
-    value: 'dock',
-    label: 'Icon dock',
-    description: 'Individual circular buttons — minimal and tactile.',
-  },
-];
-
-export const PORTFOLIO_NAV_CONTENT_MODE_OPTIONS: {
-  value: PortfolioNavContentMode;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'icons', label: 'Icons only', description: 'Compact section icons with accessible labels.' },
-  { value: 'text', label: 'Text buttons', description: 'Uppercase or styled text labels per section.' },
-  {
-    value: 'both',
-    label: 'Icons + text',
-    description: 'Icon and label together on each button.',
   },
 ];
 
@@ -126,56 +71,6 @@ export function normalizePortfolioNavFloatingPillMenuMode(
 ): Extract<PortfolioNavContentMode, 'text' | 'icons'> {
   return contentMode === 'icons' ? 'icons' : 'text';
 }
-
-export const PORTFOLIO_NAV_BUTTON_DESIGN_OPTIONS: {
-  value: PortfolioNavButtonDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'clean', label: 'Clean', description: 'Flat buttons — shape comes from the bar design only.' },
-  { value: 'outlined', label: 'Outlined', description: 'Crisp border around every button.' },
-  { value: 'soft', label: 'Soft fill', description: 'Light tinted background on each item.' },
-  { value: 'glow', label: 'Glow', description: 'Soft shadow with warm accent when active.' },
-  {
-    value: 'bottom-line',
-    label: 'Bottom line',
-    description: 'Simple underline only — hover and active tint the line.',
-  },
-];
-
-export const PORTFOLIO_NAV_ACTIVE_OPTIONS: {
-  value: PortfolioNavActiveStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'accent-fill',
-    label: 'Accent fill',
-    description: 'Solid Principal fill — icon uses Neutre (maquette 1).',
-  },
-  {
-    value: 'outline',
-    label: 'Accent outline',
-    description: 'Thin Principal ring — accent icon on Neutre surface (maquette 2).',
-  },
-  {
-    value: 'filled-pill',
-    label: 'Contrast fill',
-    description: 'Texte fort fill — Neutre icon (maquette 3).',
-  },
-  {
-    value: 'soft-badge',
-    label: 'Soft badge',
-    description: 'Light Principal tint behind an accent icon (maquette 4).',
-  },
-  {
-    value: 'dot',
-    label: 'Dot indicator',
-    description: 'Texte fort icon with a Principal dot underneath (maquette 5).',
-  },
-  { value: 'underline', label: 'Underline', description: 'Accent underline beneath the active item.' },
-  { value: 'accent-text', label: 'Accent text', description: 'Colored bold text — no background shape.' },
-];
 
 /** Active item indicators for Navigation → General (mockups 01–06, 08). */
 export const PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS: {
@@ -215,7 +110,7 @@ export const PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS: {
   },
 ];
 
-export type PortfolioNavActiveIndicatorSlot =
+type PortfolioNavActiveIndicatorSlot =
   | 'dot-below'
   | 'dot-left'
   | 'underline-bar'
@@ -277,13 +172,6 @@ export function portfolioNavUsesTextIndicatorReserve(
   return mode === 'text' && portfolioNavUsesFlatMenuIndicatorLayout(activeStyle);
 }
 
-export function portfolioNavActiveIndicatorNeedsRelative(
-  activeStyle: PortfolioNavActiveStyle,
-  active: boolean
-): boolean {
-  return portfolioNavActiveIndicatorSlot(activeStyle, active) !== null;
-}
-
 /** Legacy `both` from removed icons-stacked indicator → text-only menu. */
 export function portfolioNavEffectiveContentMode(
   contentMode: PortfolioNavContentMode
@@ -301,35 +189,8 @@ export const PORTFOLIO_NAV_DISPLAY_OPTIONS: {
   { value: 'after-hero', label: 'After hero', description: 'Hidden until the hero section is passed.' },
 ];
 
-export const PORTFOLIO_NAV_PRESENCE_OPTIONS: {
-  value: PortfolioNavPresence;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'full',
-    label: 'Always solid',
-    description: 'Full opacity whenever the nav is shown — no idle fade.',
-  },
-  {
-    value: 'dim',
-    label: 'Dim when idle',
-    description: 'Fades after a short pause; brightens on hover or touch.',
-  },
-  {
-    value: 'hover',
-    label: 'Reveal on hover',
-    description: 'Mostly hidden until hover (desktop) or a tap (touch).',
-  },
-  {
-    value: 'tap',
-    label: 'Reveal on tap',
-    description: 'Collapsed to a small handle — tap to open or close the menu.',
-  },
-];
-
 /** Simplified presence control for Navigation → General (maps to `presence`). */
-export type PortfolioNavVisibilityMode = Extract<PortfolioNavPresence, 'full' | 'dim'>;
+type PortfolioNavVisibilityMode = Extract<PortfolioNavPresence, 'full' | 'dim'>;
 
 export const PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS: {
   value: PortfolioNavVisibilityMode;
@@ -357,16 +218,6 @@ export function resolvePortfolioNavVisibilityMode(
   return 'full';
 }
 
-export const PORTFOLIO_NAV_MENU_HANDLE_OPTIONS: {
-  value: PortfolioNavMenuHandleContent;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'icon', label: 'Icon only', description: 'Glyph only — compact handle.' },
-  { value: 'text', label: 'Text only', description: 'Shows the word Menu.' },
-  { value: 'both', label: 'Icon + text', description: 'Glyph and Menu label together.' },
-];
-
 export const PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS: {
   value: PortfolioNavMenuControlIcon;
   label: string;
@@ -377,16 +228,6 @@ export const PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS: {
   { value: 'menu', label: 'Menu lines', description: 'Classic hamburger glyph.' },
   { value: 'chevron', label: 'Chevron', description: 'Up/down chevron for open state.' },
   { value: 'x', label: 'Close ×', description: 'Simple close mark.' },
-];
-
-export const PORTFOLIO_NAV_MENU_CONTROL_ALIGN_OPTIONS: {
-  value: PortfolioNavMenuControlAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Control sits before the section icons / brand.' },
-  { value: 'center', label: 'Center', description: 'Control and brand sit centered in the bar.' },
-  { value: 'right', label: 'Right', description: 'Control sits after the section icons / brand.' },
 ];
 
 export const PORTFOLIO_NAV_BAR_SURFACE_OPTIONS: {
@@ -409,16 +250,6 @@ export const PORTFOLIO_NAV_BAR_SURFACE_OPTIONS: {
     label: 'Transparent',
     description: 'Transparent bar, no border.',
   },
-];
-
-export const PORTFOLIO_NAV_LABEL_CASE_OPTIONS: {
-  value: PortfolioNavLabelCase;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'uppercase', label: 'Uppercase', description: 'Bold caps with wide letter-spacing.' },
-  { value: 'titlecase', label: 'Title case', description: 'Each word starts with a capital letter.' },
-  { value: 'normal', label: 'Sentence case', description: 'First character uppercase, the rest lowercase — default.' },
 ];
 
 export const PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS: {
@@ -490,19 +321,7 @@ export const PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS: {
   { value: 'right', label: 'From right', description: 'Drawer slides in from the right edge.' },
 ];
 
-function clampNavGapForMobile(
-  gap: PortfolioNavItemGap,
-  max: Exclude<PortfolioNavItemGap, 'spread'> = 'sm'
-): PortfolioNavItemGap {
-  const order: Exclude<PortfolioNavItemGap, 'spread'>[] = ['none', 'sm', 'md', 'lg', 'xl'];
-  if (gap === 'spread') return max;
-  const idx = order.indexOf(gap);
-  const maxIdx = order.indexOf(max);
-  if (idx < 0) return max;
-  return order[Math.min(idx, maxIdx)] ?? max;
-}
-
-export type PortfolioNavResolvedMobileChrome = {
+type PortfolioNavResolvedMobileChrome = {
   placement: PortfolioNavPlacement;
   contentMode: PortfolioNavContentMode;
   itemGap: PortfolioNavItemGap;
@@ -516,7 +335,7 @@ export type PortfolioNavResolvedMobileChrome = {
   useBrandBar: boolean;
 };
 
-export function normalizePortfolioNavMobileLayout(
+function normalizePortfolioNavMobileLayout(
   value: PortfolioNavSettings['mobileLayout'] | string | undefined
 ): PortfolioNavMobileLayout {
   if (value === 'drawer' || value === 'brand-bar') return value;
@@ -578,46 +397,6 @@ export function resolvePortfolioNavMobileChrome(
   };
 }
 
-export const PORTFOLIO_NAV_BAR_WIDTH_OPTIONS: {
-  value: PortfolioNavBarWidth;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'hug',
-    label: 'Hug content',
-    description: 'Current pill — only as wide as the icons.',
-  },
-  {
-    value: 'full',
-    label: 'Full width',
-    description: 'Edge-to-edge bar (no left/right gap).',
-  },
-];
-
-export const PORTFOLIO_NAV_BAR_THICKNESS_OPTIONS: {
-  value: PortfolioNavBarThickness;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Thin', description: 'Smaller icons and hit targets.' },
-  { value: 'md', label: 'Medium', description: 'Default balanced icon size.' },
-  { value: 'lg', label: 'Thick', description: 'Larger icons and buttons.' },
-  { value: 'xl', label: 'Extra thick', description: 'Bold, oversized icons.' },
-];
-
-export const PORTFOLIO_NAV_BAR_PADDING_OPTIONS: {
-  value: PortfolioNavBarPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No inner padding — items flush to the bar edge.' },
-  { value: 'sm', label: 'Small', description: 'Tight padding around the items.' },
-  { value: 'md', label: 'Medium', description: 'Default balanced padding.' },
-  { value: 'lg', label: 'Large', description: 'Roomy space inside the bar.' },
-  { value: 'xl', label: 'Extra large', description: 'Very spacious padding around items.' },
-];
-
 export const PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS: {
   value: PortfolioNavBarHeight;
   label: string;
@@ -637,46 +416,6 @@ export const PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS: {
     value: 'lg',
     label: 'Airy',
     description: 'Taller bar — generous vertical padding and more comfortable targets.',
-  },
-];
-
-export const PORTFOLIO_NAV_BUTTON_PADDING_OPTIONS: {
-  value: PortfolioNavButtonPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Minimal — icon/label almost flush in the pill.' },
-  { value: 'sm', label: 'Small', description: 'Tight padding inside each button.' },
-  { value: 'md', label: 'Medium', description: 'Default balanced button padding.' },
-  { value: 'lg', label: 'Large', description: 'Roomier pills / rail cells.' },
-  { value: 'xl', label: 'Extra large', description: 'Very spacious buttons.' },
-];
-
-export const PORTFOLIO_NAV_EDGE_OFFSET_OPTIONS: {
-  value: PortfolioNavEdgeOffset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Close', description: 'Flush against the viewport edge.' },
-  { value: 'md', label: 'Default', description: 'Comfortable gap from the edge.' },
-  { value: 'lg', label: 'Spacious', description: 'More breathing room from the top/edge.' },
-  { value: 'xl', label: 'Far', description: 'Pushed further into the page.' },
-];
-
-export const PORTFOLIO_NAV_ITEM_GAP_OPTIONS: {
-  value: PortfolioNavItemGap;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No gap — items touch.' },
-  { value: 'sm', label: 'Small', description: 'Tight — about 8px between items.' },
-  { value: 'md', label: 'Medium', description: 'Clear gap — about 20px between items.' },
-  { value: 'lg', label: 'Large', description: 'Roomy — about 40px between items.' },
-  { value: 'xl', label: 'Extra large', description: 'Wide — about 64px between items.' },
-  {
-    value: 'spread',
-    label: 'Spread',
-    description: 'Distribute items evenly across the full bar width.',
   },
 ];
 
@@ -954,7 +693,7 @@ export function portfolioNavPlacementClass(
 }
 
 /** How items align inside the bar — left/right placement shifts content, not bar width. */
-export function portfolioNavItemsAlignClass(
+function portfolioNavItemsAlignClass(
   placement: PortfolioNavPlacement,
   itemGap: PortfolioNavItemGap,
   vertical: boolean
@@ -1037,17 +776,6 @@ export function portfolioNavTriZoneItemGapClass(
   return map[itemGap];
 }
 
-export const PORTFOLIO_NAV_EFFECT_STRENGTH_OPTIONS: {
-  value: PortfolioNavEffectStrength;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Thin', description: 'Subtle — light blur or soft shadow.' },
-  { value: 'md', label: 'Medium', description: 'Balanced default intensity.' },
-  { value: 'lg', label: 'Thick', description: 'Stronger blur / deeper shadow.' },
-  { value: 'xl', label: 'Extra thick', description: 'Maximum frost / halo.' },
-];
-
 function glassShell(
   glassEffect: boolean,
   borderEnabled = true,
@@ -1094,7 +822,7 @@ function barPaddingHorizontalClass(padding: PortfolioNavBarPadding): string {
   }
 }
 
-export type PortfolioNavBarHeightVariant = 'shell' | 'structured' | 'item';
+type PortfolioNavBarHeightVariant = 'shell' | 'structured' | 'item';
 
 /** Vertical padding / min-height for the nav bar shell and menu hit area. `md` matches legacy defaults. */
 export function portfolioNavBarHeightClass(
@@ -1185,139 +913,17 @@ export function portfolioNavBarContainerClass(
   }
 }
 
-export const DEFAULT_NAV_BAR_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_NAV_BAR_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_NAV_ITEM_ICON_COLOR = '#525252';
-export const DEFAULT_NAV_ITEM_TEXT_COLOR = '#525252';
-export const DEFAULT_NAV_ITEM_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_NAV_ITEM_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_NAV_ITEM_HOVER_ICON_COLOR = '#e2572e';
-export const DEFAULT_NAV_ITEM_HOVER_TEXT_COLOR = '#f4f3ef';
-export const DEFAULT_NAV_ITEM_HOVER_BACKGROUND_COLOR = '#e2572e';
-export const DEFAULT_NAV_ITEM_HOVER_BORDER_COLOR = '#e2572e';
-export const DEFAULT_NAV_ACTIVE_ACCENT_COLOR = '#f97316';
-
-export type PortfolioNavLookPreset =
-  | 'accent-fill'
-  | 'accent-outline'
-  | 'dark-fill'
-  | 'soft-badge'
-  | 'dot';
-
-export const PORTFOLIO_NAV_LOOK_PRESET_OPTIONS: {
-  value: PortfolioNavLookPreset;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'accent-fill',
-    label: 'Solid accent fill',
-    description: 'Principal-color badge — Neutral icon. Colors follow the Nav palette.',
-  },
-  {
-    value: 'accent-outline',
-    label: 'Accent outline',
-    description: 'Principal-color ring — accent icon on Neutral.',
-  },
-  {
-    value: 'dark-fill',
-    label: 'Inverted contrast',
-    description: 'Texte fort-color badge — Neutral icon.',
-  },
-  {
-    value: 'soft-badge',
-    label: 'Soft badge',
-    description: 'Light Principal-color background — accent icon.',
-  },
-  {
-    value: 'dot',
-    label: 'Dot indicator',
-    description: 'Texte fort-color icon with a Principal-color dot.',
-  },
-];
-
-/**
- * Structure-only chrome for the five classic look presets.
- * Colors are never hard-coded here — they come from the Nav palette.
- */
-const NAV_LOOK_PRESET_BASE: Partial<PortfolioNavSettings> = {
-  barDesign: 'classic',
-  contentMode: 'icons',
-  buttonDesign: 'clean',
-  barWidth: 'hug',
-  barBorderEnabled: true,
-  barShadowEnabled: true,
-  glassEffect: false,
-  itemBorderEnabled: false,
-  buttonPadding: 'md',
-  itemGap: 'sm',
-};
-
-function lookPresetActiveStyle(preset: PortfolioNavLookPreset): PortfolioNavActiveStyle {
-  switch (preset) {
-    case 'accent-fill':
-      return 'accent-fill';
-    case 'accent-outline':
-      return 'outline';
-    case 'dark-fill':
-      return 'filled-pill';
-    case 'soft-badge':
-      return 'soft-badge';
-    case 'dot':
-      return 'dot';
-  }
-}
-
-/**
- * Apply a reusable nav maquette: structural chrome + re-sync every bound hex
- * from the current Nav palette tokens (never overwrites with hard-coded orange/white).
- */
-export function portfolioNavLookPresetPatch(
-  preset: PortfolioNavLookPreset,
-  navigation?: Pick<PortfolioNavSettings, 'navPalette' | 'navColorBindings' | 'useNavPalette'>
-): Partial<PortfolioNavSettings> {
-  const structure: Partial<PortfolioNavSettings> = {
-    ...NAV_LOOK_PRESET_BASE,
-    activeStyle: lookPresetActiveStyle(preset),
-  };
-  // Manual mode: keep current hex colors — only switch active style / chrome structure.
-  if (navigation?.useNavPalette === false) {
-    return structure;
-  }
-  const paletteSync = applyNavPaletteToSettings(navigation ?? {});
-  return { ...structure, ...paletteSync, useNavPalette: true };
-}
-
-/** Which look preset matches the current settings (null = custom mix). */
-export function resolvePortfolioNavLookPreset(
-  settings: Pick<
-    PortfolioNavSettings,
-    'barDesign' | 'contentMode' | 'buttonDesign' | 'activeStyle' | 'itemBorderEnabled'
-  >
-): PortfolioNavLookPreset | null {
-  if (
-    settings.barDesign !== 'classic' ||
-    settings.contentMode !== 'icons' ||
-    settings.buttonDesign !== 'clean' ||
-    settings.itemBorderEnabled !== false
-  ) {
-    return null;
-  }
-  switch (settings.activeStyle) {
-    case 'accent-fill':
-      return 'accent-fill';
-    case 'outline':
-      return 'accent-outline';
-    case 'filled-pill':
-      return 'dark-fill';
-    case 'soft-badge':
-      return 'soft-badge';
-    case 'dot':
-      return 'dot';
-    default:
-      return null;
-  }
-}
+const DEFAULT_NAV_BAR_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_NAV_BAR_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_NAV_ITEM_ICON_COLOR = '#525252';
+const DEFAULT_NAV_ITEM_TEXT_COLOR = '#525252';
+const DEFAULT_NAV_ITEM_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_NAV_ITEM_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_NAV_ITEM_HOVER_ICON_COLOR = '#e2572e';
+const DEFAULT_NAV_ITEM_HOVER_TEXT_COLOR = '#f4f3ef';
+const DEFAULT_NAV_ITEM_HOVER_BACKGROUND_COLOR = '#e2572e';
+const DEFAULT_NAV_ITEM_HOVER_BORDER_COLOR = '#e2572e';
+const DEFAULT_NAV_ACTIVE_ACCENT_COLOR = '#f97316';
 
 function navHex(value: string, fallback: string): string {
   return /^#[0-9a-fA-F]{6}$/.test(value) ? value : fallback;
@@ -1345,10 +951,6 @@ function pickContrastingColor(against: string, a: string, b: string): string {
   return Math.abs(hexLuminance(a) - base) >= Math.abs(hexLuminance(b) - base) ? a : b;
 }
 
-function darkerColor(a: string, b: string): string {
-  return hexLuminance(a) <= hexLuminance(b) ? a : b;
-}
-
 export function portfolioNavContrastRatio(ink: string, background: string): number {
   const inkLum = hexLuminance(ink);
   const bgLum = hexLuminance(background);
@@ -1369,7 +971,7 @@ export function portfolioNavTexteFortInk(palette: PortfolioHeroPalette): string 
   return resolveHeroPaletteColor(palette, 'texteFort');
 }
 
-export function portfolioNavEditorialBarUsesTexteFortInk(
+function portfolioNavEditorialBarUsesTexteFortInk(
   settings: Pick<PortfolioNavSettings, 'enabled' | 'navLayoutDesign' | 'editorialBarButtonInk'>
 ): boolean {
   return (
@@ -1564,7 +1166,7 @@ export function portfolioNavInkOnAccentFill(
  * Filled-pill label only — interchange palette tokens by page mode:
  * light → neutre, dark → texteFort (swap fallback if contrast is weak).
  */
-export function portfolioNavFilledPillLabelInk(
+function portfolioNavFilledPillLabelInk(
   fillBackground: string,
   palette: PortfolioHeroPalette
 ): string {
@@ -1699,7 +1301,7 @@ function navItemHoverBgAlpha(
   }
 }
 
-export type PortfolioNavItemHoverPresentation = {
+type PortfolioNavItemHoverPresentation = {
   shellClass: string;
   iconClass: string;
   textClass: string;
@@ -1728,7 +1330,7 @@ type PortfolioNavLayoutHoverDesign = 'editorial-bar' | 'floating-pill' | 'center
 
 function portfolioNavActiveIndicatorHoverParts(
   activeStyle: PortfolioNavActiveStyle,
-  contentMode: PortfolioNavContentMode
+  _contentMode: PortfolioNavContentMode
 ): {
   shellIndicatorClasses: string;
   showHoverDot: boolean;
@@ -2605,7 +2207,7 @@ function portfolioNavButtonDesignBaseClass(buttonDesign: PortfolioNavButtonDesig
   }
 }
 
-export function portfolioNavLabelFontClass(_labelCase: PortfolioNavLabelCase): string {
+function portfolioNavLabelFontClass(_labelCase: PortfolioNavLabelCase): string {
   return 'font-normal';
 }
 
@@ -2736,8 +2338,6 @@ export function portfolioNavActiveItemStyle({
   const strong = navHex(strongTextColor ?? '#0a0a0a', '#0a0a0a');
   const pageFill = navHex(pageFillColor ?? surface, surface);
   const onAccent = pickContrastingColor(accent, surface, strong);
-  const contrastFill = darkerColor(pageFill, strong);
-  const onContrast = pickContrastingColor(contrastFill, surface, strong);
 
   // Icon dock: high-contrast circular chrome vs page fond (light↔dark via palette tokens).
   if (design === 'dock') {

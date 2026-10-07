@@ -16,7 +16,7 @@ import {
 import type { ProductFormat } from '@/components/marketplace/product-editor-steps';
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
 
-export type MarketplaceTab = 'products' | 'favorites';
+type MarketplaceTab = 'products' | 'favorites';
 
 const TAB_COPY: Record<MarketplaceTab, { title: string; description: string }> = {
   products: {

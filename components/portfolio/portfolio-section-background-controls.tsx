@@ -1,11 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import {
-  PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS,
-  type PortfolioSectionBackgroundFill,
-  type PortfolioSectionBackgroundSettings,
-} from '@/components/portfolio/portfolio-section-background-settings';
+import { PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS, type PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import { PortfolioBackgroundImageUpload } from '@/components/portfolio/portfolio-background-image-upload';
 import {
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
@@ -191,15 +187,15 @@ function OpacitySlider({ label, value, onChange }: { label: string; value: numbe
   );
 }
 
-export type GradientOrientation = 'horizontal' | 'vertical' | 'diagonal';
+type GradientOrientation = 'horizontal' | 'vertical' | 'diagonal';
 
-export const GRADIENT_ORIENTATION_ANGLE: Record<GradientOrientation, number> = {
+const GRADIENT_ORIENTATION_ANGLE: Record<GradientOrientation, number> = {
   horizontal: 90,
   vertical: 180,
   diagonal: 135,
 };
 
-export const GRADIENT_ORIENTATION_OPTIONS: { value: GradientOrientation; label: string }[] = [
+const GRADIENT_ORIENTATION_OPTIONS: { value: GradientOrientation; label: string }[] = [
   { value: 'horizontal', label: 'Horizontal' },
   { value: 'vertical', label: 'Vertical' },
   { value: 'diagonal', label: 'Diagonal' },
@@ -207,7 +203,7 @@ export const GRADIENT_ORIENTATION_OPTIONS: { value: GradientOrientation; label: 
 
 /** The stored value is still a free angle (for older data) — snap it to whichever of the 3
  *  orientation presets it's closest to, purely for display; picking a preset writes the exact angle. */
-export function gradientOrientationFromAngle(angle: number): GradientOrientation {
+function gradientOrientationFromAngle(angle: number): GradientOrientation {
   let closest: GradientOrientation = 'diagonal';
   let closestDiff = Infinity;
   (Object.keys(GRADIENT_ORIENTATION_ANGLE) as GradientOrientation[]).forEach((key) => {
@@ -228,7 +224,7 @@ const SPLIT_DIRECTION_OPTIONS: { value: PortfolioSectionBackgroundSettings['sect
 /** Fill type (solid / gradient / split / image), the relevant color(s) or uploaded photo, a
  *  compact orientation/direction/size/position picker per fill, and opacity. No explanatory
  *  copy, no preview swatch, no split-divider sub-controls. */
-export function SectionBackgroundFillControls({
+function SectionBackgroundFillControls({
   settings,
   onChange,
   renderColorField,
@@ -379,5 +375,3 @@ export function SectionBackgroundSettingsFields({
     </div>
   );
 }
-
-export type { PortfolioSectionBackgroundFill };

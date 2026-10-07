@@ -10,8 +10,8 @@ import {
   formatServicePrice,
   solidCoverHueFromTitle,
 } from '@/lib/profile-services';
-import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
-import type { ProfileServiceItem } from '@/types/ecosystem';
+import { MediaImage } from '@/components/ui/MediaImage';
+import type { ProfileServiceItem } from '@/types/profile';
 
 type PublicServiceLightboxProps = {
   service: ProfileServiceItem | null;
@@ -50,7 +50,6 @@ export function PublicServiceLightbox({
 
   if (!mounted || !open || !service) return null;
 
-  const cover = resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl;
   const deliveryLabel = formatServiceDelivery(service);
   const hue = solidCoverHueFromTitle(service.title || 'Service');
 
@@ -69,17 +68,21 @@ export function PublicServiceLightbox({
         className="relative z-10 flex max-h-[min(88vh,720px)] w-full max-w-lg flex-col overflow-hidden rounded-2xl bg-white shadow-2xl dark:bg-neutral-950"
       >
         <div className="relative aspect-[16/9] shrink-0 bg-neutral-100 dark:bg-neutral-800">
-          {cover ? (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img src={cover} alt="" className="h-full w-full object-cover" />
-          ) : (
-            <div
-              className="flex h-full items-center justify-center text-4xl font-bold text-white/90"
-              style={{ backgroundColor: `hsl(${hue} 48% 42%)` }}
-            >
-              {(service.title.trim()[0] || 'S').toUpperCase()}
-            </div>
-          )}
+          <MediaImage
+            src={service.coverImageUrl}
+            widths={[640, 828, 1080]}
+            sizes="(min-width: 640px) 512px, 100vw"
+            priority
+            fallback={
+              <div
+                className="flex h-full items-center justify-center text-4xl font-bold text-white/90"
+                style={{ backgroundColor: `hsl(${hue} 48% 42%)` }}
+              >
+                {(service.title.trim()[0] || 'S').toUpperCase()}
+              </div>
+            }
+            className="h-full w-full object-cover"
+          />
           <button
             type="button"
             onClick={onClose}

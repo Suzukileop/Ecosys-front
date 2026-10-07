@@ -11,10 +11,8 @@ import {
   type ContentTitleFieldHandle,
 } from '@/components/creator/ContentTitleField';
 import { CreatorContentComposeTools } from '@/components/creator/CreatorContentComposeTools';
-import {
-  ContentComposeMediaPreview,
-  useContentMediaUpload,
-} from '@/components/creator/creator-content-media';
+import { ContentComposeMedia } from '@/components/creator/ContentComposeMedia';
+import { useContentGalleryUpload } from '@/components/creator/creator-content-media';
 import {
   CREATOR_CONTENT_TITLE_MAX,
   creatorContentPublishDefaults,
@@ -22,6 +20,7 @@ import {
   type CreatorContentPublishFormValues,
 } from '@/components/creator/creator-content-form';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { AvatarImage } from '@/components/ui/PersonAvatar';
 import type { CreatorContentCreateBody } from '@/types/creator-content';
 import {
   creatorComposePlaceholder,
@@ -299,7 +298,7 @@ export function CreatorContentPublishForm({
 
   const { fields: toolFields, append: appendTool, remove: removeTool } = useFieldArray({ control, name: 'toolsUsed' });
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({ control, name: 'tags' });
-  const mediaUrl = watch('mediaUrl');
+  const mediaUrls = watch('mediaUrls');
   const mediaType = watch('mediaType');
   const title = watch('title') ?? '';
   const description = watch('description') ?? '';
@@ -309,10 +308,13 @@ export function CreatorContentPublishForm({
   const isPublic = watch('isPublic');
   const commentsEnabled = watch('commentsEnabled');
 
-  const media = useContentMediaUpload({
+  const media = useContentGalleryUpload({
     locale: 'en',
-    onUrlChange: (url) => {
-      setValue('mediaUrl', url, { shouldValidate: true });
+    urls: mediaUrls,
+    onChange: (urls) => {
+      setValue('mediaUrls', urls, { shouldValidate: true });
+      /* The cover stays in `mediaUrl`, so every surface that only knows one media keeps working. */
+      setValue('mediaUrl', urls[0] ?? '', { shouldValidate: true });
       setValue('mediaType', 'FILE', { shouldValidate: true });
     },
   });
@@ -325,7 +327,7 @@ export function CreatorContentPublishForm({
     onStepChange?.(step);
   }, [onStepChange, step]);
 
-  const hasMedia = Boolean(mediaUrl?.trim());
+  const hasMedia = mediaUrls.length > 0;
   const canPost = (Boolean(title.trim()) || Boolean(description.trim()) || hasMedia) && !media.uploading;
   const detailsCount =
     (description.trim() ? 1 : 0) + (watch('priceInfo')?.trim() ? 1 : 0) + tagFields.length + toolFields.length;
@@ -337,7 +339,8 @@ export function CreatorContentPublishForm({
       title: data.title?.trim() || null,
       genre: null,
       description: data.description?.trim() || null,
-      mediaUrl: data.mediaUrl.trim() || null,
+      mediaUrl: data.mediaUrls[0]?.trim() || data.mediaUrl.trim() || null,
+      mediaUrls: data.mediaUrls,
       mediaType: data.mediaType ?? 'FILE',
       moodLabel: data.moodLabel ?? null,
       moodEmoji: data.moodEmoji ?? null,
@@ -404,9 +407,10 @@ export function CreatorContentPublishForm({
       <input
         ref={media.inputRef}
         type="file"
+        multiple
         accept="image/jpeg,image/png,image/webp,image/gif,video/mp4,video/webm,video/quicktime,application/pdf,.jpg,.jpeg,.png,.webp,.gif,.mp4,.webm,.mov,.pdf"
         className="sr-only"
-        onChange={(e) => void media.onFileChange(e)}
+        onChange={(e) => void media.onFilesChange(e)}
       />
 
       {step === 1 ? (
@@ -420,14 +424,18 @@ export function CreatorContentPublishForm({
           </div>
 
           <div className="flex gap-3 px-4 pb-3 pt-1 sm:px-5">
-            {user?.avatarUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={user.avatarUrl} alt="" className="h-10 w-10 shrink-0 rounded-full object-cover" />
-            ) : (
-              <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] text-[13px] font-semibold text-white dark:bg-white dark:text-[#111111]">
-                {userInitials(creatorName)}
-              </div>
-            )}
+            {/* AvatarImage resolves the stored URL (relative upload paths, rendition params) and falls
+                back to initials on a load error — a bare <img> rendered as a broken icon. */}
+            <AvatarImage
+              src={user?.avatarUrl}
+              className="h-10 w-10 shrink-0 rounded-full object-cover"
+              displayWidth={40}
+              fallback={
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] text-[13px] font-semibold text-white dark:bg-white dark:text-[#111111]">
+                  {userInitials(creatorName)}
+                </div>
+              }
+            />
 
             <div className="min-w-0 flex-1">
               <AudiencePill isPublic={isPublic} onChange={(v) => setValue('isPublic', v, { shouldValidate: true })} />
@@ -454,18 +462,17 @@ export function CreatorContentPublishForm({
                 </p>
               ) : null}
 
-              {hasMedia ? (
+              {hasMedia || media.uploading ? (
                 <div className="mb-3">
-                  <ContentComposeMediaPreview
-                    locale="en"
-                    mediaUrl={mediaUrl ?? ''}
-                    fileName={media.fileName}
+                  <ContentComposeMedia
+                    urls={mediaUrls}
                     mediaType={mediaType}
-                    onRemove={() => {
-                      setValue('mediaUrl', '', { shouldValidate: true });
-                      setValue('mediaType', 'FILE', { shouldValidate: true });
-                      media.setFileName(null);
-                    }}
+                    fileName={media.fileName}
+                    uploading={media.uploading}
+                    onRemoveAt={media.removeAt}
+                    onMakeCover={media.makeCover}
+                    onAddMore={media.pickFiles}
+                    onClear={media.clear}
                   />
                 </div>
               ) : null}
@@ -494,7 +501,7 @@ export function CreatorContentPublishForm({
                     setValue('moodEmoji', mood?.emoji ?? null, { shouldValidate: true });
                   }}
                   onTaggedUsersChange={(users) => setValue('taggedUsers', users, { shouldValidate: true })}
-                  onMediaPick={() => media.pickFile()}
+                  onMediaPick={() => media.pickFiles()}
                   onInsertEmoji={(emoji) => titleFieldRef.current?.insertEmoji(emoji)}
                   mediaUploading={media.uploading}
                 />

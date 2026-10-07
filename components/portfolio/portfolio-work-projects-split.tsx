@@ -2,15 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
@@ -30,11 +22,6 @@ const SPLIT_IMAGE_PARALLAX = 0.75;
 const SPLIT_TEXT_PARALLAX = 1.2;
 const SPLIT_PARALLAX_TRAVEL = 64;
 const SPLIT_DESKTOP_MQ = '(min-width: 768px)';
-
-const SPLIT_HEADER_HIDDEN: CSSProperties = {
-  opacity: 0,
-  transform: 'translate3d(0, 22px, 0)',
-};
 
 function splitThumbRadiusClass(radius: PortfolioWorkProjectsSplitRadius): string {
   if (radius === 'none') return 'rounded-none';
@@ -86,10 +73,6 @@ function splitRowGapClass(gap: PortfolioWorkProjectsSplitSettings['rowGap']): st
   return 'gap-y-24 sm:gap-y-36 lg:gap-y-44 xl:gap-y-52';
 }
 
-function prefersReducedMotion(): boolean {
-  return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
 function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
   if (!node) return window;
   let parent: HTMLElement | null = node.parentElement;
@@ -132,18 +115,6 @@ function EditorialTitleText({ text }: { text: string }) {
 
 function formatSplitIndex(index: number): string {
   return String(index + 1).padStart(2, '0');
-}
-
-function revealElement(el: HTMLElement, delayMs: number): void {
-  el.style.transition = `opacity 0.85s ${SPLIT_ENTRANCE_EASE} ${delayMs}ms, transform 0.95s ${SPLIT_ENTRANCE_EASE} ${delayMs}ms`;
-  el.style.opacity = '1';
-  el.style.transform = 'translate3d(0, 0, 0)';
-}
-
-function showElementNow(el: HTMLElement): void {
-  el.style.transition = 'none';
-  el.style.opacity = '1';
-  el.style.transform = 'none';
 }
 
 function SplitTextLink({
@@ -306,117 +277,6 @@ function useSplitGalleryMotion(itemsKey: string): {
   }, [itemsKey]);
 
   return { rootRef, revealed };
-}
-
-/**
- * Split header — short hairline, italic last word, FOUC-safe entrance.
- */
-export function ProjectsSplitSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  trailing,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  trailing?: ReactNode;
-  className?: string;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || isEmpty) return;
-
-    if (prefersReducedMotion()) {
-      showElementNow(header);
-      return;
-    }
-
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      revealElement(header, 0);
-    };
-
-    const scrollParent = getScrollParent(header);
-    const ioRoot = scrollParent instanceof HTMLElement ? scrollParent : null;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            reveal();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
-    );
-    observer.observe(header);
-    const failSafe = window.setTimeout(reveal, 1600);
-
-    return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [heading, sub, isEmpty]);
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={headerRef}
-      className={`pf-work-split-header mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
-      data-pf-no-color-transition=""
-      style={SPLIT_HEADER_HIDDEN}
-    >
-      <style>{`
-        @media (prefers-reduced-motion: reduce) {
-          .pf-work-split-header {
-            opacity: 1 !important;
-            transform: none !important;
-            transition: none !important;
-          }
-        }
-      `}</style>
-      <div className="flex items-end justify-between gap-6 sm:gap-10">
-        <div className="min-w-0 max-w-3xl">
-          <div className="mb-5 flex items-center gap-3 sm:mb-6">
-            <span
-              className="h-px w-8 shrink-0 sm:w-10"
-              style={{ backgroundColor: titleColor, opacity: 0.45 }}
-              aria-hidden
-            />
-          </div>
-          {heading ? (
-            <h2
-              className="max-w-[20ch] text-3xl font-semibold tracking-[-0.038em] sm:text-4xl lg:text-[3.05rem] lg:leading-[1.08]"
-              style={{ color: titleColor }}
-            >
-              <EditorialTitleText text={heading} />
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              className={`max-w-xl text-base leading-[1.8] sm:text-lg sm:leading-[1.85] ${heading ? 'mt-4 sm:mt-5' : ''}`}
-              style={{ color: subtitleColor }}
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        {trailing ? <div className="shrink-0 pb-1">{trailing}</div> : null}
-      </div>
-    </header>
-  );
 }
 
 function SplitProjectTitle({
@@ -717,10 +577,4 @@ export function ProjectsSplitGallery({
       ))}
     </div>
   );
-}
-
-export function isProjectsSplitDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-split';
 }

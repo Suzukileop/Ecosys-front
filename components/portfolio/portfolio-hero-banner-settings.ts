@@ -5,17 +5,6 @@ export type PortfolioHeroIdentityIndexPortraitRadius = 'none' | 'medium' | 'full
 export type PortfolioHeroBowlIntroMotif = 'bowl' | 'hug' | 'orbs-top' | 'orbs-bottom';
 export type PortfolioHeroPortraitIdentityBottomGap = 'tight' | 'medium' | 'large' | 'xlarge';
 
-export const PORTFOLIO_HERO_PORTRAIT_IDENTITY_BOTTOM_GAP_OPTIONS: {
-  value: PortfolioHeroPortraitIdentityBottomGap;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'tight', label: 'Tight', description: 'Peu d’espace au-dessus du cadre.' },
-  { value: 'medium', label: 'Medium', description: 'Espacement intermédiaire.' },
-  { value: 'large', label: 'Large', description: 'Espace généreux.' },
-  { value: 'xlarge', label: 'Extra large', description: 'Très grand espace au-dessus du cadre.' },
-];
-
 export const PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS: {
   value: PortfolioHeroIdentityIndexPortraitRadius;
   label: string;
@@ -224,7 +213,7 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
   },
 ];
 
-export function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBannerDesign {
+function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBannerDesign {
   return (
     value === 'cinematic-reveal' ||
     value === 'swiss-editorial' ||
@@ -509,7 +498,7 @@ export function resolveHeroAvailabilityValue(
  * Display-only polish for the recurring “scientist” misspelling in hero titles.
  * Does not rewrite the stored profile value.
  */
-export function polishHeroSpecialtyCopy(value: string): string {
+function polishHeroSpecialtyCopy(value: string): string {
   return value.replace(/\bscientis\b/gi, (match) =>
     match[0] === 'S' ? 'Scientist' : 'scientist'
   );
@@ -523,19 +512,6 @@ export function resolveHeroSpecialtyValue(specialite?: string | null): string {
 /** Tailwind class for hero media when noir & blanc is enabled. */
 export function heroImageGrayscaleClass(enabled?: boolean): string {
   return enabled === true ? 'grayscale' : '';
-}
-
-/** Merge grayscale into an existing media style (portrait fit/scale, etc.). */
-export function withHeroImageGrayscale(
-  style: Record<string, unknown> | undefined,
-  enabled?: boolean
-): Record<string, unknown> | undefined {
-  if (enabled !== true) return style;
-  const prev = typeof style?.filter === 'string' ? style.filter.trim() : '';
-  const filter = prev.includes('grayscale')
-    ? prev
-    : [prev, 'grayscale(1)'].filter(Boolean).join(' ');
-  return { ...(style ?? {}), filter };
 }
 
 /** Profile years of experience — short value for identity-index rail. */

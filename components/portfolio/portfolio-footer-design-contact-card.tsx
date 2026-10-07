@@ -49,7 +49,7 @@ function ContactCardStyles() {
   return <style dangerouslySetInnerHTML={{ __html: CONTACT_CARD_CSS }} />;
 }
 
-export interface FooterDesignContactCardProps {
+interface FooterDesignContactCardProps {
   creatorName: string;
   creatorId: string;
   email?: string | null;

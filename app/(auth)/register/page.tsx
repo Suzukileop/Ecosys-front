@@ -20,6 +20,7 @@ import {
 import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { AxiosError } from 'axios';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
 
@@ -119,7 +120,7 @@ function RegisterForm() {
         password: data.password,
         role: 'CREATOR',
       });
-      window.location.assign('/dashboard/home');
+      window.location.assign(SIGNED_IN_HOME);
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.response?.status === 429) {

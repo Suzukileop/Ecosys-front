@@ -1,4 +1,4 @@
-import type { ReactNode, SVGProps } from 'react';
+import type { ReactNode } from 'react';
 
 export type SocialPlatformKey =
   | 'youtube'
@@ -174,12 +174,4 @@ export function SocialPlatformIcon({
         </svg>
       );
   }
-}
-
-export function ExternalLinkChevron({ className = 'h-4 w-4' }: SVGProps<SVGSVGElement>) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M7 17L17 7M17 7H9M17 7v8" />
-    </svg>
-  );
 }

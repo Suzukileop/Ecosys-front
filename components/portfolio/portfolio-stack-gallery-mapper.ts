@@ -32,6 +32,38 @@ const TOOLS_GALLERY_DEFAULTS: Pick<
   headerDesign: 'editorial',
 };
 
+/** Tools' Editorial header text styling has no Stack counterpart — the gallery renderers never read it. */
+const TOOLS_EDITORIAL_HEADER_DEFAULTS: Pick<
+  PortfolioToolsPresentationSettings,
+  | 'headerSerifLeadSubtitleText'
+  | 'headerEditorialLabelText'
+  | 'headerEditorialTitleText'
+  | 'headerEditorialSubtitleText'
+  | 'headerEditorialLabelColor'
+  | 'headerEditorialTitleColor'
+  | 'headerEditorialSubtitleColor'
+  | 'headerEditorialLabelSize'
+  | 'headerEditorialTitleSize'
+  | 'headerEditorialSubtitleSize'
+  | 'headerEditorialLabelWeight'
+  | 'headerEditorialTitleWeight'
+  | 'headerEditorialSubtitleWeight'
+> = {
+  headerSerifLeadSubtitleText: '',
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialTitleSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialTitleWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
+};
+
 function mapStackTitlePresetToTools(
   preset: PortfolioStackTitlePresetLegacy
 ): PortfolioToolsPresentationSettings['titlePreset'] {
@@ -43,7 +75,7 @@ function mapStackTitlePresetToTools(
   return 'workflow-tools';
 }
 
-export type StackPresentationToToolsGalleryOverrides = Partial<
+type StackPresentationToToolsGalleryOverrides = Partial<
   Pick<
     PortfolioToolsPresentationSettings,
     | 'design'
@@ -91,6 +123,7 @@ export function stackPresentationToToolsGallery(
 
   return {
     ...TOOLS_GALLERY_DEFAULTS,
+    ...TOOLS_EDITORIAL_HEADER_DEFAULTS,
     ...shared,
     design: galleryDesign,
     titlePreset: mapStackTitlePresetToTools(titlePreset),

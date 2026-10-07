@@ -286,7 +286,7 @@ export const PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS: {
   },
 ];
 
-export function normalizePortfolioNavEditorialBarButtonInk(
+function normalizePortfolioNavEditorialBarButtonInk(
   value: unknown,
   fallback: PortfolioNavEditorialBarButtonInk = 'principal'
 ): PortfolioNavEditorialBarButtonInk {
@@ -404,7 +404,7 @@ export function normalizePortfolioNavContactButtonIconPosition(
   return fallback;
 }
 
-export function normalizePortfolioNavEditorialBarContactLink(
+function normalizePortfolioNavEditorialBarContactLink(
   value: unknown,
   fallback: PortfolioNavEditorialBarContactLink = 'phone'
 ): PortfolioNavEditorialBarContactLink {
@@ -412,23 +412,6 @@ export function normalizePortfolioNavEditorialBarContactLink(
   if (value === 'section') return 'phone';
   return fallback;
 }
-
-export const PORTFOLIO_NAV_EDITORIAL_BAR_CONTACT_LINK_OPTIONS: {
-  value: PortfolioNavEditorialBarContactLink;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'phone',
-    label: 'Téléphone',
-    description: 'Bouton qui ouvre le numéro du profil (tel:).',
-  },
-  {
-    value: 'mail',
-    label: 'E-mail',
-    description: 'Bouton qui ouvre l’adresse e-mail du profil (mailto:).',
-  },
-];
 
 export const PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS: {
   value: PortfolioNavContactButtonIconPosition;
@@ -440,7 +423,7 @@ export const PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS: {
   { value: 'none', label: 'No icon', description: 'Label only.' },
 ];
 
-export function normalizePortfolioNavContactButtonShape(
+function normalizePortfolioNavContactButtonShape(
   value: unknown,
   fallback: PortfolioNavContactButtonShape = 'pill'
 ): PortfolioNavContactButtonShape {
@@ -476,7 +459,7 @@ export function portfolioNavContactButtonShapeClass(
   }
 }
 
-export type PortfolioNavContactButtonChromeInput = {
+type PortfolioNavContactButtonChromeInput = {
   background: string;
   color: string;
   border: string;
@@ -546,19 +529,6 @@ function portfolioNavContactButtonBottomLineBorderStyle(color: string): Pick<
   };
 }
 
-/** Framed contact shapes (square / rounded / soft / pill) that need a visible outline on transparent shells. */
-export function portfolioNavContactButtonShapeUsesOutline(
-  shape: PortfolioNavContactButtonShape | undefined
-): boolean {
-  const normalized = normalizePortfolioNavContactButtonShape(shape);
-  return (
-    normalized === 'square' ||
-    normalized === 'rounded' ||
-    normalized === 'soft' ||
-    normalized === 'pill'
-  );
-}
-
 /** Shell paint for contact CTA — handles frameless / bottom-line variants. */
 export function portfolioNavContactButtonShellPresentation(
   shape: PortfolioNavContactButtonShape | undefined,
@@ -614,39 +584,7 @@ export function portfolioNavContactButtonShellPresentation(
 /** Custom extra reuses the same corner-shape tokens as the Contact CTA. */
 export type PortfolioNavCustomExtraShape = PortfolioNavContactButtonShape;
 
-export const PORTFOLIO_NAV_EXTRAS_PLACEMENT_OPTIONS: {
-  value: PortfolioNavExtrasPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'free-side',
-    label: 'Côté libre',
-    description: 'Dans l’espace libre (détaché ou dans le créneau gauche/droite) — comportement actuel.',
-  },
-  {
-    value: 'before-nav',
-    label: 'Avant la navigation',
-    description: 'Juste avant les boutons de section (au-dessus sur rail vertical).',
-  },
-  {
-    value: 'after-nav',
-    label: 'Après la navigation',
-    description: 'Juste après les boutons de section (en dessous sur rail vertical).',
-  },
-];
-
-export const PORTFOLIO_NAV_CUSTOM_EXTRA_DISPLAY_OPTIONS: {
-  value: PortfolioNavCustomExtraDisplay;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'logo', label: 'Logo', description: 'Icône / image seule.' },
-  { value: 'text', label: 'Texte', description: 'Libellé seul.' },
-  { value: 'both', label: 'Les deux', description: 'Logo et texte côte à côte.' },
-];
-
-export const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_OPTIONS: {
+const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_OPTIONS: {
   value: PortfolioNavCustomExtraFont;
   label: string;
   description: string;
@@ -672,7 +610,7 @@ export const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_WEIGHT_OPTIONS: {
+const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_WEIGHT_OPTIONS: {
   value: PortfolioNavCustomExtraFontWeight;
   label: string;
   description: string;
@@ -708,7 +646,7 @@ export function normalizePortfolioNavCustomExtraDisplay(
   return fallback;
 }
 
-export function normalizePortfolioNavCustomExtraFont(
+function normalizePortfolioNavCustomExtraFont(
   value: unknown,
   fallback: PortfolioNavCustomExtraFont = 'sans'
 ): PortfolioNavCustomExtraFont {
@@ -716,7 +654,7 @@ export function normalizePortfolioNavCustomExtraFont(
   return fallback;
 }
 
-export function normalizePortfolioNavCustomExtraFontWeight(
+function normalizePortfolioNavCustomExtraFontWeight(
   value: unknown,
   fallback: PortfolioNavCustomExtraFontWeight = 'semibold'
 ): PortfolioNavCustomExtraFontWeight {
@@ -765,21 +703,6 @@ export function resolvePortfolioNavExtraAdjacentPosition(
   if (side === 'left') return 'before';
   if (side === 'right') return 'after';
   return resolved === 'before-nav' ? 'before' : 'after';
-}
-
-/**
- * @deprecated Prefer resolvePortfolioNavExtraAdjacentPosition per-extra.
- * Kept for callers that still read the shared extrasPlacement / extrasSide pair.
- */
-export function resolvePortfolioNavAdjacentExtrasPosition(
-  settings: Pick<PortfolioNavSettings, 'extrasPlacement' | 'extrasSide'>
-): 'before' | 'after' {
-  return (
-    resolvePortfolioNavExtraAdjacentPosition(
-      settings.extrasPlacement,
-      settings.extrasSide
-    ) ?? 'after'
-  );
 }
 
 function clampInt(value: unknown, min: number, max: number, fallback: number): number {
@@ -839,7 +762,7 @@ export function sanitizePortfolioNavCustomHref(value: unknown): string | null {
   return null;
 }
 
-export const PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS: {
+const PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS: {
   value: PortfolioNavContactCtaIcon;
   label: string;
   description: string;
@@ -858,7 +781,7 @@ export const PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS: {
   { value: 'user', label: 'Profil', description: 'Silhouette utilisateur.' },
 ];
 
-export const PORTFOLIO_NAV_CONTACT_CTA_DIRECTION_ICONS: PortfolioNavContactCtaIcon[] = [
+const PORTFOLIO_NAV_CONTACT_CTA_DIRECTION_ICONS: PortfolioNavContactCtaIcon[] = [
   'arrow-up-right',
   'arrow-right',
   'arrow-up',
@@ -1402,7 +1325,7 @@ export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
   },
 ];
 
-export const PORTFOLIO_SETTINGS_STORAGE_KEY = 'portfolio-section-settings-v1';
+const PORTFOLIO_SETTINGS_STORAGE_KEY = 'portfolio-section-settings-v1';
 
 export function createDefaultPortfolioSettings(): PortfolioSettings {
   return {
@@ -2332,6 +2255,22 @@ function mergeNavLinkIconSources(
   return next.length > 0 ? Array.from(new Set(next)) : [...DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES];
 }
 
+const SECTION_ENABLED_KEYS = [
+  'hero',
+  'info',
+  'work',
+  'services',
+  'aboutUs',
+  'experience',
+  'team',
+  'gallery',
+  'faq',
+  'contact',
+  'tools',
+  'stack',
+  'footer',
+] as const;
+
 export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
   const defaults = createDefaultPortfolioSettings();
   if (!isRecord(stored)) return defaults;
@@ -2536,6 +2475,16 @@ export function mergePortfolioSettings(stored: unknown): PortfolioSettings {
       : [],
   };
 
+  // Each `merge*Presentation(defaults.X, stored.X)` spreads the *full* default section
+  // (`...base`), which carries `enabled: true` and lands after `mergeSectionCopy` — so the
+  // stored "Show section" value was silently overwritten. Re-apply it last, per section.
+  for (const key of SECTION_ENABLED_KEYS) {
+    const storedSection = stored[key];
+    if (isRecord(storedSection) && typeof storedSection.enabled === 'boolean') {
+      (merged[key] as { enabled: boolean }).enabled = storedSection.enabled;
+    }
+  }
+
   const storedGlobal = isRecord(stored.global) ? stored.global : null;
   const hadStoredPalettePair =
     Boolean(storedGlobal) &&
@@ -2583,7 +2532,7 @@ export function stampPortfolioSettingsUpdatedAt(
   return { ...settings, updatedAt: at };
 }
 
-export function portfolioSettingsUpdatedAtMs(settings: PortfolioSettings | null | undefined): number {
+function portfolioSettingsUpdatedAtMs(settings: PortfolioSettings | null | undefined): number {
   if (!settings?.updatedAt) return 0;
   const ms = Date.parse(settings.updatedAt);
   return Number.isFinite(ms) ? ms : 0;

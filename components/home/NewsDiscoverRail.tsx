@@ -6,36 +6,30 @@ import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { faChevronRight } from '@fortawesome/free-solid-svg-icons';
 import {
   faCamera,
-  faChartBar,
   faCompass,
   faFileCode,
   faFileVideo,
   faFolderOpen,
-  faLightbulb,
   faNewspaper,
   faObjectGroup,
   faPenToSquare,
 } from '@fortawesome/free-regular-svg-icons';
 import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
-/** The eight most in-demand fields, offered as News feed filters. */
-export const NEWS_INTERESTS = [
-  'AI',
+/** The most in-demand fields, offered as News feed filters. */
+const NEWS_INTERESTS = [
   'Developer',
   'Video editor',
-  'Data analyst',
   'UI / UX',
   'Design',
   'Marketing',
   'Photography',
 ] as const;
 
-export type NewsInterest = (typeof NEWS_INTERESTS)[number];
+type NewsInterest = (typeof NEWS_INTERESTS)[number];
 
 const INTEREST_ICONS: Record<NewsInterest, IconDefinition> = {
-  AI: faLightbulb,
   Developer: faFileCode,
   'Video editor': faFileVideo,
-  'Data analyst': faChartBar,
   'UI / UX': faObjectGroup,
   Design: faPenToSquare,
   Marketing: faNewspaper,
@@ -48,14 +42,6 @@ type NewsDiscoverProps = {
   search: string;
   onSearchChange: (value: string) => void;
 };
-
-function chipClass(active: boolean) {
-  return `inline-flex h-10 shrink-0 items-center rounded-full px-4 text-[15px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:focus-visible:ring-white/30 ${
-    active
-      ? 'bg-[#111111] font-medium text-white dark:bg-white dark:text-[#111111]'
-      : 'border border-black/[0.08] text-neutral-700 hover:border-black/20 hover:text-[#111111] dark:border-white/[0.1] dark:text-neutral-300 dark:hover:border-white/25 dark:hover:text-white'
-  }`;
-}
 
 function SearchField({ search, onSearchChange, id }: Pick<NewsDiscoverProps, 'search' | 'onSearchChange'> & { id: string }) {
   return (
@@ -80,7 +66,7 @@ function SearchField({ search, onSearchChange, id }: Pick<NewsDiscoverProps, 'se
         onChange={(e) => onSearchChange(e.target.value)}
         placeholder="Search content…"
         autoComplete="off"
-        className="h-11 w-full rounded-lg border border-black/[0.08] bg-white pl-10 dark:bg-transparent pr-3 text-[15px] text-[#111111] outline-none transition-colors placeholder:text-neutral-400 focus:border-black/25 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-white/25"
+        className="gn-inset h-11 w-full rounded-full pl-10 pr-3 text-[15px] text-[#111111] outline-none transition-colors placeholder:text-neutral-400 focus:border-black/25 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-white/25"
       />
     </div>
   );
@@ -89,15 +75,15 @@ function SearchField({ search, onSearchChange, id }: Pick<NewsDiscoverProps, 'se
 export function PortfolioCta() {
   return (
     <Link
-      href="/dashboard/portfolio"
-      className="group flex items-center gap-3.5 bg-[#EEF0F2] px-6 py-4 md:rounded-lg md:px-4 transition-[filter] hover:brightness-[0.97] dark:hover:brightness-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:bg-[#111111] dark:hover:bg-white/[0.04]"
+      href="/studio"
+      className="gn-card group flex items-center gap-3.5 px-6 py-4 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 md:px-4"
     >
-      <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-lg bg-[#111111] text-white dark:bg-white dark:text-[#111111]">
+      <span className="gn-tile flex h-10 w-10 shrink-0 items-center justify-center rounded-lg">
         <FontAwesomeIcon icon={faFolderOpen} className="h-4 w-4" />
       </span>
       <span className="min-w-0 flex-1">
-        <span className="block truncate text-[16px] font-medium text-[#111111] dark:text-white">Build your portfolio</span>
-        <span className="mt-0.5 block truncate text-[14px] text-neutral-500 dark:text-neutral-400">
+        <span className="block truncate text-[15px] font-semibold text-[#111111] dark:text-white">Build your portfolio</span>
+        <span className="mt-0.5 block truncate text-[13px] text-neutral-500 dark:text-neutral-400">
           Showcase your best work
         </span>
       </span>
@@ -125,7 +111,7 @@ function InterestNavItem({
       type="button"
       onClick={onClick}
       aria-pressed={active}
-      className={`flex min-h-[3.25rem] w-full items-center gap-3.5 rounded-lg px-3 py-3.5 text-left text-[16px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+      className={`gn-nav-item flex min-h-[3rem] w-full items-center gap-3.5 rounded-lg px-3 py-3 text-left text-[15px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
         active
           ? 'font-medium text-[#FF5722]'
           : 'font-normal text-[#222222] hover:bg-black/[0.03] hover:text-[#0A0A0A] dark:text-neutral-300 dark:hover:bg-white/[0.05] dark:hover:text-white'
@@ -140,6 +126,47 @@ function InterestNavItem({
   );
 }
 
+/**
+ * Discover for phones and tablets. The right rail only exists from `lg`, which used to leave every
+ * smaller screen without any way to filter the feed by field — the most direct discovery tool the
+ * page has. Same interests, as a swipeable chip row under the tabs (44px touch height on phones).
+ */
+export function NewsInterestChips({
+  selected,
+  onSelect,
+}: Pick<NewsDiscoverProps, 'selected' | 'onSelect'>) {
+  const chips: { label: string; value: string | null }[] = [
+    { label: 'All', value: null },
+    ...NEWS_INTERESTS.map((label) => ({ label, value: label as string })),
+  ];
+  return (
+    <nav
+      aria-label="Filter by interest"
+      className="mt-3 flex gap-2 overflow-x-auto px-4 pb-1 sm:px-8 md:px-0 lg:hidden [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+    >
+      {chips.map((chip) => {
+        const active = (selected ?? null) === chip.value;
+        return (
+          <button
+            key={chip.label}
+            type="button"
+            aria-pressed={active}
+            onClick={() => onSelect(active && chip.value !== null ? null : chip.value)}
+            data-pf-no-color-transition
+            className={`inline-flex h-10 shrink-0 items-center rounded-full px-4 text-[14px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 sm:h-9 ${
+              active
+                ? 'bg-[#FF5722]/10 text-[#FF5722]'
+                : 'gn-soft text-neutral-600 hover:text-[#111111] dark:text-neutral-300 dark:hover:text-white'
+            }`}
+          >
+            {chip.label}
+          </button>
+        );
+      })}
+    </nav>
+  );
+}
+
 /** Desktop right rail — portfolio shortcut on top, then a Discover panel styled like the studio "Manage" nav. */
 export function NewsDiscoverRail(props: NewsDiscoverProps) {
   return (
@@ -147,11 +174,12 @@ export function NewsDiscoverRail(props: NewsDiscoverProps) {
       <PortfolioCta />
       <div className="flex min-h-0 flex-col overflow-hidden">
         <div className="flex h-14 shrink-0 items-center px-5">
-          <p className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#666666] dark:text-neutral-500">
+          <p className="text-[12px] font-semibold uppercase tracking-[0.16em] text-[#666666] dark:text-neutral-500">
             Discover
           </p>
         </div>
-        <div className="px-4 pt-4">
+        <div className="gn-card mt-3 flex min-h-0 flex-col overflow-hidden">
+        <div className="px-2.5 pt-3">
           <SearchField id="news-discover-search" search={props.search} onSearchChange={props.onSearchChange} />
         </div>
         <nav
@@ -177,39 +205,8 @@ export function NewsDiscoverRail(props: NewsDiscoverProps) {
             );
           })}
         </nav>
+        </div>
       </div>
     </ProfileSectionStickyAside>
-  );
-}
-
-/** Mobile / tablet counterpart shown above the feed. */
-export function NewsDiscoverBar(props: NewsDiscoverProps) {
-  return (
-    <div className="space-y-4">
-      <SearchField id="news-discover-search-mobile" search={props.search} onSearchChange={props.onSearchChange} />
-      <div
-        className="-mx-4 flex gap-2 overflow-x-auto px-4 pb-1 [scrollbar-width:none] sm:-mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
-        role="group"
-        aria-label="Filter by interest"
-      >
-        <button type="button" onClick={() => props.onSelect(null)} aria-pressed={!props.selected} className={chipClass(!props.selected)}>
-          All
-        </button>
-        {NEWS_INTERESTS.map((label) => {
-          const active = props.selected === label;
-          return (
-            <button
-              key={label}
-              type="button"
-              onClick={() => props.onSelect(active ? null : label)}
-              aria-pressed={active}
-              className={chipClass(active)}
-            >
-              {label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
   );
 }

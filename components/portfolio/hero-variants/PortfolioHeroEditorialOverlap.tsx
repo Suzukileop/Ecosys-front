@@ -19,7 +19,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 
-export type EditorialOverlapHeroProps = {
+type EditorialOverlapHeroProps = {
   image: string | null;
   specialty: string;
   greeting: string;
@@ -76,7 +76,7 @@ function overlapScrollParent(el: HTMLElement | null): HTMLElement | undefined {
  * Editorial overlap collage — full-bleed photo + scooped text panel.
  * Desktop: absolute overlap, vertically centered. Mobile: stacked tuck.
  */
-export function EditorialOverlapHero({
+function EditorialOverlapHero({
   image,
   specialty,
   greeting,

@@ -7,6 +7,7 @@ import {
   servicesHeaderPaletteTokenColor,
   type PortfolioServicesHeaderBillboardWordStyle,
 } from '@/components/portfolio/portfolio-services-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BIG_WORD = 'SERVICES';
 const DEFAULT_COUNT_TEXT = '{count} services — see what I offer below';
@@ -121,7 +122,8 @@ export function ServicesHeaderBillboardHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_SERVICES_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const bigWord = (presentation.headerBillboardBigWord || DEFAULT_BIG_WORD).trim();
   const countTemplate = presentation.headerBillboardCountText || DEFAULT_COUNT_TEXT;
   const countText = countTemplate.replace('{count}', String(itemCount ?? 0));

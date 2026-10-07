@@ -9,6 +9,7 @@ import {
   teamHeaderPaletteTokenColor,
   type PortfolioTeamHeaderTitleSize,
 } from '@/components/portfolio/portfolio-team-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
  *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
@@ -30,8 +31,7 @@ function teamHeaderScrollParent(el: HTMLElement | null): HTMLElement | undefined
 // Two short default words — a user who hasn't touched any of the 4 word
 // fields yet still sees a live band. As soon as any field is filled in,
 // only the filled slots show (each is independently droppable).
-const DEFAULT_WORD_1 = 'Meet';
-const DEFAULT_WORD_2 = 'Team';
+const DEFAULT_WORD = 'Team';
 const MARQUEE_REPEATS = 4;
 const MARQUEE_SPEED_PX = 44; // Experience's "medium" default
 const MARQUEE_GAP = '1rem'; // "md" default
@@ -99,7 +99,8 @@ export function TeamHeaderMarqueeHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const rawWords = [
     presentation.headerMarqueeWord1Text,
     presentation.headerMarqueeWord2Text,
@@ -107,7 +108,7 @@ export function TeamHeaderMarqueeHeader({
     presentation.headerMarqueeWord4Text,
   ].map((word) => (word ?? '').trim());
   const anyWordProvided = rawWords.some(Boolean);
-  const displayWords = anyWordProvided ? rawWords.filter(Boolean) : [DEFAULT_WORD_1, DEFAULT_WORD_2];
+  const displayWords = anyWordProvided ? rawWords.filter(Boolean) : [DEFAULT_WORD];
   const wordsKey = displayWords.join('|');
   const ink = teamHeaderPaletteTokenColor(presentation.headerMarqueeWordColor ?? 'principal');
   const fontSize = WORD_SIZE[presentation.headerMarqueeSize ?? 'md'];

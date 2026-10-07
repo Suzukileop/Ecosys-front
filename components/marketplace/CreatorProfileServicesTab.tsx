@@ -11,8 +11,8 @@ import {
   formatServicePrice,
   solidCoverHueFromTitle,
 } from '@/lib/profile-services';
-import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
-import type { ProfileServiceItem } from '@/types/ecosystem';
+import { MediaImage } from '@/components/ui/MediaImage';
+import type { ProfileServiceItem } from '@/types/profile';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 
 type CreatorProfileServicesTabProps = {
@@ -21,37 +21,36 @@ type CreatorProfileServicesTabProps = {
 };
 
 function ServiceCard({ service, onOpen }: { service: ProfileServiceItem; onOpen: () => void }) {
-  const cover = resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl;
   const deliveryLabel = formatServiceDelivery(service);
   const title = service.title?.trim() || 'Service';
   const hue = solidCoverHueFromTitle(title);
+  const solidCover = (
+    <div
+      className="flex h-full items-center justify-center text-4xl font-semibold text-white/90"
+      style={{ backgroundColor: `hsl(${hue} 32% 38%)` }}
+    >
+      {title[0].toUpperCase()}
+    </div>
+  );
 
   return (
     <button
       type="button"
       onClick={onOpen}
-      className="group flex h-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white text-left transition-colors duration-300 hover:border-black/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.18] dark:focus-visible:ring-white/25"
+      className="group flex h-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white text-left max-sm:-mx-5 max-sm:w-[calc(100%+2.5rem)] max-sm:rounded-none max-sm:border-x-0 max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16] transition-colors duration-300 hover:border-black/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.18] dark:focus-visible:ring-white/25"
     >
       <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900">
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element -- storage-hosted cover
-          <img
-            src={cover}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
-          />
-        ) : (
-          <div
-            className="flex h-full items-center justify-center text-4xl font-semibold text-white/90"
-            style={{ backgroundColor: `hsl(${hue} 32% 38%)` }}
-          >
-            {title[0].toUpperCase()}
-          </div>
-        )}
+        <MediaImage
+          src={service.coverImageUrl}
+          widths={[384, 640, 828]}
+          sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+          fallback={solidCover}
+          className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
+        />
       </div>
 
-      <div className="flex flex-1 flex-col p-6">
-        <div className="pb-6">
+      <div className="flex flex-1 flex-col p-6 max-sm:px-5 max-sm:py-5">
+        <div className="pb-5 sm:pb-6">
           {service.specialty ? (
             <p className="mb-2 truncate text-[14px] capitalize text-neutral-600 dark:text-neutral-300">
               {service.specialty.toLowerCase()}
@@ -105,8 +104,8 @@ export function CreatorProfileServicesTab({ creatorId, profile }: CreatorProfile
   const discussHref = isOwn
     ? null
     : user
-      ? `/dashboard/discussions?user=${encodeURIComponent(creatorId)}`
-      : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(creatorId)}`)}`;
+      ? `/messages?user=${encodeURIComponent(creatorId)}`
+      : `/login?redirect=${encodeURIComponent(`/messages?user=${encodeURIComponent(creatorId)}`)}`;
 
   useEffect(() => {
     if (!deepLinkServiceId || services.length === 0) return;

@@ -32,10 +32,6 @@ if (typeof window !== 'undefined') {
 }
 
 const SPEC_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const SPEC_HIDDEN: CSSProperties = {
-  opacity: 0,
-  transform: 'translate3d(0, 28px, 0)',
-};
 
 /** Varied, non-repeating rhythm for the asymmetric left-offset (desktop only). */
 const SPEC_SHIFT_PATTERN = [0, 9, 3, 12, 6];
@@ -159,35 +155,6 @@ function formatSpecIndex(index: number): string {
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-function specScrollRoot(el: HTMLElement | null): HTMLElement | null {
-  let node = el?.parentElement ?? null;
-  while (node && node !== document.body) {
-    const { overflowY } = getComputedStyle(node);
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
-      node.scrollHeight > node.clientHeight + 1
-    ) {
-      return node;
-    }
-    node = node.parentElement;
-  }
-  return null;
-}
-
-function revealElement(el: HTMLElement, delayMs: number): void {
-  el.style.transition = `opacity 0.85s ${SPEC_EASE} ${delayMs}ms, transform 0.95s ${SPEC_EASE} ${delayMs}ms`;
-  el.style.opacity = '1';
-  el.style.transform = 'translate3d(0, 0, 0)';
-  el.dataset.revealed = 'true';
-}
-
-function showElementNow(el: HTMLElement): void {
-  el.style.transition = 'none';
-  el.style.opacity = '1';
-  el.style.transform = 'none';
-  el.dataset.revealed = 'true';
 }
 
 function SpecConsultAnchor({
@@ -803,128 +770,6 @@ function SpecSheet({
   );
 }
 
-/**
- * Spec header — datasheet section title with optional typography overrides.
- * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
- */
-export function ProjectsSpecSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  titleClassName = '',
-  titleStyle,
-  trailing,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  titleClassName?: string;
-  titleStyle?: CSSProperties;
-  trailing?: ReactNode;
-  className?: string;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-
-  const resolvedTitleColor =
-    (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
-
-  const restTitleStyle: CSSProperties = { ...(titleStyle ?? {}) };
-  delete restTitleStyle.fontSize;
-  delete restTitleStyle.lineHeight;
-  delete restTitleStyle.letterSpacing;
-
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || isEmpty) return;
-
-    if (prefersReducedMotion()) {
-      showElementNow(header);
-      return;
-    }
-
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      revealElement(header, 0);
-    };
-
-    const ioRoot = specScrollRoot(header);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            reveal();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
-    );
-    observer.observe(header);
-    const failSafe = window.setTimeout(reveal, 1600);
-
-    return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [heading, sub, isEmpty]);
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={headerRef}
-      className={`pf-work-spec-header mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
-      data-pf-no-color-transition=""
-      style={SPEC_HIDDEN}
-    >
-      <style>{SPEC_MOTION_CSS}</style>
-      <div className="flex items-end justify-between gap-6 sm:gap-10">
-        <div className="min-w-0 max-w-3xl">
-          <div className="mb-5 flex items-center gap-3 sm:mb-6">
-            <span
-              className="h-px w-7 shrink-0 sm:w-9"
-              style={{ backgroundColor: resolvedTitleColor, opacity: 0.55 }}
-              aria-hidden
-            />
-          </div>
-          {heading ? (
-            <h2
-              className={titleClassName.trim() || 'font-medium tracking-[-0.04em]'}
-              style={{
-                ...restTitleStyle,
-                color: resolvedTitleColor,
-                fontSize: 'clamp(2.35rem, 5.6vw, 4.35rem)',
-                lineHeight: 1.06,
-              }}
-            >
-              {heading}
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              className={`max-w-xl text-[0.95rem] leading-[1.7] sm:text-base sm:leading-[1.75] ${
-                heading ? 'mt-4' : ''
-              }`}
-              style={{ color: subtitleColor, opacity: 0.82 }}
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        {trailing ? <div className="shrink-0 pb-1">{trailing}</div> : null}
-      </div>
-    </header>
-  );
-}
-
 function specSheetGapClass(gap: PortfolioWorkProjectsSpecSettings['sheetGap']): string {
   if (gap === 'tight') return 'mt-12 sm:mt-14 lg:mt-16';
   if (gap === 'md') return 'mt-20 sm:mt-24 lg:mt-28';
@@ -1096,10 +941,4 @@ export function ProjectsSpecGallery({
       <SpecHoverPreview galleryRef={rootRef} />
     </section>
   );
-}
-
-export function isProjectsSpecDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-spec';
 }

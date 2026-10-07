@@ -1,6 +1,6 @@
 import type { DirectMessage } from '@/types/messaging';
 
-export type TimelineItem =
+type TimelineItem =
   | { kind: 'date'; key: string; label: string }
   | { kind: 'message'; key: string; message: DirectMessage };
 
@@ -10,7 +10,7 @@ function dayKey(iso: string): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
-export function formatConversationDateLabel(iso: string): string {
+function formatConversationDateLabel(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
   const now = new Date();
@@ -28,17 +28,6 @@ export function formatConversationDateLabel(iso: string): string {
     date.getDate() === yesterday.getDate();
   if (isYesterday) return `YESTERDAY — ${datePart}`;
   return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
-}
-
-export function formatConversationDateTime(iso: string): string {
-  const date = new Date(iso);
-  if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleString('en-US', {
-    day: 'numeric',
-    month: 'short',
-    hour: '2-digit',
-    minute: '2-digit',
-  });
 }
 
 export function formatConversationTime(iso: string): string {

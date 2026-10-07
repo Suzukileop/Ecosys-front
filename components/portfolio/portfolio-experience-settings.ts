@@ -26,13 +26,7 @@ import {
   mergeServicesCardBackgroundSettings,
   type PortfolioServicesCardBackgroundSettings,
 } from '@/components/portfolio/portfolio-services-card-background-settings';
-import {
-  servicesCardPaddingClass,
-  servicesCardRadiusClass,
-  type PortfolioServicesCardBorder,
-  type PortfolioServicesCardPadding,
-  type PortfolioServicesCardRadius,
-} from '@/components/portfolio/portfolio-services-settings';
+import { type PortfolioServicesCardBorder, type PortfolioServicesCardPadding, type PortfolioServicesCardRadius } from '@/components/portfolio/portfolio-services-settings';
 import {
   DEFAULT_LIST_MARKER_COLOR,
   isPortfolioListMarkerSize,
@@ -61,21 +55,6 @@ export type PortfolioExperienceDesign =
   | 'press'
   | 'legacy'
   | 'kinetic';
-
-/** Legacy design ids persisted in older portfolios — coerced to `editorial` on merge. */
-export const REMOVED_EXPERIENCE_DESIGNS = [
-  'timeline',
-  'timeline-accent',
-  'timeline-editorial',
-  'timeline-stepped',
-  'stacked',
-  'compact',
-  'large',
-  'asymmetric',
-  'spotlight',
-] as const;
-
-export type RemovedPortfolioExperienceDesign = (typeof REMOVED_EXPERIENCE_DESIGNS)[number];
 
 export type PortfolioExperienceTitlePreset =
   | 'experience'
@@ -153,13 +132,13 @@ export const DEFAULT_CENTERED_LEAD_TEXT = '{years}+ years of hands-on experience
 export const DEFAULT_SERIF_LEAD_LABEL_TEXT = 'Experience';
 export const DEFAULT_SERIF_LEAD_TITLE_TEXT = '{years}+ years of hands-on experience in my field.';
 
-export const ACCENT_YEARS_RADIUS_CSS: Record<PortfolioExperienceAccentYearsRadius, string> = {
+const ACCENT_YEARS_RADIUS_CSS: Record<PortfolioExperienceAccentYearsRadius, string> = {
   0: '0px',
   2: '10px',
   4: '20px',
 };
 
-export const ACCENT_YEARS_FONT_SIZE_CSS: Record<PortfolioExperienceAccentYearsFontSize, string> = {
+const ACCENT_YEARS_FONT_SIZE_CSS: Record<PortfolioExperienceAccentYearsFontSize, string> = {
   4: 'clamp(1.375rem, 2.8vw, 2.25rem)',
   5: 'clamp(1.75rem, 3.5vw, 3rem)',
   6: 'clamp(2.25rem, 4.2vw, 3.75rem)',
@@ -408,51 +387,6 @@ export const MARQUEE_WEIGHT: Record<PortfolioExperienceMarqueeWeight, number> = 
   semibold: 600,
 };
 
-// Spotlight Marquee Premium option arrays
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_SPEED_OPTIONS: {
-  value: PortfolioExperienceSpotlightMarqueeSpeed;
-  label: string;
-}[] = [
-  { value: 'slow', label: 'Slow' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'fast', label: 'Fast' },
-];
-
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_DIRECTION_OPTIONS: {
-  value: PortfolioExperienceSpotlightMarqueeDirection;
-  label: string;
-}[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'right', label: 'Right' },
-];
-
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_WEIGHT_OPTIONS: {
-  value: PortfolioExperienceSpotlightMarqueeWeight;
-  label: string;
-}[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'bold', label: 'Bold' },
-];
-
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_STYLE_OPTIONS: {
-  value: PortfolioExperienceSpotlightMarqueeStyle;
-  label: string;
-}[] = [
-  { value: 'outline', label: 'Outline' },
-  { value: 'fill', label: 'Fill' },
-  { value: 'mixed', label: 'Mixed' },
-];
-
-export const PORTFOLIO_EXPERIENCE_SPOTLIGHT_MARQUEE_GAP_OPTIONS: {
-  value: PortfolioExperienceSpotlightMarqueeGap;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
-];
-
 // Spotlight Marquee Premium constant mappings
 export const SPOTLIGHT_MARQUEE_SPEED_PX: Record<PortfolioExperienceSpotlightMarqueeSpeed, number> = {
   slow: 28,
@@ -476,12 +410,6 @@ export const MARQUEE_FILL_OPACITY: Record<PortfolioExperienceSerifLeadLabelOpaci
   ghost: 0.55,
   muted: 0.85,
   ink: 1,
-};
-
-export const MARQUEE_SPEED_PX: Record<PortfolioExperienceMarqueeSpeed, number> = {
-  slow: 28,
-  cruise: 44,
-  fast: 72,
 };
 
 export const MARQUEE_EDGE_FADE: Record<PortfolioExperienceMarqueeEdgeFade, string> = {
@@ -655,16 +583,6 @@ export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS: {
 /** Loft design: corner radius of the thumbnail frame. */
 export type PortfolioExperienceLoftThumbnailRadius = 'none' | 'md' | 'xl';
 
-export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_RADIUS_OPTIONS: {
-  value: PortfolioExperienceLoftThumbnailRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Sharp corners — no border radius on the thumbnail.' },
-  { value: 'md', label: 'Medium', description: 'Soft rounded corners — the default.' },
-  { value: 'xl', label: 'Large', description: 'More rounded thumbnail frame.' },
-];
-
 export function experienceLoftThumbnailRadiusClass(radius: PortfolioExperienceLoftThumbnailRadius | undefined): string {
   switch (radius) {
     case 'none':
@@ -750,7 +668,7 @@ export type PortfolioExperienceTasksDisplay =
   | 'architectural-index';
 
 /** Map legacy task-display ids saved before the Award redesign. */
-export function migrateExperienceTasksDisplay(value: unknown): PortfolioExperienceTasksDisplay | null {
+function migrateExperienceTasksDisplay(value: unknown): PortfolioExperienceTasksDisplay | null {
   if (
     value === 'engineering-grid' ||
     value === 'cinematic-timeline' ||
@@ -775,7 +693,7 @@ export type PortfolioExperienceToolsBadgeStyle =
   | 'numbered-index';
 
 /** Map legacy/unknown tools-badge-style ids. */
-export function migrateExperienceToolsBadgeStyle(value: unknown): PortfolioExperienceToolsBadgeStyle | null {
+function migrateExperienceToolsBadgeStyle(value: unknown): PortfolioExperienceToolsBadgeStyle | null {
   if (
     value === 'mineral-pills' ||
     value === 'editorial-list' ||
@@ -926,9 +844,9 @@ export type PortfolioExperienceToolsIconSize = 'sm' | 'md' | 'lg' | 'xl';
 /** Outline around each tools logo chip. */
 export type PortfolioExperienceToolsIconBorder = 'none' | 'soft' | 'solid';
 
-export type PortfolioExperienceToolsChromePadding = PortfolioServicesCardPadding | 'custom';
+type PortfolioExperienceToolsChromePadding = PortfolioServicesCardPadding | 'custom';
 
-export type PortfolioExperienceToolsChromeBorderRadius = PortfolioServicesCardRadius | 'full';
+type PortfolioExperienceToolsChromeBorderRadius = PortfolioServicesCardRadius | 'full';
 
 export type PortfolioExperienceToolsChromeSettings = {
   enabled: boolean;
@@ -942,22 +860,22 @@ export type PortfolioExperienceToolsChromeSettings = {
   fitContent: boolean;
 };
 
-export const EXPERIENCE_TOOLS_ICON_PADDING_PX_MIN = 0;
-export const EXPERIENCE_TOOLS_ICON_PADDING_PX_MAX = 28;
-export const EXPERIENCE_TOOLS_ICON_GAP_PX_MIN = 0;
-export const EXPERIENCE_TOOLS_ICON_GAP_PX_MAX = 32;
+const EXPERIENCE_TOOLS_ICON_PADDING_PX_MIN = 0;
+const EXPERIENCE_TOOLS_ICON_PADDING_PX_MAX = 28;
+const EXPERIENCE_TOOLS_ICON_GAP_PX_MIN = 0;
+const EXPERIENCE_TOOLS_ICON_GAP_PX_MAX = 32;
 
-export const EXPERIENCE_TOOLS_CHROME_PADDING_PRESET_PX: Record<PortfolioServicesCardPadding, number> = {
+const EXPERIENCE_TOOLS_CHROME_PADDING_PRESET_PX: Record<PortfolioServicesCardPadding, number> = {
   none: 0,
   sm: 16,
   md: 24,
   lg: 36,
 };
 
-export const EXPERIENCE_TOOLS_CHROME_PADDING_PX_MIN = 0;
-export const EXPERIENCE_TOOLS_CHROME_PADDING_PX_MAX = 64;
+const EXPERIENCE_TOOLS_CHROME_PADDING_PX_MIN = 0;
+const EXPERIENCE_TOOLS_CHROME_PADDING_PX_MAX = 64;
 
-export function clampExperienceToolsIconPaddingPx(value: unknown, fallback = 10): number {
+function clampExperienceToolsIconPaddingPx(value: unknown, fallback = 10): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(
@@ -966,7 +884,7 @@ export function clampExperienceToolsIconPaddingPx(value: unknown, fallback = 10)
   );
 }
 
-export function clampExperienceToolsIconGapPx(value: unknown, fallback = 8): number {
+function clampExperienceToolsIconGapPx(value: unknown, fallback = 8): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(
@@ -975,7 +893,7 @@ export function clampExperienceToolsIconGapPx(value: unknown, fallback = 8): num
   );
 }
 
-export function clampExperienceToolsChromePaddingPx(value: unknown, fallback = 16): number {
+function clampExperienceToolsChromePaddingPx(value: unknown, fallback = 16): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -984,16 +902,7 @@ export function clampExperienceToolsChromePaddingPx(value: unknown, fallback = 1
   );
 }
 
-export function resolveExperienceToolsChromePaddingPx(
-  chrome: Pick<PortfolioExperienceToolsChromeSettings, 'padding' | 'paddingPx'>
-): number {
-  if (chrome.padding === 'custom') {
-    return clampExperienceToolsChromePaddingPx(chrome.paddingPx, 16);
-  }
-  return EXPERIENCE_TOOLS_CHROME_PADDING_PRESET_PX[chrome.padding] ?? 16;
-}
-
-export function mergeExperienceToolsChrome(
+function mergeExperienceToolsChrome(
   base: PortfolioExperienceToolsChromeSettings,
   patch: unknown
 ): PortfolioExperienceToolsChromeSettings {
@@ -1062,7 +971,7 @@ export type PortfolioExperienceRepoLinkStyle =
   | 'solid'
   | 'ghost';
 
-export const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLES = [
+const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLES = [
   'auto',
   'editorial',
   'milestone',
@@ -1096,7 +1005,7 @@ export const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS: {
 /** Glyph used on Experience proof / repository link buttons that show an arrow. */
 export type PortfolioExperienceLinkArrowStyle = 'northeast' | 'chevron' | 'east';
 
-export const PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLES = [
+const PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLES = [
   'northeast',
   'chevron',
   'east',
@@ -1459,10 +1368,10 @@ export function experienceDuotoneStickySectionVh(
 }
 
 /** Font size scale for entry content elements. */
-export type PortfolioExperienceTextSize = 'sm' | 'md' | 'lg' | 'xl';
+type PortfolioExperienceTextSize = 'sm' | 'md' | 'lg' | 'xl';
 
 /** Color / font / size / weight controls for one entry text element. */
-export type PortfolioExperienceTextStyle = {
+type PortfolioExperienceTextStyle = {
   color: string;
   /**
    * Manual dark-mode color (used when the section palette is off and
@@ -1477,7 +1386,7 @@ export type PortfolioExperienceTextStyle = {
 };
 
 /** Which entry text role can be styled independently. */
-export type PortfolioExperienceStyleTarget =
+type PortfolioExperienceStyleTarget =
   | 'title'
   | 'organization'
   | 'meta'
@@ -1493,7 +1402,7 @@ export type PortfolioExperienceElementStyles = Record<
 >;
 
 /** Which of the two inner cards an element belongs to. */
-export type PortfolioExperienceCardZone = 'story' | 'details';
+type PortfolioExperienceCardZone = 'story' | 'details';
 
 /** Ordered content blocks inside an experience entry (all designs). */
 export type PortfolioExperienceElementId =
@@ -1512,7 +1421,7 @@ export type PortfolioExperienceElementZones = Record<
 >;
 
 /** Block ids that can show an uppercase heading above the content. */
-export type PortfolioExperienceBlockLabelId =
+type PortfolioExperienceBlockLabelId =
   | 'tasks'
   | 'proof'
   | 'tools';
@@ -1528,7 +1437,7 @@ export const DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY: PortfolioExperienceBlock
   tools: true,
 };
 
-export const EXPERIENCE_BLOCK_LABEL_IDS: PortfolioExperienceBlockLabelId[] = [
+const EXPERIENCE_BLOCK_LABEL_IDS: PortfolioExperienceBlockLabelId[] = [
   'tasks',
   'proof',
   'tools',
@@ -1560,7 +1469,7 @@ export type PortfolioExperienceLayerFrame = PortfolioServicesCardBackgroundSetti
  */
 export type PortfolioExperiencePremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
-export const EXPERIENCE_PREMIUM_FONT_SIZES: PortfolioExperiencePremiumFontSize[] = [
+const EXPERIENCE_PREMIUM_FONT_SIZES: PortfolioExperiencePremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -2089,22 +1998,21 @@ export type PortfolioExperienceSectionSettings = PortfolioSectionCopy & Portfoli
 export const DEFAULT_EXPERIENCE_TITLE_COLOR = '#0a0a0a';
 /** Readable title ink on dark section surfaces (editorial + dark theme). */
 export const DEFAULT_EXPERIENCE_TITLE_COLOR_DARK = '#F4F4F5';
-export const DEFAULT_EXPERIENCE_SUBTITLE_COLOR = '#737373';
-export const DEFAULT_EXPERIENCE_SUBTITLE_COLOR_DARK = '#A1A1AA';
-export const DEFAULT_EXPERIENCE_ACCENT_COLOR = '#ea580c';
+const DEFAULT_EXPERIENCE_SUBTITLE_COLOR = '#737373';
+const DEFAULT_EXPERIENCE_ACCENT_COLOR = '#ea580c';
 export const DEFAULT_EXPERIENCE_YEARS_COLOR = '#0a0a0a';
-export const DEFAULT_EXPERIENCE_YEARS_HIGHLIGHT_COLOR = '#0a0a0a';
-export const DEFAULT_EXPERIENCE_CARD_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_EXPERIENCE_CARD_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_EXPERIENCE_ENTRY_BACKGROUND_COLOR = '#f5f5f5';
-export const DEFAULT_EXPERIENCE_CHIP_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_EXPERIENCE_CHIP_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_EXPERIENCE_YEARS_HIGHLIGHT_COLOR = '#0a0a0a';
+const DEFAULT_EXPERIENCE_CARD_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_EXPERIENCE_CARD_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_EXPERIENCE_ENTRY_BACKGROUND_COLOR = '#f5f5f5';
+const DEFAULT_EXPERIENCE_CHIP_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_EXPERIENCE_CHIP_BORDER_COLOR = '#e5e5e5';
 export const DEFAULT_EXPERIENCE_BODY_COLOR = '#525252';
 export const DEFAULT_EXPERIENCE_BODY_COLOR_DARK = '#D4D4D8';
 export const DEFAULT_EXPERIENCE_MUTED_COLOR = '#a3a3a3';
 export const DEFAULT_EXPERIENCE_MUTED_COLOR_DARK = '#A1A1AA';
 
-export const DEFAULT_EXPERIENCE_TOOLS_CHROME: PortfolioExperienceToolsChromeSettings = {
+const DEFAULT_EXPERIENCE_TOOLS_CHROME: PortfolioExperienceToolsChromeSettings = {
   enabled: false,
   backgroundEnabled: true,
   backgroundColor: '#fafafa',
@@ -2132,7 +2040,7 @@ function createExperienceTextStyle(
   };
 }
 
-export const DEFAULT_EXPERIENCE_ELEMENT_STYLES: PortfolioExperienceElementStyles = {
+const DEFAULT_EXPERIENCE_ELEMENT_STYLES: PortfolioExperienceElementStyles = {
   title: createExperienceTextStyle({
     color: DEFAULT_EXPERIENCE_TITLE_COLOR,
     colorDark: DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
@@ -2184,7 +2092,7 @@ export const DEFAULT_EXPERIENCE_ELEMENT_STYLES: PortfolioExperienceElementStyles
   }),
 };
 
-export const EXPERIENCE_STYLE_TARGET_IDS: PortfolioExperienceStyleTarget[] = [
+const EXPERIENCE_STYLE_TARGET_IDS: PortfolioExperienceStyleTarget[] = [
   'title',
   'organization',
   'meta',
@@ -2195,7 +2103,7 @@ export const EXPERIENCE_STYLE_TARGET_IDS: PortfolioExperienceStyleTarget[] = [
   'tools',
 ];
 
-export const EXPERIENCE_ELEMENT_IDS: PortfolioExperienceElementId[] = [
+const EXPERIENCE_ELEMENT_IDS: PortfolioExperienceElementId[] = [
   'title',
   'organization',
   'meta',
@@ -2205,22 +2113,9 @@ export const EXPERIENCE_ELEMENT_IDS: PortfolioExperienceElementId[] = [
   'proof',
 ];
 
-export const EXPERIENCE_STORY_ELEMENT_IDS: PortfolioExperienceElementId[] = [
-  'title',
-  'organization',
-  'meta',
-  'description',
-];
+const DEFAULT_EXPERIENCE_ELEMENT_ORDER: PortfolioExperienceElementId[] = [...EXPERIENCE_ELEMENT_IDS];
 
-export const EXPERIENCE_DETAILS_ELEMENT_IDS: PortfolioExperienceElementId[] = [
-  'tools',
-  'tasks',
-  'proof',
-];
-
-export const DEFAULT_EXPERIENCE_ELEMENT_ORDER: PortfolioExperienceElementId[] = [...EXPERIENCE_ELEMENT_IDS];
-
-export const DEFAULT_EXPERIENCE_ELEMENT_ZONES: PortfolioExperienceElementZones = {
+const DEFAULT_EXPERIENCE_ELEMENT_ZONES: PortfolioExperienceElementZones = {
   title: 'story',
   organization: 'story',
   meta: 'story',
@@ -2229,20 +2124,6 @@ export const DEFAULT_EXPERIENCE_ELEMENT_ZONES: PortfolioExperienceElementZones =
   tools: 'details',
   proof: 'details',
 };
-
-export const PORTFOLIO_EXPERIENCE_ELEMENT_OPTIONS: {
-  value: PortfolioExperienceElementId;
-  label: string;
-  zone: PortfolioExperienceCardZone;
-}[] = [
-  { value: 'title', label: 'Job title', zone: 'story' },
-  { value: 'organization', label: 'Organization', zone: 'story' },
-  { value: 'meta', label: 'Meta chips', zone: 'story' },
-  { value: 'description', label: 'Description', zone: 'story' },
-  { value: 'tasks', label: 'Tasks', zone: 'details' },
-  { value: 'tools', label: 'Tools', zone: 'details' },
-  { value: 'proof', label: 'Proof links', zone: 'details' },
-];
 
 function createExperienceLayerFrame(
   overrides: Partial<PortfolioExperienceLayerFrame> = {}
@@ -2274,7 +2155,7 @@ const EXPERIENCE_DESIGNS = [
   'kinetic',
 ] as const satisfies readonly PortfolioExperienceDesign[];
 
-export function coerceExperienceDesign(value: unknown): PortfolioExperienceDesign {
+function coerceExperienceDesign(value: unknown): PortfolioExperienceDesign {
   if (typeof value === 'string' && (EXPERIENCE_DESIGNS as readonly string[]).includes(value)) {
     return value as PortfolioExperienceDesign;
   }
@@ -2580,107 +2461,11 @@ Object.assign(
   })
 );
 
-export const PORTFOLIO_EXPERIENCE_TITLE_PRESET_OPTIONS: {
-  value: PortfolioExperienceTitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'experience', label: 'Experience', description: 'Classic section label.' },
-  { value: 'career-path', label: 'Career path', description: 'Journey-focused heading.' },
-  { value: 'work-history', label: 'Work history', description: 'Professional track record.' },
-  {
-    value: 'professional-journey',
-    label: 'Professional journey',
-    description: 'Long-form career narrative tone.',
-  },
-  { value: 'custom', label: 'Custom', description: 'Your own section title.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_SUBTITLE_PRESET_OPTIONS: {
-  value: PortfolioExperienceSubtitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'default', label: 'Default', description: 'Uses the subtitle field below.' },
-  { value: 'short', label: 'Short', description: 'One concise supporting line.' },
-  { value: 'career', label: 'Career', description: 'Roles and milestones focus.' },
-  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Write your own subtitle.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_HEADER_FONT_OPTIONS: {
-  value: PortfolioExperienceHeaderFont;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
-  { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioExperienceSectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre au-dessus, expériences en dessous.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, liste à droite (côte à côte).',
-  },
-  {
-    value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Liste à gauche, titre à droite (côte à côte).',
-  },
-];
-
-export function isPortfolioExperienceSectionLayout(
+function isPortfolioExperienceSectionLayout(
   value: unknown
 ): value is PortfolioExperienceSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
 }
-
-export function experienceSectionLayoutIsAside(
-  layout: PortfolioExperienceSectionLayout | undefined
-): boolean {
-  return layout === 'aside-left' || layout === 'aside-right';
-}
-
-/** Two-column shell for title + experience list (large screens). */
-export function experienceAsideLayoutClass(layout: PortfolioExperienceSectionLayout): string {
-  if (layout === 'aside-right') {
-    return 'grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-  }
-  return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-}
-
-export const PORTFOLIO_EXPERIENCE_ILLUSTRATION_OPTIONS: {
-  value: PortfolioExperienceIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioExperienceIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche de la liste.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite de la liste.' },
-];
 
 const EXPERIENCE_ILLUSTRATION_VARIANTS = [
   'none',
@@ -2769,37 +2554,6 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_EXPERIENCE_LIST_MAX_WIDTH_OPTIONS: {
-  value: PortfolioExperienceListMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'narrow', label: 'Narrow', description: 'Focused column — best for 1 item per row.' },
-  { value: 'default', label: 'Comfortable', description: 'Wide editorial measure on desktop.' },
-  { value: 'wide', label: 'Wide', description: 'Near full-bleed — great for 2–3 columns.' },
-  { value: 'full', label: 'Full', description: 'Entire section width on every breakpoint.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_LIST_PLACEMENT_OPTIONS: {
-  value: PortfolioExperienceListPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Align experience block to the left.' },
-  { value: 'center', label: 'Center', description: 'Center experience block.' },
-  { value: 'right', label: 'Right', description: 'Align experience block to the right.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_ITEMS_PER_ROW_OPTIONS: {
-  value: '1' | '2' | '3';
-  label: string;
-  description: string;
-}[] = [
-  { value: '1', label: '1 per row', description: 'Single full-width entry — maximum detail.' },
-  { value: '2', label: '2 per row', description: 'Two cards side by side from tablet up.' },
-  { value: '3', label: '3 per row', description: 'Three cards on large screens — denser gallery.' },
-];
-
 export const PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS: {
   value: PortfolioExperienceItemGap;
   label: string;
@@ -2811,47 +2565,10 @@ export const PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS: {
   { value: 'xl', label: 'Extra large', description: 'Wide gap between cards on both axes.' },
 ];
 
-export const PORTFOLIO_EXPERIENCE_CARDS_GRID_GAP_OPTIONS: {
-  value: Exclude<PortfolioExperienceCardsGridGap, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'sm',
-    label: 'Tight',
-    description: 'Same small gap between cards, horizontally and vertically.',
-  },
-  {
-    value: 'md',
-    label: 'Standard',
-    description: 'Balanced gap on both axes.',
-  },
-  {
-    value: 'lg',
-    label: 'Large',
-    description: 'More air between cards on both axes.',
-  },
-  {
-    value: 'xl',
-    label: 'Extra large',
-    description: 'Wide gap between cards on both axes.',
-  },
-];
+const EXPERIENCE_CARDS_GRID_GAP_PX_MIN = 0;
+const EXPERIENCE_CARDS_GRID_GAP_PX_MAX = 96;
 
-export const EXPERIENCE_CARDS_GRID_GAP_PRESET_PX: Record<
-  Exclude<PortfolioExperienceCardsGridGap, 'custom'>,
-  number
-> = {
-  sm: 20,
-  md: 36,
-  lg: 48,
-  xl: 72,
-};
-
-export const EXPERIENCE_CARDS_GRID_GAP_PX_MIN = 0;
-export const EXPERIENCE_CARDS_GRID_GAP_PX_MAX = 96;
-
-export function clampExperienceCardsGridGapPx(value: unknown, fallback = 36): number {
+function clampExperienceCardsGridGapPx(value: unknown, fallback = 36): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -2860,39 +2577,11 @@ export function clampExperienceCardsGridGapPx(value: unknown, fallback = 36): nu
   );
 }
 
-export function isPortfolioExperienceCardsGridGap(
+function isPortfolioExperienceCardsGridGap(
   value: unknown
 ): value is PortfolioExperienceCardsGridGap {
   return value === 'sm' || value === 'md' || value === 'lg' || value === 'xl' || value === 'custom';
 }
-
-export function resolveExperienceCardsGridGapPx(
-  p: Pick<PortfolioExperiencePresentationSettings, 'cardsGridGap' | 'cardsGridGapPx' | 'itemGap'>
-): number {
-  const gap = p.cardsGridGap ?? (p.itemGap === 'sm' || p.itemGap === 'lg' || p.itemGap === 'xl' ? p.itemGap : 'md');
-  if (gap === 'custom') {
-    return clampExperienceCardsGridGapPx(p.cardsGridGapPx, 36);
-  }
-  return EXPERIENCE_CARDS_GRID_GAP_PRESET_PX[gap] ?? 36;
-}
-
-/** One CSS `gap` drives horizontal and vertical card spacing together. */
-export function experienceCardsGridGapStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'cardsGridGap' | 'cardsGridGapPx' | 'itemGap'>
-): CSSProperties {
-  return { gap: `${resolveExperienceCardsGridGapPx(p)}px` };
-}
-
-export const PORTFOLIO_EXPERIENCE_TASK_ITEM_GAP_OPTIONS: {
-  value: PortfolioExperienceTaskItemGap;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Serré', description: 'Peu d’espace entre les tâches.' },
-  { value: 'md', label: 'Standard', description: 'Espacement équilibré entre les puces.' },
-  { value: 'lg', label: 'Large', description: 'Plus d’air entre chaque tâche.' },
-  { value: 'xl', label: 'Très large', description: 'Fort écart vertical entre les tâches.' },
-];
 
 export const PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS: {
   value: PortfolioExperiencePeriodDesign;
@@ -3223,40 +2912,6 @@ export const PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS: {
     value: 'lg',
     label: 'Aéré',
     description: 'Espacement généreux — mieux avec peu de tâches.',
-  },
-];
-
-/** Vertical rhythm between individual tasks inside the Cards timeline — kept independent
- * from cardsElementSpacing so a long task list can be tightened without also shrinking
- * the card's padding. */
-export function experienceCardsTasksGapClass(
-  gap: PortfolioExperienceCardsTasksGap | undefined
-): string {
-  switch (gap) {
-    case 'sm':
-      return '[&_ul]:space-y-2 sm:[&_ul]:space-y-2.5';
-    case 'lg':
-      return '[&_ul]:space-y-6 sm:[&_ul]:space-y-7';
-    case 'md':
-    default:
-      return '[&_ul]:space-y-3.5 sm:[&_ul]:space-y-4';
-  }
-}
-
-export const PORTFOLIO_EXPERIENCE_CARDS_STACK_EFFECT_OPTIONS: {
-  value: PortfolioExperienceCardsStackEffect;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'cascade',
-    label: 'Cascade au scroll',
-    description: 'Sur desktop, chaque carte reste épinglée sous la précédente pendant le défilement.',
-  },
-  {
-    value: 'static',
-    label: 'Statique',
-    description: 'Les cartes restent simplement empilées, sans effet de scroll, même sur desktop.',
   },
 ];
 
@@ -3617,110 +3272,10 @@ export const PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_EXPERIENCE_STATUS_BADGE_STYLE_OPTIONS: {
-  value: PortfolioExperienceStatusBadgeStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'pill',
-    label: 'Pill',
-    description: 'Ongoing en accent plein — Finished en chip soft (défaut).',
-  },
-  {
-    value: 'soft',
-    label: 'Soft',
-    description: 'Fond muted pour Ongoing et Finished.',
-  },
-  {
-    value: 'outline',
-    label: 'Outline',
-    description: 'Contour seul, sans fond fort.',
-  },
-  {
-    value: 'plain',
-    label: 'Plain',
-    description: 'Texte uppercase seul, sans pastille.',
-  },
-  {
-    value: 'accent',
-    label: 'Accent',
-    description: 'Ongoing plein — Finished en texte / bord accent.',
-  },
-  {
-    value: 'square',
-    label: 'Square',
-    description: 'Coins légèrement carrés, look badge technique.',
-  },
-  {
-    value: 'dot',
-    label: 'Dot',
-    description: 'Pastille colorée + label, sans gros chip.',
-  },
-];
+const EXPERIENCE_STORY_CONTENT_GAP_PX_MIN = 0;
+const EXPERIENCE_STORY_CONTENT_GAP_PX_MAX = 64;
 
-export const PORTFOLIO_EXPERIENCE_ITEM_DENSITY_OPTIONS: {
-  value: PortfolioExperienceItemDensity;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'comfortable',
-    label: 'Comfortable',
-    description: 'Roomy padding and section gaps inside each entry.',
-  },
-  {
-    value: 'compact',
-    label: 'Compact',
-    description: 'Tighter spacing for denser reading.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_STORY_CONTENT_GAP_OPTIONS: {
-  value: Exclude<PortfolioExperienceStoryContentGap, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: '0px — elements sit flush.' },
-  { value: 'sm', label: 'Tight', description: '8px — compact story stack.' },
-  { value: 'md', label: 'Medium', description: '16px — balanced (default).' },
-  { value: 'lg', label: 'Large', description: '24px — airy story column.' },
-  { value: 'xl', label: 'Extra large', description: '32px — editorial breathing room.' },
-];
-
-/** Same presets as story — gap between details blocks (tasks, skills, tools…). */
-export const PORTFOLIO_EXPERIENCE_DETAILS_CONTENT_GAP_OPTIONS: {
-  value: Exclude<PortfolioExperienceStoryContentGap, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: '0px — details blocks sit flush.' },
-  { value: 'sm', label: 'Tight', description: '8px — compact details stack.' },
-  { value: 'md', label: 'Medium', description: '16px — balanced (default).' },
-  { value: 'lg', label: 'Large', description: '24px — airy details column.' },
-  { value: 'xl', label: 'Extra large', description: '32px — editorial breathing room.' },
-];
-
-export const EXPERIENCE_STORY_CONTENT_GAP_PRESET_PX: Record<
-  Exclude<PortfolioExperienceStoryContentGap, 'custom'>,
-  number
-> = {
-  none: 0,
-  sm: 8,
-  md: 16,
-  lg: 24,
-  xl: 32,
-};
-
-export const EXPERIENCE_DETAILS_CONTENT_GAP_PRESET_PX = EXPERIENCE_STORY_CONTENT_GAP_PRESET_PX;
-
-export const EXPERIENCE_STORY_CONTENT_GAP_PX_MIN = 0;
-export const EXPERIENCE_STORY_CONTENT_GAP_PX_MAX = 64;
-
-export const EXPERIENCE_DETAILS_CONTENT_GAP_PX_MIN = EXPERIENCE_STORY_CONTENT_GAP_PX_MIN;
-export const EXPERIENCE_DETAILS_CONTENT_GAP_PX_MAX = EXPERIENCE_STORY_CONTENT_GAP_PX_MAX;
-
-export function clampExperienceStoryContentGapPx(value: unknown, fallback = 16): number {
+function clampExperienceStoryContentGapPx(value: unknown, fallback = 16): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -3729,41 +3284,9 @@ export function clampExperienceStoryContentGapPx(value: unknown, fallback = 16):
   );
 }
 
-export const clampExperienceDetailsContentGapPx = clampExperienceStoryContentGapPx;
+const clampExperienceDetailsContentGapPx = clampExperienceStoryContentGapPx;
 
-export function resolveExperienceStoryContentGapPx(
-  p: Pick<PortfolioExperiencePresentationSettings, 'storyContentGap' | 'storyContentGapPx'>
-): number {
-  const gap = p.storyContentGap ?? 'md';
-  if (gap === 'custom') {
-    return clampExperienceStoryContentGapPx(p.storyContentGapPx, 16);
-  }
-  return EXPERIENCE_STORY_CONTENT_GAP_PRESET_PX[gap] ?? 16;
-}
-
-export function resolveExperienceDetailsContentGapPx(
-  p: Pick<PortfolioExperiencePresentationSettings, 'detailsContentGap' | 'detailsContentGapPx'>
-): number {
-  const gap = p.detailsContentGap ?? 'md';
-  if (gap === 'custom') {
-    return clampExperienceDetailsContentGapPx(p.detailsContentGapPx, 16);
-  }
-  return EXPERIENCE_DETAILS_CONTENT_GAP_PRESET_PX[gap] ?? 16;
-}
-
-export function experienceStoryContentGapStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'storyContentGap' | 'storyContentGapPx'>
-): CSSProperties {
-  return { gap: `${resolveExperienceStoryContentGapPx(p)}px` };
-}
-
-export function experienceDetailsContentGapStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'detailsContentGap' | 'detailsContentGapPx'>
-): CSSProperties {
-  return { gap: `${resolveExperienceDetailsContentGapPx(p)}px` };
-}
-
-export function isPortfolioExperienceStoryContentGap(
+function isPortfolioExperienceStoryContentGap(
   value: unknown
 ): value is PortfolioExperienceStoryContentGap {
   return (
@@ -3776,12 +3299,12 @@ export function isPortfolioExperienceStoryContentGap(
   );
 }
 
-export const isPortfolioExperienceDetailsContentGap = isPortfolioExperienceStoryContentGap;
+const isPortfolioExperienceDetailsContentGap = isPortfolioExperienceStoryContentGap;
 
-export const EXPERIENCE_PERIOD_RULE_THICKNESS_MIN = 1;
-export const EXPERIENCE_PERIOD_RULE_THICKNESS_MAX = 4;
+const EXPERIENCE_PERIOD_RULE_THICKNESS_MIN = 1;
+const EXPERIENCE_PERIOD_RULE_THICKNESS_MAX = 4;
 
-export function clampExperiencePeriodRuleThickness(value: unknown, fallback = 1): number {
+function clampExperiencePeriodRuleThickness(value: unknown, fallback = 1): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -3790,14 +3313,14 @@ export function clampExperiencePeriodRuleThickness(value: unknown, fallback = 1)
   );
 }
 
-export function clampExperiencePeriodRuleOpacity(value: unknown, fallback = 70): number {
+function clampExperiencePeriodRuleOpacity(value: unknown, fallback = 70): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-export const clampExperienceTimelineRailOpacity = clampExperiencePeriodRuleOpacity;
-export const clampExperienceToolsSeparatorOpacity = clampExperiencePeriodRuleOpacity;
+const clampExperienceTimelineRailOpacity = clampExperiencePeriodRuleOpacity;
+const clampExperienceToolsSeparatorOpacity = clampExperiencePeriodRuleOpacity;
 
 function experienceHexToRgba(hex: string, alpha: number): string {
   const raw = hex.replace('#', '').trim();
@@ -3838,77 +3361,6 @@ export function experienceTimelineRailNodeStyle(
   return filled ? { backgroundColor: color } : { borderColor: color };
 }
 
-/** Magazine left accent stripe. */
-export function experienceMagazineRailStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'timelineRailEnabled' | 'timelineRailColor' | 'timelineRailOpacity' | 'accentColor'>
-): CSSProperties | undefined {
-  if (p.timelineRailEnabled === false) return undefined;
-  const opacity = clampExperienceTimelineRailOpacity(p.timelineRailOpacity, 85) / 100;
-  const hex = sanitizeHex(p.timelineRailColor, experienceAccentColor(p.accentColor));
-  return { backgroundColor: experienceHexToRgba(hex, opacity) };
-}
-
-/** Hairline above the Tools block. */
-export function experienceToolsSeparatorStyle(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'toolsSeparatorEnabled' | 'toolsSeparatorColor' | 'toolsSeparatorOpacity' | 'entryFrame'
-  >
-): CSSProperties | undefined {
-  if (p.toolsSeparatorEnabled === false) return undefined;
-  return experienceHairlineBorderTopStyle(p);
-}
-
-/**
- * Horizontal divider color — palette slot `toolsSeparator` → Global `bordure`
- * (falls back to entry frame border).
- */
-export function resolveExperienceHairlineColor(
-  p: Pick<PortfolioExperiencePresentationSettings, 'toolsSeparatorColor' | 'entryFrame'>
-): string {
-  const fromTools =
-    typeof p.toolsSeparatorColor === 'string' ? p.toolsSeparatorColor.trim() : '';
-  if (fromTools) return sanitizeHex(fromTools, '#d4d4d4');
-  return sanitizeHex(
-    p.entryFrame?.cardBorderColor,
-    DEFAULT_EXPERIENCE_CARD_BORDER_COLOR
-  );
-}
-
-/** Shared top hairline (skills footer, fiche sections, magazine rows, …). */
-export function experienceHairlineBorderTopStyle(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'toolsSeparatorColor' | 'toolsSeparatorOpacity' | 'entryFrame'
-  >,
-  opacityPercent?: number
-): CSSProperties {
-  const opacity =
-    (opacityPercent ?? clampExperienceToolsSeparatorOpacity(p.toolsSeparatorOpacity, 55)) / 100;
-  return {
-    borderTopWidth: 1,
-    borderTopStyle: 'solid',
-    borderTopColor: experienceHexToRgba(resolveExperienceHairlineColor(p), opacity),
-  };
-}
-
-/** Shared bottom hairline (banner under media, entry separators, …). */
-export function experienceHairlineBorderBottomStyle(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'toolsSeparatorColor' | 'toolsSeparatorOpacity' | 'entryFrame'
-  >,
-  opacityPercent?: number
-): CSSProperties {
-  const opacity =
-    (opacityPercent ?? clampExperienceToolsSeparatorOpacity(p.toolsSeparatorOpacity, 55)) / 100;
-  return {
-    borderBottomWidth: 1,
-    borderBottomStyle: 'solid',
-    borderBottomColor: experienceHexToRgba(resolveExperienceHairlineColor(p), opacity),
-  };
-}
-
 function experiencePeriodRuleLuminance(hex: string): number {
   const raw = hex.replace('#', '').trim();
   const full =
@@ -3927,7 +3379,7 @@ function experiencePeriodRuleLuminance(hex: string): number {
 }
 
 /** Keep the hairline readable on the section surface (auto light/dark rescue). */
-export function ensureExperiencePeriodRuleContrast(ruleHex: string, surfaceHex: string): string {
+function ensureExperiencePeriodRuleContrast(ruleHex: string, surfaceHex: string): string {
   const ruleLum = experiencePeriodRuleLuminance(ruleHex);
   const surfaceLum = experiencePeriodRuleLuminance(surfaceHex);
   if (Math.abs(ruleLum - surfaceLum) >= 0.16) return ruleHex;
@@ -3960,7 +3412,7 @@ export function ensureExperienceInkContrast(
  * - Palette follow keeps both fields synced from Global Theme (clair + sombre).
  * - Manual mode uses the two hex pickers as-is (no auto-contrast rewrite).
  */
-export function resolveExperiencePeriodRuleColor(
+function resolveExperiencePeriodRuleColor(
   p: Pick<
     PortfolioExperiencePresentationSettings,
     | 'periodRuleColor'
@@ -4011,135 +3463,10 @@ export function experiencePeriodRuleStyle(
   };
 }
 
-export const PORTFOLIO_EXPERIENCE_ASIDE_PLACEMENT_OPTIONS: {
-  value: PortfolioExperienceAsidePlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'right',
-    label: 'Details right / below',
-    description:
-      'Story (title, meta, description) first — details on the right, or below when stacked.',
-  },
-  {
-    value: 'left',
-    label: 'Details left / above',
-    description:
-      'Details panel first — on the left side-by-side, or above the story when stacked.',
-  },
-  {
-    value: 'stacked',
-    label: 'Stacked',
-    description: 'Everything in one vertical column (display order).',
-  },
-  {
-    value: 'inline',
-    label: 'Inline',
-    description: 'Fold details into the story column — no side panel.',
-  },
-];
+const EXPERIENCE_ENTRY_MEDIA_SIZE_PX_MIN = 120;
+const EXPERIENCE_ENTRY_MEDIA_SIZE_PX_MAX = 480;
 
-export const PORTFOLIO_EXPERIENCE_BENTO_DETAILS_PLACEMENT_OPTIONS: {
-  value: PortfolioExperienceBentoDetailsPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'aside',
-    label: 'À côté (colonne)',
-    description: 'Tasks et Proof restent dans la colonne détails, à côté du récit.',
-  },
-  {
-    value: 'under-media',
-    label: 'Sous la photo (largeur alignée)',
-    description:
-      'Sous l’image, largeur = photo + description (même bord droit que le récit).',
-  },
-  {
-    value: 'under-story',
-    label: 'Sous la description',
-    description:
-      'Magazine : la fiche (tasks, tools, proof…) passe sous la description — 2 colonnes inégales (infos | média).',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_PLACEMENT_OPTIONS: {
-  value: PortfolioExperienceEntryMediaPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'outside-right',
-    label: 'Hors carte (droite)',
-    description: 'Image dans l’espace vide à droite de la carte — pas dans le fond.',
-  },
-  {
-    value: 'outside-left',
-    label: 'Hors carte (gauche)',
-    description: 'Image à gauche de la carte, hors du fond.',
-  },
-  {
-    value: 'aside-right',
-    label: 'Dans la carte (droite)',
-    description: 'Image à l’intérieur de la carte, à droite du texte.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Dans la carte (gauche)',
-    description: 'Image à l’intérieur de la carte, à gauche du texte.',
-  },
-  {
-    value: 'story-top',
-    label: 'Au-dessus du contenu',
-    description: 'Image au-dessus du texte — taille réglable (S–XL / manuel).',
-  },
-  {
-    value: 'entry-top',
-    label: 'Au-dessus de l’entrée',
-    description: 'Image au-dessus de toute l’entrée — taille réglable (S–XL / manuel).',
-  },
-  {
-    value: 'hidden',
-    label: 'Masquée',
-    description: 'Ne pas afficher l’image même si elle est définie dans Studio.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_SIZE_OPTIONS: {
-  value: Exclude<PortfolioExperienceEntryMediaSize, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'S', description: 'Petite vignette — peu d’espace pris.' },
-  { value: 'md', label: 'M', description: 'Taille équilibrée (défaut).' },
-  {
-    value: 'lg',
-    label: 'L',
-    description: 'Plus grande — décale automatiquement le texte à côté.',
-  },
-  {
-    value: 'full',
-    label: 'XL',
-    description: 'Très grande — pousse fort le récit / les détails à côté.',
-  },
-];
-
-/** Desktop width (px) synced when picking a size preset. */
-export const EXPERIENCE_ENTRY_MEDIA_SIZE_PRESET_PX: Record<
-  Exclude<PortfolioExperienceEntryMediaSize, 'custom'>,
-  number
-> = {
-  sm: 176,
-  md: 224,
-  lg: 288,
-  full: 352,
-};
-
-export const EXPERIENCE_ENTRY_MEDIA_SIZE_PX_MIN = 120;
-export const EXPERIENCE_ENTRY_MEDIA_SIZE_PX_MAX = 480;
-
-export function clampExperienceEntryMediaSizePx(value: unknown, fallback = 224): number {
+function clampExperienceEntryMediaSizePx(value: unknown, fallback = 224): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -4148,99 +3475,10 @@ export function clampExperienceEntryMediaSizePx(value: unknown, fallback = 224):
   );
 }
 
-export function resolveExperienceEntryMediaSizePx(
-  p: Pick<PortfolioExperiencePresentationSettings, 'entryMediaSize' | 'entryMediaSizePx'>
-): number {
-  const size = p.entryMediaSize ?? 'md';
-  if (size === 'custom') {
-    return clampExperienceEntryMediaSizePx(p.entryMediaSizePx, 224);
-  }
-  return EXPERIENCE_ENTRY_MEDIA_SIZE_PRESET_PX[size] ?? 224;
-}
+const EXPERIENCE_MAGAZINE_SEPARATOR_SPACING_PX_MIN = 32;
+const EXPERIENCE_MAGAZINE_SEPARATOR_SPACING_PX_MAX = 160;
 
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_RADIUS_OPTIONS: {
-  value: PortfolioExperienceEntryMediaRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Square corners.' },
-  { value: 'sm', label: 'S', description: 'Slight rounding.' },
-  { value: 'md', label: 'M', description: 'Medium rounding.' },
-  { value: 'lg', label: 'L', description: 'Generous rounding.' },
-  { value: 'xl', label: 'XL', description: 'Very rounded.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_ASPECT_OPTIONS: {
-  value: PortfolioExperienceEntryMediaAspect;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'auto', label: 'Auto', description: 'Natural media proportions.' },
-  { value: '1/1', label: '1:1', description: 'Square crop.' },
-  { value: '4/5', label: '4:5', description: 'Portrait editorial (default).' },
-  { value: '3/2', label: '3:2', description: 'Landscape photo.' },
-  { value: '16/9', label: '16:9', description: 'Widescreen / video.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_FIT_OPTIONS: {
-  value: PortfolioExperienceEntryMediaFit;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'cover',
-    label: 'Remplir (cover)',
-    description: 'Remplit entièrement le cadre ; les bords peuvent être recadrés.',
-  },
-  {
-    value: 'contain',
-    label: 'Afficher entier (contain)',
-    description: 'Conserve tout le média dans le cadre, avec des marges si nécessaire.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_POSITION_OPTIONS: {
-  value: PortfolioExperienceEntryMediaPosition;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'center', label: 'Centre', description: 'Point focal au centre.' },
-  { value: 'top', label: 'Haut', description: 'Privilégie le haut du média.' },
-  { value: 'bottom', label: 'Bas', description: 'Privilégie le bas du média.' },
-  { value: 'left', label: 'Gauche', description: 'Privilégie le bord gauche.' },
-  { value: 'right', label: 'Droite', description: 'Privilégie le bord droit.' },
-  { value: 'top-left', label: 'Haut gauche', description: 'Point focal dans le coin supérieur gauche.' },
-  { value: 'top-right', label: 'Haut droite', description: 'Point focal dans le coin supérieur droit.' },
-  { value: 'bottom-left', label: 'Bas gauche', description: 'Point focal dans le coin inférieur gauche.' },
-  { value: 'bottom-right', label: 'Bas droite', description: 'Point focal dans le coin inférieur droit.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_MAGAZINE_COLUMN_RATIO_OPTIONS: {
-  value: PortfolioExperienceMagazineColumnRatio;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'balanced',
-    label: 'Équilibré 50 / 50',
-    description: 'Image et contenu occupent chacun la moitié de la largeur.',
-  },
-  {
-    value: 'content-wide',
-    label: 'Contenu large',
-    description: 'Donne davantage de largeur au texte et aux détails.',
-  },
-  {
-    value: 'media-wide',
-    label: 'Image large (actuel)',
-    description: 'Conserve la composition Magazine historique avec un visuel dominant.',
-  },
-];
-
-export const EXPERIENCE_MAGAZINE_SEPARATOR_SPACING_PX_MIN = 32;
-export const EXPERIENCE_MAGAZINE_SEPARATOR_SPACING_PX_MAX = 160;
-
-export function clampExperienceMagazineSeparatorSpacingPx(
+function clampExperienceMagazineSeparatorSpacingPx(
   value: unknown,
   fallback = 64
 ): number {
@@ -4252,36 +3490,10 @@ export function clampExperienceMagazineSeparatorSpacingPx(
   );
 }
 
-export const PORTFOLIO_EXPERIENCE_ENTRY_MEDIA_HEIGHT_OPTIONS: {
-  value: Exclude<PortfolioExperienceEntryMediaHeight, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'auto', label: 'Auto', description: 'Suit le format — XL est plafonné pour ne pas exploser.' },
-  { value: 'sm', label: 'S', description: 'Cadre bas (~180px).' },
-  { value: 'md', label: 'M', description: 'Hauteur moyenne (~240px).' },
-  { value: 'lg', label: 'L', description: 'Cadre haut (~320px).' },
-  { value: 'xl', label: 'XL', description: 'Cadre très haut (~400px).' },
-];
+const EXPERIENCE_ENTRY_MEDIA_HEIGHT_PX_MIN = 120;
+const EXPERIENCE_ENTRY_MEDIA_HEIGHT_PX_MAX = 640;
 
-/** Desktop height (px) synced when picking a height preset (not auto). */
-export const EXPERIENCE_ENTRY_MEDIA_HEIGHT_PRESET_PX: Record<
-  Exclude<PortfolioExperienceEntryMediaHeight, 'auto' | 'custom'>,
-  number
-> = {
-  sm: 180,
-  md: 240,
-  lg: 320,
-  xl: 400,
-};
-
-export const EXPERIENCE_ENTRY_MEDIA_HEIGHT_PX_MIN = 120;
-export const EXPERIENCE_ENTRY_MEDIA_HEIGHT_PX_MAX = 640;
-
-/** Soft max height when size is XL and height mode is auto (avoids full-viewport portraits). */
-export const EXPERIENCE_ENTRY_MEDIA_XL_AUTO_MAX_PX = 360;
-
-export function clampExperienceEntryMediaHeightPx(value: unknown, fallback = 280): number {
+function clampExperienceEntryMediaHeightPx(value: unknown, fallback = 280): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -4289,382 +3501,6 @@ export function clampExperienceEntryMediaHeightPx(value: unknown, fallback = 280
     Math.min(EXPERIENCE_ENTRY_MEDIA_HEIGHT_PX_MAX, Math.round(n))
   );
 }
-
-export function resolveExperienceEntryMediaHeightPx(
-  p: Pick<PortfolioExperiencePresentationSettings, 'entryMediaHeight' | 'entryMediaHeightPx' | 'entryMediaSize'>
-): number | null {
-  const height = p.entryMediaHeight ?? 'auto';
-  if (height === 'custom') {
-    return clampExperienceEntryMediaHeightPx(p.entryMediaHeightPx, 280);
-  }
-  if (height === 'auto') {
-    // XL width + tall aspect otherwise dominates the viewport — cap it.
-    if ((p.entryMediaSize ?? 'md') === 'full') {
-      return EXPERIENCE_ENTRY_MEDIA_XL_AUTO_MAX_PX;
-    }
-    return null;
-  }
-  return EXPERIENCE_ENTRY_MEDIA_HEIGHT_PRESET_PX[height] ?? 240;
-}
-
-export function experienceEntryMediaUsesFixedHeight(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'entryMediaHeight' | 'entryMediaHeightPx' | 'entryMediaSize'
-  >
-): boolean {
-  return resolveExperienceEntryMediaHeightPx(p) != null;
-}
-
-export function experienceEntryMediaHeightStyle(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'entryMediaHeight' | 'entryMediaHeightPx' | 'entryMediaSize'
-  >
-): CSSProperties | undefined {
-  const px = resolveExperienceEntryMediaHeightPx(p);
-  if (px == null) return undefined;
-  return {
-    height: `${px}px`,
-    maxHeight: `${px}px`,
-  };
-}
-
-/**
- * Stepped cards panoramic banner — always a fixed height.
- * Honors Hauteur presets / manual px; Auto defaults to M (240px).
- */
-export function resolveExperienceSteppedBannerHeightPx(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'entryMediaHeight' | 'entryMediaHeightPx' | 'entryMediaSize'
-  >
-): number {
-  const height = p.entryMediaHeight ?? 'auto';
-  if (height === 'custom') {
-    return clampExperienceEntryMediaHeightPx(p.entryMediaHeightPx, 240);
-  }
-  if (height === 'auto') {
-    return EXPERIENCE_ENTRY_MEDIA_HEIGHT_PRESET_PX.md;
-  }
-  return EXPERIENCE_ENTRY_MEDIA_HEIGHT_PRESET_PX[height] ?? EXPERIENCE_ENTRY_MEDIA_HEIGHT_PRESET_PX.md;
-}
-
-export function experienceEntryMediaRadiusClass(
-  radius: PortfolioExperienceEntryMediaRadius
-): string {
-  return servicesCardRadiusClass(radius);
-}
-
-export function experienceEntryMediaAspectClass(
-  aspect: PortfolioExperienceEntryMediaAspect
-): string {
-  switch (aspect) {
-    case '1/1':
-      return 'aspect-square';
-    case '4/5':
-      return 'aspect-[4/5]';
-    case '16/9':
-      return 'aspect-[16/9]';
-    case '3/2':
-      return 'aspect-[3/2]';
-    default:
-      return '';
-  }
-}
-
-export function experienceEntryMediaPositionClass(
-  position: PortfolioExperienceEntryMediaPosition
-): string {
-  switch (position) {
-    case 'top':
-      return 'object-top';
-    case 'bottom':
-      return 'object-bottom';
-    case 'left':
-      return 'object-left';
-    case 'right':
-      return 'object-right';
-    case 'top-left':
-      return 'object-left-top';
-    case 'top-right':
-      return 'object-right-top';
-    case 'bottom-left':
-      return 'object-left-bottom';
-    case 'bottom-right':
-      return 'object-right-bottom';
-    default:
-      return 'object-center';
-  }
-}
-
-export function experienceEntryMediaIsOutside(
-  placement: PortfolioExperienceEntryMediaPlacement | undefined
-): boolean {
-  return placement === 'outside-right' || placement === 'outside-left';
-}
-
-export function experienceEntryMediaSizeClass(
-  size: PortfolioExperienceEntryMediaSize,
-  placement: PortfolioExperienceEntryMediaPlacement
-): string {
-  // Outside placements use the same column widths as aside (not top stretch).
-  // Mobile: always full container width; size caps apply from lg up only.
-  // Explicit lg widths so bento `lg:w-fit` columns grow and push the story.
-  // Top placements (story-top / entry-top): same size scale via max-width + center.
-  const isTop =
-    !experienceEntryMediaIsOutside(placement) &&
-    (placement === 'story-top' || placement === 'entry-top');
-  if (size === 'custom') {
-    return isTop
-      ? 'w-full max-w-none lg:mx-auto lg:max-w-[var(--experience-media-w)]'
-      : 'w-full max-w-none lg:!w-[var(--experience-media-w)]';
-  }
-  if (size === 'full') {
-    return isTop
-      ? 'w-full max-w-none'
-      : 'w-full max-w-none lg:w-[22rem] xl:w-[28rem]';
-  }
-  switch (size) {
-    case 'sm':
-      return isTop
-        ? 'w-full max-w-none lg:mx-auto lg:max-w-[11rem] xl:max-w-[12rem]'
-        : 'w-full max-w-none lg:w-[11rem] xl:w-[12rem]';
-    case 'lg':
-      return isTop
-        ? 'w-full max-w-none lg:mx-auto lg:max-w-[20rem] xl:max-w-[24rem]'
-        : 'w-full max-w-none lg:w-[18rem] xl:w-[22rem]';
-    default:
-      return isTop
-        ? 'w-full max-w-none lg:mx-auto lg:max-w-[15rem] xl:max-w-[17rem]'
-        : 'w-full max-w-none lg:w-[14rem] xl:w-[16rem]';
-  }
-}
-
-export function experienceEntryMediaSizeStyle(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'entryMediaSize' | 'entryMediaSizePx' | 'entryMediaPlacement'
-  >
-): CSSProperties | undefined {
-  if ((p.entryMediaSize ?? 'md') !== 'custom') return undefined;
-  const px = resolveExperienceEntryMediaSizePx(p);
-  return { ['--experience-media-w' as string]: `${px}px` };
-}
-
-/** True when the entry should render media (URL present + settings allow it). */
-export function experienceEntryHasMedia(
-  block: { mediaUrl?: string | null },
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'showEntryMedia' | 'entryMediaPlacement'
-  >
-): boolean {
-  if (presentation.showEntryMedia === false) return false;
-  if (presentation.entryMediaPlacement === 'hidden') return false;
-  return Boolean(typeof block.mediaUrl === 'string' && block.mediaUrl.trim());
-}
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_ZONE_OPTIONS: {
-  value: PortfolioExperienceToolsZone;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'details',
-    label: 'Right details card',
-    description: 'Tools stay with tasks, proof, and skills on the details side.',
-  },
-  {
-    value: 'story',
-    label: 'Left under description',
-    description: 'Tools sit at the bottom of the story column (under the description).',
-  },
-  {
-    value: 'entry',
-    label: 'Outside under column',
-    description: 'Icons sit on the entry background, just under the left or right column.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_PROOF_ZONE_OPTIONS: {
-  value: PortfolioExperienceProofZone;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'details',
-    label: 'Carte détails',
-    description: 'Les liens Proof restent dans la carte détails (avec tasks, skills…).',
-  },
-  {
-    value: 'story',
-    label: 'Carte story',
-    description: 'Les liens Proof s’affichent dans la colonne story.',
-  },
-  {
-    value: 'under-media',
-    label: 'Sous le média',
-    description: 'Les liens Proof s’affichent sous l’image de l’expérience.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_ENTRY_SIDE_OPTIONS: {
-  value: PortfolioExperienceToolsEntrySide;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'left',
-    label: 'Under left column',
-    description: 'Just under the left column (story when details are on the right).',
-  },
-  {
-    value: 'right',
-    label: 'Under right column',
-    description: 'Just under the right column (details card when details are on the right).',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_DISPLAY_OPTIONS: {
-  value: PortfolioExperienceToolsDisplay;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'icons-and-labels',
-    label: 'Icons + labels',
-    description: 'Show tool logo and name.',
-  },
-  {
-    value: 'icons',
-    label: 'Icons only',
-    description: 'Show logos without text labels.',
-  },
-  {
-    value: 'stacked',
-    label: 'Stacked icons',
-    description: 'Overlapping circular logos in a compact stack.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_ICON_SIZE_OPTIONS: {
-  value: PortfolioExperienceToolsIconSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Compact logos.' },
-  { value: 'md', label: 'Medium', description: 'Default size.' },
-  { value: 'lg', label: 'Large', description: 'More visible logos.' },
-  { value: 'xl', label: 'Extra large', description: 'Hero-sized tool icons.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_ICON_BORDER_OPTIONS: {
-  value: PortfolioExperienceToolsIconBorder;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No ring around tool logos.' },
-  { value: 'soft', label: 'Soft', description: 'Light, low-contrast outline.' },
-  { value: 'solid', label: 'Solid', description: 'Clear outline using the icon border color.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_CHROME_BORDER_OPTIONS: {
-  value: PortfolioExperienceToolsChromeSettings['border'];
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No outline on the tools group.' },
-  { value: 'soft', label: 'Soft', description: 'Light border with subtle shadow.' },
-  { value: 'solid', label: 'Solid', description: 'Clear border using the chrome border color.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_CHROME_RADIUS_OPTIONS: {
-  value: PortfolioExperienceToolsChromeBorderRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Square', description: 'Sharp corners.' },
-  { value: 'sm', label: 'Small', description: 'Subtle rounding.' },
-  { value: 'md', label: 'Medium', description: 'Balanced corners.' },
-  { value: 'lg', label: 'Large', description: 'Soft card-like corners.' },
-  { value: 'xl', label: 'Extra large', description: 'Very rounded surface.' },
-  { value: 'full', label: 'Pill', description: 'Fully rounded capsule.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_TOOLS_CHROME_PADDING_OPTIONS: {
-  value: PortfolioServicesCardPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No inner padding.' },
-  { value: 'sm', label: 'Compact', description: '16px inner padding.' },
-  { value: 'md', label: 'Standard', description: '24px inner padding.' },
-  { value: 'lg', label: 'Comfortable', description: '36px inner padding.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_PROOF_LINK_STYLE_OPTIONS: {
-  value: PortfolioExperienceProofLinkStyle;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'pill',
-    label: 'Pills',
-    description: 'Rounded chips with border — no list bullet.',
-  },
-  {
-    value: 'soft',
-    label: 'Soft chips',
-    description: 'Muted filled chips, quieter than pills.',
-  },
-  {
-    value: 'outline',
-    label: 'Outlined',
-    description: 'Squared chips with a clear border.',
-  },
-  {
-    value: 'plain',
-    label: 'Plain text',
-    description: 'Label + arrow only, no chip background.',
-  },
-  {
-    value: 'accent',
-    label: 'Accent button',
-    description: 'Solid accent fill for stronger CTAs.',
-  },
-  {
-    value: 'underline',
-    label: 'Underline',
-    description: 'Classic text link with underline.',
-  },
-];
-
-export const PORTFOLIO_EXPERIENCE_TEXT_SIZE_OPTIONS: {
-  value: PortfolioExperienceTextSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Compact body text.' },
-  { value: 'md', label: 'Medium', description: 'Default readable size.' },
-  { value: 'lg', label: 'Large', description: 'More prominent.' },
-  { value: 'xl', label: 'Extra large', description: 'Hero-level emphasis.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_STYLE_TARGET_OPTIONS: {
-  value: PortfolioExperienceStyleTarget;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'title', label: 'Job title', description: 'Main role title in the entry.' },
-  { value: 'organization', label: 'Organization', description: 'Company or freelance label.' },
-  { value: 'meta', label: 'Meta chips', description: 'Status, employment, location.' },
-  { value: 'description', label: 'Description', description: 'Role summary paragraph.' },
-  { value: 'blockLabel', label: 'Block labels', description: 'TASKS, PROOF, TOOLS headings.' },
-  { value: 'tasks', label: 'Tasks', description: 'Bullet list items.' },
-  { value: 'proof', label: 'Proof links', description: 'Proof pill labels.' },
-  { value: 'tools', label: 'Tools text', description: 'Tool chip labels (when shown).' },
-];
 
 export function resolveExperienceBlockLabel(
   custom: string | undefined,
@@ -4674,7 +3510,7 @@ export function resolveExperienceBlockLabel(
   return trimmed ? trimmed : fallback;
 }
 
-export function normalizeExperienceBlockLabelVisibility(
+function normalizeExperienceBlockLabelVisibility(
   raw: unknown,
   fallback: PortfolioExperienceBlockLabelVisibility = DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY
 ): PortfolioExperienceBlockLabelVisibility {
@@ -4702,7 +3538,7 @@ export function experienceBlockLabelVisible(
   return visibility[id] !== false;
 }
 
-export function normalizeExperienceTextStyle(
+function normalizeExperienceTextStyle(
   raw: unknown,
   fallback: PortfolioExperienceTextStyle
 ): PortfolioExperienceTextStyle {
@@ -4747,75 +3583,6 @@ export function normalizeExperienceElementStyles(raw: unknown): PortfolioExperie
   return next;
 }
 
-export function patchExperienceElementStyle(
-  styles: PortfolioExperienceElementStyles,
-  target: PortfolioExperienceStyleTarget,
-  patch: Partial<PortfolioExperienceTextStyle>
-): PortfolioExperienceElementStyles {
-  return normalizeExperienceElementStyles({
-    ...styles,
-    [target]: { ...styles[target], ...patch },
-  });
-}
-
-export function experienceTextSizeClass(
-  size: PortfolioExperienceTextSize,
-  role: 'title' | 'body' | 'label' = 'body'
-): string {
-  if (role === 'title') {
-    switch (size) {
-      case 'sm':
-        return 'text-xl sm:text-2xl';
-      case 'lg':
-        return 'text-3xl sm:text-4xl';
-      case 'xl':
-        return 'text-3xl font-bold sm:text-4xl lg:text-[2.6rem]';
-      default:
-        return 'text-2xl sm:text-3xl';
-    }
-  }
-  if (role === 'label') {
-    switch (size) {
-      case 'sm':
-        return 'text-[11px]';
-      case 'lg':
-        return 'text-sm';
-      case 'xl':
-        return 'text-base';
-      default:
-        return 'text-xs';
-    }
-  }
-  switch (size) {
-    case 'sm':
-      return 'text-sm';
-    case 'lg':
-      return 'text-lg';
-    case 'xl':
-      return 'text-xl';
-    default:
-      return 'text-base';
-  }
-}
-
-export function experienceTextStyleClass(
-  style: PortfolioExperienceTextStyle,
-  role: 'title' | 'body' | 'label' = 'body'
-): string {
-  const parts = [experienceTextSizeClass(style.size, role)];
-  if (style.font === 'serif') parts.push('font-serif');
-  if (style.italic) parts.push('italic');
-  if (style.bold) {
-    parts.push(role === 'title' ? 'font-bold' : 'font-semibold');
-  } else {
-    parts.push('font-normal');
-  }
-  if (style.uppercase) {
-    parts.push(role === 'label' ? 'uppercase tracking-[0.16em]' : 'uppercase tracking-[0.08em]');
-  }
-  return parts.join(' ');
-}
-
 /** Pick light or dark text color for experience element styles. */
 export function resolveExperienceTextColor(
   style: PortfolioExperienceTextStyle,
@@ -4844,178 +3611,12 @@ export function resolveExperienceColorMode(
   return p.activeColorMode !== 'light' ? 'dark' : 'light';
 }
 
-export function experienceTextInlineStyle(
-  style: PortfolioExperienceTextStyle,
-  mode: 'light' | 'dark' = 'light'
-): CSSProperties {
-  return {
-    color: resolveExperienceTextColor(style, mode),
-    ...experienceHeaderFontStyle(style.font),
-  };
-}
-
-export function experienceChipChromeStyle(
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'entryChipBackgroundColor' | 'entryChipBorderColor'
-  >
-): CSSProperties {
-  return {
-    backgroundColor: sanitizeHex(
-      presentation.entryChipBackgroundColor,
-      DEFAULT_EXPERIENCE_CHIP_BACKGROUND_COLOR
-    ),
-    borderColor: sanitizeHex(
-      presentation.entryChipBorderColor,
-      DEFAULT_EXPERIENCE_CHIP_BORDER_COLOR
-    ),
-    borderStyle: 'solid',
-    borderWidth: 1,
-  };
-}
-
-/** Soft skills / meta chips — same family as pill chrome, slightly translucent. */
-export function experienceSoftChipChromeStyle(
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    'entryChipBackgroundColor' | 'entryChipBorderColor'
-  >
-): CSSProperties {
-  const fill = sanitizeHex(
-    presentation.entryChipBackgroundColor,
-    DEFAULT_EXPERIENCE_CHIP_BACKGROUND_COLOR
-  );
-  return {
-    backgroundColor: `color-mix(in srgb, ${fill} 88%, transparent)`,
-    borderColor: 'transparent',
-  };
-}
-
-export function experienceToolsIconPixelSize(size: PortfolioExperienceToolsIconSize): number {
-  switch (size) {
-    case 'sm':
-      return 20;
-    case 'lg':
-      return 32;
-    case 'xl':
-      return 40;
-    default:
-      return 26;
-  }
-}
-
-export function experienceToolsIconShellClass(size: PortfolioExperienceToolsIconSize): string {
-  switch (size) {
-    case 'sm':
-      return 'h-9 w-9';
-    case 'lg':
-      return 'h-12 w-12';
-    case 'xl':
-      return 'h-16 w-16';
-    default:
-      return 'h-11 w-11';
-  }
-}
-
-export function experienceToolsIconBorderClass(
-  border: PortfolioExperienceToolsIconBorder = 'solid'
-): string {
-  switch (border) {
-    case 'none':
-      return 'border-0';
-    case 'soft':
-      return 'border border-black/10';
-    default:
-      return 'border';
-  }
-}
-
-/** Surface + outline for tools logo chips (independent from skills / proof chips). */
-export function experienceToolsIconChromeStyle(
-  presentation: Pick<
-    PortfolioExperiencePresentationSettings,
-    | 'toolsIconBackgroundEnabled'
-    | 'toolsIconBackgroundColor'
-    | 'entryChipBorderColor'
-    | 'toolsIconBorder'
-    | 'toolsIconBorderColor'
-  >
-): CSSProperties {
-  const backgroundEnabled = presentation.toolsIconBackgroundEnabled !== false;
-  const fill = backgroundEnabled
-    ? sanitizeHex(presentation.toolsIconBackgroundColor, DEFAULT_EXPERIENCE_CHIP_BACKGROUND_COLOR)
-    : 'transparent';
-  const border = presentation.toolsIconBorder ?? 'solid';
-  if (border === 'none') {
-    return {
-      backgroundColor: fill,
-      borderColor: 'transparent',
-      borderStyle: 'solid',
-      borderWidth: 0,
-    };
-  }
-  return {
-    backgroundColor: fill,
-    borderColor: sanitizeHex(
-      presentation.toolsIconBorderColor || presentation.entryChipBorderColor,
-      DEFAULT_EXPERIENCE_CHIP_BORDER_COLOR
-    ),
-    borderStyle: 'solid',
-    borderWidth: 1,
-  };
-}
-
-function experienceToolsChromeRadiusClass(radius: PortfolioExperienceToolsChromeBorderRadius): string {
-  if (radius === 'full') return 'rounded-full';
-  return servicesCardRadiusClass(radius);
-}
-
-/** Class names for the tools group chrome surface (when enabled). */
-export function experienceToolsChromeClass(
-  chrome: PortfolioExperienceToolsChromeSettings | undefined
-): string {
-  if (!chrome?.enabled) return '';
-  const parts = [
-    chrome.fitContent ? 'w-fit max-w-full' : 'w-full min-w-0',
-    experienceToolsChromeRadiusClass(chrome.borderRadius),
-    chrome.padding === 'custom' ? '' : servicesCardPaddingClass(chrome.padding),
-  ];
-  if (chrome.border !== 'none') {
-    parts.push(experienceCardBorderWidthClass(chrome.border));
-    if (chrome.border === 'soft') parts.push('shadow-sm');
-  }
-  return parts.filter(Boolean).join(' ');
-}
-
-export function experienceToolsChromeStyle(
-  chrome: PortfolioExperienceToolsChromeSettings | undefined
-): CSSProperties | undefined {
-  if (!chrome?.enabled) return undefined;
-  const style: CSSProperties = {};
-  if (chrome.backgroundEnabled) {
-    style.backgroundColor = sanitizeHex(chrome.backgroundColor, '#fafafa');
-  }
-  if (chrome.border === 'soft' || chrome.border === 'solid') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(chrome.borderColor, DEFAULT_EXPERIENCE_CHIP_BORDER_COLOR);
-  }
-  if (chrome.padding === 'custom') {
-    style.padding = `${resolveExperienceToolsChromePaddingPx(chrome)}px`;
-  }
-  return Object.keys(style).length > 0 ? style : undefined;
-}
-
 /** Cards design uses a multi-column grid on large screens. */
-export function experienceDesignSupportsItemsPerRow(design: PortfolioExperienceDesign): boolean {
+function experienceDesignSupportsItemsPerRow(design: PortfolioExperienceDesign): boolean {
   return design === 'cards';
 }
 
-/** Editorial entries are bare period/story rows, not card shells. */
-export function experienceDesignUsesEntryCard(_design: PortfolioExperienceDesign): boolean {
-  return false;
-}
-
-export function normalizeExperienceElementZones(raw: unknown): PortfolioExperienceElementZones {
+function normalizeExperienceElementZones(raw: unknown): PortfolioExperienceElementZones {
   const next: PortfolioExperienceElementZones = { ...DEFAULT_EXPERIENCE_ELEMENT_ZONES };
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return next;
   const record = raw as Record<string, unknown>;
@@ -5026,47 +3627,7 @@ export function normalizeExperienceElementZones(raw: unknown): PortfolioExperien
   return next;
 }
 
-/** Resolved card/outside zone for one element (tools/proof may sit outside via toolsZone/proofZone). */
-export function resolveExperienceElementZone(
-  id: PortfolioExperienceElementId,
-  zones: PortfolioExperienceElementZones,
-  toolsZone: PortfolioExperienceToolsZone = 'details',
-  proofZone: PortfolioExperienceProofZone = 'details'
-): PortfolioExperienceCardZone | 'entry' | 'under-media' {
-  if (id === 'tools') {
-    if (toolsZone === 'entry') return 'entry';
-    return toolsZone;
-  }
-  if (id === 'proof') {
-    if (proofZone === 'under-media') return 'under-media';
-    return proofZone;
-  }
-  return zones[id] ?? DEFAULT_EXPERIENCE_ELEMENT_ZONES[id];
-}
-
-export function isExperienceStoryElement(
-  id: PortfolioExperienceElementId,
-  toolsZone: PortfolioExperienceToolsZone = 'details',
-  zones: PortfolioExperienceElementZones = DEFAULT_EXPERIENCE_ELEMENT_ZONES,
-  proofZone: PortfolioExperienceProofZone = 'details'
-): boolean {
-  return resolveExperienceElementZone(id, zones, toolsZone, proofZone) === 'story';
-}
-
-export function isExperienceDetailsElement(
-  id: PortfolioExperienceElementId,
-  toolsZone: PortfolioExperienceToolsZone = 'details',
-  zones: PortfolioExperienceElementZones = DEFAULT_EXPERIENCE_ELEMENT_ZONES,
-  proofZone: PortfolioExperienceProofZone = 'details'
-): boolean {
-  return resolveExperienceElementZone(id, zones, toolsZone, proofZone) === 'details';
-}
-
-export function isExperienceEntryToolsZone(toolsZone: PortfolioExperienceToolsZone): boolean {
-  return toolsZone === 'entry';
-}
-
-export function normalizeExperienceElementOrder(raw: unknown): PortfolioExperienceElementId[] {
+function normalizeExperienceElementOrder(raw: unknown): PortfolioExperienceElementId[] {
   const allowed = new Set<string>(EXPERIENCE_ELEMENT_IDS);
   const seen = new Set<string>();
   const ordered: PortfolioExperienceElementId[] = [];
@@ -5082,161 +3643,6 @@ export function normalizeExperienceElementOrder(raw: unknown): PortfolioExperien
   }
   return ordered;
 }
-
-export function moveExperienceElementOrder(
-  order: PortfolioExperienceElementId[],
-  index: number,
-  direction: -1 | 1
-): PortfolioExperienceElementId[] {
-  const next = normalizeExperienceElementOrder(order);
-  const target = index + direction;
-  if (index < 0 || index >= next.length || target < 0 || target >= next.length) return next;
-  const copy = [...next];
-  const [item] = copy.splice(index, 1);
-  copy.splice(target, 0, item);
-  return copy;
-}
-
-/** Move an element to the other inner card (story ↔ details). Syncs toolsZone/proofZone when needed. */
-export function moveExperienceElementToCardZone(
-  zones: PortfolioExperienceElementZones,
-  id: PortfolioExperienceElementId,
-  zone: PortfolioExperienceCardZone,
-  toolsZone: PortfolioExperienceToolsZone,
-  elementOrder?: PortfolioExperienceElementId[],
-  proofZone: PortfolioExperienceProofZone = 'details'
-): {
-  elementZones: PortfolioExperienceElementZones;
-  toolsZone: PortfolioExperienceToolsZone;
-  proofZone?: PortfolioExperienceProofZone;
-  elementOrder?: PortfolioExperienceElementId[];
-} {
-  const elementZones = normalizeExperienceElementZones({ ...zones, [id]: zone });
-  if (id === 'tools') {
-    return {
-      elementZones,
-      toolsZone: zone,
-      ...(zone === 'story' && elementOrder
-        ? { elementOrder: pinExperienceElementAfter(elementOrder, 'tools', 'description') }
-        : {}),
-    };
-  }
-  if (id === 'proof') {
-    return {
-      elementZones,
-      toolsZone,
-      proofZone: zone,
-    };
-  }
-  return { elementZones, toolsZone, proofZone };
-}
-
-/** Place `id` immediately after `afterId` in the display order (or append if missing). */
-export function pinExperienceElementAfter(
-  order: PortfolioExperienceElementId[],
-  id: PortfolioExperienceElementId,
-  afterId: PortfolioExperienceElementId
-): PortfolioExperienceElementId[] {
-  const next = normalizeExperienceElementOrder(order).filter((item) => item !== id);
-  const anchor = next.indexOf(afterId);
-  if (anchor === -1) return [...next, id];
-  next.splice(anchor + 1, 0, id);
-  return next;
-}
-
-/** Apply Tools placement and keep story-column Tools pinned under the description. */
-export function patchExperienceToolsPlacement(
-  experience: Pick<
-    PortfolioExperiencePresentationSettings,
-    'elementOrder' | 'elementZones' | 'toolsEntrySide'
-  >,
-  toolsZone: PortfolioExperienceToolsZone,
-  toolsEntrySide?: PortfolioExperienceToolsEntrySide
-): Partial<PortfolioExperiencePresentationSettings> {
-  const elementZones = normalizeExperienceElementZones(
-    toolsZone === 'story' || toolsZone === 'details'
-      ? { ...experience.elementZones, tools: toolsZone }
-      : experience.elementZones
-  );
-  const elementOrder =
-    toolsZone === 'story'
-      ? pinExperienceElementAfter(experience.elementOrder, 'tools', 'description')
-      : normalizeExperienceElementOrder(experience.elementOrder);
-
-  return {
-    toolsZone,
-    elementZones,
-    elementOrder,
-    ...(toolsEntrySide ? { toolsEntrySide } : toolsZone === 'entry' ? { toolsEntrySide: experience.toolsEntrySide } : {}),
-  };
-}
-
-/** Apply Proof placement (story / details / under media) and sync elementZones when on a card. */
-export function patchExperienceProofPlacement(
-  experience: Pick<PortfolioExperiencePresentationSettings, 'elementZones'>,
-  proofZone: PortfolioExperienceProofZone
-): Partial<PortfolioExperiencePresentationSettings> {
-  return {
-    proofZone,
-    elementZones:
-      proofZone === 'story' || proofZone === 'details'
-        ? normalizeExperienceElementZones({ ...experience.elementZones, proof: proofZone })
-        : experience.elementZones,
-  };
-}
-
-export const PORTFOLIO_EXPERIENCE_YEARS_PRESET_OPTIONS: {
-  value: PortfolioExperienceYearsPreset;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'default',
-    label: 'Hands-on',
-    description: '{years}+ years of hands-on experience in my field.',
-  },
-  {
-    value: 'hands-on',
-    label: 'Field expertise',
-    description: '{years}+ years mastering my craft and delivering results.',
-  },
-  {
-    value: 'industry',
-    label: 'Industry',
-    description: '{years}+ years building expertise across the industry.',
-  },
-  {
-    value: 'professional',
-    label: 'Professional',
-    description: 'Over {years} years of professional experience.',
-  },
-  {
-    value: 'creative',
-    label: 'Creative',
-    description: '{years}+ years crafting stories and content for clients worldwide.',
-  },
-  { value: 'custom', label: 'Custom', description: 'Write your own phrase — use {years} for the count.' },
-];
-
-export const PORTFOLIO_EXPERIENCE_YEARS_SIZE_OPTIONS: {
-  value: PortfolioExperienceYearsSize;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
-  { value: 'xl', label: 'Extra large' },
-];
-
-export const PORTFOLIO_EXPERIENCE_CONTENT_ALIGN_OPTIONS: {
-  value: PortfolioExperienceContentAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Default left alignment.' },
-  { value: 'center', label: 'Center', description: 'Center the years phrase.' },
-  { value: 'right', label: 'Right', description: 'Right-aligned years phrase.' },
-];
 
 const SUBTITLE_PRESET_COPY: Record<
   Exclude<PortfolioExperienceSubtitlePreset, 'default' | 'custom' | 'minimal'>,
@@ -5304,7 +3710,7 @@ export function resolveExperienceSectionSubtitle(
   }
 }
 
-export function experienceHeaderFontClass(
+function experienceHeaderFontClass(
   font: PortfolioExperienceHeaderFont,
   kind: 'title' | 'subtitle'
 ): string {
@@ -5328,16 +3734,8 @@ export function experienceHeaderFontClass(
   }
 }
 
-export function experienceHeaderFontStyle(_font: PortfolioExperienceHeaderFont): CSSProperties | undefined {
+function experienceHeaderFontStyle(_font: PortfolioExperienceHeaderFont): CSSProperties | undefined {
   return undefined;
-}
-
-export function experienceTitleColorStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_EXPERIENCE_TITLE_COLOR) };
-}
-
-export function experienceSubtitleColorStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_EXPERIENCE_SUBTITLE_COLOR) };
 }
 
 export function experienceAccentColor(accent: string): string {
@@ -5386,11 +3784,6 @@ export function experienceDesignUsesTableHeader(design: PortfolioExperienceDesig
 /** Cards design owns its own header (small title left + large years right). */
 export function experienceDesignUsesCardsHeader(design: PortfolioExperienceDesign): boolean {
   return design === 'cards';
-}
-
-/** Editorial uses a period gutter, not a timeline rail. */
-export function isExperienceTimelineDesign(design: PortfolioExperienceDesign): boolean {
-  return design === 'milestone';
 }
 
 export function resolveExperienceYearsTemplate(
@@ -5447,7 +3840,7 @@ export function resolveSerifLeadCopy(
   return { label, title: interpolate(resolveExperienceYearsTemplate(presentation)) };
 }
 
-export function clampAccentYearsFontSize(
+function clampAccentYearsFontSize(
   value: unknown,
   fallback: PortfolioExperienceAccentYearsFontSize = 6
 ): PortfolioExperienceAccentYearsFontSize {
@@ -5456,31 +3849,31 @@ export function clampAccentYearsFontSize(
   return fallback;
 }
 
-export function clampAccentYearsLineHeight(value: unknown, fallback = 1.05): number {
+function clampAccentYearsLineHeight(value: unknown, fallback = 1.05): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(1.2, Math.max(1, Math.round(n * 100) / 100));
 }
 
-export function clampAccentYearsLetterSpacing(value: unknown, fallback = -0.02): number {
+function clampAccentYearsLetterSpacing(value: unknown, fallback = -0.02): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(0.02, Math.max(-0.06, Math.round(n * 1000) / 1000));
 }
 
-export function clampAccentYearsBadgePadX(value: unknown, fallback = 0.5): number {
+function clampAccentYearsBadgePadX(value: unknown, fallback = 0.5): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(0.9, Math.max(0.16, Math.round(n * 100) / 100));
 }
 
-export function clampAccentYearsBadgePadY(value: unknown, fallback = 0.1): number {
+function clampAccentYearsBadgePadY(value: unknown, fallback = 0.1): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(0.28, Math.max(0.02, Math.round(n * 100) / 100));
 }
 
-export function clampAccentYearsBadgeRadius(
+function clampAccentYearsBadgeRadius(
   value: unknown,
   fallback: PortfolioExperienceAccentYearsRadius = 4
 ): PortfolioExperienceAccentYearsRadius {
@@ -5489,7 +3882,7 @@ export function clampAccentYearsBadgeRadius(
   return fallback;
 }
 
-export function clampAccentYearsBottomRem(value: unknown, fallback = 3.5): number {
+function clampAccentYearsBottomRem(value: unknown, fallback = 3.5): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(6.5, Math.max(1.25, Math.round(n * 4) / 4));
@@ -5686,111 +4079,6 @@ export function experienceYearsHighlightStyle(
   };
 }
 
-export function experienceBlockClass(_design: PortfolioExperienceDesign): string {
-  return '';
-}
-
-function experienceCardBorderWidthClass(border: PortfolioServicesCardBorder): string {
-  switch (border) {
-    case 'soft':
-      return 'border';
-    case 'solid':
-    case 'accent':
-      return 'border-2';
-    default:
-      return 'border-0';
-  }
-}
-
-export function experienceLayerFrameClass(
-  frame: PortfolioExperienceLayerFrame,
-  density: PortfolioExperienceItemDensity = 'comfortable'
-): string {
-  if (!frame.enabled) {
-    return density === 'compact' ? 'space-y-4' : 'space-y-6';
-  }
-  const padding =
-    density === 'compact'
-      ? servicesCardPaddingClass(frame.cardPadding === 'lg' ? 'md' : frame.cardPadding === 'md' ? 'sm' : frame.cardPadding)
-      : servicesCardPaddingClass(frame.cardPadding);
-  const parts = [
-    'relative overflow-hidden',
-    servicesCardRadiusClass(frame.cardBorderRadius),
-    padding,
-  ];
-  if (frame.cardBorder !== 'none') {
-    parts.push(experienceCardBorderWidthClass(frame.cardBorder));
-    if (frame.cardBorder === 'soft') parts.push('shadow-sm');
-  }
-  parts.push(density === 'compact' ? 'space-y-4' : 'space-y-6');
-  return parts.filter(Boolean).join(' ');
-}
-
-export function experienceLayerFrameStyle(
-  frame: PortfolioExperienceLayerFrame,
-  accentColor: string
-): CSSProperties | undefined {
-  if (!frame.enabled) return undefined;
-  const style: CSSProperties = {};
-  // Solid fill on the shell; split A/B/divider are painted by ServicesCardBackgroundLayers.
-  if (frame.cardBackgroundFill === 'solid' && frame.cardBackgroundEnabled) {
-    style.backgroundColor = sanitizeHex(frame.cardBackgroundColor, DEFAULT_EXPERIENCE_CARD_BACKGROUND_COLOR);
-  }
-  if (frame.cardBorder === 'accent') {
-    style.borderColor = sanitizeHex(accentColor, DEFAULT_EXPERIENCE_ACCENT_COLOR);
-  } else if (frame.cardBorder === 'soft' || frame.cardBorder === 'solid') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(frame.cardBorderColor, DEFAULT_EXPERIENCE_CARD_BORDER_COLOR);
-  }
-  return style;
-}
-
-export function experienceLayerToCardFrameSettings(
-  frame: PortfolioExperienceLayerFrame
-): import('@/components/portfolio/portfolio-card-frame-settings-fields').PortfolioCardFrameSettings {
-  return {
-    cardBorder: frame.cardBorder,
-    cardBorderColor: frame.cardBorderColor,
-    cardBackgroundEnabled: frame.cardBackgroundEnabled,
-    cardBackgroundColor: frame.cardBackgroundColor,
-    cardBorderRadius: frame.cardBorderRadius,
-    cardPadding: frame.cardPadding,
-    cardBackgroundFill: frame.cardBackgroundFill,
-    cardBackgroundColorA: frame.cardBackgroundColorA,
-    cardBackgroundColorB: frame.cardBackgroundColorB,
-    cardBackgroundSplitAxis: frame.cardBackgroundSplitAxis,
-    cardBackgroundSplitPosition: frame.cardBackgroundSplitPosition,
-    cardDividerEnabled: frame.cardDividerEnabled,
-    cardDividerShape: frame.cardDividerShape,
-    cardDividerAngle: frame.cardDividerAngle,
-    cardDividerCurveDepth: frame.cardDividerCurveDepth,
-    cardDividerColor: frame.cardDividerColor,
-    cardDividerThickness: frame.cardDividerThickness,
-    cardDividerOpacity: frame.cardDividerOpacity,
-  };
-}
-
-export function patchExperienceLayerFrame(
-  frame: PortfolioExperienceLayerFrame,
-  patch: Partial<PortfolioExperienceLayerFrame>
-): PortfolioExperienceLayerFrame {
-  const mergedBg = mergeServicesCardBackgroundSettings(frame, patch);
-  return {
-    ...frame,
-    ...mergedBg,
-    enabled: typeof patch.enabled === 'boolean' ? patch.enabled : frame.enabled,
-    cardBorder: patch.cardBorder ?? frame.cardBorder,
-    cardBorderColor: patch.cardBorderColor ?? frame.cardBorderColor,
-    cardBackgroundEnabled:
-      typeof patch.cardBackgroundEnabled === 'boolean'
-        ? patch.cardBackgroundEnabled
-        : frame.cardBackgroundEnabled,
-    cardBackgroundColor: patch.cardBackgroundColor ?? frame.cardBackgroundColor,
-    cardBorderRadius: patch.cardBorderRadius ?? frame.cardBorderRadius,
-    cardPadding: patch.cardPadding ?? frame.cardPadding,
-  };
-}
-
 function mergeExperienceLayerFrame(
   base: PortfolioExperienceLayerFrame,
   raw: unknown,
@@ -5850,97 +4138,7 @@ function mergeExperienceLayerFrame(
   };
 }
 
-export function experienceEntryShellUsesFrame(
-  p: Pick<PortfolioExperiencePresentationSettings, 'experienceDesign' | 'entryFrame'>
-): boolean {
-  if (
-    p.experienceDesign === 'editorial' ||
-    p.experienceDesign === 'milestone' ||
-    p.experienceDesign === 'table' ||
-    p.experienceDesign === 'cards' ||
-    p.experienceDesign === 'reel' ||
-    p.experienceDesign === 'duotone' ||
-    p.experienceDesign === 'gallery' ||
-    p.experienceDesign === 'kinetic'
-  )
-    return false;
-  if (p.entryFrame.enabled) return true;
-  return experienceDesignUsesEntryCard(p.experienceDesign);
-}
-
-export function experienceEntryShellClass(
-  p: Pick<PortfolioExperiencePresentationSettings, 'experienceDesign' | 'entryFrame' | 'itemDensity'>
-): string {
-  const designExtras = experienceBlockClass(p.experienceDesign);
-  if (!experienceEntryShellUsesFrame(p)) return designExtras;
-  const frameClass = experienceLayerFrameClass(
-    { ...p.entryFrame, enabled: true },
-    p.itemDensity
-  );
-  return [frameClass, designExtras].filter(Boolean).join(' ');
-}
-
-export function experienceEntryShellStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'experienceDesign' | 'entryFrame' | 'accentColor'>
-): CSSProperties | undefined {
-  if (!experienceEntryShellUsesFrame(p)) return undefined;
-  return experienceLayerFrameStyle({ ...p.entryFrame, enabled: true }, p.accentColor);
-}
-
-export function experienceStoryPanelClass(
-  p: Pick<PortfolioExperiencePresentationSettings, 'storyFrame' | 'itemDensity'>
-): string {
-  return experienceLayerFrameClass(p.storyFrame, p.itemDensity);
-}
-
-export function experienceStoryPanelStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'storyFrame' | 'accentColor'>
-): CSSProperties | undefined {
-  return experienceLayerFrameStyle(p.storyFrame, p.accentColor);
-}
-
-export function experienceDetailsPanelClass(
-  p: Pick<PortfolioExperiencePresentationSettings, 'detailsFrame' | 'itemDensity' | 'asidePlacement'>
-): string {
-  if (p.asidePlacement === 'inline') {
-    return p.itemDensity === 'compact' ? 'space-y-4' : 'space-y-6';
-  }
-  return experienceLayerFrameClass(p.detailsFrame, p.itemDensity);
-}
-
-export function experienceDetailsPanelStyle(
-  p: Pick<PortfolioExperiencePresentationSettings, 'detailsFrame' | 'accentColor' | 'asidePlacement'>
-): CSSProperties | undefined {
-  if (p.asidePlacement === 'inline') return undefined;
-  return experienceLayerFrameStyle(p.detailsFrame, p.accentColor);
-}
-
-/** Frame for Proof / skills secondary details card (bento stack). */
-export function experienceDetailsSecondaryPanelClass(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'detailsSecondaryFrame' | 'detailsFrame' | 'itemDensity' | 'asidePlacement'
-  >
-): string {
-  if (p.asidePlacement === 'inline') {
-    return p.itemDensity === 'compact' ? 'space-y-4' : 'space-y-6';
-  }
-  const frame = p.detailsSecondaryFrame ?? p.detailsFrame;
-  return experienceLayerFrameClass(frame, p.itemDensity);
-}
-
-export function experienceDetailsSecondaryPanelStyle(
-  p: Pick<
-    PortfolioExperiencePresentationSettings,
-    'detailsSecondaryFrame' | 'detailsFrame' | 'accentColor' | 'asidePlacement'
-  >
-): CSSProperties | undefined {
-  if (p.asidePlacement === 'inline') return undefined;
-  const frame = p.detailsSecondaryFrame ?? p.detailsFrame;
-  return experienceLayerFrameStyle(frame, p.accentColor);
-}
-
-export function experienceItemGapClass(gap: PortfolioExperienceItemGap): string {
+function experienceItemGapClass(gap: PortfolioExperienceItemGap): string {
   switch (gap) {
     case 'sm':
       return 'gap-6 sm:gap-8';
@@ -5953,29 +4151,7 @@ export function experienceItemGapClass(gap: PortfolioExperienceItemGap): string 
   }
 }
 
-export function experienceTaskItemGapClass(gap: PortfolioExperienceTaskItemGap): string {
-  switch (gap) {
-    case 'sm':
-      return 'space-y-2';
-    case 'lg':
-      return 'space-y-5 sm:space-y-6';
-    case 'xl':
-      return 'space-y-7 sm:space-y-8';
-    default:
-      return 'space-y-3 sm:space-y-4';
-  }
-}
-
-export function resolveExperienceBodyLayout(
-  _p: Pick<PortfolioExperiencePresentationSettings, 'asidePlacement' | 'experienceDesign'>,
-  _inMultiColumn: boolean
-): 'stack' | 'split' | 'bento' | 'compact' | 'magazine' | 'stepped' {
-  // Editorial renders its own period/story layout — stack is the safe default
-  // for any leftover shared body helpers.
-  return 'stack';
-}
-
-export function experienceListMaxWidthClass(width: PortfolioExperienceListMaxWidth): string {
+function experienceListMaxWidthClass(width: PortfolioExperienceListMaxWidth): string {
   switch (width) {
     case 'narrow':
       return 'w-full max-w-xl sm:max-w-2xl lg:max-w-3xl';
@@ -5988,7 +4164,7 @@ export function experienceListMaxWidthClass(width: PortfolioExperienceListMaxWid
   }
 }
 
-export function experienceListPlacementClass(placement: PortfolioExperienceListPlacement): string {
+function experienceListPlacementClass(placement: PortfolioExperienceListPlacement): string {
   switch (placement) {
     case 'left':
       return 'mr-auto ml-0';

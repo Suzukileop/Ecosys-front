@@ -9,6 +9,7 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_LABEL_TEXT = 'Portfolio';
 const DEFAULT_TITLE_TEXT = 'Selected work';
@@ -62,7 +63,8 @@ export function WorkSplitHeadingHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.splitHeadingTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.splitHeadingLabelText || DEFAULT_LABEL_TEXT).trim();
   const ink = workPaletteTokenColor(presentation.splitHeadingTitleColor ?? 'principal');

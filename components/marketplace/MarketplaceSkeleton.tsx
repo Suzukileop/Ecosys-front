@@ -35,7 +35,7 @@ export function MarketplaceProductGridSkeleton({ count = 6 }: { count?: number }
   );
 }
 
-export function MarketplaceCatalogToolbarSkeleton() {
+function MarketplaceCatalogToolbarSkeleton() {
   return (
     <div className={frameClass} aria-hidden>
       <div className="flex flex-col gap-4 p-4 sm:p-5 lg:flex-row lg:items-center">

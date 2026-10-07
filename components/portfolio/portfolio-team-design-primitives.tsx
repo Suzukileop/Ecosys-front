@@ -18,13 +18,13 @@ import {
   teamSocialIconGlyphClass,
   type PortfolioTeamPresentationSettings,
 } from '@/components/portfolio/portfolio-team-settings';
-import type { ProfileTeamMember } from '@/types/ecosystem';
+import type { ProfileTeamMember } from '@/types/profile';
 
 /** One easing for the whole family — a long, soft expo-out, the premium-motion default here. */
 export const EASE_CLS = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
 /** Hover transitions: long enough to read as choreography, short enough to feel immediate. */
 export const HOVER_CLS = `transition-transform duration-[760ms] ${EASE_CLS}`;
-export const MEDIA_ZOOM_CLS = `h-full w-full transition-transform duration-[1100ms] ${EASE_CLS} group-hover:scale-[1.055]`;
+const MEDIA_ZOOM_CLS = `h-full w-full transition-transform duration-[1100ms] ${EASE_CLS} group-hover:scale-[1.055]`;
 /**
  * Touch devices have no hover, so the two hover-only designs would show nothing but portraits —
  * name, role and links would be unreachable. On a pointer that cannot hover, their reveal is
@@ -35,7 +35,7 @@ export const MEDIA_ZOOM_CLS = `h-full w-full transition-transform duration-[1100
 export const TOUCH_REVEAL_CLS =
   '[@media(hover:none)]:pointer-events-auto [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100';
 
-export function teamImageAspectClass(aspect: PortfolioTeamPresentationSettings['imageAspect']): string {
+function teamImageAspectClass(aspect: PortfolioTeamPresentationSettings['imageAspect']): string {
   if (aspect === 'square') return 'aspect-square w-full';
   if (aspect === 'landscape') return 'aspect-[4/3] w-full';
   if (aspect === 'auto') return 'min-h-48 w-full';
@@ -112,7 +112,7 @@ export function TeamMemberImage({
   );
 }
 
-export function TeamSocialIcon({ platform, className }: { platform: string; className: string }) {
+function TeamSocialIcon({ platform, className }: { platform: string; className: string }) {
   if (platform === 'EMAIL') {
     return <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden><path d="M3.5 6.5h17v11h-17z" /><path d="m4 7 8 6 8-6" /></svg>;
   }

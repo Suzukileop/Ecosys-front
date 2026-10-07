@@ -1,8 +1,8 @@
 'use client';
 
 import { useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
-export const PRODUCT_HASHTAGS_MAX = 15;
-export const PRODUCT_HASHTAG_MAX_LENGTH = 40;
+const PRODUCT_HASHTAGS_MAX = 15;
+const PRODUCT_HASHTAG_MAX_LENGTH = 40;
 
 const HASHTAG_INVALID_CHARS = new RegExp('[^\\p{L}\\p{N}_-]', 'gu');
 

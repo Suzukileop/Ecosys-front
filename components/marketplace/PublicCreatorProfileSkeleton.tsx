@@ -66,7 +66,7 @@ export function PublicCreatorProfileContentTabSkeleton() {
   );
 }
 
-export function PublicCreatorProfileInfoTabSkeleton() {
+function PublicCreatorProfileInfoTabSkeleton() {
   return (
     <div className="min-w-0" aria-busy="true" aria-label="Chargement des informations">
       <div className="flex flex-col divide-y divide-black/[0.06] dark:divide-white/[0.06]">

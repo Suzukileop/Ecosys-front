@@ -17,7 +17,7 @@ export type GalleryColorSlot =
 
 export type PortfolioGalleryColorBindings = Record<GalleryColorSlot, HeroPaletteTokenId>;
 
-export const DEFAULT_GALLERY_COLOR_BINDINGS: PortfolioGalleryColorBindings = {
+const DEFAULT_GALLERY_COLOR_BINDINGS: PortfolioGalleryColorBindings = {
   sectionBackground: 'fond',
   cardSurface: 'neutre',
   title: 'texteFort',
@@ -26,20 +26,7 @@ export const DEFAULT_GALLERY_COLOR_BINDINGS: PortfolioGalleryColorBindings = {
   overlay: 'fond',
 };
 
-export const PORTFOLIO_GALLERY_COLOR_SLOT_OPTIONS: {
-  value: GalleryColorSlot;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background', description: 'Main gallery fill.' },
-  { value: 'cardSurface', label: 'Card surface', description: 'Gallery card background and border (dark mode).' },
-  { value: 'title', label: 'Section title', description: 'Gallery heading color.' },
-  { value: 'subtitle', label: 'Subtitle', description: 'Intro text under the title.' },
-  { value: 'itemTitle', label: 'Media titles', description: 'Captions under the images.' },
-  { value: 'overlay', label: 'Overlay', description: 'Veil behind overlaid captions.' },
-];
-
-export type PortfolioGalleryPaletteHost = Partial<PortfolioGalleryPresentationSettings> & {
+type PortfolioGalleryPaletteHost = Partial<PortfolioGalleryPresentationSettings> & {
   galleryPalette?: Partial<PortfolioHeroPalette>;
   galleryColorBindings?: Partial<PortfolioGalleryColorBindings>;
 };

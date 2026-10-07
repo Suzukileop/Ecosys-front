@@ -8,19 +8,20 @@ import { NATIONALITY_SELECT_OPTIONS } from '@/lib/countries';
 import {
   PROVIDER_HAIRLINE_CLASS,
   PROVIDER_INK_CLASS,
+  PROVIDER_MUTED_CLASS,
   PROVIDER_SURFACE_CLASS,
 } from '@/components/marketplace/ProviderDirectoryPrimitives';
 
 const TRIGGER_CLASS = `group/sel flex h-10 w-full items-center rounded-lg border transition-colors duration-200 sm:inline-flex sm:w-auto ${PROVIDER_SURFACE_CLASS}`;
 const TRIGGER_IDLE_CLASS = `${PROVIDER_HAIRLINE_CLASS} hover:border-black/15 dark:hover:border-white/20`;
-const TRIGGER_ACTIVE_CLASS = 'border-[#111111]/25 dark:border-white/25';
+const TRIGGER_ACTIVE_CLASS = 'border-[#0F0F0F]/30 dark:border-white/30';
 
 const nationalityOptions = [
   { value: '', label: 'All nationalities' },
   ...NATIONALITY_SELECT_OPTIONS.map((option) => ({ value: option.code, label: option.label })),
 ];
 
-export const SERVICE_PROVIDER_MIN_YEARS_OPTIONS = [
+const SERVICE_PROVIDER_MIN_YEARS_OPTIONS = [
   { value: '', label: 'Any experience' },
   { value: '1', label: '1+ years' },
   { value: '3', label: '3+ years' },
@@ -168,10 +169,12 @@ function FilterDropdown({
         >
           <FontAwesomeIcon
             icon={icon}
-            className={`h-3.5 w-3.5 shrink-0 ${selected ? 'text-[#FF5722]' : 'text-[#222222] dark:text-neutral-300'}`}
+            className={`h-3.5 w-3.5 shrink-0 ${selected ? 'text-[#FF5722]' : PROVIDER_INK_CLASS}`}
             aria-hidden
           />
-          <span className={`truncate text-[#222222] dark:text-neutral-300 ${selected ? 'hidden sm:inline' : ''}`}>
+          <span
+            className={`truncate ${selected ? `hidden sm:inline ${PROVIDER_MUTED_CLASS}` : `font-medium ${PROVIDER_INK_CLASS}`}`}
+          >
             {label}
           </span>
           {selected ? (
@@ -181,7 +184,7 @@ function FilterDropdown({
           ) : null}
           <ChevronDownIcon
             className={`ml-auto h-3.5 w-3.5 shrink-0 transition-transform duration-300 sm:ml-0 ${open ? 'rotate-180' : ''} ${
-              selected ? 'text-[#FF5722]' : 'text-neutral-400 group-hover/sel:text-[#FF5722]'
+              selected ? 'text-[#FF5722]' : `${PROVIDER_MUTED_CLASS} group-hover/sel:text-[#FF5722]`
             }`}
           />
         </button>
@@ -191,7 +194,7 @@ function FilterDropdown({
             aria-label={`Clear ${label.toLowerCase()}`}
             title="Clear"
             onClick={() => onChange('')}
-            className="mr-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full sm:mr-2 text-neutral-400 transition-colors hover:bg-black/[0.06] hover:text-[#111111] dark:hover:bg-white/10 dark:hover:text-white"
+            className="mr-1.5 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-full sm:mr-2 text-[#606060] transition-colors hover:bg-black/[0.06] hover:text-[#0F0F0F] dark:text-[#AAAAAA] dark:hover:bg-white/10 dark:hover:text-white"
           >
             <XIcon className="h-3 w-3" />
           </button>
@@ -215,7 +218,7 @@ function FilterDropdown({
                 }}
                 placeholder={`Search ${label.toLowerCase()}…`}
                 aria-label={`Search ${label.toLowerCase()}`}
-                className="w-full bg-transparent text-[14px] text-[#111111] caret-[#FF5722] outline-none placeholder:text-neutral-400 dark:text-white"
+                className={`w-full bg-transparent text-[14px] ${PROVIDER_INK_CLASS} caret-[#FF5722] outline-none placeholder:text-[#606060] dark:placeholder:text-[#AAAAAA]`}
               />
             </div>
           ) : null}
@@ -226,7 +229,7 @@ function FilterDropdown({
             className="max-h-72 overflow-y-auto p-1.5 [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/20 dark:[&::-webkit-scrollbar-thumb]:bg-white/15"
           >
             {visible.length === 0 ? (
-              <li className="px-3 py-6 text-center text-[14px] text-neutral-400">No match</li>
+              <li className={`px-3 py-6 text-center text-[14px] ${PROVIDER_MUTED_CLASS}`}>No match</li>
             ) : (
               visible.map((option, index) => {
                 const isSelected = option.value === value;
@@ -241,8 +244,8 @@ function FilterDropdown({
                         index === cursor ? 'bg-black/[0.05] dark:bg-white/[0.07]' : ''
                       } ${
                         isSelected
-                          ? 'font-semibold text-[#111111] dark:text-white'
-                          : 'text-neutral-600 dark:text-neutral-300'
+                          ? `font-semibold ${PROVIDER_INK_CLASS}`
+                          : PROVIDER_INK_CLASS
                       }`}
                     >
                       <span className="truncate">{option.label}</span>
@@ -325,12 +328,10 @@ export function ServiceProviderFilterPills({
       >
         <FontAwesomeIcon
           icon={faLocationCrosshairs}
-          className={`h-3.5 w-3.5 shrink-0 ${closestFirst ? 'text-[#FF5722]' : 'text-[#222222] group-hover/sel:text-[#FF5722] dark:text-neutral-300'}`}
+          className={`h-3.5 w-3.5 shrink-0 ${closestFirst ? 'text-[#FF5722]' : `${PROVIDER_INK_CLASS} group-hover/sel:text-[#FF5722]`}`}
           aria-hidden
         />
-        <span
-          className={`hidden truncate sm:inline ${closestFirst ? `font-medium ${PROVIDER_INK_CLASS}` : 'text-[#222222] dark:text-neutral-300'}`}
-        >
+        <span className={`hidden truncate font-medium sm:inline ${PROVIDER_INK_CLASS}`}>
           Closest first
         </span>
       </button>

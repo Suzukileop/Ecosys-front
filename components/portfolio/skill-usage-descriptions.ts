@@ -1,5 +1,5 @@
 import { getCreatorToolCategoryLabel } from '@/components/creator/studio/creator-profile-tools-catalog';
-import type { ProfileStrengthTool, ProfileStrengthToolLevel } from '@/types/ecosystem';
+import type { ProfileStrengthTool, ProfileStrengthToolLevel } from '@/types/profile';
 export type PortfolioSkillRef = string | ProfileStrengthTool;
 
 export function resolveSkillName(skill: PortfolioSkillRef): string {
@@ -150,21 +150,6 @@ export function resolveSkillCategoryDisplay(skill: PortfolioSkillRef): string {
 /** Use cases are retired: legacy stored values are never displayed. */
 export function resolveSkillUseCases(_skill: PortfolioSkillRef): string[] {
   return [];
-}
-
-export function resolveSkillExperienceLabel(skill: PortfolioSkillRef): string {
-  if (typeof skill === 'string') return '';
-  if (typeof skill.experienceYears === 'number' && skill.experienceYears > 0) {
-    const years = skill.experienceYears;
-    return years === 1 ? '1 year of experience' : `${years} years of experience`;
-  }
-  if (skill.experienceYears === 0) return 'Less than a year';
-  return '';
-}
-
-export function resolveSkillCurrentlyUsed(skill: PortfolioSkillRef): boolean | null {
-  if (typeof skill === 'string') return null;
-  return typeof skill.currentlyUsed === 'boolean' ? skill.currentlyUsed : null;
 }
 
 /** Generic fallback — no built-in per-tool catalog copy. */

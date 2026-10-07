@@ -5,7 +5,6 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/landing/ThemeProvider';
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
 import { ThemeInitScript } from '@/components/ThemeInitScript';
-import { geist } from '@/lib/fonts/geist';
 
 const initThemeScript = `
   (function(){
@@ -24,22 +23,18 @@ const initThemeScript = `
 `;
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
   title: 'Skraft — Plateforme SaaS',
   description: 'Création de contenu assistée par IA',
 };
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
-    <html
-      lang="fr"
-      suppressHydrationWarning
-      className={geist.variable}
-      style={{ ['--font-geist' as string]: 'var(--font-geist-sans)' }}
-    >
+    <html lang="fr" suppressHydrationWarning>
       <head>
         <ThemeInitScript code={initThemeScript} />
       </head>
-      <body spellCheck={false} className={`${geist.className} font-sans antialiased`}>
+      <body spellCheck={false} className="font-sans antialiased">
         <ChunkLoadRecovery />
         <ThemeProvider>
           <AuthProvider>{children}</AuthProvider>

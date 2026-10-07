@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 /**
  * The Team section's nine member layouts, extracted out of portfolio-section-primitives.tsx and
  * reworked as a premium family: editorial typography (monumental names, small-caps meta,
@@ -47,7 +48,6 @@ import {
   type PortfolioTeamAvatarRadius,
   type PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
-import { TeamProfileCardsGallery } from '@/components/portfolio/portfolio-team-design-profile-cards';
 import {
   TEAM_CLEAR_PROPS,
   teamIndexLabel,
@@ -56,13 +56,8 @@ import {
   useTeamEntrance,
   useTeamSwipe,
 } from '@/components/portfolio/portfolio-team-design-motion';
-import type { ProfileTeamMember } from '@/types/ecosystem';
-import { TeamAvatarCards } from '@/components/portfolio/portfolio-team-design-avatar-cards';
-import { TeamFloatCardsGallery } from '@/components/portfolio/portfolio-team-design-float-cards';
-import { TeamSplitScreen } from '@/components/portfolio/portfolio-team-design-split-screen';
+import type { ProfileTeamMember } from '@/types/profile';
 import type { PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
-import { TeamEditorialRhythm } from '@/components/portfolio/portfolio-team-design-editorial-rhythm';
-import { TeamFloatingCanvas } from '@/components/portfolio/portfolio-team-design-floating-canvas';
 import {
   EASE_CLS,
   HOVER_CLS,
@@ -71,6 +66,26 @@ import {
   TeamMemberImage,
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
+
+/** The section renders one Team design, so each design is its own chunk. */
+const TeamProfileCardsGallery = dynamic(() =>
+  import('@/components/portfolio/portfolio-team-design-profile-cards').then((m) => m.TeamProfileCardsGallery)
+);
+const TeamAvatarCards = dynamic(() =>
+  import('@/components/portfolio/portfolio-team-design-avatar-cards').then((m) => m.TeamAvatarCards)
+);
+const TeamFloatCardsGallery = dynamic(() =>
+  import('@/components/portfolio/portfolio-team-design-float-cards').then((m) => m.TeamFloatCardsGallery)
+);
+const TeamSplitScreen = dynamic(() =>
+  import('@/components/portfolio/portfolio-team-design-split-screen').then((m) => m.TeamSplitScreen)
+);
+const TeamEditorialRhythm = dynamic(() =>
+  import('@/components/portfolio/portfolio-team-design-editorial-rhythm').then((m) => m.TeamEditorialRhythm)
+);
+const TeamFloatingCanvas = dynamic(() =>
+  import('@/components/portfolio/portfolio-team-design-floating-canvas').then((m) => m.TeamFloatingCanvas)
+);
 
 
 function TeamMemberCopy({

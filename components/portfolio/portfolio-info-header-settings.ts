@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { PortfolioInfoHeaderFont } from '@/components/portfolio/portfolio-info-settings';
 
 /**
@@ -203,8 +202,4 @@ export function infoHeaderDesignFontClass(
     default:
       return 'leading-relaxed';
   }
-}
-
-export function infoHeaderDesignFontStyle(_font: PortfolioInfoHeaderFont): CSSProperties | undefined {
-  return undefined;
 }

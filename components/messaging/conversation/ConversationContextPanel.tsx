@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MediaImage } from '@/components/ui/MediaImage';
 import { ContextShortcut, ContextSummary } from '@/components/messaging/conversation/ContextSummary';
 import { useAuth } from '@/context/AuthContext';
 import { SHOW_GROUP_CHAT } from '@/lib/messaging-feature-flags';
@@ -118,8 +119,13 @@ function MediaThumb({
       className="group relative aspect-square w-full overflow-hidden rounded-[10px] bg-[var(--cw-surface-soft)] ring-1 ring-neutral-300 transition hover:ring-neutral-500 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:ring-neutral-700"
     >
       {url && !isVideo ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={url} alt={item.attachment.fileName} className="h-full w-full object-cover" />
+        <MediaImage
+          src={url}
+          width={128}
+          privateMedia
+          alt={item.attachment.fileName}
+          className="h-full w-full object-cover"
+        />
       ) : (
         <div className="flex h-full w-full items-center justify-center text-[var(--cw-text-muted)]">
           <span className="text-2xl" aria-hidden>
@@ -206,9 +212,12 @@ function MediaViewerPanel({
             <track kind="captions" />
           </video>
         ) : url ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
+          <MediaImage
             src={url}
+            widths={[640, 1280]}
+            sizes="420px"
+            privateMedia
+            priority
             alt={item.attachment.fileName}
             className="max-h-[min(56vh,420px)] w-full rounded-[10px] object-contain"
           />
@@ -549,8 +558,12 @@ export function ConversationContextPanel({
             {isGroup && SHOW_GROUP_CHAT && isOwner ? (
               <label className="mb-4 block cursor-pointer overflow-hidden rounded-[8px] bg-[var(--cw-surface-soft)]">
                 {coverUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={coverUrl} alt="" className="h-28 w-full object-cover" />
+                  <MediaImage
+                    src={coverUrl}
+                    widths={[384, 640]}
+                    sizes="360px"
+                    className="h-28 w-full object-cover"
+                  />
                 ) : (
                   <div className="flex h-28 items-center justify-center text-sm text-[var(--cw-text-muted)]">
                     {uploadingCover ? 'Uploading…' : 'Add a cover photo'}
@@ -579,7 +592,7 @@ export function ConversationContextPanel({
                   <Link
                     href={marketplaceCreatorProfileHref(
                       conversation.otherUserId,
-                      `/dashboard/discussions?conversation=${encodeURIComponent(conversation.id)}`
+                      `/messages?conversation=${encodeURIComponent(conversation.id)}`
                     )}
                     className="block truncate text-base font-semibold text-[var(--cw-text-primary)] transition hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400/40"
                     title="View profile"

@@ -8,6 +8,7 @@ import {
   type PortfolioTeamHeaderTitleSize,
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ members';
 const DEFAULT_LEAD_TEXT = 'A small team of people who make it happen.';
@@ -59,7 +60,8 @@ export function TeamHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

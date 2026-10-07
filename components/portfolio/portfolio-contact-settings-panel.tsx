@@ -30,6 +30,7 @@ import {
   type HeroPaletteTokenId,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 export type ContactSubSection = 'general' | 'design' | 'background';
 
@@ -85,6 +86,8 @@ function ContactToggleRow({
   /** false when the row heads its own input (a text field's show/hide switch). */
   divider?: boolean;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <div
       className={`flex items-center justify-between gap-4 ${
@@ -117,9 +120,11 @@ function ContactOptionGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: 1 | 2 | 3 | 4 | 5;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      {rows ? null : (<p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -137,7 +142,7 @@ function ContactOptionGrid<T extends string>({
               title={option.description}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               {option.label}
@@ -146,6 +151,7 @@ function ContactOptionGrid<T extends string>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -173,10 +179,12 @@ function ContactPaletteSwatchPicker({
   value: string;
   onChange: (hex: string) => void;
 }) {
+  const rows = useSettingsRows();
   const activeHex = value.trim().toLowerCase();
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</span>
+      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</span>)}
       <div className="mt-2 flex flex-wrap gap-3">
         {CONTACT_PALETTE_SWATCH_TOKENS.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -200,6 +208,7 @@ function ContactPaletteSwatchPicker({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -637,7 +646,7 @@ export function ContactSettingsPanel({
   };
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {CONTACT_SUB_SECTIONS.map((section) => (
           <button
             key={section.id}
@@ -744,7 +753,7 @@ export function ContactSettingsPanel({
                 }
                 onOpen={() => setDesignCatalogOpen(true)}
               />
-              <ContactLayoutSettingsBand contact={contact} onChange={onChange} />
+              <SettingsRowsScope title="Layout options"><ContactLayoutSettingsBand contact={contact} onChange={onChange} /></SettingsRowsScope>
             </>
           )}
         </div>

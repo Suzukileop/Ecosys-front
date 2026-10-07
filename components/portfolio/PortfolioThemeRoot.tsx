@@ -19,7 +19,6 @@ export function PortfolioThemeRoot({
   activePalette,
   fixedBackgroundStyle,
   fixedMotifsLayer,
-  suppressDefaultBackground = false,
   children,
 }: {
   themeId: PortfolioThemeId;

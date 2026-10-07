@@ -69,7 +69,7 @@ export const HERO_PALETTE_TOKEN_IDS: HeroPaletteTokenId[] = [
   'bordure',
 ];
 
-export const HERO_COLOR_SLOT_IDS: HeroColorSlot[] = [
+const HERO_COLOR_SLOT_IDS: HeroColorSlot[] = [
   'headline',
   'headlinePrefix',
   'headlineEmphasis',
@@ -776,30 +776,6 @@ const ELEMENT_STYLE_SLOTS: Partial<Record<HeroColorSlot, PortfolioHeroStyleTarge
   metaLabel: 'metaLabel',
 };
 
-/** Reverse of ELEMENT_STYLE_SLOTS — typography color pickers → palette slot. */
-const STYLE_TARGET_COLOR_SLOTS: Partial<Record<PortfolioHeroStyleTarget, HeroColorSlot>> = {
-  headline: 'headline',
-  headlinePrefix: 'headlinePrefix',
-  headlineEmphasis: 'headlineEmphasis',
-  headlineAccent: 'headlineAccent',
-  description: 'description',
-  availabilityText: 'availabilityText',
-  cta: 'ctaText',
-  toolsLabel: 'toolsLabel',
-  toolsCardTitle: 'toolsCardTitle',
-  toolsCardDescription: 'toolsCardDescription',
-  toolsCardLevel: 'toolsCardLevel',
-  creatorName: 'creatorName',
-  metaValue: 'metaValue',
-  metaLabel: 'metaLabel',
-};
-
-export function heroStyleTargetColorSlot(
-  target: PortfolioHeroStyleTarget
-): HeroColorSlot | null {
-  return STYLE_TARGET_COLOR_SLOTS[target] ?? null;
-}
-
 /**
  * Push palette + bindings into concrete hero hex fields / elementStyles.
  * Render paths keep reading hex — no runtime token lookup required.
@@ -891,54 +867,4 @@ export function applyHeroPaletteToPresentation(
     portraitFrameBackgroundColor: color('portraitMat'),
     portraitCaptionBarColor: color('portraitCaptionBar'),
   };
-}
-
-/** Patch palette tokens, then sync bound hex fields. */
-export function patchHeroPalette(
-  presentation: PortfolioHeroPresentationSettings,
-  palettePatch: Partial<PortfolioHeroPalette>
-): Partial<PortfolioHeroPresentationSettings> {
-  const palette = mergeHeroPalette(presentation.palette ?? DEFAULT_HERO_PALETTE, {
-    ...presentation.palette,
-    ...palettePatch,
-  });
-  return applyHeroPaletteToPresentation({
-    ...presentation,
-    palette,
-  });
-}
-
-/** Change which token a slot uses, then sync that slot’s hex. */
-export function patchHeroColorBinding(
-  presentation: PortfolioHeroPresentationSettings,
-  slot: HeroColorSlot,
-  token: HeroPaletteTokenId
-): Partial<PortfolioHeroPresentationSettings> {
-  const colorBindings = mergeHeroColorBindings(
-    presentation.colorBindings ?? DEFAULT_HERO_COLOR_BINDINGS,
-    {
-      ...(presentation.colorBindings ?? DEFAULT_HERO_COLOR_BINDINGS),
-      [slot]: token,
-    }
-  );
-  return applyHeroPaletteToPresentation({
-    ...presentation,
-    colorBindings,
-  });
-}
-
-/**
- * Change the palette token a single slot is bound to, then sync hex fields.
- * Prefer this over locking several slots onto one token.
- */
-export function patchHeroSlotColor(
-  presentation: PortfolioHeroPresentationSettings,
-  slot: HeroColorSlot,
-  hex: string
-): Partial<PortfolioHeroPresentationSettings> {
-  const bindings = mergeHeroColorBindings(
-    DEFAULT_HERO_COLOR_BINDINGS,
-    presentation.colorBindings
-  );
-  return patchHeroPalette(presentation, { [bindings[slot]]: hex });
 }

@@ -1,24 +1,57 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import type { ReactNode } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import { heroSectionBackgroundStyle } from '@/components/portfolio/portfolio-hero-background-settings';
-import { PortfolioHeroSwissEditorial } from '@/components/portfolio/hero-variants/PortfolioHeroSwissEditorial';
-import { PortfolioHeroCinematicReveal } from '@/components/portfolio/hero-variants/PortfolioHeroCinematicReveal';
-import { PortfolioHeroPortraitIdentity } from '@/components/portfolio/hero-variants/PortfolioHeroPortraitIdentity';
-import { PortfolioHeroEditorialRail } from '@/components/portfolio/hero-variants/PortfolioHeroEditorialRail';
-import { PortfolioHeroStatementCta } from '@/components/portfolio/hero-variants/PortfolioHeroStatementCta';
-import { PortfolioHeroPortraitBalance } from '@/components/portfolio/hero-variants/PortfolioHeroPortraitBalance';
-import { PortfolioHeroLeftPortrait } from '@/components/portfolio/hero-variants/PortfolioHeroLeftPortrait';
-import { PortfolioHeroCirclePortrait } from '@/components/portfolio/hero-variants/PortfolioHeroCirclePortrait';
-import { PortfolioHeroExperienceSplit } from '@/components/portfolio/hero-variants/PortfolioHeroExperienceSplit';
-import { PortfolioHeroEditorialOverlap } from '@/components/portfolio/hero-variants/PortfolioHeroEditorialOverlap';
-import { PortfolioHeroSelectedWorks } from '@/components/portfolio/hero-variants/PortfolioHeroSelectedWorks';
-import { PortfolioHeroIdentityIndex } from '@/components/portfolio/hero-variants/PortfolioHeroIdentityIndex';
-import { PortfolioHeroStudioSplit } from '@/components/portfolio/hero-variants/PortfolioHeroStudioSplit';
-import { PortfolioHeroWorkDuo } from '@/components/portfolio/hero-variants/PortfolioHeroWorkDuo';
-import { PortfolioHeroBowlIntro } from '@/components/portfolio/hero-variants/PortfolioHeroBowlIntro';
 import { usePortfolioHeroGeomFade } from '@/components/portfolio/use-portfolio-hero-geom-fade';
+
+/** The section renders one Hero variant, so each variant is its own chunk. */
+const PortfolioHeroSwissEditorial = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroSwissEditorial').then((m) => m.PortfolioHeroSwissEditorial)
+);
+const PortfolioHeroCinematicReveal = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroCinematicReveal').then((m) => m.PortfolioHeroCinematicReveal)
+);
+const PortfolioHeroPortraitIdentity = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroPortraitIdentity').then((m) => m.PortfolioHeroPortraitIdentity)
+);
+const PortfolioHeroEditorialRail = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroEditorialRail').then((m) => m.PortfolioHeroEditorialRail)
+);
+const PortfolioHeroStatementCta = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroStatementCta').then((m) => m.PortfolioHeroStatementCta)
+);
+const PortfolioHeroPortraitBalance = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroPortraitBalance').then((m) => m.PortfolioHeroPortraitBalance)
+);
+const PortfolioHeroLeftPortrait = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroLeftPortrait').then((m) => m.PortfolioHeroLeftPortrait)
+);
+const PortfolioHeroCirclePortrait = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroCirclePortrait').then((m) => m.PortfolioHeroCirclePortrait)
+);
+const PortfolioHeroExperienceSplit = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroExperienceSplit').then((m) => m.PortfolioHeroExperienceSplit)
+);
+const PortfolioHeroEditorialOverlap = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroEditorialOverlap').then((m) => m.PortfolioHeroEditorialOverlap)
+);
+const PortfolioHeroSelectedWorks = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroSelectedWorks').then((m) => m.PortfolioHeroSelectedWorks)
+);
+const PortfolioHeroIdentityIndex = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroIdentityIndex').then((m) => m.PortfolioHeroIdentityIndex)
+);
+const PortfolioHeroStudioSplit = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroStudioSplit').then((m) => m.PortfolioHeroStudioSplit)
+);
+const PortfolioHeroWorkDuo = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroWorkDuo').then((m) => m.PortfolioHeroWorkDuo)
+);
+const PortfolioHeroBowlIntro = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroBowlIntro').then((m) => m.PortfolioHeroBowlIntro)
+);
 
 export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   const { sectionRef } = usePortfolioHeroGeomFade(heroData.geomFadeEnabled ?? false);

@@ -7,6 +7,7 @@ import {
   teamHeaderPaletteTokenColor,
   type PortfolioTeamHeaderBillboardWordStyle,
 } from '@/components/portfolio/portfolio-team-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BIG_WORD = 'TEAM';
 const DEFAULT_COUNT_TEXT = '{count} people — meet the team below';
@@ -121,7 +122,8 @@ export function TeamHeaderBillboardHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const bigWord = (presentation.headerBillboardBigWord || DEFAULT_BIG_WORD).trim();
   const countTemplate = presentation.headerBillboardCountText || DEFAULT_COUNT_TEXT;
   const countText = countTemplate.replace('{count}', String(itemCount ?? 0));

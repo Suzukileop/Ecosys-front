@@ -1,5 +1,3 @@
-import type { CSSProperties } from 'react';
-
 /**
  * Header — a second, independent header slot for the Stack section, copied
  * 1:1 from the Portfolio/Work section's "Header" mechanism (one shared,
@@ -18,7 +16,7 @@ export type PortfolioStackHeaderDesign =
   | 'masthead'
   | 'split-heading';
 
-export type PortfolioStackHeaderFont = 'sans' | 'serif' | 'display';
+type PortfolioStackHeaderFont = 'sans' | 'serif' | 'display';
 
 export type PortfolioStackHeaderDesignAlignment = 'left' | 'center' | 'right';
 
@@ -194,8 +192,4 @@ export function stackHeaderDesignFontClass(
     default:
       return 'leading-relaxed';
   }
-}
-
-export function stackHeaderDesignFontStyle(_font: PortfolioStackHeaderFont): CSSProperties | undefined {
-  return undefined;
 }

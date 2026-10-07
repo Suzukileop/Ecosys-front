@@ -12,7 +12,6 @@ export function PortfolioSectionShell({
   id,
   className,
   background,
-  fitContent = false,
   suppressBackground = false,
   topSpacingClass = 'pt-12 sm:pt-16 lg:pt-20',
   topSpacingStyle,
@@ -48,7 +47,6 @@ export function PortfolioSectionShell({
     !suppressBackground && background?.sectionBackgroundEnabled
       ? sectionBackgroundStyle(background)
       : undefined;
-  const hasBackground = Boolean(bgStyle);
   const fullyOpaque = !suppressBackground && hasOpaqueSectionBackground(background);
 
   const paddingClass = `${topSpacingClass} ${bottomSpacingClass}`;

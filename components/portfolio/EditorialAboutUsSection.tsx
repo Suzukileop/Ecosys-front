@@ -1,7 +1,7 @@
 'use client';
 
 import type { CSSProperties } from 'react';
-import type { ProfileAboutUs } from '@/types/ecosystem';
+import type { ProfileAboutUs } from '@/types/profile';
 import {
   aboutUsCardBorderStyle,
   aboutUsCardRadiusClass,

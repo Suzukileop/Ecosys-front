@@ -9,7 +9,7 @@ import {
   normalizeCreatorAppRole,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import type { CreatorProfileDto } from '@/types/profile';
 
 /**
  * Shared across sidebar / header / shell so nav gating does not flash on route changes.

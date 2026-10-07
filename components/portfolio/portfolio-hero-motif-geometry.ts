@@ -14,7 +14,7 @@ export const DEFAULT_LEFT_CUSTOM_MOTIF_POINTS: MotifPoint[] = [
   { x: 0, y: 58 },
 ];
 
-export type MotifShapeTemplateId =
+type MotifShapeTemplateId =
   | 'diagonal'
   | 'rectangle'
   | 'square'
@@ -25,28 +25,13 @@ export type MotifShapeTemplateId =
   | 'half-circle'
   | 'trapezoid';
 
-export type MotifEditorSide = 'left' | 'right';
-
-export const MOTIF_SHAPE_TEMPLATES: {
-  id: MotifShapeTemplateId;
-  label: string;
-}[] = [
-  { id: 'diagonal', label: 'Diagonal' },
-  { id: 'rectangle', label: 'Rectangle' },
-  { id: 'square', label: 'Square' },
-  { id: 'circle', label: 'Circle' },
-  { id: 'oval', label: 'Oval' },
-  { id: 'triangle', label: 'Triangle' },
-  { id: 'diamond', label: 'Diamond' },
-  { id: 'half-circle', label: 'Half circle' },
-  { id: 'trapezoid', label: 'Trapezoid' },
-];
+type MotifEditorSide = 'left' | 'right';
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function clampMotifPoint(point: MotifPoint): MotifPoint {
+function clampMotifPoint(point: MotifPoint): MotifPoint {
   return { x: clamp(point.x, 0, 100), y: clamp(point.y, 0, 100) };
 }
 
@@ -62,7 +47,7 @@ export function motifPointsToClipPath(points: MotifPoint[]): string {
     .join(', ')})`;
 }
 
-export function generateCircleMotifPoints(
+function generateCircleMotifPoints(
   cx = 50,
   cy = 50,
   radius = 42,
@@ -77,7 +62,7 @@ export function generateCircleMotifPoints(
   });
 }
 
-export function generateOvalMotifPoints(
+function generateOvalMotifPoints(
   cx = 50,
   cy = 50,
   radiusX = 42,
@@ -97,7 +82,7 @@ export function generateOvalMotifPoints(
  * Filled half-disk in motif local space (0–100).
  * Returns polygon points that include the center point so clip-path polygon fills the semicircle.
  */
-export function generateHalfCircleMotifPoints(
+function generateHalfCircleMotifPoints(
   cx = 50,
   cy = 50,
   radius = 42,
@@ -120,7 +105,7 @@ export function generateHalfCircleMotifPoints(
 }
 
 /** Centered, aligned templates in local 0–100 panel space. */
-export function getMotifTemplatePoints(
+function getMotifTemplatePoints(
   template: MotifShapeTemplateId,
   side: MotifEditorSide = 'right'
 ): MotifPoint[] {
@@ -228,62 +213,6 @@ export function getRightMotifPresetPoints(shape: RightMotifPresetShape): MotifPo
   }
 }
 
-function pointToSegmentDistance(
-  point: MotifPoint,
-  a: MotifPoint,
-  b: MotifPoint
-): { dist: number; t: number } {
-  const dx = b.x - a.x;
-  const dy = b.y - a.y;
-  const lenSq = dx * dx + dy * dy;
-  if (lenSq === 0) {
-    const dist = Math.hypot(point.x - a.x, point.y - a.y);
-    return { dist, t: 0 };
-  }
-  let t = ((point.x - a.x) * dx + (point.y - a.y) * dy) / lenSq;
-  t = clamp(t, 0, 1);
-  const projX = a.x + t * dx;
-  const projY = a.y + t * dy;
-  return { dist: Math.hypot(point.x - projX, point.y - projY), t };
-}
-
-export function insertMotifPointOnEdge(points: MotifPoint[], click: MotifPoint): MotifPoint[] {
-  if (points.length < 2) return points;
-
-  let bestDist = Infinity;
-  let bestIndex = 0;
-  let bestT = 0;
-
-  for (let index = 0; index < points.length; index += 1) {
-    const a = points[index];
-    const b = points[(index + 1) % points.length];
-    const { dist, t } = pointToSegmentDistance(click, a, b);
-    if (dist < bestDist) {
-      bestDist = dist;
-      bestIndex = index;
-      bestT = t;
-    }
-  }
-
-  if (bestDist > 6) return points;
-
-  const a = points[bestIndex];
-  const b = points[(bestIndex + 1) % points.length];
-  const inserted = clampMotifPoint({
-    x: a.x + (b.x - a.x) * bestT,
-    y: a.y + (b.y - a.y) * bestT,
-  });
-
-  const next = [...points];
-  next.splice(bestIndex + 1, 0, inserted);
-  return next;
-}
-
-export function removeMotifPoint(points: MotifPoint[], index: number): MotifPoint[] {
-  if (points.length <= 3 || index < 0 || index >= points.length) return points;
-  return points.filter((_, pointIndex) => pointIndex !== index);
-}
-
 /** Mirror shape points inside a motif panel (0–100 local space). */
 export function mirrorMotifPointsHorizontally(points: MotifPoint[]): MotifPoint[] {
   return points.map((point) =>
@@ -295,7 +224,7 @@ export function mirrorMotifPointsHorizontally(points: MotifPoint[]): MotifPoint[
 }
 
 /** True when the polygon has a tall edge flush to the left of the panel. */
-export function motifHasLeftVerticalEdge(points: MotifPoint[]): boolean {
+function motifHasLeftVerticalEdge(points: MotifPoint[]): boolean {
   const leftPts = points.filter((point) => point.x <= 8);
   if (leftPts.length < 2) return false;
   const ys = leftPts.map((point) => point.y);
@@ -303,7 +232,7 @@ export function motifHasLeftVerticalEdge(points: MotifPoint[]): boolean {
 }
 
 /** True when the polygon has a tall edge flush to the right of the panel. */
-export function motifHasRightVerticalEdge(points: MotifPoint[]): boolean {
+function motifHasRightVerticalEdge(points: MotifPoint[]): boolean {
   const rightPts = points.filter((point) => point.x >= 92);
   if (rightPts.length < 2) return false;
   const ys = rightPts.map((point) => point.y);
@@ -353,21 +282,7 @@ export function sanitizeMotifPoints(points: unknown, fallback = DEFAULT_CUSTOM_M
   return valid.length >= 3 ? valid : fallback.map((point) => ({ ...point }));
 }
 
-export function pointsToPolygonAttribute(points: MotifPoint[]): string {
-  return points.map((point) => `${point.x},${point.y}`).join(' ');
-}
-
-export function pointsToLocalPolygonAttribute(
-  points: MotifPoint[],
-  width: number,
-  height: number
-): string {
-  return points
-    .map((point) => `${(point.x / 100) * width},${(point.y / 100) * height}`)
-    .join(' ');
-}
-
-export function getPointsCentroid(points: MotifPoint[]): MotifPoint {
+function getPointsCentroid(points: MotifPoint[]): MotifPoint {
   if (points.length === 0) return { x: 50, y: 50 };
   const sum = points.reduce((acc, point) => ({ x: acc.x + point.x, y: acc.y + point.y }), { x: 0, y: 0 });
   return { x: sum.x / points.length, y: sum.y / points.length };

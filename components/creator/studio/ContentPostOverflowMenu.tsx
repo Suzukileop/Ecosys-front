@@ -171,7 +171,7 @@ export function ContentPostOverflowMenu({
       items.push({
         id: 'edit',
         label: 'Edit',
-        href: `/dashboard/creator/content/${postId}/edit`,
+        href: `/profile/content/${postId}/edit`,
       });
     }
 

@@ -1,44 +1,8 @@
 'use client';
 
-import {
-  heroMotifContentFrameStyle,
-  heroMotifCurvePathD,
-  heroMotifEffectiveZIndex,
-  heroMotifInnerStyle,
-  heroMotifPrimitiveMaskStyle,
-  heroMotifShellStyle,
-  isCircularMotifPrimitive,
-  isLockedMotifPrimitive,
-  circularMotifShellSizeStyle,
-  forceSquareMotifSize,
-  motifVisibilityClass,
-  sanitizeHeroMotifCurveBend,
-  sanitizeHeroMotifCurveAxis,
-  sanitizeHeroMotifStrokeWidthPx,
-  sanitizeMotifRotationDeg,
-  sanitizeHeroGlowBlurPx,
-  sanitizeHeroCurveGlowStrength,
-  resolveHeroMotifOpacity,
-  DEFAULT_HERO_CURVE_BEND,
-  DEFAULT_HERO_CURVE_STROKE_PX,
-  DEFAULT_HERO_CURVE_GLOW_STRENGTH,
-  isHeroMotifViewportFixed,
-  type HeroMotifInstance,
-} from '@/components/portfolio/portfolio-hero-motifs-settings';
+import { heroMotifContentFrameStyle, heroMotifCurvePathD, heroMotifEffectiveZIndex, heroMotifInnerStyle, heroMotifShellStyle, isLockedMotifPrimitive, motifVisibilityClass, sanitizeHeroMotifCurveBend, sanitizeHeroMotifCurveAxis, sanitizeHeroMotifStrokeWidthPx, sanitizeMotifRotationDeg, sanitizeHeroGlowBlurPx, sanitizeHeroCurveGlowStrength, DEFAULT_HERO_CURVE_BEND, DEFAULT_HERO_CURVE_STROKE_PX, DEFAULT_HERO_CURVE_GLOW_STRENGTH, isHeroMotifViewportFixed, type HeroMotifInstance } from '@/components/portfolio/portfolio-hero-motifs-settings';
 import type { PortfolioHeroBackgroundSettings } from '@/components/portfolio/portfolio-hero-background-settings';
-import { resolveMotifClipPath } from '@/components/portfolio/portfolio-hero-settings';
-import {
-  motifPanelContainerStyle,
-  normalizeMotifPositionForContentFrame,
-} from '@/components/portfolio/portfolio-hero-motif-panel';
-import {
-  HeroEditorialLayerFrame,
-} from '@/components/portfolio/portfolio-hero-geometric';
-import {
-  DEFAULT_CONTENT_GUTTER,
-  portfolioHeroLayerInset,
-  type PortfolioContentGutter,
-} from '@/components/portfolio/portfolio-editorial-layout';
+import { normalizeMotifPositionForContentFrame } from '@/components/portfolio/portfolio-hero-motif-panel';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 
 function HeroMotifCurveStroke({ motif }: { motif: HeroMotifInstance }) {
@@ -222,68 +186,6 @@ function renderMotifItems(
   ));
 }
 
-/** Renders hero-scoped motifs (scroll with the Hero). Fixed glow/curve are omitted. */
-export function PortfolioHeroMotifsLayer({
-  motifs,
-  fadeOpacity = 1,
-  background,
-  contentGutter = DEFAULT_CONTENT_GUTTER,
-  contentWidthClass = 'max-w-[90rem]',
-  visualEdge = 'right',
-  colorMode = 'dark',
-}: {
-  motifs: HeroMotifInstance[];
-  fadeOpacity?: number;
-  background?: PortfolioHeroBackgroundSettings;
-  contentGutter?: PortfolioContentGutter;
-  contentWidthClass?: string;
-  /** Geometric motifs follow the visual group: right (default) or left when flipped. */
-  visualEdge?: 'left' | 'right';
-  colorMode?: 'light' | 'dark';
-}) {
-  const sectionMotifs = motifs.filter((motif) => !isHeroMotifViewportFixed(motif));
-  if (!sectionMotifs.length) return null;
-
-  // Curves span the full viewport (ignore Global side margins / content gutters).
-  const curveMotifs = sectionMotifs.filter((motif) => motif.kind === 'curve');
-  const framedMotifs = sectionMotifs.filter((motif) => motif.kind !== 'curve');
-
-  return (
-    <>
-      {curveMotifs.length > 0 ? (
-        <div
-          aria-hidden
-          className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2 overflow-visible"
-        >
-          {renderMotifItems(curveMotifs, fadeOpacity, background, 'section', visualEdge, colorMode)}
-        </div>
-      ) : null}
-
-      {framedMotifs.length > 0 ? (
-        <>
-          {/* Below xl: full section (stacked hero). Soft glow needs overflow visible. */}
-          <div className="pointer-events-none absolute inset-0 overflow-visible xl:hidden">
-            {renderMotifItems(framedMotifs, fadeOpacity, background, 'section', visualEdge, colorMode)}
-          </div>
-          {/*
-            xl+: content-width frame WITHOUT overflow-x-clip — the shared HeroEditorialLayerFrame
-            always clips, which erased soft glow blurs. Glows need to bloom past the panel edge.
-          */}
-          <div
-            className={`pointer-events-none absolute inset-y-0 left-1/2 hidden w-full -translate-x-1/2 overflow-visible xl:block ${contentWidthClass}`}
-          >
-            <div
-              className={`absolute inset-y-0 z-0 overflow-visible ${portfolioHeroLayerInset(contentGutter)}`}
-            >
-              {renderMotifItems(framedMotifs, fadeOpacity, background, 'frame', visualEdge, colorMode)}
-            </div>
-          </div>
-        </>
-      ) : null}
-    </>
-  );
-}
-
 /**
  * Glow / curve motifs pinned to the viewport — stay visible while scrolling the site.
  * Placement % is relative to the screen (full-bleed), not the Hero section.
@@ -319,81 +221,5 @@ export function PortfolioFixedMotifsLayer({
         ? renderMotifItems(glowMotifs, 1, background, 'section', visualEdge, colorMode)
         : null}
     </div>
-  );
-}
-
-/**
- * Desaturate overlay for the primary desktop geometric motif (legacy look).
- * Only on xl+ to match the previous right-motif overlay.
- */
-export function PortfolioHeroPrimaryMotifOverlay({
-  motifs,
-  fadeOpacity = 1,
-  contentGutter = DEFAULT_CONTENT_GUTTER,
-  contentWidthClass = 'max-w-[90rem]',
-  visualEdge = 'right',
-  colorMode = 'dark',
-}: {
-  motifs: HeroMotifInstance[];
-  fadeOpacity?: number;
-  contentGutter?: PortfolioContentGutter;
-  contentWidthClass?: string;
-  visualEdge?: 'left' | 'right';
-  colorMode?: 'light' | 'dark';
-}) {
-  const primary =
-    motifs.find(
-      (m) => m.kind === 'geometric' && m.enabled && m.visibility.desktop
-    ) ?? null;
-  if (!primary) return null;
-
-  const position = normalizeMotifPositionForContentFrame(
-    primary.position,
-    isCircularMotifPrimitive(primary.primitive)
-      ? forceSquareMotifSize(primary.size)
-      : primary.size,
-    visualEdge
-  );
-  // Overlay follows the motif opacity slider, same as the fill layer.
-  const overlayOpacity = (resolveHeroMotifOpacity(primary, colorMode) / 100) * fadeOpacity;
-
-  // Smooth primitives: match the fill shape (ellipse / half-disk), never a polygon.
-  const overlayShapeStyle = isLockedMotifPrimitive(primary.primitive)
-    ? heroMotifPrimitiveMaskStyle(primary.primitive, primary.rotationDeg)
-    : {
-        clipPath: resolveMotifClipPath(primary.shape, primary.points, visualEdge),
-      };
-
-  const overlaySize = isCircularMotifPrimitive(primary.primitive)
-    ? forceSquareMotifSize(primary.size)
-    : primary.size;
-  const overlayShell = isCircularMotifPrimitive(primary.primitive)
-    ? {
-        left: `${position.x}%`,
-        top: `${position.y}%`,
-        ...circularMotifShellSizeStyle(overlaySize),
-        transform: 'translate(-50%, -50%)',
-        ...(overlayOpacity >= 1 ? {} : { opacity: overlayOpacity, willChange: 'opacity' as const }),
-      }
-    : {
-        ...motifPanelContainerStyle(position, overlaySize, overlayOpacity, '%'),
-      };
-
-  return (
-    <HeroEditorialLayerFrame
-      gutter={contentGutter}
-      contentWidthClass={contentWidthClass}
-      className="z-20 overflow-hidden"
-    >
-      <div
-        className="pointer-events-none absolute overflow-hidden"
-        style={overlayShell}
-      >
-        <div
-          className="portfolio-hero-geom-overlay absolute inset-0"
-          style={overlayShapeStyle}
-        />
-      </div>
-    </HeroEditorialLayerFrame>
   );
 }

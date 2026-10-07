@@ -2,82 +2,7 @@
 
 import { useId, useState, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import {
-  PORTFOLIO_WORK_CARD_BORDER_OPTIONS,
-  PORTFOLIO_WORK_CARD_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS,
-  PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS,
-  PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS,
-  PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS,
-  PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS,
-  PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS,
-  PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS,
-  PORTFOLIO_WORK_INDEX_MARKER_OPTIONS,
-  workSectionDesignSettingsPatch,
-  DEFAULT_PROJECTS_BOARD_SETTINGS,
-  DEFAULT_PROJECTS_ACCORDION_SETTINGS,
-  DEFAULT_PROJECTS_FRAMES_SETTINGS,
-  DEFAULT_PROJECTS_INDEX_SETTINGS,
-  PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS,
-  PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS,
-  PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS,
-  DEFAULT_PROJECTS_GRID_SETTINGS,
-  DEFAULT_PROJECTS_SPLIT_SETTINGS,
-  DEFAULT_PROJECTS_CAROUSEL_SETTINGS,
-  DEFAULT_PROJECTS_SHOWCASE_SETTINGS,
-  DEFAULT_PROJECTS_LEDGER_SETTINGS,
-  DEFAULT_PROJECTS_SPEC_SETTINGS,
-  DEFAULT_PROJECTS_CASE_SETTINGS,
-  DEFAULT_PROJECTS_PRESS_SETTINGS,
-  PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS,
-  DEFAULT_PROJECTS_DUOTONE_SETTINGS,
-  PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS,
-  PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS,
-  PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS,
-  PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS,
-  PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS,
-  PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS,
-  PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS,
-  PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS,
-  PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS,
-  PORTFOLIO_WORK_SPEC_FRAME_OPTIONS,
-  PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS,
-  PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS,
-  PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS,
-  PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS,
-  PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS,
-  PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS,
-  PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS,
-  PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS,
-  DEFAULT_PROJECTS_CASCADE_SETTINGS,
-  PORTFOLIO_WORK_CASCADE_STACK_EFFECT_OPTIONS,
-  PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS,
-  PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS,
-  PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS,
-  PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS,
-  WORK_PALETTE_TOKEN_OPTIONS,
-  WORK_BILLBOARD_WORD_STYLE_OPTIONS,
-  WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS,
-  workPaletteTokenColor,
-  type PortfolioWorkBillboardWordStyle,
-  type PortfolioWorkHeaderDesign,
-  type PortfolioWorkHeaderTitleSize,
-  type PortfolioWorkPaletteToken,
-  type PortfolioWorkProjectsSpecConsultDesign,
-  type PortfolioWorkSectionDesign,
-  type PortfolioWorkSectionSettings,
-} from '@/components/portfolio/portfolio-work-settings';
+import { PORTFOLIO_WORK_CARD_BORDER_OPTIONS, PORTFOLIO_WORK_CARD_RADIUS_OPTIONS, PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS, PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_MARKER_OPTIONS, workSectionDesignSettingsPatch, DEFAULT_PROJECTS_BOARD_SETTINGS, DEFAULT_PROJECTS_ACCORDION_SETTINGS, DEFAULT_PROJECTS_FRAMES_SETTINGS, DEFAULT_PROJECTS_INDEX_SETTINGS, PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS, DEFAULT_PROJECTS_GRID_SETTINGS, DEFAULT_PROJECTS_SPLIT_SETTINGS, DEFAULT_PROJECTS_CAROUSEL_SETTINGS, DEFAULT_PROJECTS_SHOWCASE_SETTINGS, DEFAULT_PROJECTS_LEDGER_SETTINGS, DEFAULT_PROJECTS_SPEC_SETTINGS, DEFAULT_PROJECTS_CASE_SETTINGS, DEFAULT_PROJECTS_PRESS_SETTINGS, PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS, DEFAULT_PROJECTS_DUOTONE_SETTINGS, PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS, PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS, PORTFOLIO_WORK_SPEC_FRAME_OPTIONS, PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS, PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS, PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS, PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS, PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS, PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS, PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS, PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS, PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS, PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS, PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS, PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS, DEFAULT_PROJECTS_CASCADE_SETTINGS, PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS, PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS, PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS, WORK_PALETTE_TOKEN_OPTIONS, WORK_BILLBOARD_WORD_STYLE_OPTIONS, WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS, workPaletteTokenColor, type PortfolioWorkBillboardWordStyle, type PortfolioWorkHeaderDesign, type PortfolioWorkHeaderTitleSize, type PortfolioWorkPaletteToken, type PortfolioWorkProjectsSpecConsultDesign, type PortfolioWorkSectionDesign, type PortfolioWorkSectionSettings } from '@/components/portfolio/portfolio-work-settings';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
@@ -95,6 +20,8 @@ import {
   patchWorkColorFieldManual,
   type WorkColorSlot,
 } from '@/components/portfolio/portfolio-work-palette-settings';
+import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 export type WorkSettingsSubSection =
   | 'general'
@@ -188,6 +115,7 @@ function WorkColorField({
   /** When palette is on, also show a hex picker that overrides the token until rebound. */
   allowManualHex?: boolean;
 }) {
+  const rows = useSettingsRows();
   const paletteOn = work.useHeroPalette !== false;
   const isManualOverride =
     (slot === 'contentFrameBackground' && work.contentFrameBackgroundManual) ||
@@ -211,13 +139,14 @@ function WorkColorField({
   const resolved = resolveHeroPaletteColor(palette, token);
 
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div className="space-y-3">
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
-          <div className="min-w-0">
+          {rows ? null : (<div className="min-w-0">
             <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
             {description ? <p className="mt-1 text-sm text-neutral-500">{description}</p> : null}
-          </div>
+          </div>)}
           <span
             className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
             style={{ backgroundColor: isManualOverride ? value : resolved }}
@@ -265,6 +194,7 @@ function WorkColorField({
         />
       ) : null}
     </div>
+    </SettingRow>
   );
 }
 
@@ -279,9 +209,11 @@ function WorkManualColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      {rows ? null : (<p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>)}
       {description ? <p className="mt-1 text-sm text-neutral-500">{description}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input
@@ -308,6 +240,7 @@ function WorkManualColorField({
         />
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -375,6 +308,8 @@ function WorkToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
       <div className="flex min-w-0 items-center gap-1.5">
@@ -415,10 +350,12 @@ function WorkOptionGrid<T extends string | number>({
   columns?: 1 | 2 | 3 | 4;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const rows = useSettingsRows();
   const compact = columns === options.length && options.length >= 2 && options.length <= 5;
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-work-block-label pf-work-option-label">{label}</p>
+      {rows ? null : (<p className="pf-work-block-label pf-work-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -447,6 +384,7 @@ function WorkOptionGrid<T extends string | number>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -463,6 +401,7 @@ function WorkSlider<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const rows = useSettingsRows();
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value)
@@ -471,11 +410,12 @@ function WorkSlider<T extends string>({
   const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
   const current = options[index] ?? options[0];
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <div className="pf-work-slider-row">
+      {rows ? null : (<div className="pf-work-slider-row">
         <span className="pf-work-slider-label">{label}</span>
         <span className="pf-work-slider-value">{current?.label}</span>
-      </div>
+      </div>)}
       <input
         type="range"
         min={0}
@@ -493,6 +433,7 @@ function WorkSlider<T extends string>({
         }}
       />
     </div>
+    </SettingRow>
   );
 }
 
@@ -514,9 +455,11 @@ function WorkSizePill({
   value: PortfolioWorkHeaderTitleSize;
   onChange: (value: PortfolioWorkHeaderTitleSize) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(value ?? '')}>
     <div>
-      <p className="pf-work-block-label pf-work-option-label">{label}</p>
+      {rows ? null : (<p className="pf-work-block-label pf-work-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -543,6 +486,7 @@ function WorkSizePill({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -623,10 +567,12 @@ function WorkPreviewCardGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-work-block-label pf-work-option-label">{label}</p>
+      {rows ? null : (<p className="pf-work-block-label pf-work-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -649,6 +595,7 @@ function WorkPreviewCardGrid<T extends string>({
         ))}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -1335,17 +1282,18 @@ function WorkHeaderChoiceGrid({
           {PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
             return (
-              <WorkPickerCard
-                key={option.value}
-                active={active}
-                label={option.label}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <WorkHeaderWireframe design={option.value} />
-              </WorkPickerCard>
+              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+                <WorkPickerCard
+                  active={active}
+                  label={option.label}
+                  onClick={() => {
+                    onChange(option.value);
+                    setShowGrid(false);
+                  }}
+                >
+                  <WorkHeaderWireframe design={option.value} />
+                </WorkPickerCard>
+              </PortfolioHeaderDesignOption>
             );
           })}
         </div>
@@ -3637,12 +3585,6 @@ export function WorkSettingsPanel({
                 </>
               ) : (
                 <>
-                  <WorkToggleRow
-                    label="Header motion"
-                    info="Respects reduced-motion preference"
-                    checked={work.headerAnimationEnabled !== false}
-                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
-                  />
                   <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
                 </>
               )}
@@ -3660,6 +3602,7 @@ export function WorkSettingsPanel({
           />
 
           <WorkLayoutSettingsBand motionKey={work.sectionDesign ?? 'projects-board'}>
+<SettingsRowsScope title="Layout options">
           {(work.sectionDesign ?? 'projects-board') === 'projects-board' ? (
             <div className="space-y-4">
               <div>
@@ -4495,7 +4438,8 @@ export function WorkSettingsPanel({
               />
             </div>
           ) : null}
-          </WorkLayoutSettingsBand>
+          </SettingsRowsScope>
+</WorkLayoutSettingsBand>
         </div>
         </>
       ) : null}

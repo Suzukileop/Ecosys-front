@@ -43,10 +43,9 @@ export type PortfolioElementTextStyle = {
   highlightColor: string;
 };
 
-export const DEFAULT_ELEMENT_BODY_COLOR = '#525252';
-export const DEFAULT_ELEMENT_TITLE_COLOR = '#0a0a0a';
+const DEFAULT_ELEMENT_BODY_COLOR = '#525252';
 export const DEFAULT_ELEMENT_MUTED_COLOR = '#a3a3a3';
-export const DEFAULT_ELEMENT_HIGHLIGHT_COLOR = '#fde68a';
+const DEFAULT_ELEMENT_HIGHLIGHT_COLOR = '#fde68a';
 
 /** Approximate CSS px for each size preset, by typography role. */
 export const ELEMENT_TEXT_SIZE_PRESET_PX: Record<
@@ -266,20 +265,6 @@ export function normalizeElementStylesRecord<T extends string>(
   return next;
 }
 
-export function patchElementStylesRecord<T extends string>(
-  styles: Record<T, PortfolioElementTextStyle>,
-  target: T,
-  patch: Partial<PortfolioElementTextStyle>,
-  defaults: Record<T, PortfolioElementTextStyle>,
-  ids: readonly T[]
-): Record<T, PortfolioElementTextStyle> {
-  return normalizeElementStylesRecord(
-    { ...styles, [target]: { ...styles[target], ...patch } },
-    defaults,
-    ids
-  );
-}
-
 export function elementTextSizeClass(
   size: PortfolioElementTextSize,
   role: PortfolioElementTextRole = 'body'
@@ -389,17 +374,6 @@ export function elementTextInlineStyle(
   return base;
 }
 
-/** Pick light or dark text color for manual (non-palette) mode. */
-export function resolveElementTextColor(
-  style: PortfolioElementTextStyle,
-  mode: 'light' | 'dark' = 'light'
-): string {
-  if (mode === 'dark') {
-    return sanitizeHex(style.colorDark || style.color, DEFAULT_ELEMENT_BODY_COLOR);
-  }
-  return sanitizeHex(style.color, DEFAULT_ELEMENT_BODY_COLOR);
-}
-
 export const PORTFOLIO_ELEMENT_TEXT_SIZE_OPTIONS: {
   value: Exclude<PortfolioElementTextSize, 'custom'>;
   label: string;
@@ -459,14 +433,3 @@ export function toolsIconShellClass(size: PortfolioToolsIconSize): string {
       return 'h-11 w-11 sm:h-14 sm:w-14';
   }
 }
-
-export const PORTFOLIO_TOOLS_ICON_SIZE_OPTIONS: {
-  value: PortfolioToolsIconSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Compact logos.' },
-  { value: 'md', label: 'Medium', description: 'Default size.' },
-  { value: 'lg', label: 'Large', description: 'More visible logos.' },
-  { value: 'xl', label: 'Extra large', description: 'Hero-sized tool icons.' },
-];

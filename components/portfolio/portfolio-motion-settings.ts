@@ -22,23 +22,23 @@ export type PortfolioMotionTiming = {
 
 export const DEFAULT_MOTION_PROFILE: PortfolioGlobalMotionProfile = 'none';
 
-export const DEFAULT_MOTION_HOVER_SHADOW_COLOR = '#f97316';
+const DEFAULT_MOTION_HOVER_SHADOW_COLOR = '#f97316';
 
-export const MOTION_TIMING_DELAY_MIN = 0;
-export const MOTION_TIMING_DELAY_MAX = 1.2;
-export const MOTION_TIMING_DURATION_MIN = 0.2;
-export const MOTION_TIMING_DURATION_MAX = 1.5;
-export const MOTION_TIMING_STAGGER_MIN = 0;
-export const MOTION_TIMING_STAGGER_MAX = 0.28;
-export const MOTION_TIMING_DISTANCE_MIN = 0;
-export const MOTION_TIMING_DISTANCE_MAX = 48;
-export const MOTION_TIMING_HOVER_LIFT_MIN = 0;
-export const MOTION_TIMING_HOVER_LIFT_MAX = 16;
-export const MOTION_TIMING_HOVER_SHADOW_SIZE_MIN = 0;
-export const MOTION_TIMING_HOVER_SHADOW_SIZE_MAX = 80;
-export const MOTION_TIMING_HOVER_SHADOW_OPACITY_MIN = 0;
-export const MOTION_TIMING_HOVER_SHADOW_OPACITY_MAX = 100;
-export const MOTION_STAGGER_CAP_SECONDS = 0.9;
+const MOTION_TIMING_DELAY_MIN = 0;
+const MOTION_TIMING_DELAY_MAX = 1.2;
+const MOTION_TIMING_DURATION_MIN = 0.2;
+const MOTION_TIMING_DURATION_MAX = 1.5;
+const MOTION_TIMING_STAGGER_MIN = 0;
+const MOTION_TIMING_STAGGER_MAX = 0.28;
+const MOTION_TIMING_DISTANCE_MIN = 0;
+const MOTION_TIMING_DISTANCE_MAX = 48;
+const MOTION_TIMING_HOVER_LIFT_MIN = 0;
+const MOTION_TIMING_HOVER_LIFT_MAX = 16;
+const MOTION_TIMING_HOVER_SHADOW_SIZE_MIN = 0;
+const MOTION_TIMING_HOVER_SHADOW_SIZE_MAX = 80;
+const MOTION_TIMING_HOVER_SHADOW_OPACITY_MIN = 0;
+const MOTION_TIMING_HOVER_SHADOW_OPACITY_MAX = 100;
+const MOTION_STAGGER_CAP_SECONDS = 0.9;
 
 const DEFAULT_DYNAMIC_HOVER = {
   hoverLift: 4,
@@ -73,45 +73,6 @@ export const DEFAULT_MOTION_TIMING: PortfolioMotionTiming = defaultMotionTimingF
   DEFAULT_MOTION_PROFILE
 );
 
-export const PORTFOLIO_GLOBAL_MOTION_PROFILE_OPTIONS: {
-  value: PortfolioGlobalMotionProfile;
-  label: string;
-  description: string;
-  /** Short trait chips shown under the card. */
-  traits: string[];
-  /** One-line recipe for the selected profile. */
-  recipe: string;
-}[] = [
-  {
-    value: 'none',
-    label: 'Aucun',
-    description: 'Pas d’animation d’entrée — rendu immédiat, le plus stable.',
-    traits: ['Instantané', 'Stable'],
-    recipe: 'Aucune entrée · aucun décalage',
-  },
-  {
-    value: 'editorial',
-    label: 'Éditorial',
-    description: 'Fondu doux carte par carte, déplacement léger — lecture calme.',
-    traits: ['Doux', 'Stagger', 'Geom fade'],
-    recipe: '0,60s · stagger 70ms · 20px · fondu hero',
-  },
-  {
-    value: 'dynamic',
-    label: 'Dynamique',
-    description: 'Entrée vive + lift au survol des cartes — plus réactif.',
-    traits: ['Vif', 'Hover lift', 'Stagger'],
-    recipe: '0,55s · stagger 75ms · 22px · hover −4px',
-  },
-  {
-    value: 'cinematic',
-    label: 'Cinématique',
-    description: 'Entrées lentes, plus de parcours, fondu géométrique hero marqué.',
-    traits: ['Lent', 'Large', 'Geom fade'],
-    recipe: '0,85s · stagger 120ms · 28px · fondu hero',
-  },
-];
-
 export function isMotionProfileActive(profile: PortfolioGlobalMotionProfile): boolean {
   return profile !== 'none';
 }
@@ -126,31 +87,31 @@ function clampTimingNumber(value: unknown, min: number, max: number, fallback: n
   return Math.min(max, Math.max(min, Math.round(n * 1000) / 1000));
 }
 
-export function clampMotionTimingDelay(value: unknown, fallback = 0): number {
+function clampMotionTimingDelay(value: unknown, fallback = 0): number {
   return clampTimingNumber(value, MOTION_TIMING_DELAY_MIN, MOTION_TIMING_DELAY_MAX, fallback);
 }
 
-export function clampMotionTimingDuration(value: unknown, fallback = 0.6): number {
+function clampMotionTimingDuration(value: unknown, fallback = 0.6): number {
   return clampTimingNumber(value, MOTION_TIMING_DURATION_MIN, MOTION_TIMING_DURATION_MAX, fallback);
 }
 
-export function clampMotionTimingStagger(value: unknown, fallback = 0.07): number {
+function clampMotionTimingStagger(value: unknown, fallback = 0.07): number {
   return clampTimingNumber(value, MOTION_TIMING_STAGGER_MIN, MOTION_TIMING_STAGGER_MAX, fallback);
 }
 
-export function clampMotionTimingDistance(value: unknown, fallback = 20): number {
+function clampMotionTimingDistance(value: unknown, fallback = 20): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(MOTION_TIMING_DISTANCE_MAX, Math.max(MOTION_TIMING_DISTANCE_MIN, Math.round(n)));
 }
 
-export function clampMotionHoverLift(value: unknown, fallback = 4): number {
+function clampMotionHoverLift(value: unknown, fallback = 4): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(MOTION_TIMING_HOVER_LIFT_MAX, Math.max(MOTION_TIMING_HOVER_LIFT_MIN, Math.round(n)));
 }
 
-export function clampMotionHoverShadowSize(value: unknown, fallback = 40): number {
+function clampMotionHoverShadowSize(value: unknown, fallback = 40): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(
@@ -159,7 +120,7 @@ export function clampMotionHoverShadowSize(value: unknown, fallback = 40): numbe
   );
 }
 
-export function clampMotionHoverShadowOpacity(value: unknown, fallback = 35): number {
+function clampMotionHoverShadowOpacity(value: unknown, fallback = 35): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(
@@ -211,7 +172,7 @@ export function mergeMotionTiming(
 }
 
 /** Resolve timing for a profile — uses stored overrides when active. */
-export function resolveMotionTiming(
+function resolveMotionTiming(
   profile: PortfolioGlobalMotionProfile,
   timing?: PortfolioMotionTiming | null
 ): PortfolioMotionTiming {
@@ -280,28 +241,6 @@ export function motionProfileHoverBoxShadow(
   return `0 ${y}px ${size}px ${spread}px ${color}`;
 }
 
-export function formatMotionHoverRecipe(timing: PortfolioMotionTiming): string {
-  const lift = clampMotionHoverLift(timing.hoverLift);
-  const size = clampMotionHoverShadowSize(timing.hoverShadowSize);
-  return `hover −${lift}px · ombre ${size}px`;
-}
-
-export function motionProfileItemHoverClass(profile: PortfolioGlobalMotionProfile): string {
-  if (profile === 'dynamic') {
-    return 'rounded-[inherit] transition duration-200 will-change-transform';
-  }
-  return '';
-}
-
-/** CSS enter classes for hero — only when a motion profile is active. */
-export function motionProfileHeroEnterClass(profile: PortfolioGlobalMotionProfile): string {
-  return isMotionProfileActive(profile) ? 'portfolio-hero-enter' : '';
-}
-
-export function motionProfileHeroImageEnterClass(profile: PortfolioGlobalMotionProfile): string {
-  return isMotionProfileActive(profile) ? 'portfolio-hero-image-enter' : '';
-}
-
 export function motionProfileEnablesHeroGeomFade(profile: PortfolioGlobalMotionProfile): boolean {
   return profile === 'cinematic' || profile === 'editorial';
 }
@@ -338,8 +277,4 @@ export function resolveMotionProfileFromStorage(
   }
 
   return base;
-}
-
-export function formatMotionSeconds(value: number): string {
-  return `${Math.round(value * 1000)}ms`;
 }

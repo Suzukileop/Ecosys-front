@@ -308,11 +308,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
 
     const scroller = statementCtaScrollParent(hero);
     const pick = (selector: string) => Array.from(hero.querySelectorAll<HTMLElement>(selector));
-
-    // Element selections
-    const titleLines = pick('.pf-statement-title-line');
     const titleInners = pick('.pf-statement-title-inner');
-    const photoMasks = pick('.pf-statement-photo-mask');
     const photoInners = pick('.pf-statement-photo-inner');
     const bioElements = pick('.pf-statement-bio-entry');
     const ctaElements = pick('.pf-statement-cta-entry');

@@ -16,9 +16,10 @@ import {
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_REEL_KICKER = '02 / Chronology';
-export const EXP_LEAD_MOTION_DONE = 'pf-exp-lead-motion-done';
+const EXP_LEAD_MOTION_DONE = 'pf-exp-lead-motion-done';
 
 function reelHeaderScrollParent(el: HTMLElement | null): HTMLElement | undefined {
   let node = el?.parentElement ?? null;
@@ -94,7 +95,8 @@ export function ExperienceReelHeader({
   const titleLines = useMemo(() => [title], [title]);
   const kickerEnabled = presentation.reelKickerEnabled !== false;
   const kickerText = presentation.reelKickerText?.trim() || DEFAULT_REEL_KICKER;
-  const animationEnabled = presentation.reelHeaderAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.reelHeaderAnimationEnabled !== false && !motionOff;
 
   const headerRef = useRef<HTMLElement>(null);
 

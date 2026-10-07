@@ -42,9 +42,6 @@ import {
   type PortfolioToolsHeaderBillboardWordStyle,
   type PortfolioToolsHeaderDesign,
   type PortfolioToolsHeaderDesignAlignment,
-  type PortfolioToolsHeaderPaletteToken,
-  type PortfolioToolsHeaderTitleSize,
-  type PortfolioToolsHeaderTitleWeight,
   type PortfolioToolsLevelProgressRowGap,
   type PortfolioToolsLevelBarStyle,
   type PortfolioToolsLevelBarSize,
@@ -75,15 +72,29 @@ import {
   resolveHeroPaletteColor,
   type HeroPaletteTokenId,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
+import {
+  HEADER_SIZE_STEPS,
+  HEADER_WEIGHT_STEPS,
+  HeaderBlock,
+  HeaderMarqueeWords,
+  HeaderOptionGrid,
+  HeaderStyleTargetsEditor,
+  HeaderSteppedSlider,
+  HeaderTextField,
+  HeaderTextStyleEditor,
+  type HeaderPatch,
+} from '@/components/portfolio/portfolio-header-style-controls';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 /** Same general / design / header mechanism as the Stack section settings panel, plus its own Background tab. */
 export type ToolsSubSection = 'general' | 'design' | 'header' | 'background';
 
 const SUBSECTIONS: { value: ToolsSubSection; label: string }[] = [
-  { value: 'general', label: 'Général' },
+  { value: 'general', label: 'General' },
   { value: 'design', label: 'Design' },
   { value: 'header', label: 'Header' },
-  { value: 'background', label: 'Arrière-plan' },
+  { value: 'background', label: 'Background' },
 ];
 
 export function normalizeToolsSubSection(value: string | undefined): ToolsSubSection {
@@ -198,6 +209,7 @@ function ToolsBackgroundColorField({
   const mapping = TOOLS_BACKGROUND_LABEL_SLOTS[label] ?? TOOLS_BACKGROUND_LABEL_SLOTS.Color;
   const usingPalette = tools.useHeroPalette !== false;
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <ToolsQuickColorPicker
       label={label}
       palette={palette}
@@ -212,6 +224,7 @@ function ToolsBackgroundColorField({
         )
       }
     />
+    </SettingRow>
   );
 }
 
@@ -602,6 +615,8 @@ function ToolsToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -636,12 +651,14 @@ function ToolsOptionGrid<T extends string | number>({
   columns?: number;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const rows = useSettingsRows();
   const count = options.length;
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
   const compact = cols === count && count >= 2 && count <= 5;
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -677,6 +694,7 @@ function ToolsOptionGrid<T extends string | number>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -695,6 +713,7 @@ function ToolsSlider<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const rows = useSettingsRows();
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value)
@@ -703,11 +722,12 @@ function ToolsSlider<T extends string>({
   const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
   const current = options[index] ?? options[0];
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <div className="pf-stack-slider-row">
+      {rows ? null : (<div className="pf-stack-slider-row">
         <span className="pf-stack-slider-label">{label}</span>
         <span className="pf-stack-slider-value">{current?.label}</span>
-      </div>
+      </div>)}
       <input
         type="range"
         min={0}
@@ -725,6 +745,7 @@ function ToolsSlider<T extends string>({
         }}
       />
     </div>
+    </SettingRow>
   );
 }
 
@@ -745,10 +766,12 @@ function ToolsPreviewCardGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -771,6 +794,7 @@ function ToolsPreviewCardGrid<T extends string>({
         ))}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -1143,124 +1167,6 @@ function ToolsInfoTooltip({ text }: { text: string }) {
   );
 }
 
-/** S/M/L/XL, each button's own label rendered at the size it represents —
- *  the pill illustrates the scale directly, no separate value readout needed. */
-const TOOLS_SIZE_PILL_OPTIONS: { value: PortfolioToolsHeaderTitleSize; label: string; fontPx: number }[] = [
-  { value: 'sm', label: 'S', fontPx: 12 },
-  { value: 'md', label: 'M', fontPx: 15 },
-  { value: 'lg', label: 'L', fontPx: 18 },
-  { value: 'xl', label: 'XL', fontPx: 22 },
-];
-
-function ToolsSizePill({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: PortfolioToolsHeaderTitleSize;
-  onChange: (value: PortfolioToolsHeaderTitleSize) => void;
-}) {
-  return (
-    <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid grid-cols-4 gap-[3px] p-[3px]"
-        data-compact="true"
-      >
-        {TOOLS_SIZE_PILL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={option.label}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
-              style={{ fontSize: `${option.fontPx}px` }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/** Mini swatch for a palette-token color picker — the actual resolved color,
- *  not just a text label. */
-function toolsHeaderPaletteTokenGlyph(token: PortfolioToolsHeaderPaletteToken): ReactNode {
-  return (
-    <circle
-      cx="32"
-      cy="17"
-      r="8"
-      fill={toolsHeaderPaletteTokenColor(token)}
-      style={{
-        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
-        strokeWidth: 1,
-      }}
-    />
-  );
-}
-
-function toolsHeaderBillboardWordStyleGlyph(style: PortfolioToolsHeaderBillboardWordStyle): ReactNode {
-  switch (style) {
-    case 'outline':
-      return (
-        <text
-          x="32"
-          y="23"
-          textAnchor="middle"
-          fontSize="19"
-          fontWeight={900}
-          stroke="currentColor"
-          strokeWidth="1"
-          className="pf-stack-mini-ink"
-          style={{ fill: 'none' }}
-        >
-          Aa
-        </text>
-      );
-    case 'fill':
-      return (
-        <>
-          <text
-            x="32"
-            y="23"
-            textAnchor="middle"
-            fontSize="19"
-            fontWeight={900}
-            className="pf-stack-mini-ink"
-            opacity={0.4}
-            style={{ filter: 'blur(2px)' }}
-          >
-            Aa
-          </text>
-          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-            Aa
-          </text>
-        </>
-      );
-    case 'simple':
-      return (
-        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-          Aa
-        </text>
-      );
-    default: {
-      const _exhaustive: never = style;
-      return _exhaustive;
-    }
-  }
-}
-
 /** Mini wireframes for the 8 Header design picker cards — same ToolsMiniSlide mechanism as Design. */
 function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDesign }) {
   switch (design) {
@@ -1360,11 +1266,15 @@ function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDe
 function ToolsHeaderDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioToolsHeaderDesign;
   onChange: (value: PortfolioToolsHeaderDesign) => void;
+  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS[0];
@@ -1386,17 +1296,18 @@ function ToolsHeaderDesignChoiceGrid({
           {PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
             return (
-              <ToolsPickerCard
-                key={option.value}
-                active={active}
-                label={option.label}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <ToolsHeaderDesignWireframe design={option.value} />
-              </ToolsPickerCard>
+              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+                <ToolsPickerCard
+                  active={active}
+                  label={option.label}
+                  onClick={() => {
+                    onChange(option.value);
+                    setShowGrid(false);
+                  }}
+                >
+                  <ToolsHeaderDesignWireframe design={option.value} />
+                </ToolsPickerCard>
+              </PortfolioHeaderDesignOption>
             );
           })}
         </div>
@@ -1418,18 +1329,9 @@ const TOOLS_HEADER_MARGIN_BOTTOM_OPTIONS = [
   { value: 'xl' as const, label: 'XL' },
 ];
 
-const TOOLS_HEADER_TITLE_WEIGHT_OPTIONS = [
-  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
-  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
-  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
-  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
-];
-
-/** Shared across every header design — bottom spacing, title size, and title weight.
- *  Appended to each design's own advanced-settings branch in the Header tab.
- *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
- *  actually consume (e.g. Billboard has no adjustable title size/weight and
- *  ignores header alignment) — dead controls left visible are confusing. */
+/** Shared across every header design — alignment, bottom spacing, (title size / weight) and motion.
+ *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't actually consume —
+ *  dead controls left visible are confusing. */
 function ToolsHeaderSharedAdvancedControls({
   tools,
   onChange,
@@ -1441,44 +1343,50 @@ function ToolsHeaderSharedAdvancedControls({
   hideAlignment?: boolean;
   hideTitleControls?: boolean;
 }) {
+  const titleSize = tools.headerTitleSize ?? 'md';
+  const titleWeight = tools.headerTitleWeight ?? 'regular';
   return (
-    <>
+    <div className="pf-exp-centered-config space-y-8 border-t border-neutral-200/70 pt-9">
       {hideAlignment ? null : (
-        <ToolsOptionGrid
+        <HeaderOptionGrid
           label="Header alignment"
           options={[
-            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
+            { value: 'left' as const, label: 'Left' },
+            { value: 'center' as const, label: 'Center' },
+            { value: 'right' as const, label: 'Right' },
           ]}
           value={tools.headerDesignAlignment}
           onChange={(headerDesignAlignment: PortfolioToolsHeaderDesignAlignment) => onChange({ headerDesignAlignment })}
           columns={3}
         />
       )}
-      <ToolsSlider
+      <HeaderOptionGrid
         label="Bottom spacing"
         options={TOOLS_HEADER_MARGIN_BOTTOM_OPTIONS}
         value={tools.headerMarginBottom ?? 'md'}
         onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
+        columns={4}
       />
       {hideTitleControls ? null : (
         <>
-          <ToolsSizePill
+          <HeaderSteppedSlider
             label="Title size"
-            value={tools.headerTitleSize ?? 'md'}
+            steps={HEADER_SIZE_STEPS}
+            value={titleSize}
+            currentName={HEADER_SIZE_STEPS.find((step) => step.value === titleSize)?.name ?? ''}
             onChange={(headerTitleSize) => onChange({ headerTitleSize })}
           />
-          <ToolsOptionGrid
+          <HeaderSteppedSlider
             label="Title weight"
-            options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-            value={tools.headerTitleWeight ?? 'regular'}
-            onChange={(headerTitleWeight: PortfolioToolsHeaderTitleWeight) => onChange({ headerTitleWeight })}
-            columns={4}
+            steps={HEADER_WEIGHT_STEPS}
+            value={titleWeight}
+            currentName={HEADER_WEIGHT_STEPS.find((step) => step.value === titleWeight)?.tick ?? ''}
+            onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+            stepStyle={(step) => ({ fontWeight: HEADER_WEIGHT_STEPS.find((item) => item.value === step.value)?.css })}
           />
         </>
       )}
-    </>
+    </div>
   );
 }
 
@@ -1486,20 +1394,391 @@ function ToolsLayoutSettingsBand({
   children,
   motionKey,
   title = 'Design settings',
+  flush = false,
 }: {
   children: ReactNode;
   motionKey: string;
   title?: string;
+  /** Drops the boxed frame so the fields use the dock's full width. */
+  flush?: boolean;
 }) {
   return (
-    <section className="pf-stack-layout-settings" aria-labelledby="tools-layout-settings-title">
+    <section
+      className={`pf-stack-layout-settings${flush ? ' pf-stack-layout-settings--flush' : ''}`}
+      aria-labelledby="tools-layout-settings-title"
+    >
       <h3 id="tools-layout-settings-title" className="pf-stack-layout-settings-title">
         {title}
       </h3>
-      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+      <div key={motionKey} className={`pf-stack-layout-settings-body ${flush ? 'space-y-9' : 'space-y-6'}`}>
         {children}
       </div>
     </section>
+  );
+}
+
+/**
+ * The Header tab's per-design fields: the design's texts first, then one style editor (pick the text,
+ * set only the color / size / weight it has), then the controls every design shares.
+ */
+function ToolsHeaderDesignFields({
+  tools,
+  onChange,
+}: {
+  tools: PortfolioToolsSectionSettings;
+  onChange: (patch: Partial<PortfolioToolsSectionSettings>) => void;
+}) {
+  const design = tools.headerDesign ?? 'editorial';
+  const onPatch = (patch: HeaderPatch) => onChange(patch as Partial<PortfolioToolsSectionSettings>);
+  const colorProps = { colorOptions: TOOLS_HEADER_PALETTE_TOKEN_OPTIONS, resolveColor: toolsHeaderPaletteTokenColor };
+  const shared = (opts?: { hideAlignment?: boolean; hideTitleControls?: boolean }) => (
+    <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} {...opts} />
+  );
+
+  if (design === 'index') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Rule label"
+            value={tools.headerIndexLabelText}
+            placeholder="Index"
+            onChange={(headerIndexLabelText) => onChange({ headerIndexLabelText })}
+          />
+          <HeaderTextField
+            label="Title"
+            value={tools.headerIndexTitleText}
+            placeholder="Daily workflow"
+            onChange={(headerIndexTitleText) => onChange({ headerIndexTitleText })}
+          />
+          <HeaderTextField
+            label="Subtitle"
+            value={tools.headerIndexSubtitleText}
+            placeholder="Apps and platforms I rely on daily."
+            onChange={(headerIndexSubtitleText) => onChange({ headerIndexSubtitleText })}
+            multiline
+          />
+          <HeaderTextField
+            label="Count label"
+            value={tools.headerIndexCountLabelText}
+            placeholder="Tools"
+            onChange={(headerIndexCountLabelText) => onChange({ headerIndexCountLabelText })}
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderTextStyleEditor settings={tools} onPatch={onPatch} prefix="headerIndex" {...colorProps} />
+        </HeaderBlock>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={tools}
+            onPatch={onPatch}
+            title="Counter"
+            targets={[
+              { id: 'numeral', label: 'Numeral', color: { key: 'headerIndexNumberColor', fallback: 'principal' } },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        {shared({ hideTitleControls: true })}
+      </>
+    );
+  }
+
+  if (design === 'marquee') {
+    return (
+      <>
+        <HeaderMarqueeWords
+          settings={tools}
+          onPatch={onPatch}
+          keys={['headerMarqueeWord1Text', 'headerMarqueeWord2Text', 'headerMarqueeWord3Text', 'headerMarqueeWord4Text']}
+          placeholders={['Tools', 'Optional', 'Optional', 'Optional']}
+        />
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={tools}
+            onPatch={onPatch}
+            targets={[
+              {
+                id: 'words',
+                label: 'Words',
+                color: { key: 'headerMarqueeWordColor', fallback: 'principal' },
+                size: { key: 'headerMarqueeSize', fallback: 'md' },
+              },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        {shared({ hideAlignment: true, hideTitleControls: true })}
+      </>
+    );
+  }
+
+  if (design === 'accent-count') {
+    const size = tools.headerAccentCountSize ?? 'md';
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Badge text"
+            value={tools.headerAccentCountBadgeText}
+            placeholder="{count}+ tools"
+            onChange={(headerAccentCountBadgeText) => onChange({ headerAccentCountBadgeText })}
+          />
+          <HeaderTextField
+            label="Lead text"
+            value={tools.headerAccentCountLeadText}
+            placeholder="A curated set of apps that keep me productive."
+            onChange={(headerAccentCountLeadText) => onChange({ headerAccentCountLeadText })}
+            multiline
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={tools}
+            onPatch={onPatch}
+            initialId="lead"
+            targets={[
+              { id: 'badge', label: 'Badge', color: { key: 'headerAccentCountBadgeColor', fallback: 'principal' } },
+              {
+                id: 'lead',
+                label: 'Lead',
+                color: { key: 'headerAccentCountLeadColor', fallback: 'secondaire' },
+                weight: { key: 'headerAccentCountWeight', fallback: 'regular' },
+              },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        <HeaderBlock>
+          <div className="pf-exp-centered-config space-y-8">
+            <HeaderSteppedSlider
+              label="Size (badge and lead)"
+              steps={HEADER_SIZE_STEPS}
+              value={size}
+              currentName={HEADER_SIZE_STEPS.find((step) => step.value === size)?.name ?? ''}
+              onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
+            />
+            <HeaderOptionGrid
+              label="Alignment"
+              options={TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+              value={tools.headerAccentCountAlignment ?? 'left'}
+              onChange={(headerAccentCountAlignment: PortfolioToolsHeaderAccentCountAlignment) =>
+                onChange({ headerAccentCountAlignment })
+              }
+              columns={3}
+            />
+          </div>
+        </HeaderBlock>
+        {shared({ hideAlignment: true, hideTitleControls: true })}
+      </>
+    );
+  }
+
+  if (design === 'serif-lead') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Label"
+            value={tools.headerSerifLeadLabelText}
+            placeholder="Tools"
+            onChange={(headerSerifLeadLabelText) => onChange({ headerSerifLeadLabelText })}
+          />
+          <HeaderTextField
+            label="Title"
+            value={tools.headerSerifLeadTitleText}
+            placeholder="A curated set of apps, platforms, and daily tools."
+            onChange={(headerSerifLeadTitleText) => onChange({ headerSerifLeadTitleText })}
+            multiline
+          />
+          <HeaderTextField
+            label="Subtitle"
+            value={tools.headerSerifLeadSubtitleText}
+            placeholder="Apps and platforms I rely on daily."
+            onChange={(headerSerifLeadSubtitleText) => onChange({ headerSerifLeadSubtitleText })}
+            multiline
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderTextStyleEditor settings={tools} onPatch={onPatch} prefix="headerSerifLead" {...colorProps} />
+        </HeaderBlock>
+        {shared({ hideTitleControls: true })}
+      </>
+    );
+  }
+
+  if (design === 'billboard') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Big background word"
+            value={tools.headerBillboardBigWord}
+            placeholder="TOOLS"
+            onChange={(headerBillboardBigWord) => onChange({ headerBillboardBigWord })}
+          />
+          <HeaderTextField
+            label="Title"
+            value={tools.headerBillboardTitleText}
+            placeholder="Daily workflow"
+            onChange={(headerBillboardTitleText) => onChange({ headerBillboardTitleText })}
+          />
+          <HeaderTextField
+            label="Count line"
+            value={tools.headerBillboardCountText}
+            placeholder="{count} tools"
+            onChange={(headerBillboardCountText) => onChange({ headerBillboardCountText })}
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={tools}
+            onPatch={onPatch}
+            initialId="title"
+            targets={[
+              { id: 'word', label: 'Big word', color: { key: 'headerBillboardWordColor', fallback: 'principal' } },
+              { id: 'title', label: 'Title', color: { key: 'headerBillboardTitleColor', fallback: 'principal' } },
+              { id: 'count', label: 'Count line', color: { key: 'headerBillboardMetaColor', fallback: 'secondaire' } },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        <HeaderBlock>
+          <HeaderOptionGrid
+            label="Big word style"
+            options={TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
+            value={tools.headerBillboardWordStyle ?? 'outline'}
+            onChange={(headerBillboardWordStyle: PortfolioToolsHeaderBillboardWordStyle) =>
+              onChange({ headerBillboardWordStyle })
+            }
+            columns={3}
+          />
+        </HeaderBlock>
+        {shared({ hideAlignment: true, hideTitleControls: true })}
+      </>
+    );
+  }
+
+  if (design === 'masthead') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Line 1"
+            value={tools.headerMastheadLine1Text}
+            placeholder="Daily tools."
+            onChange={(headerMastheadLine1Text) => onChange({ headerMastheadLine1Text })}
+          />
+          <HeaderTextField
+            label="Line 2"
+            value={tools.headerMastheadLine2Text}
+            placeholder="Chosen with intent."
+            onChange={(headerMastheadLine2Text) => onChange({ headerMastheadLine2Text })}
+          />
+          <HeaderTextField
+            label="Line 3"
+            value={tools.headerMastheadLine3Text}
+            placeholder="Kept up to date."
+            onChange={(headerMastheadLine3Text) => onChange({ headerMastheadLine3Text })}
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={tools}
+            onPatch={onPatch}
+            title="Headline style"
+            targets={[
+              {
+                id: 'headline',
+                label: 'Headline',
+                color: { key: 'headerMastheadHeadlineColor', fallback: 'principal' },
+                size: { key: 'headerMastheadHeadlineSize', fallback: 'md' },
+                weight: { key: 'headerMastheadHeadlineWeight', fallback: 'regular' },
+              },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        {shared({ hideTitleControls: true })}
+      </>
+    );
+  }
+
+  if (design === 'split-heading') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Title"
+            value={tools.headerSplitHeadingTitleText}
+            placeholder="Daily workflow"
+            onChange={(headerSplitHeadingTitleText) => onChange({ headerSplitHeadingTitleText })}
+          />
+          <HeaderTextField
+            label="Label"
+            value={tools.headerSplitHeadingLabelText}
+            placeholder="Tools"
+            onChange={(headerSplitHeadingLabelText) => onChange({ headerSplitHeadingLabelText })}
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={tools}
+            onPatch={onPatch}
+            initialId="title"
+            targets={[
+              {
+                id: 'title',
+                label: 'Title',
+                color: { key: 'headerSplitHeadingTitleColor', fallback: 'principal' },
+                size: { key: 'headerSplitHeadingTitleSize', fallback: 'md' },
+                weight: { key: 'headerSplitHeadingTitleWeight', fallback: 'regular' },
+              },
+              {
+                id: 'label',
+                label: 'Label',
+                color: { key: 'headerSplitHeadingLabelColor', fallback: 'secondaire' },
+                size: { key: 'headerSplitHeadingLabelSize', fallback: 'md' },
+                weight: { key: 'headerSplitHeadingLabelWeight', fallback: 'regular' },
+              },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        {shared({ hideAlignment: true, hideTitleControls: true })}
+      </>
+    );
+  }
+
+  // Editorial — kicker + title + subtitle. An empty text falls back to "Tools" / the section title / the section subtitle.
+  return (
+    <>
+      <div className="space-y-6">
+        <HeaderTextField
+          label="Label"
+          value={tools.headerEditorialLabelText}
+          placeholder="Tools"
+          onChange={(headerEditorialLabelText) => onChange({ headerEditorialLabelText })}
+        />
+        <HeaderTextField
+          label="Title"
+          value={tools.headerEditorialTitleText}
+          placeholder="Daily workflow"
+          onChange={(headerEditorialTitleText) => onChange({ headerEditorialTitleText })}
+        />
+        <HeaderTextField
+          label="Subtitle"
+          value={tools.headerEditorialSubtitleText}
+          placeholder="Apps and platforms I rely on daily."
+          onChange={(headerEditorialSubtitleText) => onChange({ headerEditorialSubtitleText })}
+          multiline
+        />
+      </div>
+      <HeaderBlock>
+        <HeaderTextStyleEditor settings={tools} onPatch={onPatch} prefix="headerEditorial" {...colorProps} />
+      </HeaderBlock>
+      {shared({ hideTitleControls: true })}
+    </>
   );
 }
 
@@ -1549,6 +1828,7 @@ export function ToolsSettingsPanel({
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, tools.toolsPalette);
   const bindings = mergeToolsColorBindings(DEFAULT_TOOLS_COLOR_BINDINGS, tools.toolsColorBindings);
   const current = normalizeToolsSubSection(subSection);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const isRichToolsDesign =
     tools.design === 'brand-cards' ||
     tools.design === 'brand-directory' ||
@@ -1571,7 +1851,7 @@ export function ToolsSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {SUBSECTIONS.map((item) => (
           <button
             key={item.value}
@@ -1663,6 +1943,7 @@ export function ToolsSettingsPanel({
             />
           ) : null}
           <ToolsLayoutSettingsBand motionKey={tools.design}>
+<SettingsRowsScope title="Layout options">
             <ToolsSlider
               label="Logo size"
               value={tools.tileSize}
@@ -2183,626 +2464,26 @@ export function ToolsSettingsPanel({
                 }
               />
             ) : null}
-          </ToolsLayoutSettingsBand>
+          </SettingsRowsScope>
+</ToolsLayoutSettingsBand>
         </div>
       ) : null}
 
       {current === 'header' ? (
         <div className="space-y-6">
-          <div>
-            <ToolsHeaderDesignChoiceGrid
-              value={tools.headerDesign ?? 'editorial'}
-              onChange={(headerDesign) => onChange({ headerDesign })}
-            />
+          <ToolsHeaderDesignChoiceGrid
+            value={tools.headerDesign ?? 'editorial'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+            open={headerCatalogOpen}
+            onOpenChange={setHeaderCatalogOpen}
+          />
 
-            <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'editorial'}>
-              {tools.headerDesign === 'index' ? (
-                <>
-                  <div>
-                    <p className="pf-stack-block-label">Rule label</p>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={tools.headerIndexLabelText}
-                          onChange={(event) => onChange({ headerIndexLabelText: event.target.value })}
-                          placeholder="Index"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <ToolsPreviewCardGrid
-                        label="Color"
-                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={tools.headerIndexLabelColor ?? 'texteFort'}
-                        onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
-                        columns={3}
-                      />
-                      <ToolsSizePill
-                        label="Size"
-                        value={tools.headerIndexLabelSize ?? 'md'}
-                        onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
-                      />
-                      <ToolsOptionGrid
-                        label="Weight"
-                        options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={tools.headerIndexLabelWeight ?? 'regular'}
-                        onChange={(headerIndexLabelWeight: PortfolioToolsHeaderTitleWeight) =>
-                          onChange({ headerIndexLabelWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Counter</p>
-                    <div className="mt-3 space-y-4">
-                      <ToolsPreviewCardGrid
-                        label="Numeral color"
-                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={tools.headerIndexNumberColor ?? 'principal'}
-                        onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
-                        columns={3}
-                      />
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
-                        <input
-                          type="text"
-                          value={tools.headerIndexCountLabelText}
-                          onChange={(event) => onChange({ headerIndexCountLabelText: event.target.value })}
-                          placeholder="Tools"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Title</p>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={tools.headerIndexTitleText}
-                          onChange={(event) => onChange({ headerIndexTitleText: event.target.value })}
-                          placeholder="Daily workflow"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <ToolsPreviewCardGrid
-                        label="Color"
-                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={tools.headerIndexTitleColor ?? 'texteFort'}
-                        onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
-                        columns={3}
-                      />
-                      <ToolsSizePill
-                        label="Size"
-                        value={tools.headerIndexTitleSize ?? 'md'}
-                        onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
-                      />
-                      <ToolsOptionGrid
-                        label="Weight"
-                        options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={tools.headerIndexTitleWeight ?? 'regular'}
-                        onChange={(headerIndexTitleWeight: PortfolioToolsHeaderTitleWeight) =>
-                          onChange({ headerIndexTitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Subtitle</p>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={tools.headerIndexSubtitleText}
-                          onChange={(event) => onChange({ headerIndexSubtitleText: event.target.value })}
-                          placeholder="Apps and platforms I rely on daily."
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <ToolsPreviewCardGrid
-                        label="Color"
-                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={tools.headerIndexSubtitleColor ?? 'texteFort'}
-                        onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
-                        columns={3}
-                      />
-                      <ToolsSizePill
-                        label="Size"
-                        value={tools.headerIndexSubtitleSize ?? 'md'}
-                        onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
-                      />
-                      <ToolsOptionGrid
-                        label="Weight"
-                        options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={tools.headerIndexSubtitleWeight ?? 'regular'}
-                        onChange={(headerIndexSubtitleWeight: PortfolioToolsHeaderTitleWeight) =>
-                          onChange({ headerIndexSubtitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideTitleControls />
-                  </div>
-                </>
-              ) : tools.headerDesign === 'marquee' ? (
-                <>
-                  <div>
-                    <p className="pf-stack-block-label">Words</p>
-                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
-                        <input
-                          type="text"
-                          value={tools.headerMarqueeWord1Text}
-                          onChange={(event) => onChange({ headerMarqueeWord1Text: event.target.value })}
-                          placeholder="Daily"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
-                        <input
-                          type="text"
-                          value={tools.headerMarqueeWord2Text}
-                          onChange={(event) => onChange({ headerMarqueeWord2Text: event.target.value })}
-                          placeholder="Tools"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
-                        <input
-                          type="text"
-                          value={tools.headerMarqueeWord3Text}
-                          onChange={(event) => onChange({ headerMarqueeWord3Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
-                        <input
-                          type="text"
-                          value={tools.headerMarqueeWord4Text}
-                          onChange={(event) => onChange({ headerMarqueeWord4Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Style</p>
-                    <div className="mt-3 space-y-4">
-                      <ToolsPreviewCardGrid
-                        label="Word color"
-                        options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={tools.headerMarqueeWordColor ?? 'principal'}
-                        onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
-                        columns={3}
-                      />
-                      <ToolsSizePill
-                        label="Size"
-                        value={tools.headerMarqueeSize ?? 'md'}
-                        onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
-                  </div>
-                </>
-              ) : tools.headerDesign === 'accent-count' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
-                    <input
-                      type="text"
-                      value={tools.headerAccentCountBadgeText}
-                      onChange={(event) => onChange({ headerAccentCountBadgeText: event.target.value })}
-                      placeholder="{count}+ tools"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
-                    <input
-                      type="text"
-                      value={tools.headerAccentCountLeadText}
-                      onChange={(event) => onChange({ headerAccentCountLeadText: event.target.value })}
-                      placeholder="A curated set of apps that keep me productive."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ToolsPreviewCardGrid
-                    label="Badge color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerAccentCountBadgeColor ?? 'principal'}
-                    onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
-                    columns={3}
-                  />
-                  <ToolsPreviewCardGrid
-                    label="Lead color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerAccentCountLeadColor ?? 'secondaire'}
-                    onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Size"
-                    value={tools.headerAccentCountSize ?? 'md'}
-                    onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Lead weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerAccentCountWeight ?? 'regular'}
-                    onChange={(headerAccentCountWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerAccentCountWeight })
-                    }
-                    columns={4}
-                  />
-                  <ToolsOptionGrid
-                    label="Alignment"
-                    options={TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
-                    value={tools.headerAccentCountAlignment ?? 'left'}
-                    onChange={(headerAccentCountAlignment: PortfolioToolsHeaderAccentCountAlignment) =>
-                      onChange({ headerAccentCountAlignment })
-                    }
-                    columns={3}
-                  />
-                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : tools.headerDesign === 'serif-lead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={tools.headerSerifLeadLabelText}
-                      onChange={(event) => onChange({ headerSerifLeadLabelText: event.target.value })}
-                      placeholder="Tools"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ToolsPreviewCardGrid
-                    label="Label color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerSerifLeadLabelColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Label size"
-                    value={tools.headerSerifLeadLabelSize ?? 'md'}
-                    onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Label weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerSerifLeadLabelWeight ?? 'regular'}
-                    onChange={(headerSerifLeadLabelWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={tools.headerSerifLeadTitleText}
-                      onChange={(event) => onChange({ headerSerifLeadTitleText: event.target.value })}
-                      placeholder="A curated set of apps, platforms, and daily tools."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ToolsPreviewCardGrid
-                    label="Title color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerSerifLeadTitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Title size"
-                    value={tools.headerSerifLeadTitleSize ?? 'md'}
-                    onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Title weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerSerifLeadTitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadTitleWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <ToolsPreviewCardGrid
-                    label="Subtitle color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerSerifLeadSubtitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Subtitle size"
-                    value={tools.headerSerifLeadSubtitleSize ?? 'md'}
-                    onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Subtitle weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerSerifLeadSubtitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadSubtitleWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadSubtitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideTitleControls />
-                </>
-              ) : tools.headerDesign === 'billboard' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
-                    <input
-                      type="text"
-                      value={tools.headerBillboardBigWord}
-                      onChange={(event) => onChange({ headerBillboardBigWord: event.target.value })}
-                      placeholder="TOOLS"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count line</p>
-                    <input
-                      type="text"
-                      value={tools.headerBillboardCountText}
-                      onChange={(event) => onChange({ headerBillboardCountText: event.target.value })}
-                      placeholder="{count} tools"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={tools.headerBillboardTitleText}
-                      onChange={(event) => onChange({ headerBillboardTitleText: event.target.value })}
-                      placeholder="Daily workflow"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ToolsPreviewCardGrid
-                    label="Big word style"
-                    options={TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderBillboardWordStyleGlyph(option.value),
-                    }))}
-                    value={tools.headerBillboardWordStyle ?? 'outline'}
-                    onChange={(headerBillboardWordStyle: PortfolioToolsHeaderBillboardWordStyle) =>
-                      onChange({ headerBillboardWordStyle })
-                    }
-                    columns={3}
-                  />
-                  <ToolsPreviewCardGrid
-                    label="Big word color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerBillboardWordColor ?? 'principal'}
-                    onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
-                    columns={3}
-                  />
-                  <ToolsPreviewCardGrid
-                    label="Title color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerBillboardTitleColor ?? 'principal'}
-                    onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
-                    columns={3}
-                  />
-                  <ToolsPreviewCardGrid
-                    label="Count line color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerBillboardMetaColor ?? 'secondaire'}
-                    onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
-                    columns={3}
-                  />
-                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : tools.headerDesign === 'masthead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
-                    <input
-                      type="text"
-                      value={tools.headerMastheadLine1Text}
-                      onChange={(event) => onChange({ headerMastheadLine1Text: event.target.value })}
-                      placeholder="Daily tools."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
-                    <input
-                      type="text"
-                      value={tools.headerMastheadLine2Text}
-                      onChange={(event) => onChange({ headerMastheadLine2Text: event.target.value })}
-                      placeholder="Chosen with intent."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
-                    <input
-                      type="text"
-                      value={tools.headerMastheadLine3Text}
-                      onChange={(event) => onChange({ headerMastheadLine3Text: event.target.value })}
-                      placeholder="Kept up to date."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ToolsPreviewCardGrid
-                    label="Headline color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerMastheadHeadlineColor ?? 'principal'}
-                    onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Headline size"
-                    value={tools.headerMastheadHeadlineSize ?? 'md'}
-                    onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Headline weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerMastheadHeadlineWeight ?? 'regular'}
-                    onChange={(headerMastheadHeadlineWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerMastheadHeadlineWeight })
-                    }
-                    columns={4}
-                  />
-                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideTitleControls />
-                </>
-              ) : tools.headerDesign === 'split-heading' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={tools.headerSplitHeadingTitleText}
-                      onChange={(event) => onChange({ headerSplitHeadingTitleText: event.target.value })}
-                      placeholder="Daily workflow"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={tools.headerSplitHeadingLabelText}
-                      onChange={(event) => onChange({ headerSplitHeadingLabelText: event.target.value })}
-                      placeholder="Tools"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <ToolsPreviewCardGrid
-                    label="Title color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerSplitHeadingTitleColor ?? 'principal'}
-                    onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Title size"
-                    value={tools.headerSplitHeadingTitleSize ?? 'md'}
-                    onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Title weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerSplitHeadingTitleWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingTitleWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <ToolsPreviewCardGrid
-                    label="Label color"
-                    options={TOOLS_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: toolsHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={tools.headerSplitHeadingLabelColor ?? 'secondaire'}
-                    onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
-                    columns={3}
-                  />
-                  <ToolsSizePill
-                    label="Label size"
-                    value={tools.headerSplitHeadingLabelSize ?? 'md'}
-                    onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
-                  />
-                  <ToolsOptionGrid
-                    label="Label weight"
-                    options={TOOLS_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={tools.headerSplitHeadingLabelWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingLabelWeight: PortfolioToolsHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : (
-                <>
-                  <ToolsToggleRow
-                    label="Header motion"
-                    info="Respects reduced-motion preference"
-                    checked={tools.headerAnimationEnabled !== false}
-                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
-                  />
-                  <ToolsHeaderSharedAdvancedControls tools={tools} onChange={onChange} />
-                </>
-              )}
+          {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
+          {headerCatalogOpen ? null : (
+            <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'editorial'} title="Header settings" flush>
+              <ToolsHeaderDesignFields tools={tools} onChange={onChange} />
             </ToolsLayoutSettingsBand>
-          </div>
+          )}
         </div>
       ) : null}
 

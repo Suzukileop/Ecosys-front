@@ -12,7 +12,7 @@ export type ContactColorSlot = 'iconColor' | 'iconBorder' | 'iconBackground' | '
 
 export type PortfolioContactColorBindings = Record<ContactColorSlot, HeroPaletteTokenId>;
 
-export const CONTACT_COLOR_SLOT_IDS: ContactColorSlot[] = [
+const CONTACT_COLOR_SLOT_IDS: ContactColorSlot[] = [
   'iconColor',
   'iconBorder',
   'iconBackground',
@@ -40,17 +40,4 @@ export function mergeContactColorBindings(
     }
   }
   return next;
-}
-
-export function patchContactColorBinding(
-  contact: { contactColorBindings?: PortfolioContactColorBindings },
-  slot: ContactColorSlot,
-  token: HeroPaletteTokenId
-): { contactColorBindings: PortfolioContactColorBindings } {
-  return {
-    contactColorBindings: mergeContactColorBindings(DEFAULT_CONTACT_COLOR_BINDINGS, {
-      ...contact.contactColorBindings,
-      [slot]: token,
-    }),
-  };
 }

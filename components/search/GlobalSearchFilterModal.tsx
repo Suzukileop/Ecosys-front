@@ -28,17 +28,6 @@ const subscribeNoop = () => () => {};
 const SCROLLBAR =
   '[scrollbar-width:thin] [scrollbar-color:#a3a3a3_transparent] [&::-webkit-scrollbar]:w-1.5 [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-neutral-400 dark:[scrollbar-color:#525252_transparent] [&::-webkit-scrollbar-thumb]:dark:bg-neutral-600';
 
-function SlidersIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
-      <path strokeLinecap="round" d="M4 7h16M4 12h10M4 17h6" />
-      <circle cx="8" cy="7" r="2" fill="currentColor" stroke="none" />
-      <circle cx="14" cy="12" r="2" fill="currentColor" stroke="none" />
-      <circle cx="11" cy="17" r="2" fill="currentColor" stroke="none" />
-    </svg>
-  );
-}
-
 function CloseIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -151,19 +140,6 @@ function UnderlineChoice<T extends string>({
         );
       })}
     </div>
-  );
-}
-
-export function GlobalSearchFilterButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-label="Open search filters"
-      className="shrink-0 p-1.5 text-neutral-500 transition hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-white"
-    >
-      <SlidersIcon className="h-[22px] w-[22px]" />
-    </button>
   );
 }
 

@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useMemo, useLayoutEffect, useRef, type MouseEvent } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
-import { heroImageGrayscaleClass, resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
+import { resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_PALETTE,
   mergeHeroPalette,
@@ -379,7 +379,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
             <ul 
               className={`pf-sw-card-row m-0 grid min-h-0 list-none gap-4 p-0 sm:gap-5 ${thumbGridClass}`}
             >
-              {works.map((work, index) => {
+              {works.map((work) => {
                 // Determine if this is an external link (not a hash link)
                 const isExternalLink = work.href && !work.href.startsWith('#') && !work.href.startsWith('/');
                 const isHashLink = work.href?.startsWith('#');

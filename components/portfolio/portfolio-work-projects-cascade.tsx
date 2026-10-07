@@ -23,12 +23,6 @@ import {
   mergeProjectsCascadeSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 
-export function isProjectsCascadeDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-cascade';
-}
-
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }

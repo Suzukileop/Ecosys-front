@@ -48,7 +48,7 @@ function SubscriberRow({ follower }: { follower: CreatorProfileFollowerItem }) {
 
   return (
     <li className="flex flex-col gap-3 border-b border-neutral-200 px-5 py-5 last:border-b-0 dark:border-neutral-800 sm:flex-row sm:items-center sm:justify-between sm:px-6">
-      <Link href={`/marketplace/${follower.followerUserId}`} className="min-w-0 transition hover:opacity-80">
+      <Link href={`/providers/${follower.followerUserId}`} className="min-w-0 transition hover:opacity-80">
         {identity}
       </Link>
       <p className="shrink-0 text-[15px] text-neutral-500 dark:text-neutral-400">{formatFollowDate(follower.followedAt)}</p>

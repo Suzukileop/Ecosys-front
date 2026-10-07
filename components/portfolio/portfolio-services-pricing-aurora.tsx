@@ -6,27 +6,19 @@ import {
   useMemo,
   useRef,
   useSyncExternalStore,
+  type CSSProperties,
   type MouseEvent as ReactMouseEvent,
 } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
-import {
-  handleServicesOrderCtaClick,
-  useServicesOrderCtaNav,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
   DEFAULT_SERVICES_PALETTE,
   mergeServicesPalette,
 } from '@/components/portfolio/portfolio-services-palette-settings';
-
-export function isServicesPricingAuroraDesign(
-  presentation: Pick<PortfolioServicesPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return (presentation?.sectionDesign as string | undefined) === 'services-pricing-aurora';
-}
 
 /* -----------------------------------------------------------------------
  * Per-design settings — mirrors the real, already-wired `PortfolioServicesPricingAuroraSettings`
@@ -277,7 +269,7 @@ export function ServicesPricingAuroraSection({
   const popularIndex =
     settings.popularIndex >= 0 && settings.popularIndex < items.length ? settings.popularIndex : -1;
 
-  const { href: ctaHref, onNavigate: ctaOnNavigate } = useServicesOrderCtaNav();
+  const pricingStyle = useServicesPricingStyle(presentation);
   const interactive = useAuroraFinePointerDesktop(768);
 
   const gridRef = useRef<HTMLDivElement | null>(null);
@@ -457,7 +449,7 @@ export function ServicesPricingAuroraSection({
   return (
     <div
       className="relative left-1/2 w-screen -translate-x-1/2 md:static md:left-auto md:w-auto md:translate-x-0"
-      style={{ backgroundColor: tokens.stageBg }}
+      style={pricingStyle.style.showFrame ? { backgroundColor: tokens.stageBg } : undefined}
       data-pf-no-color-transition=""
     >
       <style>{`
@@ -521,7 +513,10 @@ export function ServicesPricingAuroraSection({
                   </p>
                   <div
                     className="flex items-end gap-1.5 font-black leading-[0.95] tracking-[-0.02em]"
-                    style={{ fontSize: 'clamp(2.75rem, 8vw, 4.25rem)', color: tokens.ink }}
+                    style={{
+                      fontSize: 'calc(clamp(2.75rem, 8vw, 4.25rem) * var(--pf-services-font-scale, 1))',
+                      color: tokens.ink,
+                    }}
                   >
                     <span>{isCustom ? 'Custom' : amount}</span>
                     {unit ? (
@@ -570,8 +565,7 @@ export function ServicesPricingAuroraSection({
                     ref={(el) => {
                       ctaRefs.current[i] = el;
                     }}
-                    href={ctaHref}
-                    onClick={(event) => handleServicesOrderCtaClick(event, ctaHref, ctaOnNavigate)}
+                    {...pricingStyle.anchorProps}
                     className="flex min-h-12 w-full items-center justify-center gap-2 text-[0.95rem] font-medium will-change-transform sm:w-auto sm:justify-start"
                     style={{ color: tokens.ink }}
                     data-pf-no-color-transition=""
@@ -608,10 +602,15 @@ export function ServicesPricingAuroraSection({
                 onMouseEnter={() => handleCardEnter(i)}
                 onMouseMove={(event) => handleCardMove(i, event)}
                 onMouseLeave={() => handleCardLeave(i)}
-                className="pf-svc-pricing-aurora-card relative rounded-none will-change-transform sm:rounded-[28px]"
+                className="pf-svc-pricing-aurora-card relative rounded-none will-change-transform sm:rounded-[var(--pf-aurora-radius,28px)]"
                 style={{
+                  ...(pricingStyle.cardRadiusPx != null
+                    ? ({ '--pf-aurora-radius': `${pricingStyle.cardRadiusPx}px` } as CSSProperties)
+                    : null),
                   backgroundColor: isPopular ? tokens.popularCardBg : tokens.cardBg,
-                  border: `1px solid ${isPopular ? tokens.popularCardBorder : tokens.cardBorder}`,
+                  borderStyle: 'solid',
+                  borderWidth: pricingStyle.borderWidthPx ?? 1,
+                  borderColor: pricingStyle.borderColor ?? (isPopular ? tokens.popularCardBorder : tokens.cardBorder),
                   backdropFilter: 'blur(16px)',
                   WebkitBackdropFilter: 'blur(16px)',
                   boxShadow: `0 24px 64px -34px ${tokens.shadow}`,

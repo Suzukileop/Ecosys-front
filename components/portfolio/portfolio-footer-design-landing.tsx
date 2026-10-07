@@ -29,7 +29,7 @@ function LandingStyles() {
   return <style dangerouslySetInnerHTML={{ __html: LANDING_CSS }} />;
 }
 
-export interface FooterDesignLandingProps {
+interface FooterDesignLandingProps {
   creatorName: string;
   creatorId: string;
   avatarUrl?: string | null;

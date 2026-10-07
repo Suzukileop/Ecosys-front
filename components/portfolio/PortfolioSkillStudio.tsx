@@ -39,7 +39,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 
-export type PortfolioSkillVariant = 'stack' | 'tools';
+type PortfolioSkillVariant = 'stack' | 'tools';
 
 type SkillRow = PortfolioStrengthDraft & { key: string };
 type SkillDraft = { items: SkillRow[] };
@@ -116,30 +116,6 @@ function emptyRow(): SkillRow {
     experienceLabel: '',
     currentlyUsed: null,
     iconUrl: null,
-  };
-}
-
-export function toStrengthDraft(item: {
-  value?: string | null;
-  description?: string | null;
-  category?: string | null;
-  level?: StrengthToolLevel | null;
-  useCases?: string[] | null;
-  experienceYears?: number | null;
-  experienceLabel?: string | null;
-  currentlyUsed?: boolean | null;
-  iconUrl?: string | null;
-}): PortfolioStrengthDraft {
-  return {
-    value: item.value ?? '',
-    description: item.description ?? '',
-    category: item.category ?? '',
-    level: item.level ?? null,
-    useCases: item.useCases ?? [],
-    experienceYears: item.experienceYears ?? null,
-    experienceLabel: item.experienceLabel ?? '',
-    currentlyUsed: item.currentlyUsed ?? null,
-    iconUrl: item.iconUrl ?? null,
   };
 }
 

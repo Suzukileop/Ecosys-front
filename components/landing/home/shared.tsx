@@ -14,7 +14,7 @@ export function Eyebrow({ children, className = '' }: { children: ReactNode; cla
   );
 }
 
-export function ArrowIcon({ className = 'h-4 w-4' }: { className?: string }) {
+function ArrowIcon({ className = 'h-4 w-4' }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
@@ -49,24 +49,5 @@ export function PrimaryCta({
         <ArrowIcon />
       </span>
     </Link>
-  );
-}
-
-export function SectionHeading({
-  eyebrow,
-  title,
-  className = '',
-}: {
-  eyebrow: string;
-  title: ReactNode;
-  className?: string;
-}) {
-  return (
-    <div className={className}>
-      <Eyebrow>{eyebrow}</Eyebrow>
-      <h2 className="mt-6 max-w-3xl text-[clamp(2.25rem,5vw,4.25rem)] font-semibold leading-[1.02] tracking-[-0.04em] text-[#111111]">
-        {title}
-      </h2>
-    </div>
   );
 }

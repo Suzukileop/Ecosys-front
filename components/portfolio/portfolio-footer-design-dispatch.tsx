@@ -242,7 +242,7 @@ function DispatchSubmitButton({
   );
 }
 
-export interface FooterDesignDispatchProps {
+interface FooterDesignDispatchProps {
   creatorName: string;
   creatorId: string;
   email?: string | null;

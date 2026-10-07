@@ -301,7 +301,7 @@ function SplitFormSubmit({
   );
 }
 
-export interface FooterDesignSplitFormProps {
+interface FooterDesignSplitFormProps {
   creatorName: string;
   creatorId: string;
   avatarUrl?: string | null;

@@ -57,7 +57,7 @@ const AVATAR_PALETTE = [
   '#4F46E5',
 ] as const;
 
-export function avatarColorFromKey(key: string): string {
+function avatarColorFromKey(key: string): string {
   const seed = key.trim().toLowerCase() || '?';
   let hash = 0;
   for (let i = 0; i < seed.length; i += 1) {

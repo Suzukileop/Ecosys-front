@@ -1,6 +1,6 @@
 import { parseSpecialtyList } from '@/lib/specialties';
 import { nationalityLabel } from '@/lib/countries';
-import type { CreatorProfileDto, ContactEntry } from '@/types/ecosystem';
+import type { CreatorProfileDto, ContactEntry } from '@/types/profile';
 
 export type CvTemplateId = 'ats' | 'modern' | 'editorial';
 

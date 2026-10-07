@@ -20,6 +20,7 @@ import { getSkillUsageDescription } from '@/components/portfolio/skill-usage-des
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MediaImage } from '@/components/ui/MediaImage';
 
 const MAX_STRENGTHS = 12;
 const MAX_DESCRIPTION = 280;
@@ -434,8 +435,7 @@ export function ProfileStrengthsField({
             {uploadingIcon ? (
               <LoadingSpinner size="sm" />
             ) : customIconUrl ? (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img src={customIconUrl} alt="" className="h-full w-full object-cover" />
+              <MediaImage src={customIconUrl} width={40} className="h-full w-full object-cover" />
             ) : (
               <CreatorToolLogo label={customDraft || '?'} size={20} />
             )}

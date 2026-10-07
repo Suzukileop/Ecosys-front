@@ -10,7 +10,7 @@ import {
 import { prunePortfolioSettingsForPersist } from '@/components/portfolio/portfolio-settings-persist';
 
 /** Keep in sync with backend PortfolioSettingsSupport.MAX_JSON_BYTES. */
-export const PORTFOLIO_SETTINGS_MAX_JSON_BYTES = 512_000;
+const PORTFOLIO_SETTINGS_MAX_JSON_BYTES = 512_000;
 
 export type PortfolioSettingsPersistStatus = 'idle' | 'saving' | 'saved' | 'error';
 
@@ -53,7 +53,7 @@ function estimateJsonBytes(value: unknown): number {
  * and fail early on oversized payloads.
  * Does not strip unknown keys — backend is an opaque JSON document.
  */
-export function preparePortfolioSettingsForPersist(
+function preparePortfolioSettingsForPersist(
   settings: PortfolioSettings
 ): PortfolioSettings {
   const stamped =

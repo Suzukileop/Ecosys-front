@@ -1,5 +1,5 @@
 /** ISO 3166-1 alpha-2 codes used for citizenship / nationality. */
-export const NATIONALITY_CODES = [
+const NATIONALITY_CODES = [
   'AD', 'AE', 'AF', 'AG', 'AI', 'AL', 'AM', 'AO', 'AQ', 'AR', 'AS', 'AT', 'AU', 'AW', 'AX', 'AZ',
   'BA', 'BB', 'BD', 'BE', 'BF', 'BG', 'BH', 'BI', 'BJ', 'BL', 'BM', 'BN', 'BO', 'BQ', 'BR', 'BS',
   'BT', 'BV', 'BW', 'BY', 'BZ', 'CA', 'CC', 'CD', 'CF', 'CG', 'CH', 'CI', 'CK', 'CL', 'CM', 'CN',
@@ -18,7 +18,7 @@ export const NATIONALITY_CODES = [
   'VN', 'VU', 'WF', 'WS', 'YE', 'YT', 'ZA', 'ZM', 'ZW',
 ] as const;
 
-export type NationalityCode = (typeof NATIONALITY_CODES)[number];
+type NationalityCode = (typeof NATIONALITY_CODES)[number];
 
 const CODE_SET = new Set<string>(NATIONALITY_CODES);
 
@@ -52,7 +52,7 @@ export function formatDistanceAwayKm(km: number | null | undefined): string | nu
   return `${Math.round(km)} km away`;
 }
 
-export function nationalityOptions(locale = 'en'): { code: NationalityCode; label: string }[] {
+function nationalityOptions(locale = 'en'): { code: NationalityCode; label: string }[] {
   return NATIONALITY_CODES.map((code) => ({ code, label: nationalityLabel(code, locale) || code })).sort((a, b) =>
     a.label.localeCompare(b.label, locale)
   );

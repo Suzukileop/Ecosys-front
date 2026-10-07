@@ -121,14 +121,20 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
       <span aria-hidden className="mx-4 block h-px bg-neutral-900/[0.07] dark:bg-white/[0.08]" />
 
       <div className="flex flex-col p-1.5">
-        <Link href="/dashboard/creator" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
+        <Link href="/profile" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
           <svg className={menuIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <circle cx="12" cy="8" r="3.75" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.75 20a7.25 7.25 0 0114.5 0" />
           </svg>
           My Profile
         </Link>
-        <Link href="/dashboard/settings" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
+        <Link href="/settings?section=saved" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
+          <svg className={menuIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
+            <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 4.5h10.5a.75.75 0 01.75.75v14.4a.35.35 0 01-.56.28L12 16l-5.44 3.93A.35.35 0 016 19.65V5.25a.75.75 0 01.75-.75z" />
+          </svg>
+          Saved posts
+        </Link>
+        <Link href="/settings" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
           <svg className={menuIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />

@@ -1,6 +1,6 @@
 import type { Role } from '@/types/auth';
 import type { ReactNode } from 'react';
-import { isContentCreatorsPath, isMarketplaceCreatorProfilePath, isMarketplaceHubPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
+import { isMarketplaceHubPath, isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
 import {
   APP_ROLES_WITHOUT_MY_PRODUCTS,
   APP_ROLES_WITHOUT_MY_SERVICES,
@@ -8,9 +8,7 @@ import {
   APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
-
-/** Default authenticated landing — overview `/dashboard` is hidden for now. */
-export const DASHBOARD_HOME_PATH = '/dashboard/home';
+import { ROUTES, isPathWithin } from '@/lib/routes';
 
 export type DashboardNavChild = {
   href: string;
@@ -49,9 +47,9 @@ export type DashboardNavItem = {
  */
 export const dashboardNavItems: DashboardNavItem[] = [
   {
-    href: '/dashboard/home',
+    href: ROUTES.feed,
     label: 'News',
-    activeWhen: isDashboardHomePath,
+    activeWhen: isFeedPath,
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
         <path
@@ -63,7 +61,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
     ),
   },
   {
-    href: '/dashboard/portfolio',
+    href: ROUTES.studio,
     label: 'My Portfolio',
     roles: ['ROLE_CREATOR'],
     icon: (
@@ -77,7 +75,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
     ),
   },
   {
-    href: '/marketplace/creators',
+    href: ROUTES.providers,
     label: 'Providers',
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU],
     activeWhen: (pathname, search = '') =>
@@ -95,12 +93,12 @@ export const dashboardNavItems: DashboardNavItem[] = [
      */
     children: [
       {
-        href: '/marketplace/creators',
+        href: ROUTES.providers,
         label: 'Explore',
         activeWhen: (pathname) => isServiceProvidersCatalogPath(pathname),
       },
       {
-        href: '/marketplace/my-services',
+        href: ROUTES.myServices,
         label: 'My Services',
         roles: ['ROLE_CREATOR'],
         hiddenForAppRoles: [...APP_ROLES_WITHOUT_MY_SERVICES],
@@ -118,7 +116,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
     ),
   },
   {
-    href: '/marketplace',
+    href: ROUTES.marketplace,
     label: 'Products',
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_PRODUCTS_MENU],
     activeWhen: (pathname, search = '') =>
@@ -126,12 +124,12 @@ export const dashboardNavItems: DashboardNavItem[] = [
     /* Same move as Providers above, and for the same reasons. */
     children: [
       {
-        href: '/marketplace',
+        href: ROUTES.marketplace,
         label: 'Explore',
         activeWhen: (pathname) => isMarketplaceHubPath(pathname),
       },
       {
-        href: '/marketplace/my-products',
+        href: ROUTES.myProducts,
         label: 'My Product',
         roles: ['ROLE_CREATOR'],
         hiddenForAppRoles: [...APP_ROLES_WITHOUT_MY_PRODUCTS],
@@ -149,21 +147,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
     ),
   },
   {
-    href: '/dashboard/agent',
-    label: 'Agent queue',
-    roles: ['ROLE_AGENT'],
-    icon: (
-      <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
-        />
-      </svg>
-    ),
-  },
-  {
-    href: '/admin/users',
+    href: ROUTES.adminUsers,
     label: 'Admin',
     roles: ['ROLE_ADMIN'],
     icon: (
@@ -179,66 +163,19 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
 ];
 
+/** A product opened from the profile (`?from=profile`) keeps the profile entry highlighted. */
 export function isMyProductNavPath(pathname: string, search = ''): boolean {
-  if (pathname === '/marketplace/my-products' || pathname.startsWith('/marketplace/my-products/')) {
-    return true;
-  }
-  if (pathname === '/dashboard/products' || pathname.startsWith('/dashboard/products/')) {
-    return true;
-  }
-  if (!pathname.startsWith('/dashboard/creator/products')) return false;
+  if (pathname === ROUTES.myProducts) return true;
+  if (!isPathWithin(pathname, ROUTES.myProducts)) return false;
   return (
     new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('from') !== 'profile'
   );
 }
 
 export function isMyServiceNavPath(pathname: string, _search = ''): boolean {
-  return (
-    pathname === '/marketplace/my-services' ||
-    pathname.startsWith('/marketplace/my-services/') ||
-    pathname === '/dashboard/services' ||
-    pathname.startsWith('/dashboard/services/')
-  );
+  return isPathWithin(pathname, ROUTES.myServices);
 }
 
-export function isServiceProviderNavPath(pathname: string): boolean {
-  return isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname);
-}
-
-export function isDashboardHomePath(pathname: string): boolean {
-  return pathname === '/dashboard/home' || pathname.startsWith('/dashboard/home/');
-}
-
-export function getPageTitle(pathname: string, search = ''): string {
-  if (pathname === '/dashboard') return 'Dashboard';
-  if (pathname === '/dashboard/home') return 'News';
-  if (pathname.startsWith('/dashboard/notifications')) return 'Notifications';
-  if (pathname.startsWith('/dashboard/credits')) return 'Credits';
-  if (pathname.startsWith('/dashboard/discussions')) return 'Professional Discussion';
-  if (pathname.startsWith('/dashboard/portfolio')) return 'My Portfolio';
-  if (pathname.startsWith('/dashboard/search')) return 'Search';
-  if (pathname.startsWith('/dashboard/scheduler')) return 'Scheduler';
-  if (pathname.startsWith('/dashboard/agent/deliver')) return 'Deliver content';
-  if (pathname.startsWith('/dashboard/agent')) return 'Agent queue';
-  if (pathname.startsWith('/marketplace/my-products') || pathname.startsWith('/dashboard/products')) {
-    return 'My Product';
-  }
-  if (pathname.startsWith('/marketplace/my-services') || pathname.startsWith('/dashboard/services')) {
-    return 'My Services';
-  }
-  if (pathname.startsWith('/dashboard/creator/content/new')) return 'New content';
-  if (pathname.startsWith('/dashboard/creator/content')) return 'My Profile';
-  if (pathname.startsWith('/dashboard/creator/products/new')) return 'New product';
-  if (pathname.startsWith('/dashboard/creator/products')) {
-    const from = new URLSearchParams(search.startsWith('?') ? search.slice(1) : search).get('from');
-    return from === 'profile' ? 'My Profile' : 'My Product';
-  }
-  if (pathname.startsWith('/dashboard/creator/profile')) return 'My Profile';
-  if (pathname.startsWith('/dashboard/creator')) return 'My Profile';
-  if (isMarketplaceCreatorProfilePath(pathname)) return '';
-  if (isServiceProvidersCatalogPath(pathname)) return 'Service Provider';
-  if (isContentCreatorsPath(pathname)) return 'Service Provider';
-  if (/\/marketplace\/[^/]+\/shop\/?$/.test(pathname)) return 'Shop';
-  if (isMarketplaceHubPath(pathname)) return 'Explore';
-  return 'Dashboard';
+function isFeedPath(pathname: string): boolean {
+  return isPathWithin(pathname, ROUTES.feed);
 }

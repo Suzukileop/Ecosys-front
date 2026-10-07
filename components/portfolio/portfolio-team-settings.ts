@@ -164,13 +164,13 @@ export type PortfolioTeamIllustrationVariant =
 
 export type PortfolioTeamIllustrationPlacement = 'left' | 'right';
 
-export const PORTFOLIO_TEAM_SECTION_LAYOUTS = [
+const PORTFOLIO_TEAM_SECTION_LAYOUTS = [
   'stacked',
   'aside-left',
   'aside-right',
 ] as const satisfies readonly PortfolioTeamSectionLayout[];
 
-export const PORTFOLIO_TEAM_ILLUSTRATION_VARIANTS = [
+const PORTFOLIO_TEAM_ILLUSTRATION_VARIANTS = [
   'none',
   'chat',
   'question',
@@ -179,7 +179,7 @@ export const PORTFOLIO_TEAM_ILLUSTRATION_VARIANTS = [
   'hex',
 ] as const satisfies readonly PortfolioTeamIllustrationVariant[];
 
-export const PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENTS = [
+const PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENTS = [
   'left',
   'right',
 ] as const satisfies readonly PortfolioTeamIllustrationPlacement[];
@@ -332,6 +332,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   headerSerifLeadLabelText: string;
   /** Header serif lead — the large serif title itself, independent of the section title. */
   headerSerifLeadTitleText: string;
+  /** Header serif lead — the line under the title; empty = the section subtitle. */
+  headerSerifLeadSubtitleText: string;
   /** Header serif lead — each element bound to a palette token, independently. */
   headerSerifLeadLabelColor: PortfolioTeamHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioTeamHeaderPaletteToken;
@@ -343,6 +345,23 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   headerSerifLeadLabelWeight: PortfolioTeamHeaderTitleWeight;
   headerSerifLeadTitleWeight: PortfolioTeamHeaderTitleWeight;
   headerSerifLeadSubtitleWeight: PortfolioTeamHeaderTitleWeight;
+  /** Header editorial — kicker above the title; empty = "Team". */
+  headerEditorialLabelText: string;
+  /** Header editorial — the big title; empty = the section title. */
+  headerEditorialTitleText: string;
+  /** Header editorial — the line under the title; empty = the section subtitle. */
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, independently. */
+  headerEditorialLabelColor: PortfolioTeamHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioTeamHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioTeamHeaderPaletteToken;
+  /** Header editorial — each text sized/weighted independently. */
+  headerEditorialLabelSize: PortfolioTeamHeaderTitleSize;
+  headerEditorialTitleSize: PortfolioTeamHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioTeamHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioTeamHeaderTitleWeight;
+  headerEditorialTitleWeight: PortfolioTeamHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioTeamHeaderTitleWeight;
   /** Header billboard — big faint background word + a {count}-token line. */
   headerBillboardBigWord: string;
   headerBillboardCountText: string;
@@ -446,7 +465,7 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   { value: 'floating-canvas', label: 'Floating canvas', description: 'An irregular, ultra-airy canvas — names float above or below their portrait, broken by an editorial passage.' },
 ];
 
-export const PORTFOLIO_TEAM_RAIL_NAVIGATIONS = [
+const PORTFOLIO_TEAM_RAIL_NAVIGATIONS = [
   'drag',
   'chevrons',
   'show-all',
@@ -470,7 +489,7 @@ export const PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS: {
   { value: 4, label: '4' },
 ];
 
-export const PORTFOLIO_TEAM_POLAROID_PHOTO_TONES = [
+const PORTFOLIO_TEAM_POLAROID_PHOTO_TONES = [
   'hover',
   'monochrome',
   'color',
@@ -486,12 +505,12 @@ export const PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS: {
   { value: 'color', label: 'Full color', description: 'Always in color — no monochrome filter.' },
 ];
 
-export const PORTFOLIO_TEAM_PROFILE_VIEWS = [
+const PORTFOLIO_TEAM_PROFILE_VIEWS = [
   'rail',
   'grid',
 ] as const satisfies readonly PortfolioTeamProfileView[];
 
-export const PORTFOLIO_TEAM_FLOAT_ALIGNS = [
+const PORTFOLIO_TEAM_FLOAT_ALIGNS = [
   'left',
   'center',
   'right',
@@ -535,7 +554,7 @@ export const PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS: {
   { value: 'grid', label: 'Grid' },
 ];
 
-export const PORTFOLIO_TEAM_PROFILE_RATIOS = [
+const PORTFOLIO_TEAM_PROFILE_RATIOS = [
   'square',
   'soft',
   'portrait',
@@ -556,7 +575,7 @@ export const PORTFOLIO_TEAM_PROFILE_RATIO_OPTIONS: {
   { value: 'xtall', label: '9:16' },
 ];
 
-export const PORTFOLIO_TEAM_PROFILE_GUTTERS = [
+const PORTFOLIO_TEAM_PROFILE_GUTTERS = [
   'sm',
   'md',
   'lg',
@@ -573,7 +592,7 @@ export const PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS: {
   { value: 'xl', label: 'Extra wide' },
 ];
 
-export const PORTFOLIO_TEAM_PROFILE_PANELS = [
+const PORTFOLIO_TEAM_PROFILE_PANELS = [
   'always',
   'hover',
 ] as const satisfies readonly PortfolioTeamProfilePanel[];
@@ -586,7 +605,7 @@ export const PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS: {
   { value: 'hover', label: 'On hover' },
 ];
 
-export const PORTFOLIO_TEAM_PROFILE_VISIBLES = [
+const PORTFOLIO_TEAM_PROFILE_VISIBLES = [
   '4',
   '6',
   '8',
@@ -603,7 +622,7 @@ export const PORTFOLIO_TEAM_PROFILE_VISIBLE_OPTIONS: {
   { value: 'all', label: 'All' },
 ];
 
-export const PORTFOLIO_TEAM_AVATAR_VIEWS = [
+const PORTFOLIO_TEAM_AVATAR_VIEWS = [
   'rail',
   'grid',
 ] as const satisfies readonly PortfolioTeamAvatarView[];
@@ -616,7 +635,7 @@ export const PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS: {
   { value: 'grid', label: 'Grid' },
 ];
 
-export const PORTFOLIO_TEAM_AVATAR_SHAPES = [
+const PORTFOLIO_TEAM_AVATAR_SHAPES = [
   'circle',
   'squircle',
   'arch',
@@ -641,7 +660,7 @@ export const PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS: {
   { value: 4, label: '4' },
 ];
 
-export const PORTFOLIO_TEAM_AVATAR_COLUMN_GAPS = [
+const PORTFOLIO_TEAM_AVATAR_COLUMN_GAPS = [
   'sm',
   'md',
   'lg',
@@ -658,7 +677,7 @@ export const PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS: {
   { value: 'xl', label: 'Wide' },
 ];
 
-export const PORTFOLIO_TEAM_AVATAR_GRID_WIDTHS = [
+const PORTFOLIO_TEAM_AVATAR_GRID_WIDTHS = [
   'centered',
   'full',
 ] as const satisfies readonly PortfolioTeamAvatarGridWidth[];
@@ -671,7 +690,7 @@ export const PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS: {
   { value: 'full', label: 'Full width' },
 ];
 
-export const PORTFOLIO_TEAM_CORNER_RADII = [
+const PORTFOLIO_TEAM_CORNER_RADII = [
   'none',
   'sm',
   'md',
@@ -688,7 +707,7 @@ export const PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS: {
   { value: 'lg', label: 'Large' },
 ];
 
-export const PORTFOLIO_TEAM_AVATAR_RADII = [
+const PORTFOLIO_TEAM_AVATAR_RADII = [
   ...PORTFOLIO_TEAM_CORNER_RADII,
   'full',
 ] as const satisfies readonly PortfolioTeamAvatarRadius[];
@@ -698,7 +717,7 @@ export const PORTFOLIO_TEAM_AVATAR_RADIUS_OPTIONS: {
   label: string;
 }[] = [...PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS, { value: 'full', label: 'Full' }];
 
-export const PORTFOLIO_TEAM_IMAGE_HEIGHTS = [
+const PORTFOLIO_TEAM_IMAGE_HEIGHTS = [
   'short',
   'medium',
   'tall',
@@ -713,12 +732,12 @@ export const PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS: {
   { value: 'tall', label: 'Tall' },
 ];
 
-export const PORTFOLIO_TEAM_SPOTLIGHT_SIDES = [
+const PORTFOLIO_TEAM_SPOTLIGHT_SIDES = [
   'left',
   'right',
 ] as const satisfies readonly PortfolioTeamSpotlightSide[];
 
-export const PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATIONS = [
+const PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATIONS = [
   'thumbnails',
   'arrows',
   'both',
@@ -742,7 +761,7 @@ export const PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS: {
 ];
 
 
-export const PORTFOLIO_TEAM_DIRECTORY_PORTRAITS = [
+const PORTFOLIO_TEAM_DIRECTORY_PORTRAITS = [
   'cursor',
   'left',
   'right',
@@ -755,16 +774,6 @@ export const PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS: {
   { value: 'cursor', label: 'On hover' },
   { value: 'left', label: 'Left' },
   { value: 'right', label: 'Right' },
-];
-
-export const PORTFOLIO_TEAM_GAP_OPTIONS: {
-  value: PortfolioTeamGap;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'Tight' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
-  { value: 'xl', label: 'Extra large' },
 ];
 
 export const PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS = [
@@ -783,13 +792,6 @@ export const PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS = [
 ];
 
 export {
-  PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS,
-  TEAM_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
-  TEAM_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
-  TEAM_HEADER_PALETTE_TOKEN_OPTIONS,
-  teamHeaderDesignFontClass,
-  teamHeaderDesignFontStyle,
-  teamHeaderPaletteTokenColor,
   type PortfolioTeamHeaderAccentCountAlignment,
   type PortfolioTeamHeaderBillboardWordStyle,
   type PortfolioTeamHeaderDesign,
@@ -800,85 +802,15 @@ export {
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
 
-export const PORTFOLIO_TEAM_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioTeamSectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Stacked',
-    description: 'Title above, members below.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Title on the left',
-    description: 'Title on the left, team grid on the right (side by side).',
-  },
-  {
-    value: 'aside-right',
-    label: 'Title on the right',
-    description: 'Team grid on the left, title on the right (side by side).',
-  },
-];
-
-export const PORTFOLIO_TEAM_ILLUSTRATION_OPTIONS: {
-  value: PortfolioTeamIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No decorative SVG beside the content.' },
-  { value: 'chat', label: 'Chat', description: 'Conversation bubbles.' },
-  { value: 'question', label: 'Question', description: 'Graphic question mark.' },
-  { value: 'docs', label: 'Docs', description: 'Stacked documents.' },
-  { value: 'support', label: 'Support', description: 'Support illustration.' },
-  { value: 'hex', label: 'Hex', description: 'Hexagonal symbol.' },
-];
-
-export const PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioTeamIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'SVG on the left of the team content.' },
-  { value: 'right', label: 'Right', description: 'SVG on the right of the team content.' },
-];
-
-export function isPortfolioTeamSectionLayout(value: unknown): value is PortfolioTeamSectionLayout {
+function isPortfolioTeamSectionLayout(value: unknown): value is PortfolioTeamSectionLayout {
   return (
     typeof value === 'string' &&
     (PORTFOLIO_TEAM_SECTION_LAYOUTS as readonly string[]).includes(value)
   );
 }
 
-export function isPortfolioTeamIllustrationVariant(
-  value: unknown
-): value is PortfolioTeamIllustrationVariant {
-  return (
-    typeof value === 'string' &&
-    (PORTFOLIO_TEAM_ILLUSTRATION_VARIANTS as readonly string[]).includes(value)
-  );
-}
-
-export function isPortfolioTeamIllustrationPlacement(
-  value: unknown
-): value is PortfolioTeamIllustrationPlacement {
-  return (
-    typeof value === 'string' &&
-    (PORTFOLIO_TEAM_ILLUSTRATION_PLACEMENTS as readonly string[]).includes(value)
-  );
-}
-
 export function teamSectionLayoutIsAside(layout: PortfolioTeamSectionLayout | undefined): boolean {
   return layout === 'aside-left' || layout === 'aside-right';
-}
-
-/** Two-column shell for title + team grid (large screens). */
-export function teamAsideLayoutClass(layout: PortfolioTeamSectionLayout): string {
-  if (layout === 'aside-right') {
-    return 'grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-  }
-  return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
 }
 
 export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
@@ -973,6 +905,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   headerAccentCountAlignment: 'left',
   headerSerifLeadLabelText: '',
   headerSerifLeadTitleText: '',
+  headerSerifLeadSubtitleText: '',
   headerSerifLeadLabelColor: 'texteFort',
   headerSerifLeadTitleColor: 'texteFort',
   headerSerifLeadSubtitleColor: 'texteFort',
@@ -981,7 +914,19 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   headerSerifLeadSubtitleSize: 'md',
   headerSerifLeadLabelWeight: 'regular',
   headerSerifLeadTitleWeight: 'regular',
-  headerSerifLeadSubtitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular' as const,
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialTitleSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialTitleWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
   headerBillboardBigWord: '',
   headerBillboardCountText: '',
   headerBillboardTitleText: '',
@@ -1039,8 +984,8 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
 
 Object.assign(DEFAULT_TEAM_PRESENTATION, applyTeamPaletteToSettings(DEFAULT_TEAM_PRESENTATION));
 
-export const DEFAULT_TEAM_TITLE_EN = 'Our team';
-export const DEFAULT_TEAM_SUBTITLE_EN = 'The people who bring every project to life.';
+const DEFAULT_TEAM_TITLE_EN = 'Our team';
+const DEFAULT_TEAM_SUBTITLE_EN = 'The people who bring every project to life.';
 const LEGACY_TEAM_TITLES = new Set(['Notre équipe', 'NOTRE ÉQUIPE']);
 const LEGACY_TEAM_SUBTITLES = new Set(['Les personnes qui donnent vie à chaque projet.']);
 
@@ -1080,16 +1025,6 @@ export function resolveTeamSectionSubtitle(
   const stored = settings.subtitle.trim();
   if (!stored || LEGACY_TEAM_SUBTITLES.has(stored)) return DEFAULT_TEAM_SUBTITLE_EN;
   return stored;
-}
-
-export function teamHeaderFontClass(font: PortfolioTeamHeaderFont, kind: 'title' | 'subtitle'): string {
-  if (font === 'serif') return kind === 'title' ? 'font-serif font-bold tracking-tight' : 'font-serif';
-  if (font === 'display') return 'font-black uppercase tracking-[0.08em]';
-  return kind === 'title' ? 'font-extrabold tracking-tight' : 'font-sans';
-}
-
-export function teamHeaderFontStyle(_font: PortfolioTeamHeaderFont): CSSProperties | undefined {
-  return undefined;
 }
 
 export function teamTitleColorStyle(color: string): CSSProperties {
@@ -1133,13 +1068,6 @@ export function teamAvatarSizeClass(size: PortfolioTeamAvatarSize | undefined): 
   return 'h-24 w-24';
 }
 
-export function teamCircleAvatarClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'h-20 w-20';
-  if (size === 'lg') return 'h-36 w-36';
-  if (size === 'xl') return 'h-48 w-48';
-  return 'h-28 w-28';
-}
-
 export function teamFlexAlignClass(align: PortfolioTeamListAlign | undefined): string {
   if (align === 'left') return 'items-start';
   if (align === 'right') return 'items-end';
@@ -1164,7 +1092,7 @@ export function teamFlexAlignClass(align: PortfolioTeamListAlign | undefined): s
  */
 export type PortfolioTeamPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
-export const TEAM_PREMIUM_FONT_SIZES: PortfolioTeamPremiumFontSize[] = [
+const TEAM_PREMIUM_FONT_SIZES: PortfolioTeamPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -1282,13 +1210,6 @@ export function teamSocialAlignClass(align: PortfolioTeamListAlign | undefined):
   return 'justify-center';
 }
 
-export function teamProfilePhotoHeightClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'h-44';
-  if (size === 'lg') return 'h-72';
-  if (size === 'xl') return 'h-96';
-  return 'h-56';
-}
-
 export function teamHoverPhotoClass(size: PortfolioTeamAvatarSize | undefined): string {
   if (size === 'sm') return 'aspect-[4/5] min-h-[16rem]';
   if (size === 'lg') return 'aspect-[4/5] min-h-[24rem]';
@@ -1296,23 +1217,7 @@ export function teamHoverPhotoClass(size: PortfolioTeamAvatarSize | undefined): 
   return 'aspect-[4/5] min-h-[20rem]';
 }
 
-export function teamHoverOverlayPaddingClass(size: PortfolioTeamAvatarSize | undefined): string {
-  if (size === 'sm') return 'px-3 py-2.5';
-  if (size === 'lg') return 'px-5 py-4';
-  if (size === 'xl') return 'px-6 py-5';
-  return 'px-4 py-3';
-}
-
-export const PORTFOLIO_TEAM_CARD_BORDER_OPTIONS: {
-  value: PortfolioTeamCardBorder;
-  label: string;
-}[] = [
-  { value: 'none', label: 'Aucune' },
-  { value: 'thin', label: 'Fine' },
-  { value: 'medium', label: 'Moyenne' },
-];
-
-export function teamCardBorderClass(settings: PortfolioTeamPresentationSettings): string {
+function teamCardBorderClass(settings: PortfolioTeamPresentationSettings): string {
   const border = settings.cardBorder ?? 'thin';
   if (border === 'none') return 'border-0';
   if (border === 'medium') return 'border-2';
@@ -1619,10 +1524,8 @@ export function mergeTeamPresentation(
     subtitleCustom: typeof record.subtitleCustom === 'string' ? record.subtitleCustom : base.subtitleCustom,
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'], base.headerAlignment),
     headerDesign: pick(record.headerDesign, TEAM_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -1680,6 +1583,10 @@ export function mergeTeamPresentation(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pick(
       record.headerSerifLeadLabelColor,
       TEAM_HEADER_PALETTE_TOKENS,
@@ -1724,6 +1631,63 @@ export function mergeTeamPresentation(
       record.headerSerifLeadSubtitleWeight,
       TEAM_HEADER_TITLE_WEIGHTS,
       base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string'
+        ? record.headerEditorialLabelText
+        : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pick(
+      record.headerEditorialLabelColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerEditorialLabelColor ?? 'texteFort'
+    ),
+    headerEditorialTitleColor: pick(
+      record.headerEditorialTitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerEditorialSubtitleColor: pick(
+      record.headerEditorialSubtitleColor,
+      TEAM_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pick(
+      record.headerEditorialLabelSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerEditorialLabelSize ?? 'md'
+    ),
+    headerEditorialTitleSize: pick(
+      record.headerEditorialTitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerEditorialTitleSize ?? 'md'
+    ),
+    headerEditorialSubtitleSize: pick(
+      record.headerEditorialSubtitleSize,
+      TEAM_HEADER_TITLE_SIZES,
+      base.headerEditorialSubtitleSize ?? 'md'
+    ),
+    headerEditorialLabelWeight: pick(
+      record.headerEditorialLabelWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialLabelWeight ?? 'regular'
+    ),
+    headerEditorialTitleWeight: pick(
+      record.headerEditorialTitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialTitleWeight ?? 'regular'
+    ),
+    headerEditorialSubtitleWeight: pick(
+      record.headerEditorialSubtitleWeight,
+      TEAM_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerBillboardBigWord:
       typeof record.headerBillboardBigWord === 'string'

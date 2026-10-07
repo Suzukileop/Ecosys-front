@@ -8,9 +8,11 @@ import { CountryFlag } from '@/components/ui/CountryFlag';
 import { usePresence } from '@/hooks/usePresence';
 import { mediaImageSrc } from '@/lib/media-image-url';
 import {
+  PROVIDER_BODY_CLASS,
   PROVIDER_FRAME_CLASS,
   PROVIDER_INK_CLASS,
   PROVIDER_LABEL_CLASS,
+  PROVIDER_MUTED_CLASS,
   ProviderSlashList,
   ProviderTextAction,
 } from '@/components/marketplace/ProviderDirectoryPrimitives';
@@ -77,7 +79,7 @@ function ChevronIcon({ className }: { className?: string }) {
 }
 
 const DISCUSS_BUTTON_CLASS =
-  'inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full text-[14px] font-medium text-[#111111] transition-colors duration-200 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:text-white dark:hover:bg-white/[0.06] sm:w-auto sm:px-3';
+  'inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full text-[14px] font-medium text-[#0F0F0F] transition-colors duration-200 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:text-white dark:hover:bg-white/[0.06] sm:w-auto sm:px-3';
 
 function ChatIcon({ className }: { className?: string }) {
   return (
@@ -319,21 +321,21 @@ export function CreatorCard({
   const bioText = bio?.trim() || '';
   const distanceLabel = formatDistanceAwayKm(distanceKm);
   const placeLabel = formatPlaceLabel(locationCity, locationCountry, nationality);
-  const profileHref = isOwnCard ? '/dashboard/creator?tab=profile' : resolvedId ? `/marketplace/${resolvedId}` : null;
+  const profileHref = isOwnCard ? '/profile?tab=profile' : resolvedId ? `/providers/${resolvedId}` : null;
   const servicesHref = isOwnCard
-    ? '/dashboard/creator?tab=services'
+    ? '/profile?tab=services'
     : resolvedId
-      ? `/marketplace/${resolvedId}?tab=services`
+      ? `/providers/${resolvedId}?tab=services`
       : null;
   const discussHref =
     !isOwnCard && resolvedId
       ? user
-        ? `/dashboard/discussions?user=${encodeURIComponent(resolvedId)}`
-        : `/login?redirect=${encodeURIComponent(`/dashboard/discussions?user=${encodeURIComponent(resolvedId)}`)}`
+        ? `/messages?user=${encodeURIComponent(resolvedId)}`
+        : `/login?redirect=${encodeURIComponent(`/messages?user=${encodeURIComponent(resolvedId)}`)}`
       : null;
   const discussLabel = fullName?.trim() ? `Discuss with ${fullName.trim()}` : 'Discuss';
   const portfolioHref = isOwnCard
-    ? '/dashboard/portfolio'
+    ? '/studio'
     : resolvedId
       ? buildCreatorPortfolioPath(resolvedId, username)
       : null;
@@ -368,7 +370,7 @@ export function CreatorCard({
   return (
     <div className="flex h-full flex-col gap-2.5">
       <article
-        className={`group/card flex h-full flex-1 flex-col overflow-hidden ${PROVIDER_FRAME_CLASS} max-sm:border-0 ${flushOnMobile ? 'max-sm:rounded-none max-sm:!border-y max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16]' : ''} transition-colors duration-200 hover:border-black/[0.12] sm:min-h-[300px] md:min-h-[280px] md:flex-row md:items-stretch dark:hover:border-white/[0.16]`}
+        className={`group/card flex h-full flex-1 flex-col overflow-hidden ${PROVIDER_FRAME_CLASS} max-sm:border-0 ${flushOnMobile ? 'max-sm:rounded-none max-sm:!border-y max-sm:!border-[#E5E5E5] max-sm:!bg-[#FFFFFF] dark:max-sm:!border-white/[0.1] dark:max-sm:!bg-[#111111]' : ''} transition-colors duration-200 hover:border-black/[0.12] sm:min-h-[300px] md:min-h-[280px] md:flex-row md:items-stretch dark:hover:border-white/[0.16]`}
       >
         <div
           className={`relative hidden w-full shrink-0 overflow-hidden sm:block md:h-auto md:self-stretch ${
@@ -417,11 +419,11 @@ export function CreatorCard({
                   as="p"
                   text={primarySpecialty}
                   className="mt-1"
-                  textClassName="text-[14px] text-neutral-600 dark:text-neutral-300"
+                  textClassName={`text-[14px] font-medium ${PROVIDER_BODY_CLASS}`}
                 />
               ) : null}
               {experienceLabel || hasStars || isNew ? (
-                <p className="mt-1 flex items-center gap-3 text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
+                <p className={`mt-1 flex items-center gap-3 text-[13px] tabular-nums ${PROVIDER_MUTED_CLASS}`}>
                   {experienceLabel ? (
                     <span>{experienceLabel}</span>
                   ) : isNew ? (
@@ -446,14 +448,14 @@ export function CreatorCard({
               {profileHref ? (
                 <Link href={profileHref} className="min-w-0 focus-visible:outline-none">
                   <h3
-                    className={`${nameSizeClass} font-semibold leading-tight tracking-tight ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722]`}
+                    className={`${nameSizeClass} font-semibold leading-tight tracking-[-0.02em] ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722]`}
                   >
                     {fullName ?? 'Provider'}
                   </h3>
                 </Link>
               ) : (
                 <h3
-                  className={`min-w-0 ${nameSizeClass} font-semibold leading-tight tracking-tight ${PROVIDER_INK_CLASS}`}
+                  className={`min-w-0 ${nameSizeClass} font-semibold leading-tight tracking-[-0.02em] ${PROVIDER_INK_CLASS}`}
                 >
                   {fullName ?? 'Provider'}
                 </h3>
@@ -483,7 +485,7 @@ export function CreatorCard({
             ) : marker ? (
               <span
                 className={`shrink-0 ${labelClass} tabular-nums ${
-                  marker === 'New' ? 'text-[#FF5722]' : 'text-neutral-500 dark:text-neutral-400'
+                  marker === 'New' ? 'text-[#FF5722]' : PROVIDER_MUTED_CLASS
                 }`}
               >
                 {marker}
@@ -493,51 +495,49 @@ export function CreatorCard({
 
           <div id={detailsId} className={mobileDetailsClass}>
             <div
-              className={`mt-4 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${metaSizeClass} text-neutral-500 dark:text-neutral-400`}
+              className={`mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${metaSizeClass} ${PROVIDER_MUTED_CLASS}`}
             >
               {servicesHref ? (
                 <Link
                   href={servicesHref}
                   className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-[#FF5722]"
                 >
-                  <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                  <FolderIcon className="h-4 w-4" />
                   <span>{servicesLabel}</span>
                 </Link>
               ) : (
                 <span className="inline-flex items-center gap-1.5">
-                  <FolderIcon className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
+                  <FolderIcon className="h-4 w-4" />
                   <span>{servicesLabel}</span>
                 </span>
               )}
               {placeLabel ? (
                 <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <PinIcon className="h-4 w-4 shrink-0 text-neutral-400 dark:text-neutral-500" />
+                  <PinIcon className="h-4 w-4 shrink-0" />
                   <span className="truncate">{placeLabel}</span>
                 </span>
               ) : null}
-              {isAvailable ? null : (
-                <span className={`${labelClass} text-neutral-400 dark:text-neutral-500`}>Unavailable</span>
-              )}
+              {isAvailable ? null : <span className="font-medium">Unavailable</span>}
             </div>
 
             {bioText ? (
-              <p className={`mt-5 max-w-[52ch] ${bioSizeClass} leading-[1.75] text-neutral-600 dark:text-neutral-400`}>
+              <p className={`mt-4 max-w-[60ch] ${bioSizeClass} leading-[1.65] ${PROVIDER_BODY_CLASS}`}>
                 {bioText}
               </p>
             ) : null}
 
             {specialtyChips.length > 0 || tagChips.length > 0 ? (
-              <div className="mt-auto space-y-1.5 pt-6">
+              <div className="mt-auto space-y-1 pt-6">
                 {specialtyChips.length > 0 ? (
                   <ProviderSlashList
                     items={specialtyChips}
-                    className={`${labelClass} leading-relaxed text-[#111111]/85 dark:text-white/85`}
+                    className={`${labelClass} leading-relaxed ${PROVIDER_INK_CLASS}`}
                   />
                 ) : null}
                 {tagChips.length > 0 ? (
                   <ProviderSlashList
                     items={tagChips}
-                    className={`${tagSizeClass} leading-relaxed text-neutral-500 dark:text-neutral-400`}
+                    className={`${tagSizeClass} leading-relaxed ${PROVIDER_MUTED_CLASS}`}
                   />
                 ) : null}
               </div>
@@ -565,7 +565,7 @@ export function CreatorCard({
               onClick={() => setDetailsOpen((open) => !open)}
               aria-expanded={detailsOpen}
               aria-controls={detailsId}
-              className="inline-flex items-center gap-1.5 text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] focus-visible:outline-none dark:text-neutral-400 dark:hover:text-white sm:hidden"
+              className={`inline-flex items-center gap-1.5 text-[14px] font-medium ${PROVIDER_MUTED_CLASS} transition-colors hover:text-[#0F0F0F] focus-visible:outline-none dark:hover:text-white sm:hidden`}
             >
               {detailsOpen ? 'Less' : 'Details'}
               <ChevronIcon className={`h-4 w-4 transition-transform duration-300 ${detailsOpen ? 'rotate-180' : ''}`} />
@@ -594,7 +594,7 @@ export function CreatorCard({
               <span
                 role="status"
                 className={`ml-auto hidden items-center gap-2 sm:inline-flex ${labelClass} ${
-                  online ? 'text-emerald-600 dark:text-emerald-400' : 'text-neutral-400 dark:text-neutral-500'
+                  online ? 'text-emerald-700 dark:text-emerald-400' : PROVIDER_MUTED_CLASS
                 }`}
               >
                 <span
@@ -610,7 +610,7 @@ export function CreatorCard({
 
       {distanceLabel ? (
         <p
-          className={`shrink-0 pl-1 ${detailsOpen ? '' : 'hidden sm:block'} ${labelClass} leading-none text-neutral-500 dark:text-neutral-400`}
+          className={`shrink-0 pl-1 ${detailsOpen ? '' : 'hidden sm:block'} ${labelClass} leading-none ${PROVIDER_MUTED_CLASS}`}
         >
           {distanceLabel}
         </p>

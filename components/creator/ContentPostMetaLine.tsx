@@ -1,7 +1,6 @@
 'use client';
 
 import type { TaggedUserRef } from '@/types/creator-content';
-import { buildPostMetaLine } from '@/components/creator/creator-content-enrichments';
 
 type ContentPostMetaLineProps = {
   creatorName: string;
@@ -43,18 +42,4 @@ export function ContentPostMetaLine({
       )}
     </p>
   );
-}
-
-export function contentPostMetaSummary(opts: {
-  creatorName: string;
-  moodLabel?: string | null;
-  moodEmoji?: string | null;
-  taggedUsers?: TaggedUserRef[];
-}): string {
-  return buildPostMetaLine({
-    creatorName: opts.creatorName,
-    moodLabel: opts.moodLabel,
-    moodEmoji: opts.moodEmoji,
-    taggedNames: opts.taggedUsers?.map((u) => u.fullName),
-  });
 }

@@ -2,7 +2,7 @@ import api from '@/lib/api';
 import { UserFacingError } from '@/lib/api-error';
 import { parseAboutSkills } from '@/lib/about-skills';
 import { parseEmploymentType } from '@/lib/experience-employment';
-import { normalizeSpringPage } from '@/lib/ecosystem';
+import { normalizeSpringPage } from '@/lib/pagination';
 import { parseSpokenLanguageEntries } from '@/lib/spoken-languages';
 import { normalizeCreatorGender } from '@/lib/creator-gender';
 import { normalizeStorageUrlsDeep, resolveStorageMediaUrl } from '@/lib/storage-media-url';
@@ -10,44 +10,8 @@ import {
   parseProductWhyBlocks,
   serializeProductWhyBlocks,
 } from '@/components/marketplace/product-why-block-schema';
-import type { PagedResponse, SpringPageRaw, CreatorStarStats } from '@/types/ecosystem';
-import type { CreatorContentItemDto } from '@/types/creator-content';
-import type {
-  ContentReport,
-  FavoriteItem,
-  MarketplaceBundleDetail,
-  MarketplaceBundleRequest,
-  MarketplaceBundleSummary,
-  MarketplaceProductGroup,
-  MarketplaceProductGroupRequest,
-  MarketplaceComment,
-  MarketplaceContentDetail,
-  MarketplaceContentItem,
-  PublicContentFeedItem,
-  PublicContentFeedPage,
-  MarketplaceCreatorPublicProfile,
-  MarketplaceCreatorSummary,
-  MarketplaceProductDetail,
-  MarketplaceProductRequest,
-  MarketplaceProductSummary,
-  MarketplacePurchase,
-  MarketplacePurchaseResponse,
-  ProductInitData,
-  ProductReview,
-  ProductReviewComposerStatus,
-  ProductReviewRequest,
-  ProductReviewSummary,
-  ProductOwnership,
-  OwnedProductRaw,
-  PurchaseAccessMode,
-  PurchaseAccessResponse,
-  ReactionCounts,
-  ReactionType,
-  ReportUpdateRequest,
-  ReportReason,
-  ReportStatus,
-  SocialTargetType,
-} from '@/types/marketplace';
+import type { PagedResponse, SpringPageRaw, CreatorStarStats } from '@/types/profile';
+import type { ContentReport, MarketplaceBundleSummary, MarketplaceProductGroup, MarketplaceProductGroupRequest, MarketplaceComment, MarketplaceContentDetail, MarketplaceContentItem, PublicContentFeedItem, PublicContentFeedPage, MarketplaceCreatorPublicProfile, MarketplaceCreatorSummary, MarketplaceProductDetail, MarketplaceProductRequest, MarketplaceProductSummary, MarketplacePurchase, MarketplacePurchaseResponse, ProductInitData, ProductReview, ProductReviewComposerStatus, ProductReviewRequest, ProductReviewSummary, ProductOwnership, OwnedProductRaw, PurchaseAccessMode, PurchaseAccessResponse, ReactionCounts, ReactionType, ReportUpdateRequest, ReportReason, ReportStatus, SocialTargetType } from '@/types/marketplace';
 
 type RawRecord = Record<string, unknown>;
 
@@ -89,7 +53,7 @@ function mapContentCreator(raw: unknown): {
   };
 }
 
-export function mapPublicContentFeedItem(raw: RawRecord): PublicContentFeedItem {
+function mapPublicContentFeedItem(raw: RawRecord): PublicContentFeedItem {
   return {
     id: String(raw.id ?? ''),
     title: raw.title != null ? String(raw.title) : null,
@@ -116,6 +80,18 @@ export function mapPublicContentFeedItem(raw: RawRecord): PublicContentFeedItem 
     commentCount: raw.commentCount != null ? Number(raw.commentCount) : undefined,
     viewerReaction:
       raw.commentCount != null ? (raw.viewerReaction === 'LIKE' ? 'LIKE' : null) : undefined,
+    mediaUrls: Array.isArray(raw.mediaUrls)
+      ? raw.mediaUrls.map((u) => String(u)).filter(Boolean)
+      : raw.mediaUrl != null
+        ? [String(raw.mediaUrl)]
+        : [],
+    repostOf:
+      raw.repostOf != null && typeof raw.repostOf === 'object'
+        ? mapPublicContentFeedItem(raw.repostOf as RawRecord)
+        : null,
+    repostCount: raw.repostCount != null ? Number(raw.repostCount) : 0,
+    viewerReposted: typeof raw.viewerReposted === 'boolean' ? raw.viewerReposted : null,
+    viewerSaved: typeof raw.viewerSaved === 'boolean' ? raw.viewerSaved : null,
   };
 }
 
@@ -150,10 +126,6 @@ function mapContentItem(raw: RawRecord): MarketplaceContentItem {
             ? String(raw.priceInfo)
             : null,
   };
-}
-
-export function normalizeContentItem(raw: RawRecord): MarketplaceContentItem {
-  return mapContentItem(raw);
 }
 
 export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSummary {
@@ -198,7 +170,7 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
 
 const PROFILE_STRENGTH_LEVELS = new Set(['beginner', 'intermediate', 'advanced', 'expert']);
 
-function mapProfileStrengthTool(raw: unknown): import('@/types/ecosystem').ProfileStrengthTool | null {
+function mapProfileStrengthTool(raw: unknown): import('@/types/profile').ProfileStrengthTool | null {
   if (typeof raw === 'string') {
     const name = raw.trim();
     return name ? { name, description: null } : null;
@@ -215,7 +187,7 @@ function mapProfileStrengthTool(raw: unknown): import('@/types/ecosystem').Profi
     typeof record.category === 'string' && record.category.trim() ? record.category.trim() : null;
   const rawLevel = typeof record.level === 'string' ? record.level.trim().toLowerCase() : '';
   const level = PROFILE_STRENGTH_LEVELS.has(rawLevel)
-    ? (rawLevel as import('@/types/ecosystem').ProfileStrengthToolLevel)
+    ? (rawLevel as import('@/types/profile').ProfileStrengthToolLevel)
     : null;
   const useCases = Array.isArray(record.useCases)
     ? record.useCases
@@ -271,7 +243,7 @@ function mapProfileServiceItem(raw: RawRecord, index: number) {
     currency: raw.currency != null ? String(raw.currency) : 'EUR',
     deliveryValue: raw.deliveryValue != null ? Number(raw.deliveryValue) : null,
     deliveryUnit: raw.deliveryUnit != null ? String(raw.deliveryUnit) : null,
-  };
+    billingPeriod: raw.billingPeriod != null ? String(raw.billingPeriod) : null,  };
 }
 
 function mapFaqItem(raw: RawRecord, index: number) {
@@ -300,12 +272,12 @@ function mapTeamSocialLink(
   raw: RawRecord,
   index: number,
   memberIndex: number
-): import('@/types/ecosystem').ProfileTeamSocialLink | null {
+): import('@/types/profile').ProfileTeamSocialLink | null {
   const url = raw.url != null ? String(raw.url).trim() : '';
   if (!url) return null;
   const platformRaw = raw.platform != null ? String(raw.platform).toUpperCase() : 'OTHER';
   const platform = TEAM_SOCIAL_PLATFORMS.has(platformRaw)
-    ? (platformRaw as import('@/types/ecosystem').TeamSocialPlatform)
+    ? (platformRaw as import('@/types/profile').TeamSocialPlatform)
     : 'OTHER';
   return {
     id: raw.id != null ? String(raw.id) : `team-social-${memberIndex}-${index}`,
@@ -319,7 +291,7 @@ function mapTeamSocialLink(
 function mapTeamMember(
   raw: RawRecord,
   index: number
-): import('@/types/ecosystem').ProfileTeamMember {
+): import('@/types/profile').ProfileTeamMember {
   const socialLinks = Array.isArray(raw.socialLinks)
     ? raw.socialLinks
         .map((item, linkIndex) =>
@@ -327,7 +299,7 @@ function mapTeamMember(
             ? mapTeamSocialLink(item as RawRecord, linkIndex, index)
             : null
         )
-        .filter((item): item is import('@/types/ecosystem').ProfileTeamSocialLink => Boolean(item))
+        .filter((item): item is import('@/types/profile').ProfileTeamSocialLink => Boolean(item))
         .sort((a, b) => a.sortOrder - b.sortOrder)
     : [];
   return {
@@ -343,7 +315,7 @@ function mapTeamMember(
 function mapGalleryItem(
   raw: RawRecord,
   index: number
-): import('@/types/ecosystem').ProfileGalleryItem {
+): import('@/types/profile').ProfileGalleryItem {
   const mediaUrl = resolveStorageMediaUrl(raw.mediaUrl != null ? String(raw.mediaUrl) : '');
   const mediaTypeRaw = raw.mediaType != null ? String(raw.mediaType).toUpperCase() : null;
   const mediaType =
@@ -357,7 +329,7 @@ function mapGalleryItem(
   };
 }
 
-function mapAboutUs(raw: unknown): import('@/types/ecosystem').ProfileAboutUs | null {
+function mapAboutUs(raw: unknown): import('@/types/profile').ProfileAboutUs | null {
   if (!raw || typeof raw !== 'object' || Array.isArray(raw)) return null;
   const record = raw as RawRecord;
   const founderRaw =
@@ -418,7 +390,7 @@ function mapProfileLink(raw: RawRecord, index: number) {
   };
 }
 
-function mapProfileEducationEntry(raw: unknown, index: number): import('@/types/ecosystem').ProfileEducationEntry | null {
+function mapProfileEducationEntry(raw: unknown, index: number): import('@/types/profile').ProfileEducationEntry | null {
   if (!raw || typeof raw !== 'object') return null;
   const row = raw as RawRecord;
   const schoolYear = row.schoolYear != null ? String(row.schoolYear).trim() : '';
@@ -656,16 +628,16 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     profileStack: Array.isArray(raw.profileStack)
       ? raw.profileStack
           .map((item) => mapProfileStrengthTool(item))
-          .filter((item): item is import('@/types/ecosystem').ProfileStrengthTool => Boolean(item))
+          .filter((item): item is import('@/types/profile').ProfileStrengthTool => Boolean(item))
       : Array.isArray(raw.stack)
         ? raw.stack
             .map((item) => mapProfileStrengthTool(item))
-            .filter((item): item is import('@/types/ecosystem').ProfileStrengthTool => Boolean(item))
+            .filter((item): item is import('@/types/profile').ProfileStrengthTool => Boolean(item))
         : [],
     strengthsToolsMastered: Array.isArray(raw.strengthsToolsMastered)
       ? raw.strengthsToolsMastered
           .map((item) => mapProfileStrengthTool(item))
-          .filter((item): item is import('@/types/ecosystem').ProfileStrengthTool => Boolean(item))
+          .filter((item): item is import('@/types/profile').ProfileStrengthTool => Boolean(item))
       : [],
     profileVisits:
       typeof raw.profileVisits === 'number' ? raw.profileVisits : Number(raw.profileVisits ?? 0),
@@ -686,7 +658,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     aboutEducation: Array.isArray(raw.aboutEducation)
       ? raw.aboutEducation
           .map((item, index) => mapProfileEducationEntry(item, index))
-          .filter((item): item is import('@/types/ecosystem').ProfileEducationEntry => Boolean(item))
+          .filter((item): item is import('@/types/profile').ProfileEducationEntry => Boolean(item))
           .sort((a, b) => a.sortOrder - b.sortOrder)
       : [],
     profileServices: Array.isArray(raw.profileServices)
@@ -740,12 +712,12 @@ function mapExperienceProofLink(
   raw: RawRecord,
   index: number,
   blockIndex: number
-): import('@/types/ecosystem').ExperienceProofLink | null {
+): import('@/types/profile').ExperienceProofLink | null {
   const url = raw.url != null ? String(raw.url).trim() : '';
   const label = raw.label != null ? String(raw.label).trim() : '';
   if (!url || !label) return null;
   const platformRaw = raw.platform != null ? String(raw.platform).toUpperCase() : null;
-  const platform: import('@/types/ecosystem').ExperienceProofPlatform | null =
+  const platform: import('@/types/profile').ExperienceProofPlatform | null =
     platformRaw === 'GITHUB' ||
     platformRaw === 'FACEBOOK' ||
     platformRaw === 'LINKEDIN' ||
@@ -764,12 +736,12 @@ function mapExperienceProofLink(
   };
 }
 
-function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/ecosystem').ProfileMediaBlock {
+function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/profile').ProfileMediaBlock {
   const mediaUrl = raw.mediaUrl != null ? String(raw.mediaUrl) : null;
   const mediaTypeRaw = raw.mediaType != null ? String(raw.mediaType).toUpperCase() : null;
   const mediaType = mediaTypeRaw === 'VIDEO' ? 'VIDEO' : mediaTypeRaw === 'IMAGE' ? 'IMAGE' : null;
   const statusRaw = raw.status != null ? String(raw.status).toUpperCase() : null;
-  const status: import('@/types/ecosystem').ExperienceBlockStatus | null =
+  const status: import('@/types/profile').ExperienceBlockStatus | null =
     statusRaw === 'ONGOING' || statusRaw === 'FINISHED' ? statusRaw : null;
   const employmentType = parseEmploymentType(raw.employmentType);
   const links = Array.isArray(raw.links)
@@ -820,7 +792,7 @@ function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/ec
   };
 }
 
-export const MARKETPLACE_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+const MARKETPLACE_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
 
 type ServerFetchOptions = {
   refreshToken?: string;
@@ -860,25 +832,6 @@ export async function getPublicContent(id: string): Promise<MarketplaceContentDe
   );
 }
 
-export async function listPublicContents(
-  params?: { genre?: string; q?: string; creatorId?: string; page?: number; size?: number }
-): Promise<PagedResponse<MarketplaceContentItem>> {
-  const res = await api.get<SpringPageRaw<Record<string, unknown>>>('/api/marketplace/contents', {
-    params: {
-      page: params?.page ?? 0,
-      size: params?.size ?? 10,
-      ...(params?.genre ? { genre: params.genre } : {}),
-      ...(params?.q ? { q: params.q } : {}),
-      ...(params?.creatorId ? { creatorId: params.creatorId } : {}),
-    },
-  });
-  const pageData = normalizeSpringPage(res.data);
-  return {
-    ...pageData,
-    content: pageData.content.map((row) => mapContentItem(row)),
-  };
-}
-
 export async function listPublicContentFeed(
   params?: { genre?: string; q?: string; creatorId?: string; page?: number; size?: number }
 ): Promise<PublicContentFeedPage> {
@@ -896,6 +849,40 @@ export async function listPublicContentFeed(
     ...pageData,
     content: pageData.content.map((row) => mapPublicContentFeedItem(row)),
   };
+}
+
+/** Public posts the signed-in viewer saved, most recently saved first. */
+export async function listSavedContent(params?: { page?: number; size?: number }): Promise<PublicContentFeedPage> {
+  const res = await api.get<SpringPageRaw<Record<string, unknown>>>('/api/marketplace/contents/saved', {
+    params: { page: params?.page ?? 0, size: params?.size ?? 10 },
+  });
+  const pageData = normalizeSpringPage(res.data);
+  return {
+    ...pageData,
+    content: pageData.content.map((row) => mapPublicContentFeedItem(row)),
+  };
+}
+
+/** Reposts `postId` on the signed-in creator's profile, with an optional note above it. */
+export async function repostContent(postId: string, comment?: string): Promise<PublicContentFeedItem> {
+  const res = await api.post<Record<string, unknown>>('/api/creator/content/reposts', {
+    postId,
+    ...(comment?.trim() ? { comment: comment.trim() } : {}),
+  });
+  return mapPublicContentFeedItem(res.data);
+}
+
+export async function undoRepostContent(postId: string): Promise<void> {
+  await api.delete(`/api/creator/content/reposts/${encodeURIComponent(postId)}`);
+}
+
+/** "Not interested": removes the post from the viewer's own feed. */
+export async function hideContentPost(postId: string): Promise<void> {
+  await api.post(`/api/marketplace/social/hidden-posts/${encodeURIComponent(postId)}`);
+}
+
+export async function unhideContentPost(postId: string): Promise<void> {
+  await api.delete(`/api/marketplace/social/hidden-posts/${encodeURIComponent(postId)}`);
 }
 
 export async function recordContentView(id: string): Promise<void> {
@@ -916,15 +903,6 @@ export async function recordCreatorProfileView(
   };
 }
 
-// --- Creator portfolio content ---
-
-export async function getCreatorContentById(id: string): Promise<CreatorContentItemDto> {
-  const res = await api.get<CreatorContentItemDto>(
-    `/api/creator/content/${encodeURIComponent(id)}`
-  );
-  return res.data;
-}
-
 export async function uploadContentMedia(file: File): Promise<string> {
   const form = new FormData();
   form.append('file', file);
@@ -934,7 +912,7 @@ export async function uploadContentMedia(file: File): Promise<string> {
   return res.data.url;
 }
 
-export const MAX_EXPERIENCE_MEDIA_BYTES = 100 * 1024 * 1024;
+const MAX_EXPERIENCE_MEDIA_BYTES = 100 * 1024 * 1024;
 
 export async function uploadExperienceMedia(file: File): Promise<string> {
   if (file.size > MAX_EXPERIENCE_MEDIA_BYTES) {
@@ -1064,7 +1042,7 @@ export async function uploadShopCover(file: File): Promise<string> {
   return res.data.url;
 }
 
-export function normalizeMarketplaceProduct(
+function normalizeMarketplaceProduct(
   raw: MarketplaceProductSummary & Partial<Pick<MarketplaceProductDetail, 'whyProductBlocks'>>
 ): MarketplaceProductSummary {
   const legacy = raw as MarketplaceProductSummary & { niche?: string | null };
@@ -1332,15 +1310,6 @@ export function formatVideoDuration(totalSeconds: number): string {
   return `${minutes}:${String(seconds).padStart(2, '0')}`;
 }
 
-// --- Purchases ---
-
-export async function simulateProductPurchase(productId: string): Promise<MarketplacePurchaseResponse> {
-  const res = await api.post<MarketplacePurchaseResponse>(
-    `/api/marketplace/products/${encodeURIComponent(productId)}/purchase`
-  );
-  return res.data;
-}
-
 function normalizePurchase(raw: OwnedProductRaw): MarketplacePurchase {
   return {
     id: raw.purchaseId,
@@ -1359,13 +1328,6 @@ function normalizePurchase(raw: OwnedProductRaw): MarketplacePurchase {
     downloadCount: raw.downloadCount,
     maxDownloads: raw.maxDownloads,
   };
-}
-
-export async function getProductOwnership(productId: string): Promise<ProductOwnership> {
-  const res = await api.get<ProductOwnership>(
-    `/api/marketplace/products/${encodeURIComponent(productId)}/ownership`
-  );
-  return res.data;
 }
 
 export async function getProductInit(productId: string): Promise<ProductInitData> {
@@ -1397,7 +1359,7 @@ export async function listMyPurchases(
   page = 0,
   size = 20
 ): Promise<PagedResponse<MarketplacePurchase>> {
-  const res = await api.get<SpringPageRaw<OwnedProductRaw>>('/api/marketplace/purchases/me', {
+  const res = await api.get<SpringPageRaw<OwnedProductRaw>>('/api/purchases/me', {
     params: { page, size },
   });
   const pageData = normalizeSpringPage(res.data);
@@ -1412,7 +1374,7 @@ export async function getPurchaseAccess(
   mode: PurchaseAccessMode = 'stream'
 ): Promise<PurchaseAccessResponse> {
   const res = await api.get<PurchaseAccessResponse>(
-    `/api/marketplace/purchases/${encodeURIComponent(purchaseId)}/access`,
+    `/api/purchases/${encodeURIComponent(purchaseId)}/access`,
     { params: { mode } }
   );
   return res.data;
@@ -1428,18 +1390,6 @@ export async function listCreatorBundles(
     params: { page, size },
   });
   return normalizeSpringPage(res.data);
-}
-
-export async function getCreatorBundle(id: string): Promise<MarketplaceBundleDetail> {
-  const res = await api.get<MarketplaceBundleDetail>(
-    `/api/creator/bundles/${encodeURIComponent(id)}`
-  );
-  return res.data;
-}
-
-export async function createBundle(body: MarketplaceBundleRequest): Promise<MarketplaceBundleDetail> {
-  const res = await api.post<MarketplaceBundleDetail>('/api/creator/bundles', body);
-  return res.data;
 }
 
 export async function simulateBundlePurchase(bundleId: string): Promise<MarketplacePurchaseResponse> {
@@ -1471,13 +1421,6 @@ export async function listPublicCreatorProductGroups(
     { params: { page, size } }
   );
   return normalizeSpringPage(res.data);
-}
-
-export async function getCreatorProductGroup(id: string): Promise<MarketplaceProductGroup> {
-  const res = await api.get<MarketplaceProductGroup>(
-    `/api/creator/product-groups/${encodeURIComponent(id)}`
-  );
-  return res.data;
 }
 
 export async function createProductGroup(
@@ -1538,32 +1481,26 @@ export async function removeFavorite(targetType: SocialTargetType, targetId: str
   });
 }
 
+/** With `targetIds`, returns which of those the user liked; without, only the most recent likes. */
 export async function listMyLikedTargetIds(
-  targetType: SocialTargetType
+  targetType: SocialTargetType,
+  targetIds?: string[]
 ): Promise<string[]> {
   const res = await api.get<string[]>('/api/marketplace/social/reactions/me/ids', {
-    params: { targetType },
+    params: { targetType, ...(targetIds?.length ? { targetIds: targetIds.join(',') } : {}) },
   });
   return res.data;
 }
 
+/** With `targetIds`, returns which of those the user favorited; without, only the most recent. */
 export async function listMyFavoriteTargetIds(
-  targetType: SocialTargetType
+  targetType: SocialTargetType,
+  targetIds?: string[]
 ): Promise<string[]> {
   const res = await api.get<string[]>('/api/marketplace/favorites/me/ids', {
-    params: { targetType },
+    params: { targetType, ...(targetIds?.length ? { targetIds: targetIds.join(',') } : {}) },
   });
   return res.data;
-}
-
-export async function listMyFavorites(
-  page = 0,
-  size = 20
-): Promise<PagedResponse<FavoriteItem>> {
-  const res = await api.get<SpringPageRaw<FavoriteItem>>('/api/marketplace/favorites/me', {
-    params: { page, size },
-  });
-  return normalizeSpringPage(res.data);
 }
 
 export async function listComments(
@@ -1628,7 +1565,7 @@ export async function recordShare(
   await api.post('/api/marketplace/social/shares', { targetType, targetId, platform });
 }
 
-export interface CreatorFollowStats {
+interface CreatorFollowStats {
   followerCount: number;
   isFollowing: boolean;
 }
@@ -1717,7 +1654,7 @@ export async function unstarCreator(creatorId: string): Promise<CreatorStarStats
   return toCreatorStarStats(res.data);
 }
 
-export type CreatorContactMessageRequest = {
+type CreatorContactMessageRequest = {
   name: string;
   email: string;
   subject?: string;

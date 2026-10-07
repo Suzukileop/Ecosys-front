@@ -54,26 +54,15 @@ export type HeroMotifPrimitive = 'free' | 'circle' | 'oval' | 'halfCircle';
 /** Axis of a curved stroke (endpoints on opposite sides of the motif panel). */
 export type HeroMotifCurveAxis = 'vertical' | 'horizontal' | 'diagonal' | 'diagonal-alt';
 
-export const HERO_MOTIF_CURVE_AXIS_OPTIONS: {
-  value: HeroMotifCurveAxis;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'vertical', label: 'Vertical', description: 'Top → bottom, bend left/right.' },
-  { value: 'horizontal', label: 'Horizontal', description: 'Left → right, bend up/down.' },
-  { value: 'diagonal', label: 'Diagonal ╲', description: 'Top-left → bottom-right.' },
-  { value: 'diagonal-alt', label: 'Diagonal ╱', description: 'Top-right → bottom-left.' },
-];
-
-export const HERO_CURVE_BEND_MIN = -500;
-export const HERO_CURVE_BEND_MAX = 500;
-export const HERO_CURVE_STROKE_MIN = 1;
-export const HERO_CURVE_STROKE_MAX = 40;
+const HERO_CURVE_BEND_MIN = -500;
+const HERO_CURVE_BEND_MAX = 500;
+const HERO_CURVE_STROKE_MIN = 1;
+const HERO_CURVE_STROKE_MAX = 40;
 export const DEFAULT_HERO_CURVE_BEND = 28;
 export const DEFAULT_HERO_CURVE_STROKE_PX = 3;
-export const HERO_CURVE_GLOW_STRENGTH_MIN = 0;
-export const HERO_CURVE_GLOW_STRENGTH_MAX = 100;
-export const DEFAULT_HERO_CURVE_GLOW_BLUR_PX = 18;
+const HERO_CURVE_GLOW_STRENGTH_MIN = 0;
+const HERO_CURVE_GLOW_STRENGTH_MAX = 100;
+const DEFAULT_HERO_CURVE_GLOW_BLUR_PX = 18;
 export const DEFAULT_HERO_CURVE_GLOW_STRENGTH = 65;
 
 /** Breakpoint split matches hero layout: stacked below xl, dual-column at xl+. */
@@ -87,9 +76,9 @@ export type HeroMotifVisibility = {
 /** Glow / curve scroll attachment. Geometric & pattern are always section-scoped. */
 export type HeroMotifScrollAttach = 'section' | 'fixed';
 
-export const DEFAULT_HERO_MOTIF_SCROLL_ATTACH: HeroMotifScrollAttach = 'section';
+const DEFAULT_HERO_MOTIF_SCROLL_ATTACH: HeroMotifScrollAttach = 'section';
 
-export function sanitizeHeroMotifScrollAttach(
+function sanitizeHeroMotifScrollAttach(
   value: unknown,
   fallback: HeroMotifScrollAttach = DEFAULT_HERO_MOTIF_SCROLL_ATTACH
 ): HeroMotifScrollAttach {
@@ -189,7 +178,7 @@ export type HeroMotifPaletteToken =
   | 'fond'
   | 'bordure';
 
-export const HERO_MOTIF_PALETTE_TOKENS: HeroMotifPaletteToken[] = [
+const HERO_MOTIF_PALETTE_TOKENS: HeroMotifPaletteToken[] = [
   'principal',
   'secondaire',
   'texteFort',
@@ -200,7 +189,7 @@ export const HERO_MOTIF_PALETTE_TOKENS: HeroMotifPaletteToken[] = [
   'bordure',
 ];
 
-export function sanitizeHeroMotifPaletteToken(
+function sanitizeHeroMotifPaletteToken(
   value: unknown,
   fallback?: HeroMotifPaletteToken
 ): HeroMotifPaletteToken | undefined {
@@ -214,22 +203,22 @@ export function sanitizeHeroMotifPaletteToken(
   return fallback;
 }
 
-export const MAX_HERO_MOTIFS = 8;
-export const DEFAULT_MOTIF_COLOR = '#E5E5E5';
-export const HERO_GLOW_BLUR_PX_MIN = 0;
-export const HERO_GLOW_BLUR_PX_MAX = 120;
-export const HERO_GLOW_BACKDROP_BLUR_PX_MIN = 0;
-export const HERO_GLOW_BACKDROP_BLUR_PX_MAX = 40;
-export const DEFAULT_HERO_GLOW_BLUR_PX = 48;
-export const DEFAULT_HERO_GLOW_BACKDROP_BLUR_PX = 0;
-export const DEFAULT_HERO_GLOW_COLOR = '#e2572e';
+const MAX_HERO_MOTIFS = 8;
+const DEFAULT_MOTIF_COLOR = '#E5E5E5';
+const HERO_GLOW_BLUR_PX_MIN = 0;
+const HERO_GLOW_BLUR_PX_MAX = 120;
+const HERO_GLOW_BACKDROP_BLUR_PX_MIN = 0;
+const HERO_GLOW_BACKDROP_BLUR_PX_MAX = 40;
+const DEFAULT_HERO_GLOW_BLUR_PX = 48;
+const DEFAULT_HERO_GLOW_BACKDROP_BLUR_PX = 0;
+const DEFAULT_HERO_GLOW_COLOR = '#e2572e';
 
-export const DEFAULT_HERO_MOTIF_VISIBILITY: HeroMotifVisibility = {
+const DEFAULT_HERO_MOTIF_VISIBILITY: HeroMotifVisibility = {
   mobile: false,
   desktop: true,
 };
 
-export const DEFAULT_MOBILE_HERO_MOTIF_VISIBILITY: HeroMotifVisibility = {
+const DEFAULT_MOBILE_HERO_MOTIF_VISIBILITY: HeroMotifVisibility = {
   mobile: true,
   desktop: true,
 };
@@ -245,7 +234,7 @@ function sanitizeMotifOpacity(value: unknown, fallback: number): number {
 }
 
 /** Effective motif opacity for the active Global color mode. */
-export function resolveHeroMotifOpacity(
+function resolveHeroMotifOpacity(
   motif: Pick<HeroMotifInstance, 'opacity' | 'opacityDark'>,
   colorMode: 'light' | 'dark' = 'dark'
 ): number {
@@ -265,7 +254,7 @@ export function sanitizeHeroGlowBlurPx(value: unknown, fallback = DEFAULT_HERO_G
   return Math.round(clamp(n, HERO_GLOW_BLUR_PX_MIN, HERO_GLOW_BLUR_PX_MAX));
 }
 
-export function sanitizeHeroGlowBackdropBlurPx(
+function sanitizeHeroGlowBackdropBlurPx(
   value: unknown,
   fallback = DEFAULT_HERO_GLOW_BACKDROP_BLUR_PX
 ): number {
@@ -284,16 +273,16 @@ export function sanitizeHeroCurveGlowStrength(
 }
 
 /** Motifs that hug the visual column (right edge) vs copy column (left). */
-export function heroMotifClampSide(kind: HeroMotifKind): 'left' | 'right' {
+function heroMotifClampSide(kind: HeroMotifKind): 'left' | 'right' {
   return kind === 'pattern' ? 'left' : 'right';
 }
 
 /** Curves (and similar free strokes) may overflow the frame so they can sit at any edge. */
-export function heroMotifAllowsOverflow(kind: HeroMotifKind): boolean {
+function heroMotifAllowsOverflow(kind: HeroMotifKind): boolean {
   return kind === 'curve';
 }
 
-export function createGeometricMotif(
+function createGeometricMotif(
   partial?: Partial<HeroMotifInstance>
 ): HeroMotifInstance {
   return {
@@ -319,7 +308,7 @@ export function createGeometricMotif(
   };
 }
 
-export function createPatternMotif(partial?: Partial<HeroMotifInstance>): HeroMotifInstance {
+function createPatternMotif(partial?: Partial<HeroMotifInstance>): HeroMotifInstance {
   return {
     id: partial?.id ?? newMotifId('pat'),
     label: partial?.label ?? 'Pattern',
@@ -343,79 +332,6 @@ export function createPatternMotif(partial?: Partial<HeroMotifInstance>): HeroMo
   };
 }
 
-/** Soft round tint between section background and page content (modern ambient wash). */
-export function createGlowMotif(partial?: Partial<HeroMotifInstance>): HeroMotifInstance {
-  return {
-    id: partial?.id ?? newMotifId('glow'),
-    label: partial?.label ?? 'Glow',
-    enabled: partial?.enabled ?? true,
-    kind: 'glow',
-    visibility: partial?.visibility ?? { ...DEFAULT_MOBILE_HERO_MOTIF_VISIBILITY },
-    position: partial?.position ?? { x: 72, y: 38 },
-    size: partial?.size ?? { width: 46, height: 46 },
-    color: partial?.color ?? DEFAULT_HERO_GLOW_COLOR,
-    paletteToken: sanitizeHeroMotifPaletteToken(partial?.paletteToken),
-    opacity: partial?.opacity ?? 55,
-    opacityDark: partial?.opacityDark ?? partial?.opacity ?? 55,
-    zIndex: partial?.zIndex ?? 1,
-    shape: 'custom',
-    points: (partial?.points ?? DEFAULT_CUSTOM_MOTIF_POINTS).map((p) => ({ ...p })),
-    primitive: partial?.primitive === 'oval' ? 'oval' : 'circle',
-    rotationDeg: 0,
-    pattern: 'dots',
-    blurPx: sanitizeHeroGlowBlurPx(partial?.blurPx, DEFAULT_HERO_GLOW_BLUR_PX),
-    backdropBlurPx: sanitizeHeroGlowBackdropBlurPx(
-      partial?.backdropBlurPx,
-      DEFAULT_HERO_GLOW_BACKDROP_BLUR_PX
-    ),
-    scrollAttach: sanitizeHeroMotifScrollAttach(
-      partial?.scrollAttach,
-      DEFAULT_HERO_MOTIF_SCROLL_ATTACH
-    ),
-  };
-}
-
-/** Decorative curved stroke — move/resize the panel, bend the line, soft stroke glow. */
-export function createCurveMotif(partial?: Partial<HeroMotifInstance>): HeroMotifInstance {
-  return {
-    id: partial?.id ?? newMotifId('curve'),
-    label: partial?.label ?? 'Curve',
-    enabled: partial?.enabled ?? true,
-    kind: 'curve',
-    visibility: partial?.visibility ?? { ...DEFAULT_MOBILE_HERO_MOTIF_VISIBILITY },
-    // Wide shallow band near the top — easy to nudge to bottom / corners.
-    position: partial?.position ?? { x: 50, y: 22 },
-    size: partial?.size ?? { width: 108, height: 48 },
-    color: partial?.color ?? DEFAULT_MOTIF_COLOR,
-    paletteToken: sanitizeHeroMotifPaletteToken(partial?.paletteToken),
-    opacity: partial?.opacity ?? 70,
-    opacityDark: partial?.opacityDark ?? partial?.opacity ?? 70,
-    zIndex: partial?.zIndex ?? 0,
-    shape: 'custom',
-    points: (partial?.points ?? DEFAULT_CUSTOM_MOTIF_POINTS).map((p) => ({ ...p })),
-    primitive: 'free',
-    rotationDeg: sanitizeMotifRotationDeg(partial?.rotationDeg, 0),
-    pattern: 'dots',
-    blurPx: sanitizeHeroGlowBlurPx(partial?.blurPx, DEFAULT_HERO_CURVE_GLOW_BLUR_PX),
-    backdropBlurPx: 0,
-    curveAxis: sanitizeHeroMotifCurveAxis(partial?.curveAxis, 'horizontal'),
-    curveBend: sanitizeHeroMotifCurveBend(partial?.curveBend, 42),
-    strokeWidthPx: sanitizeHeroMotifStrokeWidthPx(
-      partial?.strokeWidthPx,
-      DEFAULT_HERO_CURVE_STROKE_PX
-    ),
-    strokeGlowStrength: sanitizeHeroCurveGlowStrength(
-      partial?.strokeGlowStrength,
-      DEFAULT_HERO_CURVE_GLOW_STRENGTH
-    ),
-    underGlow: partial?.underGlow !== false,
-    scrollAttach: sanitizeHeroMotifScrollAttach(
-      partial?.scrollAttach,
-      DEFAULT_HERO_MOTIF_SCROLL_ATTACH
-    ),
-  };
-}
-
 export function motifVisibilityClass(visibility: HeroMotifVisibility): string {
   if (visibility.mobile && visibility.desktop) return 'block';
   if (visibility.mobile && !visibility.desktop) return 'block xl:hidden';
@@ -423,7 +339,7 @@ export function motifVisibilityClass(visibility: HeroMotifVisibility): string {
   return 'hidden';
 }
 
-export function sanitizeHeroMotifVisibility(
+function sanitizeHeroMotifVisibility(
   value: unknown,
   base: HeroMotifVisibility = DEFAULT_HERO_MOTIF_VISIBILITY
 ): HeroMotifVisibility {
@@ -475,7 +391,7 @@ export function sanitizeHeroMotifStrokeWidthPx(
  * Quadratic Bezier endpoints + control for a curved stroke in a 0–100 local box.
  * `bend` offsets the mid control along the perpendicular (±% of the short axis).
  */
-export function heroMotifCurveControlPoints(
+function heroMotifCurveControlPoints(
   axis: HeroMotifCurveAxis = 'diagonal',
   bend: number = DEFAULT_HERO_CURVE_BEND
 ): { start: MotifPoint; control: MotifPoint; end: MotifPoint } {
@@ -573,14 +489,14 @@ export function isLockedMotifPrimitive(
 }
 
 /** Circle + half-circle must stay round in pixels (not stretched by a landscape hero). */
-export function isCircularMotifPrimitive(
+function isCircularMotifPrimitive(
   primitive: HeroMotifPrimitive | undefined
 ): primitive is 'circle' | 'halfCircle' {
   return primitive === 'circle' || primitive === 'halfCircle';
 }
 
 /** Keep stored panel size square for circular primitives (editor + persistence). */
-export function forceSquareMotifSize(size: MotifPanelSize): MotifPanelSize {
+function forceSquareMotifSize(size: MotifPanelSize): MotifPanelSize {
   const side = Math.min(size.width, size.height);
   return { width: side, height: side };
 }
@@ -590,7 +506,7 @@ export function forceSquareMotifSize(size: MotifPanelSize): MotifPanelSize {
  * Equal width%/height% on a landscape hero is still an oval in pixels —
  * only aspect-ratio forces a true circle.
  */
-export function circularMotifShellSizeStyle(size: MotifPanelSize): CSSProperties {
+function circularMotifShellSizeStyle(size: MotifPanelSize): CSSProperties {
   const side = Math.min(size.width, size.height);
   return {
     width: `${side}%`,
@@ -605,7 +521,7 @@ export function circularMotifShellSizeStyle(size: MotifPanelSize): CSSProperties
  * oval → border-radius 50% on a free rectangle (true ellipse).
  * halfCircle → circle clipped to a half-disk + CSS rotate.
  */
-export function heroMotifPrimitiveMaskStyle(
+function heroMotifPrimitiveMaskStyle(
   primitive: Exclude<HeroMotifPrimitive, 'free'>,
   rotationDeg?: number
 ): CSSProperties {
@@ -637,7 +553,7 @@ function sanitizeHeroMotifPattern(
     : base;
 }
 
-export function sanitizeHeroMotifInstance(
+function sanitizeHeroMotifInstance(
   value: unknown,
   fallback?: HeroMotifInstance
 ): HeroMotifInstance | null {
@@ -774,7 +690,7 @@ export function sanitizeHeroMotifInstance(
   };
 }
 
-export function sanitizeHeroMotifs(value: unknown, base: HeroMotifInstance[]): HeroMotifInstance[] {
+function sanitizeHeroMotifs(value: unknown, base: HeroMotifInstance[]): HeroMotifInstance[] {
   if (!Array.isArray(value)) return base.map((m) => ({ ...m, points: m.points.map((p) => ({ ...p })) }));
   const next: HeroMotifInstance[] = [];
   for (const item of value) {
@@ -893,130 +809,6 @@ export function syncLegacyFieldsFromHeroMotifs(motifs: HeroMotifInstance[]): {
     leftMotifSize: pat?.size ?? { ...DEFAULT_HERO_LEFT_MOTIF_SETTINGS.leftMotifSize },
     leftCustomMotifPoints: (pat?.points ?? DEFAULT_LEFT_CUSTOM_MOTIF_POINTS).map((p) => ({ ...p })),
   };
-}
-
-export function updateHeroMotifInList(
-  motifs: HeroMotifInstance[],
-  id: string,
-  patch: Partial<HeroMotifInstance>
-): HeroMotifInstance[] {
-  return motifs.map((motif) => {
-    if (motif.id !== id) return motif;
-    const kind = patch.kind ?? motif.kind;
-    const clampSide = heroMotifClampSide(kind);
-    const freePlacement = heroMotifAllowsOverflow(kind);
-    const primitive =
-      patch.primitive !== undefined
-        ? sanitizeHeroMotifPrimitive(patch.primitive, motif.primitive ?? 'free')
-        : motif.primitive;
-    const lockedPrimitive =
-      kind === 'glow'
-        ? primitive === 'oval'
-          ? 'oval'
-          : 'circle'
-        : kind === 'curve'
-          ? 'free'
-          : primitive;
-    const rawSize = patch.size
-      ? clampMotifPanelSize(patch.size, clampSide, { freePlacement })
-      : motif.size;
-    const size = isCircularMotifPrimitive(lockedPrimitive)
-      ? forceSquareMotifSize(rawSize)
-      : rawSize;
-    const position = patch.position
-      ? clampMotifPanelPosition(patch.position, clampSide, size, {
-          allowOverflow: freePlacement,
-        })
-      : freePlacement
-        ? clampMotifPanelPosition(motif.position, clampSide, size, { allowOverflow: true })
-        : motif.position;
-
-    const next: HeroMotifInstance = {
-      ...motif,
-      ...patch,
-      kind,
-      size,
-      position,
-      visibility: patch.visibility
-        ? sanitizeHeroMotifVisibility(patch.visibility, motif.visibility)
-        : motif.visibility,
-      opacity:
-        typeof patch.opacity === 'number' ? clamp(patch.opacity, 0, 100) : motif.opacity,
-      opacityDark:
-        typeof patch.opacityDark === 'number'
-          ? clamp(patch.opacityDark, 0, 100)
-          : motif.opacityDark,
-      points: patch.points ? patch.points.map((p) => ({ ...p })) : motif.points,
-      primitive: lockedPrimitive,
-      rotationDeg:
-        patch.rotationDeg !== undefined
-          ? sanitizeMotifRotationDeg(patch.rotationDeg, motif.rotationDeg ?? 0)
-          : motif.rotationDeg,
-      blurPx:
-        patch.blurPx !== undefined
-          ? sanitizeHeroGlowBlurPx(patch.blurPx, motif.blurPx ?? 0)
-          : motif.blurPx,
-      backdropBlurPx:
-        patch.backdropBlurPx !== undefined
-          ? sanitizeHeroGlowBackdropBlurPx(patch.backdropBlurPx, motif.backdropBlurPx ?? 0)
-          : motif.backdropBlurPx,
-    };
-
-    if (kind === 'curve' || motif.kind === 'curve' || patch.kind === 'curve') {
-      if (patch.curveAxis !== undefined || kind === 'curve') {
-        next.curveAxis = sanitizeHeroMotifCurveAxis(
-          patch.curveAxis !== undefined ? patch.curveAxis : motif.curveAxis,
-          'diagonal'
-        );
-      }
-      if (patch.curveBend !== undefined || kind === 'curve') {
-        next.curveBend = sanitizeHeroMotifCurveBend(
-          patch.curveBend !== undefined ? patch.curveBend : motif.curveBend
-        );
-      }
-      if (patch.strokeWidthPx !== undefined || kind === 'curve') {
-        next.strokeWidthPx = sanitizeHeroMotifStrokeWidthPx(
-          patch.strokeWidthPx !== undefined ? patch.strokeWidthPx : motif.strokeWidthPx
-        );
-      }
-      if (patch.strokeGlowStrength !== undefined || kind === 'curve') {
-        next.strokeGlowStrength = sanitizeHeroCurveGlowStrength(
-          patch.strokeGlowStrength !== undefined
-            ? patch.strokeGlowStrength
-            : motif.strokeGlowStrength
-        );
-      }
-      if (patch.underGlow !== undefined) {
-        next.underGlow = patch.underGlow;
-      } else if (kind === 'curve' && next.underGlow === undefined) {
-        next.underGlow = motif.underGlow !== false;
-      }
-    }
-
-    if (kind === 'glow' || kind === 'curve') {
-      if (patch.scrollAttach !== undefined) {
-        next.scrollAttach = sanitizeHeroMotifScrollAttach(patch.scrollAttach);
-      } else if (next.scrollAttach === undefined) {
-        next.scrollAttach = sanitizeHeroMotifScrollAttach(
-          motif.scrollAttach,
-          DEFAULT_HERO_MOTIF_SCROLL_ATTACH
-        );
-      }
-    } else {
-      delete next.scrollAttach;
-    }
-
-    if (patch.paletteToken !== undefined) {
-      const nextToken = sanitizeHeroMotifPaletteToken(patch.paletteToken);
-      if (nextToken) {
-        next.paletteToken = nextToken;
-      } else {
-        delete next.paletteToken;
-      }
-    }
-
-    return next;
-  });
 }
 
 export function heroMotifShellStyle(

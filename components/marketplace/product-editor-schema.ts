@@ -17,11 +17,11 @@ export const PRODUCT_TYPES = [
   'OTHER',
 ] as const satisfies readonly Exclude<ProductType, 'PHYSICAL'>[];
 
-export const ALL_PRODUCT_TYPES = [...PRODUCT_TYPES, 'PHYSICAL'] as const satisfies readonly ProductType[];
+const ALL_PRODUCT_TYPES = [...PRODUCT_TYPES, 'PHYSICAL'] as const satisfies readonly ProductType[];
 
 export const STOCK_MAX = 1_000_000;
 
-export const DEMO_TYPES = ['NONE', 'IMAGE', 'VIDEO', 'FILE_EXTRACT'] as const satisfies readonly DemoType[];
+const DEMO_TYPES = ['NONE', 'IMAGE', 'VIDEO', 'FILE_EXTRACT'] as const satisfies readonly DemoType[];
 
 export const productEditorSchema = z.object({
   productFormat: z.enum(['virtual', 'physical']),

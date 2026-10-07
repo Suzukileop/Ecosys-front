@@ -23,7 +23,7 @@ export type HeroUltraWideColumnLayout = {
   visualSlots: Record<HeroVisualColumnSlot, HeroColumnIndex>;
 };
 
-export const HERO_COPY_COLUMN_SLOT_OPTIONS: {
+const HERO_COPY_COLUMN_SLOT_OPTIONS: {
   value: HeroCopyColumnSlot;
   label: string;
 }[] = [
@@ -34,34 +34,12 @@ export const HERO_COPY_COLUMN_SLOT_OPTIONS: {
   { value: 'cta', label: 'Contact CTA' },
 ];
 
-export const HERO_VISUAL_COLUMN_SLOT_OPTIONS: {
+const HERO_VISUAL_COLUMN_SLOT_OPTIONS: {
   value: HeroVisualColumnSlot;
   label: string;
 }[] = [
   { value: 'portrait', label: 'Portrait' },
   { value: 'stats', label: 'Stats' },
-];
-
-export const PORTFOLIO_HERO_ULTRAWIDE_COLUMN_OPTIONS: {
-  value: HeroUltraWideColumnCount;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 1,
-    label: '1 column',
-    description: 'Single centered stack — default vertical layout.',
-  },
-  {
-    value: 2,
-    label: '2 columns',
-    description: 'Split each unit across two columns on desktop (xl+).',
-  },
-  {
-    value: 3,
-    label: '3 columns',
-    description: 'Spread elements across three columns on desktop (xl+).',
-  },
 ];
 
 const ALL_IN_ONE: HeroUltraWideColumnLayout = {
@@ -139,88 +117,4 @@ export function sanitizeHeroUltraWideColumnLayout(
       fallback.visualSlots
     ),
   };
-}
-
-/**
- * Automatic placement when the column count changes — spreads copy / visual
- * units so side columns are used on 2–3 column ultra-wide grids.
- */
-export function autoPlaceHeroUltraWideSlots(
-  columns: HeroUltraWideColumnCount
-): HeroUltraWideColumnLayout {
-  if (columns === 1) {
-    return {
-      columns: 1,
-      copySlots: { ...ALL_IN_ONE.copySlots },
-      visualSlots: { ...ALL_IN_ONE.visualSlots },
-    };
-  }
-
-  if (columns === 2) {
-    return {
-      columns: 2,
-      copySlots: {
-        availability: 1,
-        headline: 1,
-        description: 1,
-        tools: 2,
-        cta: 2,
-      },
-      visualSlots: {
-        portrait: 1,
-        stats: 2,
-      },
-    };
-  }
-
-  return {
-    columns: 3,
-    copySlots: {
-      availability: 1,
-      headline: 2,
-      description: 2,
-      tools: 3,
-      cta: 3,
-    },
-    visualSlots: {
-      portrait: 1,
-      stats: 3,
-    },
-  };
-}
-
-export function applyHeroUltraWideColumns(
-  current: HeroUltraWideColumnLayout | undefined,
-  columns: HeroUltraWideColumnCount
-): HeroUltraWideColumnLayout {
-  const base = sanitizeHeroUltraWideColumnLayout(current);
-  if (base.columns === columns) return base;
-  return autoPlaceHeroUltraWideSlots(columns);
-}
-
-/** Tailwind grid column class for xl+ (vertical multi-column layouts). */
-export function heroUltraWideColClass(
-  column: HeroColumnIndex,
-  total: HeroUltraWideColumnCount
-): string {
-  if (total <= 1) return '';
-  const start = Math.min(column, total) as HeroColumnIndex;
-  const map: Record<HeroColumnIndex, string> = {
-    1: 'xl:col-start-1',
-    2: 'xl:col-start-2',
-    3: 'xl:col-start-3',
-  };
-  return map[start];
-}
-
-export function heroUltraWideGridClass(columns: HeroUltraWideColumnCount): string {
-  if (columns === 3) return 'xl:grid-cols-3 xl:gap-x-10 xl:gap-y-8';
-  if (columns === 2) return 'xl:grid-cols-2 xl:gap-x-10 xl:gap-y-8';
-  return '';
-}
-
-export function resolveHeroUltraWideColumnLayout(
-  presentation: { heroUltraWideColumns?: HeroUltraWideColumnLayout }
-): HeroUltraWideColumnLayout {
-  return sanitizeHeroUltraWideColumnLayout(presentation.heroUltraWideColumns);
 }

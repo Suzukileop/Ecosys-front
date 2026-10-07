@@ -170,7 +170,7 @@ export function DashboardMobileNav({
        * you are reading, and translucency here would leave the page's own type showing through the
        * rules.
        */
-      className={`fixed inset-x-0 bottom-0 top-[var(--dash-header-h,3.85rem)] z-30 flex flex-col overflow-y-auto overscroll-contain bg-[#F8F8F8] transition-[opacity,transform] duration-[520ms] ${EASE_CLS} dark:bg-[#0A0A0A] lg:hidden ${
+      className={`fixed inset-x-0 bottom-0 top-[var(--dash-header-h,3.85rem)] z-30 flex flex-col overflow-y-auto overscroll-contain bg-[#FFFFFF] transition-[opacity,transform] duration-[520ms] ${EASE_CLS} dark:bg-[#0A0A0A] lg:hidden ${
         open ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-3 opacity-0'
       }`}
     >

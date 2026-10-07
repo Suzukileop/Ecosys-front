@@ -60,6 +60,7 @@ import {
   type PortfolioFaqFrameSettings,
   type PortfolioFaqFrameShadow,
 } from '@/components/portfolio/portfolio-faq-frame';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 export type FaqSubSection = 'general' | 'design' | 'background' | 'header';
 
@@ -97,6 +98,8 @@ function FaqToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -294,7 +297,7 @@ function FaqBentoDualColorSwatches({
               title={option.description}
               onClick={() => onChange(option.value)}
               className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               <span
@@ -326,9 +329,11 @@ function FaqOptionGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -346,7 +351,7 @@ function FaqOptionGrid<T extends string>({
               title={option.description}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               {option.label}
@@ -355,6 +360,7 @@ function FaqOptionGrid<T extends string>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -369,12 +375,14 @@ function FaqPercentSlider({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(value ?? '')}>
     <div>
-      <div className="flex items-center justify-between gap-4">
+      {rows ? null : (<div className="flex items-center justify-between gap-4">
         <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
         <span className="text-xs font-semibold tabular-nums text-neutral-500">{Math.round(value)}%</span>
-      </div>
+      </div>)}
       <input
         type="range"
         min={0}
@@ -386,6 +394,7 @@ function FaqPercentSlider({
         className="mt-2 w-full accent-neutral-900"
       />
     </div>
+    </SettingRow>
   );
 }
 
@@ -756,7 +765,7 @@ function FaqLayoutPills({
               className={`flex items-center justify-center gap-2 rounded-lg py-1.5 font-semibold leading-none transition ${
                 columns > 4 ? 'px-1' : 'px-2.5'
               } ${option.fontPx ? 'py-2' : 'text-xs'} ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
               style={{
                 fontSize: option.fontPx ? `${option.fontPx}px` : undefined,
@@ -1005,14 +1014,6 @@ function FaqHeaderLayoutControl({
           onChange={(visible) => setOverride({ visible })}
         />
       );
-    case 'fieldToggle':
-      return (
-        <FaqToggleRow
-          label={spec.label}
-          checked={faq[spec.field] !== false}
-          onChange={(checked) => onChange({ [spec.field]: checked })}
-        />
-      );
     case 'option':
       return (
         <FaqLayoutPills
@@ -1119,12 +1120,14 @@ function FaqBackgroundColorField({
   label: string;
   value: string;
 }) {
+  const rows = useSettingsRows();
   const mapping = FAQ_BACKGROUND_LABEL_SLOTS[label] ?? FAQ_BACKGROUND_LABEL_SLOTS.Color;
   const usingPalette = faq.useHeroPalette !== false;
   const activeHex = value.trim().toLowerCase();
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
       <div className="mt-2 flex items-center gap-3">
         {FAQ_BACKGROUND_PALETTE_TOKENS.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -1159,6 +1162,7 @@ function FaqBackgroundColorField({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -1187,7 +1191,7 @@ export function FaqSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {FAQ_SUB_SECTIONS.map((section) => (
           <button
             key={section.id}
@@ -1225,6 +1229,7 @@ export function FaqSettingsPanel({
           <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} />
 
           <FaqLayoutSettingsBand motionKey={faq.design}>
+<SettingsRowsScope title="Layout options">
             {faq.design === 'bento-dual' ? (
               <div className="space-y-6">
                 <FaqBentoDualColorSwatches
@@ -1271,7 +1276,8 @@ export function FaqSettingsPanel({
                 all built in. It doesn&rsquo;t expose extra styling controls.
               </p>
             )}
-          </FaqLayoutSettingsBand>
+          </SettingsRowsScope>
+</FaqLayoutSettingsBand>
         </div>
       ) : null}
 

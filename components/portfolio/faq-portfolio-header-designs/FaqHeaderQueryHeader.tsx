@@ -12,6 +12,7 @@ import {
 } from '@/components/portfolio/portfolio-faq-settings';
 import { FAQ_HEADER_MARGIN_BOTTOM_REM } from '@/components/portfolio/portfolio-faq-header-settings';
 import { FAQ_HEADER_TITLE_SIZE_CLASS, createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Layout settings → "Glyph intensity" (Medium is the original 10%). */
 const GLYPH_INK_PERCENT: Record<string, number> = { subtle: 6, medium: 10, bold: 18 };
@@ -59,7 +60,8 @@ export function FaqHeaderQueryHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
   const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;

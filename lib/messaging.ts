@@ -1,23 +1,7 @@
 import api from '@/lib/api';
-import { normalizeSpringPage } from '@/lib/ecosystem';
-import type { PagedResponse, SpringPageRaw } from '@/types/ecosystem';
-import type {
-  AttachmentAccess,
-  CallSession,
-  CallType,
-  ConversationGuestSession,
-  ConversationInvite,
-  ConversationParticipant,
-  ConversationSummary,
-  CreateConversationRequest,
-  CreateGroupRequest,
-  DirectMessage,
-  MessageType,
-  MessagingUserSummary,
-  OutgoingGuestInvite,
-  PendingConversationInvite,
-  TemporaryInboxEntry,
-} from '@/types/messaging';
+import { normalizeSpringPage } from '@/lib/pagination';
+import type { PagedResponse, SpringPageRaw } from '@/types/profile';
+import type { AttachmentAccess, CallSession, CallType, ConversationGuestSession, ConversationParticipant, ConversationSummary, CreateConversationRequest, CreateGroupRequest, DirectMessage, MessageType, MessagingUserSummary, OutgoingGuestInvite, PendingConversationInvite, TemporaryInboxEntry } from '@/types/messaging';
 
 type RawConversationSummary = Partial<ConversationSummary> & {
   otherUserFullName?: string | null;
@@ -212,18 +196,6 @@ export async function getAttachmentDownloadUrl(
 ): Promise<AttachmentAccess> {
   const res = await api.get<AttachmentAccess>(
     `/api/messaging/conversations/${encodeURIComponent(conversationId)}/attachments/${encodeURIComponent(attachmentId)}/download`
-  );
-  return res.data;
-}
-
-export async function createConversationInvite(
-  conversationId: string,
-  expiresInHours = 48,
-  maxUses = 5
-): Promise<ConversationInvite> {
-  const res = await api.post<ConversationInvite>(
-    `/api/messaging/conversations/${encodeURIComponent(conversationId)}/invites`,
-    { expiresInHours, maxUses }
   );
   return res.data;
 }

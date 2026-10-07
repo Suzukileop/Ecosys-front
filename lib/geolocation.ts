@@ -1,7 +1,7 @@
 import { nationalityLabel } from '@/lib/countries';
 import { UserFacingError } from '@/lib/api-error';
 
-export type DetectedLocation = {
+type DetectedLocation = {
   lat: number;
   lng: number;
   timezoneId: string;
@@ -29,7 +29,7 @@ function toLocationError(err: unknown): UserFacingError {
 }
 
 /** Requires browser geolocation permission — used for mandatory creator location setup. */
-export async function detectUserLocation(): Promise<DetectedLocation> {
+async function detectUserLocation(): Promise<DetectedLocation> {
   if (typeof window === 'undefined' || !navigator.geolocation) {
     throw new UserFacingError('Geolocation is not supported by your browser.');
   }
@@ -127,9 +127,9 @@ export async function detectUserCoordinates(): Promise<ViewerCoordinates> {
  * Max accepted GPS accuracy (meters) before we publish a distance label.
  * Coarse IP/Wi-Fi fixes often report 2–50 km and produce "Less than 1 km" by chance.
  */
-export const DISTANCE_MAX_ACCURACY_M = 500;
+const DISTANCE_MAX_ACCURACY_M = 500;
 
-export function isReliableDistanceFix(coords: ViewerCoordinates): boolean {
+function isReliableDistanceFix(coords: ViewerCoordinates): boolean {
   if (!isFiniteCoords(coords)) return false;
   if (coords.accuracyM == null || !Number.isFinite(coords.accuracyM) || coords.accuracyM <= 0) {
     return false;
@@ -279,7 +279,7 @@ export async function requestDetectedLocation(): Promise<DetectedLocation> {
   }
 }
 
-export type GeocodedPlace = {
+type GeocodedPlace = {
   lat: number;
   lng: number;
   displayName: string;
@@ -344,7 +344,7 @@ export function openStreetMapEmbedUrl(lat: number, lng: number, delta = 0.12): s
 }
 
 /** Great-circle distance in km (Haversine). */
-export function haversineKm(
+function haversineKm(
   lat1: number,
   lng1: number,
   lat2: number,

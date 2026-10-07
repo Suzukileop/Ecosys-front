@@ -3,7 +3,7 @@
 import Image from 'next/image';
 import { useMouseParallax } from '@/lib/useMouseParallax';
 
-export type MarketplacePatternVariant = 'hub' | 'product';
+type MarketplacePatternVariant = 'hub' | 'product';
 
 const PATTERN_MASKS: Record<MarketplacePatternVariant, string> = {
   /** Catalog hub — header + Products / Favorites / Purchases tabs */
@@ -69,6 +69,3 @@ export function MarketplacePatternBackground({
     </div>
   );
 }
-
-/** @deprecated Use MarketplacePatternBackground */
-export const ProductDetailHalftoneBackground = MarketplacePatternBackground;

@@ -56,8 +56,6 @@ import { FormSelect, type FormSelectOption } from '@/components/ui/FormSelect';
 import { CurrencyPicker } from '@/components/ui/CurrencyPicker';
 import type { MarketplaceProductDetail, MarketplaceProductRequest } from '@/types/marketplace';
 
-export type { ProductFormValues } from '@/components/marketplace/product-editor-schema';
-
 const GENRES = ['Tech', 'Lifestyle', 'Business', 'Art', 'Sport', 'Music', 'Other'] as const;
 const VIDEO_RESOLUTIONS = ['480p', '720p', '1080p', '4K'] as const;
 const PRODUCT_LANGUAGES = [
@@ -186,7 +184,7 @@ function initialsOf(name: string): string {
 
 /* ─── Form <-> API mapping ───────────────────────────────────────────────── */
 
-export function productToFormValues(product: MarketplaceProductDetail): ProductFormValues {
+function productToFormValues(product: MarketplaceProductDetail): ProductFormValues {
   const demoUrl = product.demoUrl ?? '';
   const resolvedDemoType =
     demoUrl.trim() && product.demoType === 'NONE' ? detectDemoTypeFromUrl(demoUrl) : product.demoType;
@@ -221,7 +219,7 @@ export function productToFormValues(product: MarketplaceProductDetail): ProductF
   };
 }
 
-export function formValuesToRequest(
+function formValuesToRequest(
   data: ProductFormValues,
   options: { isPublished?: boolean } = {}
 ): MarketplaceProductRequest {

@@ -1,8 +1,5 @@
 import manifest from '@/components/creator/studio/creator-tool-tech-icons-manifest.json';
-import {
-  buildCreatorToolIconLookupKeys,
-  normalizeCreatorToolIconKey,
-} from '@/components/creator/studio/creator-tool-icon-keys';
+import { buildCreatorToolIconLookupKeys } from '@/components/creator/studio/creator-tool-icon-keys';
 
 type TechIconManifest = {
   version: number;
@@ -15,11 +12,7 @@ type TechIconManifest = {
 const TECH_ICON_MANIFEST = manifest as TechIconManifest;
 const BY_KEY = TECH_ICON_MANIFEST.byKey;
 
-export const TOOL_TECH_ICONS_PUBLIC_BASE = TECH_ICON_MANIFEST.publicBase;
-export const TOOL_TECH_ICONS_SOURCE_URL = TECH_ICON_MANIFEST.source;
-export const TOOL_TECH_ICONS_COUNT = TECH_ICON_MANIFEST.iconCount;
-
-export { normalizeCreatorToolIconKey };
+const TOOL_TECH_ICONS_PUBLIC_BASE = TECH_ICON_MANIFEST.publicBase;
 
 function encodePublicIconPath(filename: string): string {
   return filename
@@ -29,7 +22,7 @@ function encodePublicIconPath(filename: string): string {
 }
 
 /** Public URL for a bundled TechIcons PNG filename. */
-export function creatorToolTechIconPublicUrl(filename: string): string {
+function creatorToolTechIconPublicUrl(filename: string): string {
   const base = TOOL_TECH_ICONS_PUBLIC_BASE.replace(/\/$/, '');
   return `${base}/${encodePublicIconPath(filename)}`;
 }

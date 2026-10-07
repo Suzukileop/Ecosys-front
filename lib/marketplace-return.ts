@@ -1,7 +1,7 @@
 const RETURN_STORAGE_KEY = 'marketplace:products-return';
 const RESTORE_FLAG_KEY = 'marketplace:products-restore';
 
-export type MarketplaceReturnPoint = {
+type MarketplaceReturnPoint = {
   key: string;
   y: number;
   url: string;

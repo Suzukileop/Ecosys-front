@@ -98,7 +98,7 @@ export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProf
         post={activePost}
         open={Boolean(activePost)}
         onClose={() => setActivePost(null)}
-        loginRedirect={`/login?redirect=/marketplace/${creatorId}`}
+        loginRedirect={`/login?redirect=/providers/${creatorId}`}
       />
     </div>
   );

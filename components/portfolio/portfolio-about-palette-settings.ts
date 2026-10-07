@@ -3,19 +3,11 @@
  * Concrete hex fields still drive render; bindings choose which token paints each slot.
  */
 
-import {
-  computeLightPalette,
-  DEFAULT_HERO_PALETTE,
-  HERO_PALETTE_TOKEN_IDS,
-  mergeHeroPalette,
-  resolveHeroPaletteColor,
-  type HeroPaletteTokenId,
-  type PortfolioHeroPalette,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_HERO_PALETTE, HERO_PALETTE_TOKEN_IDS, mergeHeroPalette, resolveHeroPaletteColor, type HeroPaletteTokenId, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 
 /** Local mirrors — avoid importing portfolio-about-settings (circular TDZ). */
-export type AboutElementStyleTarget =
+type AboutElementStyleTarget =
   | 'sideLabel'
   | 'sideTitle'
   | 'sideSubtitle';
@@ -87,7 +79,7 @@ type AboutPresentationColorFields = {
   sidePanelBackgroundEnabled?: boolean;
 };
 
-export const ABOUT_COLOR_SLOT_IDS: AboutColorSlot[] = [
+const ABOUT_COLOR_SLOT_IDS: AboutColorSlot[] = [
   'sectionBackground',
   'sectionGradientFrom',
   'sectionGradientTo',
@@ -116,47 +108,8 @@ export const ABOUT_COLOR_SLOT_IDS: AboutColorSlot[] = [
   'sideSubtitle',
 ];
 
-export const PORTFOLIO_ABOUT_COLOR_SLOT_OPTIONS: {
-  value: AboutColorSlot;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background', description: 'Solid section fill.' },
-  { value: 'sectionGradientFrom', label: 'Gradient start', description: 'Start of the section gradient.' },
-  { value: 'sectionGradientTo', label: 'Gradient end', description: 'End of the section gradient.' },
-  { value: 'sectionSplitA', label: 'Split zone A', description: 'First split background zone.' },
-  { value: 'sectionSplitB', label: 'Split zone B', description: 'Second split background zone.' },
-  { value: 'sectionDivider', label: 'Split divider', description: 'Line between split zones.' },
-  { value: 'title', label: 'Section title', description: 'About heading.' },
-  { value: 'subtitle', label: 'Section subtitle', description: 'Intro under the title.' },
-  { value: 'accent', label: 'Accent', description: 'Rating accent, icons, and marker accents.' },
-  { value: 'cardBorder', label: 'Stats card border', description: 'Outline around stat cards.' },
-  { value: 'cardBackground', label: 'Stats card background', description: 'Fill behind stat values.' },
-  { value: 'cardBackgroundA', label: 'Stats split A', description: 'First zone on split stat cards.' },
-  { value: 'cardBackgroundB', label: 'Stats split B', description: 'Second zone on split stat cards.' },
-  { value: 'cardDivider', label: 'Stats divider', description: 'Divider on split stat cards.' },
-  { value: 'statsValue', label: 'Stat value', description: 'Numbers on stat cards.' },
-  { value: 'statsLabel', label: 'Stat label', description: 'YEARS / CONTENT labels.' },
-  { value: 'statsIcon', label: 'Stat icon', description: 'Icons on stat cards.' },
-  { value: 'sidePanelBorder', label: 'Side panel border', description: 'Profile panel outline.' },
-  { value: 'sidePanelBackground', label: 'Side panel background', description: 'Profile panel fill.' },
-  { value: 'sidePanelBackgroundA', label: 'Side panel split A', description: 'First split zone on profile panel.' },
-  { value: 'sidePanelBackgroundB', label: 'Side panel split B', description: 'Second split zone on profile panel.' },
-  { value: 'sidePanelDivider', label: 'Side panel divider', description: 'Divider on profile panel.' },
-  { value: 'sidePanelHeading', label: 'Infos heading', description: 'Title above the Infos panel.' },
-  { value: 'sideLabel', label: 'Side panel label', description: 'LOCATION / LANGUAGES captions (muted).' },
-  { value: 'sideTitle', label: 'Side panel title', description: 'Main value in profile rows.' },
-  { value: 'sideSubtitle', label: 'Side panel subtitle', description: 'Secondary profile line.' },
-];
-
-export const DARK_ABOUT_PALETTE: PortfolioAboutPalette = { ...DEFAULT_HERO_PALETTE };
+const DARK_ABOUT_PALETTE: PortfolioAboutPalette = { ...DEFAULT_HERO_PALETTE };
 export const DEFAULT_ABOUT_PALETTE: PortfolioAboutPalette = { ...DARK_ABOUT_PALETTE };
-
-export function computeLightAboutPalette(
-  dark: Partial<PortfolioAboutPalette>
-): PortfolioAboutPalette {
-  return computeLightPalette(mergeHeroPalette(DARK_ABOUT_PALETTE, dark));
-}
 
 export const DEFAULT_ABOUT_COLOR_BINDINGS: PortfolioAboutColorBindings = {
   sectionBackground: 'fond',
@@ -339,65 +292,3 @@ export function applyAboutPaletteToSettings(about: AboutPaletteHost): AboutPalet
 
   return patch as AboutPalettePatch;
 }
-
-export function patchAboutPalette(
-  about: AboutPaletteHost,
-  palettePatch: Partial<PortfolioAboutPalette>
-): AboutPalettePatch {
-  const palette = mergeAboutPalette(DEFAULT_ABOUT_PALETTE, {
-    ...about.aboutPalette,
-    ...palettePatch,
-  });
-  return applyAboutPaletteToSettings({ ...about, aboutPalette: palette });
-}
-
-export function patchAboutSlotColor(
-  about: AboutPaletteHost,
-  slot: AboutColorSlot,
-  hex: string
-): AboutPalettePatch {
-  const bindings = mergeAboutColorBindings(DEFAULT_ABOUT_COLOR_BINDINGS, about.aboutColorBindings);
-  return patchAboutPalette(about, { [bindings[slot]]: hex });
-}
-
-export function patchAboutColorBinding(
-  about: AboutPaletteHost,
-  slot: AboutColorSlot,
-  token: HeroPaletteTokenId
-): AboutPalettePatch {
-  const bindings = mergeAboutColorBindings(DEFAULT_ABOUT_COLOR_BINDINGS, {
-    ...about.aboutColorBindings,
-    [slot]: token,
-  });
-  return applyAboutPaletteToSettings({ ...about, aboutColorBindings: bindings });
-}
-
-export function patchAboutColorFieldManual(
-  about: AboutPaletteHost,
-  slot: AboutColorSlot,
-  hex: string
-): AboutPalettePatch {
-  const elementTarget = ABOUT_ELEMENT_STYLE_SLOT[slot];
-  if (elementTarget) {
-    const elementStyles = paintAboutElementColor(about.elementStyles, elementTarget, hex);
-    return elementStyles ? { elementStyles } : {};
-  }
-  return { [ABOUT_SLOT_TO_FIELD[slot]]: hex } as AboutPalettePatch;
-}
-
-export function patchAboutColorField(
-  about: AboutPaletteHost & { useHeroPalette?: boolean },
-  slot: AboutColorSlot,
-  hex: string
-): AboutPalettePatch {
-  if (about.useHeroPalette === false) {
-    return patchAboutColorFieldManual(about, slot, hex);
-  }
-  return patchAboutSlotColor(about, slot, hex);
-}
-
-export const ABOUT_STYLE_TARGET_COLOR_SLOT: Record<AboutElementStyleTarget, AboutColorSlot> = {
-  sideLabel: 'sideLabel',
-  sideTitle: 'sideTitle',
-  sideSubtitle: 'sideSubtitle',
-};

@@ -14,19 +14,6 @@ export function detectDemoTypeFromUrl(url: string | null | undefined): DemoType 
   return 'FILE_EXTRACT';
 }
 
-export function demoTypeLabel(type: DemoType): string {
-  switch (type) {
-    case 'IMAGE':
-      return 'Image';
-    case 'VIDEO':
-      return 'Video';
-    case 'FILE_EXTRACT':
-      return 'File extract';
-    default:
-      return 'None';
-  }
-}
-
 export function isAllowedDemoMediaFile(file: File): boolean {
   if (file.type.startsWith('image/')) return true;
   return ['video/mp4', 'video/webm', 'video/quicktime'].includes(file.type);

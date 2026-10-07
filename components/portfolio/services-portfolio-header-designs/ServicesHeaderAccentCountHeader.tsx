@@ -8,6 +8,7 @@ import {
   type PortfolioServicesHeaderTitleSize,
   type PortfolioServicesHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-services-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ services';
 const DEFAULT_LEAD_TEXT = 'A focused set of services, built around what you need.';
@@ -59,7 +60,8 @@ export function ServicesHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_SERVICES_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

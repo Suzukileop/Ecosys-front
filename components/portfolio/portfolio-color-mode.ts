@@ -49,7 +49,7 @@ import {
 /** Site-wide appearance driven from Global → Theme. */
 export type PortfolioColorMode = 'dark' | 'light';
 
-export type PortfolioPaletteFamily =
+type PortfolioPaletteFamily =
   | 'indigo'
   | 'classic'
   | 'verdant'
@@ -60,28 +60,6 @@ export type PortfolioPaletteFamily =
   | 'ecarlate'
   | 'ardoise'
   | 'custom';
-
-export const PORTFOLIO_COLOR_MODE_OPTIONS: {
-  value: PortfolioColorMode;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'dark',
-    label: 'Dark mode',
-    description: 'Uses the dark half of the selected Global palette pair.',
-  },
-  {
-    value: 'light',
-    label: 'Light mode',
-    description: 'Uses the light half of the selected Global palette pair.',
-  },
-];
-
-/** Classic defaults only — prefer resolveActivePortfolioPalette for live settings. */
-export function resolveColorModePalette(mode: PortfolioColorMode): PortfolioHeroPalette {
-  return mode === 'light' ? { ...LIGHT_HERO_PALETTE } : { ...DEFAULT_HERO_PALETTE };
-}
 
 /** Active global palette tokens as CSS vars on `.pf-theme-root` — animatable via @property. */
 export function portfolioPaletteCssVars(palette: PortfolioHeroPalette): CSSProperties {
@@ -404,64 +382,6 @@ export function applyGlobalPalettePair(
       paletteLight: light,
     },
   });
-}
-
-/** Preset pairs selectable in Global → Theme. */
-export function resolveGlobalPalettePresetPair(
-  family: 'indigo' | 'classic' | 'verdant' | 'vive' | 'safran' | 'citron' | 'rouge' | 'ecarlate' | 'ardoise'
-): { dark: PortfolioHeroPalette; light: PortfolioHeroPalette } {
-  if (family === 'indigo') {
-    return {
-      dark: { ...INDIGO_DARK_HERO_PALETTE },
-      light: { ...INDIGO_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'verdant') {
-    return {
-      dark: { ...VERDANT_DARK_HERO_PALETTE },
-      light: { ...VERDANT_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'vive') {
-    return {
-      dark: { ...VIVE_DARK_HERO_PALETTE },
-      light: { ...VIVE_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'safran') {
-    return {
-      dark: { ...SAFRAN_DARK_HERO_PALETTE },
-      light: { ...SAFRAN_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'citron') {
-    return {
-      dark: { ...CITRON_DARK_HERO_PALETTE },
-      light: { ...CITRON_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'rouge') {
-    return {
-      dark: { ...ROUGE_DARK_HERO_PALETTE },
-      light: { ...ROUGE_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'ecarlate') {
-    return {
-      dark: { ...ECARLATE_DARK_HERO_PALETTE },
-      light: { ...ECARLATE_LIGHT_HERO_PALETTE },
-    };
-  }
-  if (family === 'ardoise') {
-    return {
-      dark: { ...ARDOISE_DARK_HERO_PALETTE },
-      light: { ...ARDOISE_LIGHT_HERO_PALETTE },
-    };
-  }
-  return {
-    dark: { ...DEFAULT_HERO_PALETTE },
-    light: { ...LIGHT_HERO_PALETTE },
-  };
 }
 
 /**

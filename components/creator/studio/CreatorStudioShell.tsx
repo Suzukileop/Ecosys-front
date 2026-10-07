@@ -93,7 +93,7 @@ export function CreatorStudioShell({
   const selectTab = (next: CreatorStudioTab) => onTabChange(next);
 
   return (
-    <div className="mx-auto w-full max-w-[1400px] px-0 pb-16 pt-2 sm:px-8 sm:pt-4 md:px-12 lg:px-16">
+    <div className="news-theme mx-auto w-full max-w-[1400px] px-0 pb-16 pt-2 sm:px-8 sm:pt-4 md:px-12 lg:px-16">
       <input
         ref={avatarInputRef}
         type="file"
@@ -123,13 +123,13 @@ export function CreatorStudioShell({
           serviceCount={header.serviceCount ?? 0}
           showProductCount={creatorCanAccessProfileProducts(appRole)}
           profileVisits={header.profileVisits}
-          profileVisitsHref="/dashboard/creator?tab=visitors"
-          profileSubscribersHref="/dashboard/creator?tab=subscribers"
+          profileVisitsHref="/profile?tab=visitors"
+          profileSubscribersHref="/profile?tab=subscribers"
           starCount={header.starCount}
           locationLabel={header.locationLabel}
           isAvailable={header.isAvailable}
           availabilityLabel={header.availabilityLabel}
-          shopHref="/marketplace/my-products"
+          shopHref="/my-products"
           shopLabel="Manage shop"
           editable
           uploadingAvatar={uploadingAvatar}
@@ -186,7 +186,7 @@ export function CreatorStudioShell({
                 </p>
               </div>
               <nav
-                className="flex min-h-0 w-full flex-col gap-1.5 overflow-y-auto px-2.5 py-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+                className="mt-3 flex min-h-0 w-full flex-col gap-1.5 overflow-y-auto rounded-xl bg-[#FFFFFF] px-2.5 py-3 [scrollbar-width:none] dark:bg-[#111111] [&::-webkit-scrollbar]:hidden"
                 aria-label="Creator studio sections"
               >
                 {visibleTabs.map((item) => {
@@ -197,24 +197,14 @@ export function CreatorStudioShell({
                       type="button"
                       onClick={() => selectTab(item.id)}
                       aria-current={active ? 'page' : undefined}
-                      className={`group/item flex min-h-[3.25rem] w-full items-center gap-3.5 rounded-lg px-3 py-3.5 text-left text-[16px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+                      className={`flex min-h-[3.25rem] w-full items-center gap-3.5 rounded-lg px-3 py-3.5 text-left text-[16px] text-[#0F0F0F] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:text-[#F1F1F1] ${
                         active
-                          ? 'font-medium text-[#0A0A0A] dark:text-white'
-                          : 'font-medium text-[#222222] dark:text-neutral-300'
+                          ? 'bg-black/[0.05] font-semibold dark:bg-white/[0.1]'
+                          : 'font-medium hover:bg-black/[0.05] dark:hover:bg-white/[0.1]'
                       }`}
                     >
                       <FontAwesomeIcon icon={STUDIO_TAB_ICONS[item.id]} className="h-[1.05rem] w-[1.05rem] shrink-0" />
-                      <span className="min-w-0 flex-1">
-                        <span className="relative inline-block whitespace-nowrap align-middle">
-                          {item.label}
-                          <span
-                            aria-hidden
-                            className={`pointer-events-none absolute -bottom-1 left-0 right-0 block h-px origin-left bg-current transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                              active ? 'scale-x-100' : 'scale-x-0 group-hover/item:scale-x-100'
-                            }`}
-                          />
-                        </span>
-                      </span>
+                      <span className="min-w-0 flex-1 whitespace-nowrap">{item.label}</span>
                     </button>
                   );
                 })}

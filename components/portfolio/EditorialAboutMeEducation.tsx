@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState } from 'react';
-import type { ProfileEducationEntry } from '@/types/ecosystem';
+import type { ProfileEducationEntry } from '@/types/profile';
 import type {
   PortfolioInfoPremiumFontSize,
   PortfolioInfoEducationDisplayStyle,
@@ -13,7 +13,7 @@ import {
   infoContentEducationTitleSizeClass,
 } from '@/components/portfolio/portfolio-info-settings';
 
-export type TraitEducationColors = {
+type TraitEducationColors = {
   titleColor: string;
   bodyColor: string;
   accent: string;
@@ -565,7 +565,6 @@ function EducationCascade({
   titleColor,
   bodyColor,
   accent,
-  cardBg,
   cardBorder,
   scrollShiftEnabled = false,
   contentSize,

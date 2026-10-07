@@ -8,6 +8,7 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 // Three short lines — that's what makes the magazine-cover masthead stack
 // dramatically. Each line is its own field (not one string split on
@@ -47,7 +48,8 @@ export function InfoHeaderCoverHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_INFO_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const lines = [
     presentation.headerCoverLine1Text || DEFAULT_LINE_1,
     presentation.headerCoverLine2Text || DEFAULT_LINE_2,

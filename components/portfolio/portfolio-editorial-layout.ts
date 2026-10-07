@@ -102,9 +102,3 @@ export function portfolioHeroContentShellClass(
     contentGutter ?? DEFAULT_CONTENT_GUTTER
   )}`;
 }
-
-/** @deprecated Prefer portfolioEditorialGutterX(settings) — medium default. */
-export const PORTFOLIO_EDITORIAL_GUTTER_X = GUTTER_PADDING_X.medium;
-
-/** @deprecated Prefer portfolioHeroLayerInset(settings) — medium default. */
-export const PORTFOLIO_HERO_LAYER_INSET = GUTTER_LAYER_INSET.medium;

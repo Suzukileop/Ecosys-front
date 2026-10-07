@@ -10,6 +10,7 @@ import {
   type PortfolioFaqHeaderTitleSize,
   type PortfolioFaqHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Label is a small uppercase kicker — sizes stay compact at every step. */
 const LABEL_SIZE: Record<PortfolioFaqHeaderTitleSize, string> = {
@@ -110,7 +111,8 @@ export function FaqHeaderSerifLeadHeader({
   const align = presentation.headerDesignAlignment ?? 'left';
   const centered = align === 'center';
   const alignRight = align === 'right';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerSerifLeadTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSerifLeadLabelText || DEFAULT_LABEL_TEXT).trim();
   const lines = splitSerifLeadLines(title);

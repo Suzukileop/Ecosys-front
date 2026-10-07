@@ -28,7 +28,7 @@ export type ToolsColorSlot =
 
 export type PortfolioToolsColorBindings = Record<ToolsColorSlot, HeroPaletteTokenId>;
 
-export const TOOLS_COLOR_SLOT_IDS: ToolsColorSlot[] = [
+const TOOLS_COLOR_SLOT_IDS: ToolsColorSlot[] = [
   'sectionBackground',
   'sectionGradientFrom',
   'sectionGradientTo',
@@ -44,27 +44,6 @@ export const TOOLS_COLOR_SLOT_IDS: ToolsColorSlot[] = [
   'chipBackground',
   'chipText',
   'levelAccent',
-];
-
-export const PORTFOLIO_TOOLS_COLOR_SLOT_OPTIONS: {
-  value: ToolsColorSlot;
-  label: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background' },
-  { value: 'sectionGradientFrom', label: 'Gradient start' },
-  { value: 'sectionGradientTo', label: 'Gradient end' },
-  { value: 'sectionSplitA', label: 'Zone A' },
-  { value: 'sectionSplitB', label: 'Zone B' },
-  { value: 'sectionDivider', label: 'Divider' },
-  { value: 'title', label: 'Title' },
-  { value: 'tileBackground', label: 'Tile / logo background' },
-  { value: 'label', label: 'Tool name' },
-  { value: 'description', label: 'Description' },
-  { value: 'cardBackground', label: 'Card background' },
-  { value: 'cardBorder', label: 'Card border' },
-  { value: 'chipBackground', label: 'Use case background' },
-  { value: 'chipText', label: 'Use case text' },
-  { value: 'levelAccent', label: 'Level badge' },
 ];
 
 export const DEFAULT_TOOLS_PALETTE: PortfolioToolsPalette = { ...DEFAULT_HERO_PALETTE };
@@ -149,17 +128,4 @@ export function patchToolsColorBinding(
     [slot]: token,
   });
   return applyToolsPaletteToSettings({ ...host, toolsColorBindings });
-}
-
-export function patchToolsPaletteSlotColor(
-  host: ToolsPaletteHost,
-  slot: ToolsColorSlot,
-  hex: string
-): ToolsPalettePatch {
-  const toolsPalette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, host.toolsPalette);
-  const bindings = mergeToolsColorBindings(DEFAULT_TOOLS_COLOR_BINDINGS, host.toolsColorBindings);
-  return applyToolsPaletteToSettings({
-    ...host,
-    toolsPalette: { ...toolsPalette, [bindings[slot]]: hex },
-  });
 }

@@ -3,7 +3,7 @@
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
 
-export type ConfirmDialogProps = {
+type ConfirmDialogProps = {
   open: boolean;
   title: string;
   description?: string;

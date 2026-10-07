@@ -3,10 +3,7 @@
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } from 'react';
-import {
-  handleServicesOrderCtaClick,
-  useServicesOrderCtaNav,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
 import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
 import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
@@ -214,15 +211,6 @@ type PricingGridCard = {
   isPopular: boolean;
 };
 
-export function isServicesPricingGridDesign(
-  presentation: Pick<PortfolioServicesPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  // Cast: 'services-pricing-grid' isn't in PortfolioServicesSectionDesign's union yet — the
-  // coordinator adds it to portfolio-services-settings.ts (see `unionValue`). Once that lands
-  // this still holds; the cast only keeps *this* file tsc-clean in the meantime.
-  return (presentation?.sectionDesign as string | undefined) === 'services-pricing-grid';
-}
-
 /**
  * Services "Pricing Grid" — an Awwwards-grade three-tier pricing table. Large-radius,
  * thin-bordered editorial cards; the popular tier radically inverts its fill (near-black in
@@ -251,7 +239,7 @@ export function ServicesPricingGridSection({
     [presentation, settings.popularColorToken]
   );
   const tiltCapable = useFinePointerDesktop();
-  const { href, onNavigate } = useServicesOrderCtaNav();
+  const pricingStyle = useServicesPricingStyle(presentation);
 
   const popularIndex = count > 0 ? Math.min(settings.popularIndex, count - 1) : -1;
   const periodLabel = settings.periodLabel.trim();
@@ -444,7 +432,9 @@ export function ServicesPricingGridSection({
             }`}
             style={{
               backgroundColor: cardBg,
-              borderColor: cardBorder,
+              borderColor: pricingStyle.borderColor ?? cardBorder,
+              ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
+              ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
               boxShadow: isPopular ? `0 36px 60px -28px ${cardBg}66` : 'none',
               zIndex: isPopular ? 2 : 1,
             }}
@@ -475,7 +465,7 @@ export function ServicesPricingGridSection({
 
             <div className="mt-9 flex items-baseline gap-2">
               <span
-                className="text-[2.75rem] font-black leading-none tracking-[-0.03em] sm:text-[3.1rem]"
+                className="text-[length:calc(2.75rem*var(--pf-services-font-scale,1))] font-black leading-none tracking-[-0.03em] sm:text-[length:calc(3.1rem*var(--pf-services-font-scale,1))]"
                 style={{ color: cardInk }}
               >
                 {priceLabel || 'On request'}
@@ -505,14 +495,14 @@ export function ServicesPricingGridSection({
 
             <a
               ref={setCtaRef(index)}
-              href={href}
-              onClick={(event) => handleServicesOrderCtaClick(event, href, onNavigate)}
+              {...pricingStyle.anchorProps}
               className="mt-10 inline-flex min-h-[48px] w-full items-center justify-center rounded-full px-6 text-sm font-semibold"
-              style={
-                isPopular
+              style={{
+                ...(isPopular
                   ? { backgroundColor: cardInk, color: cardBg }
-                  : { backgroundColor: tokens.ink, color: tokens.cardBg }
-              }
+                  : { backgroundColor: tokens.ink, color: tokens.cardBg }),
+                ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
+              }}
               data-pf-no-color-transition=""
             >
               {settings.ctaLabel}

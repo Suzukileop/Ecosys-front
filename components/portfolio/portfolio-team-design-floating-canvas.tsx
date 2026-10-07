@@ -52,7 +52,7 @@ import {
   portfolioEditorialGutterNegativeX,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
-import type { ProfileTeamMember } from '@/types/ecosystem';
+import type { ProfileTeamMember } from '@/types/profile';
 
 const DEFAULT_EDITORIAL_TEXT =
   'A small collective of specialists who each choose their own tools — and still land on one signature, because every project passes through every hand before it ships.';

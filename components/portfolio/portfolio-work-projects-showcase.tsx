@@ -140,16 +140,6 @@ function EditorialTitleText({ text }: { text: string }) {
   );
 }
 
-function omitHeaderTitleMetrics(style?: CSSProperties): CSSProperties {
-  if (!style) return {};
-  const rest = { ...style };
-  delete rest.fontSize;
-  delete rest.lineHeight;
-  delete rest.letterSpacing;
-  delete rest.fontStyle;
-  return rest;
-}
-
 function measureShowcaseThumbStep(node: HTMLDivElement, visible: number, gap: number): number {
   if (visible <= 0) return 0;
   const itemWidth = (node.clientWidth - (visible - 1) * gap) / visible;
@@ -743,150 +733,6 @@ function ShowcaseDetails({
         </div>
       ) : null}
     </div>
-  );
-}
-
-/**
- * Showcase header — kicker, italic last word, airy subtitle.
- * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
- */
-export function ProjectsShowcaseSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  titleClassName = '',
-  titleStyle,
-  trailing,
-  entryCount,
-  accent,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  titleClassName?: string;
-  titleStyle?: CSSProperties;
-  trailing?: ReactNode;
-  entryCount?: number;
-  accent?: string;
-  className?: string;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-  const resolvedTitleColor =
-    (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
-  const incomingFontStyle = titleStyle?.fontStyle;
-  const restTitleStyle = omitHeaderTitleMetrics(titleStyle);
-  const allowItalicWord = incomingFontStyle !== 'italic';
-  const mark = accent || subtitleColor;
-  const countLabel =
-    typeof entryCount === 'number' && entryCount > 0
-      ? String(entryCount).padStart(2, '0')
-      : '';
-
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || isEmpty) return;
-
-    if (prefersReducedMotion()) {
-      showElementNow(header);
-      return;
-    }
-
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      revealElement(header, 0);
-    };
-
-    const ioRoot = showcaseScrollRoot(header);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            reveal();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
-    );
-    observer.observe(header);
-    const failSafe = window.setTimeout(reveal, 1600);
-
-    return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [heading, sub, isEmpty]);
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={headerRef}
-      className={`mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
-      data-showcase-enter=""
-      data-pf-no-color-transition=""
-      style={SHOWCASE_HIDDEN}
-    >
-      <style dangerouslySetInnerHTML={{ __html: SHOWCASE_MOTION_CSS }} />
-      <div className="flex items-end justify-between gap-6 sm:gap-10">
-        <div className="min-w-0 max-w-3xl">
-          <div className="mb-5 flex items-center gap-3 sm:mb-6">
-            <span
-              className="h-px w-7 shrink-0 sm:w-9"
-              style={{ backgroundColor: mark, opacity: 0.7 }}
-              aria-hidden
-            />
-            <p
-              className="text-[10px] font-medium uppercase tracking-[0.28em] sm:text-[11px]"
-              style={{ color: subtitleColor }}
-            >
-              {countLabel || 'Selected'}
-            </p>
-          </div>
-          {heading ? (
-            <h2
-              className={titleClassName.trim() || 'font-semibold tracking-[-0.045em]'}
-              style={{
-                ...restTitleStyle,
-                color: resolvedTitleColor,
-                fontSize: 'clamp(2.35rem, 5.6vw, 4.25rem)',
-                lineHeight: 1.06,
-              }}
-            >
-              {allowItalicWord ? <EditorialTitleText text={heading} /> : heading}
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              className={`max-w-md text-[15px] leading-[1.7] sm:text-base sm:leading-[1.75] ${
-                heading ? 'mt-5' : ''
-              }`}
-              style={{ color: subtitleColor, opacity: 0.86 }}
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        {trailing ? (
-          <div className="flex shrink-0 flex-col items-end gap-3 pb-1">
-            {trailing}
-            <span
-              className="hidden h-px w-16 sm:block lg:w-24"
-              style={{ backgroundColor: mark, opacity: 0.35 }}
-              aria-hidden
-            />
-          </div>
-        ) : null}
-      </div>
-    </header>
   );
 }
 
@@ -1688,10 +1534,4 @@ export function ProjectsShowcaseGallery({
       </div>
     </section>
   );
-}
-
-export function isProjectsShowcaseDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-showcase';
 }

@@ -10,7 +10,7 @@ export type PortfolioPresenceKind = 'portfolio' | 'storefront' | 'business';
  */
 const RETIRED_PRESENCE_KINDS: Record<string, PortfolioPresenceKind> = { linktrue: 'portfolio' };
 
-export type PortfolioPresenceOption = {
+type PortfolioPresenceOption = {
   id: PortfolioPresenceKind;
   title: string;
   teaser: string;
@@ -87,7 +87,7 @@ export function getPortfolioPresenceOption(
   return PORTFOLIO_PRESENCE_OPTIONS.find((option) => option.id === kind);
 }
 
-export function isPortfolioPresenceKind(value: unknown): value is PortfolioPresenceKind {
+function isPortfolioPresenceKind(value: unknown): value is PortfolioPresenceKind {
   return value === 'portfolio' || value === 'storefront' || value === 'business';
 }
 

@@ -89,7 +89,7 @@ export type PortfolioGallerySectionLayout = 'stacked' | 'aside-left' | 'aside-ri
  */
 export type PortfolioGalleryPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
-export const GALLERY_PREMIUM_FONT_SIZES: PortfolioGalleryPremiumFontSize[] = [
+const GALLERY_PREMIUM_FONT_SIZES: PortfolioGalleryPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -241,6 +241,8 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   headerSerifLeadLabelText: string;
   /** Header serif lead — the large serif title itself, independent of the section title. */
   headerSerifLeadTitleText: string;
+  /** Header serif lead — the line under the title; empty = the section subtitle. */
+  headerSerifLeadSubtitleText: string;
   /** Header serif lead — each element bound to a palette token, independently. */
   headerSerifLeadLabelColor: PortfolioGalleryHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioGalleryHeaderPaletteToken;
@@ -252,6 +254,23 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   headerSerifLeadLabelWeight: PortfolioGalleryHeaderTitleWeight;
   headerSerifLeadTitleWeight: PortfolioGalleryHeaderTitleWeight;
   headerSerifLeadSubtitleWeight: PortfolioGalleryHeaderTitleWeight;
+  /** Header editorial — kicker above the title; empty = "Gallery". */
+  headerEditorialLabelText: string;
+  /** Header editorial — the big title; empty = the section title. */
+  headerEditorialTitleText: string;
+  /** Header editorial — the line under the title; empty = the section subtitle. */
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, independently. */
+  headerEditorialLabelColor: PortfolioGalleryHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioGalleryHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioGalleryHeaderPaletteToken;
+  /** Header editorial — each text sized/weighted independently. */
+  headerEditorialLabelSize: PortfolioGalleryHeaderTitleSize;
+  headerEditorialTitleSize: PortfolioGalleryHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioGalleryHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioGalleryHeaderTitleWeight;
+  headerEditorialTitleWeight: PortfolioGalleryHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioGalleryHeaderTitleWeight;
   /** Header billboard — big faint background word + a {count}-token line. */
   headerBillboardBigWord: string;
   headerBillboardCountText: string;
@@ -335,7 +354,7 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   { value: 'editorial-split', label: 'Editorial split', description: 'Alternating wide and compact compositions.' },
 ];
 
-export const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
+const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
 
 export const PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS: {
   value: PortfolioGalleryFramedGridParallax;
@@ -373,57 +392,8 @@ export const PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS = [
   { value: 'custom', label: 'Custom', description: 'Enter your own text.' },
 ] as const;
 
-export const PORTFOLIO_GALLERY_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioGallerySectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Stacked',
-    description: 'Section title above the grid.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Title left',
-    description: 'Section title on the left, grid on the right (side by side).',
-  },
-  {
-    value: 'aside-right',
-    label: 'Title right',
-    description: 'Grid on the left, section title on the right (side by side).',
-  },
-  {
-    value: 'over-thumbs',
-    label: 'Above thumbnails',
-    description: 'Title and subtitle centered above the thumbnails (Tall + row), or in the empty space beside the featured image.',
-  },
-];
-
-export const PORTFOLIO_GALLERY_ILLUSTRATION_OPTIONS: {
-  value: PortfolioGalleryIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No decorative SVG beside the grid.' },
-  { value: 'chat', label: 'Chat', description: 'Conversation bubbles.' },
-  { value: 'question', label: 'Question', description: 'Graphic question mark.' },
-  { value: 'docs', label: 'Docs', description: 'Stacked documents.' },
-  { value: 'support', label: 'Support', description: 'Support illustration.' },
-  { value: 'hex', label: 'Hex', description: 'Hexagonal symbol.' },
-];
-
-export const PORTFOLIO_GALLERY_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioGalleryIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'SVG on the left of the grid.' },
-  { value: 'right', label: 'Right', description: 'SVG on the right of the grid.' },
-];
-
-export const GALLERY_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right', 'over-thumbs'] as const;
-export const GALLERY_ILLUSTRATION_VARIANTS = [
+const GALLERY_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right', 'over-thumbs'] as const;
+const GALLERY_ILLUSTRATION_VARIANTS = [
   'none',
   'chat',
   'question',
@@ -431,33 +401,12 @@ export const GALLERY_ILLUSTRATION_VARIANTS = [
   'support',
   'hex',
 ] as const;
-export const GALLERY_ILLUSTRATION_PLACEMENTS = ['left', 'right'] as const;
-
-export function isPortfolioGallerySectionLayout(
-  value: unknown
-): value is PortfolioGallerySectionLayout {
-  return value === 'stacked' || value === 'aside-left' || value === 'aside-right' || value === 'over-thumbs';
-}
+const GALLERY_ILLUSTRATION_PLACEMENTS = ['left', 'right'] as const;
 
 export function gallerySectionLayoutIsAside(
   layout: PortfolioGallerySectionLayout | undefined
 ): layout is 'aside-left' | 'aside-right' {
   return layout === 'aside-left' || layout === 'aside-right';
-}
-
-export function gallerySectionLayoutEmbedsInTallRow(
-  layout: PortfolioGallerySectionLayout | undefined,
-  design: PortfolioGalleryDesign | undefined
-): boolean {
-  return design === 'tall-row' && layout === 'over-thumbs';
-}
-
-export function gallerySectionLayoutEmbedsHeader(
-  layout: PortfolioGallerySectionLayout | undefined,
-  presentation: Pick<PortfolioGalleryPresentationSettings, 'design'>
-): boolean {
-  if (gallerySectionLayoutIsAside(layout)) return false;
-  return gallerySectionLayoutEmbedsInTallRow(layout, presentation.design);
 }
 
 export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings = {
@@ -525,6 +474,7 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   headerAccentCountAlignment: 'left',
   headerSerifLeadLabelText: '',
   headerSerifLeadTitleText: '',
+  headerSerifLeadSubtitleText: '',
   headerSerifLeadLabelColor: 'texteFort',
   headerSerifLeadTitleColor: 'texteFort',
   headerSerifLeadSubtitleColor: 'texteFort',
@@ -533,7 +483,19 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   headerSerifLeadSubtitleSize: 'md',
   headerSerifLeadLabelWeight: 'regular',
   headerSerifLeadTitleWeight: 'regular',
-  headerSerifLeadSubtitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular' as const,
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialTitleSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialTitleWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
   headerBillboardBigWord: '',
   headerBillboardCountText: '',
   headerBillboardTitleText: '',
@@ -578,8 +540,8 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   premiumFontSize: 'medium',
 };
 
-export const DEFAULT_GALLERY_TITLE_EN = 'Gallery';
-export const DEFAULT_GALLERY_SUBTITLE_EN = 'Images, films, and chosen moments.';
+const DEFAULT_GALLERY_TITLE_EN = 'Gallery';
+const DEFAULT_GALLERY_SUBTITLE_EN = 'Images, films, and chosen moments.';
 const LEGACY_GALLERY_TITLES = new Set(['Galerie', 'GALERIE']);
 const LEGACY_GALLERY_SUBTITLES = new Set(['Images, films et instants choisis.']);
 
@@ -591,13 +553,6 @@ export function migrateLegacyGalleryCopy(title: string, subtitle: string): { tit
 }
 
 export {
-  PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS,
-  GALLERY_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
-  GALLERY_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
-  GALLERY_HEADER_PALETTE_TOKEN_OPTIONS,
-  galleryHeaderDesignFontClass,
-  galleryHeaderDesignFontStyle,
-  galleryHeaderPaletteTokenColor,
   type PortfolioGalleryHeaderAccentCountAlignment,
   type PortfolioGalleryHeaderBillboardWordStyle,
   type PortfolioGalleryHeaderDesign,
@@ -648,25 +603,8 @@ export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): bo
   return design === 'cinema-strip' || design === 'caption-carousel' || design === 'tall-row';
 }
 
-export function galleryDesignUsesColumns(design: PortfolioGalleryDesign): boolean {
-  return (
-    design !== 'cinema-strip' &&
-    design !== 'caption-carousel' &&
-    design !== 'hero-mosaic' &&
-    design !== 'tall-row' &&
-    design !== 'floating-canvas'
-  );
-}
-
 export function galleryDesignUsesCaptionCardWidth(design: PortfolioGalleryDesign): boolean {
   return design === 'cinema-strip' || design === 'caption-carousel';
-}
-
-export function galleryCaptionCardWidthClass(columns: number): string {
-  if (columns === 1) return 'w-[88vw] sm:w-full';
-  if (columns === 2) return 'w-[72vw] sm:w-[calc((100%-var(--gallery-gap,24px))/2)]';
-  if (columns === 4) return 'w-[56vw] sm:w-[calc((100%-var(--gallery-gap,24px)*3)/4)]';
-  return 'w-[64vw] sm:w-[calc((100%-var(--gallery-gap,24px)*2)/3)]';
 }
 
 function pickString<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
@@ -783,10 +721,8 @@ export function mergeGalleryPresentation(
     cardSurfaceColor: color(record.cardSurfaceColor, base.cardSurfaceColor),
     captionCardWidthPx: clamp(record.captionCardWidthPx, 180, 420, base.captionCardWidthPx),
     headerDesign: pickString(record.headerDesign, GALLERY_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pickString(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -844,6 +780,10 @@ export function mergeGalleryPresentation(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pickString(
       record.headerSerifLeadLabelColor,
       GALLERY_HEADER_PALETTE_TOKENS,
@@ -888,6 +828,63 @@ export function mergeGalleryPresentation(
       record.headerSerifLeadSubtitleWeight,
       GALLERY_HEADER_TITLE_WEIGHTS,
       base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string'
+        ? record.headerEditorialLabelText
+        : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pickString(
+      record.headerEditorialLabelColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerEditorialLabelColor ?? 'texteFort'
+    ),
+    headerEditorialTitleColor: pickString(
+      record.headerEditorialTitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerEditorialSubtitleColor: pickString(
+      record.headerEditorialSubtitleColor,
+      GALLERY_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pickString(
+      record.headerEditorialLabelSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerEditorialLabelSize ?? 'md'
+    ),
+    headerEditorialTitleSize: pickString(
+      record.headerEditorialTitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerEditorialTitleSize ?? 'md'
+    ),
+    headerEditorialSubtitleSize: pickString(
+      record.headerEditorialSubtitleSize,
+      GALLERY_HEADER_TITLE_SIZES,
+      base.headerEditorialSubtitleSize ?? 'md'
+    ),
+    headerEditorialLabelWeight: pickString(
+      record.headerEditorialLabelWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialLabelWeight ?? 'regular'
+    ),
+    headerEditorialTitleWeight: pickString(
+      record.headerEditorialTitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialTitleWeight ?? 'regular'
+    ),
+    headerEditorialSubtitleWeight: pickString(
+      record.headerEditorialSubtitleWeight,
+      GALLERY_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerBillboardBigWord:
       typeof record.headerBillboardBigWord === 'string'
@@ -1111,16 +1108,6 @@ export function resolveGallerySectionSubtitle(
   const stored = settings.subtitle.trim();
   if (!stored || LEGACY_GALLERY_SUBTITLES.has(stored)) return DEFAULT_GALLERY_SUBTITLE_EN;
   return stored;
-}
-
-export function galleryHeaderFontClass(font: PortfolioGalleryHeaderFont, kind: 'title' | 'subtitle'): string {
-  if (font === 'serif') return kind === 'title' ? 'font-serif font-bold tracking-[-0.03em]' : 'font-serif leading-relaxed';
-  if (font === 'display') return kind === 'title' ? 'font-black uppercase tracking-[0.08em]' : 'font-semibold uppercase tracking-[0.1em]';
-  return kind === 'title' ? 'font-extrabold tracking-[-0.04em]' : 'leading-relaxed';
-}
-
-export function galleryHeaderFontStyle(_font: PortfolioGalleryHeaderFont): CSSProperties | undefined {
-  return undefined;
 }
 
 export function galleryTitleColorStyle(value: string | undefined): CSSProperties {

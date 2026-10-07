@@ -310,7 +310,7 @@ export function MarketplaceCatalogToolbar({
       <div
         ref={toolbarRef}
         data-surface-tray
-        className="scroll-mt-28 bg-[#EEF0F2] dark:bg-white/[0.04] sm:rounded-xl"
+        className="scroll-mt-28 border-y border-[#E5E5E5] bg-[#FFFFFF] dark:border-white/[0.1] dark:bg-[#111111] sm:rounded-xl sm:border"
       >
         <div className="flex flex-col gap-2.5 px-5 py-3 sm:gap-4 sm:p-5 lg:flex-row lg:items-center">
           <form
@@ -323,7 +323,7 @@ export function MarketplaceCatalogToolbar({
             <label htmlFor="marketplace-search" className="sr-only">
               Search products
             </label>
-            <div className="flex h-11 items-center gap-2.5 rounded-lg bg-white px-3.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] ring-1 ring-transparent transition focus-within:ring-2 focus-within:ring-[#FF5722]/20 dark:bg-[#111111] dark:focus-within:ring-white/20">
+            <div className="flex h-11 items-center gap-2.5 rounded-lg border border-[#E5E5E5] bg-[#FFFFFF] px-3.5 transition focus-within:border-[#CCCCCC] focus-within:ring-2 focus-within:ring-[#FF5722]/20 dark:border-white/[0.1] dark:bg-[#111111] dark:focus-within:ring-white/20">
               <SearchIcon className="h-[1.1rem] w-[1.1rem] shrink-0 text-[#222222] dark:text-neutral-300" />
               <input
                 id="marketplace-search"
@@ -363,7 +363,7 @@ export function MarketplaceCatalogToolbar({
               className={`inline-flex h-11 shrink-0 items-center gap-2 rounded-lg border px-4 text-[14px] font-medium transition-colors duration-200 ${
                 advancedOpen
                   ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
-                  : 'border-transparent bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:border-black/15 dark:bg-[#111111] dark:text-white dark:hover:border-white/25'
+                  : 'border-[#E5E5E5] bg-[#FFFFFF] text-[#111111] hover:border-[#CCCCCC] dark:border-white/[0.1] dark:bg-[#111111] dark:text-white dark:hover:border-white/25'
               }`}
             >
               <SlidersIcon />

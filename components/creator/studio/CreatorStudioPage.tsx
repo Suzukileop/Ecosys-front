@@ -25,7 +25,7 @@ import { CreatorStudioVisitorsTab } from './CreatorStudioVisitorsTab';
 import { CreatorStudioSubscribersTab } from './CreatorStudioSubscribersTab';
 import { CreatorStudioImagesTab } from './CreatorStudioImagesTab';
 import { parseCreatorStudioTab, type CreatorStudioTab } from './types';
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import type { CreatorProfileDto } from '@/types/profile';
 import { parseSpecialtyList, parseSpecialtyTags } from '@/lib/specialties';
 import { filterActiveServices } from '@/lib/profile-services';
 import {
@@ -34,6 +34,7 @@ import {
   creatorCanAccessProfileServices,
   normalizeCreatorAppRole,
 } from '@/lib/creator-app-role';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 function CreatorStudioPageInner() {
   const router = useRouter();
@@ -52,11 +53,11 @@ function CreatorStudioPageInner() {
   useEffect(() => {
     if (searchParams.get('tab') !== 'products' || searchParams.get('create') !== '1') return;
     if (header && !creatorCanAccessMyProducts(normalizeCreatorAppRole(header.appRole))) {
-      router.replace('/dashboard/creator?tab=content', { scroll: false });
+      router.replace('/profile?tab=content', { scroll: false });
       return;
     }
     if (!header) return;
-    router.replace('/marketplace/my-products?create=1');
+    router.replace('/my-products?create=1');
   }, [header, router, searchParams]);
 
   // Role-gated studio tabs: bounce away from Products / Services when hidden.
@@ -64,11 +65,11 @@ function CreatorStudioPageInner() {
     if (!header) return;
     const role = normalizeCreatorAppRole(header.appRole);
     if (tab === 'products' && !creatorCanAccessProfileProducts(role)) {
-      router.replace('/dashboard/creator?tab=content', { scroll: false });
+      router.replace('/profile?tab=content', { scroll: false });
       return;
     }
     if (tab === 'services' && !creatorCanAccessProfileServices(role)) {
-      router.replace('/dashboard/creator?tab=content', { scroll: false });
+      router.replace('/profile?tab=content', { scroll: false });
     }
   }, [header, router, tab]);
 
@@ -153,14 +154,14 @@ function CreatorStudioPageInner() {
 
   useEffect(() => {
     if (!isLoading && user && !hasRole('ROLE_CREATOR')) {
-      router.replace('/dashboard/home');
+      router.replace(SIGNED_IN_HOME);
     }
   }, [isLoading, user, hasRole, router]);
 
   const setTab = (next: CreatorStudioTab) => {
     if (next === tab) return;
     startTabTransition(next);
-    router.replace(`/dashboard/creator?tab=${next}`, { scroll: false });
+    router.replace(`/profile?tab=${next}`, { scroll: false });
   };
 
   const onAvatarSelect = async (file: File) => {

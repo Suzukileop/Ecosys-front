@@ -8,6 +8,7 @@ import {
   type PortfolioWorkBillboardWordStyle,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BIG_WORD = 'WORK';
 const DEFAULT_COUNT_TEXT = '{count} projects — selected work below';
@@ -124,7 +125,8 @@ export function WorkBillboardHeader({
   projectCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const bigWord = (presentation.billboardBigWord || DEFAULT_BIG_WORD).trim();
   const countTemplate = presentation.billboardCountText || DEFAULT_COUNT_TEXT;
   const countText = countTemplate.replace('{count}', String(projectCount ?? 0));

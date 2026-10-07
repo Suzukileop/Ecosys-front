@@ -49,7 +49,7 @@ function writeSharedCache(authResponse: AuthResponse): void {
   localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(payload));
 }
 
-export function clearSharedSessionCache(): void {
+function clearSharedSessionCache(): void {
   if (!isBrowser()) return;
   localStorage.removeItem(SHARED_CACHE_KEY);
   localStorage.removeItem(REFRESH_LOCK_KEY);

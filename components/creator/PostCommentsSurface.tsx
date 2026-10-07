@@ -34,10 +34,13 @@ export function PostCommentsSurface({
   open,
   onClose,
   children,
+  inlineClassName = '',
 }: {
   open: boolean;
   onClose: () => void;
   children: (mode: 'inline' | 'sheet') => ReactNode;
+  /** Extra classes for the inline wrapper (the host page's own styling hook). */
+  inlineClassName?: string;
 }) {
   const isMobile = useIsMobile();
   const dragControls = useDragControls();
@@ -59,7 +62,10 @@ export function PostCommentsSurface({
 
   if (!isMobile) {
     return open ? (
-      <div className="border-t border-black/[0.06] px-3 pb-3 dark:border-white/[0.08]" style={STUDIO_FLOAT_IN_STYLE}>
+      <div
+        className={`border-t border-black/[0.06] px-3 pb-3 dark:border-white/[0.08] ${inlineClassName}`}
+        style={STUDIO_FLOAT_IN_STYLE}
+      >
         {children('inline')}
       </div>
     ) : null;

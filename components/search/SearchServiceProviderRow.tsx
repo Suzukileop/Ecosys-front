@@ -24,8 +24,8 @@ export function SearchServiceProviderRow({ creator }: { creator: MarketplaceCrea
   const online = Boolean(presenceUserId) && isOnline(presenceUserId);
   const statusLabel = online ? 'Online' : 'Offline';
 
-  const profileHref = resolvedId ? `/marketplace/${resolvedId}` : null;
-  const servicesHref = resolvedId ? `/marketplace/${resolvedId}?tab=services` : null;
+  const profileHref = resolvedId ? `/providers/${resolvedId}` : null;
+  const servicesHref = resolvedId ? `/providers/${resolvedId}?tab=services` : null;
   const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId, creator.username) : null;
   const starCount = Math.max(0, creator.starCount ?? 0);
 

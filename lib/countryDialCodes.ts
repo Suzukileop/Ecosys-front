@@ -10,16 +10,6 @@ export function countryFlagImageUrl(iso2: string, width = 40): string {
   return `https://flagcdn.com/w${w}/${code}.png`;
 }
 
-/** @deprecated Prefer `<CountryFlag />` — emoji flags do not render on Windows. */
-export function countryFlag(iso2: string): string {
-  if (!iso2 || iso2.length !== 2) return '\u{1F3F3}\u{FE0F}';
-  return iso2
-    .toUpperCase()
-    .split('')
-    .map((c) => String.fromCodePoint(0x1f1e6 + c.charCodeAt(0) - 65))
-    .join('');
-}
-
 export const COUNTRY_DIAL_CODES: CountryDialCode[] = [
   { iso2: 'AF', name: 'Afghanistan', dial: '+93' },
   { iso2: 'AL', name: 'Albania', dial: '+355' },
@@ -246,9 +236,4 @@ export const DIAL_CODES_BY_LENGTH = [...COUNTRY_DIAL_CODES].sort((a, b) => b.dia
 
 export function findCountryByIso(iso2: string): CountryDialCode | undefined {
   return COUNTRY_DIAL_CODES.find((c) => c.iso2 === iso2);
-}
-
-export function findCountryByDial(dial: string): CountryDialCode | undefined {
-  const normalized = dial.startsWith('+') ? dial : `+${dial}`;
-  return DIAL_CODES_BY_LENGTH.find((c) => normalized.startsWith(c.dial));
 }

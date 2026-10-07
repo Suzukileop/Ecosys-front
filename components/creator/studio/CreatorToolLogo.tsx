@@ -2,6 +2,7 @@
 
 import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
 import { resolveCreatorToolTechIconUrl } from '@/components/creator/studio/creator-tool-tech-icons';
+import { MediaImage } from '@/components/ui/MediaImage';
 
 /**
  * Tool mark priority:
@@ -73,14 +74,7 @@ export function CreatorToolLogo({
   if (uploadedUrl) {
     return (
       <span className={shell} style={{ width: size, height: size, ...markFilter }}>
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
-          src={uploadedUrl}
-          alt=""
-          width={size}
-          height={size}
-          className="h-full w-full object-contain"
-        />
+        <MediaImage src={uploadedUrl} width={size} className="h-full w-full object-contain" />
       </span>
     );
   }
@@ -96,6 +90,8 @@ export function CreatorToolLogo({
             alt=""
             width={size}
             height={size}
+            loading="lazy"
+            decoding="async"
             className="h-full w-full object-contain"
           />
         </span>

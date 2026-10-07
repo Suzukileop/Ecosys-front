@@ -100,7 +100,7 @@ function EditorialGridMagnetButton({ href, ink, inkContrast }: { href: string; i
   );
 }
 
-export interface FooterDesignEditorialGridProps {
+interface FooterDesignEditorialGridProps {
   creatorName: string;
   creatorId: string;
   avatarUrl?: string | null;

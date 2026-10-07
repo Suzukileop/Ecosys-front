@@ -36,7 +36,7 @@ function isHex(value: unknown): value is string {
   return typeof value === 'string' && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(value.trim());
 }
 
-export function stripThemeMeta(settings: PortfolioSettings): PortfolioCustomThemeSnapshot {
+function stripThemeMeta(settings: PortfolioSettings): PortfolioCustomThemeSnapshot {
   const { themeId, customThemes, updatedAt, ...rest } = settings;
   void themeId;
   void customThemes;
@@ -45,7 +45,7 @@ export function stripThemeMeta(settings: PortfolioSettings): PortfolioCustomThem
 }
 
 /** Palette for theme cards / CSS vars — prefer real accents, never title highlight yellow. */
-export function extractThemeColorsFromSettings(settings: PortfolioSettings): {
+function extractThemeColorsFromSettings(settings: PortfolioSettings): {
   colors: PortfolioThemeColors;
   cta: string;
   ctaHover: string;

@@ -21,7 +21,7 @@ import { refreshSession, beginLogout, endLogout } from '@/lib/sessionRefresh';
  * 'error'          — transient failure (429, network); token may still be
  *                    valid — do NOT redirect, show a retry UI instead
  */
-export type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
+type SessionStatus = 'loading' | 'authenticated' | 'unauthenticated' | 'error';
 
 interface AuthContextType {
   user: User | null;

@@ -76,7 +76,7 @@ function LayoutSwitch({
 }) {
   return (
     <div
-      className="inline-flex rounded-lg bg-white p-0.5 shadow-[0_1px_2px_rgba(0,0,0,0.04)] dark:bg-[#111111]"
+      className="inline-flex rounded-lg border border-[#E5E5E5] bg-[#FFFFFF] p-0.5 dark:border-white/[0.1] dark:bg-[#111111]"
       role="radiogroup"
       aria-label="Display"
     >
@@ -370,7 +370,7 @@ export function CreatorProductsToolbar({
 
       <div
         data-surface-tray
-        className="sm:rounded-xl sm:bg-[#EEF0F2] sm:p-2.5 sm:dark:bg-white/[0.04]"
+        className="sm:rounded-xl sm:border sm:border-[#E5E5E5] sm:bg-[#FFFFFF] sm:p-2.5 sm:dark:border-white/[0.1] sm:dark:bg-[#111111]"
       >
       <div className="flex items-center gap-2 md:gap-2.5">
         <div className="min-w-0 flex-1">
@@ -378,7 +378,7 @@ export function CreatorProductsToolbar({
             Search products
           </label>
           <div
-            className={`flex h-11 items-center gap-3 rounded-lg px-4 transition ${APP_FIELD} ${APP_FIELD_HOVER} focus-within:bg-[#E6E9EC] dark:bg-white/[0.06] dark:hover:bg-white/[0.08] dark:focus-within:bg-white/[0.08] sm:bg-white sm:shadow-[0_1px_2px_rgba(0,0,0,0.04)] sm:hover:bg-white sm:focus-within:bg-white sm:focus-within:ring-1 sm:focus-within:ring-black/15 sm:dark:bg-[#111111] sm:dark:focus-within:ring-white/20`}
+            className={`flex h-11 items-center gap-3 rounded-lg px-4 transition ${APP_FIELD} ${APP_FIELD_HOVER} focus-within:ring-[#CCCCCC] dark:bg-white/[0.06] dark:hover:bg-white/[0.08] dark:focus-within:bg-white/[0.08] sm:dark:bg-[#111111]`}
           >
             <svg
               className="h-4 w-4 shrink-0 text-neutral-400"
@@ -480,7 +480,7 @@ export function CreatorProductsToolbar({
               className={`inline-flex shrink-0 items-center gap-2 rounded-full border px-4 py-1.5 text-[14px] font-medium transition-colors duration-200 ${
                 selected
                   ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
-                  : 'border-transparent bg-white text-neutral-600 shadow-[0_1px_2px_rgba(0,0,0,0.04)] hover:text-[#111111] dark:bg-[#111111] dark:text-neutral-300 dark:hover:text-white'
+                  : 'border-[#E5E5E5] bg-[#FFFFFF] text-neutral-600 hover:border-[#CCCCCC] hover:text-[#111111] dark:border-white/[0.1] dark:bg-[#111111] dark:text-neutral-300 dark:hover:text-white'
               }`}
             >
               <span>{option.label}</span>

@@ -1,11 +1,11 @@
 import { COUNTRY_DIAL_CODES, DIAL_CODES_BY_LENGTH, findCountryByIso, type CountryDialCode } from './countryDialCodes';
 
-export type ParsedPhone = {
+type ParsedPhone = {
   country: CountryDialCode;
   nationalNumber: string;
 };
 
-export function getDefaultCountry(): CountryDialCode {
+function getDefaultCountry(): CountryDialCode {
   return findCountryByIso('FR') ?? COUNTRY_DIAL_CODES[0];
 }
 

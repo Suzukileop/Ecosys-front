@@ -2,7 +2,7 @@
  * Pub/sub for product like count updates across sibling components
  * (purchase panel ↔ thumbnail strip ↔ characteristics tab).
  */
-export type ProductLikesUpdate = {
+type ProductLikesUpdate = {
   productId: string;
   likes: number;
   userLiked?: boolean;

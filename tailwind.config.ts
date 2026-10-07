@@ -1,5 +1,24 @@
 import type { Config } from "tailwindcss";
 
+/*
+ * YouTube's neutral ramp: pure greys (no blue cast), ink at #0F0F0F, secondary text at #606060,
+ * tertiary at #909090, chip fill #F2F2F2, hairline #E5E5E5; dark mode raises #0F0F0F → #181818 →
+ * #272727 → #3F3F3F. `neutral` and `gray` share it so every grey in the app comes from one family.
+ */
+const YOUTUBE_GREYS = {
+  50: "#F9F9F9",
+  100: "#F2F2F2",
+  200: "#E5E5E5",
+  300: "#CCCCCC",
+  400: "#909090",
+  500: "#606060",
+  600: "#4D4D4D",
+  700: "#3F3F3F",
+  800: "#272727",
+  900: "#181818",
+  950: "#0F0F0F",
+};
+
 const config: Config = {
   darkMode: "class",
   content: [
@@ -20,6 +39,8 @@ const config: Config = {
         "accent-3": "#06B6D4",
         "text-primary": "#F0F0FF",
         "text-secondary": "#9CA3AF",
+        neutral: YOUTUBE_GREYS,
+        gray: YOUTUBE_GREYS,
         // Brand orange: every `orange-*` utility resolves to the #FF5722 button hue.
         orange: {
           50: "#FFF3EF",
@@ -36,11 +57,9 @@ const config: Config = {
         },
       },
       fontFamily: {
-        sans: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
+        sans: ["var(--font-app)"],
         clash: ["var(--font-clash)", "sans-serif"],
         "dm-sans": ["var(--font-dm-sans)", "sans-serif"],
-        "geist-mono": ["var(--font-geist-mono)", "monospace"],
-        geist: ["var(--font-geist)", "ui-sans-serif", "system-ui", "sans-serif"],
       },
       backgroundImage: {
         "gradient-radial": "radial-gradient(var(--tw-gradient-stops))",

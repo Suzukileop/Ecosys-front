@@ -4,7 +4,15 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
-import { faBell, faCircleUser, faEye, faHardDrive, faIdBadge, faSun } from '@fortawesome/free-regular-svg-icons';
+import {
+  faBell,
+  faBookmark,
+  faCircleUser,
+  faEye,
+  faHardDrive,
+  faIdBadge,
+  faSun,
+} from '@fortawesome/free-regular-svg-icons';
 import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
 import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -23,13 +31,15 @@ import {
   NotificationSettingsSection,
   PrivacySettingsSection,
 } from './PreferenceSettingsSections';
+import { SavedPostsSettingsSection } from './SavedPostsSettingsSection';
 import { SecuritySettingsSection } from './SecuritySettingsSection';
 import { SECONDARY_BUTTON_CLASS, SETTINGS_CARD_CLASS, Spinner } from './settingsUi';
 
-type SectionId = 'account' | 'security' | 'notifications' | 'privacy' | 'appearance' | 'data';
+type SectionId = 'account' | 'saved' | 'security' | 'notifications' | 'privacy' | 'appearance' | 'data';
 
 const SECTIONS: { id: SectionId; label: string; icon: IconDefinition }[] = [
   { id: 'account', label: 'Account', icon: faCircleUser },
+  { id: 'saved', label: 'Saved posts', icon: faBookmark },
   { id: 'security', label: 'Security', icon: faIdBadge },
   { id: 'notifications', label: 'Notifications', icon: faBell },
   { id: 'privacy', label: 'Privacy', icon: faEye },
@@ -200,6 +210,7 @@ export function SettingsPage() {
   const renderSection = () => {
     if (active === 'appearance') return <AppearanceSettingsSection />;
     if (active === 'account') return <AccountSettingsSection security={security} />;
+    if (active === 'saved') return <SavedPostsSettingsSection />;
     if (loading) return <SectionSkeleton />;
     if (loadError) {
       return (

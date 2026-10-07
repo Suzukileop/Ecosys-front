@@ -8,6 +8,7 @@ import {
   type PortfolioContactHeaderTitleSize,
   type PortfolioContactHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-contact-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_LABEL_TEXT = 'Contact';
 const DEFAULT_TITLE_TEXT = "Let's talk";
@@ -61,7 +62,8 @@ export function ContactHeaderSplitHeadingHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_CONTACT_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerSplitHeadingTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSplitHeadingLabelText || DEFAULT_LABEL_TEXT).trim();
   const ink = contactHeaderPaletteTokenColor(presentation.headerSplitHeadingTitleColor ?? 'principal');

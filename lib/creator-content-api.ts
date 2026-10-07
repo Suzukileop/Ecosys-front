@@ -1,6 +1,6 @@
 import api from '@/lib/api';
-import { normalizeSpringPage } from '@/lib/ecosystem';
-import type { PagedResponse, SpringPageRaw } from '@/types/ecosystem';
+import { normalizeSpringPage } from '@/lib/pagination';
+import type { PagedResponse, SpringPageRaw } from '@/types/profile';
 import type { ContentPostBucket, CreatorContentCreateBody, CreatorContentItemDto } from '@/types/creator-content';
 
 export async function listMyContent(

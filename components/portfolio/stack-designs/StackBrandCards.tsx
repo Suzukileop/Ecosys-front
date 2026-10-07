@@ -5,7 +5,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { resolveToolLevelPercent } from '@/components/creator/studio/creator-tool-logo-color';
-import type { ProfileStrengthToolLevel } from '@/types/ecosystem';
+import type { ProfileStrengthToolLevel } from '@/types/profile';
 import {
   resolveSkillCategory,
   resolveSkillDescription,

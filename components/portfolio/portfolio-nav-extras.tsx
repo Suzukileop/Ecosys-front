@@ -74,29 +74,7 @@ import type {
   PortfolioNavLinkIconSource,
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
-import { DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES } from '@/components/portfolio/portfolio-settings-types';
-import {
-  clampPortfolioNavCustomExtraFontSizePx,
-  clampPortfolioNavCustomExtraGapPx,
-  clampPortfolioNavCustomExtraLogoSizePx,
-  clampPortfolioNavCustomExtraPaddingX,
-  clampPortfolioNavCustomExtraPaddingY,
-  normalizePortfolioNavContactButtonIconPosition,
-  normalizePortfolioNavCustomExtraDisplay,
-  normalizePortfolioNavCustomExtraPlacement,
-  normalizePortfolioNavEditorialBarContactLink,
-  normalizePortfolioNavExtrasPlacement,
-  mergeEditorialBarContactChannelSettings,
-  seedEditorialBarPhoneContactFromLegacy,
-  DEFAULT_EDITORIAL_BAR_PHONE_CONTACT,
-  DEFAULT_EDITORIAL_BAR_MAIL_CONTACT,
-  portfolioNavContactButtonShapeClass,
-  portfolioNavContactButtonShellPresentation,
-  portfolioNavCustomExtraFontFamily,
-  portfolioNavCustomExtraFontWeightValue,
-  resolvePortfolioNavExtraAdjacentPosition,
-  sanitizePortfolioNavCustomHref,
-} from '@/components/portfolio/portfolio-settings-types';
+import { clampPortfolioNavCustomExtraFontSizePx, clampPortfolioNavCustomExtraGapPx, clampPortfolioNavCustomExtraLogoSizePx, clampPortfolioNavCustomExtraPaddingX, clampPortfolioNavCustomExtraPaddingY, normalizePortfolioNavContactButtonIconPosition, normalizePortfolioNavCustomExtraDisplay, normalizePortfolioNavCustomExtraPlacement, normalizePortfolioNavExtrasPlacement, mergeEditorialBarContactChannelSettings, seedEditorialBarPhoneContactFromLegacy, DEFAULT_EDITORIAL_BAR_PHONE_CONTACT, DEFAULT_EDITORIAL_BAR_MAIL_CONTACT, portfolioNavContactButtonShapeClass, portfolioNavContactButtonShellPresentation, portfolioNavCustomExtraFontFamily, portfolioNavCustomExtraFontWeightValue, resolvePortfolioNavExtraAdjacentPosition, sanitizePortfolioNavCustomHref } from '@/components/portfolio/portfolio-settings-types';
 
 export type PortfolioNavChromeLink = {
   id: string;
@@ -132,7 +110,7 @@ function platformToSource(platform: string): PortfolioNavLinkIconSource {
   return 'other';
 }
 
-export type PortfolioProfileLinkInput = {
+type PortfolioProfileLinkInput = {
   id: string;
   label: string;
   url: string;
@@ -158,7 +136,7 @@ function resolveLinkSourceFromProfileLink(link: PortfolioProfileLinkInput): Port
 }
 
 /** Profile Links section only — excludes contact email (that belongs to Contact). */
-export function buildPortfolioNavProfileLinkOptions(
+function buildPortfolioNavProfileLinkOptions(
   profileLinks: PortfolioProfileLinkInput[]
 ): PortfolioNavChromeLink[] {
   return profileLinks
@@ -182,7 +160,7 @@ export function buildPortfolioNavSocialLinkOptions({
   return buildPortfolioNavProfileLinkOptions(profileLinks);
 }
 
-export function resolveTriZoneSocialLinks(
+function resolveTriZoneSocialLinks(
   links: PortfolioNavChromeLink[],
   settings: Pick<PortfolioNavSettings, 'triZoneSocialLinkIds'>,
   maxLinks = 3
@@ -236,43 +214,6 @@ export function resolveEditorialBarContactHref(
     return /^mailto:/i.test(email) ? email : `mailto:${email}`;
   }
   return null;
-}
-
-export function resolveEditorialBarActiveContact(
-  settings: Pick<
-    PortfolioNavSettings,
-    | 'editorialBarContactLink'
-    | 'editorialBarPhoneContact'
-    | 'editorialBarMailContact'
-    | 'contactButtonLabel'
-    | 'contactButtonDisplay'
-    | 'contactButtonIcon'
-    | 'contactButtonIconPosition'
-    | 'contactButtonShape'
-  >,
-  opts: { phone?: string | null; email?: string | null }
-): {
-  channel: PortfolioNavEditorialBarContactLink;
-  profile: PortfolioNavEditorialBarContactChannelSettings;
-  href: string | null;
-} {
-  const channel = normalizePortfolioNavEditorialBarContactLink(
-    settings.editorialBarContactLink,
-    'phone'
-  );
-  const phoneProfile = mergeEditorialBarContactChannelSettings(
-    settings.editorialBarPhoneContact ?? seedEditorialBarPhoneContactFromLegacy(settings),
-    undefined,
-    DEFAULT_EDITORIAL_BAR_PHONE_CONTACT
-  );
-  const mailProfile = mergeEditorialBarContactChannelSettings(
-    settings.editorialBarMailContact,
-    undefined,
-    DEFAULT_EDITORIAL_BAR_MAIL_CONTACT
-  );
-  const profile = channel === 'phone' ? phoneProfile : mailProfile;
-  const href = resolveEditorialBarContactHref(channel, opts);
-  return { channel, profile, href };
 }
 
 function navShowsSocialSlot(settings: PortfolioNavSettings): boolean {
@@ -968,7 +909,6 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   const borderEnabled = settings.customExtraBorderEnabled ?? false;
   const href = sanitizePortfolioNavCustomHref(settings.customExtraHref);
   const openNewTab = settings.customExtraOpenNewTab ?? true;
-  const alt = text || 'Extra';
   const label = text || 'Extra';
   const floatingPill = portfolioNavUsesFloatingPillLayout(settings);
   const editorialBar = portfolioNavUsesEditorialBarLayout(settings);
@@ -1074,7 +1014,7 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   );
 }
 
-export type PortfolioNavExtrasModel = {
+type PortfolioNavExtrasModel = {
   showContact: boolean;
   iconLinks: PortfolioNavChromeLink[];
   contactLabel: string;
@@ -1131,7 +1071,7 @@ function resolveExtraDock(opts: {
 }
 
 /** Resolve which extras to show for the current viewport + settings. */
-export function usePortfolioNavExtrasModel(
+function usePortfolioNavExtrasModel(
   settings: PortfolioNavSettings,
   links: PortfolioNavChromeLink[]
 ): PortfolioNavExtrasModel {
@@ -1244,7 +1184,7 @@ export function usePortfolioNavExtrasModel(
 }
 
 /** Shared Contact + link icons cluster (optionally icons-only or contact-only). */
-export function PortfolioNavExtrasCluster({
+function PortfolioNavExtrasCluster({
   settings,
   model,
   contactHref = '#contact',
@@ -1456,7 +1396,7 @@ export function PortfolioNavCenterBrand({
 }
 
 /** Social link icons for editorial-bar nav — shows up to `maxLinks` (default 3). */
-export function PortfolioNavSocialIconStrip({
+function PortfolioNavSocialIconStrip({
   settings,
   links,
   maxLinks = 3,
@@ -1596,7 +1536,7 @@ export function PortfolioNavEditorialRightSlot({
 }
 
 /** Standalone Contact CTA (used by every structured bar layout's free-space Contact button). */
-export function PortfolioNavContactCta({
+function PortfolioNavContactCta({
   settings,
   contactHref = '#contact',
   onContactNavigate,

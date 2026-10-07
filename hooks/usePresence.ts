@@ -6,7 +6,7 @@ import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
 import { fetchPresenceStatuses, type PresenceStatus } from '@/lib/presence-api';
 import { createStompWebSocket } from '@/lib/ws-url';
 
-export type PresenceMap = Record<string, PresenceStatus>;
+type PresenceMap = Record<string, PresenceStatus>;
 
 type UsePresenceOptions = {
   /** When false, skip REST bootstrap and STOMP (default true). */

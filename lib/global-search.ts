@@ -41,8 +41,6 @@ export type GlobalSearchPageData = {
   content: PublicContentFeedItem[];
 };
 
-export type GlobalSearchTabCounts = Record<GlobalSearchCategory, number>;
-
 export const GLOBAL_SEARCH_MIN_LENGTH = 2;
 /** Quick preview in the command palette modal */
 export const GLOBAL_SEARCH_MODAL_PREVIEW_SIZE = 4;
@@ -82,7 +80,7 @@ export function buildGlobalSearchPageUrl(query: string, tab: GlobalSearchTab = '
   if (q) params.set('q', q);
   if (tab !== 'all') params.set('tab', tab);
   const qs = params.toString();
-  return qs ? `/dashboard/search?${qs}` : '/dashboard/search';
+  return qs ? `/search?${qs}` : '/search';
 }
 
 function contentMediaBadge(item: PublicContentFeedItem): string {
@@ -269,51 +267,4 @@ export async function fetchGlobalSearchPageData(
         ? contentRes.value.content
         : [],
   };
-}
-
-const EMPTY_TAB_COUNTS: GlobalSearchTabCounts = {
-  users: 0,
-  creators: 0,
-  serviceProviders: 0,
-  products: 0,
-  content: 0,
-};
-
-/** Lightweight totals for tab badges (independent of active tab). */
-export async function fetchGlobalSearchTabCounts(
-  query: string,
-  _isAuthenticated: boolean
-): Promise<GlobalSearchTabCounts> {
-  const q = query.trim();
-  if (q.length < GLOBAL_SEARCH_MIN_LENGTH) return EMPTY_TAB_COUNTS;
-
-  const [creatorsRes, productsRes, contentRes] = await Promise.allSettled([
-    searchMarketplaceCreators(q, 0, 1),
-    listPublicProducts({ q, size: 1 }),
-    listPublicContentFeed({ q, size: 1 }),
-  ]);
-
-  const creatorTotal =
-    creatorsRes.status === 'fulfilled' ? creatorsRes.value.totalElements : 0;
-
-  return {
-    users: 0,
-    creators: creatorTotal,
-    serviceProviders: creatorTotal,
-    products: productsRes.status === 'fulfilled' ? productsRes.value.totalElements : 0,
-    content: contentRes.status === 'fulfilled' ? contentRes.value.totalElements : 0,
-  };
-}
-
-export function getTabCount(
-  tab: GlobalSearchTab,
-  counts: GlobalSearchTabCounts,
-  _isAuthenticated: boolean
-): number {
-  if (tab === 'all') {
-    // Profiles + Service Provider share the same people — count once
-    return counts.creators + counts.products + counts.content;
-  }
-  if (tab === 'users') return 0;
-  return counts[tab];
 }

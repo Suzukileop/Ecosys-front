@@ -56,11 +56,11 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
     : fallback;
 }
 
-export function sanitizeHex(value: unknown, fallback: string): string {
+function sanitizeHex(value: unknown, fallback: string): string {
   return typeof value === 'string' && isValidProfileHexColor(value) ? value.trim() : fallback;
 }
 
-export function parseBrandGridColumnsPerRow(
+function parseBrandGridColumnsPerRow(
   raw: unknown,
   fallback: PortfolioToolsBrandGridColumnsPerRow
 ): PortfolioToolsBrandGridColumnsPerRow {
@@ -191,7 +191,7 @@ function isStackLevelIndicatorDesign(design: PortfolioStackDesign): boolean {
   );
 }
 
-export function resolveStackShowLevel(
+function resolveStackShowLevel(
   settings: Pick<PortfolioStackPresentationSettings, 'design' | 'showLevel' | 'showLevelOptIn'>
 ): boolean {
   if (settings.showLevelOptIn === true) return true;
@@ -203,7 +203,7 @@ export function resolveStackShowLevel(
 }
 
 /** Stack icon background — no brand-float default-on behavior. */
-export function resolveStackIconBackgroundEnabled(
+function resolveStackIconBackgroundEnabled(
   settings: Pick<
     PortfolioStackPresentationSettings,
     'iconBackgroundEnabled' | 'iconBackgroundOptIn'
@@ -296,10 +296,8 @@ export function mergeStackPresentationBase(
     ...mergeSectionBackground(base, record),
     design,
     headerDesign: pick(record.headerDesign, STACK_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -357,6 +355,10 @@ export function mergeStackPresentationBase(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pick(
       record.headerSerifLeadLabelColor,
       STACK_HEADER_PALETTE_TOKENS,
@@ -401,6 +403,63 @@ export function mergeStackPresentationBase(
       record.headerSerifLeadSubtitleWeight,
       STACK_HEADER_TITLE_WEIGHTS,
       base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string'
+        ? record.headerEditorialLabelText
+        : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pick(
+      record.headerEditorialLabelColor,
+      STACK_HEADER_PALETTE_TOKENS,
+      base.headerEditorialLabelColor ?? 'texteFort'
+    ),
+    headerEditorialTitleColor: pick(
+      record.headerEditorialTitleColor,
+      STACK_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerEditorialSubtitleColor: pick(
+      record.headerEditorialSubtitleColor,
+      STACK_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pick(
+      record.headerEditorialLabelSize,
+      STACK_HEADER_TITLE_SIZES,
+      base.headerEditorialLabelSize ?? 'md'
+    ),
+    headerEditorialTitleSize: pick(
+      record.headerEditorialTitleSize,
+      STACK_HEADER_TITLE_SIZES,
+      base.headerEditorialTitleSize ?? 'md'
+    ),
+    headerEditorialSubtitleSize: pick(
+      record.headerEditorialSubtitleSize,
+      STACK_HEADER_TITLE_SIZES,
+      base.headerEditorialSubtitleSize ?? 'md'
+    ),
+    headerEditorialLabelWeight: pick(
+      record.headerEditorialLabelWeight,
+      STACK_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialLabelWeight ?? 'regular'
+    ),
+    headerEditorialTitleWeight: pick(
+      record.headerEditorialTitleWeight,
+      STACK_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialTitleWeight ?? 'regular'
+    ),
+    headerEditorialSubtitleWeight: pick(
+      record.headerEditorialSubtitleWeight,
+      STACK_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerBillboardBigWord:
       typeof record.headerBillboardBigWord === 'string'

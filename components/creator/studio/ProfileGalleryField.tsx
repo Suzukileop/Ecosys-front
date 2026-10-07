@@ -19,11 +19,7 @@ import {
   inferProfileMediaType,
   type ProfileFormValues,
 } from '@/components/creator/studio/profile-form-schema';
-import {
-  profileFormInputClass,
-  profileFormLabelClass,
-  profileSectionEmptyClass,
-} from '@/components/creator/studio/profile-section-ui';
+import { profileFormLabelClass, profileSectionEmptyClass } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 
 export const MAX_GALLERY = 8;
@@ -49,7 +45,6 @@ export function ProfileGalleryField({
   append,
   remove,
   move,
-  register,
   setValue,
   watch,
   readOnly = false,

@@ -118,8 +118,6 @@ export type PortfolioToolsLevelIndicatorDisplayStyle =
   | 'stars'
   | 'dots'
   | 'progress-bar';
-/** @deprecated Use `PortfolioToolsBrandGridColumnsPerRow` */
-export type PortfolioToolsBrandDirectoryColumnsPerRow = PortfolioToolsBrandGridColumnsPerRow;
 
 export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSettings & {
   design: PortfolioToolsDesign;
@@ -158,6 +156,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   headerSerifLeadLabelText: string;
   /** Header serif lead — the large serif title itself, independent of the section title. */
   headerSerifLeadTitleText: string;
+  /** Header serif lead — the line under the title; empty = the section subtitle. */
+  headerSerifLeadSubtitleText: string;
   /** Header serif lead — each element bound to a palette token, independently. */
   headerSerifLeadLabelColor: PortfolioToolsHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioToolsHeaderPaletteToken;
@@ -169,6 +169,23 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   headerSerifLeadLabelWeight: PortfolioToolsHeaderTitleWeight;
   headerSerifLeadTitleWeight: PortfolioToolsHeaderTitleWeight;
   headerSerifLeadSubtitleWeight: PortfolioToolsHeaderTitleWeight;
+  /** Header editorial — kicker above the title; empty = "Tools". */
+  headerEditorialLabelText: string;
+  /** Header editorial — the big title; empty = the section title. */
+  headerEditorialTitleText: string;
+  /** Header editorial — the line under the title; empty = the section subtitle. */
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, independently. */
+  headerEditorialLabelColor: PortfolioToolsHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioToolsHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioToolsHeaderPaletteToken;
+  /** Header editorial — each text sized/weighted independently. */
+  headerEditorialLabelSize: PortfolioToolsHeaderTitleSize;
+  headerEditorialTitleSize: PortfolioToolsHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioToolsHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioToolsHeaderTitleWeight;
+  headerEditorialTitleWeight: PortfolioToolsHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioToolsHeaderTitleWeight;
   /** Header billboard — big faint background word + a {count}-token line. */
   headerBillboardBigWord: string;
   headerBillboardCountText: string;
@@ -423,20 +440,11 @@ export const PORTFOLIO_TOOLS_DESIGN_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_TOOLS_TITLE_PRESET_OPTIONS = [
-  { value: 'workflow-tools' as const, label: 'Workflow & Tools', description: 'Default title.' },
-  { value: 'tools' as const, label: 'Tools', description: 'Short label.' },
-  { value: 'stack' as const, label: 'Stack', description: 'Tech stack framing.' },
-  { value: 'custom' as const, label: 'Custom', description: 'Your own title.' },
-];
-
 export {
   PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS,
   TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
   TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   TOOLS_HEADER_PALETTE_TOKEN_OPTIONS,
-  toolsHeaderDesignFontClass,
-  toolsHeaderDesignFontStyle,
   toolsHeaderPaletteTokenColor,
   type PortfolioToolsHeaderAccentCountAlignment,
   type PortfolioToolsHeaderBillboardWordStyle,
@@ -549,23 +557,11 @@ const LEVEL_BAR_HEIGHT_CLASS: Record<
   xlarge: { default: 'h-4', thin: 'h-3 sm:h-3.5' },
 };
 
-const LEVEL_BAR_PERCENT_CLASS: Record<PortfolioToolsLevelBarSize, string> = {
-  tight: 'text-sm',
-  small: 'text-base',
-  medium: 'text-lg',
-  large: 'text-xl',
-  xlarge: 'text-2xl',
-};
-
 export function toolsLevelBarHeightClass(
   size: PortfolioToolsLevelBarSize,
   variant: 'default' | 'thin' = 'default'
 ): string {
   return LEVEL_BAR_HEIGHT_CLASS[size][variant];
-}
-
-export function toolsLevelBarPercentClass(size: PortfolioToolsLevelBarSize): string {
-  return LEVEL_BAR_PERCENT_CLASS[size];
 }
 
 /** Same tier scale as toolsLevelBarPercentClass, as a rem value — for designs (like
@@ -595,7 +591,7 @@ const LEVEL_RING_STROKE_MULTIPLIER: Record<PortfolioToolsLevelBarSize, number> =
   xlarge: 2.85,
 };
 
-export function toolsLevelRingStrokeMultiplier(size: PortfolioToolsLevelBarSize): number {
+function toolsLevelRingStrokeMultiplier(size: PortfolioToolsLevelBarSize): number {
   return LEVEL_RING_STROKE_MULTIPLIER[size] ?? 1;
 }
 
@@ -660,13 +656,13 @@ export function resolveToolsLevelIndicatorFullWidth(
   );
 }
 
-export function resolveToolsBrandCardsFullWidth(
+function resolveToolsBrandCardsFullWidth(
   presentation: Pick<PortfolioToolsPresentationSettings, 'brandCardsFullWidth'>
 ): boolean {
   return presentation.brandCardsFullWidth === true;
 }
 
-export function resolveToolsBrandDirectoryFullWidth(
+function resolveToolsBrandDirectoryFullWidth(
   presentation: Pick<PortfolioToolsPresentationSettings, 'brandDirectoryFullWidth'>
 ): boolean {
   return presentation.brandDirectoryFullWidth === true;
@@ -742,15 +738,6 @@ export const PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS: {
 }[] = [
   { value: 'none', label: 'None' },
   { value: 'custom', label: 'Custom' },
-];
-
-export const PORTFOLIO_TOOLS_HEADER_ALIGNMENT_OPTIONS: {
-  value: PortfolioToolsHeaderAlignment;
-  label: string;
-}[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
 ];
 
 export const PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS: {
@@ -1013,9 +1000,6 @@ export const PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS: {
   { value: 'left', label: 'Left (horizontal panel)' },
 ];
 
-/** @deprecated Use `PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS` */
-export const PORTFOLIO_TOOLS_BRAND_DIRECTORY_COLUMNS_OPTIONS = PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS;
-
 export const PORTFOLIO_TOOLS_BRAND_DIRECTORY_LEVEL_STYLE_OPTIONS: {
   value: PortfolioToolsBrandDirectoryLevelStyle;
   label: string;
@@ -1035,7 +1019,7 @@ export const PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS: {
   { value: 'right', label: 'Right' },
 ];
 
-export const DEFAULT_TOOLS_TITLE = 'Workflow & Tools';
+const DEFAULT_TOOLS_TITLE = 'Workflow & Tools';
 
 export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
@@ -1061,6 +1045,7 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   headerAccentCountAlignment: 'left',
   headerSerifLeadLabelText: '',
   headerSerifLeadTitleText: '',
+  headerSerifLeadSubtitleText: '',
   headerSerifLeadLabelColor: 'texteFort',
   headerSerifLeadTitleColor: 'texteFort',
   headerSerifLeadSubtitleColor: 'texteFort',
@@ -1070,6 +1055,18 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   headerSerifLeadLabelWeight: 'regular',
   headerSerifLeadTitleWeight: 'regular',
   headerSerifLeadSubtitleWeight: 'regular',
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialTitleSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialTitleWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
   headerBillboardBigWord: '',
   headerBillboardCountText: '',
   headerBillboardTitleText: '',
@@ -1194,26 +1191,6 @@ export function resolveToolsSectionSubtitle(
   return settings.subtitleCustom.trim() || settings.subtitle.trim();
 }
 
-export function toolsHeaderFontClass(
-  font: PortfolioToolsHeaderFont | undefined,
-  kind: 'title' | 'subtitle' | 'label'
-): string {
-  if (font === 'serif') {
-    return kind === 'title' ? 'font-serif tracking-tight' : 'font-sans tracking-normal';
-  }
-  if (font === 'display') {
-    return kind === 'title'
-      ? 'font-sans text-[1.05em] font-semibold tracking-tight'
-      : 'font-sans tracking-normal';
-  }
-  return 'font-sans tracking-tight';
-}
-
-export function toolsHeaderFontStyle(font: PortfolioToolsHeaderFont | undefined): CSSProperties {
-  if (font === 'serif') return { fontFamily: 'Georgia, "Times New Roman", serif' };
-  return {};
-}
-
 export function toolsTitleColorStyle(color: string | undefined): CSSProperties {
   return { color: sanitizeHex(color, '#171717') };
 }
@@ -1270,14 +1247,6 @@ export function toolsBrandCardsGapClass(gap: PortfolioToolsCardGap | undefined):
   return 'gap-4 sm:gap-5 lg:gap-6';
 }
 
-/** Gap between level-stat-bars grid items. */
-export function toolsLevelStatBarsGapClass(gap: PortfolioToolsCardGap | undefined): string {
-  if (gap === 'medium') return 'gap-5 sm:gap-6 lg:gap-7';
-  if (gap === 'large') return 'gap-6 sm:gap-8 lg:gap-9';
-  if (gap === 'xlarge') return 'gap-7 sm:gap-10 lg:gap-12';
-  return 'gap-4 sm:gap-5 lg:gap-6';
-}
-
 /** Outer ring diameter for `level-circular-cards`. */
 export function toolsLevelCircularRingPx(size: PortfolioToolsTileSize | undefined): number {
   if (size === 'sm') return 92;
@@ -1314,19 +1283,12 @@ export function toolsLevelCircularCardsGridClass(
 
 /** Fixed large-screen column count for `level-star-cards`. */
 export const LEVEL_STAR_CARDS_COLUMNS_PER_ROW = 4 as const;
-
-export function resolveLevelStarCardsColumnsPerRow(
-  presentation: Pick<PortfolioToolsPresentationSettings, 'brandCardsColumnsPerRow'>
-): typeof LEVEL_STAR_CARDS_COLUMNS_PER_ROW {
-  void presentation;
-  return LEVEL_STAR_CARDS_COLUMNS_PER_ROW;
-}
 /** Fixed 4-column grid for level star card rows — incomplete rows keep the same card width. */
 export function toolsLevelStarCardsGridClass(): string {
   return 'grid-cols-1 sm:grid-cols-2 lg:grid-cols-4';
 }
 
-export function parseBrandGridColumnsPerRow(raw: unknown, fallback: PortfolioToolsBrandGridColumnsPerRow): PortfolioToolsBrandGridColumnsPerRow {
+function parseBrandGridColumnsPerRow(raw: unknown, fallback: PortfolioToolsBrandGridColumnsPerRow): PortfolioToolsBrandGridColumnsPerRow {
   if (raw === 4 || raw === '4') return 4;
   if (raw === 3 || raw === '3') return 3;
   if (raw === 2 || raw === '2') return 2;
@@ -1444,15 +1406,6 @@ export function toolsContentAlignWrapperClass(
     return `w-full max-w-3xl ${edge}`;
   }
   return `w-full ${edge}`;
-}
-
-export function toolsWorkflowRailJustifyClass(
-  alignment: PortfolioToolsContentAlignment | undefined
-): string {
-  const align = alignment ?? 'center';
-  if (align === 'left') return 'justify-start';
-  if (align === 'right') return 'justify-end';
-  return 'justify-center';
 }
 
 /** Gap for workflow-rail logo row. */
@@ -1707,10 +1660,8 @@ export function mergeToolsPresentation(
       typeof record.subtitleCustom === 'string' ? record.subtitleCustom : (base.subtitleCustom ?? ''),
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'] as const, base.headerAlignment),
     headerDesign: pick(record.headerDesign, TOOLS_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -1768,6 +1719,10 @@ export function mergeToolsPresentation(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pick(
       record.headerSerifLeadLabelColor,
       TOOLS_HEADER_PALETTE_TOKENS,
@@ -1812,6 +1767,63 @@ export function mergeToolsPresentation(
       record.headerSerifLeadSubtitleWeight,
       TOOLS_HEADER_TITLE_WEIGHTS,
       base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string'
+        ? record.headerEditorialLabelText
+        : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pick(
+      record.headerEditorialLabelColor,
+      TOOLS_HEADER_PALETTE_TOKENS,
+      base.headerEditorialLabelColor ?? 'texteFort'
+    ),
+    headerEditorialTitleColor: pick(
+      record.headerEditorialTitleColor,
+      TOOLS_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerEditorialSubtitleColor: pick(
+      record.headerEditorialSubtitleColor,
+      TOOLS_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pick(
+      record.headerEditorialLabelSize,
+      TOOLS_HEADER_TITLE_SIZES,
+      base.headerEditorialLabelSize ?? 'md'
+    ),
+    headerEditorialTitleSize: pick(
+      record.headerEditorialTitleSize,
+      TOOLS_HEADER_TITLE_SIZES,
+      base.headerEditorialTitleSize ?? 'md'
+    ),
+    headerEditorialSubtitleSize: pick(
+      record.headerEditorialSubtitleSize,
+      TOOLS_HEADER_TITLE_SIZES,
+      base.headerEditorialSubtitleSize ?? 'md'
+    ),
+    headerEditorialLabelWeight: pick(
+      record.headerEditorialLabelWeight,
+      TOOLS_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialLabelWeight ?? 'regular'
+    ),
+    headerEditorialTitleWeight: pick(
+      record.headerEditorialTitleWeight,
+      TOOLS_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialTitleWeight ?? 'regular'
+    ),
+    headerEditorialSubtitleWeight: pick(
+      record.headerEditorialSubtitleWeight,
+      TOOLS_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerBillboardBigWord:
       typeof record.headerBillboardBigWord === 'string'

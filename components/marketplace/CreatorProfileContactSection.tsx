@@ -1,6 +1,15 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore,
+  type ReactNode,
+  type TouchEvent,
+} from 'react';
 import Link from 'next/link';
 import {
   NeutralIconBadge,
@@ -12,9 +21,8 @@ import { PublicSkillsToolsGrouped } from '@/components/marketplace/PublicSkillsT
 import { geocodePlaceLabel, openStreetMapEmbedUrl, detectUserCoordinatesForDistance, computeReliableDistanceKm } from '@/lib/geolocation';
 import { formatDistanceAwayKm } from '@/lib/countries';
 import { formatPhoneDisplay } from '@/lib/phone';
-import type { ProfileStrengthTool } from '@/types/ecosystem';
+import type { ProfileStrengthTool } from '@/types/profile';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
-import { PublicExperienceShowcase } from '@/components/marketplace/PublicExperienceShowcase';
 import { APP_FIELD } from '@/components/landing/landingBrand';
 import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
 import {
@@ -22,7 +30,7 @@ import {
   getProfileSection,
   type ProfileSectionId,
 } from '@/components/creator/studio/profile-section-nav';
-import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
+import { SOCIAL_PLATFORMS } from '@/types/profile';
 import {
   creatorShowsCareerSections,
   creatorShowsProviderAboutFields,
@@ -31,11 +39,10 @@ import {
 
 type PublicInfoNavId = Extract<
   ProfileSectionId,
-  'experience' | 'about' | 'strengths' | 'faq' | 'contact' | 'links'
+  'about' | 'strengths' | 'faq' | 'contact' | 'links'
 >;
 
 const PUBLIC_INFO_SECTION_DOM_ID: Record<PublicInfoNavId, string> = {
-  experience: 'public-info-experience',
   about: 'public-info-about',
   strengths: 'public-info-skills-tools',
   faq: 'public-info-faq',
@@ -112,11 +119,35 @@ function resolveDisplayLinks(profile: MarketplaceCreatorPublicProfile) {
   return legacy;
 }
 
-function SectionHeading({ children }: { children: ReactNode }) {
+/** Below `md` the information sections are shown one page at a time. */
+const PAGED_QUERY = '(max-width: 767px)';
+
+function subscribePaged(onChange: () => void) {
+  const mq = window.matchMedia(PAGED_QUERY);
+  mq.addEventListener('change', onChange);
+  return () => mq.removeEventListener('change', onChange);
+}
+
+function useIsPagedLayout() {
+  return useSyncExternalStore(
+    subscribePaged,
+    () => window.matchMedia(PAGED_QUERY).matches,
+    () => false
+  );
+}
+
+function SectionHeading({ children, meta }: { children: ReactNode; meta?: ReactNode }) {
   return (
-    <h3 className="mb-10 text-[1.375rem] font-semibold tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[1.5rem]">
-      {children}
-    </h3>
+    <div className="mb-6 flex items-baseline justify-between gap-4 md:mb-10">
+      <h3 className="text-[1.25rem] font-semibold tracking-[-0.015em] text-[#111111] dark:text-white md:text-[1.5rem]">
+        {children}
+      </h3>
+      {meta ? (
+        <span className="shrink-0 text-[13px] font-medium text-neutral-500 dark:text-neutral-400 md:hidden">
+          {meta}
+        </span>
+      ) : null}
+    </div>
   );
 }
 
@@ -128,19 +159,21 @@ function InfoPanelSection({
   children,
   id,
   framed = false,
+  pageHidden = false,
 }: {
   children: ReactNode;
   id?: string;
   framed?: boolean;
+  pageHidden?: boolean;
 }) {
   return (
     <div
       id={id}
       className={`${
         framed
-          ? 'rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-10'
+          ? 'bg-white max-md:!bg-transparent dark:bg-[#111111] dark:max-md:!bg-transparent md:rounded-lg md:border md:border-black/[0.06] md:p-10 md:dark:border-white/[0.08]'
           : 'pb-2'
-      } ${id ? 'scroll-mt-24' : ''}`}
+      } ${id ? 'scroll-mt-24' : ''} ${pageHidden ? 'max-md:hidden' : 'max-md:animate-[pf-fade-in_220ms_ease-out]'}`}
     >
       {children}
     </div>
@@ -339,6 +372,8 @@ function LocationFeaturedBlock({
           <img
             src={staticMapUrl}
             alt={`Map of ${label}`}
+            loading="lazy"
+            decoding="async"
             className="absolute inset-0 h-full w-full object-cover"
             onError={() => setMapImageFailed(true)}
           />
@@ -450,14 +485,17 @@ function ProfileFactCards({ rows }: { rows: InfoRow[] }) {
   if (rows.length === 0) return null;
   return (
     <dl
-      className={`grid gap-x-10 gap-y-8 ${
+      className={`grid gap-x-10 gap-y-8 max-md:gap-0 max-md:divide-y max-md:divide-[#DADDE1] max-md:rounded-xl max-md:border max-md:border-[#DADDE1] dark:max-md:divide-white/[0.12] dark:max-md:border-white/[0.16] ${
         rows.length === 1 ? 'sm:max-w-sm' : rows.length === 2 ? 'sm:grid-cols-2' : 'sm:grid-cols-3'
       }`}
     >
       {rows.map((row) => (
-        <div key={row.key} className="border-t border-black/[0.06] pt-5 dark:border-white/[0.06]">
-          <dt className="text-[14px] text-neutral-600 dark:text-neutral-300">{row.label}</dt>
-          <dd className="mt-1.5 text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-neutral-100">
+        <div
+          key={row.key}
+          className="border-t border-black/[0.06] pt-5 dark:border-white/[0.06] max-md:flex max-md:items-baseline max-md:justify-between max-md:gap-4 max-md:border-t-0 max-md:px-4 max-md:py-3.5"
+        >
+          <dt className="shrink-0 text-[14px] text-neutral-600 dark:text-neutral-300">{row.label}</dt>
+          <dd className="mt-1.5 text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-neutral-100 max-md:mt-0 max-md:min-w-0 max-md:text-right max-md:text-[15px]">
             {row.value}
           </dd>
         </div>
@@ -480,15 +518,25 @@ function ContactDirectCard({
   return (
     <a
       href={href}
-      className="group flex items-center gap-4 border-t border-black/[0.06] pt-5 dark:border-white/[0.06]"
+      className="group flex items-center gap-4 border-t border-black/[0.06] pt-5 dark:border-white/[0.06] max-md:rounded-xl max-md:border max-md:border-[#DADDE1] max-md:p-4 max-md:active:bg-black/[0.03] dark:max-md:border-white/[0.16] dark:max-md:active:bg-white/[0.04]"
     >
       <NeutralIconBadge name={icon} size="sm" />
       <div className="min-w-0 flex-1">
-        <p className="text-[14px] text-neutral-600 dark:text-neutral-300">{label}</p>
-        <p className="mt-1 break-all text-[1.0625rem] font-medium leading-snug text-[#111111] underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-neutral-400 dark:text-white dark:group-hover:decoration-neutral-500">
+        <p className="text-[14px] text-neutral-600 dark:text-neutral-300 max-md:text-[13px]">{label}</p>
+        <p className="mt-1 break-all text-[1.0625rem] font-medium leading-snug text-[#111111] underline decoration-transparent underline-offset-4 transition-colors group-hover:decoration-neutral-400 dark:text-white dark:group-hover:decoration-neutral-500 max-md:mt-0.5 max-md:text-[15px]">
           {value}
         </p>
       </div>
+      <svg
+        className="h-4 w-4 shrink-0 text-neutral-400 md:hidden"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+        strokeWidth={2}
+        aria-hidden
+      >
+        <path strokeLinecap="round" strokeLinejoin="round" d="m9 5 7 7-7 7" />
+      </svg>
     </a>
   );
 }
@@ -574,7 +622,7 @@ function UnifiedLinkIcon({
       target="_blank"
       rel="noopener noreferrer"
       title={label}
-      className="group flex w-[5.5rem] flex-col items-center gap-2.5 sm:w-24"
+      className="group flex w-full min-w-0 flex-col items-center gap-2.5 md:w-24"
     >
       <span
         className={`flex h-14 w-14 items-center justify-center rounded-full transition group-hover:scale-105 sm:h-16 sm:w-16 ${
@@ -602,7 +650,7 @@ function UnifiedLinkIcon({
           </svg>
         )}
       </span>
-      <span className="w-full truncate text-center text-[14px] font-medium text-neutral-800 dark:text-neutral-200">
+      <span className="w-full truncate text-center text-[13px] font-medium text-neutral-800 dark:text-neutral-200 md:text-[14px]">
         {label}
       </span>
     </a>
@@ -636,11 +684,7 @@ export function CreatorProfileContactSection({
   const showProviderSections = creatorShowsProviderAboutFields(appRole);
   const showCareerSections = creatorShowsCareerSections(appRole);
 
-  const experienceBlocks = profile.experienceBlocks ?? [];
   const faqItems = profile.faqItems ?? [];
-  const hasYears = showCareerSections && profile.yearsOfExperience != null;
-  const hasExperienceBlocks = showCareerSections && experienceBlocks.length > 0;
-  const hasExperience = hasYears || hasExperienceBlocks;
   const strengths = profile.strengthsToolsMastered ?? [];
   const stackItems =
     profile.profileStack ??
@@ -657,7 +701,7 @@ export function CreatorProfileContactSection({
   const hasProfileInfo = hasAboutMeta || hasLocation || hasStrengths || hasStack || hasSkillTags;
   const hasDirectContact = hasEmail || hasPhone;
   const hasAnyPublicInfo =
-    hasProfileInfo || hasDirectContact || hasLinks || hasExperience || hasFaq;
+    hasProfileInfo || hasDirectContact || hasLinks || hasFaq;
   const showMembersHint = !isAuthenticated && profile.membersOnlyContactAvailable;
 
   const profileFactRows = useMemo(() => {
@@ -716,12 +760,11 @@ export function CreatorProfileContactSection({
   const navItems = useMemo(() => {
     const items: PublicInfoNavId[] = [];
     if (hasAboutSection) items.push('about');
-    if (hasExperience) items.push('experience');
     if (hasFaq) items.push('faq');
     if (hasDirectContact) items.push('contact');
     if (hasLinks) items.push('links');
     return items;
-  }, [hasAboutSection, hasExperience, hasFaq, hasDirectContact, hasLinks]);
+  }, [hasAboutSection, hasFaq, hasDirectContact, hasLinks]);
 
   const [activeSection, setActiveSection] = useState<PublicInfoNavId | null>(navItems[0] ?? null);
 
@@ -738,9 +781,12 @@ export function CreatorProfileContactSection({
   /* While a nav click is smooth-scrolling, the clicked item stays active instead of flickering
      through the sections in between. */
   const scrollLockRef = useRef<{ timer: number } | null>(null);
+  const paged = useIsPagedLayout();
+  const mobileNavRef = useRef<HTMLDivElement | null>(null);
+  const swipeStartRef = useRef<{ x: number; y: number } | null>(null);
 
   useEffect(() => {
-    if (navItems.length === 0) return;
+    if (navItems.length === 0 || paged) return;
     let frame = 0;
 
     const compute = (scroller: Element | null) => {
@@ -790,10 +836,17 @@ export function CreatorProfileContactSection({
       document.removeEventListener('scroll', onScroll, { capture: true });
       window.removeEventListener('resize', onScroll as EventListener);
     };
-  }, [navItems]);
+  }, [navItems, paged]);
 
   const selectSection = (sectionId: PublicInfoNavId) => {
     setActiveSection(sectionId);
+    if (paged) {
+      const nav = mobileNavRef.current;
+      if (nav && nav.getBoundingClientRect().top < 0) {
+        nav.scrollIntoView({ behavior: 'smooth', block: 'start' });
+      }
+      return;
+    }
     const previous = scrollLockRef.current;
     if (previous) window.clearTimeout(previous.timer);
     scrollLockRef.current = {
@@ -805,14 +858,31 @@ export function CreatorProfileContactSection({
     el?.scrollIntoView({ behavior: 'smooth', block: 'start' });
   };
 
+  const activePageIndex = activeSection ? navItems.indexOf(activeSection) : -1;
+  const isPageHidden = (sectionId: PublicInfoNavId) => paged && activeSection !== sectionId;
+
+  const onPageTouchStart = (event: TouchEvent<HTMLDivElement>) => {
+    if (!paged || navItems.length < 2) return;
+    const touch = event.touches[0];
+    swipeStartRef.current = { x: touch.clientX, y: touch.clientY };
+  };
+
+  const onPageTouchEnd = (event: TouchEvent<HTMLDivElement>) => {
+    const start = swipeStartRef.current;
+    swipeStartRef.current = null;
+    if (!start || activePageIndex < 0) return;
+    const touch = event.changedTouches[0];
+    const dx = touch.clientX - start.x;
+    const dy = touch.clientY - start.y;
+    if (Math.abs(dx) < 60 || Math.abs(dx) < Math.abs(dy) * 1.5) return;
+    const next = activePageIndex + (dx < 0 ? 1 : -1);
+    if (next >= 0 && next < navItems.length) selectSection(navItems[next]);
+  };
+
   const renderNav = (layout: 'desktop' | 'mobile') => (
     <nav
       aria-label="Profile information sections"
-      className={
-        layout === 'desktop'
-          ? 'flex min-h-0 flex-col'
-          : 'flex gap-1 overflow-x-auto pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden'
-      }
+      className={layout === 'desktop' ? 'flex min-h-0 flex-col' : 'flex'}
     >
       {layout === 'desktop' ? (
         <div className="flex h-14 shrink-0 items-center px-5 pt-2">
@@ -825,25 +895,32 @@ export function CreatorProfileContactSection({
         className={
           layout === 'desktop'
             ? 'flex min-h-0 flex-col gap-1.5 overflow-y-auto px-2 pb-4 pt-1'
-            : 'flex gap-1'
+            : 'flex w-full items-center justify-around gap-2'
         }
       >
         {navItems.map((sectionId) => {
           const active = activeSection === sectionId;
           const label =
             PUBLIC_INFO_LABEL_OVERRIDES[sectionId] ?? getProfileSection(sectionId).label;
+          const iconOnly = layout === 'mobile';
           return (
             <button
               key={sectionId}
               type="button"
               onClick={() => selectSection(sectionId)}
               aria-current={active ? 'true' : undefined}
+              aria-label={iconOnly ? label : undefined}
+              title={iconOnly ? label : undefined}
               className={`${NAV_BUTTON_BASE} ${
-                layout === 'desktop' ? 'w-full py-3.5' : 'shrink-0 py-2.5'
+                iconOnly
+                  ? `h-11 w-11 shrink-0 justify-center !rounded-full !px-0 ${
+                      active ? 'bg-[#FF5722]/10 dark:bg-[#FF5722]/15' : ''
+                    }`
+                  : 'w-full py-3.5'
               } ${active ? NAV_BUTTON_ACTIVE : NAV_BUTTON_INACTIVE}`}
             >
               <ProfileSectionNavIcon sectionId={sectionId} active={active} />
-              <span className="min-w-0 truncate">{label}</span>
+              {iconOnly ? null : <span className="min-w-0 truncate">{label}</span>}
             </button>
           );
         })}
@@ -862,23 +939,33 @@ export function CreatorProfileContactSection({
           <p className="text-[1.0625rem] text-neutral-500 dark:text-neutral-400">No public information yet.</p>
         </div>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-6 md:space-y-10">
           {navItems.length > 0 ? (
-            <div className="border-b border-black/[0.06] pb-3 dark:border-white/[0.06] md:hidden">
+            <div
+              ref={mobileNavRef}
+              className="scroll-mt-4 border-b border-[#DADDE1] pb-3 dark:border-white/[0.16] md:hidden"
+            >
               {renderNav('mobile')}
             </div>
           ) : null}
 
           <div className="grid items-start gap-10 md:grid-cols-[minmax(0,1fr)_auto] lg:gap-16">
-            <div className="order-2 min-w-0 space-y-10 md:order-none md:col-start-1 md:row-start-1">
+            <div
+              className="order-2 min-w-0 space-y-10 max-md:min-h-[45dvh] md:order-none md:col-start-1 md:row-start-1"
+              onTouchStart={onPageTouchStart}
+              onTouchEnd={onPageTouchEnd}
+            >
               <InfoPanel>
                 {hasAboutSection ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.about}>
+                  <InfoPanelSection
+                    id={PUBLIC_INFO_SECTION_DOM_ID.about}
+                    pageHidden={isPageHidden('about')}
+                  >
                     <SectionHeading>Profile</SectionHeading>
                     {hasStack || hasSkillTags || hasStrengths ? (
                       <div
                         id={PUBLIC_INFO_SECTION_DOM_ID.strengths}
-                        className="mb-14 scroll-mt-24"
+                        className="mb-10 scroll-mt-24 md:mb-14"
                       >
                         <PublicSkillsToolsGrouped
                           stack={stackItems}
@@ -889,7 +976,7 @@ export function CreatorProfileContactSection({
                       </div>
                     ) : null}
                     {(hasLocation || profileFactRows.length > 0) && (
-                      <div className="space-y-12">
+                      <div className="space-y-8 md:space-y-12">
                         {hasLocation ? (
                           <LocationFeaturedBlock
                             label={locationLabel!.trim()}
@@ -905,34 +992,33 @@ export function CreatorProfileContactSection({
                   </InfoPanelSection>
                 ) : null}
 
-                {hasExperience ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.experience} framed>
-                    <SectionHeading>Experience</SectionHeading>
-                    <PublicExperienceShowcase
-                      blocks={hasExperienceBlocks ? experienceBlocks : []}
-                      yearsOfExperience={hasYears ? profile.yearsOfExperience : null}
-                    />
-                  </InfoPanelSection>
-                ) : null}
-
                 {hasFaq ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.faq} framed>
-                    <SectionHeading>FAQ</SectionHeading>
-                    <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
+                  <InfoPanelSection
+                    id={PUBLIC_INFO_SECTION_DOM_ID.faq}
+                    framed
+                    pageHidden={isPageHidden('faq')}
+                  >
+                    <SectionHeading meta={`${faqItems.length} ${faqItems.length > 1 ? 'questions' : 'question'}`}>
+                      FAQ
+                    </SectionHeading>
+                    <div className="divide-y divide-black/[0.06] dark:divide-white/[0.06] max-md:divide-[#DADDE1] max-md:border-y max-md:border-[#DADDE1] dark:max-md:divide-white/[0.12] dark:max-md:border-white/[0.16]">
                       {faqItems.map((item) => (
-                        <details key={item.id} className="group py-6 first:pt-0 last:pb-0">
-                          <summary className="flex cursor-pointer list-none items-start justify-between gap-6 text-left [&::-webkit-details-marker]:hidden">
-                            <span className="text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-white">
+                        <details
+                          key={item.id}
+                          className="group py-6 first:pt-0 last:pb-0 max-md:py-4 max-md:first:pt-4 max-md:last:pb-4"
+                        >
+                          <summary className="flex cursor-pointer list-none items-start justify-between gap-6 text-left [&::-webkit-details-marker]:hidden max-md:items-center max-md:gap-4">
+                            <span className="text-[1.0625rem] font-medium leading-snug text-[#111111] dark:text-white max-md:text-[15px]">
                               {item.question}
                             </span>
                             <span
-                              className="mt-0.5 shrink-0 text-xl font-light leading-none text-neutral-400 transition group-open:rotate-45 dark:text-neutral-500"
+                              className="mt-0.5 shrink-0 text-xl font-light leading-none text-neutral-400 transition group-open:rotate-45 dark:text-neutral-500 max-md:mt-0 max-md:flex max-md:h-7 max-md:w-7 max-md:items-center max-md:justify-center max-md:rounded-full max-md:bg-black/[0.05] max-md:text-lg max-md:text-[#111111] max-md:group-open:bg-[#FF5722]/10 max-md:group-open:text-[#FF5722] dark:max-md:bg-white/[0.08] dark:max-md:text-white"
                               aria-hidden
                             >
                               +
                             </span>
                           </summary>
-                          <p className="mt-3 pr-10 text-[1rem] leading-[1.75] text-neutral-600 dark:text-neutral-300">
+                          <p className="mt-3 pr-10 text-[1rem] leading-[1.75] text-neutral-600 dark:text-neutral-300 max-md:mt-2.5 max-md:pr-11 max-md:text-[15px] max-md:leading-relaxed">
                             {item.answer}
                           </p>
                         </details>
@@ -942,10 +1028,14 @@ export function CreatorProfileContactSection({
                 ) : null}
 
                 {hasDirectContact ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.contact} framed>
+                  <InfoPanelSection
+                    id={PUBLIC_INFO_SECTION_DOM_ID.contact}
+                    framed
+                    pageHidden={isPageHidden('contact')}
+                  >
                     <SectionHeading>Contact</SectionHeading>
                     <div
-                      className={`grid gap-x-10 gap-y-8 ${directContacts.length > 1 ? 'sm:grid-cols-2' : 'sm:max-w-md'}`}
+                      className={`grid gap-x-10 gap-y-8 max-md:gap-3 ${directContacts.length > 1 ? 'sm:grid-cols-2' : 'sm:max-w-md'}`}
                     >
                       {directContacts.map((item) => (
                         <ContactDirectCard
@@ -961,9 +1051,13 @@ export function CreatorProfileContactSection({
                 ) : null}
 
                 {hasLinks ? (
-                  <InfoPanelSection id={PUBLIC_INFO_SECTION_DOM_ID.links} framed>
-                    <SectionHeading>Links</SectionHeading>
-                    <div className="flex flex-wrap items-start gap-x-8 gap-y-8 sm:gap-x-10">
+                  <InfoPanelSection
+                    id={PUBLIC_INFO_SECTION_DOM_ID.links}
+                    framed
+                    pageHidden={isPageHidden('links')}
+                  >
+                    <SectionHeading meta={displayLinks.length}>Links</SectionHeading>
+                    <div className="grid grid-cols-4 gap-x-2 gap-y-6 md:flex md:flex-wrap md:items-start md:gap-x-10 md:gap-y-8">
                       {displayLinks.map((link) => (
                         <UnifiedLinkIcon key={link.id} link={link} />
                       ))}
@@ -975,7 +1069,7 @@ export function CreatorProfileContactSection({
               {showMembersHint ? (
                 <p className="border-t border-black/[0.06] pt-6 text-[1rem] text-neutral-600 dark:border-white/[0.06] dark:text-neutral-300">
                   <Link
-                    href={`/login?redirect=${encodeURIComponent(`/marketplace/${creatorId}`)}`}
+                    href={`/login?redirect=${encodeURIComponent(`/providers/${creatorId}`)}`}
                     className="font-medium text-[#111111] underline decoration-neutral-300 underline-offset-4 hover:decoration-neutral-500 dark:text-white dark:decoration-neutral-600"
                   >
                     Sign in

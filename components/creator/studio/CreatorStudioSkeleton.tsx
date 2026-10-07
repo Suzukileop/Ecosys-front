@@ -10,16 +10,16 @@ function SkeletonLine({ className = '' }: { className?: string }) {
 
 const softBlock = 'animate-pulse rounded-md bg-black/[0.06] dark:bg-white/[0.06]';
 const hairlineFrame =
-  'overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]';
+  'overflow-hidden rounded-xl bg-[#FFFFFF] dark:bg-[#111111]';
 
 function SoftLine({ className = '' }: { className?: string }) {
   return <div className={`${softBlock} ${className}`} aria-hidden />;
 }
 
 /** Matches `HorizontalProfileHeader`: avatar · identity · Subscribers / Stars, edge to edge on phones. */
-export function CreatorStudioHeaderSkeleton() {
+function CreatorStudioHeaderSkeleton() {
   return (
-    <div className="border-y border-black/[0.06] bg-white px-5 py-7 dark:border-white/[0.08] dark:bg-[#111111] sm:rounded-lg sm:border sm:p-10">
+    <div className="bg-[#FFFFFF] px-5 py-7 dark:bg-[#111111] sm:rounded-xl sm:p-10">
       <div className="flex flex-col items-center gap-7 sm:flex-row sm:items-stretch sm:gap-10 md:gap-12">
         <div className="w-32 shrink-0 self-center sm:w-44 md:w-52 lg:w-56">
           <div className={`aspect-square w-full !rounded-full ${softBlock}`} />
@@ -55,7 +55,7 @@ export function CreatorStudioHeaderSkeleton() {
 
 function ContentPostCardSkeleton() {
   return (
-    <article className="overflow-hidden border-y border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111] sm:rounded-lg sm:border">
+    <article className="overflow-hidden bg-[#FFFFFF] dark:bg-[#111111] sm:rounded-xl">
       <div className="flex items-center gap-3.5 px-6 pt-6 sm:px-7 sm:pt-7">
         <div className={`h-11 w-11 shrink-0 !rounded-full ${softBlock}`} />
         <div className="min-w-0 flex-1 space-y-2">
@@ -92,7 +92,7 @@ export function CreatorStudioContentPostsSkeleton({ count = 2 }: { count?: numbe
 }
 
 /** Headline · status tabs · News-style composer above the post cards. */
-export function CreatorStudioContentTabSkeleton() {
+function CreatorStudioContentTabSkeleton() {
   return (
     <div className="space-y-10" aria-busy="true" aria-label="Loading content">
       <div className="w-full">
@@ -108,7 +108,7 @@ export function CreatorStudioContentTabSkeleton() {
       </div>
 
       <div>
-        <div className="mx-auto mb-8 w-full max-w-[760px] bg-[#EEF0F2] dark:bg-[#111111] md:rounded-lg">
+        <div className="mx-auto mb-8 w-full max-w-[760px] bg-[#FFFFFF] dark:bg-[#111111] md:rounded-xl">
           <div className="flex items-center gap-3.5 px-5 pt-5 sm:px-6">
             <div className={`h-11 w-11 shrink-0 !rounded-full ${softBlock}`} />
             <div className="h-11 flex-1 rounded-full bg-white dark:bg-white/[0.06]" />
@@ -277,7 +277,7 @@ export function CreatorStudioServicesTabSkeleton() {
   );
 }
 
-export function CreatorStudioVisitorsTabSkeleton() {
+function CreatorStudioVisitorsTabSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading visitors">
       <div className="space-y-2">
@@ -303,7 +303,7 @@ export function CreatorStudioVisitorsTabSkeleton() {
   );
 }
 
-export function CreatorStudioImagesTabSkeleton() {
+function CreatorStudioImagesTabSkeleton() {
   return (
     <div className="space-y-10" aria-busy="true" aria-label="Loading images">
       <div className="space-y-2">
@@ -330,7 +330,7 @@ export function CreatorStudioImagesTabSkeleton() {
   );
 }
 
-export function CreatorStudioSubscribersTabSkeleton() {
+function CreatorStudioSubscribersTabSkeleton() {
   return (
     <div className="space-y-4" aria-busy="true" aria-label="Loading subscribers">
       <div className="space-y-2">
@@ -581,28 +581,6 @@ export function CreatorStudioProductEditSkeleton() {
           <SkeletonLine className="h-10 w-32 rounded-full" />
         </div>
       </div>
-    </div>
-  );
-}
-
-export function CreatorStudioContentFormSkeleton() {
-  return (
-    <div className="mx-auto max-w-2xl space-y-6" aria-busy="true" aria-label="Loading content form">
-      <div className="space-y-2">
-        <SkeletonLine className="h-4 w-24" />
-        <SkeletonLine className="h-8 w-48" />
-      </div>
-      <div className="space-y-4 rounded-2xl border border-neutral-200 bg-white p-6 dark:border-neutral-800 dark:bg-neutral-900">
-        <SkeletonLine className="h-10 w-full rounded-xl" />
-        <div className="grid gap-4 sm:grid-cols-2">
-          <SkeletonLine className="h-10 w-full rounded-xl" />
-          <SkeletonLine className="h-10 w-full rounded-xl" />
-        </div>
-        <SkeletonLine className="h-28 w-full rounded-xl" />
-        <SkeletonLine className="h-10 w-full rounded-xl" />
-        <SkeletonLine className="h-10 w-full rounded-xl" />
-      </div>
-      <SkeletonLine className="h-10 w-32 rounded-full" />
     </div>
   );
 }

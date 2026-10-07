@@ -17,10 +17,3 @@ export const TYPICAL_RESPONSE_TIME_OPTIONS = [
     label: 'Usually within 2-3 days',
   },
 ] as const;
-
-export type TypicalResponseTimeCode = (typeof TYPICAL_RESPONSE_TIME_OPTIONS)[number]['value'];
-
-export function typicalResponseTimeLabel(code: string | null | undefined): string | null {
-  if (!code?.trim()) return null;
-  return TYPICAL_RESPONSE_TIME_OPTIONS.find((option) => option.value === code)?.label ?? null;
-}

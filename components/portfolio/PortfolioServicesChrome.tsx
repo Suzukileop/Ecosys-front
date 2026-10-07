@@ -22,7 +22,7 @@ export type PortfolioServiceItem = {
   tasks: Array<{ value: string }>;
 };
 
-export type PortfolioServiceDraft = {
+type PortfolioServiceDraft = {
   title: string;
   description: string;
   basePriceCents: number | null;

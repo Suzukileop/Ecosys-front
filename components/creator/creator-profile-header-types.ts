@@ -1,15 +1,10 @@
 import type { ReactNode } from 'react';
 import type { CreatorStudioHeaderLayout } from '@/components/creator/studio/creator-studio-header';
 import type { CreatorStudioHeaderContentStyle } from '@/components/creator/studio/creator-studio-header-content';
-import {
-  creatorCanAccessProfileProducts,
-  type CreatorAppRole,
-} from '@/lib/creator-app-role';
+import { type CreatorAppRole } from '@/lib/creator-app-role';
 
 export const CREATOR_PROFILE_VISITS_LABEL = 'Visits';
 export const CREATOR_PROFILE_SUBSCRIBERS_LABEL = 'Subscribers';
-export const CREATOR_PROFILE_PRODUCTS_LABEL = 'Products';
-export const CREATOR_PROFILE_SERVICES_LABEL = 'Services';
 
 export type CreatorProfileHeaderProps = {
   layout: CreatorStudioHeaderLayout;
@@ -56,11 +51,6 @@ export type CreatorProfileHeaderProps = {
   /** Open layout without the card surface, with larger type (public profile). */
   flat?: boolean;
 };
-
-export function resolveShowProductCount(props: Pick<CreatorProfileHeaderProps, 'showProductCount' | 'appRole'>): boolean {
-  if (props.showProductCount != null) return props.showProductCount;
-  return creatorCanAccessProfileProducts(props.appRole);
-}
 
 /** Hide a raw "0 subscribers" on public profiles — keep it for the owner dashboard. */
 export function resolveShowSubscriberCount(

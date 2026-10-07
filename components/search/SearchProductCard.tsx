@@ -82,7 +82,7 @@ export function SearchProductCard({ product }: SearchProductCardProps) {
 
         {product.creatorName ? (
           <Link
-            href={product.creatorId ? `/marketplace/${product.creatorId}` : href}
+            href={product.creatorId ? `/providers/${product.creatorId}` : href}
             className="truncate text-sm font-medium text-neutral-600 dark:text-neutral-300"
           >
             {product.creatorName}

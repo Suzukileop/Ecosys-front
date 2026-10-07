@@ -5,7 +5,7 @@ import { Avatar } from '@/components/ui/Avatar';
 import { usePresence } from '@/hooks/usePresence';
 import type { CreatorProfileFollowerItem } from '@/lib/creator-profile-followers-api';
 
-export type InboxFollowersStripProps = {
+type InboxFollowersStripProps = {
   followers: CreatorProfileFollowerItem[];
   loading?: boolean;
   onSeeAll: () => void;

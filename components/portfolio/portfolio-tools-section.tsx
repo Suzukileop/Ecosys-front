@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import {
   useEffect,
   useId,
@@ -32,17 +33,6 @@ import {
   ToolsLevelStatBar,
   resolveToolsLevelBarColors,
 } from '@/components/portfolio/portfolio-tools-level-indicators';
-import { EditorialToolsWorkflow } from '@/components/portfolio/stack-designs/StackWorkflowRail';
-import { EditorialToolsBrandIndex } from '@/components/portfolio/stack-designs/StackBrandIndex';
-import { EditorialToolsBrandCards } from '@/components/portfolio/stack-designs/StackBrandCards';
-import { EditorialToolsBrandRow } from '@/components/portfolio/stack-designs/StackBrandRow';
-import { EditorialToolsLevelCircularCards } from '@/components/portfolio/stack-designs/StackLevelCircularCards';
-import { EditorialToolsLevelProgressRows } from '@/components/portfolio/stack-designs/StackLevelProgressRows';
-import { EditorialToolsLevelCategoryRows } from '@/components/portfolio/stack-designs/StackLevelCategoryRows';
-import { EditorialToolsLevelTableRows } from '@/components/portfolio/stack-designs/StackLevelTableRows';
-import { EditorialToolsLevelStarCards } from '@/components/portfolio/stack-designs/StackLevelStarCards';
-import { EditorialToolsLevelSvgRings } from '@/components/portfolio/stack-designs/StackLevelSvgRings';
-import { EditorialToolsLevelBentoCategories } from '@/components/portfolio/stack-designs/StackLevelBentoCategories';
 import {
   toolsBrandCardLogoPx,
   toolsBrandCardLogoTilePx,
@@ -66,6 +56,41 @@ import {
   toolsDesignSupportsCategoryFilter,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+
+/** The section renders one Tools design, so each design is its own chunk. */
+const EditorialToolsWorkflow = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackWorkflowRail').then((m) => m.EditorialToolsWorkflow)
+);
+const EditorialToolsBrandIndex = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackBrandIndex').then((m) => m.EditorialToolsBrandIndex)
+);
+const EditorialToolsBrandCards = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackBrandCards').then((m) => m.EditorialToolsBrandCards)
+);
+const EditorialToolsBrandRow = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackBrandRow').then((m) => m.EditorialToolsBrandRow)
+);
+const EditorialToolsLevelCircularCards = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelCircularCards').then((m) => m.EditorialToolsLevelCircularCards)
+);
+const EditorialToolsLevelProgressRows = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelProgressRows').then((m) => m.EditorialToolsLevelProgressRows)
+);
+const EditorialToolsLevelCategoryRows = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelCategoryRows').then((m) => m.EditorialToolsLevelCategoryRows)
+);
+const EditorialToolsLevelTableRows = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelTableRows').then((m) => m.EditorialToolsLevelTableRows)
+);
+const EditorialToolsLevelStarCards = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelStarCards').then((m) => m.EditorialToolsLevelStarCards)
+);
+const EditorialToolsLevelSvgRings = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelSvgRings').then((m) => m.EditorialToolsLevelSvgRings)
+);
+const EditorialToolsLevelBentoCategories = dynamic(() =>
+  import('@/components/portfolio/stack-designs/StackLevelBentoCategories').then((m) => m.EditorialToolsLevelBentoCategories)
+);
 
 type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
@@ -339,7 +364,7 @@ export function EditorialToolsGallery({ tools, presentation }: ToolsGalleryProps
  * Webflow / Framer directory rows — open list with hairline rules,
  * logo left, copy + chips, level aligned right.
  */
-export function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps) {
+function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
   const tilePx = toolsBrandCardLogoTilePx(presentation.tileSize);
@@ -551,7 +576,7 @@ function ToolsBrandFloatDescription({
 /**
  * Centered tile grid — logo, name, optional copy. Hairline frame, no lift.
  */
-export function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
+function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
   const logoPx = toolsShowcaseLogoPx(presentation.tileSize);
@@ -793,7 +818,7 @@ function ToolLevelStatBarCardItem({
 /**
  * Landbook / Framer minimal grid — logo, name, 4-segment stat bar (no text level).
  */
-export function EditorialToolsLevelStatBars({ tools, presentation }: ToolsGalleryProps) {
+function EditorialToolsLevelStatBars({ tools, presentation }: ToolsGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null);
 
   const tilePx = toolsBrandCardLogoTilePx(presentation.tileSize);

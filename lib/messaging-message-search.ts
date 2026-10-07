@@ -3,7 +3,7 @@
 import type { DirectMessage } from '@/types/messaging';
 import { isGuestSessionTraceMessage } from '@/lib/guest-session-trace';
 
-export function getMessageSearchHaystack(message: DirectMessage): string {
+function getMessageSearchHaystack(message: DirectMessage): string {
   const parts: string[] = [];
   if (message.content?.trim()) parts.push(message.content.trim());
   for (const attachment of message.attachments ?? []) {
@@ -12,7 +12,7 @@ export function getMessageSearchHaystack(message: DirectMessage): string {
   return parts.join(' ');
 }
 
-export function messageMatchesSearchQuery(message: DirectMessage, query: string): boolean {
+function messageMatchesSearchQuery(message: DirectMessage, query: string): boolean {
   if (isGuestSessionTraceMessage(message)) return false;
   if (message.messageType === 'SYSTEM' && !message.content?.trim()) return false;
   const tokens = query

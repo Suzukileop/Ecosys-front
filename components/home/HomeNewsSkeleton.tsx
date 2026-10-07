@@ -8,21 +8,21 @@ function SkeletonLine({ className = '' }: { className?: string }) {
 
 function HomeNewsPostCardSkeleton() {
   return (
-    <article className="overflow-hidden border border-black/[0.06] md:rounded-lg bg-[#EEF0F2] dark:border-white/[0.08] dark:bg-[#111111]">
-      <div className="flex items-center gap-3.5 px-6 pt-6 sm:px-7 sm:pt-7">
+    <article className="overflow-hidden border-y border-[#E5E5E5] bg-[#FFFFFF] dark:border-white/[0.1] dark:bg-[#111111] sm:rounded-xl sm:border">
+      <div className="flex items-center gap-3.5 px-4 pt-4 sm:px-5 sm:pt-5">
         <div className={`h-11 w-11 shrink-0 rounded-full ${block}`} />
         <div className="min-w-0 flex-1 space-y-2">
           <SkeletonLine className="h-4 w-40" />
           <SkeletonLine className="h-3.5 w-28" />
         </div>
       </div>
-      <div className="space-y-3 px-6 pt-5 sm:px-7">
+      <div className="space-y-3 px-4 pt-4 sm:px-5">
         <SkeletonLine className="h-6 w-20 rounded-full" />
         <SkeletonLine className="h-6 w-2/3" />
         <SkeletonLine className="h-4 w-full" />
       </div>
-      <div className={`mt-6 aspect-[4/3] w-full rounded-none ${block}`} />
-      <div className="mt-6 flex items-center gap-6 border-t border-black/[0.06] px-6 py-4 dark:border-white/[0.08] sm:px-7">
+      <div className={`mt-3 aspect-[4/3] w-full rounded-none ${block}`} />
+      <div className="flex items-center gap-6 px-4 py-4 sm:px-5">
         <SkeletonLine className="h-5 w-16" />
         <SkeletonLine className="h-5 w-24" />
         <SkeletonLine className="ml-auto h-5 w-16" />
@@ -33,7 +33,7 @@ function HomeNewsPostCardSkeleton() {
 
 export function HomeNewsFeedSkeleton({ count = 2 }: { count?: number; split?: boolean }) {
   return (
-    <div className="space-y-8" aria-busy="true" aria-label="Loading news">
+    <div className="space-y-1 sm:space-y-3" aria-busy="true" aria-label="Loading news">
       {Array.from({ length: count }, (_, index) => (
         <HomeNewsPostCardSkeleton key={index} />
       ))}
@@ -41,11 +41,11 @@ export function HomeNewsFeedSkeleton({ count = 2 }: { count?: number; split?: bo
   );
 }
 
-export function HomeNewsHeaderSkeleton() {
+function HomeNewsHeaderSkeleton() {
   return (
     <div
       aria-hidden
-      className="border border-black/[0.06] bg-[#EEF0F2] dark:border-white/[0.08] dark:bg-[#111111] md:rounded-lg"
+      className="bg-[#FFFFFF] dark:bg-[#111111] md:rounded-xl"
     >
       <div className="flex items-center gap-3.5 px-5 pt-5 sm:px-6">
         <SkeletonLine className="h-11 w-11 shrink-0 !rounded-full" />
@@ -65,7 +65,7 @@ export function HomeNewsPageSkeleton() {
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] xl:gap-16">
         <div className="-mx-4 min-w-0 max-w-[760px] sm:-mx-8 md:mx-auto md:w-full">
           <HomeNewsHeaderSkeleton />
-          <div className="mt-8">
+          <div className="mt-1 sm:mt-8">
             <HomeNewsFeedSkeleton />
           </div>
         </div>

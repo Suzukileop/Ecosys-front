@@ -11,7 +11,7 @@ function abbreviateWord(word: string): string {
 }
 
 /** Full text first, then one more word shortened to "X." per step, starting from the last word. */
-export function abbreviationSteps(text: string): string[] {
+function abbreviationSteps(text: string): string[] {
   const parts = text.split(SEPARATOR);
   const wordIndexes = parts
     .map((part, index) => (index % 2 === 0 && Array.from(part).length > 2 ? index : -1))

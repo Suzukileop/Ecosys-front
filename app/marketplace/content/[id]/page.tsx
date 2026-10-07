@@ -36,7 +36,7 @@ export default async function MarketplaceContentDetailPage({
     <main className="mx-auto max-w-4xl space-y-8 px-4 py-10">
       <ContentViewTracker contentId={id} />
 
-      <Link href="/marketplace/creators" className="text-sm font-medium text-orange-600 hover:text-orange-700">
+      <Link href="/providers" className="text-sm font-medium text-orange-600 hover:text-orange-700">
         ← Back to creators
       </Link>
 
@@ -91,7 +91,7 @@ export default async function MarketplaceContentDetailPage({
 
           {content.creator && (
             <Link
-              href={`/marketplace/${content.creator.id}`}
+              href={`/providers/${content.creator.id}`}
               className="flex items-center gap-3 rounded-xl border border-gray-100 bg-gray-50 p-4 transition-colors hover:border-orange-200 hover:bg-orange-50/50"
             >
               {content.creator.avatarUrl ? (

@@ -1,4 +1,4 @@
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import type { CreatorProfileDto } from '@/types/profile';
 
 export type ProfileReadinessField =
   | 'photo'
@@ -33,7 +33,7 @@ function hasText(value: string | null | undefined): boolean {
  * Only photos uploaded through the app storage count.
  * CSS/OAuth letter avatars and other external URLs are rejected.
  */
-export function isUploadedProfilePhoto(avatarUrl: string | null | undefined): boolean {
+function isUploadedProfilePhoto(avatarUrl: string | null | undefined): boolean {
   const raw = avatarUrl?.trim() ?? '';
   if (!raw) return false;
   if (raw.startsWith('data:')) return false;
@@ -66,7 +66,7 @@ function hasLocation(profile: Pick<
   return profile.locationLat != null && profile.locationLng != null;
 }
 
-export type ProfileReadinessInput = Pick<
+type ProfileReadinessInput = Pick<
   CreatorProfileDto,
   | 'fullName'
   | 'avatarUrl'
@@ -130,11 +130,4 @@ export function getMissingProfileReadinessFields(
   }
 
   return missing;
-}
-
-export function isProfileReadyForPublishing(
-  profile: ProfileReadinessInput | null | undefined,
-  options?: { requireSpecialties?: boolean }
-): boolean {
-  return getMissingProfileReadinessFields(profile, options).length === 0;
 }

@@ -47,7 +47,7 @@ import {
   galleryItemDisplayTitle,
   type PortfolioGalleryPresentationSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
-import type { ProfileGalleryItem } from '@/types/ecosystem';
+import type { ProfileGalleryItem } from '@/types/profile';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);

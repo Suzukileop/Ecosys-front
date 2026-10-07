@@ -3,38 +3,33 @@
 import Link from 'next/link';
 import type { ReactNode } from 'react';
 
-/**
- * Design tokens + shared atoms for the Service Providers directory.
- *
- * Surfaces are plain white / near-black frames with a hairline border on the shell's page ground;
- * type is sentence case at reading size, and the coral accent is kept for hover, dots and stars.
- */
-
-/** Signature coral — hover accent, dots and stars; never a large fill. */
-export const PROVIDER_ACCENT = '#FF5722';
-
 export const PROVIDER_SURFACE_CLASS = 'bg-white dark:bg-[#111111]';
 export const PROVIDER_HAIRLINE_CLASS = 'border-black/[0.06] dark:border-white/[0.08]';
-export const PROVIDER_INK_CLASS = 'text-[#111111] dark:text-white';
-export const PROVIDER_MUTED_CLASS = 'text-neutral-500 dark:text-neutral-400';
+/*
+ * Three text tones, nothing else: ink for what is read first (names, titles, actions), body for
+ * running text, muted for metadata. Muted is the lightest text on the page — it stays above WCAG AA
+ * on white, so no lighter grey is ever used for words.
+ */
+export const PROVIDER_INK_CLASS = 'text-[#0F0F0F] dark:text-[#F1F1F1]';
+export const PROVIDER_BODY_CLASS = 'text-[#3A3A3A] dark:text-[#D0D0D0]';
+export const PROVIDER_MUTED_CLASS = 'text-[#606060] dark:text-[#AAAAAA]';
 /** Surface + hairline + 8px radius — the one frame every panel on the page uses. */
 export const PROVIDER_FRAME_CLASS = `rounded-lg border ${PROVIDER_HAIRLINE_CLASS} ${PROVIDER_SURFACE_CLASS}`;
 
 /** Sentence-case label used by actions, toggles and status markers. */
 export const PROVIDER_LABEL_CLASS = 'text-[14px] font-medium';
-/** @deprecated Kept for existing imports; now resolves to {@link PROVIDER_LABEL_CLASS}. */
-export const providerMicroLabelClass = PROVIDER_LABEL_CLASS;
 
-const BUTTON_BASE =
-  'inline-flex items-center justify-center gap-2 rounded-lg px-5 py-2.5 text-[15px] font-medium transition-opacity duration-200';
+/* Same pill geometry as chips and switches (h-10, rounded-full, 14px medium) so buttons sit in the row
+   as one family; only the fill tells them apart. */
+const BUTTON_BASE = `inline-flex h-10 shrink-0 items-center justify-center gap-2 whitespace-nowrap rounded-full px-5 ${PROVIDER_LABEL_CLASS} transition-opacity duration-200`;
 
 const ACTION_VARIANT_CLASS = {
   link: `group/act inline-flex items-center gap-1.5 text-[15px] font-medium ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722] focus-visible:text-[#FF5722]`,
-  primary: `${BUTTON_BASE} bg-[#111111] text-white hover:opacity-85 dark:bg-white dark:text-[#111111]`,
-  secondary: `${BUTTON_BASE} border border-black/[0.12] ${PROVIDER_INK_CLASS} hover:opacity-85 dark:border-white/[0.12]`,
+  primary: `${BUTTON_BASE} bg-[#0F0F0F] text-white hover:opacity-85 dark:bg-[#F1F1F1] dark:text-[#0F0F0F]`,
+  secondary: `${BUTTON_BASE} border border-black/[0.14] ${PROVIDER_INK_CLASS} hover:opacity-85 dark:border-white/[0.14]`,
 } as const;
 
-export type ProviderActionVariant = keyof typeof ACTION_VARIANT_CLASS;
+type ProviderActionVariant = keyof typeof ACTION_VARIANT_CLASS;
 
 type ProviderTextActionProps = {
   children: ReactNode;
@@ -111,8 +106,8 @@ export function ProviderTextAction({
 export function providerPillClass(active: boolean) {
   return `inline-flex shrink-0 items-center gap-2 whitespace-nowrap rounded-full border h-10 px-4 ${PROVIDER_LABEL_CLASS} transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
     active
-      ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
-      : `border-black/[0.12] bg-transparent ${PROVIDER_INK_CLASS} hover:border-black/30 dark:border-white/[0.12] dark:hover:border-white/30`
+      ? 'border-[#0F0F0F] bg-[#0F0F0F] text-white dark:border-[#F1F1F1] dark:bg-[#F1F1F1] dark:text-[#0F0F0F]'
+      : `border-black/[0.14] bg-transparent ${PROVIDER_INK_CLASS} hover:border-black/30 hover:bg-black/[0.03] dark:border-white/[0.14] dark:hover:border-white/30 dark:hover:bg-white/[0.04]`
   }`;
 }
 
@@ -148,6 +143,15 @@ export function ProviderSwitch({
   );
 }
 
+/** Borderless tinted suggestion chip (32px, 8px radius, 14px medium); `active` fills it with ink. */
+export function providerChipClass(active: boolean) {
+  return `inline-flex h-8 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-lg px-3 text-[14px] font-medium leading-5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+    active
+      ? 'bg-[#0F0F0F] text-white dark:bg-[#F1F1F1] dark:text-[#0F0F0F]'
+      : 'bg-black/[0.05] text-[#0F0F0F] hover:bg-black/[0.1] dark:bg-white/[0.1] dark:text-[#F1F1F1] dark:hover:bg-white/[0.2]'
+  }`;
+}
+
 /** Selectable category chip. */
 export function ProviderChip({
   active,
@@ -161,20 +165,8 @@ export function ProviderChip({
   title?: string;
 }) {
   return (
-    <button
-      type="button"
-      onClick={onClick}
-      aria-pressed={active}
-      title={title}
-      className={`relative ${providerPillClass(false)} ${active ? 'border-black/30 dark:border-white/30' : ''}`}
-    >
+    <button type="button" onClick={onClick} aria-pressed={active} title={title} className={providerChipClass(active)}>
       {children}
-      <span
-        aria-hidden
-        className={`pointer-events-none absolute inset-x-4 -bottom-[7px] h-[2px] rounded-full bg-[#FF5722] transition-[opacity,transform] duration-300 ${
-          active ? 'scale-x-100 opacity-100' : 'scale-x-0 opacity-0'
-        }`}
-      />
     </button>
   );
 }
@@ -199,7 +191,7 @@ export function ProviderSlashList({
       {items.map((item, index) => (
         <span key={`${item}-${index}`} className="inline-flex items-baseline whitespace-nowrap">
           {index > 0 ? (
-            <span aria-hidden className="px-1.5 text-black/20 dark:text-white/25">
+            <span aria-hidden className="px-1.5 text-black/25 dark:text-white/30">
               /
             </span>
           ) : null}

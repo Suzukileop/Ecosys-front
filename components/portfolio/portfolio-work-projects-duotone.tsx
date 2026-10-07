@@ -1027,9 +1027,3 @@ export function ProjectsDuotoneGallery({
     </div>
   );
 }
-
-export function isProjectsDuotoneDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-duotone';
-}

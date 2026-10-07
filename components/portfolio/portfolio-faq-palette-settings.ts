@@ -3,19 +3,11 @@
  * Concrete hex fields still drive render; bindings choose which token paints each slot.
  */
 
-import {
-  computeLightPalette,
-  DEFAULT_HERO_PALETTE,
-  HERO_PALETTE_TOKEN_IDS,
-  mergeHeroPalette,
-  resolveHeroPaletteColor,
-  type HeroPaletteTokenId,
-  type PortfolioHeroPalette,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_HERO_PALETTE, HERO_PALETTE_TOKEN_IDS, mergeHeroPalette, resolveHeroPaletteColor, type HeroPaletteTokenId, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 
 /** Local mirrors — avoid importing portfolio-faq-settings (circular TDZ). */
-export type FaqElementStyleTarget = 'question' | 'answer' | 'number';
+type FaqElementStyleTarget = 'question' | 'answer' | 'number';
 
 type FaqElementStyles = Record<FaqElementStyleTarget, PortfolioElementTextStyle>;
 
@@ -72,7 +64,7 @@ type FaqPresentationColorFields = {
   cardBackgroundEnabled?: boolean;
 };
 
-export const FAQ_COLOR_SLOT_IDS: FaqColorSlot[] = [
+const FAQ_COLOR_SLOT_IDS: FaqColorSlot[] = [
   'sectionBackground',
   'sectionGradientFrom',
   'sectionGradientTo',
@@ -94,38 +86,8 @@ export const FAQ_COLOR_SLOT_IDS: FaqColorSlot[] = [
   'answerAccentBorder',
 ];
 
-export const PORTFOLIO_FAQ_COLOR_SLOT_OPTIONS: {
-  value: FaqColorSlot;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background', description: 'Solid section fill.' },
-  { value: 'sectionGradientFrom', label: 'Gradient start', description: 'Start of the section gradient.' },
-  { value: 'sectionGradientTo', label: 'Gradient end', description: 'End of the section gradient.' },
-  { value: 'sectionSplitA', label: 'Split zone A', description: 'First split background zone.' },
-  { value: 'sectionSplitB', label: 'Split zone B', description: 'Second split background zone.' },
-  { value: 'sectionDivider', label: 'Split divider', description: 'Line between split zones.' },
-  { value: 'title', label: 'Section title', description: 'FAQ heading.' },
-  { value: 'subtitle', label: 'Section subtitle', description: 'Intro under the title.' },
-  { value: 'accent', label: 'Accent', description: 'Accent bars and emphasis.' },
-  { value: 'cardBorder', label: 'Item border', description: 'Outline around FAQ rows / cards.' },
-  { value: 'cardBackground', label: 'Item background', description: 'Fill behind FAQ content.' },
-  { value: 'cardBackgroundA', label: 'Item split A', description: 'First split zone on items.' },
-  { value: 'cardBackgroundB', label: 'Item split B', description: 'Second split zone on items.' },
-  { value: 'cardDivider', label: 'Item divider', description: 'Divider on split items.' },
-  { value: 'question', label: 'Question', description: 'Question text in each row.' },
-  { value: 'answer', label: 'Answer', description: 'Expanded answer paragraph.' },
-  { value: 'number', label: 'Item number', description: 'Numbered label before questions.' },
-  { value: 'expandIcon', label: 'Expand icon', description: 'Plus / chevron icon color.' },
-  { value: 'answerAccentBorder', label: 'Answer accent border', description: 'Left border on expanded answers.' },
-];
-
-export const DARK_FAQ_PALETTE: PortfolioFaqPalette = { ...DEFAULT_HERO_PALETTE };
+const DARK_FAQ_PALETTE: PortfolioFaqPalette = { ...DEFAULT_HERO_PALETTE };
 export const DEFAULT_FAQ_PALETTE: PortfolioFaqPalette = { ...DARK_FAQ_PALETTE };
-
-export function computeLightFaqPalette(dark: Partial<PortfolioFaqPalette>): PortfolioFaqPalette {
-  return computeLightPalette(mergeHeroPalette(DARK_FAQ_PALETTE, dark));
-}
 
 export const DEFAULT_FAQ_COLOR_BINDINGS: PortfolioFaqColorBindings = {
   sectionBackground: 'fond',
@@ -286,26 +248,6 @@ export function applyFaqPaletteToSettings(faq: FaqPaletteHost): FaqPalettePatch 
   return patch as FaqPalettePatch;
 }
 
-export function patchFaqPalette(
-  faq: FaqPaletteHost,
-  palettePatch: Partial<PortfolioFaqPalette>
-): FaqPalettePatch {
-  const palette = mergeFaqPalette(DEFAULT_FAQ_PALETTE, {
-    ...faq.faqPalette,
-    ...palettePatch,
-  });
-  return applyFaqPaletteToSettings({ ...faq, faqPalette: palette });
-}
-
-export function patchFaqSlotColor(
-  faq: FaqPaletteHost,
-  slot: FaqColorSlot,
-  hex: string
-): FaqPalettePatch {
-  const bindings = mergeFaqColorBindings(DEFAULT_FAQ_COLOR_BINDINGS, faq.faqColorBindings);
-  return patchFaqPalette(faq, { [bindings[slot]]: hex });
-}
-
 export function patchFaqColorBinding(
   faq: FaqPaletteHost,
   slot: FaqColorSlot,
@@ -317,40 +259,3 @@ export function patchFaqColorBinding(
   });
   return applyFaqPaletteToSettings({ ...faq, faqColorBindings: bindings });
 }
-
-export function patchFaqColorFieldManual(
-  faq: FaqPaletteHost,
-  slot: FaqColorSlot,
-  hex: string
-): FaqPalettePatch {
-  const elementTarget = FAQ_ELEMENT_STYLE_SLOT[slot];
-  if (elementTarget) {
-    const elementStyles = paintFaqElementColor(faq.elementStyles, elementTarget, hex);
-    const patch: FaqPalettePatch = elementStyles ? { elementStyles } : {};
-    if (slot === 'question') patch.questionColor = hex;
-    if (slot === 'answer') patch.answerColor = hex;
-    if (slot === 'number') {
-      patch.numberColor = hex;
-      patch.itemMarkerColor = hex;
-    }
-    return patch;
-  }
-  return { [FAQ_SLOT_TO_FIELD[slot]]: hex } as FaqPalettePatch;
-}
-
-export function patchFaqColorField(
-  faq: FaqPaletteHost & { useHeroPalette?: boolean },
-  slot: FaqColorSlot,
-  hex: string
-): FaqPalettePatch {
-  if (faq.useHeroPalette === false) {
-    return patchFaqColorFieldManual(faq, slot, hex);
-  }
-  return patchFaqSlotColor(faq, slot, hex);
-}
-
-export const FAQ_STYLE_TARGET_COLOR_SLOT: Record<FaqElementStyleTarget, FaqColorSlot> = {
-  question: 'question',
-  answer: 'answer',
-  number: 'number',
-};

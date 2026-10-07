@@ -49,14 +49,11 @@ export type FaqHeaderLayoutFieldOptionSpec = SpecBase & {
   options: { value: string; label: string; fontPx?: number; fontWeight?: number }[];
 };
 
-export type FaqHeaderLayoutFieldToggleSpec = SpecBase & { kind: 'fieldToggle'; field: 'headerAnimationEnabled' };
-
 export type FaqHeaderLayoutElementSpec =
   | FaqHeaderLayoutToggleSpec
   | FaqHeaderLayoutTextSpec
   | FaqHeaderLayoutOptionSpec
-  | FaqHeaderLayoutFieldOptionSpec
-  | FaqHeaderLayoutFieldToggleSpec;
+  | FaqHeaderLayoutFieldOptionSpec;
 
 const visibleWhen =
   (design: PortfolioFaqHeaderDesignSelectable, ...keys: string[]) =>
@@ -109,10 +106,9 @@ const ALL_HEADERS: FaqHeaderLayoutElementSpec[] = [
       { value: 'xl', label: 'XL' },
     ],
   },
-  { kind: 'fieldToggle', key: 'animation', label: 'Entrance animation', group: 'all', field: 'headerAnimationEnabled' },
 ];
 
-export const FAQ_HEADER_INK_OPTIONS = [
+const FAQ_HEADER_INK_OPTIONS = [
   { value: 'principal', label: 'Principal', swatch: faqHeaderPaletteTokenColor('principal') },
   { value: 'secondaire', label: 'Secondary', swatch: faqHeaderPaletteTokenColor('secondaire') },
   { value: 'texteFort', label: 'Strong text', swatch: faqHeaderPaletteTokenColor('texteFort') },
@@ -236,7 +232,7 @@ export function resolveFaqHeaderLayoutVisible(p: Presentation, design: Portfolio
 
 /** Override, else the design default; `null` when hidden or empty (caller then uses its own
  *  computed fallback, e.g. an automatic singular/plural). */
-export function resolveFaqHeaderLayoutText(p: Presentation, design: PortfolioFaqHeaderDesignSelectable, key: string): string | null {
+function resolveFaqHeaderLayoutText(p: Presentation, design: PortfolioFaqHeaderDesignSelectable, key: string): string | null {
   if (!resolveFaqHeaderLayoutVisible(p, design, key)) return null;
   const spec = findSpec(design, key);
   const defaultText = spec?.kind === 'text' ? spec.defaultText : '';
@@ -250,7 +246,7 @@ export function resolveFaqHeaderLayoutOption(p: Presentation, design: PortfolioF
   return choice && spec.options.some((option) => option.value === choice) ? choice : spec.defaultValue;
 }
 
-export type FaqHeaderLayoutResolver = {
+type FaqHeaderLayoutResolver = {
   isVisible: (key: string) => boolean;
   text: (key: string) => string | null;
   option: (key: string) => string;

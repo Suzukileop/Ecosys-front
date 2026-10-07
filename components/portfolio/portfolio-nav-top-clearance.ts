@@ -10,10 +10,10 @@ import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-sett
 const CLEARANCE_GAP_PX = 16;
 
 /** Measured from the fixed top nav — 0px when the bar is hidden or not top-placed. */
-export const PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR = '--portfolio-nav-top-clearance';
+const PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR = '--portfolio-nav-top-clearance';
 
 /** Duration to wait after closing an overlay nav before scrolling (panel fold animation). */
-export const PORTFOLIO_NAV_OVERLAY_CLOSE_MS = 520;
+const PORTFOLIO_NAV_OVERLAY_CLOSE_MS = 520;
 
 export function readPortfolioNavTopClearancePx(): number {
   if (typeof document === 'undefined') return 0;
@@ -148,11 +148,6 @@ export function deferAfterPortfolioNavOverlayClose(
     return;
   }
   window.setTimeout(action, delayMs);
-}
-
-/** Hero copy column — never less than the editorial defaults, grows when the nav is taller. */
-export function portfolioHeroTopClearancePaddingClass(): string {
-  return 'pt-[max(5rem,var(--portfolio-nav-top-clearance,0px))] sm:pt-[max(6rem,var(--portfolio-nav-top-clearance,0px))] xl:pt-[max(7rem,var(--portfolio-nav-top-clearance,0px))] transition-[padding-top] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)]';
 }
 
 /**

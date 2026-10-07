@@ -6,7 +6,7 @@ import {
   listPublicProducts,
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { mediaImageResponsive, mediaImageSrc, mediaImageSrcSet } from '@/lib/media-image-url';
+import { MediaImage } from '@/components/ui/MediaImage';
 import { CreatorProductsStatsPanel } from '@/components/creator/CreatorProductsStatsPanel';
 import { CreatorProductGroupsExplorePanel } from '@/components/creator/CreatorProductGroupsExplorePanel';
 import { useCreatorProductsFilter } from '@/components/creator/useCreatorProductsFilter';
@@ -205,12 +205,11 @@ export function CreatorPublicShopView({
                 autoPlay
               />
             ) : (
-              // eslint-disable-next-line @next/next/no-img-element
-              <img
-                {...mediaImageResponsive(shopCoverUrl, [828, 1080, 1920])}
+              <MediaImage
+                src={shopCoverUrl}
+                widths={[828, 1080, 1920]}
                 sizes="100vw"
-                alt=""
-                decoding="async"
+                priority
                 className="absolute inset-0 h-full w-full object-cover"
               />
             )
@@ -226,20 +225,18 @@ export function CreatorPublicShopView({
 
           <div className="relative z-10 flex h-full min-h-[280px] flex-col items-center justify-end px-5 pb-8 pt-16 text-center sm:min-h-[340px] sm:px-8 sm:pb-10 lg:min-h-[400px]">
             <div className="mb-4 flex h-24 w-24 items-center justify-center overflow-hidden rounded-full border-4 border-white/90 bg-neutral-800 shadow-lg sm:mb-5 sm:h-28 sm:w-28">
-              {avatarUrl?.trim() ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={mediaImageSrc(avatarUrl.trim(), 128)}
-                  srcSet={mediaImageSrcSet(avatarUrl.trim(), 128)}
-                  alt=""
-                  decoding="async"
-                  className="h-full w-full object-cover"
-                />
-              ) : (
-                <span className="text-2xl font-bold text-white sm:text-3xl">
-                  {initialsFromName(displayName)}
-                </span>
-              )}
+              <MediaImage
+                src={avatarUrl}
+                width={112}
+                priority
+                referrerPolicy="no-referrer"
+                fallback={
+                  <span className="text-2xl font-bold text-white sm:text-3xl">
+                    {initialsFromName(displayName)}
+                  </span>
+                }
+                className="h-full w-full object-cover"
+              />
             </div>
 
             <h1 className="max-w-2xl text-2xl font-bold tracking-tight text-white sm:text-3xl">
@@ -277,7 +274,7 @@ export function CreatorPublicShopView({
                 size="sm"
                 tone="onDark"
                 showCount={false}
-                loginRedirect={`/marketplace/${creatorId}/shop`}
+                loginRedirect={`/providers/${creatorId}/shop`}
               />
             </div>
           </div>

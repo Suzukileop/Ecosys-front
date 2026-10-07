@@ -1,18 +1,8 @@
-import type { CSSProperties } from 'react';
 import {
   mergeSectionColorMode,
   type PortfolioSectionColorMode,
 } from '@/components/portfolio/portfolio-section-color-mode';
-import {
-  DEFAULT_CUSTOM_MOTIF_POINTS,
-  ensureLeftColumnMotifPoints,
-  ensureRightColumnMotifPoints,
-  getRightMotifPresetPoints,
-  motifPointsToClipPath,
-  sanitizeMotifPoints,
-  type MotifPoint,
-  type RightMotifPresetShape,
-} from '@/components/portfolio/portfolio-hero-motif-geometry';
+import { DEFAULT_CUSTOM_MOTIF_POINTS, sanitizeMotifPoints, type MotifPoint } from '@/components/portfolio/portfolio-hero-motif-geometry';
 import {
   DEFAULT_RIGHT_MOTIF_POSITION,
   DEFAULT_RIGHT_MOTIF_SIZE,
@@ -33,17 +23,7 @@ import {
   mergeHeroMetaSettings,
   type PortfolioHeroMetaSettings,
 } from '@/components/portfolio/portfolio-hero-meta-settings';
-import {
-  isPortfolioHeroBannerDesign,
-  isPortfolioHeroBowlIntroMotif,
-  normalizePortfolioHeroBannerDesign,
-  DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN,
-  type PortfolioHeroBannerDesign,
-  type PortfolioHeroBowlIntroMotif,
-  type PortfolioHeroIdentityIndexPortraitRadius,
-  type PortfolioHeroPortraitIdentityBottomGap,
-  type PortfolioHeroSelectedWorksIdentityLayout,
-} from '@/components/portfolio/portfolio-hero-banner-settings';
+import { isPortfolioHeroBowlIntroMotif, normalizePortfolioHeroBannerDesign, DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN, type PortfolioHeroBannerDesign, type PortfolioHeroBowlIntroMotif, type PortfolioHeroIdentityIndexPortraitRadius, type PortfolioHeroPortraitIdentityBottomGap, type PortfolioHeroSelectedWorksIdentityLayout } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_LEFT_MOTIF_SETTINGS,
   mergeHeroLeftMotifSettings,
@@ -60,21 +40,8 @@ import {
   mergeHeroCopySettings,
   type PortfolioHeroCopySettings,
 } from '@/components/portfolio/portfolio-hero-copy-settings';
-import {
-  DEFAULT_HERO_HEADLINE_SETTINGS,
-  mergeHeroHeadlineSettings,
-  PORTFOLIO_HERO_HEADLINE_PREFIX_OPTIONS,
-  PORTFOLIO_HERO_HEADLINE_VALUE_OPTIONS,
-  type PortfolioHeroHeadlineSettings,
-  type PortfolioHeroHeadlineValue,
-} from '@/components/portfolio/portfolio-hero-headline-settings';
-import {
-  DEFAULT_HERO_BACKGROUND_SETTINGS,
-  mergeHeroBackgroundSettings,
-  PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS,
-  PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS,
-  type PortfolioHeroBackgroundSettings,
-} from '@/components/portfolio/portfolio-hero-background-settings';
+import { DEFAULT_HERO_HEADLINE_SETTINGS, mergeHeroHeadlineSettings, type PortfolioHeroHeadlineSettings } from '@/components/portfolio/portfolio-hero-headline-settings';
+import { DEFAULT_HERO_BACKGROUND_SETTINGS, mergeHeroBackgroundSettings, type PortfolioHeroBackgroundSettings } from '@/components/portfolio/portfolio-hero-background-settings';
 import {
   DEFAULT_HERO_ELEMENT_STYLES,
   normalizeHeroElementStyles,
@@ -83,45 +50,19 @@ import {
   type PortfolioHeroElementStyles,
 } from '@/components/portfolio/portfolio-hero-element-styles';
 
-export {
-  PORTFOLIO_HERO_HEADLINE_PREFIX_OPTIONS,
-  PORTFOLIO_HERO_HEADLINE_VALUE_OPTIONS,
-  PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS,
-  PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS,
-  type PortfolioHeroHeadlineValue,
-};
-
 export type {
-  PortfolioHeroCreatorNameFont,
-  PortfolioHeroCreatorNameSize,
-  PortfolioHeroPortraitRadius,
-  PortfolioHeroPortraitSize,
   PortfolioHeroProfileSettings,
-  PortraitPosition,
 } from '@/components/portfolio/portfolio-hero-profile-settings';
 
 export type {
-  MetaRowPosition,
-  PortfolioHeroMetaCardPadding,
-  PortfolioHeroMetaDisplayDesign,
-  PortfolioHeroMetaFrameShape,
-  PortfolioHeroMetaInnerLayout,
-  PortfolioHeroMetaPlacementMode,
   PortfolioHeroMetaSettings,
-  PortfolioHeroMetaSpread,
-  PortfolioHeroMetaValueSize,
 } from '@/components/portfolio/portfolio-hero-meta-settings';
 
 export type {
-  HeroCopyPlacementMode,
-  HeroCopyPosition,
   PortfolioHeroCopySettings,
 } from '@/components/portfolio/portfolio-hero-copy-settings';
 
 export type {
-  LeftMotifPosition,
-  LeftMotifSize,
-  PortfolioHeroLeftMotifPattern,
   PortfolioHeroLeftMotifSettings,
 } from '@/components/portfolio/portfolio-hero-left-motif-settings';
 
@@ -138,8 +79,8 @@ export type { MotifPoint };
 
 export type PortfolioHeroMotifLayout = 'centered' | 'full';
 
-export const HERO_GEOM_CENTERED_MARGIN_VH = 12;
-export const HERO_GEOM_CENTERED_PANEL_HEIGHT_VH = 76;
+const HERO_GEOM_CENTERED_MARGIN_VH = 12;
+const HERO_GEOM_CENTERED_PANEL_HEIGHT_VH = 76;
 
 export type PortfolioHeroHeadlineFont =
   | 'sans'
@@ -166,7 +107,7 @@ const PORTFOLIO_HERO_HEADLINE_FONTS = new Set<PortfolioHeroHeadlineFont>([
   'script',
 ]);
 
-export function isPortfolioHeroHeadlineFont(value: unknown): value is PortfolioHeroHeadlineFont {
+function isPortfolioHeroHeadlineFont(value: unknown): value is PortfolioHeroHeadlineFont {
   return typeof value === 'string' && PORTFOLIO_HERO_HEADLINE_FONTS.has(value as PortfolioHeroHeadlineFont);
 }
 
@@ -181,7 +122,7 @@ export type PortfolioHeroCtaIcon =
   | 'phone-outgoing'
   | 'phone-incoming';
 
-export const PORTFOLIO_HERO_CTA_ICON_OPTIONS: {
+const PORTFOLIO_HERO_CTA_ICON_OPTIONS: {
   value: PortfolioHeroCtaIcon;
   label: string;
   description: string;
@@ -194,7 +135,7 @@ export const PORTFOLIO_HERO_CTA_ICON_OPTIONS: {
   { value: 'phone-incoming', label: 'Incoming', description: 'Handset with inward arrow.' },
 ];
 
-export function normalizePortfolioHeroCtaIcon(
+function normalizePortfolioHeroCtaIcon(
   value: unknown,
   fallback: PortfolioHeroCtaIcon = 'phone'
 ): PortfolioHeroCtaIcon {
@@ -225,22 +166,7 @@ export type PortfolioHeroSecondaryCtaTarget =
   | 'faq'
   | 'contact';
 
-export const PORTFOLIO_HERO_SECONDARY_CTA_TARGET_OPTIONS: {
-  value: PortfolioHeroSecondaryCtaTarget;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'work', label: 'Work', description: 'Projects / portfolio grid.' },
-  { value: 'services', label: 'Services', description: 'Services & offers section.' },
-  { value: 'about', label: 'About', description: 'About / bio section.' },
-  { value: 'experience', label: 'Experience', description: 'Experience timeline.' },
-  { value: 'team', label: 'Team', description: 'Members and roles.' },
-  { value: 'gallery', label: 'Gallery', description: 'Visual media gallery.' },
-  { value: 'faq', label: 'FAQ', description: 'Frequently asked questions.' },
-  { value: 'contact', label: 'Contact', description: 'Contact section.' },
-];
-
-export function isPortfolioHeroSecondaryCtaTarget(
+function isPortfolioHeroSecondaryCtaTarget(
   value: unknown
 ): value is PortfolioHeroSecondaryCtaTarget {
   return (
@@ -255,43 +181,7 @@ export function isPortfolioHeroSecondaryCtaTarget(
   );
 }
 
-export const DEFAULT_HERO_SECONDARY_CTA_LABEL = 'View my work';
-
-export function resolveShowSecondaryCta(presentation: {
-  showSecondaryCta?: boolean;
-}): boolean {
-  return presentation.showSecondaryCta === true;
-}
-
-export function resolveSecondaryCtaLabel(presentation: {
-  secondaryCtaLabel?: string;
-}): string {
-  const label = presentation.secondaryCtaLabel?.trim();
-  return label || DEFAULT_HERO_SECONDARY_CTA_LABEL;
-}
-
-export function resolveSecondaryCtaTarget(presentation: {
-  secondaryCtaTarget?: PortfolioHeroSecondaryCtaTarget;
-}): PortfolioHeroSecondaryCtaTarget {
-  return isPortfolioHeroSecondaryCtaTarget(presentation.secondaryCtaTarget)
-    ? presentation.secondaryCtaTarget
-    : 'work';
-}
-
-export function resolveSecondaryCtaDesign(presentation: {
-  secondaryCtaDesign?: PortfolioHeroCtaDesign;
-}): PortfolioHeroCtaDesign {
-  const design = presentation.secondaryCtaDesign;
-  if (
-    design === 'pill-dark' ||
-    design === 'pill-outline' ||
-    design === 'pill-accent' ||
-    design === 'text-arrow'
-  ) {
-    return design;
-  }
-  return 'text-arrow';
-}
+const DEFAULT_HERO_SECONDARY_CTA_LABEL = 'View my work';
 
 export type PortfolioHeroAvailabilityDesign = 'pill-live' | 'pill-minimal' | 'bordered' | 'soft';
 
@@ -331,7 +221,7 @@ export type PortfolioHeroAvailabilityBorderWidth = 'none' | 'thin' | 'medium' | 
 
 export type PortfolioHeroAvailabilityBorderRadius = 'none' | 'sm' | 'md' | 'lg' | 'full';
 
-export type PortfolioHeroAvailabilityDotSize = 'sm' | 'md' | 'lg';
+type PortfolioHeroAvailabilityDotSize = 'sm' | 'md' | 'lg';
 
 export type PortfolioHeroAvailabilityChromeSettings = {
   availabilityLabel: string;
@@ -355,22 +245,22 @@ export type PortfolioHeroAvailabilityChromeSettings = {
   availabilityMarginBottomPx: number;
 };
 
-export const DEFAULT_AVAILABILITY_LABEL = 'Available for work';
+const DEFAULT_AVAILABILITY_LABEL = 'Available for work';
 export const DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL = 'Currently unavailable';
-export const DEFAULT_AVAILABILITY_TEXT_COLOR = '#065f46';
-export const DEFAULT_AVAILABILITY_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_AVAILABILITY_BORDER_COLOR = '#a7f3d0';
-export const DEFAULT_AVAILABILITY_DOT_COLOR = '#10b981';
-export const DEFAULT_AVAILABILITY_UNAVAILABLE_TEXT_COLOR = '#92400e';
-export const DEFAULT_AVAILABILITY_UNAVAILABLE_BACKGROUND_COLOR = '#fffbeb';
-export const DEFAULT_AVAILABILITY_UNAVAILABLE_BORDER_COLOR = '#fcd34d';
-export const DEFAULT_AVAILABILITY_UNAVAILABLE_DOT_COLOR = '#f59e0b';
-export const DEFAULT_AVAILABILITY_MARGIN_TOP_PX = 0;
-export const DEFAULT_AVAILABILITY_MARGIN_BOTTOM_PX = 0;
-export const AVAILABILITY_MARGIN_PX_MIN = 0;
-export const AVAILABILITY_MARGIN_PX_MAX = 96;
+const DEFAULT_AVAILABILITY_TEXT_COLOR = '#065f46';
+const DEFAULT_AVAILABILITY_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_AVAILABILITY_BORDER_COLOR = '#a7f3d0';
+const DEFAULT_AVAILABILITY_DOT_COLOR = '#10b981';
+const DEFAULT_AVAILABILITY_UNAVAILABLE_TEXT_COLOR = '#92400e';
+const DEFAULT_AVAILABILITY_UNAVAILABLE_BACKGROUND_COLOR = '#fffbeb';
+const DEFAULT_AVAILABILITY_UNAVAILABLE_BORDER_COLOR = '#fcd34d';
+const DEFAULT_AVAILABILITY_UNAVAILABLE_DOT_COLOR = '#f59e0b';
+const DEFAULT_AVAILABILITY_MARGIN_TOP_PX = 0;
+const DEFAULT_AVAILABILITY_MARGIN_BOTTOM_PX = 0;
+const AVAILABILITY_MARGIN_PX_MIN = 0;
+const AVAILABILITY_MARGIN_PX_MAX = 96;
 
-export function sanitizeAvailabilityMarginPx(
+function sanitizeAvailabilityMarginPx(
   value: unknown,
   fallback: number = 0
 ): number {
@@ -379,7 +269,7 @@ export function sanitizeAvailabilityMarginPx(
   return Math.min(AVAILABILITY_MARGIN_PX_MAX, Math.max(AVAILABILITY_MARGIN_PX_MIN, Math.round(n)));
 }
 
-export const DEFAULT_HERO_AVAILABILITY_CHROME: PortfolioHeroAvailabilityChromeSettings = {
+const DEFAULT_HERO_AVAILABILITY_CHROME: PortfolioHeroAvailabilityChromeSettings = {
   availabilityLabel: DEFAULT_AVAILABILITY_LABEL,
   availabilityUnavailableLabel: DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL,
   availabilityTextColor: DEFAULT_AVAILABILITY_TEXT_COLOR,
@@ -401,14 +291,6 @@ export const DEFAULT_HERO_AVAILABILITY_CHROME: PortfolioHeroAvailabilityChromeSe
 
 export type {
   PortfolioHeroElementStyles,
-  PortfolioHeroStyleTarget,
-} from '@/components/portfolio/portfolio-hero-element-styles';
-
-export {
-  DEFAULT_HERO_ELEMENT_STYLES,
-  HERO_STYLE_TARGET_IDS,
-  PORTFOLIO_HERO_STYLE_TARGET_OPTIONS,
-  patchHeroElementStyle,
 } from '@/components/portfolio/portfolio-hero-element-styles';
 import {
   applyHeroPaletteToPresentation,
@@ -449,17 +331,7 @@ import {
   type HeroVerticalCellPlacement,
 } from '@/components/portfolio/portfolio-hero-vertical-cell-placement';
 
-export const DEFAULT_HERO_VISUAL_FREE_CELL: HeroVerticalCellPlacement = 'top-right';
-
-/** 3×3 anchor of the "free zone" — where copy elements sent to the other part land. */
-export function resolveHeroVisualFreeCell(presentation: {
-  heroVisualFreeCell?: HeroVerticalCellPlacement;
-}): HeroVerticalCellPlacement {
-  return sanitizeHeroVerticalCellPlacement(
-    presentation.heroVisualFreeCell,
-    DEFAULT_HERO_VISUAL_FREE_CELL
-  );
-}
+const DEFAULT_HERO_VISUAL_FREE_CELL: HeroVerticalCellPlacement = 'top-right';
 
 export type PortfolioHeroPresentationSettings = {
   /** Full-section Hero banner layout (Classic vs Swiss editorial, …). */
@@ -794,30 +666,30 @@ export type PortfolioHeroPresentationSettings = {
     colorModeOverride: PortfolioSectionColorMode;
   };
 
-export const HERO_TOOLS_ICON_SIZE_PX_MIN = 12;
-export const HERO_TOOLS_ICON_SIZE_PX_MAX = 64;
-export const HERO_TOOLS_ICON_PADDING_PX_MIN = 0;
-export const HERO_TOOLS_ICON_PADDING_PX_MAX = 28;
-export const HERO_TOOLS_ICON_GAP_PX_MIN = 0;
-export const HERO_TOOLS_ICON_GAP_PX_MAX = 40;
-export const HERO_TOOLS_ICON_MARGIN_PX_MIN = 0;
-export const HERO_TOOLS_ICON_MARGIN_PX_MAX = 24;
-export const HERO_TOOLS_CARD_GAP_PX_MIN = 0;
-export const HERO_TOOLS_CARD_GAP_PX_MAX = 48;
-export const HERO_TOOLS_CARD_MARGIN_PX_MIN = 0;
-export const HERO_TOOLS_CARD_MARGIN_PX_MAX = 96;
-export const HERO_TOOLS_CARD_BORDER_WIDTH_PX_MIN = 0;
-export const HERO_TOOLS_CARD_BORDER_WIDTH_PX_MAX = 8;
-export const HERO_TOOLS_CARD_RADIUS_PX_MIN = 0;
-export const HERO_TOOLS_CARD_RADIUS_PX_MAX = 48;
-export const HERO_TOOLS_CARD_CONTENT_GAP_PX_MIN = 0;
-export const HERO_TOOLS_CARD_CONTENT_GAP_PX_MAX = 40;
-export const HERO_TOOLS_CARD_MIN_HEIGHT_PX_MIN = 96;
-export const HERO_TOOLS_CARD_MIN_HEIGHT_PX_MAX = 360;
-export const HERO_TOOLS_CARD_WIDTH_PX_MIN = 160;
-export const HERO_TOOLS_CARD_WIDTH_PX_MAX = 420;
-export const HERO_TOOLS_CARD_PADDING_PX_MIN = 8;
-export const HERO_TOOLS_CARD_PADDING_PX_MAX = 48;
+const HERO_TOOLS_ICON_SIZE_PX_MIN = 12;
+const HERO_TOOLS_ICON_SIZE_PX_MAX = 64;
+const HERO_TOOLS_ICON_PADDING_PX_MIN = 0;
+const HERO_TOOLS_ICON_PADDING_PX_MAX = 28;
+const HERO_TOOLS_ICON_GAP_PX_MIN = 0;
+const HERO_TOOLS_ICON_GAP_PX_MAX = 40;
+const HERO_TOOLS_ICON_MARGIN_PX_MIN = 0;
+const HERO_TOOLS_ICON_MARGIN_PX_MAX = 24;
+const HERO_TOOLS_CARD_GAP_PX_MIN = 0;
+const HERO_TOOLS_CARD_GAP_PX_MAX = 48;
+const HERO_TOOLS_CARD_MARGIN_PX_MIN = 0;
+const HERO_TOOLS_CARD_MARGIN_PX_MAX = 96;
+const HERO_TOOLS_CARD_BORDER_WIDTH_PX_MIN = 0;
+const HERO_TOOLS_CARD_BORDER_WIDTH_PX_MAX = 8;
+const HERO_TOOLS_CARD_RADIUS_PX_MIN = 0;
+const HERO_TOOLS_CARD_RADIUS_PX_MAX = 48;
+const HERO_TOOLS_CARD_CONTENT_GAP_PX_MIN = 0;
+const HERO_TOOLS_CARD_CONTENT_GAP_PX_MAX = 40;
+const HERO_TOOLS_CARD_MIN_HEIGHT_PX_MIN = 96;
+const HERO_TOOLS_CARD_MIN_HEIGHT_PX_MAX = 360;
+const HERO_TOOLS_CARD_WIDTH_PX_MIN = 160;
+const HERO_TOOLS_CARD_WIDTH_PX_MAX = 420;
+const HERO_TOOLS_CARD_PADDING_PX_MIN = 8;
+const HERO_TOOLS_CARD_PADDING_PX_MAX = 48;
 
 function sanitizeHeroToolsCardNumber(
   value: unknown,
@@ -830,7 +702,7 @@ function sanitizeHeroToolsCardNumber(
   return Math.min(max, Math.max(min, Math.round(n)));
 }
 
-export function sanitizeHeroToolsCardGapPx(value: unknown, fallback = 16): number {
+function sanitizeHeroToolsCardGapPx(value: unknown, fallback = 16): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -839,7 +711,7 @@ export function sanitizeHeroToolsCardGapPx(value: unknown, fallback = 16): numbe
   );
 }
 
-export function sanitizeHeroToolsCardMarginPx(value: unknown, fallback = 0): number {
+function sanitizeHeroToolsCardMarginPx(value: unknown, fallback = 0): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -848,7 +720,7 @@ export function sanitizeHeroToolsCardMarginPx(value: unknown, fallback = 0): num
   );
 }
 
-export function sanitizeHeroToolsCardBorderWidthPx(value: unknown, fallback = 1): number {
+function sanitizeHeroToolsCardBorderWidthPx(value: unknown, fallback = 1): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -857,7 +729,7 @@ export function sanitizeHeroToolsCardBorderWidthPx(value: unknown, fallback = 1)
   );
 }
 
-export function sanitizeHeroToolsCardRadiusPx(value: unknown, fallback = 16): number {
+function sanitizeHeroToolsCardRadiusPx(value: unknown, fallback = 16): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -866,7 +738,7 @@ export function sanitizeHeroToolsCardRadiusPx(value: unknown, fallback = 16): nu
   );
 }
 
-export function sanitizeHeroToolsCardContentGapPx(value: unknown, fallback = 12): number {
+function sanitizeHeroToolsCardContentGapPx(value: unknown, fallback = 12): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -875,7 +747,7 @@ export function sanitizeHeroToolsCardContentGapPx(value: unknown, fallback = 12)
   );
 }
 
-export function sanitizeHeroToolsCardMinHeightPx(value: unknown, fallback = 208): number {
+function sanitizeHeroToolsCardMinHeightPx(value: unknown, fallback = 208): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -884,7 +756,7 @@ export function sanitizeHeroToolsCardMinHeightPx(value: unknown, fallback = 208)
   );
 }
 
-export function sanitizeHeroToolsCardWidthPx(value: unknown, fallback = 260): number {
+function sanitizeHeroToolsCardWidthPx(value: unknown, fallback = 260): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -893,7 +765,7 @@ export function sanitizeHeroToolsCardWidthPx(value: unknown, fallback = 260): nu
   );
 }
 
-export function sanitizeHeroToolsCardPaddingPx(value: unknown, fallback = 24): number {
+function sanitizeHeroToolsCardPaddingPx(value: unknown, fallback = 24): number {
   return sanitizeHeroToolsCardNumber(
     value,
     fallback,
@@ -902,13 +774,13 @@ export function sanitizeHeroToolsCardPaddingPx(value: unknown, fallback = 24): n
   );
 }
 
-export function sanitizeHeroToolsIconSizePx(value: unknown, fallback = 28): number {
+function sanitizeHeroToolsIconSizePx(value: unknown, fallback = 28): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(HERO_TOOLS_ICON_SIZE_PX_MAX, Math.max(HERO_TOOLS_ICON_SIZE_PX_MIN, Math.round(n)));
 }
 
-export function sanitizeHeroToolsIconPaddingPx(value: unknown, fallback = 10): number {
+function sanitizeHeroToolsIconPaddingPx(value: unknown, fallback = 10): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(
@@ -917,13 +789,13 @@ export function sanitizeHeroToolsIconPaddingPx(value: unknown, fallback = 10): n
   );
 }
 
-export function sanitizeHeroToolsIconGapPx(value: unknown, fallback = 10): number {
+function sanitizeHeroToolsIconGapPx(value: unknown, fallback = 10): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(HERO_TOOLS_ICON_GAP_PX_MAX, Math.max(HERO_TOOLS_ICON_GAP_PX_MIN, Math.round(n)));
 }
 
-export function sanitizeHeroToolsIconMarginPx(value: unknown, fallback = 0): number {
+function sanitizeHeroToolsIconMarginPx(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.min(
@@ -933,15 +805,15 @@ export function sanitizeHeroToolsIconMarginPx(value: unknown, fallback = 0): num
 }
 
 /** Matches DEFAULT_HERO_PALETTE.bordure (default Motif token). */
-export const DEFAULT_HERO_MOTIF_COLOR = '#2a2a30';
+const DEFAULT_HERO_MOTIF_COLOR = '#2a2a30';
 
 /**
  * v1: stacked hero copy (below xl) centers every element by default.
  * Bump when the stacked-align defaults change to re-run the one-time reset.
  */
-export const HERO_MOBILE_ALIGN_SETTINGS_REVISION = 1;
+const HERO_MOBILE_ALIGN_SETTINGS_REVISION = 1;
 
-export const DEFAULT_HERO_MOTIFS: HeroMotifInstance[] = migrateLegacyHeroMotifs({
+const DEFAULT_HERO_MOTIFS: HeroMotifInstance[] = migrateLegacyHeroMotifs({
   motifShape: 'diagonal',
   motifColor: DEFAULT_HERO_MOTIF_COLOR,
   customMotifPoints: DEFAULT_CUSTOM_MOTIF_POINTS.map((point) => ({ ...point })),
@@ -1108,217 +980,7 @@ export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
   colorModeOverride: 'auto',
 };
 
-export const PORTFOLIO_HERO_TOOLS_ICON_ARRANGEMENT_OPTIONS: {
-  value: 'spaced' | 'stacked';
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'spaced',
-    label: 'Spaced',
-    description: 'Separate circular chips with a gap.',
-  },
-  {
-    value: 'stacked',
-    label: 'Stacked',
-    description: 'Overlapping circular logos in a compact stack.',
-  },
-];
-
-export const PORTFOLIO_HERO_TOOLS_DISPLAY_DESIGN_OPTIONS: {
-  value: PortfolioHeroToolsDisplayDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'icons', label: 'Icons', description: 'Legacy icon chips or stacked logos.' },
-  { value: 'large-cards', label: 'Large cards', description: 'Roomy cards in one or two columns.' },
-  { value: 'compact-cards', label: 'Compact cards', description: 'Dense cards that can reach four columns.' },
-  { value: 'horizontal-cards', label: 'Horizontal cards', description: 'Icon beside the tool details.' },
-];
-
-export const PORTFOLIO_HERO_TOOLS_CARDS_PER_ROW_OPTIONS: {
-  value: PortfolioHeroToolsCardsPerRow;
-  label: string;
-  description: string;
-}[] = [1, 2, 3, 4].map((value) => ({
-  value: value as PortfolioHeroToolsCardsPerRow,
-  label: String(value),
-  description: `${value} carte${value > 1 ? 's' : ''} par ligne sur grand écran.`,
-}));
-
-export const PORTFOLIO_HERO_TOOLS_CARDS_LIMIT_OPTIONS: {
-  value: PortfolioHeroToolsCardsLimit;
-  label: string;
-  description: string;
-}[] = [1, 2, 3, 4].map((value) => ({
-  value: value as PortfolioHeroToolsCardsLimit,
-  label: String(value),
-  description: `Afficher au maximum ${value} carte${value > 1 ? 's' : ''}.`,
-}));
-
-export const PORTFOLIO_HERO_TOOLS_CARD_CONTENT_ALIGNMENT_OPTIONS: {
-  value: PortfolioHeroToolsCardContentAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Contenu aligné à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Contenu centré.' },
-  { value: 'right', label: 'Droite', description: 'Contenu aligné à droite.' },
-];
-
-export const PORTFOLIO_HERO_TOOLS_CARD_ICON_PLACEMENT_OPTIONS: {
-  value: PortfolioHeroToolsCardIconPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'top', label: 'En haut', description: 'Icône au-dessus du libellé.' },
-  { value: 'left', label: 'À gauche', description: 'Icône à gauche du libellé.' },
-  { value: 'right', label: 'À droite', description: 'Icône à droite du libellé.' },
-];
-
-export const PORTFOLIO_HERO_TOOLS_CARD_SIZE_PRESET_OPTIONS = [
-  {
-    value: 'small',
-    label: 'Petite',
-    description: 'Carte compacte.',
-    minHeightPx: 160,
-    widthPx: 200,
-    paddingPx: 18,
-  },
-  {
-    value: 'medium',
-    label: 'Moyenne',
-    description: 'Taille actuelle par défaut.',
-    minHeightPx: 208,
-    widthPx: 260,
-    paddingPx: 24,
-  },
-  {
-    value: 'large',
-    label: 'Grande',
-    description: 'Carte plus ample.',
-    minHeightPx: 272,
-    widthPx: 340,
-    paddingPx: 32,
-  },
-] as const;
-
-export const PORTFOLIO_HERO_MOTIF_OPTIONS: {
-  value: PortfolioHeroMotifShape;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'diagonal', label: 'Diagonal', description: 'Classic editorial slash from center-bottom to top-right.' },
-  { value: 'triangle', label: 'Triangle', description: 'Bold right triangle — graphic and minimal.' },
-  { value: 'trapezoid', label: 'Trapezoid', description: 'Angled top edge with a stable base.' },
-  { value: 'block', label: 'Vertical block', description: 'Clean rectangular panel on the right half.' },
-  { value: 'chevron', label: 'Chevron', description: 'Layered V-shape pointing into the content.' },
-  { value: 'prism', label: 'Prism', description: 'Two-angle facet — dynamic and modern.' },
-  {
-    value: 'custom',
-    label: 'Custom editor',
-    description: 'Draw freely — drag points on the border to create any shape.',
-  },
-];
-
-export const PORTFOLIO_HERO_MOTIF_LAYOUT_OPTIONS: {
-  value: PortfolioHeroMotifLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'centered',
-    label: 'Centered with margins',
-    description: 'Motif band vertically centered — white space above and below (12vh each).',
-  },
-  {
-    value: 'full',
-    label: 'Full viewport',
-    description: 'Motif fills 100vh from the top — edge-to-edge editorial impact.',
-  },
-];
-
-export const PORTFOLIO_HERO_HEADLINE_FONT_OPTIONS: {
-  value: PortfolioHeroHeadlineFont;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans — current default.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine headline feel.' },
-  { value: 'display', label: 'Display caps', description: 'Tight uppercase sans — poster-like impact.' },
-  { value: 'montserrat', label: 'Montserrat', description: 'Clean modern sans — versatile and sharp.' },
-  { value: 'oswald', label: 'Oswald', description: 'Condensed uppercase — strong editorial punch.' },
-  { value: 'bebas', label: 'Bebas Neue', description: 'Tall display caps — billboard presence.' },
-  { value: 'raleway', label: 'Raleway', description: 'Elegant geometric sans — refined and light.' },
-  { value: 'anton', label: 'Anton', description: 'Heavy impact caps — loud and confident.' },
-  { value: 'righteous', label: 'Righteous', description: 'Retro display — rounded poster energy.' },
-  { value: 'script', label: 'Dancing Script', description: 'Handwritten script — creative and personal.' },
-];
-
-export const PORTFOLIO_HERO_CTA_DESIGN_OPTIONS: {
-  value: PortfolioHeroCtaDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'pill-dark', label: 'Dark pill', description: 'Solid black capsule — primary CTA.' },
-  { value: 'pill-outline', label: 'Outline pill', description: 'Bordered capsule on white.' },
-  { value: 'pill-accent', label: 'Accent pill', description: 'Theme accent fill — warm or monochrome.' },
-  { value: 'text-arrow', label: 'Text + arrow', description: 'Minimal linked text with arrow.' },
-];
-
-export const PORTFOLIO_HERO_CTA_PLACEMENT_OPTIONS: {
-  value: PortfolioHeroCtaPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'below-tools', label: 'Below tools', description: 'Under the software icons — default.' },
-  { value: 'below-pitch', label: 'Below pitch', description: 'Under the description paragraph.' },
-  { value: 'after-headline', label: 'After headline', description: 'Directly under the main title.' },
-  { value: 'with-tools', label: 'With tools', description: 'Same row as software icons on desktop.' },
-  {
-    value: 'above-stats',
-    label: 'Above stats',
-    description: 'Directly above the stats chips (same column) — still links to contact.',
-  },
-  {
-    value: 'below-stats',
-    label: 'Below stats',
-    description: 'Directly under the stats chips (same column) — still links to contact.',
-  },
-];
-
-export const PORTFOLIO_HERO_AVAILABILITY_DESIGN_OPTIONS: {
-  value: PortfolioHeroAvailabilityDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'pill-live', label: 'Live pill', description: 'Green pulse dot in a rounded capsule.' },
-  { value: 'pill-minimal', label: 'Minimal dot', description: 'Small dot and text — ultra light.' },
-  { value: 'bordered', label: 'Bordered', description: 'Square corners with crisp border.' },
-  { value: 'soft', label: 'Soft gray', description: 'Muted neutral chip — understated.' },
-];
-
-export const PORTFOLIO_HERO_AVAILABILITY_PLACEMENT_OPTIONS: {
-  value: PortfolioHeroAvailabilityPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'above-headline', label: 'Above headline', description: 'Before the main title.' },
-  { value: 'below-headline', label: 'Below headline', description: 'Between title and description.' },
-  { value: 'below-description', label: 'Below description', description: 'After the pitch paragraph.' },
-  { value: 'above-tools', label: 'Above tools', description: 'Just before the tools row.' },
-  { value: 'below-tools', label: 'Below tools', description: 'After tools / near the CTA area.' },
-  { value: 'top-left', label: 'Top left', description: 'Start of the hero copy column.' },
-  { value: 'top-center', label: 'Top center', description: 'Centered at the top — all screen sizes.' },
-  { value: 'top-right', label: 'Top right', description: 'End of the hero copy column.' },
-  {
-    value: 'above-portrait',
-    label: 'Above portrait',
-    description: 'Outside the portrait frame, sitting on top of it — not inside the photo.',
-  },
-];
-
-export function isHeroAvailabilityPlacement(
+function isHeroAvailabilityPlacement(
   value: unknown
 ): value is PortfolioHeroAvailabilityPlacement {
   return (
@@ -1334,245 +996,13 @@ export function isHeroAvailabilityPlacement(
   );
 }
 
-export const PORTFOLIO_HERO_MOBILE_ALIGN_OPTIONS: {
-  value: PortfolioHeroMobileAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Align to the left edge.' },
-  { value: 'center', label: 'Center', description: 'Center horizontally.' },
-  { value: 'right', label: 'Right', description: 'Align to the right edge.' },
-];
-
 function isHeroMobileAlign(value: unknown): value is PortfolioHeroMobileAlign {
   return value === 'left' || value === 'center' || value === 'right';
 }
 
-export const PORTFOLIO_HERO_DESKTOP_ALIGN_OPTIONS: {
-  value: PortfolioHeroDesktopAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'auto', label: 'Auto', description: 'Follows the layout side.' },
-  { value: 'left', label: 'Left', description: 'Align to the left edge.' },
-  { value: 'center', label: 'Center', description: 'Center horizontally.' },
-  { value: 'right', label: 'Right', description: 'Align to the right edge.' },
-];
-
 function isHeroDesktopAlign(value: unknown): value is PortfolioHeroDesktopAlign {
   return value === 'auto' || isHeroMobileAlign(value);
 }
-
-export type HeroAlignClassOptions = {
-  /**
-   * When true, left/center/right applies at every breakpoint (vertical division).
-   * When false (default), xl+ follows the horizontal layout flip instead.
-   */
-  respectAlignOnDesktop?: boolean;
-  /** Explicit desktop (xl+) alignment — anything but 'auto' wins over the layout side. */
-  desktopAlign?: PortfolioHeroDesktopAlign;
-};
-
-/** Explicit (non-auto) desktop alignment from options, if any. */
-function explicitDesktopAlign(
-  options?: HeroAlignClassOptions
-): PortfolioHeroMobileAlign | null {
-  return options?.desktopAlign && options.desktopAlign !== 'auto' ? options.desktopAlign : null;
-}
-
-export function heroAlignTextClass(align: PortfolioHeroMobileAlign): string {
-  return align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left';
-}
-
-export function heroAlignJustifyClass(align: PortfolioHeroMobileAlign): string {
-  return align === 'center'
-    ? 'justify-center'
-    : align === 'right'
-      ? 'justify-end'
-      : 'justify-start';
-}
-
-export function heroAlignSelfClass(align: PortfolioHeroMobileAlign): string {
-  return align === 'center' ? 'self-center' : align === 'right' ? 'self-end' : 'self-start';
-}
-
-function heroAlignTextXlClass(align: PortfolioHeroMobileAlign): string {
-  return align === 'center' ? 'xl:text-center' : align === 'right' ? 'xl:text-right' : 'xl:text-left';
-}
-
-function heroAlignJustifyXlClass(align: PortfolioHeroMobileAlign): string {
-  return align === 'center'
-    ? 'xl:justify-center'
-    : align === 'right'
-      ? 'xl:justify-end'
-      : 'xl:justify-start';
-}
-
-function heroAlignSelfXlClass(align: PortfolioHeroMobileAlign): string {
-  return align === 'center' ? 'xl:self-center' : align === 'right' ? 'xl:self-end' : 'xl:self-start';
-}
-
-/** Text-align classes: stacked/mobile value below xl; xl+ uses the explicit desktop align, else the layout flip (or the chosen align for vertical divisions). */
-export function heroMobileTextAlignClass(
-  align: PortfolioHeroMobileAlign,
-  desktopEnd: boolean,
-  options?: HeroAlignClassOptions
-): string {
-  const desktop = explicitDesktopAlign(options);
-  /** Vertical division: tablet/mobile auto-centers, the chosen align already drives desktop. */
-  if (options?.respectAlignOnDesktop) {
-    return `text-center ${heroAlignTextXlClass(align)}`;
-  }
-  const base = heroAlignTextClass(align);
-  const xl = desktop
-    ? heroAlignTextXlClass(desktop)
-    : desktopEnd
-      ? 'xl:text-right'
-      : 'xl:text-left';
-  return `${base} ${xl}`;
-}
-
-/** Flex justify for rows (badge, tools): stacked/mobile value below xl; xl+ uses the explicit desktop align, else the layout flip (or the chosen align for vertical divisions). */
-export function heroMobileJustifyClass(
-  align: PortfolioHeroMobileAlign,
-  desktopEnd: boolean,
-  options?: HeroAlignClassOptions
-): string {
-  const desktop = explicitDesktopAlign(options);
-  if (options?.respectAlignOnDesktop) {
-    return `justify-center ${heroAlignJustifyXlClass(align)}`;
-  }
-  const base = heroAlignJustifyClass(align);
-  const xl = desktop
-    ? heroAlignJustifyXlClass(desktop)
-    : desktopEnd
-      ? 'xl:justify-end'
-      : 'xl:justify-start';
-  return `${base} ${xl}`;
-}
-
-/** Self-alignment for hug-content items (CTA): stacked/mobile value below xl; xl+ uses the explicit desktop align, else the layout flip (or the chosen align for vertical divisions). */
-export function heroMobileSelfAlignClass(
-  align: PortfolioHeroMobileAlign,
-  desktopEnd: boolean,
-  options?: HeroAlignClassOptions
-): string {
-  const desktop = explicitDesktopAlign(options);
-  if (options?.respectAlignOnDesktop) {
-    return `self-center ${heroAlignSelfXlClass(align)}`;
-  }
-  const base = heroAlignSelfClass(align);
-  const xl = desktop
-    ? heroAlignSelfXlClass(desktop)
-    : desktopEnd
-      ? 'xl:self-end'
-      : 'xl:self-start';
-  return `${base} ${xl}`;
-}
-
-/** Block alignment for capped-width copy (description) so center isn't stuck to the left edge. */
-export function heroMobileBlockAlignClass(
-  align: PortfolioHeroMobileAlign,
-  desktopEnd: boolean,
-  options?: HeroAlignClassOptions
-): string {
-  return heroMobileSelfAlignClass(align, desktopEnd, options);
-}
-
-/** Flex justify for the availability row based on pin placement + mobile align. */
-export function availabilityPlacementJustifyClass(
-  placement: PortfolioHeroAvailabilityPlacement,
-  mobileAlign: PortfolioHeroMobileAlign,
-  desktopEnd: boolean,
-  options?: HeroAlignClassOptions
-): string {
-  if (placement === 'top-center' || placement === 'above-portrait') {
-    return 'justify-center';
-  }
-
-  const base = heroAlignJustifyClass(mobileAlign);
-  const desktop = explicitDesktopAlign(options);
-
-  if (options?.respectAlignOnDesktop) {
-    return `justify-center ${heroAlignJustifyXlClass(mobileAlign)}`;
-  }
-
-  // An explicit desktop align wins over the corner pin on xl+.
-  if (placement === 'top-right') {
-    return `${base} ${desktop ? heroAlignJustifyXlClass(desktop) : desktopEnd ? 'xl:justify-start' : 'xl:justify-end'}`;
-  }
-  if (placement === 'top-left') {
-    return `${base} ${desktop ? heroAlignJustifyXlClass(desktop) : desktopEnd ? 'xl:justify-end' : 'xl:justify-start'}`;
-  }
-  return heroMobileJustifyClass(mobileAlign, desktopEnd, options);
-}
-
-/** Whether availability should sit above the portrait for a given viewport. */
-export function isAvailabilityAbovePortrait(
-  presentation: Pick<
-    PortfolioHeroPresentationSettings,
-    'availabilityPlacement' | 'mobileAvailabilityPlacement'
-  >,
-  viewport: 'mobile' | 'desktop' | 'either' = 'either'
-): boolean {
-  const desktop = presentation.availabilityPlacement === 'above-portrait';
-  const mobile =
-    (presentation.mobileAvailabilityPlacement ?? presentation.availabilityPlacement) ===
-    'above-portrait';
-  if (viewport === 'desktop') return desktop;
-  if (viewport === 'mobile') return mobile;
-  return desktop || mobile;
-}
-
-/** Visibility classes when the badge is mounted on the portrait stack. */
-export function availabilityAbovePortraitVisibilityClass(
-  presentation: Pick<
-    PortfolioHeroPresentationSettings,
-    'availabilityPlacement' | 'mobileAvailabilityPlacement'
-  >
-): string | null {
-  const desktop = presentation.availabilityPlacement === 'above-portrait';
-  const mobile =
-    (presentation.mobileAvailabilityPlacement ?? presentation.availabilityPlacement) ===
-    'above-portrait';
-  if (!desktop && !mobile) return null;
-  if (desktop && mobile) return 'flex';
-  if (mobile) return 'flex xl:hidden';
-  return 'hidden xl:flex';
-}
-
-export const PORTFOLIO_HERO_AVAILABILITY_BORDER_WIDTH_OPTIONS: {
-  value: PortfolioHeroAvailabilityBorderWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No outline around the badge.' },
-  { value: 'thin', label: 'Thin', description: 'Subtle 1px border.' },
-  { value: 'medium', label: 'Medium', description: 'Clear 2px border.' },
-  { value: 'thick', label: 'Thick', description: 'Bold 3px border.' },
-];
-
-export const PORTFOLIO_HERO_AVAILABILITY_BORDER_RADIUS_OPTIONS: {
-  value: PortfolioHeroAvailabilityBorderRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Square', description: 'Sharp corners.' },
-  { value: 'sm', label: 'Slight', description: 'Soft small radius.' },
-  { value: 'md', label: 'Rounded', description: 'Comfortable medium radius.' },
-  { value: 'lg', label: 'Soft', description: 'Larger rounded corners.' },
-  { value: 'full', label: 'Pill', description: 'Fully rounded capsule.' },
-];
-
-export const PORTFOLIO_HERO_AVAILABILITY_DOT_SIZE_OPTIONS: {
-  value: PortfolioHeroAvailabilityDotSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Compact status dot.' },
-  { value: 'md', label: 'Medium', description: 'Default status dot.' },
-  { value: 'lg', label: 'Large', description: 'More visible status dot.' },
-];
 
 function sanitizeAvailabilityHex(value: unknown, fallback: string): string {
   if (typeof value === 'string' && /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value.trim())) {
@@ -1671,472 +1101,8 @@ function mergeHeroAvailabilityChrome(
   };
 }
 
-export function pickHeroAvailabilityBadgeProps(presentation: PortfolioHeroPresentationSettings) {
-  return {
-    design: presentation.availabilityDesign,
-    placement: presentation.availabilityPlacement,
-    showResponseTime: presentation.showAvailabilityResponseTime,
-    label: presentation.availabilityLabel,
-    unavailableLabel: presentation.availabilityUnavailableLabel,
-    textColor: presentation.availabilityTextColor,
-    backgroundColor: presentation.availabilityBackgroundColor,
-    borderColor: presentation.availabilityBorderColor,
-    borderWidth: presentation.availabilityBorderWidth,
-    borderRadius: presentation.availabilityBorderRadius,
-    showDot: presentation.availabilityShowDot,
-    dotColor: presentation.availabilityDotColor,
-    dotSize: presentation.availabilityDotSize,
-    dotPulse: presentation.availabilityDotPulse,
-    unavailableTextColor: presentation.availabilityUnavailableTextColor,
-    unavailableBackgroundColor: presentation.availabilityUnavailableBackgroundColor,
-    unavailableBorderColor: presentation.availabilityUnavailableBorderColor,
-    unavailableDotColor: presentation.availabilityUnavailableDotColor,
-    marginTopPx: presentation.availabilityMarginTopPx,
-    marginBottomPx: presentation.availabilityMarginBottomPx,
-  };
-}
-
-export function resolveMotifPoints(
-  shape: PortfolioHeroMotifShape,
-  customMotifPoints: MotifPoint[],
-  /** Which content-frame column the geometric motif sits on. */
-  column: 'left' | 'right' = 'right'
-): MotifPoint[] {
-  const raw =
-    shape === 'custom'
-      ? sanitizeMotifPoints(customMotifPoints)
-      : getRightMotifPresetPoints(shape as RightMotifPresetShape);
-  return column === 'left'
-    ? ensureLeftColumnMotifPoints(raw)
-    : ensureRightColumnMotifPoints(raw);
-}
-
-export function getHeroMotifClipPath(shape: Exclude<PortfolioHeroMotifShape, 'custom'>): string {
-  return motifPointsToClipPath(getRightMotifPresetPoints(shape));
-}
-
-export function resolveMotifClipPath(
-  shape: PortfolioHeroMotifShape,
-  customMotifPoints: MotifPoint[],
-  column: 'left' | 'right' = 'right'
-): string {
-  return motifPointsToClipPath(resolveMotifPoints(shape, customMotifPoints, column));
-}
-
-export function isValidHeroMotifColor(value: string): boolean {
+function isValidHeroMotifColor(value: string): boolean {
   return /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(value.trim());
-}
-
-export function heroHeadlineUsesSplitLayout(font: PortfolioHeroHeadlineFont): boolean {
-  return font === 'display' || font === 'bebas' || font === 'anton' || font === 'oswald';
-}
-
-export function heroHeadlineSizeClass(font: PortfolioHeroHeadlineFont): string {
-  switch (font) {
-    case 'display':
-    case 'bebas':
-    case 'anton':
-      return 'text-[2.25rem] sm:text-[3.25rem] lg:text-[4.5rem] xl:text-[5rem]';
-    case 'script':
-      return 'text-[2.5rem] sm:text-[3.5rem] lg:text-[4.75rem] xl:text-[5.5rem]';
-    case 'oswald':
-    case 'righteous':
-      return 'text-[2.35rem] sm:text-[3.5rem] lg:text-[5rem] xl:text-[5.25rem]';
-    default:
-      return 'text-[2.5rem] sm:text-[3.5rem] lg:text-[5rem] xl:text-[5.5rem]';
-  }
-}
-
-/** Scales the hero h1 from element “Headline typography” size (xl = full display size). */
-export function heroHeadlineSizeClassForElement(
-  font: PortfolioHeroHeadlineFont,
-  size: 'sm' | 'md' | 'lg' | 'xl' | 'custom'
-): string {
-  // Custom size is applied via inline fontSize; keep display-scale class as the baseline.
-  if (size === 'custom') return heroHeadlineSizeClass(font);
-  switch (size) {
-    case 'sm':
-      switch (font) {
-        case 'display':
-        case 'bebas':
-        case 'anton':
-          return 'text-[1.35rem] sm:text-[1.85rem] lg:text-[2.35rem] xl:text-[2.6rem]';
-        case 'script':
-          return 'text-[1.5rem] sm:text-[2rem] lg:text-[2.5rem] xl:text-[2.85rem]';
-        case 'oswald':
-        case 'righteous':
-          return 'text-[1.4rem] sm:text-[2rem] lg:text-[2.55rem] xl:text-[2.75rem]';
-        default:
-          return 'text-[1.5rem] sm:text-[2rem] lg:text-[2.55rem] xl:text-[2.85rem]';
-      }
-    case 'md':
-      switch (font) {
-        case 'display':
-        case 'bebas':
-        case 'anton':
-          return 'text-[1.7rem] sm:text-[2.35rem] lg:text-[3.15rem] xl:text-[3.5rem]';
-        case 'script':
-          return 'text-[1.85rem] sm:text-[2.5rem] lg:text-[3.35rem] xl:text-[3.75rem]';
-        case 'oswald':
-        case 'righteous':
-          return 'text-[1.75rem] sm:text-[2.5rem] lg:text-[3.4rem] xl:text-[3.6rem]';
-        default:
-          return 'text-[1.85rem] sm:text-[2.5rem] lg:text-[3.4rem] xl:text-[3.75rem]';
-      }
-    case 'lg':
-      switch (font) {
-        case 'display':
-        case 'bebas':
-        case 'anton':
-          return 'text-[2rem] sm:text-[2.85rem] lg:text-[3.85rem] xl:text-[4.25rem]';
-        case 'script':
-          return 'text-[2.2rem] sm:text-[3rem] lg:text-[4.1rem] xl:text-[4.65rem]';
-        case 'oswald':
-        case 'righteous':
-          return 'text-[2.1rem] sm:text-[3rem] lg:text-[4.25rem] xl:text-[4.5rem]';
-        default:
-          return 'text-[2.2rem] sm:text-[3rem] lg:text-[4.25rem] xl:text-[4.65rem]';
-      }
-    default:
-      return heroHeadlineSizeClass(font);
-  }
-}
-
-export function heroHeadlineClassName(font: PortfolioHeroHeadlineFont): string {
-  switch (font) {
-    case 'serif':
-      return 'font-serif font-bold tracking-[-0.03em]';
-    case 'display':
-      return 'font-black uppercase tracking-[-0.05em]';
-    case 'montserrat':
-      return 'font-bold tracking-[-0.04em]';
-    case 'oswald':
-      return 'font-bold uppercase tracking-[0.03em]';
-    case 'bebas':
-      return 'font-normal uppercase tracking-[0.08em]';
-    case 'raleway':
-      return 'font-extrabold tracking-[-0.03em]';
-    case 'anton':
-      return 'font-normal uppercase tracking-[0.05em]';
-    case 'righteous':
-      return 'font-normal tracking-[0.02em]';
-    case 'script':
-      return 'font-normal normal-case tracking-normal';
-    default:
-      return 'font-extrabold tracking-[-0.04em]';
-  }
-}
-
-export function heroHeadlineFontStyle(_font: PortfolioHeroHeadlineFont): import('react').CSSProperties | undefined {
-  return undefined;
-}
-
-/** @deprecated Use heroHeadlineFontStyle */
-export function heroHeadlineSerifStyle(font: PortfolioHeroHeadlineFont): import('react').CSSProperties | undefined {
-  return heroHeadlineFontStyle(font);
-}
-
-export function heroCtaClassName(design: PortfolioHeroCtaDesign): string {
-  const base = 'inline-flex items-center gap-2 text-sm font-bold transition';
-  switch (design) {
-    case 'pill-outline':
-      return `${base} rounded-full border-2 px-9 py-4`;
-    case 'pill-accent':
-      return `${base} rounded-full px-9 py-4`;
-    case 'text-arrow':
-      return `${base} px-0 py-2 underline-offset-4 hover:underline`;
-    default:
-      return `${base} rounded-full px-9 py-4`;
-  }
-}
-
-/**
- * Fallback colors when the CTA has no palette / inline overrides.
- * Prefer dark ink defaults so light-mode pages stay readable before palette hydrates.
- */
-export function heroCtaFallbackStyle(design: PortfolioHeroCtaDesign): CSSProperties {
-  switch (design) {
-    case 'pill-outline':
-      return { color: '#15151a', backgroundColor: 'transparent', borderColor: '#15151a' };
-    case 'pill-accent':
-      return { color: '#ffffff', backgroundColor: '#ea580c' };
-    case 'text-arrow':
-      return { color: '#65656d' };
-    default:
-      return { color: '#ffffff', backgroundColor: '#0a0a0a' };
-  }
-}
-
-function ctaHexLuminance(hex: string): number {
-  const raw = hex.replace('#', '').trim();
-  const full =
-    raw.length === 3
-      ? raw
-          .split('')
-          .map((c) => c + c)
-          .join('')
-      : raw;
-  if (!/^[0-9a-fA-F]{6}$/.test(full)) return 0.5;
-  const r = parseInt(full.slice(0, 2), 16) / 255;
-  const g = parseInt(full.slice(2, 4), 16) / 255;
-  const b = parseInt(full.slice(4, 6), 16) / 255;
-  const lin = (c: number) => (c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4);
-  return 0.2126 * lin(r) + 0.7152 * lin(g) + 0.0722 * lin(b);
-}
-
-/** White or near-black ink from fill luminance — keeps Contact / secondary readable. */
-export function heroCtaContrastInk(backgroundHex: string): string {
-  return ctaHexLuminance(backgroundHex) < 0.45 ? '#ffffff' : '#15151a';
-}
-
-type HeroCtaStylePresentation = Pick<
-  PortfolioHeroPresentationSettings,
-  | 'elementStyles'
-  | 'palette'
-  | 'useHeroPalette'
-  | 'ctaBackgroundEnabled'
-  | 'ctaBackgroundColor'
-  | 'ctaBorderEnabled'
-  | 'ctaBorderColor'
-  | 'ctaBorderWidth'
-  | 'ctaBorderRadius'
-  | 'ctaDesign'
->;
-
-/**
- * Resolve the filled-pill background so light/dark palette switches never
- * collapse into page-colored (e.g. Neutre ≈ Fond) white-on-grey ghosts.
- */
-export function resolveHeroCtaFillColor(
-  design: PortfolioHeroCtaDesign,
-  presentation: Pick<
-    PortfolioHeroPresentationSettings,
-    'ctaBackgroundColor' | 'palette' | 'useHeroPalette'
-  >
-): string {
-  const accentFallback = '#ea580c';
-  const darkFallback = '#0a0a0a';
-  const raw = sanitizeAvailabilityHex(
-    presentation.ctaBackgroundColor,
-    design === 'pill-accent' ? accentFallback : darkFallback
-  );
-
-  if (presentation.useHeroPalette === false) return raw;
-
-  const palette = presentation.palette;
-  if (!palette) return raw;
-
-  const fond =
-    typeof palette.fond === 'string' && isValidProfileHexColor(palette.fond)
-      ? palette.fond.trim()
-      : '#0b0b0d';
-  const texteFort =
-    typeof palette.texteFort === 'string' && isValidProfileHexColor(palette.texteFort)
-      ? palette.texteFort.trim()
-      : '#f4f3ef';
-  const principal =
-    typeof palette.principal === 'string' && isValidProfileHexColor(palette.principal)
-      ? palette.principal.trim()
-      : accentFallback;
-
-  if (design === 'pill-accent') {
-    return sanitizeAvailabilityHex(presentation.ctaBackgroundColor, principal);
-  }
-
-  // pill-dark (and painted surfaces): if fill ≈ page, rebuild a contrasting capsule.
-  const pageLum = ctaHexLuminance(fond);
-  const fillLum = ctaHexLuminance(raw);
-  if (Math.abs(fillLum - pageLum) < 0.18) {
-    // Dark page → Principal (brand) or light ink; light page → strong dark ink.
-    return pageLum < 0.4 ? principal : texteFort;
-  }
-  return raw;
-}
-
-/**
- * Readable label color for Contact / secondary CTAs across designs + palette modes.
- * Filled pills → contrast ink on the real fill. Outline / text-arrow → palette text.
- */
-export function heroCtaLabelStyle(
-  design: PortfolioHeroCtaDesign,
-  presentation: Pick<
-    PortfolioHeroPresentationSettings,
-    'elementStyles' | 'palette' | 'useHeroPalette' | 'ctaBackgroundColor' | 'ctaDesign'
-  >
-): CSSProperties {
-  const styles = normalizeHeroElementStyles(
-    presentation.elementStyles,
-    presentation as unknown as Parameters<typeof normalizeHeroElementStyles>[1]
-  );
-  if (design === 'pill-accent' || design === 'pill-dark') {
-    const fill = resolveHeroCtaFillColor(design, presentation);
-    return { color: heroCtaContrastInk(fill) };
-  }
-  if (design === 'text-arrow') {
-    const palette = presentation.palette;
-    // Prefer strong text in light mode so secondary links stay visible on Fond.
-    const strong =
-      palette && typeof palette.texteFort === 'string' && isValidProfileHexColor(palette.texteFort)
-        ? palette.texteFort.trim()
-        : null;
-    const muted =
-      palette && typeof palette.texteMuted === 'string' && isValidProfileHexColor(palette.texteMuted)
-        ? palette.texteMuted.trim()
-        : '#65656d';
-    const fond =
-      palette && typeof palette.fond === 'string' && isValidProfileHexColor(palette.fond)
-        ? palette.fond.trim()
-        : null;
-    if (strong && fond && ctaHexLuminance(fond) > 0.6) {
-      return { color: strong };
-    }
-    return { color: muted };
-  }
-  // pill-outline — follow CTA typography (texteFort after palette sync).
-  const ink = styles.cta.color;
-  if (ink && isValidProfileHexColor(ink)) {
-    const fond =
-      presentation.palette &&
-      typeof presentation.palette.fond === 'string' &&
-      isValidProfileHexColor(presentation.palette.fond)
-        ? presentation.palette.fond.trim()
-        : null;
-    if (fond && Math.abs(ctaHexLuminance(ink) - ctaHexLuminance(fond)) < 0.2) {
-      return {
-        color:
-          ctaHexLuminance(fond) > 0.6
-            ? '#15151a'
-            : presentation.palette &&
-                typeof presentation.palette.texteFort === 'string' &&
-                isValidProfileHexColor(presentation.palette.texteFort)
-              ? presentation.palette.texteFort.trim()
-              : '#f4f3ef',
-      };
-    }
-  }
-  return { color: ink };
-}
-
-/** Background / border for a CTA design (Contact or secondary). */
-export function heroCtaSurfaceStyleForDesign(
-  presentation: HeroCtaStylePresentation,
-  design: PortfolioHeroCtaDesign
-): CSSProperties {
-  return heroCtaSurfaceStyle({ ...presentation, ctaDesign: design });
-}
-
-function heroSurfaceBorderWidthPx(width: PortfolioHeroAvailabilityBorderWidth): number {
-  switch (width) {
-    case 'none':
-      return 0;
-    case 'medium':
-      return 2;
-    case 'thick':
-      return 3;
-    default:
-      return 1;
-  }
-}
-
-function heroSurfaceBorderRadiusCss(radius: PortfolioHeroAvailabilityBorderRadius): string {
-  switch (radius) {
-    case 'none':
-      return '0px';
-    case 'sm':
-      return '0.375rem';
-    case 'md':
-      return '0.75rem';
-    case 'lg':
-      return '1rem';
-    default:
-      return '9999px';
-  }
-}
-
-/** Background / border for Contact / secondary CTAs — auto-applies palette colors per design. */
-export function heroCtaSurfaceStyle(
-  presentation: HeroCtaStylePresentation
-): CSSProperties {
-  const design = presentation.ctaDesign ?? 'pill-dark';
-  const style: CSSProperties = {
-    borderRadius: heroSurfaceBorderRadiusCss(presentation.ctaBorderRadius ?? 'full'),
-  };
-
-  const needsBg =
-    presentation.ctaBackgroundEnabled ||
-    design === 'pill-dark' ||
-    design === 'pill-accent';
-  const needsBorder =
-    presentation.ctaBorderEnabled || design === 'pill-outline';
-
-  if (needsBg) {
-    style.backgroundColor = resolveHeroCtaFillColor(design, presentation);
-  }
-  if (needsBorder) {
-    const width = heroSurfaceBorderWidthPx(presentation.ctaBorderWidth ?? 'thin');
-    style.borderStyle = 'solid';
-    style.borderWidth = width || 2;
-    let border = sanitizeAvailabilityHex(presentation.ctaBorderColor, '#15151a');
-    if (presentation.useHeroPalette !== false && presentation.palette) {
-      const fond =
-        typeof presentation.palette.fond === 'string' &&
-        isValidProfileHexColor(presentation.palette.fond)
-          ? presentation.palette.fond.trim()
-          : null;
-      const texteFort =
-        typeof presentation.palette.texteFort === 'string' &&
-        isValidProfileHexColor(presentation.palette.texteFort)
-          ? presentation.palette.texteFort.trim()
-          : null;
-      if (fond && Math.abs(ctaHexLuminance(border) - ctaHexLuminance(fond)) < 0.2 && texteFort) {
-        border = texteFort;
-      }
-    }
-    style.borderColor = border;
-    // Outline needs a visible stroke even when width was stored as "none".
-    if (design === 'pill-outline' && width === 0) {
-      style.borderWidth = 2;
-    }
-  }
-  return style;
-}
-
-/** Extra padding when a text-arrow CTA gains a painted surface. */
-export function heroCtaSurfacePaddingClass(
-  presentation: Pick<
-    PortfolioHeroPresentationSettings,
-    'ctaDesign' | 'ctaBackgroundEnabled' | 'ctaBorderEnabled'
-  >
-): string {
-  if (presentation.ctaDesign !== 'text-arrow') return '';
-  if (!presentation.ctaBackgroundEnabled && !presentation.ctaBorderEnabled) return '';
-  return 'px-6 py-3 no-underline hover:no-underline';
-}
-
-/** Background + border for each tools icon chip. */
-export function heroToolsIconSurfaceStyle(
-  presentation: Pick<
-    PortfolioHeroPresentationSettings,
-    | 'toolsIconBackgroundEnabled'
-    | 'toolsIconBackgroundColor'
-    | 'toolsIconBorderColor'
-    | 'toolsIconBorderWidth'
-    | 'toolsIconBorderRadius'
-  >
-): CSSProperties {
-  const backgroundEnabled = presentation.toolsIconBackgroundEnabled !== false;
-  const width = backgroundEnabled
-    ? heroSurfaceBorderWidthPx(presentation.toolsIconBorderWidth ?? 'thin')
-    : 0;
-  return {
-    backgroundColor: backgroundEnabled
-      ? sanitizeAvailabilityHex(presentation.toolsIconBackgroundColor, '#ffffff')
-      : 'transparent',
-    borderStyle: 'solid',
-    borderWidth: width,
-    borderColor: sanitizeAvailabilityHex(presentation.toolsIconBorderColor, '#e5e5e5'),
-    borderRadius: heroSurfaceBorderRadiusCss(presentation.toolsIconBorderRadius ?? 'full'),
-  };
 }
 
 export function resolveHeroTools(allTools: string[], selectedTools: string[], max = 6): string[] {
@@ -2148,7 +1114,7 @@ export function resolveHeroTools(allTools: string[], selectedTools: string[], ma
   return (picked.length > 0 ? picked : normalized).slice(0, max);
 }
 
-export function getHeroGeomMetrics(layout: PortfolioHeroMotifLayout = 'centered') {
+function getHeroGeomMetrics(layout: PortfolioHeroMotifLayout = 'centered') {
   if (layout === 'full') {
     return {
       marginVh: 0,
@@ -2162,17 +1128,6 @@ export function getHeroGeomMetrics(layout: PortfolioHeroMotifLayout = 'centered'
     panelHeightVh: HERO_GEOM_CENTERED_PANEL_HEIGHT_VH,
     motifBottom: `${HERO_GEOM_CENTERED_MARGIN_VH + HERO_GEOM_CENTERED_PANEL_HEIGHT_VH}vh`,
   };
-}
-
-/** Desktop hero must be tall enough for motif + stat cards (positioned in vh from the top). */
-export const HERO_SECTION_DESKTOP_MIN_HEIGHT_VH = 100;
-
-export function resolveHeroSectionMinHeightVh(
-  presentation: Pick<PortfolioHeroPresentationSettings, 'motifPosition' | 'motifPanelSize' | 'metaPosition'>
-): number {
-  const motifBottom = presentation.motifPosition.y + presentation.motifPanelSize.height / 2;
-  const metaBottom = presentation.metaPosition.y + 8;
-  return Math.ceil(Math.max(HERO_SECTION_DESKTOP_MIN_HEIGHT_VH, motifBottom + 2, metaBottom));
 }
 
 export function heroGeomLayerPositionStyle(

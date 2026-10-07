@@ -4,7 +4,7 @@ import { useCallback, useEffect, useLayoutEffect, useRef, useState } from 'react
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faRightLeft } from '@fortawesome/free-solid-svg-icons';
-import { ACCENT_ORANGE, APP_FIELD, APP_GROUND, brandCtaClass } from '@/components/landing/landingBrand';
+import { ACCENT_ORANGE, brandCtaClass } from '@/components/landing/landingBrand';
 import { useAuth } from '@/context/AuthContext';
 import { CreatorStudioProfileTab } from '@/components/creator/studio/CreatorStudioProfileTab';
 import { PortfolioPresencePicker } from '@/components/portfolio/PortfolioPresencePicker';
@@ -187,7 +187,8 @@ function PortfolioWorkspaceSegmentedNav({
             transitionTimingFunction: EASE,
             opacity: plate.ready && plate.width > 0 ? 1 : 0,
           }}
-          className="pointer-events-none absolute top-1 bottom-1 rounded-md bg-black/[0.06] transition-[left,width,opacity] duration-[420ms] dark:bg-white/[0.08]"
+          /* Same colour as the page behind it (no grey), set apart by a hairline ring. */
+          className="pointer-events-none absolute top-1 bottom-1 rounded-md bg-white ring-1 ring-black/[0.12] transition-[left,width,opacity] duration-[420ms] dark:bg-black dark:ring-white/[0.18]"
         />
 
         {TABS.map((item) => {
@@ -290,7 +291,7 @@ export function MyPortfolioWorkspace() {
   if (isLoading) {
     return (
       <div className={PORTFOLIO_FRAME_CLASS}>
-        <div className={`rounded-lg border border-black/[0.08] ${APP_GROUND} px-6 py-16 text-center text-sm text-[#666666] dark:border-white/[0.06] dark:bg-[#0F0F0F] dark:text-neutral-400`}>
+        <div className={`rounded-lg border border-black/[0.08] bg-[#FFFFFF] px-6 py-16 text-center text-sm text-[#666666] dark:border-white/[0.06] dark:bg-[#0F0F0F] dark:text-neutral-400`}>
           Loading…
         </div>
       </div>
@@ -299,12 +300,12 @@ export function MyPortfolioWorkspace() {
 
   if (!isCreator || !user) {
     return (
-      <div className={`mx-4 rounded-2xl border border-dashed border-black/[0.08] ${APP_FIELD} px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#0D0D0D]/80 sm:mx-5`}>
+      <div className={`mx-4 rounded-2xl border border-dashed border-black/[0.08] bg-[#FFFFFF] px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#0D0D0D]/80 sm:mx-5`}>
         <p className="text-sm text-[#666666] dark:text-neutral-400">
           A creator account is required to manage your portfolio.
         </p>
         <Link
-          href="/dashboard/home"
+          href="/feed"
           className="mt-4 inline-flex text-sm font-medium text-[#EA580C] hover:text-[#F97316]"
         >
           Back to Dashboard
@@ -315,7 +316,7 @@ export function MyPortfolioWorkspace() {
 
   if (!selectedPresence) {
     return (
-      <div className={PORTFOLIO_FRAME_CLASS}>
+      <div className={`news-theme ${PORTFOLIO_FRAME_CLASS}`}>
         <PortfolioPresencePicker onSelect={(kind) => void persistPresenceKind(kind)} />
       </div>
     );
@@ -351,7 +352,8 @@ export function MyPortfolioWorkspace() {
 
       <div
         className={`min-w-0 flex-1 ${
-          isPreview ? 'min-h-0 max-w-full overflow-x-clip' : PORTFOLIO_FRAME_CLASS
+          /* The News palette stays off the live preview: its settings dock has its own surface system. */
+          isPreview ? 'min-h-0 max-w-full overflow-x-clip' : `news-theme ${PORTFOLIO_FRAME_CLASS}`
         }`}
       >
         {/*
@@ -371,7 +373,7 @@ export function MyPortfolioWorkspace() {
           ) : tab === 'preview' ? (
             <PortfolioLivePreview creatorId={user.id} username={user.username} />
           ) : (
-            <div className={`rounded-2xl border border-black/[0.04] ${APP_FIELD} px-6 py-20 text-center dark:border-white/[0.04] dark:bg-[#0D0D0D]`}>
+            <div className={`rounded-2xl border border-[#E5E5E5] bg-[#FFFFFF] px-6 py-20 text-center dark:border-white/[0.04] dark:bg-[#0D0D0D]`}>
               <p className="text-base font-semibold text-[#111111] dark:text-white">
                 {TABS.find((t) => t.id === tab)?.label}
               </p>

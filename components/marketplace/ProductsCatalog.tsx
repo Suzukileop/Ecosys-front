@@ -52,6 +52,58 @@ function readSavedScroll(cacheKey: string): number | null {
   return point && point.key === cacheKey ? point.y : null;
 }
 
+const fetchLikedProducts = (ids: string[]) => listMyLikedTargetIds('PRODUCT', ids);
+const fetchFavoritedProducts = (ids: string[]) => listMyFavoriteTargetIds('PRODUCT', ids);
+
+/**
+ * Which of the listed products the viewer has marked. Only products not asked about yet are sent,
+ * so paging through the catalogue costs one small request per new page — never the whole history.
+ */
+function useViewerMarkedIds(
+  viewerId: string | null,
+  productIds: string[],
+  fetchMarked: (ids: string[]) => Promise<string[]>
+) {
+  const [marked, setMarked] = useState<Set<string>>(() => new Set());
+  const checkedRef = useRef<{ viewerId: string | null; ids: Set<string> }>({ viewerId: null, ids: new Set() });
+  const idsKey = productIds.join(',');
+
+  useEffect(() => {
+    if (checkedRef.current.viewerId !== viewerId) {
+      checkedRef.current = { viewerId, ids: new Set() };
+      setMarked(new Set());
+    }
+    if (!viewerId) return;
+
+    const tracker = checkedRef.current;
+    const pending = idsKey.split(',').filter((id) => id && !tracker.ids.has(id));
+    if (pending.length === 0) return;
+    pending.forEach((id) => tracker.ids.add(id));
+
+    let settled = false;
+    void fetchMarked(pending)
+      .then((ids) => {
+        settled = true;
+        if (checkedRef.current !== tracker || ids.length === 0) return;
+        setMarked((prev) => {
+          const next = new Set(prev);
+          ids.forEach((id) => next.add(id));
+          return next;
+        });
+      })
+      .catch(() => {
+        settled = true;
+        pending.forEach((id) => tracker.ids.delete(id));
+      });
+
+    return () => {
+      if (!settled) pending.forEach((id) => tracker.ids.delete(id));
+    };
+  }, [viewerId, idsKey, fetchMarked]);
+
+  return [marked, setMarked] as const;
+}
+
 export function ProductsCatalog({
   basePath = '/marketplace',
   embedded = false,
@@ -75,66 +127,14 @@ export function ProductsCatalog({
     typeof window !== 'undefined' &&
       (Date.now() - lastPopStateAt < BACK_NAVIGATION_WINDOW_MS || hasMarketplaceRestoreRequest())
   );
-  const [favoriteIds, setFavoriteIds] = useState<Set<string>>(new Set());
-  const [likedIds, setLikedIds] = useState<Set<string>>(new Set());
-  const favoritesLoaded = useRef(false);
-  const likesLoaded = useRef(false);
-
-  useEffect(() => {
-    if (authLoading || !user?.id) {
-      setLikedIds(new Set());
-      likesLoaded.current = false;
-      return;
-    }
-
-    if (likesLoaded.current) return;
-
-    let cancelled = false;
-    void listMyLikedTargetIds('PRODUCT')
-      .then((ids) => {
-        if (!cancelled) {
-          setLikedIds(new Set(ids));
-          likesLoaded.current = true;
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setLikedIds(new Set());
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, user?.id]);
-
-  useEffect(() => {
-    if (authLoading || !canFavorite) {
-      setFavoriteIds(new Set());
-      favoritesLoaded.current = false;
-      return;
-    }
-
-    if (favoritesLoaded.current) return;
-
-    let cancelled = false;
-    void listMyFavoriteTargetIds('PRODUCT')
-      .then((ids) => {
-        if (!cancelled) {
-          setFavoriteIds(new Set(ids));
-          favoritesLoaded.current = true;
-        }
-      })
-      .catch(() => {
-        if (!cancelled) {
-          setFavoriteIds(new Set());
-        }
-      });
-
-    return () => {
-      cancelled = true;
-    };
-  }, [authLoading, canFavorite, user?.id]);
+  const productIds = useMemo(() => products.map((product) => product.id), [products]);
+  const viewerId = !authLoading && user?.id ? user.id : null;
+  const [likedIds, setLikedIds] = useViewerMarkedIds(viewerId, productIds, fetchLikedProducts);
+  const [favoriteIds, setFavoriteIds] = useViewerMarkedIds(
+    canFavorite ? viewerId : null,
+    productIds,
+    fetchFavoritedProducts
+  );
 
   const onFavoritedChange = useCallback(
     (productId: string, favorited: boolean) => {
@@ -282,7 +282,7 @@ export function ProductsCatalog({
             <>
               Only published products appear here. Creators publish from{' '}
               <Link
-                href="/marketplace/my-products"
+                href="/my-products"
                 className="font-medium text-[#111111] transition-colors hover:text-[#FF5722] dark:text-white"
               >
                 Creator studio → Products

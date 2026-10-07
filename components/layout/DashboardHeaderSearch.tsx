@@ -45,7 +45,9 @@ function HeaderSearchButton({
 }) {
   const pathname = usePathname();
   const onLegacyGround =
-    pathname.startsWith('/dashboard/discussions') || pathname.startsWith('/dashboard/settings');
+    pathname.startsWith('/messages') || pathname.startsWith('/settings');
+  /** News draws no outlines: here the field is a soft tonal fill instead of a bordered white box. */
+  const onFeed = pathname.startsWith('/feed');
   /*
    * `iconOnly` is the bar's form: a bare 36px disc with no plate at rest, so search sits in the
    * right-hand cluster as one control among equals instead of a wide filled pill that outweighs
@@ -85,7 +87,11 @@ function HeaderSearchButton({
          * attention the navigation should hold.
          */
         className={`flex h-10 items-center gap-2 py-0 pl-10 pr-4 text-left text-sm transition focus:outline-none ${
-          onLegacyGround ? 'bg-[#EDEDED] hover:bg-[#E4E4E4]' : `${APP_FIELD} ${APP_FIELD_HOVER}`
+          onFeed
+            ? '!border-transparent !bg-[#f5f5f6] hover:!bg-[#ececee] dark:!bg-white/[0.08] dark:hover:!bg-white/[0.12]'
+            : onLegacyGround
+              ? 'bg-[#EDEDED] hover:bg-[#E4E4E4]'
+              : `${APP_FIELD} ${APP_FIELD_HOVER}`
         } focus:ring-2 focus:ring-[#FF5722]/20 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] ${
           fluid
             ? 'w-full rounded-lg'
@@ -212,7 +218,7 @@ function DashboardHeaderSearchContent({
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
 
-  const currentQuery = pathname.startsWith('/dashboard/search')
+  const currentQuery = pathname.startsWith('/search')
     ? (searchParams.get('q') ?? '').trim()
     : '';
   const hasQuery = currentQuery.length > 0;

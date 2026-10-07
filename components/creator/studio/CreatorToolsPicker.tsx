@@ -6,6 +6,7 @@ import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creato
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MediaImage } from '@/components/ui/MediaImage';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faImage } from '@fortawesome/free-regular-svg-icons';
 import {
@@ -19,7 +20,7 @@ import {
   StudioUnderline,
 } from '@/components/portfolio/PortfolioStudioKit';
 
-export type CreatorToolPick = {
+type CreatorToolPick = {
   value: string;
   iconUrl?: string | null;
 };
@@ -180,8 +181,7 @@ export function CreatorToolsPicker({
                 {uploadingIcon ? (
                   <LoadingSpinner size="sm" />
                 ) : customIconUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img src={customIconUrl} alt="" className="h-full w-full object-cover" />
+                  <MediaImage src={customIconUrl} width={40} className="h-full w-full object-cover" />
                 ) : customDraft.trim() ? (
                   <CreatorToolLogo label={customDraft} size={20} />
                 ) : (
@@ -305,8 +305,7 @@ export function CreatorToolsPicker({
               {uploadingIcon ? (
                 <LoadingSpinner size="sm" />
               ) : customIconUrl ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={customIconUrl} alt="" className="h-full w-full object-cover" />
+                <MediaImage src={customIconUrl} width={40} className="h-full w-full object-cover" />
               ) : (
                 <CreatorToolLogo label={customDraft || '?'} size={20} />
               )}

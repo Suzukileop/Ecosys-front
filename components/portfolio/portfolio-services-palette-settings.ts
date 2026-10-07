@@ -3,19 +3,11 @@
  * Concrete hex fields still drive render; bindings choose which token paints each slot.
  */
 
-import {
-  computeLightPalette,
-  DEFAULT_HERO_PALETTE,
-  HERO_PALETTE_TOKEN_IDS,
-  mergeHeroPalette,
-  resolveHeroPaletteColor,
-  type HeroPaletteTokenId,
-  type PortfolioHeroPalette,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_HERO_PALETTE, HERO_PALETTE_TOKEN_IDS, mergeHeroPalette, resolveHeroPaletteColor, type HeroPaletteTokenId, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 
 /** Local mirrors — avoid importing portfolio-services-settings (circular TDZ). */
-export type ServicesElementStyleTarget =
+type ServicesElementStyleTarget =
   | 'blockSubheading'
   | 'cardTitle'
   | 'cardBody'
@@ -151,7 +143,7 @@ type ServicesPresentationColorFields = {
   servicesHeader?: { titleColor?: string; subtitleColor?: string };
 };
 
-export const SERVICES_COLOR_SLOT_IDS: ServicesColorSlot[] = [
+const SERVICES_COLOR_SLOT_IDS: ServicesColorSlot[] = [
   'sectionBackground',
   'sectionGradientFrom',
   'sectionGradientTo',
@@ -196,127 +188,8 @@ export const SERVICES_COLOR_SLOT_IDS: ServicesColorSlot[] = [
   'tasksChromeBorder',
 ];
 
-export const PORTFOLIO_SERVICES_COLOR_SLOT_OPTIONS: {
-  value: ServicesColorSlot;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background', description: 'Solid section fill.' },
-  { value: 'sectionGradientFrom', label: 'Gradient start', description: 'Start of the section gradient.' },
-  { value: 'sectionGradientTo', label: 'Gradient end', description: 'End of the section gradient.' },
-  { value: 'sectionSplitA', label: 'Split zone A', description: 'First split background zone.' },
-  { value: 'sectionSplitB', label: 'Split zone B', description: 'Second split background zone.' },
-  { value: 'sectionDivider', label: 'Split divider', description: 'Line between split zones.' },
-  { value: 'title', label: 'Section title', description: 'Services & Skills heading.' },
-  { value: 'subtitle', label: 'Section subtitle', description: 'Intro under the title.' },
-  { value: 'cardBorder', label: 'Card border', description: 'Outline around skill / service cards.' },
-  { value: 'cardBackground', label: 'Card background', description: 'Fill behind card content.' },
-  { value: 'cardAccent', label: 'Card accent', description: 'Accent bars, checks, price emphasis.' },
-  {
-    value: 'ctaAccent',
-    label: 'CTA accent',
-    description: 'Commander button fill / outline — same idea as Portfolio View project.',
-  },
-  { value: 'ctaBorder', label: 'CTA border', description: 'Outline on the Commander button.' },
-  { value: 'ctaHoverBackground', label: 'CTA hover fill', description: 'Button background on hover.' },
-  { value: 'ctaHoverText', label: 'CTA hover text', description: 'Button label on hover.' },
-  { value: 'ctaHoverBorder', label: 'CTA hover border', description: 'Button outline on hover.' },
-  { value: 'stageBackground', label: 'Stage background', description: 'Outer framed stage fill.' },
-  { value: 'stageBorder', label: 'Stage border', description: 'Outer framed stage outline.' },
-  { value: 'stagePattern', label: 'Stage pattern', description: 'Decorative stage pattern ink.' },
-  { value: 'blockSubheading', label: 'Block subheading', description: '“Tools” / “Services” labels.' },
-  { value: 'cardTitle', label: 'Service title', description: 'Title on service / pricing cards.' },
-  { value: 'cardBody', label: 'Service body', description: 'Description on service cards.' },
-  { value: 'price', label: 'Price', description: 'Price / “from” amount.' },
-  { value: 'delivery', label: 'Delivery', description: 'Delivery line on service cards.' },
-  { value: 'tasks', label: 'Tasks', description: 'Deliverable checklist on service cards.' },
-  {
-    value: 'tasksBullet',
-    label: 'Task bullet',
-    description: 'Color of the checklist marker before each task.',
-  },
-  { value: 'skillTitle', label: 'Skill title', description: 'Tool name on skill cards.' },
-  { value: 'skillBody', label: 'Skill body', description: 'Description on skill cards.' },
-  {
-    value: 'cardTitleChromeBackground',
-    label: 'Service title background',
-    description: 'Fill behind the service title when element chrome is on.',
-  },
-  {
-    value: 'cardTitleChromeBorder',
-    label: 'Service title border',
-    description: 'Border on the service title chrome.',
-  },
-  {
-    value: 'cardBodyChromeBackground',
-    label: 'Service body background',
-    description: 'Fill behind the service description chrome.',
-  },
-  {
-    value: 'cardBodyChromeBorder',
-    label: 'Service body border',
-    description: 'Border on the service description chrome.',
-  },
-  {
-    value: 'skillTitleChromeBackground',
-    label: 'Skill title background',
-    description: 'Fill behind the skill title when element chrome is on.',
-  },
-  {
-    value: 'skillTitleChromeBorder',
-    label: 'Skill title border',
-    description: 'Border on the skill title chrome.',
-  },
-  {
-    value: 'skillBodyChromeBackground',
-    label: 'Skill body background',
-    description: 'Fill behind the skill description chrome.',
-  },
-  {
-    value: 'skillBodyChromeBorder',
-    label: 'Skill body border',
-    description: 'Border on the skill description chrome.',
-  },
-  {
-    value: 'priceChromeBackground',
-    label: 'Price background',
-    description: 'Fill behind the price when element chrome is on.',
-  },
-  {
-    value: 'priceChromeBorder',
-    label: 'Price border',
-    description: 'Border on the price chrome.',
-  },
-  {
-    value: 'deliveryChromeBackground',
-    label: 'Delivery background',
-    description: 'Fill behind the delivery line when element chrome is on.',
-  },
-  {
-    value: 'deliveryChromeBorder',
-    label: 'Delivery border',
-    description: 'Border on the delivery chrome.',
-  },
-  {
-    value: 'tasksChromeBackground',
-    label: 'Tasks background',
-    description: 'Fill behind the tasks list when element chrome is on.',
-  },
-  {
-    value: 'tasksChromeBorder',
-    label: 'Tasks border',
-    description: 'Border on the tasks chrome.',
-  },
-];
-
-export const DARK_SERVICES_PALETTE: PortfolioServicesPalette = { ...DEFAULT_HERO_PALETTE };
+const DARK_SERVICES_PALETTE: PortfolioServicesPalette = { ...DEFAULT_HERO_PALETTE };
 export const DEFAULT_SERVICES_PALETTE: PortfolioServicesPalette = { ...DARK_SERVICES_PALETTE };
-
-export function computeLightServicesPalette(
-  dark: Partial<PortfolioServicesPalette>
-): PortfolioServicesPalette {
-  return computeLightPalette(mergeHeroPalette(DARK_SERVICES_PALETTE, dark));
-}
 
 /** Default token bindings — card text slots map to texteFort / texteMuted. */
 export const DEFAULT_SERVICES_COLOR_BINDINGS: PortfolioServicesColorBindings = {
@@ -437,41 +310,6 @@ const SERVICES_CHROME_COLOR_SLOT: Partial<
   deliveryChromeBorder: { id: 'delivery', field: 'borderColor' },
   tasksChromeBackground: { id: 'tasks', field: 'backgroundColor' },
   tasksChromeBorder: { id: 'tasks', field: 'borderColor' },
-};
-
-/** Map element chrome ids to palette slots for the settings panel. */
-export const SERVICES_ELEMENT_CHROME_COLOR_SLOTS: Record<
-  ServicesElementChromeId,
-  { background: ServicesColorSlot; border: ServicesColorSlot }
-> = {
-  cardTitle: {
-    background: 'cardTitleChromeBackground',
-    border: 'cardTitleChromeBorder',
-  },
-  cardBody: {
-    background: 'cardBodyChromeBackground',
-    border: 'cardBodyChromeBorder',
-  },
-  skillTitle: {
-    background: 'skillTitleChromeBackground',
-    border: 'skillTitleChromeBorder',
-  },
-  skillBody: {
-    background: 'skillBodyChromeBackground',
-    border: 'skillBodyChromeBorder',
-  },
-  price: {
-    background: 'priceChromeBackground',
-    border: 'priceChromeBorder',
-  },
-  delivery: {
-    background: 'deliveryChromeBackground',
-    border: 'deliveryChromeBorder',
-  },
-  tasks: {
-    background: 'tasksChromeBackground',
-    border: 'tasksChromeBorder',
-  },
 };
 
 type ServicesBlockChrome = {
@@ -646,7 +484,7 @@ export function applyServicesPaletteToSettings(services: ServicesPaletteHost): S
   return patch as ServicesPalettePatch;
 }
 
-export function patchServicesPalette(
+function patchServicesPalette(
   services: ServicesPaletteHost,
   palettePatch: Partial<PortfolioServicesPalette>
 ): ServicesPalettePatch {
@@ -657,7 +495,7 @@ export function patchServicesPalette(
   return applyServicesPaletteToSettings({ ...services, servicesPalette: palette });
 }
 
-export function patchServicesSlotColor(
+function patchServicesSlotColor(
   services: ServicesPaletteHost,
   slot: ServicesColorSlot,
   hex: string
@@ -678,7 +516,7 @@ export function patchServicesColorBinding(
   return applyServicesPaletteToSettings({ ...services, servicesColorBindings: bindings });
 }
 
-export function patchServicesColorFieldManual(
+function patchServicesColorFieldManual(
   services: ServicesPaletteHost,
   slot: ServicesColorSlot,
   hex: string
@@ -712,15 +550,3 @@ export function patchServicesColorField(
   }
   return patchServicesSlotColor(services, slot, hex);
 }
-
-export const SERVICES_STYLE_TARGET_COLOR_SLOT: Record<ServicesElementStyleTarget, ServicesColorSlot> = {
-  blockSubheading: 'blockSubheading',
-  cardTitle: 'cardTitle',
-  cardBody: 'cardBody',
-  price: 'price',
-  delivery: 'delivery',
-  tasks: 'tasks',
-  skillTitle: 'skillTitle',
-  skillBody: 'skillBody',
-  cta: 'ctaAccent',
-};

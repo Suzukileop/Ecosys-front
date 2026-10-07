@@ -3,7 +3,7 @@
 import { useMemo, type ReactNode } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { groupBySpecialty } from '@/lib/specialties';
-import type { ProfileStrengthTool } from '@/types/ecosystem';
+import type { ProfileStrengthTool } from '@/types/profile';
 
 type PublicSkillsToolsGroupedProps = {
   /** Rich stack items (preferred). */

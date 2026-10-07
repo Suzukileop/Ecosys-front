@@ -8,6 +8,7 @@ import {
   type PortfolioTeamHeaderTitleSize,
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 // Three short, punchy default lines — that's what makes the mast stack
 // dramatically. Each line is its own field (not one string split on
@@ -52,7 +53,8 @@ export function TeamHeaderMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = teamHeaderPaletteTokenColor(presentation.headerMastheadHeadlineColor ?? 'principal');
   const headlineWeight = HEADLINE_WEIGHT[presentation.headerMastheadHeadlineWeight ?? 'regular'];
 

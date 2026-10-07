@@ -11,8 +11,6 @@ import { FooterMiniBarServicesReveal } from '@/components/portfolio/portfolio-fo
 import type { FooterMiniBarVariantProps } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
 import type { PortfolioFooterMiniBarDesign } from '@/components/portfolio/portfolio-footer-settings';
 
-export type { PortfolioFooterMiniBarDesign };
-
 /**
  * Ultra-minimal, edge-to-edge "Bottom Bar" that closes the page just below the main
  * Contact/Footer section — independent of whichever Footer `design` is active, and of

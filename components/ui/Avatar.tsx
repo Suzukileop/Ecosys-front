@@ -95,7 +95,8 @@ export function Avatar({ name, avatarUrl, size = 'md', tone = 'brand' }: AvatarP
         height={sizePx[size]}
         unoptimized={shouldBypassImageOptimizer(resolved)}
         onError={() => setFailed(true)}
-        className={`${sizeClasses[size]} rounded-full object-cover`}
+        referrerPolicy="no-referrer"
+        className={`${sizeClasses[size]} shrink-0 rounded-full bg-neutral-200 object-cover dark:bg-neutral-800`}
       />
     );
   }

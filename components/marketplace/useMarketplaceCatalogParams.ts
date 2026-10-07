@@ -12,18 +12,6 @@ export const MARKETPLACE_PAGE_SIZE_OPTIONS = [10, 50, 100, 200, 500, 1000] as co
 export const MARKETPLACE_DEFAULT_PAGE_SIZE = 100;
 export const MARKETPLACE_DEFAULT_FORMAT: MarketplaceProductFormat = 'physical';
 
-export type MarketplaceCatalogParams = {
-  q: string;
-  genre: string;
-  type: string;
-  format: MarketplaceProductFormat;
-  minPrice: string;
-  maxPrice: string;
-  sort: MarketplaceSort;
-  page: number;
-  size: number;
-};
-
 function parseEuroToCents(value: string): number | undefined {
   const trimmed = value.trim().replace(',', '.');
   if (!trimmed) return undefined;

@@ -14,6 +14,7 @@ import {
   useContentMediaUpload,
 } from '@/components/creator/creator-content-media';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MediaImage } from '@/components/ui/MediaImage';
 import {
   createEmptyTeamMember,
   createEmptyTeamSocialLink,
@@ -305,18 +306,16 @@ export function ProfileTeamField({
               key={member.id}
               className="flex gap-4 rounded-xl border border-neutral-200 bg-neutral-50/50 p-4 dark:border-neutral-800 dark:bg-neutral-950/50"
             >
-              {member.imageUrl?.trim() ? (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img
-                  src={member.imageUrl}
-                  alt=""
-                  className="h-16 w-16 shrink-0 rounded-full object-cover"
-                />
-              ) : (
-                <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
-                  {member.name.trim().charAt(0).toUpperCase() || '?'}
-                </div>
-              )}
+              <MediaImage
+                src={member.imageUrl}
+                width={64}
+                fallback={
+                  <div className="flex h-16 w-16 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300">
+                    {member.name.trim().charAt(0).toUpperCase() || '?'}
+                  </div>
+                }
+                className="h-16 w-16 shrink-0 rounded-full bg-neutral-200 object-cover dark:bg-neutral-800"
+              />
               <div className="min-w-0 flex-1">
                 <p className="text-base font-semibold text-neutral-900 dark:text-white">{member.name}</p>
                 <p className="mt-0.5 text-[15px] text-neutral-600 dark:text-neutral-300">{member.responsibility}</p>

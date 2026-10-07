@@ -44,7 +44,7 @@ type SteppedField = (typeof STEPPED_FIELDS)[number];
 
 const STEPPED_STEP_LABELS = ['Name', 'Email', 'Subject', 'Message'] as const;
 
-export type ContactFormChannelsMeta = {
+type ContactFormChannelsMeta = {
   email?: string | null;
   phone?: string | null;
   locationLabel?: string | null;

@@ -62,7 +62,7 @@ import {
   type PortfolioTeamGap,
   type PortfolioTeamPresentationSettings,
 } from '@/components/portfolio/portfolio-team-settings';
-import type { ProfileTeamMember } from '@/types/ecosystem';
+import type { ProfileTeamMember } from '@/types/profile';
 
 /* ---------------------------------------------------------------------- */
 /* Scale — the single place this design is sized from                      */

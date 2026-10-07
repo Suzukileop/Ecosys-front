@@ -11,6 +11,7 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Label is a small uppercase kicker — sizes stay compact at every step. */
 const LABEL_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
@@ -115,7 +116,8 @@ export function WorkSerifLeadHeader({
   const align = presentation.headerAlignment ?? 'left';
   const centered = align === 'center';
   const alignRight = align === 'right';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.serifLeadTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.serifLeadLabelText || DEFAULT_LABEL_TEXT).trim();
   const lines = splitSerifLeadLines(title);

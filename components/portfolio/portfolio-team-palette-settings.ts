@@ -27,7 +27,7 @@ export type TeamColorSlot =
 
 export type PortfolioTeamColorBindings = Record<TeamColorSlot, HeroPaletteTokenId>;
 
-export const TEAM_COLOR_SLOT_IDS: TeamColorSlot[] = [
+const TEAM_COLOR_SLOT_IDS: TeamColorSlot[] = [
   'sectionBackground',
   'sectionGradientFrom',
   'sectionGradientTo',
@@ -42,26 +42,6 @@ export const TEAM_COLOR_SLOT_IDS: TeamColorSlot[] = [
   'responsibility',
   'socialIcon',
   'socialBackground',
-];
-
-export const PORTFOLIO_TEAM_COLOR_SLOT_OPTIONS: {
-  value: TeamColorSlot;
-  label: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background' },
-  { value: 'sectionGradientFrom', label: 'Gradient start' },
-  { value: 'sectionGradientTo', label: 'Gradient end' },
-  { value: 'sectionSplitA', label: 'Color A' },
-  { value: 'sectionSplitB', label: 'Color B' },
-  { value: 'sectionDivider', label: 'Divider' },
-  { value: 'title', label: 'Title' },
-  { value: 'subtitle', label: 'Subtitle' },
-  { value: 'cardBackground', label: 'Card background' },
-  { value: 'cardBorder', label: 'Card border' },
-  { value: 'name', label: 'Name' },
-  { value: 'responsibility', label: 'Role' },
-  { value: 'socialIcon', label: 'Social icons' },
-  { value: 'socialBackground', label: 'Icon background' },
 ];
 
 export const DEFAULT_TEAM_PALETTE: PortfolioTeamPalette = { ...DEFAULT_HERO_PALETTE };
@@ -170,18 +150,4 @@ export function patchTeamColorBinding(
     [slot]: token,
   });
   return applyTeamPaletteToSettings({ ...host, teamColorBindings });
-}
-
-/** Updates the palette token bound to a slot, then reapplies colors. */
-export function patchTeamPaletteSlotColor(
-  host: TeamPaletteHost,
-  slot: TeamColorSlot,
-  hex: string
-): TeamPalettePatch {
-  const teamPalette = mergeTeamPalette(DEFAULT_TEAM_PALETTE, host.teamPalette);
-  const bindings = mergeTeamColorBindings(DEFAULT_TEAM_COLOR_BINDINGS, host.teamColorBindings);
-  return applyTeamPaletteToSettings({
-    ...host,
-    teamPalette: { ...teamPalette, [bindings[slot]]: hex },
-  });
 }

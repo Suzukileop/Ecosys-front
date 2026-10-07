@@ -1,3 +1,5 @@
+import { ROUTES, myProductEditPath, myProductPath } from '@/lib/routes';
+
 /** Where the creator opened a product detail/edit screen from. */
 export type CreatorProductNavFrom = 'profile' | 'products';
 
@@ -9,7 +11,7 @@ export function creatorProductViewPath(
   productId: string,
   from: CreatorProductNavFrom = 'products'
 ): string {
-  const base = `/dashboard/creator/products/${encodeURIComponent(productId)}`;
+  const base = myProductPath(productId);
   return from === 'profile' ? `${base}?from=profile` : base;
 }
 
@@ -17,7 +19,7 @@ export function creatorProductEditPath(
   productId: string,
   from: CreatorProductNavFrom = 'products'
 ): string {
-  const base = `/dashboard/creator/products/${encodeURIComponent(productId)}/edit`;
+  const base = myProductEditPath(productId);
   return from === 'profile' ? `${base}?from=profile` : base;
 }
 
@@ -27,12 +29,12 @@ export function creatorProductBackNav(from: CreatorProductNavFrom): {
 } {
   if (from === 'profile') {
     return {
-      href: '/dashboard/creator?tab=products',
+      href: `${ROUTES.profile}?tab=products`,
       label: '← My Profile',
     };
   }
   return {
-    href: '/marketplace/my-products',
+    href: ROUTES.myProducts,
     label: '← My products',
   };
 }

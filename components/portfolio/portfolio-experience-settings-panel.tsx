@@ -2,117 +2,13 @@
 
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import {
-  PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_RADIUS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS,
-  PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS,
-  PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS,
-  PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS,
-  PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS,
-  DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY,
-  DEFAULT_ACCENT_YEARS_BADGE_TEXT,
-  DEFAULT_ACCENT_YEARS_LEAD_TEXT,
-  DEFAULT_CENTERED_TITLE_TEXT,
-  DEFAULT_CENTERED_LEAD_TEXT,
-  DEFAULT_SERIF_LEAD_LABEL_TEXT,
-  DEFAULT_SERIF_LEAD_TITLE_TEXT,
-  PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS,
-  PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS,
-  PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS,
-  PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS,
-  PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS,
-  PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS,
-  PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS,
-  PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS,
-  PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS,
-  CENTERED_LEAD_WEIGHT,
-  CENTERED_LEAD_OPACITY,
-  SERIF_LEAD_WEIGHT,
-  SERIF_LEAD_LABEL_OPACITY,
-  MARQUEE_WEIGHT,
-  MARQUEE_FILL_OPACITY,
-  type PortfolioExperienceCardsBorderRadius,
-  type PortfolioExperienceGalleryColumns,
-  type PortfolioExperienceItemGap,
-  type PortfolioExperienceLoftColumns,
-  type PortfolioExperienceLoftHoverEffect,
-  type PortfolioExperienceCenteredAlign,
-  type PortfolioExperienceCenteredDivider,
-  type PortfolioExperienceCenteredLineHeight,
-  type PortfolioExperienceCenteredMaxWidth,
-  type PortfolioExperienceSerifLeadInk,
-  type PortfolioExperienceSerifLeadTracking,
-  type PortfolioExperienceDesign,
-  type PortfolioExperienceHeaderDesign,
-  type PortfolioExperienceAccentYearsBadgeColor,
-  type PortfolioExperienceLinkArrowStyle,
-  type PortfolioExperienceRepoLinkStyle,
-  type PortfolioExperienceSectionSettings,
-  type PortfolioExperienceTasksDisplay,
-  type PortfolioExperienceToolsBadgeStyle,
-  PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS,
-} from '@/components/portfolio/portfolio-experience-settings';
+import { PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS, PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS, PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS, PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS, DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY, DEFAULT_ACCENT_YEARS_BADGE_TEXT, DEFAULT_ACCENT_YEARS_LEAD_TEXT, DEFAULT_CENTERED_TITLE_TEXT, DEFAULT_CENTERED_LEAD_TEXT, DEFAULT_SERIF_LEAD_LABEL_TEXT, DEFAULT_SERIF_LEAD_TITLE_TEXT, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS, CENTERED_LEAD_WEIGHT, CENTERED_LEAD_OPACITY, SERIF_LEAD_WEIGHT, SERIF_LEAD_LABEL_OPACITY, MARQUEE_WEIGHT, MARQUEE_FILL_OPACITY, type PortfolioExperienceCardsBorderRadius, type PortfolioExperienceGalleryColumns, type PortfolioExperienceItemGap, type PortfolioExperienceLoftColumns, type PortfolioExperienceLoftHoverEffect, type PortfolioExperienceCenteredAlign, type PortfolioExperienceCenteredDivider, type PortfolioExperienceCenteredLineHeight, type PortfolioExperienceCenteredMaxWidth, type PortfolioExperienceSerifLeadInk, type PortfolioExperienceSerifLeadTracking, type PortfolioExperienceDesign, type PortfolioExperienceHeaderDesign, type PortfolioExperienceAccentYearsBadgeColor, type PortfolioExperienceLinkArrowStyle, type PortfolioExperienceRepoLinkStyle, type PortfolioExperienceSectionSettings, type PortfolioExperienceTasksDisplay, type PortfolioExperienceToolsBadgeStyle, PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS } from '@/components/portfolio/portfolio-experience-settings';
 import {
   experienceLinkButtonPalette,
   PortfolioLinkArrowProvider,
   PortfolioLinkButton,
 } from '@/components/portfolio/portfolio-link-buttons';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 export type ExperienceSubSection = 'general' | 'header' | 'design';
 
@@ -706,19 +602,21 @@ function CenteredSteppedSlider<T extends string>({
   onChange: (value: T) => void;
   formatValue?: (option: { value: T; label: string }) => string;
 }) {
+  const rows = useSettingsRows();
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value)
   );
   const current = options[index];
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <div className="pf-exp-centered-slider-head">
+      {rows ? null : (<div className="pf-exp-centered-slider-head">
         <p className="pf-exp-block-label">{label}</p>
         <span className="pf-exp-centered-slider-value">
           {current ? (formatValue ? formatValue(current) : current.label) : null}
         </span>
-      </div>
+      </div>)}
       <input
         type="range"
         min={0}
@@ -751,6 +649,7 @@ function CenteredSteppedSlider<T extends string>({
         ))}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -2189,6 +2088,8 @@ function ExperienceToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -2741,9 +2642,11 @@ function ExperienceScalePill<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">{label}</p>
+      {rows ? null : (<p className="pf-exp-block-label pf-exp-option-label">{label}</p>)}
       <div role="radiogroup" aria-label={label} className="pf-exp-scale-pill">
         {options.map((option, index) => {
           const active = option.value === value;
@@ -2765,6 +2668,7 @@ function ExperienceScalePill<T extends string>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -2781,12 +2685,14 @@ function ExperienceOptionGrid<T extends string | number>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const rows = useSettingsRows();
   const count = options.length;
   const cols = columns ?? (count <= 3 ? Math.max(count, 1) : 2);
   const compact = cols === count && count >= 2 && count <= 4;
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">{label}</p>
+      {rows ? null : (<p className="pf-exp-block-label pf-exp-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -2820,6 +2726,7 @@ function ExperienceOptionGrid<T extends string | number>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -2848,9 +2755,11 @@ function ExperienceThumbnailRadiusChoiceGrid({
   onChange: (value: PortfolioExperienceCardsBorderRadius) => void;
   label?: string;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(value ?? '')}>
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">{label}</p>
+      {rows ? null : (<p className="pf-exp-block-label pf-exp-option-label">{label}</p>)}
       <div role="radiogroup" aria-label={label} className="grid grid-cols-3 gap-2">
         {PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS.map((option) => {
           const active = option.value === value;
@@ -2868,6 +2777,7 @@ function ExperienceThumbnailRadiusChoiceGrid({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -3338,6 +3248,7 @@ export function ExperienceSettingsPanel({
             onChange={(experienceDesign) => onChange({ experienceDesign })}
           />
           <ExperienceLayoutSettingsBand motionKey={design}>
+<SettingsRowsScope title="Layout options">
           {isTable ? (
             <ExperienceToggleRow
               label="Striped rows"
@@ -3862,7 +3773,8 @@ export function ExperienceSettingsPanel({
               />
             </>
           ) : null}
-          </ExperienceLayoutSettingsBand>
+          </SettingsRowsScope>
+</ExperienceLayoutSettingsBand>
         </div>
       )}
     </div>

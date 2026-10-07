@@ -17,6 +17,7 @@ import {
 import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { AxiosError } from 'axios';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -28,10 +29,9 @@ type LoginFormData = z.infer<typeof loginSchema>;
 function resolvePostAuthDest(searchParams: URLSearchParams): string {
   const redirectTo = searchParams.get('redirect');
   if (redirectTo && redirectTo.startsWith('/') && !redirectTo.startsWith('//')) {
-    if (redirectTo === '/dashboard') return '/dashboard/home';
     return redirectTo;
   }
-  return '/dashboard/home';
+  return SIGNED_IN_HOME;
 }
 
 function LoginForm() {

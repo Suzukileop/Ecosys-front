@@ -1,63 +1,29 @@
+import {
+  DEFAULT_SERVICES_PRICING_STYLE_SETTINGS,
+  mergeServicesPricingStyleSettings,
+  type PortfolioServicesPricingStyleSettings,
+} from '@/components/portfolio/portfolio-services-pricing-style';
 import type { CSSProperties } from 'react';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
   mergeSectionColorMode,
   type PortfolioSectionColorMode,
 } from '@/components/portfolio/portfolio-section-color-mode';
-import {
-  DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
-  DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B,
-  mergeServicesCardBackgroundSettings,
-  withMigratedServicesCardBackground,
-  type PortfolioServicesCardBackgroundSettings,
-} from '@/components/portfolio/portfolio-services-card-background-settings';
+import { DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS, mergeServicesCardBackgroundSettings, withMigratedServicesCardBackground, type PortfolioServicesCardBackgroundSettings } from '@/components/portfolio/portfolio-services-card-background-settings';
 import {
   DEFAULT_SERVICES_CARD_DECOR_SETTINGS,
   mergeServicesCardDecorSettings,
   type PortfolioServicesCardDecorSettings,
 } from '@/components/portfolio/portfolio-services-card-decor-settings';
-import {
-  createElementTextStyle,
-  ELEMENT_TEXT_SIZE_PRESET_PX,
-  ELEMENT_TEXT_WEIGHT_PRESET_AMOUNT,
-  normalizeElementStylesRecord,
-  patchElementStylesRecord,
-  type PortfolioElementTextStyle,
-  type PortfolioToolsIconSize,
-} from '@/components/portfolio/portfolio-element-text-style';
+import { createElementTextStyle, ELEMENT_TEXT_SIZE_PRESET_PX, ELEMENT_TEXT_WEIGHT_PRESET_AMOUNT, normalizeElementStylesRecord, type PortfolioElementTextStyle, type PortfolioToolsIconSize } from '@/components/portfolio/portfolio-element-text-style';
 import {
   normalizePortfolioWorkCtaIcon,
   type PortfolioWorkCtaIcon,
   type PortfolioWorkCtaIconPosition,
 } from '@/components/portfolio/portfolio-work-cta-icons';
-
-export type {
-  PortfolioWorkCtaIcon as PortfolioServicesCtaIcon,
-  PortfolioWorkCtaIconPosition as PortfolioServicesCtaIconPosition,
-} from '@/components/portfolio/portfolio-work-cta-icons';
-export {
-  PORTFOLIO_WORK_CTA_ICON_OPTIONS as PORTFOLIO_SERVICES_CTA_ICON_OPTIONS,
-  PORTFOLIO_WORK_CTA_ICON_POSITION_OPTIONS as PORTFOLIO_SERVICES_CTA_ICON_POSITION_OPTIONS,
-} from '@/components/portfolio/portfolio-work-cta-icons';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
-import { resolveHeroPaletteColor } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
-import {
-  DEFAULT_LIST_MARKER_COLOR,
-  isPortfolioListMarkerSize,
-  isPortfolioListMarkerSource,
-  isPortfolioListMarkerStyle,
-  isPortfolioListMarkerWeight,
-  clampListMarkerSizePx,
-  clampListMarkerWeightAmount,
-  LIST_MARKER_SIZE_PRESET_PX,
-  LIST_MARKER_WEIGHT_PRESET_AMOUNT,
-  PORTFOLIO_LIST_MARKER_STYLE_OPTIONS,
-  type PortfolioListMarkerSize,
-  type PortfolioListMarkerSource,
-  type PortfolioListMarkerStyle,
-  type PortfolioListMarkerWeight,
-} from '@/components/portfolio/portfolio-list-marker';
+import { isPortfolioListMarkerSize, isPortfolioListMarkerSource, isPortfolioListMarkerStyle, isPortfolioListMarkerWeight, clampListMarkerSizePx, clampListMarkerWeightAmount, LIST_MARKER_SIZE_PRESET_PX, LIST_MARKER_WEIGHT_PRESET_AMOUNT, type PortfolioListMarkerSize, type PortfolioListMarkerSource, type PortfolioListMarkerStyle, type PortfolioListMarkerWeight } from '@/components/portfolio/portfolio-list-marker';
 import {
   DEFAULT_SERVICES_COLOR_BINDINGS,
   DEFAULT_SERVICES_PALETTE,
@@ -128,25 +94,22 @@ export type PortfolioServicesSectionDesign =
   | 'services-pricing-bento'
   | 'services-pricing-monolith'
   | 'services-pricing-aurora'
-  | 'services-pricing-toggle';
+  | 'services-pricing-toggle'
+  | 'services-index-list'
+  | 'services-media-columns';
 
-export const DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN: PortfolioServicesSectionDesign = 'showcase-hero';
+const DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN: PortfolioServicesSectionDesign = 'showcase-hero';
 
-export const PORTFOLIO_SERVICES_SECTION_DESIGNS: readonly PortfolioServicesSectionDesign[] = [
+const PORTFOLIO_SERVICES_SECTION_DESIGNS: readonly PortfolioServicesSectionDesign[] = [
   'showcase-hero',
   'services-pricing-grid',
   'services-pricing-bento',
   'services-pricing-monolith',
   'services-pricing-aurora',
   'services-pricing-toggle',
+  'services-index-list',
+  'services-media-columns',
 ];
-
-export function resolveServicesSectionDesign(value: unknown): PortfolioServicesSectionDesign {
-  return typeof value === 'string' &&
-    (PORTFOLIO_SERVICES_SECTION_DESIGNS as readonly string[]).includes(value)
-    ? (value as PortfolioServicesSectionDesign)
-    : DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN;
-}
 
 export const PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS: {
   value: PortfolioServicesSectionDesign;
@@ -189,7 +152,226 @@ export const PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS: {
     description:
       'Horizontal three-row layout with a spring-physics Monthly/Yearly switch, an animated price transition, and a full-color-inversion popular row.',
   },
+  {
+    value: 'services-index-list',
+    label: 'Index List',
+    description:
+      'Numbered editorial rows — index, large title, description and task tags on the left, the service media on the right, with a drawn rule and a clip-path media reveal on scroll.',
+  },
+  {
+    value: 'services-media-columns',
+    label: 'Media Columns',
+    description:
+      'A clean grid of service cards — large cover media on top, title and description underneath. Columns, corner radius, gap, media ratio and alignment are all configurable.',
+  },
 ];
+
+/** Where the media sits in each Index List row; `zigzag` alternates it row by row. */
+export type PortfolioServicesIndexListLayout = 'media-right' | 'media-left' | 'zigzag';
+
+/** How a service's tasks are presented in the Index List design. */
+export type PortfolioServicesIndexListTasksStyle =
+  | 'pills'
+  | 'ledger'
+  | 'numbered'
+  | 'inline';
+
+export type PortfolioServicesIndexListMediaRatio = 'wide' | 'standard' | 'square';
+
+/** Options that apply only when `sectionDesign === 'services-index-list'`. */
+export type PortfolioServicesIndexListSettings = {
+  layout: PortfolioServicesIndexListLayout;
+  tasksStyle: PortfolioServicesIndexListTasksStyle;
+  mediaRatio: PortfolioServicesIndexListMediaRatio;
+  /** Shows the small "01/" index above each title. */
+  showIndex: boolean;
+};
+
+export const DEFAULT_SERVICES_INDEX_LIST_SETTINGS: PortfolioServicesIndexListSettings = {
+  layout: 'media-right',
+  tasksStyle: 'pills',
+  mediaRatio: 'wide',
+  showIndex: true,
+};
+
+export const PORTFOLIO_SERVICES_INDEX_LIST_LAYOUT_OPTIONS: {
+  value: PortfolioServicesIndexListLayout;
+  label: string;
+}[] = [
+  { value: 'media-right', label: 'Media right' },
+  { value: 'media-left', label: 'Media left' },
+  { value: 'zigzag', label: 'Zigzag' },
+];
+
+export const PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS: {
+  value: PortfolioServicesIndexListTasksStyle;
+  label: string;
+}[] = [
+  { value: 'pills', label: 'Pills' },
+  { value: 'ledger', label: 'Ledger' },
+  { value: 'numbered', label: 'Numbered' },
+  { value: 'inline', label: 'Inline' },
+];
+
+export const PORTFOLIO_SERVICES_INDEX_LIST_MEDIA_RATIO_OPTIONS: {
+  value: PortfolioServicesIndexListMediaRatio;
+  label: string;
+}[] = [
+  { value: 'wide', label: '16:9' },
+  { value: 'standard', label: '4:3' },
+  { value: 'square', label: '1:1' },
+];
+
+function pickOption<T extends string | number>(
+  value: unknown,
+  options: readonly { value: T }[],
+  fallback: T
+): T {
+  return options.some((option) => option.value === value) ? (value as T) : fallback;
+}
+
+function mergeServicesIndexListSettings(
+  base: PortfolioServicesIndexListSettings,
+  patch: unknown
+): PortfolioServicesIndexListSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    layout: pickOption(record.layout, PORTFOLIO_SERVICES_INDEX_LIST_LAYOUT_OPTIONS, base.layout),
+    tasksStyle: pickOption(record.tasksStyle, PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS, base.tasksStyle),
+    mediaRatio: pickOption(record.mediaRatio, PORTFOLIO_SERVICES_INDEX_LIST_MEDIA_RATIO_OPTIONS, base.mediaRatio),
+    showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'services-media-columns'`. */
+export type PortfolioServicesMediaColumnsCount = 2 | 3 | 4;
+export type PortfolioServicesMediaColumnsMobileCount = 1 | 2;
+export type PortfolioServicesMediaColumnsRatio = 'portrait' | 'square' | 'landscape' | 'wide';
+export type PortfolioServicesMediaColumnsRadius = 'none' | 'small' | 'medium' | 'large' | 'round';
+export type PortfolioServicesMediaColumnsGap = 'tight' | 'normal' | 'wide' | 'roomy';
+export type PortfolioServicesMediaColumnsTextAlign = 'left' | 'center';
+export type PortfolioServicesMediaColumnsHover = 'zoom' | 'lift' | 'none';
+
+export type PortfolioServicesMediaColumnsSettings = {
+  /** Cards per row on desktop (tablet always shows 2). */
+  columns: PortfolioServicesMediaColumnsCount;
+  /** Cards per row on phones. */
+  mobileColumns: PortfolioServicesMediaColumnsMobileCount;
+  mediaRatio: PortfolioServicesMediaColumnsRatio;
+  cardRadius: PortfolioServicesMediaColumnsRadius;
+  gap: PortfolioServicesMediaColumnsGap;
+  textAlign: PortfolioServicesMediaColumnsTextAlign;
+  /** Centers an incomplete last row instead of leaving it flush left. */
+  centerLastRow: boolean;
+  showDescription: boolean;
+  hoverEffect: PortfolioServicesMediaColumnsHover;
+};
+
+export const DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS: PortfolioServicesMediaColumnsSettings = {
+  columns: 4,
+  mobileColumns: 1,
+  mediaRatio: 'portrait',
+  cardRadius: 'medium',
+  gap: 'normal',
+  textAlign: 'left',
+  centerLastRow: false,
+  showDescription: true,
+  hoverEffect: 'zoom',
+};
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS: {
+  value: PortfolioServicesMediaColumnsCount;
+  label: string;
+}[] = [
+  { value: 2, label: '2 per row' },
+  { value: 3, label: '3 per row' },
+  { value: 4, label: '4 per row' },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_MOBILE_OPTIONS: {
+  value: PortfolioServicesMediaColumnsMobileCount;
+  label: string;
+}[] = [
+  { value: 1, label: '1 column' },
+  { value: 2, label: '2 columns' },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_RATIO_OPTIONS: {
+  value: PortfolioServicesMediaColumnsRatio;
+  label: string;
+}[] = [
+  { value: 'portrait', label: 'Portrait' },
+  { value: 'square', label: 'Square' },
+  { value: 'landscape', label: 'Landscape' },
+  { value: 'wide', label: 'Wide' },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS: {
+  value: PortfolioServicesMediaColumnsRadius;
+  label: string;
+}[] = [
+  { value: 'none', label: 'Square' },
+  { value: 'small', label: 'Small' },
+  { value: 'medium', label: 'Medium' },
+  { value: 'large', label: 'Large' },
+  { value: 'round', label: 'Round' },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_GAP_OPTIONS: {
+  value: PortfolioServicesMediaColumnsGap;
+  label: string;
+}[] = [
+  { value: 'tight', label: 'Tight' },
+  { value: 'normal', label: 'Normal' },
+  { value: 'wide', label: 'Wide' },
+  { value: 'roomy', label: 'Roomy' },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_TEXT_ALIGN_OPTIONS: {
+  value: PortfolioServicesMediaColumnsTextAlign;
+  label: string;
+}[] = [
+  { value: 'left', label: 'Left' },
+  { value: 'center', label: 'Center' },
+];
+
+export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_HOVER_OPTIONS: {
+  value: PortfolioServicesMediaColumnsHover;
+  label: string;
+}[] = [
+  { value: 'zoom', label: 'Zoom' },
+  { value: 'lift', label: 'Lift' },
+  { value: 'none', label: 'None' },
+];
+
+function mergeServicesMediaColumnsSettings(
+  base: PortfolioServicesMediaColumnsSettings,
+  patch: unknown
+): PortfolioServicesMediaColumnsSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    columns: pickOption(record.columns, PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS, base.columns),
+    mobileColumns: pickOption(
+      record.mobileColumns,
+      PORTFOLIO_SERVICES_MEDIA_COLUMNS_MOBILE_OPTIONS,
+      base.mobileColumns
+    ),
+    mediaRatio: pickOption(record.mediaRatio, PORTFOLIO_SERVICES_MEDIA_COLUMNS_RATIO_OPTIONS, base.mediaRatio),
+    cardRadius: pickOption(record.cardRadius, PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS, base.cardRadius),
+    gap: pickOption(record.gap, PORTFOLIO_SERVICES_MEDIA_COLUMNS_GAP_OPTIONS, base.gap),
+    textAlign: pickOption(
+      record.textAlign,
+      PORTFOLIO_SERVICES_MEDIA_COLUMNS_TEXT_ALIGN_OPTIONS,
+      base.textAlign
+    ),
+    centerLastRow: typeof record.centerLastRow === 'boolean' ? record.centerLastRow : base.centerLastRow,
+    showDescription:
+      typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
+    hoverEffect: pickOption(record.hoverEffect, PORTFOLIO_SERVICES_MEDIA_COLUMNS_HOVER_OPTIONS, base.hoverEffect),
+  };
+}
 
 /** One of 4 fixed palette tokens the creator can pick for the popular card's fill — always a
  *  real color from the active theme palette, never a free hex picker. */
@@ -217,7 +399,7 @@ export const DEFAULT_SERVICES_PRICING_GRID_SETTINGS: PortfolioServicesPricingGri
   popularColorToken: 'principal',
 };
 
-export function mergeServicesPricingGridSettings(
+function mergeServicesPricingGridSettings(
   base: PortfolioServicesPricingGridSettings,
   patch: unknown
 ): PortfolioServicesPricingGridSettings {
@@ -245,6 +427,20 @@ export function mergeServicesPricingGridSettings(
   };
 }
 
+export type PortfolioServicesPricingBentoMotif = 'shapes' | 'lines' | 'dots' | 'grid' | 'waves' | 'none';
+
+export const PORTFOLIO_SERVICES_PRICING_BENTO_MOTIF_OPTIONS: {
+  value: PortfolioServicesPricingBentoMotif;
+  label: string;
+}[] = [
+  { value: 'shapes', label: 'Shapes' },
+  { value: 'lines', label: 'Lines' },
+  { value: 'dots', label: 'Dots' },
+  { value: 'grid', label: 'Grid' },
+  { value: 'waves', label: 'Waves' },
+  { value: 'none', label: 'None' },
+];
+
 /** Options that apply only when `sectionDesign === 'services-pricing-bento'`. */
 export type PortfolioServicesPricingBentoSettings = {
   /** Index (within the rendered service list) of the card that gets the textured,
@@ -254,12 +450,15 @@ export type PortfolioServicesPricingBentoSettings = {
   periodLabel: string;
   /** Label on every card's CTA button (routes to the Contact section). */
   ctaLabel: string;
+  /** Pattern drawn in the featured card's graphic header; `none` removes the header. */
+  graphicMotif: PortfolioServicesPricingBentoMotif;
 };
 
 export const DEFAULT_SERVICES_PRICING_BENTO_SETTINGS: PortfolioServicesPricingBentoSettings = {
   graphicHeaderIndex: 0,
   periodLabel: '/ project',
   ctaLabel: 'Get Started',
+  graphicMotif: 'shapes',
 };
 
 export function mergeServicesPricingBentoSettings(
@@ -278,6 +477,15 @@ export function mergeServicesPricingBentoSettings(
       typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
         ? record.ctaLabel.trim()
         : base.ctaLabel,
+    graphicMotif:
+      record.graphicMotif === 'shapes' ||
+      record.graphicMotif === 'lines' ||
+      record.graphicMotif === 'dots' ||
+      record.graphicMotif === 'grid' ||
+      record.graphicMotif === 'waves' ||
+      record.graphicMotif === 'none'
+        ? record.graphicMotif
+        : base.graphicMotif,
   };
 }
 
@@ -307,7 +515,7 @@ export const DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS: PortfolioServicesPricin
   cardsPerRow: 3,
 };
 
-export function mergeServicesPricingMonolithSettings(
+function mergeServicesPricingMonolithSettings(
   base: PortfolioServicesPricingMonolithSettings,
   patch: unknown
 ): PortfolioServicesPricingMonolithSettings {
@@ -373,7 +581,7 @@ export const DEFAULT_SERVICES_PRICING_AURORA_SETTINGS: PortfolioServicesPricingA
   popularColorToken: 'principal',
 };
 
-export function mergeServicesPricingAuroraSettings(
+function mergeServicesPricingAuroraSettings(
   base: PortfolioServicesPricingAuroraSettings,
   patch: unknown
 ): PortfolioServicesPricingAuroraSettings {
@@ -415,7 +623,7 @@ export const PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS: {
 ];
 
 /** Options that apply only when `sectionDesign === 'services-pricing-toggle'`. */
-export type PortfolioServicesPricingToggleBillingCycle = 'monthly' | 'yearly';
+type PortfolioServicesPricingToggleBillingCycle = 'monthly' | 'yearly';
 
 export type PortfolioServicesPricingToggleSettings = {
   /** Which visible row (0-indexed) gets the full color-inversion treatment. */
@@ -445,7 +653,7 @@ export const DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS: PortfolioServicesPricingT
   defaultBilling: 'monthly',
 };
 
-export function mergeServicesPricingToggleSettings(
+function mergeServicesPricingToggleSettings(
   base: PortfolioServicesPricingToggleSettings,
   patch: unknown
 ): PortfolioServicesPricingToggleSettings {
@@ -673,7 +881,7 @@ function normalizeServicesGalleryLayoutValue(
 }
 
 export type PortfolioSkillsInspectorRailPlacement = 'left' | 'right' | 'top';
-export type PortfolioServicesSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
+type PortfolioServicesSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
 export type PortfolioSkillsInspectorIllustrationVariant =
   | 'none'
   | 'chat'
@@ -712,7 +920,7 @@ export type PortfolioServicesStagePattern = 'none' | 'dots' | 'grid' | 'diagonal
 export type PortfolioServicesStageCorners = 'none' | 'diagonal' | 'all';
 
 /** Chrome controls for the outer stage wrapper (framed / soft). */
-export type PortfolioServicesStageChromeSettings = {
+type PortfolioServicesStageChromeSettings = {
   stageBackgroundEnabled: boolean;
   stageBackgroundColor: string;
   stageBackgroundOpacity: number;
@@ -779,7 +987,7 @@ export type PortfolioServicesCtaBorderRadius = 'none' | 'sm' | 'md' | 'lg' | 'fu
 export type PortfolioServicesCtaAlignment = 'left' | 'center' | 'right';
 
 /** Which text element inside the skills / services section can be styled independently. */
-export type PortfolioServicesStyleTarget =
+type PortfolioServicesStyleTarget =
   | 'blockSubheading'
   | 'cardTitle'
   | 'cardBody'
@@ -793,7 +1001,7 @@ export type PortfolioServicesStyleTarget =
 export type PortfolioServicesElementStyles = Record<PortfolioServicesStyleTarget, PortfolioElementTextStyle>;
 
 /** Per-element surface chrome (title / description / price / delivery / tasks on cards). */
-export type PortfolioServicesElementChromeId =
+type PortfolioServicesElementChromeId =
   | 'cardTitle'
   | 'cardBody'
   | 'skillTitle'
@@ -802,7 +1010,7 @@ export type PortfolioServicesElementChromeId =
   | 'delivery'
   | 'tasks';
 
-export type PortfolioServicesElementChromeSettings = {
+type PortfolioServicesElementChromeSettings = {
   enabled: boolean;
   backgroundEnabled: boolean;
   backgroundColor: string;
@@ -821,18 +1029,9 @@ export type PortfolioServicesElementChromes = Record<
 /** List marker for service card task / deliverable lines (shared vocabulary). */
 export type PortfolioServicesTaskBulletStyle = PortfolioListMarkerStyle;
 
-export const DEFAULT_SERVICES_TASK_BULLET_COLOR = '#10b981';
-export const SERVICES_ELEMENT_CHROME_IDS: PortfolioServicesElementChromeId[] = [
-  'cardTitle',
-  'cardBody',
-  'skillTitle',
-  'skillBody',
-  'price',
-  'delivery',
-  'tasks',
-];
+const DEFAULT_SERVICES_TASK_BULLET_COLOR = '#10b981';
 
-export const DEFAULT_SERVICES_ELEMENT_CHROME: PortfolioServicesElementChromeSettings = {
+const DEFAULT_SERVICES_ELEMENT_CHROME: PortfolioServicesElementChromeSettings = {
   enabled: false,
   backgroundEnabled: true,
   backgroundColor: '#fafafa',
@@ -843,7 +1042,7 @@ export const DEFAULT_SERVICES_ELEMENT_CHROME: PortfolioServicesElementChromeSett
   margin: 'none',
 };
 
-export const DEFAULT_SERVICES_ELEMENT_CHROMES: PortfolioServicesElementChromes = {
+const DEFAULT_SERVICES_ELEMENT_CHROMES: PortfolioServicesElementChromes = {
   cardTitle: { ...DEFAULT_SERVICES_ELEMENT_CHROME },
   cardBody: { ...DEFAULT_SERVICES_ELEMENT_CHROME },
   skillTitle: { ...DEFAULT_SERVICES_ELEMENT_CHROME },
@@ -870,7 +1069,7 @@ export type PortfolioServicesCardTextContrast = 'auto' | 'pair-ab';
  */
 export type PortfolioServicesPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
-export const SERVICES_PREMIUM_FONT_SIZES: PortfolioServicesPremiumFontSize[] = [
+const SERVICES_PREMIUM_FONT_SIZES: PortfolioServicesPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -950,6 +1149,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   headerSerifLeadLabelText: string;
   /** Header serif lead — the large serif title itself, independent of the section title. */
   headerSerifLeadTitleText: string;
+  /** Header serif lead — the line under the title; empty = the section subtitle. */
+  headerSerifLeadSubtitleText: string;
   /** Header serif lead — each element bound to a palette token, independently. */
   headerSerifLeadLabelColor: PortfolioServicesHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioServicesHeaderPaletteToken;
@@ -961,6 +1162,23 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   headerSerifLeadLabelWeight: PortfolioServicesHeaderTitleWeight;
   headerSerifLeadTitleWeight: PortfolioServicesHeaderTitleWeight;
   headerSerifLeadSubtitleWeight: PortfolioServicesHeaderTitleWeight;
+  /** Header editorial — kicker above the title; empty = "Services". */
+  headerEditorialLabelText: string;
+  /** Header editorial — the big title; empty = the section title. */
+  headerEditorialTitleText: string;
+  /** Header editorial — the line under the title; empty = the section subtitle. */
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, independently. */
+  headerEditorialLabelColor: PortfolioServicesHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioServicesHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioServicesHeaderPaletteToken;
+  /** Header editorial — each text sized/weighted independently. */
+  headerEditorialLabelSize: PortfolioServicesHeaderTitleSize;
+  headerEditorialTitleSize: PortfolioServicesHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioServicesHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioServicesHeaderTitleWeight;
+  headerEditorialTitleWeight: PortfolioServicesHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioServicesHeaderTitleWeight;
   /** Header billboard — big faint background word + a {count}-token line. */
   headerBillboardBigWord: string;
   headerBillboardCountText: string;
@@ -1027,6 +1245,10 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   layoutMode: PortfolioServicesLayoutMode;
   /** Body/content design for the section (Design tab) — see PortfolioServicesSectionDesign. */
   sectionDesign: PortfolioServicesSectionDesign;
+  /** Index List design–only options. */
+  indexList: PortfolioServicesIndexListSettings;
+  /** Media Columns design–only options. */
+  mediaColumns: PortfolioServicesMediaColumnsSettings;
   /** Pricing Grid design–only options. */
   pricingGrid: PortfolioServicesPricingGridSettings;
   /** Pricing Bento design–only options. */
@@ -1037,6 +1259,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   servicesPricingAurora: PortfolioServicesPricingAuroraSettings;
   /** Pricing Toggle design–only options. */
   pricingToggle: PortfolioServicesPricingToggleSettings;
+  /** Card corners / border / order-button options shared by every Pricing design. */
+  pricingStyle: PortfolioServicesPricingStyleSettings;
   displayMode: PortfolioServicesDisplayMode;
   /**
    * Entrance motion for Deck diagonal (ignored for other display modes).
@@ -1295,8 +1519,6 @@ export {
   SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
   SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   SERVICES_HEADER_PALETTE_TOKEN_OPTIONS,
-  servicesHeaderDesignFontClass,
-  servicesHeaderDesignFontStyle,
   servicesHeaderPaletteTokenColor,
   type PortfolioServicesHeaderAccentCountAlignment,
   type PortfolioServicesHeaderBillboardWordStyle,
@@ -1308,16 +1530,16 @@ export {
   type PortfolioServicesHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-services-header-settings';
 
-export const DEFAULT_SERVICES_TITLE_COLOR = '#0a0a0a';
-export const DEFAULT_SERVICES_SUBTITLE_COLOR = '#737373';
-export const DEFAULT_SERVICES_ACCENT_COLOR = '#f97316';
-export const DEFAULT_SERVICES_CARD_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_SERVICES_STAGE_BACKGROUND_COLOR = '#fafafa';
-export const DEFAULT_SERVICES_STAGE_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_SERVICES_STAGE_PATTERN_COLOR = '#a3a3a3';
+const DEFAULT_SERVICES_TITLE_COLOR = '#0a0a0a';
+const DEFAULT_SERVICES_SUBTITLE_COLOR = '#737373';
+const DEFAULT_SERVICES_ACCENT_COLOR = '#f97316';
+const DEFAULT_SERVICES_CARD_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_SERVICES_STAGE_BACKGROUND_COLOR = '#fafafa';
+const DEFAULT_SERVICES_STAGE_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_SERVICES_STAGE_PATTERN_COLOR = '#a3a3a3';
 
 /** Defaults matching the previous hardcoded framed stage shell. */
-export const DEFAULT_SERVICES_STAGE_CHROME: PortfolioServicesStageChromeSettings = {
+const DEFAULT_SERVICES_STAGE_CHROME: PortfolioServicesStageChromeSettings = {
   stageBackgroundEnabled: false,
   stageBackgroundColor: DEFAULT_SERVICES_STAGE_BACKGROUND_COLOR,
   stageBackgroundOpacity: 80,
@@ -1331,65 +1553,12 @@ export const DEFAULT_SERVICES_STAGE_CHROME: PortfolioServicesStageChromeSettings
   stageCorners: 'none',
   stageMaxWidth: 'full',
 };
-
-/** Apply stage-design presets so Soft / Framed keep expected looks when switching. */
-export function stageChromePresetForDesign(
-  design: PortfolioServicesStageDesign
-): Partial<PortfolioServicesStageChromeSettings> {
-  switch (design) {
-    case 'soft':
-      return {
-        stageBackgroundEnabled: true,
-        stageBackgroundColor: DEFAULT_SERVICES_STAGE_BACKGROUND_COLOR,
-        stageBackgroundOpacity: 80,
-        stageBorder: 'none',
-        stageBorderColor: DEFAULT_SERVICES_ACCENT_COLOR,
-        stageBorderRadius: 'xl',
-        stagePadding: 'md',
-        stagePattern: 'none',
-        stageCorners: 'diagonal',
-        stageMaxWidth: 'full',
-      };
-    case 'framed':
-      return {
-        stageBackgroundEnabled: false,
-        stageBorder: 'soft',
-        stageBorderColor: DEFAULT_SERVICES_STAGE_BORDER_COLOR,
-        stageBorderRadius: 'xl',
-        stagePadding: 'md',
-        stagePattern: 'none',
-        stageCorners: 'diagonal',
-        stageMaxWidth: 'full',
-      };
-    case 'open':
-    case 'none':
-      return {
-        stageBackgroundEnabled: false,
-        stageBorder: 'none',
-        stagePadding: 'none',
-        stagePattern: 'none',
-        stageBorderRadius: 'none',
-        stageCorners: 'none',
-        stageMaxWidth: 'full',
-      };
-  }
-}
-
-export function servicesStageChromeIsActive(chrome: PortfolioServicesStageChromeSettings): boolean {
-  return (
-    chrome.stageBackgroundEnabled ||
-    chrome.stageBorder !== 'none' ||
-    chrome.stagePattern !== 'none' ||
-    chrome.stagePadding !== 'none' ||
-    (chrome.stageCorners != null && chrome.stageCorners !== 'none')
-  );
-}
-export const DEFAULT_SERVICES_CARD_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_SERVICES_BODY_COLOR = '#737373';
-export const DEFAULT_SERVICES_SUBHEADING_COLOR = '#a3a3a3';
+const DEFAULT_SERVICES_CARD_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_SERVICES_BODY_COLOR = '#737373';
+const DEFAULT_SERVICES_SUBHEADING_COLOR = '#a3a3a3';
 
 /** Defaults tuned to match the current editorial card look (title/body/price/delivery). */
-export const DEFAULT_SERVICES_ELEMENT_STYLES: PortfolioServicesElementStyles = {
+const DEFAULT_SERVICES_ELEMENT_STYLES: PortfolioServicesElementStyles = {
   blockSubheading: createElementTextStyle({
     color: DEFAULT_SERVICES_SUBHEADING_COLOR,
     colorDark: '#a3a3a3',
@@ -1446,7 +1615,7 @@ export const DEFAULT_SERVICES_ELEMENT_STYLES: PortfolioServicesElementStyles = {
   }),
 };
 
-export const SERVICES_STYLE_TARGET_IDS: PortfolioServicesStyleTarget[] = [
+const SERVICES_STYLE_TARGET_IDS: PortfolioServicesStyleTarget[] = [
   'blockSubheading',
   'cardTitle',
   'cardBody',
@@ -1458,55 +1627,17 @@ export const SERVICES_STYLE_TARGET_IDS: PortfolioServicesStyleTarget[] = [
   'cta',
 ];
 
-export const PORTFOLIO_SERVICES_STYLE_TARGET_OPTIONS: {
-  value: PortfolioServicesStyleTarget;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'blockSubheading',
-    label: 'Block subheading',
-    description: '“Skills & tools” / “Services” small label above each block.',
-  },
-  { value: 'cardTitle', label: 'Service title', description: 'Title text on service cards.' },
-  { value: 'cardBody', label: 'Service description', description: 'Description text on service cards.' },
-  { value: 'price', label: 'Price', description: 'Price amount shown on service cards.' },
-  { value: 'delivery', label: 'Delivery', description: 'Delivery time badge on service cards.' },
-  { value: 'tasks', label: 'Tasks', description: 'Deliverable checklist items on service cards.' },
-  { value: 'skillTitle', label: 'Skill title', description: 'Title text on skill / tool cards.' },
-  { value: 'skillBody', label: 'Skill description', description: 'Description text on skill / tool cards.' },
-  { value: 'cta', label: 'CTA', description: 'Label typography on the Commander / Order button.' },
-];
-
-export const PORTFOLIO_SERVICES_TASK_BULLET_STYLE_OPTIONS = PORTFOLIO_LIST_MARKER_STYLE_OPTIONS;
-
-export function resolveServicesTaskBulletColor(
-  presentation: Pick<PortfolioServicesPresentationSettings, 'servicesTaskBulletColor'>
-): string {
-  return sanitizeHex(presentation.servicesTaskBulletColor, DEFAULT_SERVICES_TASK_BULLET_COLOR);
-}
-
-export function resolveServicesTaskBulletSource(
-  _presentation?: Pick<
-    PortfolioServicesPresentationSettings,
-    'servicesTaskBulletSource' | 'servicesTaskBulletStyle'
-  >
-): PortfolioListMarkerSource {
-  // Global task-list bullets were removed — Services always uses section markers.
-  return 'section';
-}
-
-export function isPortfolioServicesTaskBulletStyle(
+function isPortfolioServicesTaskBulletStyle(
   value: unknown
 ): value is PortfolioServicesTaskBulletStyle {
   return isPortfolioListMarkerStyle(value);
 }
 
-export function normalizeServicesElementStyles(raw: unknown): PortfolioServicesElementStyles {
+function normalizeServicesElementStyles(raw: unknown): PortfolioServicesElementStyles {
   return normalizeElementStylesRecord(raw, DEFAULT_SERVICES_ELEMENT_STYLES, SERVICES_STYLE_TARGET_IDS);
 }
 
-export function mergeServicesElementChrome(
+function mergeServicesElementChrome(
   base: PortfolioServicesElementChromeSettings,
   patch: unknown
 ): PortfolioServicesElementChromeSettings {
@@ -1550,7 +1681,7 @@ export function mergeServicesElementChrome(
   };
 }
 
-export function mergeServicesElementChromes(
+function mergeServicesElementChromes(
   base: PortfolioServicesElementChromes,
   patch: unknown
 ): PortfolioServicesElementChromes {
@@ -1577,126 +1708,19 @@ export function mergeServicesElementChromes(
   };
 }
 
-export function patchServicesElementChrome(
-  chromes: PortfolioServicesElementChromes,
-  id: PortfolioServicesElementChromeId,
-  patch: Partial<PortfolioServicesElementChromeSettings>
-): PortfolioServicesElementChromes {
-  return {
-    ...chromes,
-    [id]: mergeServicesElementChrome(chromes[id] ?? DEFAULT_SERVICES_ELEMENT_CHROME, {
-      ...(chromes[id] ?? DEFAULT_SERVICES_ELEMENT_CHROME),
-      ...patch,
-    }),
-  };
-}
+const DEFAULT_SERVICES_CARD_INK_STRONG_A = '#15151a';
+const DEFAULT_SERVICES_CARD_INK_MUTED_A = '#65656d';
+const DEFAULT_SERVICES_CARD_INK_STRONG_B = '#f4f3ef';
+const DEFAULT_SERVICES_CARD_INK_MUTED_B = '#e8ddd2';
 
-function servicesElementChromeMarginClass(margin: PortfolioServicesCardPadding): string {
-  switch (margin) {
-    case 'sm':
-      return 'my-1';
-    case 'md':
-      return 'my-2';
-    case 'lg':
-      return 'my-3';
-    default:
-      return '';
-  }
-}
-
-/** Class names for a per-element chrome surface (when enabled). */
-export function servicesElementChromeClass(
-  chrome: PortfolioServicesElementChromeSettings | undefined
-): string {
-  if (!chrome?.enabled) return '';
-  const parts = [
-    'w-full min-w-0',
-    servicesCardRadiusClass(chrome.borderRadius),
-    servicesCardPaddingClass(chrome.padding),
-    servicesElementChromeMarginClass(chrome.margin),
-  ];
-  if (chrome.border !== 'none') {
-    parts.push(servicesCardBorderWidthClass(chrome.border));
-    if (chrome.border === 'soft') parts.push('shadow-sm');
-  }
-  return parts.filter(Boolean).join(' ');
-}
-
-export function servicesElementChromeStyle(
-  chrome: PortfolioServicesElementChromeSettings | undefined,
-  accentColor?: string
-): CSSProperties | undefined {
-  if (!chrome?.enabled) return undefined;
-  const style: CSSProperties = {};
-  if (chrome.backgroundEnabled) {
-    style.backgroundColor = sanitizeHex(chrome.backgroundColor, '#fafafa');
-  }
-  if (chrome.border === 'accent') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(accentColor, DEFAULT_SERVICES_ACCENT_COLOR);
-  } else if (chrome.border !== 'none') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(chrome.borderColor, DEFAULT_SERVICES_CARD_BORDER_COLOR);
-  }
-  return Object.keys(style).length > 0 ? style : undefined;
-}
-
-export const DEFAULT_SERVICES_CARD_INK_STRONG_A = '#15151a';
-export const DEFAULT_SERVICES_CARD_INK_MUTED_A = '#65656d';
-export const DEFAULT_SERVICES_CARD_INK_STRONG_B = '#f4f3ef';
-export const DEFAULT_SERVICES_CARD_INK_MUTED_B = '#e8ddd2';
-
-export const PORTFOLIO_SERVICES_CARD_TEXT_CONTRAST_OPTIONS: {
-  value: PortfolioServicesCardTextContrast;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'auto',
-    label: 'Contraste auto',
-    description: 'Texte clair ou foncé selon la luminance du fond de chaque carte.',
-  },
-  {
-    value: 'pair-ab',
-    label: 'Couleurs A / B',
-    description: 'Deux paires de texte : cartes claires (A) et cartes alternées (B).',
-  },
-];
-
-export function pickServicesCardTextContrast(
+function pickServicesCardTextContrast(
   value: unknown,
   fallback: PortfolioServicesCardTextContrast = 'auto'
 ): PortfolioServicesCardTextContrast {
   return value === 'pair-ab' || value === 'auto' ? value : fallback;
 }
 
-export function patchServicesElementStyle(
-  styles: PortfolioServicesElementStyles,
-  target: PortfolioServicesStyleTarget,
-  patch: Partial<PortfolioElementTextStyle>
-): PortfolioServicesElementStyles {
-  return patchElementStylesRecord(
-    styles,
-    target,
-    patch,
-    DEFAULT_SERVICES_ELEMENT_STYLES,
-    SERVICES_STYLE_TARGET_IDS
-  );
-}
-
-export function resolveServicesSkillsSubheadingLabel(
-  settings: Pick<PortfolioServicesPresentationSettings, 'skillsSubheadingLabel'>
-): string {
-  return settings.skillsSubheadingLabel.trim() || 'Skills & tools';
-}
-
-export function resolveServicesServicesSubheadingLabel(
-  settings: Pick<PortfolioServicesPresentationSettings, 'servicesSubheadingLabel'>
-): string {
-  return settings.servicesSubheadingLabel.trim() || 'Services';
-}
-
-export const DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES: PortfolioServicesCardDesignIntensities = {
+const DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES: PortfolioServicesCardDesignIntensities = {
   editorial: 65,
   minimal: 55,
   compact: 60,
@@ -1705,7 +1729,7 @@ export const DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES: PortfolioServicesCardDesi
   accent: 65,
 };
 
-export const DEFAULT_SERVICES_CARD_DESIGN_TINTS: PortfolioServicesCardDesignTints = {
+const DEFAULT_SERVICES_CARD_DESIGN_TINTS: PortfolioServicesCardDesignTints = {
   editorial: 100,
   minimal: 0,
   compact: 0,
@@ -1828,101 +1852,6 @@ function createDefaultServicesBlockSettings(
   };
 }
 
-export function snapshotServicesBlocksFromSection(
-  services: PortfolioServicesSectionSettings
-): Pick<PortfolioServicesSectionSettings, 'skillsBlock' | 'servicesBlock'> {
-  return {
-    skillsBlock: createDefaultServicesBlockSettings('skills', services),
-    servicesBlock: createDefaultServicesBlockSettings('services', services),
-  };
-}
-
-function mapCombinedTitleToSkillsPreset(
-  preset: PortfolioServicesTitlePreset
-): PortfolioServicesTitlePreset {
-  switch (preset) {
-    case 'skills-services':
-      return 'skills-services';
-    case 'expertise':
-      return 'expertise';
-    case 'what-i-offer':
-      return 'expertise';
-    default:
-      return 'services-skills';
-  }
-}
-
-function mapCombinedTitleToServicesPreset(
-  preset: PortfolioServicesTitlePreset
-): PortfolioServicesTitlePreset {
-  switch (preset) {
-    case 'what-i-offer':
-      return 'what-i-offer';
-    case 'expertise':
-      return 'expertise';
-    case 'skills-services':
-      return 'services-skills';
-    default:
-      return 'services-skills';
-  }
-}
-
-function mapCombinedSubtitleToSkillsPreset(
-  preset: PortfolioServicesSubtitlePreset
-): PortfolioServicesSubtitlePreset {
-  if (preset === 'collaboration') return 'short';
-  if (preset === 'default') return 'craft';
-  return preset === 'custom' || preset === 'minimal' || preset === 'short' || preset === 'craft'
-    ? preset
-    : 'craft';
-}
-
-function mapCombinedSubtitleToServicesPreset(
-  preset: PortfolioServicesSubtitlePreset
-): PortfolioServicesSubtitlePreset {
-  if (preset === 'craft') return 'collaboration';
-  if (preset === 'default') return 'collaboration';
-  return preset === 'custom' || preset === 'minimal' || preset === 'short' || preset === 'collaboration'
-    ? preset
-    : 'collaboration';
-}
-
-export function snapshotServicesHeadersFromSection(
-  services: PortfolioServicesSectionSettings
-): Pick<
-  PortfolioServicesSectionSettings,
-  'skillsHeader' | 'servicesHeader' | 'showSkillsSubheading' | 'showServicesSubheading'
-> {
-  return {
-    skillsHeader: {
-      ...createDefaultDistinctHeaderSettings('skills'),
-      titlePreset: mapCombinedTitleToSkillsPreset(services.titlePreset),
-      titleCustom: services.titlePreset === 'custom' ? services.titleCustom : '',
-      subtitlePreset: mapCombinedSubtitleToSkillsPreset(services.subtitlePreset),
-      subtitleCustom: services.subtitlePreset === 'custom' ? services.subtitleCustom : '',
-      titleFont: services.titleFont,
-      subtitleFont: services.subtitleFont,
-      titleColor: services.titleColor,
-      subtitleColor: services.subtitleColor,
-      headerAlignment: services.headerAlignment,
-    },
-    servicesHeader: {
-      ...createDefaultDistinctHeaderSettings('services'),
-      titlePreset: mapCombinedTitleToServicesPreset(services.titlePreset),
-      titleCustom: services.titlePreset === 'custom' ? services.titleCustom : '',
-      subtitlePreset: mapCombinedSubtitleToServicesPreset(services.subtitlePreset),
-      subtitleCustom: services.subtitlePreset === 'custom' ? services.subtitleCustom : '',
-      titleFont: services.titleFont,
-      subtitleFont: services.subtitleFont,
-      titleColor: services.titleColor,
-      subtitleColor: services.subtitleColor,
-      headerAlignment: services.headerAlignment,
-    },
-    showSkillsSubheading: false,
-    showServicesSubheading: false,
-  };
-}
-
 function createDefaultDistinctHeaderSettings(
   kind: PortfolioServicesBlockScope
 ): PortfolioServicesDistinctHeaderSettings {
@@ -1968,6 +1897,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   headerAccentCountAlignment: 'left' as const,
   headerSerifLeadLabelText: '' as const,
   headerSerifLeadTitleText: '' as const,
+  headerSerifLeadSubtitleText: '' as const,
   headerSerifLeadLabelColor: 'texteFort' as const,
   headerSerifLeadTitleColor: 'texteFort' as const,
   headerSerifLeadSubtitleColor: 'texteFort' as const,
@@ -1977,6 +1907,18 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   headerSerifLeadLabelWeight: 'regular' as const,
   headerSerifLeadTitleWeight: 'regular' as const,
   headerSerifLeadSubtitleWeight: 'regular' as const,
+  headerEditorialLabelText: '' as const,
+  headerEditorialTitleText: '' as const,
+  headerEditorialSubtitleText: '' as const,
+  headerEditorialLabelColor: 'texteFort' as const,
+  headerEditorialTitleColor: 'texteFort' as const,
+  headerEditorialSubtitleColor: 'texteFort' as const,
+  headerEditorialLabelSize: 'md' as const,
+  headerEditorialTitleSize: 'md' as const,
+  headerEditorialSubtitleSize: 'md' as const,
+  headerEditorialLabelWeight: 'regular' as const,
+  headerEditorialTitleWeight: 'regular' as const,
+  headerEditorialSubtitleWeight: 'regular' as const,
   headerBillboardBigWord: '' as const,
   headerBillboardCountText: '' as const,
   headerBillboardTitleText: '' as const,
@@ -2021,11 +1963,14 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   sectionOrganization: 'distinct' as const,
   layoutMode: 'separated' as const,
   sectionDesign: 'showcase-hero' as const,
+  indexList: { ...DEFAULT_SERVICES_INDEX_LIST_SETTINGS },
+  mediaColumns: { ...DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS },
   pricingGrid: { ...DEFAULT_SERVICES_PRICING_GRID_SETTINGS },
   pricingBento: { ...DEFAULT_SERVICES_PRICING_BENTO_SETTINGS },
   servicesPricingMonolith: { ...DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS },
   servicesPricingAurora: { ...DEFAULT_SERVICES_PRICING_AURORA_SETTINGS },
   pricingToggle: { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS },
+  pricingStyle: { ...DEFAULT_SERVICES_PRICING_STYLE_SETTINGS },
   displayMode: 'grid' as const,
   deckEntranceEffect: 'expand' as const,
   servicesMarqueeDirection: 'left' as const,
@@ -2184,42 +2129,6 @@ Object.assign(
   applyServicesPaletteToSettings(DEFAULT_SERVICES_PRESENTATION)
 );
 
-export const PORTFOLIO_SERVICES_TITLE_PRESET_OPTIONS: {
-  value: PortfolioServicesTitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'services-skills', label: 'Services & skills', description: 'Default balanced label.' },
-  { value: 'expertise', label: 'Expertise', description: 'Short and professional.' },
-  { value: 'what-i-offer', label: 'What I offer', description: 'Client-friendly wording.' },
-  { value: 'skills-services', label: 'Skills & services', description: 'Tools first, services second.' },
-  { value: 'custom', label: 'Custom', description: 'Your own section title.' },
-];
-
-export const PORTFOLIO_SERVICES_SUBTITLE_PRESET_OPTIONS: {
-  value: PortfolioServicesSubtitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'default', label: 'Default', description: 'Uses the subtitle field below.' },
-  { value: 'short', label: 'Short', description: 'One concise supporting line.' },
-  { value: 'collaboration', label: 'Collaboration', description: 'Emphasizes partnership and delivery.' },
-  { value: 'craft', label: 'Craft focus', description: 'Highlights tools, process, and quality.' },
-  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Write your own subtitle.' },
-];
-
-export const PORTFOLIO_SERVICES_DISTINCT_SKILLS_TITLE_PRESET_OPTIONS: {
-  value: PortfolioServicesTitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'services-skills', label: 'Skills & tools', description: 'Titre affiché : SKILLS & TOOLS' },
-  { value: 'expertise', label: 'Expertise', description: 'Titre affiché : EXPERTISE' },
-  { value: 'skills-services', label: 'Stack technique', description: 'Titre affiché : SKILLS & SERVICES' },
-  { value: 'custom', label: 'Personnalisé', description: 'Écrivez le titre principal vous-même.' },
-];
-
 export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS: {
   value: PortfolioServicesTitlePreset;
   label: string;
@@ -2229,17 +2138,6 @@ export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS: {
   { value: 'what-i-offer', label: 'What I offer', description: 'Displayed title: WHAT I OFFER' },
   { value: 'expertise', label: 'Expertise', description: 'Displayed title: EXPERTISE' },
   { value: 'custom', label: 'Custom', description: 'Write the main title yourself.' },
-];
-
-export const PORTFOLIO_SERVICES_DISTINCT_SKILLS_SUBTITLE_PRESET_OPTIONS: {
-  value: PortfolioServicesSubtitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'craft', label: 'Focus outils', description: 'Sous-titre sur votre stack et vos outils.' },
-  { value: 'short', label: 'Court', description: 'Une ligne courte sous le titre.' },
-  { value: 'minimal', label: 'Aucun sous-titre', description: 'Masquer le sous-titre de section.' },
-  { value: 'custom', label: 'Personnalisé', description: 'Écrivez le sous-titre vous-même.' },
 ];
 
 export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS: {
@@ -2253,357 +2151,16 @@ export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS: {
   { value: 'custom', label: 'Custom', description: 'Write the subtitle yourself.' },
 ];
 
-export const PORTFOLIO_SERVICES_HEADER_FONT_OPTIONS: {
-  value: PortfolioServicesHeaderFont;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
-  { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
-];
+const SKILLS_INSPECTOR_ICON_GAP_PX_MIN = 0;
+const SKILLS_INSPECTOR_ICON_GAP_PX_MAX = 40;
 
-export const PORTFOLIO_SERVICES_LAYOUT_MODE_OPTIONS: {
-  value: PortfolioServicesLayoutMode;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'combined', label: 'Combined frame', description: 'Skills and services inside one panel.' },
-  { value: 'separated', label: 'Separated blocks', description: 'Distinct skills and services areas.' },
-];
-
-export const PORTFOLIO_SERVICES_SECTION_ORGANIZATION_OPTIONS: {
-  value: PortfolioServicesSectionOrganization;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'combined',
-    label: 'Cadre combiné',
-    description: 'Skills et services dans un même panneau — réglages partagés.',
-  },
-  {
-    value: 'separated',
-    label: 'Blocs séparés',
-    description: 'Deux zones, un titre combiné — cadre et design indépendants par bloc.',
-  },
-  {
-    value: 'distinct',
-    label: 'Sections distinctes',
-    description: 'Deux sections avec titres séparés (Skills / Services) — nav et fonds indépendants.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_DISPLAY_MODE_OPTIONS: {
-  value: PortfolioServicesDisplayMode;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'marquee',
-    label: 'Carrousel infini',
-    description: 'Défilement automatique fluide — nécessite le design « Carte horizontal ».',
-  },
-  {
-    value: 'coverflow',
-    label: 'Coverflow vertical',
-    description: 'Pile centrée auto-rotative — nécessite le design « Carte horizontal ».',
-  },
-  {
-    value: 'deck',
-    label: 'Deck diagonal',
-    description: 'Éventail diagonal fluide — nécessite le design « Carte horizontal ».',
-  },
-  { value: 'grid', label: 'Grille statique', description: 'Grille responsive sans animation.' },
-  { value: 'stack', label: 'Pile verticale', description: 'Cartes pleine largeur empilées.' },
-];
-
-export const PORTFOLIO_SERVICES_MARQUEE_DIRECTION_OPTIONS: {
-  value: PortfolioServicesMarqueeDirection;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'left',
-    label: 'Vers la gauche',
-    description: 'Le carrousel défile de droite vers la gauche.',
-  },
-  {
-    value: 'right',
-    label: 'Vers la droite',
-    description: 'Le carrousel défile de gauche vers la droite.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_DECK_ENTRANCE_EFFECT_OPTIONS: {
-  value: PortfolioServicesDeckEntranceEffect;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'expand',
-    label: 'Expand',
-    description: 'Une carte seule, puis éventail fluide — toutes les cartes partent ensemble.',
-  },
-  {
-    value: 'cascade',
-    label: 'Cascade',
-    description: 'Les cartes sortent une par une en diagonale (pas toutes en même temps).',
-  },
-  {
-    value: 'none',
-    label: 'None',
-    description: 'Éventail déjà ouvert — pas d’effet d’entrée.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS: {
-  value: PortfolioServicesGalleryLayout;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'card', label: 'Carte horizontal', description: 'Titre, description, tâches alignées, CTA plein — 3 par ligne.' },
-  {
-    value: 'list',
-    label: 'Liste / menu',
-    description: 'Cartes premium : titre + prix à gauche, délai et action en pied.',
-  },
-  {
-    value: 'service-selector',
-    label: 'Service selector',
-    description: 'Onglets verticaux et panneau détaillé avec prix, inclusions et CTA.',
-  },
-  {
-    value: 'commercial-list',
-    label: 'Liste commerciale',
-    description: 'Lignes pleine largeur numérotées, prestations incluses, prix et action.',
-  },
-  {
-    value: 'tier',
-    label: 'Offre / Tarif horizontal',
-    description: 'Tarif, titre encadré, tâches et CTA outline — description masquée par défaut.',
-  },
-  {
-    value: 'plan',
-    label: 'Plan tarifaire horizontal',
-    description: 'Titre, description, prix, bouton puis liste — 3 par ligne par défaut.',
-  },
-  {
-    value: 'plan-split',
-    label: 'Plan en colonnes',
-    description: 'Bandeau 3 colonnes : titre + description, inclusions, prix et CTA.',
-  },
-  {
-    value: 'card-media',
-    label: 'Carte média',
-    description: 'Contenu à gauche (titre, tâches, prix / délai) et image de couverture à droite.',
-  },
-  {
-    value: 'media-banner',
-    label: 'Bannière média',
-    description:
-      'Image à gauche, contenu à droite : tags, prix, délai et CTA — style offre / formation.',
-  },
-  {
-    value: 'media-checklist',
-    label: 'Média checklist',
-    description: 'Image à gauche, grand titre, tâches cochées et CTA Get started.',
-  },
-  {
-    value: 'media-split',
-    label: 'Média split',
-    description:
-      'Image en bandeau, titre et description à gauche, checklist et prix / délai à droite.',
-  },
-];
-
-/** Skills-only layouts (includes stacked tool icons). */
-export const PORTFOLIO_SKILLS_GALLERY_LAYOUT_OPTIONS: {
-  value: PortfolioServicesGalleryLayout;
-  label: string;
-  description: string;
-}[] = [
-  ...PORTFOLIO_SERVICES_GALLERY_LAYOUT_OPTIONS.filter(
-    (option) =>
-      option.value !== 'service-selector' &&
-      option.value !== 'commercial-list' &&
-      option.value !== 'tier' &&
-      option.value !== 'plan' &&
-      option.value !== 'plan-split' &&
-      option.value !== 'card-media' &&
-      option.value !== 'media-banner' &&
-      option.value !== 'media-checklist' &&
-      option.value !== 'media-split'
-  ),
-  {
-    value: 'icon-stack',
-    label: 'Stacked icons',
-    description: 'Overlapping circular skill logos only — no cards.',
-  },
-  {
-    value: 'pill-cloud',
-    label: 'Nuage de pilules',
-    description: 'Capsules compactes centrées avec pastilles aux couleurs des outils.',
-  },
-  {
-    value: 'tool-inspector',
-    label: 'Tool inspector',
-    description: 'Rail d’icônes + panneau détail (niveau, cas d’usage, expérience).',
-  },
-];
-
-export const PORTFOLIO_SERVICES_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioServicesSectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'stacked', label: 'Empilé', description: 'Titre au-dessus du contenu.' },
-  { value: 'aside-left', label: 'Titre à gauche', description: 'Titre et contenu côte à côte.' },
-  { value: 'aside-right', label: 'Titre à droite', description: 'Contenu à gauche, titre à droite.' },
-];
-
-export const PORTFOLIO_SKILLS_INSPECTOR_ILLUSTRATION_OPTIONS: {
-  value: PortfolioSkillsInspectorIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
-];
-
-export const PORTFOLIO_SKILLS_INSPECTOR_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioSkillsInspectorIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche de l’inspecteur.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite de l’inspecteur.' },
-];
-
-export const PORTFOLIO_SERVICES_ILLUSTRATION_OPTIONS: {
-  value: PortfolioServicesIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
-];
-
-export const PORTFOLIO_SERVICES_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioServicesIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche du contenu.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite du contenu.' },
-];
-
-export function isPortfolioServicesSectionLayout(
-  value: unknown
-): value is PortfolioServicesSectionLayout {
-  return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
-}
-
-export function servicesSectionLayoutIsAside(
-  layout: PortfolioServicesSectionLayout | undefined
-): boolean {
-  return layout === 'aside-left' || layout === 'aside-right';
-}
-
-export const SKILLS_INSPECTOR_ICON_GAP_PX_MIN = 0;
-export const SKILLS_INSPECTOR_ICON_GAP_PX_MAX = 40;
-
-export function clampSkillsInspectorIconGapPx(value: unknown, fallback = 12): number {
+function clampSkillsInspectorIconGapPx(value: unknown, fallback = 12): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.max(
     SKILLS_INSPECTOR_ICON_GAP_PX_MIN,
     Math.min(SKILLS_INSPECTOR_ICON_GAP_PX_MAX, Math.round(parsed))
   );
-}
-
-export const PORTFOLIO_SERVICES_CTA_DESIGN_OPTIONS: {
-  value: PortfolioServicesCtaDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'circle-icon',
-    label: 'Circle icon',
-    description: 'Label + cercle flèche — bordure et hover sur l’icône.',
-  },
-  {
-    value: 'pill-dark',
-    label: 'Dark pill',
-    description: 'Capsule remplie (accent) — bordure et hover configurables.',
-  },
-  {
-    value: 'pill-outline',
-    label: 'Outline pill',
-    description: 'Capsule à contour — au survol, fond hover + texte.',
-  },
-  {
-    value: 'pill-accent',
-    label: 'Accent pill',
-    description: 'Capsule accent vive — comme View project du Portfolio.',
-  },
-  {
-    value: 'text-arrow',
-    label: 'Text + arrow',
-    description: 'Lien minimal — soulignement et couleurs au survol.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_CTA_BORDER_WIDTH_OPTIONS: {
-  value: PortfolioServicesCtaBorderWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucune', description: 'Pas de contour sur le bouton.' },
-  { value: 'thin', label: 'Fine', description: 'Contour léger (1px).' },
-  { value: 'medium', label: 'Moyenne', description: 'Contour marqué (2px).' },
-  { value: 'thick', label: 'Épaisse', description: 'Contour fort (3px).' },
-];
-
-export const PORTFOLIO_SERVICES_CTA_BORDER_RADIUS_OPTIONS: {
-  value: PortfolioServicesCtaBorderRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Carré', description: 'Coins droits.' },
-  { value: 'sm', label: 'Léger', description: 'Arrondi subtil.' },
-  { value: 'md', label: 'Moyen', description: 'Arrondi équilibré.' },
-  { value: 'lg', label: 'Large', description: 'Coins bien arrondis.' },
-  { value: 'full', label: 'Pilule', description: 'Capsule complètement ronde (défaut).' },
-];
-
-export const PORTFOLIO_SERVICES_CTA_ALIGNMENT_OPTIONS: {
-  value: PortfolioServicesCtaAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Bouton aligné à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Bouton centré.' },
-  { value: 'right', label: 'Droite', description: 'Bouton aligné à droite.' },
-];
-
-export function servicesCtaAlignClass(alignment: PortfolioServicesCtaAlignment): string {
-  switch (alignment) {
-    case 'center':
-      return 'justify-center';
-    case 'right':
-      return 'justify-end';
-    default:
-      return 'justify-start';
-  }
 }
 
 /**
@@ -2622,238 +2179,10 @@ export function resolveServicesOrderCtaHref(opts: {
   return '#footer';
 }
 
-/**
- * Bridge Services CTA settings into the Work CTA surface helpers
- * so Order / Commander matches View project styling exactly.
- * When the section palette is on, resolve CTA colors live from tokens
- * so light/dark switches never leave a stale gray fill + white label.
- */
-export function servicesCtaWorkPresentation(p: PortfolioServicesPresentationSettings) {
-  const paletteOn = p.useHeroPalette !== false;
-  const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, p.servicesPalette);
-  const bindings = mergeServicesColorBindings(DEFAULT_SERVICES_COLOR_BINDINGS, p.servicesColorBindings);
+const SERVICES_CONTENT_GAP_PX_MIN = 0;
+const SERVICES_CONTENT_GAP_PX_MAX = 48;
 
-  const accent = paletteOn
-    ? resolveHeroPaletteColor(palette, bindings.ctaAccent)
-    : sanitizeHex(p.ctaColor || p.cardAccentColor, DEFAULT_SERVICES_ACCENT_COLOR);
-  const pageFond = paletteOn
-    ? resolveHeroPaletteColor(palette, bindings.sectionBackground)
-    : sanitizeHex(p.sectionBackgroundColor, '#0b0b0d');
-  const hoverBg = paletteOn
-    ? resolveHeroPaletteColor(palette, bindings.ctaHoverBackground)
-    : sanitizeHex(p.ctaHoverBackgroundColor || accent, accent);
-  const hoverText = paletteOn
-    ? resolveHeroPaletteColor(palette, bindings.ctaHoverText)
-    : sanitizeHex(p.ctaHoverTextColor || pageFond, pageFond);
-  const hoverBorder = paletteOn
-    ? resolveHeroPaletteColor(palette, bindings.ctaHoverBorder)
-    : sanitizeHex(p.ctaHoverBorderColor || accent, accent);
-
-  return {
-    ctaColor: accent,
-    // Outline CTAs need border = principal too (not bordure gray).
-    ctaBorderColor: accent,
-    ctaBorderWidth: p.ctaBorderWidth,
-    ctaBorderRadius: p.ctaBorderRadius,
-    ctaHoverEnabled: p.ctaHoverEnabled !== false,
-    ctaHoverBackgroundColor: hoverBg,
-    ctaHoverTextColor: hoverText,
-    ctaHoverBorderColor: hoverBorder,
-    ctaShowIcon: p.ctaShowIcon !== false,
-    ctaIcon: normalizePortfolioWorkCtaIcon(p.ctaIcon, 'arrow-up-right'),
-    ctaIconPosition: p.ctaIconPosition === 'left' ? 'left' : 'right',
-    sectionBackgroundColor: pageFond,
-    elementStyles: {
-      cta: (() => {
-        const stored = normalizeServicesElementStyles(p.elementStyles).cta;
-        return {
-          ...stored,
-          // Always ink from palette principal (ctaAccent) — never the stale orange default.
-          color: accent,
-        };
-      })(),
-    },
-  };
-}
-
-export const PORTFOLIO_SERVICES_CARD_BORDER_OPTIONS: {
-  value: PortfolioServicesCardBorder;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucune', description: 'Sans bordure.' },
-  { value: 'soft', label: 'Douce', description: 'Liseré fin + ombre légère.' },
-  { value: 'solid', label: 'Solide', description: 'Bordure nette configurable.' },
-  { value: 'accent', label: 'Accent', description: 'Bordure teintée avec la couleur accent.' },
-];
-
-export const PORTFOLIO_SERVICES_CARD_BACKGROUND_ALTERNATION_OPTIONS: {
-  value: PortfolioServicesCardBackgroundAlternation;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'uniform',
-    label: 'Uniforme',
-    description: 'Toutes les cartes utilisent la même couleur de fond.',
-  },
-  {
-    value: 'alternate',
-    label: 'Alterné',
-    description: 'Alterne deux couleurs (A / B) d’une carte à l’autre. Nécessite un fond uni.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_CARD_RADIUS_OPTIONS: {
-  value: PortfolioServicesCardRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Coins droits.' },
-  { value: 'sm', label: 'S', description: 'Léger arrondi.' },
-  { value: 'md', label: 'M', description: 'Arrondi moyen.' },
-  { value: 'lg', label: 'L', description: 'Arrondi généreux.' },
-  { value: 'xl', label: 'XL', description: 'Très arrondi.' },
-];
-
-export const PORTFOLIO_SERVICES_CARD_PADDING_OPTIONS: {
-  value: PortfolioServicesCardPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Contenu collé au bord.' },
-  { value: 'sm', label: 'S', description: 'Padding serré.' },
-  { value: 'md', label: 'M', description: 'Padding équilibré.' },
-  { value: 'lg', label: 'L', description: 'Padding généreux.' },
-];
-
-export const PORTFOLIO_SERVICES_COLUMNS_OPTIONS: {
-  value: PortfolioServicesCardColumns;
-  label: string;
-  description: string;
-}[] = [
-  { value: 1, label: '1', description: 'Une colonne — pleine largeur.' },
-  { value: 2, label: '2', description: 'Deux colonnes sur grand écran.' },
-  { value: 3, label: '3', description: 'Trois colonnes — dense et équilibré.' },
-  { value: 4, label: '4', description: 'Quatre colonnes — très compact.' },
-];
-
-export const PORTFOLIO_SERVICES_CARD_MAX_WIDTH_OPTIONS: {
-  value: PortfolioServicesCardMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'full', label: 'Pleine largeur', description: 'La carte remplit toute la colonne.' },
-  { value: 'xl', label: 'Large', description: 'Max ~36rem — encore confortable.' },
-  { value: 'lg', label: 'Carte portrait', description: 'Max ~32rem — défaut Carte / Offre / Plan.' },
-  { value: 'md', label: 'Moyenne', description: 'Max ~28rem — plus compacte.' },
-  { value: 'sm', label: 'Compacte', description: 'Max ~24rem — tuile étroite.' },
-];
-
-/** Liste commerciale — row widths (wider steps so price + CTA stay readable). */
-export const PORTFOLIO_SERVICES_COMMERCIAL_LIST_MAX_WIDTH_OPTIONS: {
-  value: PortfolioServicesCardMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'full', label: 'Pleine largeur', description: 'La ligne remplit toute la colonne.' },
-  { value: 'xl', label: 'Très large', description: 'Max ~80rem — grand espace entre sections (défaut).' },
-  { value: 'lg', label: 'Large', description: 'Max ~72rem — défaut Bannière média.' },
-  { value: 'md', label: 'Moyenne', description: 'Max ~64rem — plus compacte.' },
-  { value: 'sm', label: 'Compacte', description: 'Max ~56rem — ligne plus étroite.' },
-];
-
-/** Tool inspector widths — spread further apart than card tiles (~32–72rem). */
-export const PORTFOLIO_SKILLS_INSPECTOR_MAX_WIDTH_OPTIONS: {
-  value: PortfolioServicesCardMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'full',
-    label: 'Pleine largeur',
-    description: 'L’inspecteur occupe toute la colonne.',
-  },
-  {
-    value: 'xl',
-    label: 'Très large',
-    description: 'Max ~72rem — presque toute la section.',
-  },
-  {
-    value: 'lg',
-    label: 'Large',
-    description: 'Max ~56rem — rail + détail confortables.',
-  },
-  {
-    value: 'md',
-    label: 'Moyenne',
-    description: 'Max ~42rem — largeur de lecture.',
-  },
-  {
-    value: 'sm',
-    label: 'Étroite',
-    description: 'Max ~32rem — bloc compact.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_CARD_ALIGNMENT_OPTIONS: {
-  value: PortfolioServicesCardAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Place le cadre à gauche de la colonne.' },
-  { value: 'center', label: 'Centre', description: 'Centre le cadre dans la colonne.' },
-  { value: 'right', label: 'Droite', description: 'Place le cadre à droite de la colonne.' },
-];
-
-export const PORTFOLIO_SKILLS_INSPECTOR_ALIGNMENT_OPTIONS: {
-  value: PortfolioServicesCardAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Colle l’inspecteur à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Centre l’inspecteur dans la colonne.' },
-  { value: 'right', label: 'Droite', description: 'Colle l’inspecteur à droite.' },
-];
-
-export const PORTFOLIO_SERVICES_CONTENT_ALIGNMENT_OPTIONS: {
-  value: PortfolioServicesContentAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Éléments alignés à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Éléments centrés.' },
-  { value: 'right', label: 'Droite', description: 'Éléments alignés à droite.' },
-];
-
-export const PORTFOLIO_SERVICES_CONTENT_GAP_OPTIONS: {
-  value: Exclude<PortfolioServicesContentGap, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Preset — pas d’écart entre les éléments.' },
-  { value: 'sm', label: 'Serré', description: 'Preset — espacement compact.' },
-  { value: 'md', label: 'Moyen', description: 'Preset — espacement équilibré (défaut).' },
-  { value: 'lg', label: 'Large', description: 'Preset — plus d’air entre les blocs.' },
-  { value: 'xl', label: 'Très large', description: 'Preset — espacement maximum.' },
-];
-
-/** Pixel values used by presets (and as starting points for Manual). */
-export const SERVICES_CONTENT_GAP_PRESET_PX: Record<
-  Exclude<PortfolioServicesContentGap, 'custom'>,
-  number
-> = {
-  none: 0,
-  sm: 8,
-  md: 14,
-  lg: 20,
-  xl: 28,
-};
-
-export const SERVICES_CONTENT_GAP_PX_MIN = 0;
-export const SERVICES_CONTENT_GAP_PX_MAX = 48;
-
-export function clampServicesContentGapPx(value: unknown, fallback = 14): number {
+function clampServicesContentGapPx(value: unknown, fallback = 14): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -2862,55 +2191,10 @@ export function clampServicesContentGapPx(value: unknown, fallback = 14): number
   );
 }
 
-export const PORTFOLIO_SERVICES_PRICE_PLACEMENT_OPTIONS: {
-  value: PortfolioServicesPricePlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'end', label: 'À droite', description: 'Prix / livraison à côté du titre.' },
-  { value: 'below', label: 'En dessous', description: 'Prix sous le texte principal.' },
-  { value: 'top', label: 'En haut', description: 'Prix mis en avant avant le titre.' },
-];
+const SERVICE_PRICE_MARGIN_PX_MIN = 0;
+const SERVICE_PRICE_MARGIN_PX_MAX = 80;
 
-export const PORTFOLIO_SERVICES_PRICE_ALIGN_OPTIONS: {
-  value: PortfolioServicesContentAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Prix aligné à gauche.' },
-  { value: 'center', label: 'Centre', description: 'Prix centré.' },
-  { value: 'right', label: 'Droite', description: 'Prix aligné à droite.' },
-];
-
-export const PORTFOLIO_SERVICES_CURRENCY_PLACEMENT_OPTIONS: {
-  value: PortfolioServicesCurrencyPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'before', label: 'Devant', description: 'Symbole avant le chiffre ($50, €50).' },
-  { value: 'after', label: 'Derrière', description: 'Symbole après le chiffre (50 €).' },
-];
-
-/** Format cents as a locale number string (no currency symbol). */
-export function formatServicesPriceAmount(cents: number): string {
-  const euros = cents / 100;
-  if (!Number.isFinite(euros)) return '0';
-  return new Intl.NumberFormat('fr-FR', {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: 2,
-  }).format(euros);
-}
-
-export function resolveServiceCurrencyPlacement(
-  placement: PortfolioServicesCurrencyPlacement | undefined
-): 'before' | 'after' {
-  return placement === 'before' ? 'before' : 'after';
-}
-
-export const SERVICE_PRICE_MARGIN_PX_MIN = 0;
-export const SERVICE_PRICE_MARGIN_PX_MAX = 80;
-
-export function clampServicePriceMarginPx(value: unknown, fallback = 0): number {
+function clampServicePriceMarginPx(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -2919,7 +2203,7 @@ export function clampServicePriceMarginPx(value: unknown, fallback = 0): number 
   );
 }
 
-export function clampCommercialLayoutPx(
+function clampCommercialLayoutPx(
   value: unknown,
   fallback: number,
   min: number,
@@ -2930,133 +2214,7 @@ export function clampCommercialLayoutPx(
   return Math.max(min, Math.min(max, Math.round(n)));
 }
 
-/** Prefix shown before the amount, or null when disabled. Empty custom text falls back to "From". */
-export function resolveServicePricePrefix(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'servicePricePrefixEnabled' | 'servicePricePrefix'
-  >
-): string | null {
-  if (!presentation.servicePricePrefixEnabled) return null;
-  const custom = presentation.servicePricePrefix?.trim() ?? '';
-  return custom || 'From';
-}
-
-export function servicePriceAlignClass(
-  align: PortfolioServicesContentAlignment | undefined
-): string {
-  switch (align) {
-    case 'center':
-      return 'flex justify-center text-center';
-    case 'right':
-      return 'flex justify-end text-right';
-    default:
-      return 'flex justify-start text-left';
-  }
-}
-
-export function servicePriceBoxStyle(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'servicePriceMarginTopPx' | 'servicePriceMarginBottomPx'
-  >
-): CSSProperties {
-  return {
-    marginTop: `${clampServicePriceMarginPx(presentation.servicePriceMarginTopPx, 0)}px`,
-    marginBottom: `${clampServicePriceMarginPx(presentation.servicePriceMarginBottomPx, 0)}px`,
-  };
-}
-
-const FALLBACK_SERVICES_CURRENCY_CODES = [
-  'EUR',
-  'USD',
-  'GBP',
-  'CHF',
-  'CAD',
-  'AUD',
-  'NZD',
-  'JPY',
-  'CNY',
-  'HKD',
-  'SGD',
-  'KRW',
-  'INR',
-  'IDR',
-  'THB',
-  'MYR',
-  'PHP',
-  'VND',
-  'AED',
-  'SAR',
-  'QAR',
-  'KWD',
-  'BHD',
-  'OMR',
-  'ILS',
-  'TRY',
-  'RUB',
-  'UAH',
-  'PLN',
-  'CZK',
-  'HUF',
-  'RON',
-  'BGN',
-  'SEK',
-  'NOK',
-  'DKK',
-  'ISK',
-  'BRL',
-  'MXN',
-  'ARS',
-  'CLP',
-  'COP',
-  'PEN',
-  'UYU',
-  'ZAR',
-  'NGN',
-  'EGP',
-  'KES',
-  'GHS',
-  'MAD',
-  'TND',
-  'DZD',
-  'XOF',
-  'XAF',
-  'XPF',
-] as const;
-
-function listServicesCurrencyCodes(): string[] {
-  try {
-    const intlWithSupported = Intl as typeof Intl & {
-      supportedValuesOf?: (key: string) => string[];
-    };
-    if (typeof intlWithSupported.supportedValuesOf === 'function') {
-      return intlWithSupported.supportedValuesOf('currency').slice().sort((a, b) => a.localeCompare(b));
-    }
-  } catch {
-    /* fall through */
-  }
-  return [...FALLBACK_SERVICES_CURRENCY_CODES];
-}
-
-/** Resolve a display symbol for an ISO 4217 currency (€, $, £, MAD…). */
-export function servicesCurrencySymbol(code: string | undefined): string {
-  const currency = sanitizeServicesCurrencyCode(code);
-  try {
-    const parts = new Intl.NumberFormat('en', {
-      style: 'currency',
-      currency,
-      currencyDisplay: 'narrowSymbol',
-    }).formatToParts(0);
-    const symbol = parts.find((part) => part.type === 'currency')?.value?.trim();
-    if (symbol) return symbol;
-  } catch {
-    /* fall through */
-  }
-  return currency === 'EUR' ? '€' : currency;
-}
-
-export function sanitizeServicesCurrencyCode(value: unknown, fallback = 'EUR'): string {
+function sanitizeServicesCurrencyCode(value: unknown, fallback = 'EUR'): string {
   if (typeof value !== 'string') return fallback;
   const code = value.trim().toUpperCase();
   if (!/^[A-Z]{3}$/.test(code)) return fallback;
@@ -3068,52 +2226,10 @@ export function sanitizeServicesCurrencyCode(value: unknown, fallback = 'EUR'): 
   }
 }
 
-export const PORTFOLIO_SERVICES_CURRENCY_OPTIONS: {
-  value: string;
-  label: string;
-  description: string;
-}[] = (() => {
-  const displayNames =
-    typeof Intl !== 'undefined' && typeof Intl.DisplayNames === 'function'
-      ? new Intl.DisplayNames(['fr', 'en'], { type: 'currency' })
-      : null;
-  return listServicesCurrencyCodes().map((code) => {
-    const symbol = servicesCurrencySymbol(code);
-    const name = displayNames?.of(code) ?? code;
-    return {
-      value: code,
-      label: `${code} · ${symbol}`,
-      description: name,
-    };
-  });
-})();
+const SKILLS_ICON_BORDER_WIDTH_PX_MIN = 0;
+const SKILLS_ICON_BORDER_WIDTH_PX_MAX = 8;
 
-export const PORTFOLIO_SERVICES_ICON_PLACEMENT_OPTIONS: {
-  value: PortfolioServicesIconPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'start', label: 'À gauche', description: 'Icône avant le titre (ligne).' },
-  { value: 'top', label: 'Au-dessus', description: 'Icône centrée au-dessus du texte.' },
-];
-
-export const PORTFOLIO_SKILLS_ICON_RADIUS_OPTIONS: {
-  value: PortfolioSkillsIconRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Carré', description: 'Aucun arrondi.' },
-  { value: 'sm', label: 'S', description: 'Coins légèrement arrondis.' },
-  { value: 'md', label: 'M', description: 'Arrondi moyen.' },
-  { value: 'lg', label: 'L', description: 'Arrondi généreux.' },
-  { value: 'xl', label: 'XL', description: 'Coins très arrondis.' },
-  { value: 'full', label: 'Rond', description: 'Icône entièrement circulaire.' },
-];
-
-export const SKILLS_ICON_BORDER_WIDTH_PX_MIN = 0;
-export const SKILLS_ICON_BORDER_WIDTH_PX_MAX = 8;
-
-export function clampSkillsIconBorderWidthPx(value: unknown, fallback = 1): number {
+function clampSkillsIconBorderWidthPx(value: unknown, fallback = 1): number {
   const parsed = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(parsed)) return fallback;
   return Math.min(
@@ -3121,184 +2237,6 @@ export function clampSkillsIconBorderWidthPx(value: unknown, fallback = 1): numb
     Math.max(SKILLS_ICON_BORDER_WIDTH_PX_MIN, Math.round(parsed))
   );
 }
-
-export const PORTFOLIO_SERVICES_CARD_DESIGN_OPTIONS: {
-  value: PortfolioServicesCardDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'editorial',
-    label: 'Editorial',
-    description: 'Ombre portée et hover chaleureux — laisse voir le fond diagonal.',
-  },
-  {
-    value: 'minimal',
-    label: 'Minimal',
-    description: 'Plat et épuré — fin liseré gris, sans ombre.',
-  },
-  {
-    value: 'compact',
-    label: 'Compact',
-    description: 'Fond gris clair, typo serrée — idéal en grille dense.',
-  },
-  {
-    value: 'glass',
-    label: 'Glass',
-    description: 'Verre dépoli, transparence et reflet teinté accent.',
-  },
-  {
-    value: 'frost',
-    label: 'Frost',
-    description: 'Verre dépoli neutre — blanc pur, sans teinte chaude.',
-  },
-  {
-    value: 'accent',
-    label: 'Accent edge',
-    description: 'Bandeau coloré à gauche + fond teinté accent.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_CARD_DESIGN_INTENSITY_HINTS: Record<
-  PortfolioServicesCardDesign,
-  { label: string; low: string; high: string }
-> = {
-  editorial: {
-    label: 'Intensité du dégradé & ombre',
-    low: 'Ombre légère, wash discret',
-    high: 'Dégradé orange marqué, ombre profonde',
-  },
-  minimal: {
-    label: 'Intensité du liseré',
-    low: 'Bordure très fine et pâle',
-    high: 'Liseré net et visible',
-  },
-  compact: {
-    label: 'Intensité du fond gris',
-    low: 'Fond presque blanc',
-    high: 'Contraste gris plus fort',
-  },
-  glass: {
-    label: 'Intensité du verre dépoli',
-    low: 'Léger flou et transparence',
-    high: 'Flou épais, reflet lumineux fort',
-  },
-  frost: {
-    label: 'Intensité du verre neutre',
-    low: 'Léger flou et transparence',
-    high: 'Flou épais, reflet blanc fort',
-  },
-  accent: {
-    label: 'Intensité du bandeau accent',
-    low: 'Bandeau fin, teinte légère',
-    high: 'Bandeau large, fond teinté marqué',
-  },
-};
-
-export const PORTFOLIO_SERVICES_CARD_DESIGN_TINT_HINTS: Record<
-  PortfolioServicesCardDesign,
-  { label: string; low: string; high: string }
-> = {
-  editorial: {
-    label: 'Teinte du dégradé',
-    low: 'Sans wash coloré',
-    high: 'Wash accent saturé',
-  },
-  minimal: {
-    label: 'Teinte',
-    low: '—',
-    high: '—',
-  },
-  compact: {
-    label: 'Teinte',
-    low: '—',
-    high: '—',
-  },
-  glass: {
-    label: 'Teinte du reflet',
-    low: 'Blanc pur',
-    high: 'Reflet accent marqué',
-  },
-  frost: {
-    label: 'Teinte optionnelle',
-    low: 'Verre 100 % neutre',
-    high: 'Légère teinte accent',
-  },
-  accent: {
-    label: 'Teinte du fond',
-    low: 'Fond presque blanc',
-    high: 'Fond accent prononcé',
-  },
-};
-
-export const PORTFOLIO_SERVICES_STAGE_DESIGN_OPTIONS: {
-  value: PortfolioServicesStageDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'framed', label: 'Framed panel', description: 'Bordered container around the content.' },
-  { value: 'soft', label: 'Soft panel', description: 'Light background padding without hard border.' },
-  { value: 'open', label: 'Open', description: 'No outer wrapper — cards float freely.' },
-  { value: 'none', label: 'None', description: 'Same as open — maximum air.' },
-];
-
-export const PORTFOLIO_SERVICES_STAGE_BORDER_OPTIONS: {
-  value: PortfolioServicesStageBorder;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucune', description: 'Sans bordure autour du stage.' },
-  { value: 'soft', label: 'Douce', description: 'Liseré fin autour du panneau.' },
-  { value: 'solid', label: 'Solide', description: 'Bordure nette configurable.' },
-];
-
-export const PORTFOLIO_SERVICES_STAGE_RADIUS_OPTIONS: {
-  value: PortfolioServicesStageRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Coins droits.' },
-  { value: 'sm', label: 'S', description: 'Léger arrondi.' },
-  { value: 'md', label: 'M', description: 'Arrondi moyen.' },
-  { value: 'lg', label: 'L', description: 'Arrondi généreux.' },
-  { value: 'xl', label: 'XL', description: 'Très arrondi (défaut Soft / Framed).' },
-];
-
-export const PORTFOLIO_SERVICES_STAGE_PADDING_OPTIONS: {
-  value: PortfolioServicesStagePadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Contenu collé au bord du stage.' },
-  { value: 'sm', label: 'S', description: 'Padding serré.' },
-  { value: 'md', label: 'M', description: 'Padding équilibré (défaut).' },
-  { value: 'lg', label: 'L', description: 'Padding généreux.' },
-];
-
-export const PORTFOLIO_SERVICES_STAGE_PATTERN_OPTIONS: {
-  value: PortfolioServicesStagePattern;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Fond uni uniquement.' },
-  { value: 'dots', label: 'Points', description: 'Trame de points discrète.' },
-  { value: 'grid', label: 'Grille', description: 'Quadrillage léger sur le fond.' },
-  { value: 'diagonal', label: 'Diagonale', description: 'Hachures diagonales.' },
-];
-
-export const PORTFOLIO_SERVICES_STAGE_CORNERS_OPTIONS: {
-  value: PortfolioServicesStageCorners;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de marques dans les coins.' },
-  {
-    value: 'diagonal',
-    label: 'Diagonale',
-    description: 'Accents en haut à gauche et en bas à droite.',
-  },
-  { value: 'all', label: 'Quatre coins', description: 'Un accent L dans chaque coin du stage.' },
-];
 
 const SUBTITLE_PRESET_COPY: Record<
   Exclude<PortfolioServicesSubtitlePreset, 'default' | 'custom' | 'minimal'>,
@@ -3329,33 +2267,6 @@ function clampCardDesignIntensity(value: unknown, fallback: number): number {
   return Math.min(100, Math.max(0, Math.round(n)));
 }
 
-function hexWithAlpha(hex: string, alpha: number): string {
-  const channel = Math.round(Math.min(1, Math.max(0, alpha)) * 255)
-    .toString(16)
-    .padStart(2, '0');
-  return `${sanitizeHex(hex, DEFAULT_SERVICES_ACCENT_COLOR)}${channel}`;
-}
-
-function hexToRgb(hex: string): { r: number; g: number; b: number } {
-  const normalized = sanitizeHex(hex, DEFAULT_SERVICES_ACCENT_COLOR).replace('#', '');
-  return {
-    r: Number.parseInt(normalized.slice(0, 2), 16),
-    g: Number.parseInt(normalized.slice(2, 4), 16),
-    b: Number.parseInt(normalized.slice(4, 6), 16),
-  };
-}
-
-export function servicesCardDesignSupportsTint(design: PortfolioServicesCardDesign): boolean {
-  return design === 'editorial' || design === 'glass' || design === 'frost' || design === 'accent';
-}
-
-export function resolveCardDesignIntensity(
-  intensities: PortfolioServicesCardDesignIntensities,
-  design: PortfolioServicesCardDesign
-): number {
-  return clampCardDesignIntensity(intensities[design], DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES[design]);
-}
-
 function mergeCardDesignIntensities(
   base: PortfolioServicesCardDesignIntensities,
   patch: unknown
@@ -3384,109 +2295,6 @@ function mergeCardDesignTints(
     }
   }
   return next;
-}
-
-export function resolveCardDesignTint(
-  tints: PortfolioServicesCardDesignTints,
-  design: PortfolioServicesCardDesign
-): number {
-  return clampCardDesignIntensity(tints[design], DEFAULT_SERVICES_CARD_DESIGN_TINTS[design]);
-}
-
-function glassSurfaceStyle(intensity: number): {
-  borderColor: string;
-  borderWidth: string;
-  borderStyle: 'solid';
-  backdropFilter: string;
-  WebkitBackdropFilter: string;
-  boxShadow: string;
-} {
-  const t = intensity / 100;
-  return {
-    borderColor: `rgba(255,255,255,${0.45 + t * 0.45})`,
-    borderWidth: '1px',
-    borderStyle: 'solid',
-    backdropFilter: `blur(${Math.round(4 + t * 22)}px)`,
-    WebkitBackdropFilter: `blur(${Math.round(4 + t * 22)}px)`,
-    boxShadow: `0 ${Math.round(6 + t * 10)}px ${Math.round(16 + t * 20)}px -${Math.round(4 + t * 8)}px rgba(15,23,42,${0.04 + t * 0.1})`,
-  };
-}
-
-export function servicesCardDesignIntensityStyle(
-  design: PortfolioServicesCardDesign,
-  intensity: number,
-  accentColor: string,
-  tint = DEFAULT_SERVICES_CARD_DESIGN_TINTS[design]
-): CSSProperties {
-  const t = clampCardDesignIntensity(intensity, DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES[design]) / 100;
-  const tintMix = clampCardDesignIntensity(tint, DEFAULT_SERVICES_CARD_DESIGN_TINTS[design]) / 100;
-  const accent = sanitizeHex(accentColor, DEFAULT_SERVICES_ACCENT_COLOR);
-  const { r, g, b } = hexToRgb(accent);
-
-  switch (design) {
-    case 'editorial': {
-      const wash = tintMix * (0.04 + t * 0.2);
-      return {
-        boxShadow: `0 ${Math.round(4 + t * 14)}px ${Math.round(10 + t * 22)}px -${Math.round(2 + t * 6)}px rgba(15,23,42,${0.05 + t * 0.14})`,
-        ...(wash > 0
-          ? {
-              backgroundImage: `linear-gradient(135deg, rgba(${r},${g},${b},${wash}) 0%, transparent 58%)`,
-            }
-          : {}),
-      };
-    }
-    case 'minimal': {
-      const alpha = 0.08 + t * 0.35;
-      const width = 1 + Math.round(t * 2);
-      return {
-        boxShadow: 'none',
-        outline: `${width}px solid rgba(163,163,163,${alpha})`,
-        outlineOffset: '-1px',
-      };
-    }
-    case 'compact': {
-      const gray = Math.round(250 - t * 38);
-      return {
-        backgroundColor: `rgb(${gray},${gray},${Math.min(255, gray + 2)})`,
-      };
-    }
-    case 'glass': {
-      const warmAlpha = tintMix * (0.08 + t * 0.22);
-      return {
-        backgroundImage:
-          warmAlpha > 0
-            ? `linear-gradient(135deg, rgba(255,255,255,${0.35 + t * 0.45}) 0%, rgba(${r},${g},${b},${warmAlpha}) 100%)`
-            : `linear-gradient(135deg, rgba(255,255,255,${0.35 + t * 0.45}) 0%, rgba(255,255,255,${0.15 + t * 0.25}) 100%)`,
-        ...glassSurfaceStyle(t * 100),
-      };
-    }
-    case 'frost': {
-      const optionalTint = tintMix * (0.05 + t * 0.16);
-      return {
-        backgroundImage:
-          optionalTint > 0
-            ? `linear-gradient(135deg, rgba(255,255,255,${0.35 + t * 0.45}) 0%, rgba(248,250,252,${0.18 + t * 0.28}) 55%, rgba(${r},${g},${b},${optionalTint}) 100%)`
-            : `linear-gradient(135deg, rgba(255,255,255,${0.35 + t * 0.45}) 0%, rgba(248,250,252,${0.2 + t * 0.35}) 100%)`,
-        ...glassSurfaceStyle(t * 100),
-      };
-    }
-    case 'accent': {
-      const borderW = Math.round(2 + t * 6);
-      const wash = tintMix * (0.05 + t * 0.28);
-      return {
-        borderLeftWidth: `${borderW}px`,
-        borderLeftStyle: 'solid',
-        borderLeftColor: accent,
-        ...(wash > 0
-          ? {
-              backgroundImage: `linear-gradient(90deg, ${hexWithAlpha(accent, wash)} 0%, transparent ${Math.round(38 + t * 28)}%)`,
-            }
-          : {}),
-      };
-    }
-    default:
-      return {};
-  }
 }
 
 export function resolveServicesSectionTitle(
@@ -3528,186 +2336,12 @@ export function resolveServicesSectionSubtitle(
   }
 }
 
-export function servicesHeaderFontClass(font: PortfolioServicesHeaderFont, kind: 'title' | 'subtitle'): string {
-  if (kind === 'title') {
-    switch (font) {
-      case 'serif':
-        return 'font-serif font-bold tracking-[-0.03em]';
-      case 'display':
-        return 'font-black uppercase tracking-[0.08em]';
-      default:
-        return 'font-extrabold tracking-[-0.04em]';
-    }
-  }
-  switch (font) {
-    case 'serif':
-      return 'font-serif leading-relaxed';
-    case 'display':
-      return 'font-bold uppercase tracking-[0.1em]';
-    default:
-      return 'leading-relaxed';
-  }
-}
-
-export function servicesHeaderFontStyle(_font: PortfolioServicesHeaderFont): CSSProperties | undefined {
-  return undefined;
-}
-
 export function servicesTitleColorStyle(color: string): CSSProperties {
   return { color: sanitizeHex(color, DEFAULT_SERVICES_TITLE_COLOR) };
 }
 
 export function servicesSubtitleColorStyle(color: string): CSSProperties {
   return { color: sanitizeHex(color, DEFAULT_SERVICES_SUBTITLE_COLOR) };
-}
-
-function servicesStageRadiusClass(radius: PortfolioServicesStageRadius): string {
-  switch (radius) {
-    case 'none':
-      return 'rounded-none';
-    case 'sm':
-      return 'rounded-xl sm:rounded-2xl';
-    case 'md':
-      return 'rounded-2xl sm:rounded-[1.5rem]';
-    case 'lg':
-      return 'rounded-[1.5rem] sm:rounded-[1.75rem]';
-    default:
-      return 'rounded-[1.75rem] sm:rounded-[2rem]';
-  }
-}
-
-function servicesStagePaddingClass(padding: PortfolioServicesStagePadding): string {
-  switch (padding) {
-    case 'none':
-      return '';
-    case 'sm':
-      return 'px-1.5 py-2 sm:px-2 sm:py-3';
-    case 'lg':
-      return 'px-3 py-5 sm:px-5 sm:py-6 lg:px-6 lg:py-8';
-    default:
-      return 'px-2 py-4 sm:px-4 sm:py-5 lg:px-5 lg:py-6';
-  }
-}
-
-function servicesStageBorderWidthClass(border: PortfolioServicesStageBorder): string {
-  switch (border) {
-    case 'soft':
-      return 'border';
-    case 'solid':
-      return 'border-2';
-    default:
-      return 'border-0';
-  }
-}
-
-function servicesStagePatternImage(
-  pattern: PortfolioServicesStagePattern,
-  color: string,
-  opacity: number
-): string | undefined {
-  if (pattern === 'none') return undefined;
-  const { r, g, b } = hexToRgb(sanitizeHex(color, DEFAULT_SERVICES_STAGE_PATTERN_COLOR));
-  const a = Math.min(1, Math.max(0, opacity / 100));
-  const ink = `rgba(${r}, ${g}, ${b}, ${a})`;
-  switch (pattern) {
-    case 'dots':
-      return `radial-gradient(circle at 1px 1px, ${ink} 1px, transparent 0)`;
-    case 'grid':
-      return `linear-gradient(to right, ${ink} 1px, transparent 1px), linear-gradient(to bottom, ${ink} 1px, transparent 1px)`;
-    case 'diagonal':
-      return `repeating-linear-gradient(135deg, ${ink} 0 1px, transparent 1px 10px)`;
-    default:
-      return undefined;
-  }
-}
-
-function servicesStagePatternSize(pattern: PortfolioServicesStagePattern): string | undefined {
-  switch (pattern) {
-    case 'dots':
-      return '14px 14px';
-    case 'grid':
-      return '18px 18px, 18px 18px';
-    case 'diagonal':
-      return undefined;
-    default:
-      return undefined;
-  }
-}
-
-/** Whether the stage needs a DOM wrapper for the chosen design + chrome. */
-export function servicesStageNeedsShell(
-  design: PortfolioServicesStageDesign,
-  chrome: PortfolioServicesStageChromeSettings = DEFAULT_SERVICES_STAGE_CHROME
-): boolean {
-  if (design === 'soft' || design === 'framed') return true;
-  return servicesStageChromeIsActive(chrome);
-}
-
-export function servicesStageShellClass(
-  design: PortfolioServicesStageDesign,
-  chrome: PortfolioServicesStageChromeSettings = DEFAULT_SERVICES_STAGE_CHROME
-): string {
-  if (!servicesStageNeedsShell(design, chrome)) return '';
-
-  const parts = [
-    'relative overflow-hidden',
-    servicesStageRadiusClass(chrome.stageBorderRadius),
-    servicesStagePaddingClass(chrome.stagePadding),
-  ];
-  if (chrome.stageBorder !== 'none') {
-    parts.push(servicesStageBorderWidthClass(chrome.stageBorder));
-  }
-  return parts.filter(Boolean).join(' ');
-}
-
-export function servicesStageShellStyle(
-  chrome: PortfolioServicesStageChromeSettings = DEFAULT_SERVICES_STAGE_CHROME
-): CSSProperties {
-  const style: CSSProperties = {};
-
-  if (chrome.stageBackgroundEnabled) {
-    style.backgroundColor = hexWithAlpha(
-      sanitizeHex(chrome.stageBackgroundColor, DEFAULT_SERVICES_STAGE_BACKGROUND_COLOR),
-      chrome.stageBackgroundOpacity / 100
-    );
-  }
-
-  if (chrome.stageBorder !== 'none') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(chrome.stageBorderColor, DEFAULT_SERVICES_STAGE_BORDER_COLOR);
-  }
-
-  const patternImage = servicesStagePatternImage(
-    chrome.stagePattern,
-    chrome.stagePatternColor,
-    chrome.stagePatternOpacity
-  );
-  if (patternImage) {
-    style.backgroundImage = patternImage;
-    const size = servicesStagePatternSize(chrome.stagePattern);
-    if (size) style.backgroundSize = size;
-  }
-
-  return style;
-}
-
-export function pickServicesStageChrome(
-  source: PortfolioServicesStageChromeSettings
-): PortfolioServicesStageChromeSettings {
-  return {
-    stageBackgroundEnabled: source.stageBackgroundEnabled,
-    stageBackgroundColor: source.stageBackgroundColor,
-    stageBackgroundOpacity: source.stageBackgroundOpacity,
-    stageBorder: source.stageBorder,
-    stageBorderColor: source.stageBorderColor,
-    stageBorderRadius: source.stageBorderRadius,
-    stagePadding: source.stagePadding,
-    stagePattern: source.stagePattern,
-    stagePatternColor: source.stagePatternColor,
-    stagePatternOpacity: source.stagePatternOpacity,
-    stageCorners: source.stageCorners ?? 'none',
-    stageMaxWidth: source.stageMaxWidth ?? 'full',
-  };
 }
 
 function mergeServicesStageChrome(
@@ -3762,550 +2396,6 @@ function mergeServicesStageChrome(
   };
 }
 
-export function servicesCardDesignShellClass(
-  design: PortfolioServicesCardDesign,
-  tone: 'light' | 'muted' = 'light',
-  options?: { applyMutedClass?: boolean; omitDefaultFill?: boolean }
-): string {
-  const base = 'pf-services-card group relative h-full overflow-hidden transition';
-  const applyMuted = options?.applyMutedClass !== false && tone === 'muted';
-  const muted = applyMuted ? 'pf-muted-card-gradient' : '';
-  const omitFill = options?.omitDefaultFill === true;
-  // Default Tailwind fills fight palette / custom hex — omit when surface style owns the fill.
-  const lightFill = omitFill ? '' : 'bg-white';
-  const darkFill = omitFill ? '' : 'dark:bg-neutral-900';
-  switch (design) {
-    case 'minimal':
-      return `${base} ${lightFill} shadow-none ${darkFill} ${muted}`.trim();
-    case 'compact':
-      return `${base} ${omitFill ? '' : 'dark:bg-neutral-900/80'} ${muted}`.trim();
-    case 'glass':
-    case 'frost':
-      return `${base} ${muted}`.trim();
-    case 'accent':
-      return `${base} ${lightFill} shadow-none ${darkFill} ${muted}`.trim();
-    default:
-      return `${base} ${lightFill} ${darkFill} ${muted}`.trim();
-  }
-}
-
-export function resolveServicesCardTone(
-  index: number,
-  alternation: PortfolioServicesCardBackgroundAlternation = 'uniform',
-  rowOffset: 0 | 1 = 0
-): 'light' | 'muted' {
-  if (alternation !== 'alternate') return 'light';
-  return (index + rowOffset) % 2 === 0 ? 'light' : 'muted';
-}
-
-/** Compact / glass paint their own fill — they win over the diagonal split layer.
- *  Frost stays translucent so the default diagonal theme remains visible. */
-export function servicesCardDesignOwnsBackground(design: PortfolioServicesCardDesign): boolean {
-  return design === 'compact' || design === 'glass';
-}
-
-/** All service card designs except Service selector, Carte média, Bannière média and Média checklist. */
-export function servicesLayoutSupportsPrincipalSurface(
-  layout: PortfolioServicesGalleryLayout | undefined
-): boolean {
-  return (
-    layout != null &&
-    layout !== 'service-selector' &&
-    layout !== 'card-media' &&
-    layout !== 'media-banner' &&
-    layout !== 'media-checklist' &&
-    layout !== 'media-split'
-  );
-}
-
-/** Layouts that show a cover image beside service copy (side-by-side). */
-export function servicesLayoutHasCoverMedia(
-  layout: PortfolioServicesGalleryLayout | undefined
-): boolean {
-  return layout === 'card-media' || layout === 'media-banner' || layout === 'media-checklist';
-}
-
-/** Layouts that include a cover image (side-by-side or top banner). */
-export function servicesLayoutHasMediaCover(
-  layout: PortfolioServicesGalleryLayout | undefined
-): boolean {
-  return servicesLayoutHasCoverMedia(layout) || layout === 'media-split';
-}
-
-/** Whether the media column is on the left for this card index. */
-export function servicesMediaOnLeft(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'servicesMediaSide' | 'servicesMediaSideAlternation'
-  >,
-  cardIndex = 0
-): boolean {
-  const startLeft = presentation.servicesMediaSide !== 'media-right';
-  if (presentation.servicesMediaSideAlternation !== 'alternate') return startLeft;
-  return cardIndex % 2 === 0 ? startLeft : !startLeft;
-}
-
-export const PORTFOLIO_SERVICES_MEDIA_SIDE_OPTIONS: {
-  value: PortfolioServicesMediaSide;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'media-left',
-    label: 'Média à gauche',
-    description: 'Image à gauche, informations à droite (1re carte si alternance).',
-  },
-  {
-    value: 'media-right',
-    label: 'Média à droite',
-    description: 'Informations à gauche, image à droite (1re carte si alternance).',
-  },
-];
-
-export const PORTFOLIO_SERVICES_MEDIA_SIDE_ALTERNATION_OPTIONS: {
-  value: PortfolioServicesMediaSideAlternation;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'uniform',
-    label: 'Uniforme',
-    description: 'Toutes les cartes gardent le même côté média / infos.',
-  },
-  {
-    value: 'alternate',
-    label: 'Alterné',
-    description: 'Alterne média gauche / infos droite puis l’inverse à chaque carte.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATION_OPTIONS: {
-  value: PortfolioServicesCardBackgroundAlternation;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'uniform',
-    label: 'Uniforme',
-    description: 'Toutes les cartes ont le fond couleur principale (sans survol sur ce fond).',
-  },
-  {
-    value: 'alternate',
-    label: 'Alterné',
-    description: 'Alterne cartes mises en avant (fond principal) et cartes normales.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_PRINCIPAL_SURFACE_ALTERNATE_START_OPTIONS: {
-  value: PortfolioServicesPrincipalSurfaceAlternateStart;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'principal',
-    label: 'Principal d’abord',
-    description: 'La 1re carte a le fond couleur principale, puis normal, etc.',
-  },
-  {
-    value: 'normal',
-    label: 'Normal d’abord',
-    description: 'La 1re carte est normale, puis fond couleur principale, etc.',
-  },
-];
-
-/** True when the card uses static principal fill (no principal-background hover). */
-export function servicesPrincipalSurfaceActive(
-  p: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'servicesPrincipalSurfaceEnabled'
-    | 'servicesPrincipalSurfaceAlternation'
-    | 'servicesPrincipalSurfaceAlternateStart'
-    | 'servicesGalleryLayout'
-  >,
-  cardIndex = 0
-): boolean {
-  if (
-    p.servicesPrincipalSurfaceEnabled !== true ||
-    !servicesLayoutSupportsPrincipalSurface(p.servicesGalleryLayout)
-  ) {
-    return false;
-  }
-  if (p.servicesPrincipalSurfaceAlternation === 'alternate') {
-    const startPrincipal = p.servicesPrincipalSurfaceAlternateStart !== 'normal';
-    const evenIsPrincipal = startPrincipal;
-    return cardIndex % 2 === 0 ? evenIsPrincipal : !evenIsPrincipal;
-  }
-  return true;
-}
-
-/** Layouts that stay border-only in light mode but get a solid fill in dark (like Offre / Tarif). */
-export function servicesLayoutUsesDarkOnlyCardFill(
-  layout: PortfolioServicesGalleryLayout | undefined
-): boolean {
-  // Carte / Liste commerciale now use explicit fill by default; keep dark-only for Liste / menu.
-  return layout === 'list';
-}
-
-/** True when this presentation should paint a card fill only because Global mode is dark. */
-export function servicesCardDarkOnlyFillActive(
-  p: Pick<
-    PortfolioServicesPresentationSettings,
-    'servicesGalleryLayout' | 'activeColorMode' | 'cardBackgroundEnabled'
-  >
-): boolean {
-  if (p.cardBackgroundEnabled) return false;
-  if (!servicesLayoutUsesDarkOnlyCardFill(p.servicesGalleryLayout)) return false;
-  // Strict: only when Global color mode is explicitly dark (not undefined / light).
-  return p.activeColorMode === 'dark';
-}
-
-/** True when the user-controlled card fill should win over theme/design defaults. */
-export function servicesCardHasCustomFill(
-  p: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'cardDesign'
-    | 'cardBackgroundFill'
-    | 'cardBackgroundEnabled'
-    | 'cardBackgroundAlternation'
-    | 'servicesGalleryLayout'
-    | 'activeColorMode'
-  >
-): boolean {
-  if (servicesCardDesignOwnsBackground(p.cardDesign)) return false;
-  if (p.cardBackgroundFill === 'split') return true;
-  if (p.cardBackgroundEnabled) return true;
-  return servicesCardDarkOnlyFillActive(p);
-}
-
-export function servicesCardFillDataAttrs(
-  p: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'cardDesign'
-    | 'cardBackgroundFill'
-    | 'cardBackgroundEnabled'
-    | 'cardBackgroundAlternation'
-    | 'servicesGalleryLayout'
-    | 'activeColorMode'
-  >
-): { 'data-pf-card-fill'?: 'custom' } {
-  return servicesCardHasCustomFill(p) ? { 'data-pf-card-fill': 'custom' } : {};
-}
-
-export function servicesCardDesignStyle(
-  design: PortfolioServicesCardDesign,
-  accentColor: string,
-  intensity = DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES[design],
-  tint = DEFAULT_SERVICES_CARD_DESIGN_TINTS[design]
-): CSSProperties {
-  return servicesCardDesignIntensityStyle(design, intensity, accentColor, tint);
-}
-
-/** @deprecated Use servicesCardDesignStyle — kept for callers during migration */
-export function servicesCardAccentStyle(
-  design: PortfolioServicesCardDesign,
-  accentColor: string
-): CSSProperties | undefined {
-  return servicesCardDesignStyle(design, accentColor);
-}
-
-export function servicesCardTypographyClass(design: PortfolioServicesCardDesign): {
-  title: string;
-  body: string;
-  icon: number;
-  iconShell: string;
-} {
-  if (design === 'compact') {
-    return {
-      title: 'text-base font-bold sm:text-lg',
-      body: 'text-xs sm:text-sm',
-      icon: 24,
-      iconShell: 'h-10 w-10',
-    };
-  }
-  if (design === 'minimal') {
-    return {
-      title: 'text-lg font-semibold sm:text-xl',
-      body: 'text-sm',
-      icon: 28,
-      iconShell: 'h-12 w-12',
-    };
-  }
-  if (design === 'glass' || design === 'frost') {
-    return {
-      title: 'text-lg font-bold sm:text-xl',
-      body: 'text-sm',
-      icon: 30,
-      iconShell: 'h-12 w-12',
-    };
-  }
-  return {
-    title: 'text-xl font-extrabold sm:text-2xl',
-    body: 'text-base sm:text-[1.05rem]',
-    icon: 34,
-    iconShell: 'h-14 w-14 sm:h-16 sm:w-16',
-  };
-}
-
-export function servicesListIconShellClass(design: PortfolioServicesCardDesign): string {
-  switch (design) {
-    case 'minimal':
-      return 'text-neutral-700 dark:text-neutral-200';
-    case 'compact':
-      return 'text-neutral-800 dark:text-neutral-100';
-    case 'glass':
-    case 'frost':
-      return 'text-neutral-800 dark:text-white';
-    case 'accent':
-      return 'text-white';
-    default:
-      return 'text-white';
-  }
-}
-
-export function servicesListIconShellStyle(
-  design: PortfolioServicesCardDesign,
-  intensities: PortfolioServicesCardDesignIntensities,
-  accentColor: string,
-  tints?: PortfolioServicesCardDesignTints
-): CSSProperties | undefined {
-  const intensity = resolveCardDesignIntensity(intensities, design);
-  const t = intensity / 100;
-  const accent = sanitizeHex(accentColor, DEFAULT_SERVICES_ACCENT_COLOR);
-  const tintMix = tints ? resolveCardDesignTint(tints, design) / 100 : 0;
-  const { r, g, b } = hexToRgb(accent);
-
-  switch (design) {
-    case 'minimal': {
-      const gray = Math.round(245 - t * 50);
-      return { backgroundColor: `rgb(${gray},${gray},${gray})` };
-    }
-    case 'compact': {
-      const gray = Math.round(229 - t * 45);
-      return { backgroundColor: `rgb(${gray},${gray},${Math.min(255, gray + 2)})` };
-    }
-    case 'glass':
-      return {
-        backgroundColor:
-          tintMix > 0
-            ? `rgba(${Math.round(255 * (1 - tintMix * 0.35) + r * tintMix * 0.35)},${Math.round(255 * (1 - tintMix * 0.35) + g * tintMix * 0.35)},${Math.round(255 * (1 - tintMix * 0.35) + b * tintMix * 0.35)},${0.2 + t * 0.55})`
-            : `rgba(255,255,255,${0.2 + t * 0.55})`,
-        borderWidth: 1,
-        borderStyle: 'solid',
-        borderColor: `rgba(255,255,255,${0.4 + t * 0.45})`,
-        backdropFilter: `blur(${Math.round(2 + t * 10)}px)`,
-        WebkitBackdropFilter: `blur(${Math.round(2 + t * 10)}px)`,
-      };
-    case 'frost':
-      return {
-        backgroundColor:
-          tintMix > 0
-            ? `rgba(${Math.round(248 * (1 - tintMix) + r * tintMix)},${Math.round(250 * (1 - tintMix) + g * tintMix)},${Math.round(252 * (1 - tintMix) + b * tintMix)},${0.22 + t * 0.5})`
-            : `rgba(248,250,252,${0.22 + t * 0.5})`,
-        borderWidth: 1,
-        borderStyle: 'solid',
-        borderColor: `rgba(255,255,255,${0.45 + t * 0.4})`,
-        backdropFilter: `blur(${Math.round(2 + t * 10)}px)`,
-        WebkitBackdropFilter: `blur(${Math.round(2 + t * 10)}px)`,
-      };
-    case 'accent':
-      return { backgroundColor: accent, opacity: 0.75 + t * 0.25 };
-    default: {
-      const dark = Math.round(10 + (1 - t) * 15);
-      return { backgroundColor: `rgb(${dark},${dark},${dark})` };
-    }
-  }
-}
-
-export function servicesCardShellClass(
-  design: PortfolioServicesCardDesign,
-  tone: 'light' | 'muted',
-  presentation?: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'cardDesign'
-    | 'cardBackgroundFill'
-    | 'cardBackgroundEnabled'
-    | 'cardBackgroundAlternation'
-    | 'useHeroPalette'
-    | 'servicesGalleryLayout'
-    | 'activeColorMode'
-  >
-): string {
-  const custom = presentation ? servicesCardHasCustomFill(presentation) : false;
-  const omitDefaultFill =
-    custom ||
-    (presentation != null && !presentation.cardBackgroundEnabled) ||
-    presentation?.useHeroPalette !== false;
-  return `${servicesCardDesignShellClass(design, tone, {
-    // Never paint muted gray fill when the user turned the card background off.
-    applyMutedClass: custom,
-    omitDefaultFill,
-  })} flex flex-col`;
-}
-
-export function servicesServiceCardMinHeight(design: PortfolioServicesCardDesign): string {
-  return design === 'compact' ? 'min-h-[18rem]' : design === 'minimal' ? 'min-h-[20rem]' : 'min-h-[22rem] sm:min-h-[23rem]';
-}
-
-export function servicesSkillCardMinHeight(design: PortfolioServicesCardDesign): string {
-  return design === 'compact' ? 'min-h-[12rem]' : design === 'minimal' ? 'min-h-[13rem]' : 'min-h-[14rem] sm:min-h-[15rem]';
-}
-
-export function servicesGallerySupportsMarquee(layout: PortfolioServicesGalleryLayout): boolean {
-  return layout === 'card';
-}
-
-export function servicesGallerySupportsCoverflow(layout: PortfolioServicesGalleryLayout): boolean {
-  return layout === 'card';
-}
-
-export function servicesGallerySupportsDeck(layout: PortfolioServicesGalleryLayout): boolean {
-  return layout === 'card';
-}
-
-export function servicesMarqueeActiveFor(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'displayMode' | 'servicesGalleryLayout' | 'skillsGalleryLayout'
-  >,
-  kind: 'services' | 'skills'
-): boolean {
-  if (presentation.displayMode !== 'marquee') return false;
-  const layout =
-    kind === 'services' ? presentation.servicesGalleryLayout : presentation.skillsGalleryLayout;
-  return servicesGallerySupportsMarquee(layout);
-}
-
-export function servicesCoverflowActiveFor(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'displayMode' | 'servicesGalleryLayout' | 'skillsGalleryLayout'
-  >,
-  kind: 'services' | 'skills'
-): boolean {
-  if (presentation.displayMode !== 'coverflow') return false;
-  const layout =
-    kind === 'services' ? presentation.servicesGalleryLayout : presentation.skillsGalleryLayout;
-  return servicesGallerySupportsCoverflow(layout);
-}
-
-export function servicesDeckActiveFor(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'displayMode' | 'servicesGalleryLayout' | 'skillsGalleryLayout'
-  >,
-  kind: 'services' | 'skills'
-): boolean {
-  if (presentation.displayMode !== 'deck') return false;
-  const layout =
-    kind === 'services' ? presentation.servicesGalleryLayout : presentation.skillsGalleryLayout;
-  return servicesGallerySupportsDeck(layout);
-}
-
-/** Modes that need « Carte horizontal » — auto-applied when selecting the mode. */
-export function servicesDisplayModeNeedsCardLayout(mode: PortfolioServicesDisplayMode): boolean {
-  return mode === 'marquee' || mode === 'coverflow' || mode === 'deck';
-}
-
-/** Patch to apply a display mode and keep gallery layouts in sync (root + both blocks). */
-export function servicesDisplayModeSettingsPatch(
-  services: PortfolioServicesPresentationSettings,
-  displayMode: PortfolioServicesDisplayMode
-): Partial<PortfolioServicesPresentationSettings> {
-  const needsCard = servicesDisplayModeNeedsCardLayout(displayMode);
-  const galleryLayout = needsCard ? ('card' as const) : undefined;
-  return {
-    displayMode,
-    ...(galleryLayout
-      ? {
-          skillsGalleryLayout: galleryLayout,
-          servicesGalleryLayout: galleryLayout,
-        }
-      : {}),
-    skillsBlock: {
-      ...services.skillsBlock,
-      displayMode,
-      ...(galleryLayout ? { galleryLayout } : {}),
-    },
-    servicesBlock: {
-      ...services.servicesBlock,
-      displayMode,
-      ...(galleryLayout ? { galleryLayout } : {}),
-    },
-  };
-}
-
-function servicesColumnsGridClass(columns: PortfolioServicesCardColumns, gapClass = 'gap-3'): string {
-  switch (columns) {
-    case 1:
-      return `mx-auto flex w-full max-w-2xl flex-col ${gapClass}`;
-    case 2:
-      return `grid items-stretch ${gapClass} grid-cols-1 sm:grid-cols-2`;
-    case 4:
-      return `grid items-stretch ${gapClass} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4`;
-    default:
-      // 3 columns: single on phone, 2 on tablet, 3 from lg (not only xl).
-      return `grid items-stretch ${gapClass} grid-cols-1 sm:grid-cols-2 lg:grid-cols-3`;
-  }
-}
-
-export function servicesGalleryContainerClass(
-  layout: PortfolioServicesGalleryLayout,
-  displayMode: PortfolioServicesDisplayMode,
-  kind: 'services' | 'skills' = 'services',
-  columns?: PortfolioServicesCardColumns
-): string {
-  const cols =
-    columns ??
-    (kind === 'skills'
-      ? DEFAULT_SERVICES_PRESENTATION.skillsColumns
-      : DEFAULT_SERVICES_PRESENTATION.servicesColumns);
-
-  if (layout === 'commercial-list') {
-    return 'flex w-full flex-col gap-0';
-  }
-
-  if (
-    layout === 'card-media' ||
-    layout === 'media-banner' ||
-    layout === 'media-checklist' ||
-    layout === 'media-split'
-  ) {
-    return 'flex w-full flex-col gap-12 sm:gap-16 lg:gap-20';
-  }
-
-  if (layout === 'plan-split') {
-    return 'flex w-full flex-col gap-5';
-  }
-
-  if (layout === 'service-accordion') {
-    return 'flex w-full flex-col gap-4';
-  }
-
-  if (
-    layout === 'list' ||
-    layout === 'service-selector' ||
-    layout === 'pricing-hero' ||
-    layout === 'tier' ||
-    layout === 'plan'
-  ) {
-    return servicesColumnsGridClass(cols, layout === 'list' ? 'gap-3' : 'gap-5');
-  }
-
-  if (layout === 'icon-stack') {
-    return 'flex w-full flex-wrap items-center';
-  }
-
-  if (layout === 'tool-inspector') {
-    return 'flex w-full flex-col';
-  }
-
-  if (displayMode === 'stack' || displayMode === 'coverflow' || displayMode === 'deck') {
-    return servicesColumnsGridClass(1, 'gap-5');
-  }
-
-  return servicesColumnsGridClass(cols, 'gap-5');
-}
-
 export function servicesCardRadiusClass(radius: PortfolioServicesCardRadius): string {
   switch (radius) {
     case 'none':
@@ -4334,91 +2424,6 @@ export function servicesCardPaddingClass(padding: PortfolioServicesCardPadding):
   }
 }
 
-function servicesCardBorderWidthClass(border: PortfolioServicesCardBorder): string {
-  switch (border) {
-    case 'soft':
-      return 'border';
-    case 'solid':
-    case 'accent':
-      return 'border-2';
-    default:
-      return 'border-0';
-  }
-}
-
-/** Frame override applied on top of design shells (border / radius / padding / bg). */
-export function servicesCardFrameClass(p: PortfolioServicesPresentationSettings): string {
-  const parts = [servicesCardRadiusClass(p.cardBorderRadius), servicesCardPaddingClass(p.cardPadding)];
-  if (p.cardBorder !== 'none') {
-    parts.push(servicesCardBorderWidthClass(p.cardBorder));
-    // Soft shadow only when there is a fill — border-only cards stay flat.
-    if (p.cardBorder === 'soft' && p.cardBackgroundEnabled) parts.push('shadow-sm');
-  } else {
-    parts.push('border-0 shadow-none');
-  }
-  return parts.filter(Boolean).join(' ');
-}
-
-/**
- * Cover-media layouts default to no outline. Soft (legacy shared default) is remapped to none
- * so old sessions actually lose the border; solid / accent stay if the user set them.
- */
-export function resolveServicesMediaCardPresentation(
-  presentation: PortfolioServicesPresentationSettings
-): PortfolioServicesPresentationSettings {
-  if (
-    presentation.cardBorder === 'solid' ||
-    presentation.cardBorder === 'accent'
-  ) {
-    return presentation;
-  }
-  return { ...presentation, cardBorder: 'none' };
-}
-
-/** Surface style for media cards — kills leftover soft border / minimal outline / soft shadow. */
-export function servicesMediaCardSurfaceStyle(
-  presentation: PortfolioServicesPresentationSettings,
-  tone: 'light' | 'muted' = 'light'
-): CSSProperties {
-  const resolved = resolveServicesMediaCardPresentation(presentation);
-  const surface = servicesCardSurfaceStyle(resolved, tone);
-  if (resolved.cardBorder !== 'none') return surface;
-  return {
-    ...surface,
-    borderWidth: 0,
-    borderStyle: 'none',
-    borderColor: 'transparent',
-    outline: 'none',
-    boxShadow: 'none',
-  };
-}
-
-export function servicesCardFrameStyle(p: PortfolioServicesPresentationSettings): CSSProperties {
-  const style: CSSProperties = {};
-
-  if (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled) {
-    style.backgroundColor = sanitizeHex(p.cardBackgroundColor, DEFAULT_SERVICES_CARD_BACKGROUND_COLOR);
-  }
-
-  if (p.cardBorder !== 'none') {
-    const opacity = clampCardDesignIntensity(p.cardBorderOpacity, 100) / 100;
-    style.borderStyle = 'solid';
-    if (p.cardBorder === 'accent') {
-      const accent = sanitizeHex(p.cardAccentColor, DEFAULT_SERVICES_ACCENT_COLOR);
-      style.borderColor = opacity >= 0.999 ? accent : hexWithAlpha(accent, opacity);
-    } else if (p.cardBorder === 'soft' || p.cardBorder === 'solid') {
-      const border = sanitizeHex(p.cardBorderColor, DEFAULT_SERVICES_CARD_BORDER_COLOR);
-      style.borderColor = opacity >= 0.999 ? border : hexWithAlpha(border, opacity);
-    }
-  } else {
-    style.borderWidth = 0;
-    style.borderStyle = 'none';
-    style.borderColor = 'transparent';
-  }
-
-  return style;
-}
-
 /** Merges design-specific surface (accent bar, glass blur) with user frame overrides. */
 /**
  * Relative luminance 0–1 for Services card contrast (same curve as Work / FAQ).
@@ -4440,375 +2445,7 @@ export function servicesColorLuminance(hex: string): number {
   return 0.2126 * channel(0) + 0.7152 * channel(2) + 0.0722 * channel(4);
 }
 
-/**
- * Hex of the fill the user actually sees behind skill/service card content.
- * Must stay in sync with {@link servicesCardSurfaceStyle} (+ design-owned fills).
- * When the card fill is off, content sits on the section background — not a white default
- * (otherwise auto ink flips to dark text on a dark page).
- */
-export function resolveServicesSectionSurfaceHex(
-  p: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'useHeroPalette'
-    | 'servicesPalette'
-    | 'servicesColorBindings'
-    | 'sectionBackgroundColor'
-  >
-): string {
-  if (p.useHeroPalette !== false) {
-    const palette = mergeServicesPalette(DEFAULT_SERVICES_PALETTE, p.servicesPalette);
-    const bindings = mergeServicesColorBindings(
-      DEFAULT_SERVICES_COLOR_BINDINGS,
-      p.servicesColorBindings
-    );
-    return resolveHeroPaletteColor(palette, bindings.sectionBackground);
-  }
-  return sanitizeHex(p.sectionBackgroundColor, '#0b0b0d');
-}
-
-export function resolveServicesCardSurfaceHex(
-  p: PortfolioServicesPresentationSettings,
-  tone: 'light' | 'muted' = 'light'
-): string {
-  const lightColor = resolveServicesManualHex(
-    p.cardBackgroundColor,
-    p.cardBackgroundColorDark,
-    p,
-    DEFAULT_SERVICES_CARD_BACKGROUND_COLOR
-  );
-  const mutedColor = resolveServicesManualHex(
-    p.cardBackgroundColorB,
-    p.cardBackgroundColorBDark,
-    p,
-    DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B
-  );
-  const designOwnsBackground = servicesCardDesignOwnsBackground(p.cardDesign);
-
-  if (designOwnsBackground) {
-    if (p.cardDesign === 'compact') {
-      const intensity = resolveCardDesignIntensity(p.cardDesignIntensities, p.cardDesign);
-      const t =
-        clampCardDesignIntensity(intensity, DEFAULT_SERVICES_CARD_DESIGN_INTENSITIES.compact) / 100;
-      const gray = Math.round(250 - t * 38);
-      const hex = gray.toString(16).padStart(2, '0');
-      return `#${hex}${hex}${hex}`;
-    }
-    // glass — frosted light wash
-    return '#f3f3f5';
-  }
-
-  if (
-    p.cardBackgroundAlternation === 'alternate' &&
-    p.cardBackgroundEnabled &&
-    p.cardBackgroundFill !== 'split'
-  ) {
-    return tone === 'muted' ? mutedColor : lightColor;
-  }
-
-  if (p.cardBackgroundFill === 'split') {
-    // Split layers expose zone A as the dominant reading surface.
-    return sanitizeHex(p.cardBackgroundColorA, lightColor);
-  }
-
-  if (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled) {
-    return lightColor;
-  }
-
-  // Carte / Liste / Liste commerciale — fill like Offre·Tarif, but dark mode only.
-  if (servicesCardDarkOnlyFillActive(p)) {
-    return tone === 'muted' ? mutedColor : lightColor;
-  }
-
-  // Transparent card — contrast against the section, not a phantom white fill.
-  return resolveServicesSectionSurfaceHex(p);
-}
-
-/**
- * Card text binds to element colors. When `cardTextContrast === 'pair-ab'`
- * and Alterné is on, use explicit A/B ink pairs instead of element hexes.
- * Otherwise prefer the painted element colors (palette / manual).
- */
-export function servicesReadableCardInk(
-  p: PortfolioServicesPresentationSettings,
-  tone: 'light' | 'muted',
-  preferredStrong: string,
-  preferredMuted: string,
-  /** Kept for call-site compatibility; contrast now trusts preferred hexes unless pair-ab. */
-  _surfaceHexOverride?: string
-): { strong: string; muted: string } {
-  const contrast = pickServicesCardTextContrast(p.cardTextContrast, 'auto');
-  const alternate = p.cardBackgroundAlternation === 'alternate';
-
-  if (alternate && contrast === 'pair-ab') {
-    if (tone === 'muted') {
-      return {
-        strong: sanitizeHex(p.cardInkStrongB, DEFAULT_SERVICES_CARD_INK_STRONG_B),
-        muted: sanitizeHex(p.cardInkMutedB, DEFAULT_SERVICES_CARD_INK_MUTED_B),
-      };
-    }
-    return {
-      strong: sanitizeHex(p.cardInkStrongA, DEFAULT_SERVICES_CARD_INK_STRONG_A),
-      muted: sanitizeHex(p.cardInkMutedA, DEFAULT_SERVICES_CARD_INK_MUTED_A),
-    };
-  }
-
-  // Default / auto: trust the preferred (painted) colors.
-  return {
-    strong: sanitizeHex(preferredStrong, DEFAULT_SERVICES_CARD_INK_STRONG_A),
-    muted: sanitizeHex(preferredMuted, DEFAULT_SERVICES_CARD_INK_MUTED_A),
-  };
-}
-
-/** Active Global color mode for manual (non-palette) light/dark picks. */
-export function servicesActiveColorMode(
-  p: Pick<PortfolioServicesPresentationSettings, 'activeColorMode'>
-): 'light' | 'dark' {
-  return p.activeColorMode === 'light' ? 'light' : 'dark';
-}
-
-/** Resolve a manual light/dark hex pair when palette is off. */
-export function resolveServicesManualHex(
-  light: string,
-  dark: string,
-  p: Pick<PortfolioServicesPresentationSettings, 'useHeroPalette' | 'activeColorMode'>,
-  fallback: string
-): string {
-  const mode = servicesActiveColorMode(p);
-  if (p.useHeroPalette === false && mode === 'dark') {
-    return sanitizeHex(dark || light, fallback);
-  }
-  return sanitizeHex(light, fallback);
-}
-
-/**
- * Soft icon disc when the skill card has no painted fill (or sits on a brand
- * fill). Never pure white on dark surfaces — that reads as a harsh “light mode”
- * chip in dark portfolios.
- */
-export function servicesSoftIconChipBg(surfaceHex: string): string {
-  if (servicesColorLuminance(surfaceHex) < 0.45) {
-    return '#2a2a2e';
-  }
-  return '#ececf0';
-}
-
-/**
- * Skill icon chip fill — same contract as Work `toolsIconBackground` /
- * {@link workToolIconShellStyle}: use the painted card surface (neutre), not a
- * forced light wash. Must be a solid hex so CreatorToolLogo can invert marks.
- */
-export function resolveServicesSkillIconChipBg(
-  p: PortfolioServicesPresentationSettings,
-  tone: 'light' | 'muted' = 'light'
-): string {
-  return resolveServicesCardSurfaceHex(p, tone);
-}
-
-/** Icon chip chrome — mirrors Work tool circles (surface + border tokens). */
-export function servicesSkillIconChromeStyle(
-  p: PortfolioServicesPresentationSettings,
-  tone: 'light' | 'muted' = 'light'
-): CSSProperties {
-  const radius =
-    p.skillsIconRadius === 'none'
-      ? '0'
-      : p.skillsIconRadius === 'sm'
-        ? '0.375rem'
-        : p.skillsIconRadius === 'md'
-          ? '0.625rem'
-          : p.skillsIconRadius === 'lg'
-            ? '0.875rem'
-            : p.skillsIconRadius === 'xl'
-              ? '1.25rem'
-              : '9999px';
-  return {
-    borderStyle: 'solid',
-    borderWidth:
-      p.skillsIconBorderEnabled === false
-        ? 0
-        : clampSkillsIconBorderWidthPx(p.skillsIconBorderWidthPx, 1),
-    borderColor:
-      p.skillsIconBorderEnabled === false
-        ? 'transparent'
-        : p.skillsIconBorderManual
-          ? sanitizeHex(p.skillsIconBorderColor, DEFAULT_SERVICES_CARD_BORDER_COLOR)
-          : sanitizeHex(p.cardBorderColor, DEFAULT_SERVICES_CARD_BORDER_COLOR),
-    backgroundColor:
-      p.skillsIconBackgroundEnabled === false
-        ? 'transparent'
-        : p.skillsIconBackgroundManual
-          ? sanitizeHex(p.skillsIconBackgroundColor, DEFAULT_SERVICES_CARD_BACKGROUND_COLOR)
-          : resolveServicesSkillIconChipBg(p, tone),
-    borderRadius: radius,
-  };
-}
-
-export function servicesCardSurfaceStyle(
-  p: PortfolioServicesPresentationSettings,
-  tone: 'light' | 'muted' = 'light'
-): CSSProperties {
-  const intensity = resolveCardDesignIntensity(p.cardDesignIntensities, p.cardDesign);
-  const tint = resolveCardDesignTint(p.cardDesignTints, p.cardDesign);
-  const designStyle = servicesCardDesignIntensityStyle(p.cardDesign, intensity, p.cardAccentColor, tint);
-  const frameStyle = servicesCardFrameStyle(p);
-  const designOwnsBackground = servicesCardDesignOwnsBackground(p.cardDesign);
-  const lightColor = resolveServicesManualHex(
-    p.cardBackgroundColor,
-    p.cardBackgroundColorDark,
-    p,
-    DEFAULT_SERVICES_CARD_BACKGROUND_COLOR
-  );
-  const mutedColor = resolveServicesManualHex(
-    p.cardBackgroundColorB,
-    p.cardBackgroundColorBDark,
-    p,
-    DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B
-  );
-
-  // Alternating solid fills — require the fill toggle (alternation alone must not keep fill on).
-  if (
-    p.cardBackgroundAlternation === 'alternate' &&
-    p.cardBackgroundEnabled &&
-    p.cardBackgroundFill !== 'split' &&
-    !designOwnsBackground
-  ) {
-    return {
-      ...designStyle,
-      ...frameStyle,
-      backgroundImage: 'none',
-      backgroundColor: tone === 'muted' ? mutedColor : lightColor,
-      ['--pf-card-muted-bg' as string]: mutedColor,
-    };
-  }
-
-  // Diagonal / geometric split is drawn in ServicesCardBackgroundLayers.
-  if (p.cardBackgroundFill === 'split' && !designOwnsBackground) {
-    const { backgroundColor: _bg, backgroundImage: _img, ...restDesign } = designStyle as CSSProperties & {
-      backgroundColor?: string;
-      backgroundImage?: string;
-    };
-    void _bg;
-    void _img;
-    return {
-      ...restDesign,
-      ...frameStyle,
-      backgroundColor: 'transparent',
-      backgroundImage: 'none',
-    };
-  }
-
-  // Uniform solid fill when enabled — clear design backgroundImage so the color is visible.
-  if (p.cardBackgroundFill === 'solid' && p.cardBackgroundEnabled && !designOwnsBackground) {
-    return {
-      ...designStyle,
-      ...frameStyle,
-      backgroundImage: 'none',
-      backgroundColor: lightColor,
-    };
-  }
-
-  // Carte / Liste / Liste commerciale: solid fill in dark mode only (Offre·Tarif-like surface).
-  if (servicesCardDarkOnlyFillActive(p) && !designOwnsBackground) {
-    const { backgroundColor: _bg, backgroundImage: _img, ...restDesign } = designStyle as CSSProperties & {
-      backgroundColor?: string;
-      backgroundImage?: string;
-    };
-    void _bg;
-    void _img;
-    return {
-      ...restDesign,
-      ...frameStyle,
-      backgroundImage: 'none',
-      backgroundColor: tone === 'muted' ? mutedColor : lightColor,
-    };
-  }
-
-  // Fill off wins over design-owned paints (compact / glass) so "Fond du cadre" is authoritative.
-  if (!p.cardBackgroundEnabled) {
-    const { backgroundColor: _bg, backgroundImage: _img, ...restDesign } = designStyle as CSSProperties & {
-      backgroundColor?: string;
-      backgroundImage?: string;
-    };
-    void _bg;
-    void _img;
-    return {
-      ...restDesign,
-      ...frameStyle,
-      backgroundColor: 'transparent',
-      backgroundImage: 'none',
-      boxShadow: 'none',
-    };
-  }
-
-  return {
-    ...designStyle,
-    ...frameStyle,
-  };
-}
-
-export function servicesContentAlignClass(alignment: PortfolioServicesContentAlignment): {
-  container: string;
-  text: string;
-  row: string;
-  block: string;
-} {
-  switch (alignment) {
-    case 'center':
-      return {
-        container: 'items-center',
-        text: 'text-center',
-        row: 'justify-center',
-        block: 'mx-auto',
-      };
-    case 'right':
-      return {
-        container: 'items-end',
-        text: 'text-right',
-        row: 'justify-end',
-        block: 'ml-auto',
-      };
-    default:
-      return {
-        container: 'items-start',
-        text: 'text-left',
-        row: 'justify-start',
-        block: '',
-      };
-  }
-}
-
-/** Vertical gap between title / description / tasks / price / CTA inside a card. */
-export function servicesCardContentGapClass(gap: PortfolioServicesContentGap | undefined): string {
-  switch (gap) {
-    case 'none':
-      return 'gap-0';
-    case 'sm':
-      return 'gap-2';
-    case 'lg':
-      return 'gap-5';
-    case 'xl':
-      return 'gap-7';
-    case 'custom':
-      return '';
-    default:
-      return 'gap-3.5';
-  }
-}
-
-export function servicesCardContentGapProps(
-  gap: PortfolioServicesContentGap | undefined,
-  customPx?: number
-): { className: string; style?: { gap: string } } {
-  if (gap === 'custom') {
-    return {
-      className: '',
-      style: { gap: `${clampServicesContentGapPx(customPx, 14)}px` },
-    };
-  }
-  return { className: servicesCardContentGapClass(gap) };
-}
-
-export function pickServicesContentGap(
+function pickServicesContentGap(
   value: unknown,
   fallback: PortfolioServicesContentGap = 'md'
 ): PortfolioServicesContentGap {
@@ -4822,104 +2459,19 @@ export function pickServicesContentGap(
     : fallback;
 }
 
-export function servicesListRowShellClass(
-  design: PortfolioServicesCardDesign,
-  tone: 'light' | 'muted' = 'light',
-  presentation?: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'cardDesign'
-    | 'cardBackgroundFill'
-    | 'cardBackgroundEnabled'
-    | 'cardBackgroundAlternation'
-    | 'useHeroPalette'
-    | 'servicesGalleryLayout'
-    | 'activeColorMode'
-  >
-): string {
-  const custom = presentation ? servicesCardHasCustomFill(presentation) : false;
-  const omitDefaultFill = custom || presentation?.useHeroPalette !== false;
-  return servicesCardDesignShellClass(design, tone, {
-    applyMutedClass: !custom,
-    omitDefaultFill,
-  });
-}
-
-export function servicesPricingHeroShellClass(
-  design: PortfolioServicesCardDesign,
-  tone: 'light' | 'muted' = 'light',
-  presentation?: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'cardDesign'
-    | 'cardBackgroundFill'
-    | 'cardBackgroundEnabled'
-    | 'cardBackgroundAlternation'
-    | 'useHeroPalette'
-    | 'servicesGalleryLayout'
-    | 'activeColorMode'
-  >
-): string {
-  return `${servicesListRowShellClass(design, tone, presentation)} flex flex-col`;
-}
-
-/** Shell for the vertical subscription / tier offer card. */
-export function servicesTierShellClass(
-  design: PortfolioServicesCardDesign,
-  tone: 'light' | 'muted' = 'light',
-  presentation?: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'cardDesign'
-    | 'cardBackgroundFill'
-    | 'cardBackgroundEnabled'
-    | 'cardBackgroundAlternation'
-    | 'useHeroPalette'
-    | 'servicesGalleryLayout'
-    | 'activeColorMode'
-  >
-): string {
-  return `${servicesCardShellClass(design, tone, presentation)} flex flex-col`;
-}
-
 /**
  * Sensible defaults when picking Offre / Tarif or Plan tarifaire layouts.
  */
-export const SERVICES_VERTICAL_CARD_CHROME_VERSION = 44;
+const SERVICES_VERTICAL_CARD_CHROME_VERSION = 44;
 
 /** Default width for Bannière média (commercial-list steps: lg ≈ max-w-6xl). */
-export const SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH = 'lg' as const;
-
-/**
- * Resolve display width for Bannière média.
- * Pre-migration profiles still store `full` (old default) — show the capped default until chrome migrates.
- * After migration, `full` and other sizes are respected as configured.
- */
-export function resolveMediaBannerCardMaxWidth(
-  presentation: Pick<
-    PortfolioServicesPresentationSettings,
-    'cardMaxWidth' | 'servicesCardChromeVersion'
-  >
-): PortfolioServicesCardMaxWidth {
-  const width = presentation.cardMaxWidth;
-  const version = presentation.servicesCardChromeVersion ?? 0;
-  if (version < SERVICES_VERTICAL_CARD_CHROME_VERSION) {
-    if (!width || width === 'full') return SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH;
-  }
-  if (
-    width === 'full' ||
-    width === 'xl' ||
-    width === 'lg' ||
-    width === 'md' ||
-    width === 'sm'
-  ) {
-    return width;
-  }
-  return SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH;
-}
+const SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH = 'lg' as const;
 
 /** Shared max width for Carte / Offre·Tarif / Plan (same footprint). */
-export const SERVICES_HORIZONTAL_CARD_MAX_WIDTH = 'lg' as const;
+const SERVICES_HORIZONTAL_CARD_MAX_WIDTH = 'lg' as const;
 
 /** Border-only chrome (fill / decor remain editable after). */
-export const SERVICES_VERTICAL_CARD_FRAME_DEFAULTS = {
+const SERVICES_VERTICAL_CARD_FRAME_DEFAULTS = {
   cardBackgroundEnabled: false as const,
   cardBorder: 'soft' as const,
   cardBorderOpacity: 100,
@@ -4930,19 +2482,16 @@ export const SERVICES_VERTICAL_CARD_FRAME_DEFAULTS = {
 };
 
 /** Filled card surface by default (light + dark) — Carte / Offre / Plan / Liste commerciale. */
-export const SERVICES_FILLED_CARD_FRAME_DEFAULTS = {
+const SERVICES_FILLED_CARD_FRAME_DEFAULTS = {
   ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
   cardBackgroundEnabled: true as const,
 };
 
 /** Media layouts — filled surface, no outline by default. */
-export const SERVICES_MEDIA_CARD_FRAME_DEFAULTS = {
+const SERVICES_MEDIA_CARD_FRAME_DEFAULTS = {
   ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
   cardBorder: 'none' as const,
 };
-
-/** @deprecated Prefer SERVICES_FILLED_CARD_FRAME_DEFAULTS — Offre / Tarif alias. */
-export const SERVICES_TIER_CARD_FRAME_DEFAULTS = SERVICES_FILLED_CARD_FRAME_DEFAULTS;
 
 /** Layouts that start with a solid card fill (including light mode). */
 function servicesLayoutUsesFilledCardFrame(layout: PortfolioServicesGalleryLayout): boolean {
@@ -4957,86 +2506,6 @@ function servicesLayoutUsesFilledCardFrame(layout: PortfolioServicesGalleryLayou
     layout === 'media-split' ||
     layout === 'commercial-list'
   );
-}
-
-function servicesLayoutUsesMediaCardFrame(layout: PortfolioServicesGalleryLayout): boolean {
-  return (
-    layout === 'card-media' ||
-    layout === 'media-banner' ||
-    layout === 'media-checklist' ||
-    layout === 'media-split'
-  );
-}
-
-/**
- * Common frame shape returned by layout presets. The defaults are intentionally
- * narrow literals, but saved settings can use every valid presentation value.
- */
-type ServicesGalleryLayoutFrame = Pick<
-  PortfolioServicesPresentationSettings,
-  | 'cardBackgroundEnabled'
-  | 'cardBorder'
-  | 'cardBorderOpacity'
-  | 'cardBackgroundFill'
-  | 'cardBackgroundAlternation'
-  | 'cardDecorEnabled'
-  | 'cardDividerEnabled'
->;
-
-/**
- * Per-layout frame defaults.
- * Carte / Offre / Plan / Plan en colonnes / Liste commerciale start filled; media layouts filled without border; others stay border-only.
- */
-export function servicesGalleryLayoutFrameDefaults(
-  layout: PortfolioServicesGalleryLayout
-): ServicesGalleryLayoutFrame {
-  if (servicesLayoutUsesMediaCardFrame(layout)) return SERVICES_MEDIA_CARD_FRAME_DEFAULTS;
-  return servicesLayoutUsesFilledCardFrame(layout)
-    ? SERVICES_FILLED_CARD_FRAME_DEFAULTS
-    : SERVICES_VERTICAL_CARD_FRAME_DEFAULTS;
-}
-
-/** Resolve frame for a layout from its individual preset, falling back to that layout’s defaults. */
-function resolveServicesGalleryLayoutFrame(
-  layout: PortfolioServicesGalleryLayout,
-  saved?: PortfolioServicesGalleryLayoutPreset | null
-): ServicesGalleryLayoutFrame {
-  const defaults = servicesGalleryLayoutFrameDefaults(layout);
-  if (!saved) return defaults;
-  return {
-    cardBackgroundEnabled:
-      typeof saved.cardBackgroundEnabled === 'boolean'
-        ? saved.cardBackgroundEnabled
-        : defaults.cardBackgroundEnabled,
-    cardBorder:
-      saved.cardBorder === 'none' ||
-      saved.cardBorder === 'soft' ||
-      saved.cardBorder === 'solid' ||
-      saved.cardBorder === 'accent'
-        ? saved.cardBorder
-        : defaults.cardBorder,
-    cardBorderOpacity:
-      typeof saved.cardBorderOpacity === 'number'
-        ? saved.cardBorderOpacity
-        : defaults.cardBorderOpacity,
-    cardBackgroundFill:
-      saved.cardBackgroundFill === 'solid' || saved.cardBackgroundFill === 'split'
-        ? saved.cardBackgroundFill
-        : defaults.cardBackgroundFill,
-    cardBackgroundAlternation:
-      saved.cardBackgroundAlternation === 'uniform' ||
-      saved.cardBackgroundAlternation === 'alternate'
-        ? saved.cardBackgroundAlternation
-        : defaults.cardBackgroundAlternation,
-    cardDecorEnabled:
-      typeof saved.cardDecorEnabled === 'boolean'
-        ? saved.cardDecorEnabled
-        : defaults.cardDecorEnabled,
-    cardDividerEnabled:
-      typeof saved.cardDividerEnabled === 'boolean'
-        ? saved.cardDividerEnabled
-        : defaults.cardDividerEnabled,
-  };
 }
 
 /** Default task bullet size for Carte horizontal (still editable). */
@@ -5086,7 +2555,7 @@ function servicesVerticalCardElementStyles(
  * Colors stay on the section palette — never invent accent hexes here.
  * Filled card background for Carte / Offre / Plan (light + dark).
  */
-export function applyServicesHorizontalCardDesignDefaults(
+function applyServicesHorizontalCardDesignDefaults(
   layout: 'card' | 'tier' | 'plan',
   services: Pick<
     PortfolioServicesPresentationSettings,
@@ -5204,20 +2673,6 @@ export function applyServicesHorizontalCardDesignDefaults(
   };
 }
 
-/** @deprecated Prefer applyServicesHorizontalCardDesignDefaults('card', …). */
-export function applyServicesVerticalCardDesignDefaults(
-  services: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'servicesBlock'
-    | 'skillsBlock'
-    | 'skillsGalleryLayout'
-    | 'elementStyles'
-    | 'servicesColorBindings'
-  >
-): Partial<PortfolioServicesPresentationSettings> {
-  return applyServicesHorizontalCardDesignDefaults('card', services);
-}
-
 const SERVICES_GALLERY_LAYOUT_PRESET_KEYS = [
   'displayMode',
   'servicesColumns',
@@ -5265,7 +2720,7 @@ const SERVICES_GALLERY_LAYOUT_PRESET_KEYS = [
   'commercialColumnGapPx',
 ] as const satisfies ReadonlyArray<keyof PortfolioServicesGalleryLayoutPreset>;
 
-export function captureServicesGalleryLayoutPreset(
+function captureServicesGalleryLayoutPreset(
   services: PortfolioServicesPresentationSettings
 ): PortfolioServicesGalleryLayoutPreset {
   const preset: PortfolioServicesGalleryLayoutPreset = {};
@@ -5286,357 +2741,6 @@ export function captureServicesGalleryLayoutPreset(
     (preset as Record<string, unknown>)[key] = value;
   }
   return preset;
-}
-
-/**
- * Switch gallery design while keeping each layout’s presentation independent:
- * snapshot the current design, then restore the target’s saved preset
- * (or apply first-time defaults only when that design was never configured).
- * Frame/background is always restored from that layout’s individual config
- * (Offre / Tarif defaults to fill; every other design defaults to no fill).
- */
-export function switchServicesGalleryLayout(
-  nextLayout: PortfolioServicesGalleryLayout,
-  current: PortfolioServicesPresentationSettings
-): Partial<PortfolioServicesPresentationSettings> {
-  const prevLayout = current.servicesGalleryLayout;
-  const presets: Partial<
-    Record<PortfolioServicesGalleryLayout, PortfolioServicesGalleryLayoutPreset>
-  > = { ...(current.servicesGalleryLayoutPresets ?? {}) };
-
-  if (prevLayout && prevLayout !== nextLayout) {
-    presets[prevLayout] = {
-      ...presets[prevLayout],
-      ...captureServicesGalleryLayoutPreset(current),
-    };
-  }
-
-  const saved = presets[nextLayout];
-  const frame = resolveServicesGalleryLayoutFrame(nextLayout, saved);
-
-  if (saved && Object.keys(saved).length > 0) {
-    const nextColumns =
-      typeof saved.servicesColumns === 'number' ? saved.servicesColumns : current.servicesColumns;
-    const nextDisplayMode = saved.displayMode ?? current.displayMode;
-    const restored: Partial<PortfolioServicesPresentationSettings> = {
-      servicesGalleryLayout: nextLayout,
-      servicesGalleryLayoutPresets: presets,
-      ...saved,
-      // Always re-apply this layout’s own frame — never leave the previous design’s fill.
-      ...frame,
-      // Older card presets often omitted this flag or inherited `false` from another layout.
-      ...(nextLayout === 'card' && saved.showServiceDescription == null
-        ? { showServiceDescription: true as const }
-        : {}),
-      // Liste / menu always shows description under delivery.
-      ...(nextLayout === 'list'
-        ? {
-            showServiceDescription: true as const,
-            showServiceDelivery: true as const,
-            cardMaxWidth:
-              saved.cardMaxWidth === 'full' ||
-              saved.cardMaxWidth === 'xl' ||
-              saved.cardMaxWidth === 'lg' ||
-              saved.cardMaxWidth === 'md' ||
-              saved.cardMaxWidth === 'sm'
-                ? saved.cardMaxWidth === 'sm'
-                  ? ('md' as const)
-                  : saved.cardMaxWidth
-                : ('md' as const),
-          }
-        : {}),
-      // Plan en colonnes / Carte média / Bannière média / Média split: pleine largeur + fond activé.
-      ...(nextLayout === 'plan-split' ||
-      nextLayout === 'card-media' ||
-      nextLayout === 'media-banner' ||
-      nextLayout === 'media-split'
-        ? {
-            showServiceDescription: true as const,
-            showServiceTasks: true as const,
-            showServicePrice: true as const,
-            showServiceDelivery: true as const,
-            ctaDesign: 'pill-accent' as const,
-            servicesColumns: 1 as const,
-            cardPadding: 'lg' as const,
-            cardBackgroundEnabled: true as const,
-            cardBackgroundFill: 'solid' as const,
-            ...(nextLayout === 'card-media' ||
-            nextLayout === 'media-banner' ||
-            nextLayout === 'media-split'
-              ? { cardBorder: 'none' as const }
-              : {}),
-            ctaLabel:
-              nextLayout === 'media-banner'
-                ? saved.ctaLabel === 'Start Free Trial' ||
-                  saved.ctaLabel === 'Get started' ||
-                  !saved.ctaLabel?.trim()
-                  ? ('Order now' as const)
-                  : saved.ctaLabel
-                : saved.ctaLabel === 'Start Free Trial' || !saved.ctaLabel?.trim()
-                  ? ('Get started' as const)
-                  : saved.ctaLabel,
-            cardMaxWidth:
-              nextLayout === 'media-banner'
-                ? saved.cardMaxWidth === 'xl' ||
-                  saved.cardMaxWidth === 'lg' ||
-                  saved.cardMaxWidth === 'md' ||
-                  saved.cardMaxWidth === 'sm'
-                  ? saved.cardMaxWidth
-                  : ('lg' as const)
-                : nextLayout === 'media-split'
-                  ? saved.cardMaxWidth === 'full' ||
-                    saved.cardMaxWidth === 'xl' ||
-                    saved.cardMaxWidth === 'lg' ||
-                    saved.cardMaxWidth === 'md' ||
-                    saved.cardMaxWidth === 'sm'
-                    ? saved.cardMaxWidth
-                    : ('xl' as const)
-                  : saved.cardMaxWidth === 'full' || saved.cardMaxWidth === 'xl'
-                    ? saved.cardMaxWidth
-                    : ('full' as const),
-            cardAlignment:
-              nextLayout === 'media-banner' || nextLayout === 'media-split'
-                ? saved.cardAlignment === 'left' ||
-                  saved.cardAlignment === 'center' ||
-                  saved.cardAlignment === 'right'
-                  ? saved.cardAlignment
-                  : ('center' as const)
-                : saved.cardAlignment === 'left' ||
-                    saved.cardAlignment === 'center' ||
-                    saved.cardAlignment === 'right'
-                  ? saved.cardAlignment
-                  : ('center' as const),
-            ...(nextLayout === 'plan-split'
-              ? {
-                  servicePricePeriodSuffix:
-                    typeof saved.servicePricePeriodSuffix === 'string'
-                      ? saved.servicePricePeriodSuffix
-                      : '/ month',
-                }
-              : nextLayout === 'media-banner'
-                ? { servicePricePeriodSuffix: '' as const, showServiceCta: true as const }
-                : nextLayout === 'media-split'
-                  ? { servicePricePeriodSuffix: '' as const, showServiceCta: false as const }
-                  : { servicePricePeriodSuffix: '' as const, showServiceCta: false as const }),
-          }
-        : {}),
-      // Média checklist: image + titre + tâches cochées + CTA only.
-      ...(nextLayout === 'media-checklist'
-        ? {
-            showServiceTitle: true as const,
-            showServiceDescription: false as const,
-            showServicePrice: false as const,
-            showServiceDelivery: false as const,
-            showServiceTasks: true as const,
-            showServiceCta: true as const,
-            ctaDesign: 'pill-accent' as const,
-            ctaLabel: 'Get started' as const,
-            servicesColumns: 1 as const,
-            cardPadding: 'lg' as const,
-            cardBackgroundEnabled: true as const,
-            cardBackgroundFill: 'solid' as const,
-            servicePricePeriodSuffix: '' as const,
-            servicesTaskBulletStyle: 'check' as const,
-            servicesTaskBulletSource: 'section' as const,
-            cardBorder: 'none' as const,
-            cardMaxWidth: 'full' as const,
-            cardAlignment:
-              saved.cardAlignment === 'left' ||
-              saved.cardAlignment === 'center' ||
-              saved.cardAlignment === 'right'
-                ? saved.cardAlignment
-                : ('center' as const),
-          }
-        : {}),
-      // Carte / Offre / Plan: même largeur de cadre + fond activé.
-      ...(nextLayout === 'card' || nextLayout === 'tier' || nextLayout === 'plan'
-        ? {
-            cardBackgroundEnabled: true as const,
-            cardBackgroundFill: 'solid' as const,
-            cardMaxWidth:
-              saved.cardMaxWidth === 'full' || saved.cardMaxWidth === 'xl'
-                ? saved.cardMaxWidth
-                : SERVICES_HORIZONTAL_CARD_MAX_WIDTH,
-          }
-        : {}),
-      // Offre / Tarif: description on.
-      ...(nextLayout === 'tier' ? { showServiceDescription: true as const } : {}),
-      // Plan tarifaire: description hidden by default; filled CTA.
-      ...(nextLayout === 'plan'
-        ? {
-            showServiceDescription: false as const,
-            ctaDesign: 'pill-accent' as const,
-          }
-        : {}),
-      // Liste commerciale / tarifaire: roomier price + CTA columns + filled surface.
-      ...(nextLayout === 'commercial-list'
-        ? {
-            cardBackgroundEnabled: true as const,
-            cardBackgroundFill: 'solid' as const,
-            commercialPriceWidthPx:
-              typeof saved.commercialPriceWidthPx === 'number' &&
-              saved.commercialPriceWidthPx > 160
-                ? saved.commercialPriceWidthPx
-                : 200,
-            commercialCtaWidthPx:
-              typeof saved.commercialCtaWidthPx === 'number' && saved.commercialCtaWidthPx > 160
-                ? Math.max(saved.commercialCtaWidthPx, 210)
-                : 210,
-            ctaDesign: 'pill-accent' as const,
-            servicesTaskBulletStyle: 'check' as const,
-            servicesTaskBulletSource: 'section' as const,
-            servicesTaskBulletSize: 'custom' as const,
-            servicesTaskBulletSizePx: 24,
-            servicesTaskBulletWeight: 'bold' as const,
-            cardMaxWidth:
-              saved.cardMaxWidth === 'full' ||
-              saved.cardMaxWidth === 'xl' ||
-              saved.cardMaxWidth === 'lg' ||
-              saved.cardMaxWidth === 'md' ||
-              saved.cardMaxWidth === 'sm'
-                ? saved.cardMaxWidth === 'full' || saved.cardMaxWidth === 'lg'
-                  ? ('xl' as const) // migrate older compact presets to wider default
-                  : saved.cardMaxWidth
-                : ('xl' as const),
-            cardAlignment:
-              saved.cardAlignment === 'left' ||
-              saved.cardAlignment === 'center' ||
-              saved.cardAlignment === 'right'
-                ? saved.cardAlignment
-                : ('center' as const),
-            commercialColumnGapPx:
-              typeof saved.commercialColumnGapPx === 'number' &&
-              saved.commercialColumnGapPx >= 32
-                ? saved.commercialColumnGapPx
-                : 48,
-          }
-        : {}),
-      // Carte / Plan / Offre / Plan en colonnes share Carte horizontal type scale.
-      ...(nextLayout === 'card' ||
-      nextLayout === 'plan' ||
-      nextLayout === 'tier' ||
-      nextLayout === 'plan-split' ||
-      nextLayout === 'card-media' ||
-      nextLayout === 'media-banner' ||
-      nextLayout === 'media-checklist' ||
-      nextLayout === 'media-split'
-        ? {
-            servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
-            elementStyles: servicesVerticalCardElementStyles(
-              (saved.elementStyles as PortfolioServicesElementStyles | undefined) ??
-                current.elementStyles
-            ),
-          }
-        : {}),
-      // Offre / Tarif CTA is filled (plein couleur).
-      ...(nextLayout === 'tier' ||
-      nextLayout === 'plan-split' ||
-      nextLayout === 'card-media' ||
-      nextLayout === 'media-banner' ||
-      nextLayout === 'media-checklist' ||
-      nextLayout === 'media-split'
-        ? { ctaDesign: 'pill-accent' as const }
-        : {}),
-      // Period suffix: keep for Plan en colonnes; clear elsewhere.
-      ...(nextLayout === 'plan-split'
-        ? {}
-        : { servicePricePeriodSuffix: '' as const }),
-      servicesBlock: {
-        ...current.servicesBlock,
-        galleryLayout: nextLayout,
-        columns:
-          nextLayout === 'plan-split' ||
-          nextLayout === 'card-media' ||
-          nextLayout === 'media-banner' ||
-          nextLayout === 'media-checklist' ||
-          nextLayout === 'media-split'
-            ? (1 as const)
-            : nextColumns,
-        displayMode: nextDisplayMode,
-        ...frame,
-        ...(servicesLayoutUsesFilledCardFrame(nextLayout)
-          ? {
-              cardBackgroundEnabled: true as const,
-              cardBackgroundFill: 'solid' as const,
-            }
-          : {}),
-      },
-    };
-    if (current.useHeroPalette !== false) {
-      const palettePatch = applyServicesPaletteToSettings({
-        ...current,
-        ...restored,
-      }) as Partial<PortfolioServicesPresentationSettings>;
-      const filledFrame = servicesLayoutUsesFilledCardFrame(nextLayout)
-        ? {
-            cardBackgroundEnabled: true as const,
-            cardBackgroundFill: 'solid' as const,
-          }
-        : {};
-      return {
-        ...restored,
-        ...palettePatch,
-        ...frame,
-        ...filledFrame,
-        servicesGalleryLayout: nextLayout,
-        servicesGalleryLayoutPresets: presets,
-        useHeroPalette: true,
-        servicesBlock: {
-          ...restored.servicesBlock!,
-          ...frame,
-          ...filledFrame,
-        },
-      };
-    }
-    return restored;
-  }
-
-  const firstTime = servicesGalleryLayoutSettingsPatch(nextLayout, current);
-  const filledFrameFirst = servicesLayoutUsesFilledCardFrame(nextLayout)
-    ? {
-        cardBackgroundEnabled: true as const,
-        cardBackgroundFill: 'solid' as const,
-      }
-    : {};
-  const seeded: Partial<PortfolioServicesPresentationSettings> = {
-    ...firstTime,
-    // First visit: layout defaults for frame (filled layouts keep solid fill).
-    ...frame,
-    ...filledFrameFirst,
-    ...(nextLayout === 'plan-split'
-      ? {}
-      : { servicePricePeriodSuffix: '' as const }),
-    servicesGalleryLayout: nextLayout,
-    servicesGalleryLayoutPresets: presets,
-    servicesBlock: {
-      ...current.servicesBlock,
-      ...(firstTime.servicesBlock ?? {}),
-      galleryLayout: nextLayout,
-      ...frame,
-      ...filledFrameFirst,
-    },
-  };
-  if (current.useHeroPalette !== false) {
-    const palettePatch = applyServicesPaletteToSettings({
-      ...current,
-      ...seeded,
-    }) as Partial<PortfolioServicesPresentationSettings>;
-    return {
-      ...seeded,
-      ...palettePatch,
-      ...frame,
-      ...filledFrameFirst,
-      servicesGalleryLayout: nextLayout,
-      servicesGalleryLayoutPresets: presets,
-      useHeroPalette: true,
-      servicesBlock: {
-        ...seeded.servicesBlock!,
-        ...frame,
-        ...filledFrameFirst,
-      },
-    };
-  }
-  return seeded;
 }
 
 function mergeServicesGalleryLayoutPresets(
@@ -5684,387 +2788,6 @@ function mergeServicesGalleryLayoutPresets(
   return out;
 }
 
-export function servicesGalleryLayoutSettingsPatch(
-  layout: PortfolioServicesGalleryLayout,
-  current?: Pick<
-    PortfolioServicesPresentationSettings,
-    | 'servicesBlock'
-    | 'skillsBlock'
-    | 'skillsGalleryLayout'
-    | 'elementStyles'
-    | 'servicesColorBindings'
-  >
-): Partial<PortfolioServicesPresentationSettings> {
-  if (layout === 'commercial-list') {
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'left',
-      ctaAlignment: 'left',
-      // Compact card width with a bit of air (still configurable via Largeur de la carte).
-      cardMaxWidth: 'xl',
-      cardAlignment: 'center',
-      commercialPriceWidthPx: 200,
-      commercialCtaWidthPx: 210,
-      commercialColumnGapPx: 48,
-      ctaDesign: 'pill-accent',
-      servicesTaskBulletStyle: 'check',
-      servicesTaskBulletSource: 'section',
-      servicesTaskBulletSize: 'custom',
-      servicesTaskBulletSizePx: 24,
-      servicesTaskBulletWeight: 'bold',
-      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
-    };
-  }
-  if (layout === 'service-selector') {
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'right',
-      ctaAlignment: 'left',
-      ctaDesign: 'pill-accent',
-      servicesTaskBulletStyle: 'dash',
-      servicesTaskBulletSource: 'section',
-      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
-    };
-  }
-  if (layout === 'service-accordion') {
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'right',
-      ctaAlignment: 'left',
-      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
-    };
-  }
-  if (layout === 'list') {
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      cardMaxWidth: 'md',
-      ctaAlignment: 'left',
-      showServiceDescription: true,
-      showServiceDelivery: true,
-      ...SERVICES_VERTICAL_CARD_FRAME_DEFAULTS,
-    };
-  }
-  if (layout === 'plan-split') {
-    const bindings = current
-      ? mergeServicesColorBindings(
-          DEFAULT_SERVICES_COLOR_BINDINGS,
-          current.servicesColorBindings
-        )
-      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      cardMaxWidth: 'full',
-      cardAlignment: 'center',
-      cardPadding: 'lg',
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'left',
-      servicePricePrefixEnabled: false,
-      servicePricePeriodSuffix: '/ month',
-      showServiceTitle: true,
-      showServiceDescription: true,
-      showServicePrice: true,
-      showServiceTasks: true,
-      showServiceCta: true,
-      ctaLabel: 'Get started',
-      ctaDesign: 'pill-accent',
-      ctaAlignment: 'left',
-      servicesTaskBulletStyle: 'check-circle',
-      servicesTaskBulletSource: 'section',
-      servicesTaskBulletSize: 'custom',
-      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
-      servicesTaskBulletWeight: 'regular',
-      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
-      elementStyles: servicesVerticalCardElementStyles(
-        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
-      ),
-      servicesColorBindings: {
-        ...bindings,
-        tasksBullet: 'principal',
-        ctaAccent: 'principal',
-        ctaBorder: 'principal',
-      },
-      ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
-      ...(current
-        ? {
-            servicesBlock: {
-              ...current.servicesBlock,
-              galleryLayout: layout,
-              columns: 1 as const,
-              displayMode: 'grid' as const,
-              ...SERVICES_FILLED_CARD_FRAME_DEFAULTS,
-            },
-          }
-        : {}),
-    };
-  }
-  if (layout === 'card-media') {
-    const bindings = current
-      ? mergeServicesColorBindings(
-          DEFAULT_SERVICES_COLOR_BINDINGS,
-          current.servicesColorBindings
-        )
-      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      cardMaxWidth: 'full',
-      cardAlignment: 'center',
-      cardPadding: 'lg',
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'left',
-      servicePricePrefixEnabled: false,
-      servicePricePeriodSuffix: '',
-      showServiceTitle: true,
-      showServiceDescription: true,
-      showServicePrice: true,
-      showServiceDelivery: true,
-      showServiceTasks: true,
-      showServiceCta: false,
-      ctaLabel: 'Get started',
-      ctaDesign: 'pill-accent',
-      ctaAlignment: 'left',
-      servicesTaskBulletStyle: 'check-circle',
-      servicesTaskBulletSource: 'section',
-      servicesTaskBulletSize: 'custom',
-      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
-      servicesTaskBulletWeight: 'regular',
-      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
-      elementStyles: servicesVerticalCardElementStyles(
-        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
-      ),
-      servicesColorBindings: {
-        ...bindings,
-        tasksBullet: 'principal',
-        ctaAccent: 'principal',
-        ctaBorder: 'principal',
-      },
-      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-      ...(current
-        ? {
-            servicesBlock: {
-              ...current.servicesBlock,
-              galleryLayout: layout,
-              columns: 1 as const,
-              displayMode: 'grid' as const,
-              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-            },
-          }
-        : {}),
-    };
-  }
-  if (layout === 'media-banner') {
-    const bindings = current
-      ? mergeServicesColorBindings(
-          DEFAULT_SERVICES_COLOR_BINDINGS,
-          current.servicesColorBindings
-        )
-      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      cardMaxWidth: SERVICES_MEDIA_BANNER_DEFAULT_MAX_WIDTH,
-      cardAlignment: 'center',
-      cardPadding: 'lg',
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'left',
-      servicePricePrefixEnabled: false,
-      servicePricePeriodSuffix: '',
-      showServiceTitle: true,
-      showServiceDescription: true,
-      showServicePrice: true,
-      showServiceDelivery: true,
-      showServiceTasks: true,
-      showServiceCta: true,
-      ctaLabel: 'Order now',
-      ctaDesign: 'pill-accent',
-      ctaAlignment: 'left',
-      servicesTaskBulletStyle: 'check-circle',
-      servicesTaskBulletSource: 'section',
-      servicesTaskBulletSize: 'custom',
-      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
-      servicesTaskBulletWeight: 'regular',
-      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
-      elementStyles: servicesVerticalCardElementStyles(
-        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
-      ),
-      servicesColorBindings: {
-        ...bindings,
-        tasksBullet: 'principal',
-        ctaAccent: 'principal',
-        ctaBorder: 'principal',
-      },
-      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-      ...(current
-        ? {
-            servicesBlock: {
-              ...current.servicesBlock,
-              galleryLayout: layout,
-              columns: 1 as const,
-              displayMode: 'grid' as const,
-              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-            },
-          }
-        : {}),
-    };
-  }
-  if (layout === 'media-checklist') {
-    const bindings = current
-      ? mergeServicesColorBindings(
-          DEFAULT_SERVICES_COLOR_BINDINGS,
-          current.servicesColorBindings
-        )
-      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      cardMaxWidth: 'full',
-      cardAlignment: 'center',
-      cardPadding: 'lg',
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'left',
-      servicePricePrefixEnabled: false,
-      servicePricePeriodSuffix: '',
-      showServiceTitle: true,
-      showServiceDescription: false,
-      showServicePrice: false,
-      showServiceDelivery: false,
-      showServiceTasks: true,
-      showServiceCta: true,
-      ctaLabel: 'Get started',
-      ctaDesign: 'pill-accent',
-      ctaAlignment: 'left',
-      servicesTaskBulletStyle: 'check',
-      servicesTaskBulletSource: 'section',
-      servicesTaskBulletSize: 'custom',
-      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
-      servicesTaskBulletWeight: 'regular',
-      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
-      elementStyles: servicesVerticalCardElementStyles(
-        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
-      ),
-      servicesColorBindings: {
-        ...bindings,
-        tasksBullet: 'principal',
-        ctaAccent: 'principal',
-        ctaBorder: 'principal',
-      },
-      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-      ...(current
-        ? {
-            servicesBlock: {
-              ...current.servicesBlock,
-              galleryLayout: layout,
-              columns: 1 as const,
-              displayMode: 'grid' as const,
-              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-            },
-          }
-        : {}),
-    };
-  }
-  if (layout === 'media-split') {
-    const bindings = current
-      ? mergeServicesColorBindings(
-          DEFAULT_SERVICES_COLOR_BINDINGS,
-          current.servicesColorBindings
-        )
-      : { ...DEFAULT_SERVICES_COLOR_BINDINGS };
-    return {
-      servicesGalleryLayout: layout,
-      displayMode: 'grid',
-      servicesColumns: 1,
-      cardMaxWidth: 'xl',
-      cardAlignment: 'center',
-      cardPadding: 'lg',
-      servicesContentAlignment: 'left',
-      servicePriceAlign: 'left',
-      servicePricePrefixEnabled: false,
-      servicePricePeriodSuffix: '',
-      showServiceTitle: true,
-      showServiceDescription: true,
-      showServicePrice: true,
-      showServiceDelivery: true,
-      showServiceTasks: true,
-      showServiceCta: false,
-      ctaLabel: 'Get started',
-      ctaDesign: 'pill-accent',
-      ctaAlignment: 'left',
-      servicesTaskBulletStyle: 'check-square',
-      servicesTaskBulletSource: 'section',
-      servicesTaskBulletSize: 'custom',
-      servicesTaskBulletSizePx: SERVICES_VERTICAL_CARD_TASK_BULLET_SIZE_PX,
-      servicesTaskBulletWeight: 'regular',
-      servicesTaskBulletWeightAmount: LIST_MARKER_WEIGHT_PRESET_AMOUNT.regular,
-      elementStyles: servicesVerticalCardElementStyles(
-        current?.elementStyles ?? DEFAULT_SERVICES_ELEMENT_STYLES
-      ),
-      servicesColorBindings: {
-        ...bindings,
-        tasksBullet: 'principal',
-        ctaAccent: 'principal',
-        ctaBorder: 'principal',
-      },
-      ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-      ...(current
-        ? {
-            servicesBlock: {
-              ...current.servicesBlock,
-              galleryLayout: layout,
-              columns: 1 as const,
-              displayMode: 'grid' as const,
-              ...SERVICES_MEDIA_CARD_FRAME_DEFAULTS,
-            },
-          }
-        : {}),
-    };
-  }
-  if (layout === 'tier' || layout === 'plan' || layout === 'card') {
-    if (current) return applyServicesHorizontalCardDesignDefaults(layout, current);
-    return applyServicesHorizontalCardDesignDefaults(layout, {
-      servicesBlock: createDefaultServicesBlockSettings('services', {
-        ...DEFAULT_SERVICES_PRESENTATION_BASE,
-        ...DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
-      }),
-      skillsBlock: createDefaultServicesBlockSettings('skills', {
-        ...DEFAULT_SERVICES_PRESENTATION_BASE,
-        ...DEFAULT_SERVICES_CARD_BACKGROUND_SETTINGS,
-      }),
-      skillsGalleryLayout: 'card',
-      elementStyles: DEFAULT_SERVICES_ELEMENT_STYLES,
-      servicesColorBindings: { ...DEFAULT_SERVICES_COLOR_BINDINGS },
-    });
-  }
-  return { servicesGalleryLayout: layout };
-}
-
-export function servicesGridClass(displayMode: PortfolioServicesDisplayMode): string {
-  if (displayMode === 'stack' || displayMode === 'coverflow' || displayMode === 'deck') {
-    return 'flex flex-col gap-5';
-  }
-  return 'grid gap-5 sm:grid-cols-2 xl:grid-cols-3';
-}
-
-export function servicesCardWidthClass(displayMode: PortfolioServicesDisplayMode): string {
-  if (displayMode === 'stack' || displayMode === 'coverflow' || displayMode === 'deck') return 'w-full';
-  // Carte / Offre / Plan marquee — same slightly roomier footprint.
-  return 'w-[20.5rem] shrink-0 py-1 sm:w-[22.5rem] lg:w-[26rem]';
-}
-
 /** Caps card / coverflow width so the stack stays portrait instead of stretching full column. */
 export function servicesCardMaxWidthClass(maxWidth: PortfolioServicesCardMaxWidth | undefined): string {
   switch (maxWidth) {
@@ -6085,7 +2808,7 @@ export function servicesCardMaxWidthClass(maxWidth: PortfolioServicesCardMaxWidt
  * Liste commerciale — wider steps than tile cards so price + CTA fit,
  * but still capped (default `xl` = max-w-7xl) instead of full bleed.
  */
-export function servicesCommercialListMaxWidthClass(
+function servicesCommercialListMaxWidthClass(
   maxWidth: PortfolioServicesCardMaxWidth | undefined
 ): string {
   switch (maxWidth) {
@@ -6097,24 +2820,6 @@ export function servicesCommercialListMaxWidthClass(
       return 'w-full max-w-6xl';
     case 'xl':
       return 'w-full max-w-7xl';
-    default:
-      return 'w-full max-w-full';
-  }
-}
-
-/** Wider, more spaced steps for the Tool inspector (vs. card tiles). */
-export function skillsInspectorMaxWidthClass(
-  maxWidth: PortfolioServicesCardMaxWidth | undefined
-): string {
-  switch (maxWidth) {
-    case 'sm':
-      return 'w-full max-w-lg';
-    case 'md':
-      return 'w-full max-w-2xl';
-    case 'lg':
-      return 'w-full max-w-4xl';
-    case 'xl':
-      return 'w-full max-w-6xl';
     default:
       return 'w-full max-w-full';
   }
@@ -6142,29 +2847,12 @@ export function servicesCardMaxWidthShellClass(
   }
 }
 
-/** Align a width-capped Tool inspector inside its column. */
-export function skillsInspectorMaxWidthShellClass(
-  maxWidth: PortfolioServicesCardMaxWidth | undefined,
-  alignment: PortfolioServicesCardAlignment | PortfolioServicesContentAlignment = 'center'
-): string {
-  const width = skillsInspectorMaxWidthClass(maxWidth);
-  if (!maxWidth || maxWidth === 'full') return width;
-  switch (alignment) {
-    case 'left':
-      return `${width} mr-auto`;
-    case 'right':
-      return `${width} ml-auto`;
-    default:
-      return `${width} mx-auto`;
-  }
-}
-
 export function pickServicesPresentationSettings(services: unknown): PortfolioServicesPresentationSettings {
   return mergeServicesPresentation(DEFAULT_SERVICES_PRESENTATION, services);
 }
 
 /** Legacy `none` (old factory uniforme) → `alternate`. Explicit uniforme is now `uniform`. */
-export function pickServicesCardBackgroundAlternation(
+function pickServicesCardBackgroundAlternation(
   value: unknown,
   fallback: PortfolioServicesCardBackgroundAlternation
 ): PortfolioServicesCardBackgroundAlternation {
@@ -6219,10 +2907,8 @@ export function mergeServicesPresentation(
     subtitleColor: sanitizeHex(record.subtitleColor, base.subtitleColor),
     headerAlignment: pick(record.headerAlignment, ['left', 'center'], base.headerAlignment),
     headerDesign: pick(record.headerDesign, SERVICES_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -6280,6 +2966,10 @@ export function mergeServicesPresentation(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pick(
       record.headerSerifLeadLabelColor,
       SERVICES_HEADER_PALETTE_TOKENS,
@@ -6324,6 +3014,63 @@ export function mergeServicesPresentation(
       record.headerSerifLeadSubtitleWeight,
       SERVICES_HEADER_TITLE_WEIGHTS,
       base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string'
+        ? record.headerEditorialLabelText
+        : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pick(
+      record.headerEditorialLabelColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerEditorialLabelColor ?? 'texteFort'
+    ),
+    headerEditorialTitleColor: pick(
+      record.headerEditorialTitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerEditorialSubtitleColor: pick(
+      record.headerEditorialSubtitleColor,
+      SERVICES_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pick(
+      record.headerEditorialLabelSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerEditorialLabelSize ?? 'md'
+    ),
+    headerEditorialTitleSize: pick(
+      record.headerEditorialTitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerEditorialTitleSize ?? 'md'
+    ),
+    headerEditorialSubtitleSize: pick(
+      record.headerEditorialSubtitleSize,
+      SERVICES_HEADER_TITLE_SIZES,
+      base.headerEditorialSubtitleSize ?? 'md'
+    ),
+    headerEditorialLabelWeight: pick(
+      record.headerEditorialLabelWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialLabelWeight ?? 'regular'
+    ),
+    headerEditorialTitleWeight: pick(
+      record.headerEditorialTitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialTitleWeight ?? 'regular'
+    ),
+    headerEditorialSubtitleWeight: pick(
+      record.headerEditorialSubtitleWeight,
+      SERVICES_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerBillboardBigWord:
       typeof record.headerBillboardBigWord === 'string'
@@ -6513,6 +3260,14 @@ export function mergeServicesPresentation(
       PORTFOLIO_SERVICES_SECTION_DESIGNS,
       base.sectionDesign ?? DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN
     ),
+    indexList: mergeServicesIndexListSettings(
+      mergeServicesIndexListSettings(DEFAULT_SERVICES_INDEX_LIST_SETTINGS, base.indexList),
+      record.indexList
+    ),
+    mediaColumns: mergeServicesMediaColumnsSettings(
+      mergeServicesMediaColumnsSettings(DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS, base.mediaColumns),
+      record.mediaColumns
+    ),
     pricingGrid: mergeServicesPricingGridSettings(
       mergeServicesPricingGridSettings(DEFAULT_SERVICES_PRICING_GRID_SETTINGS, base.pricingGrid),
       record.pricingGrid
@@ -6532,6 +3287,10 @@ export function mergeServicesPresentation(
     pricingToggle: mergeServicesPricingToggleSettings(
       mergeServicesPricingToggleSettings(DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS, base.pricingToggle),
       record.pricingToggle
+    ),
+    pricingStyle: mergeServicesPricingStyleSettings(
+      mergeServicesPricingStyleSettings(DEFAULT_SERVICES_PRICING_STYLE_SETTINGS, base.pricingStyle),
+      record.pricingStyle
     ),
     displayMode: pick(record.displayMode, ['marquee', 'grid', 'stack', 'coverflow', 'deck'], base.displayMode),
     deckEntranceEffect: pick(

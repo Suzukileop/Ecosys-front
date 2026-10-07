@@ -37,7 +37,7 @@ const NON_ENGLISH_PATTERN =
   /[àâäçéèêëîïôöùûüÿœæ]|\b(le|la|les|des|du|une|est|pas|introuvable|invalide|vous|votre|déjà|fichier|utilisateur|requête|erreur)\b/i;
 
 /** True when a server-provided message is short, plain English and free of technical details. */
-export function isDisplayableMessage(message: unknown): message is string {
+function isDisplayableMessage(message: unknown): message is string {
   if (typeof message !== 'string') return false;
   const trimmed = message.trim();
   if (trimmed.length < 3 || trimmed.length > MAX_DISPLAYABLE_LENGTH) return false;
@@ -60,7 +60,6 @@ const CODE_MESSAGES: Record<string, string> = {
   FILE_REQUIRED: 'Please choose a file first.',
   UPLOAD_FAILED: 'The upload failed. Please try again.',
   ALREADY_PURCHASED: 'You already own this product.',
-  INSUFFICIENT_CREDITS: 'You don’t have enough credits for this action.',
   PRODUCT_GROUP_NAME_TAKEN: 'A group with this name already exists.',
   RATE_LIMIT_EXCEEDED: 'Too many requests. Please try again in a minute.',
   FORBIDDEN: NO_PERMISSION,

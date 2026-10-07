@@ -17,6 +17,7 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
 import {
   portfolioHeroContentShellClass,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Circle portrait — Split Éclaté avec Typographie Monumentale en Bas
@@ -106,10 +107,12 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     
     // Query all animated elements
     const titleWords = section.querySelectorAll('[data-gsap-word]');
-    const redLineTop = section.querySelector('[data-gsap-red-line="top"]') as HTMLElement;
-    const redLineBottom = section.querySelector('[data-gsap-red-line="bottom"]') as HTMLElement;
-    const portrait = section.querySelector('[data-gsap-portrait]') as HTMLElement;
-    const availability = section.querySelector('[data-gsap-availability]') as HTMLElement;
+    // The desktop and mobile trees both render these elements — animate every copy,
+    // otherwise only the hidden (display:none) desktop one is revealed and mobile stays at scale(0).
+    const redLinesTop = section.querySelectorAll<HTMLElement>('[data-gsap-red-line="top"]');
+    const redLinesBottom = section.querySelectorAll<HTMLElement>('[data-gsap-red-line="bottom"]');
+    const portraits = section.querySelectorAll<HTMLElement>('[data-gsap-portrait]');
+    const availabilities = section.querySelectorAll<HTMLElement>('[data-gsap-availability]');
     const bioElements = section.querySelectorAll('[data-gsap-bio]');
     
     const timers: ReturnType<typeof setTimeout>[] = [];
@@ -122,7 +125,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     // 1. TITLE WORDS - Staggered reveal (word by word)
     titleWords.forEach((word, index) => {
       const el = word as HTMLElement;
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         el.style.transition = 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
         el.style.opacity = '1';
         el.style.transform = 'translateY(0)';
@@ -133,40 +136,40 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     delay += titleWords.length * 70 + 200;
     
     // 2. RED LINES - Scale in
-    timers.push(setTimeout(() => {
-      if (redLineTop) {
+    timers.push(motionTimeout(() => {
+      redLinesTop.forEach((redLineTop) => {
         redLineTop.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
         redLineTop.style.transform = 'scaleX(1)';
-      }
+      });
     }, delay));
     
-    timers.push(setTimeout(() => {
-      if (redLineBottom) {
+    timers.push(motionTimeout(() => {
+      redLinesBottom.forEach((redLineBottom) => {
         redLineBottom.style.transition = 'transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
         redLineBottom.style.transform = 'scaleX(1)';
-      }
+      });
     }, delay + 200));
     
     delay += 400;
     
     // 3. PORTRAIT - Scale from center with bounce effect
-    timers.push(setTimeout(() => {
-      if (portrait) {
+    timers.push(motionTimeout(() => {
+      portraits.forEach((portrait) => {
         portrait.style.transition = 'transform 1s cubic-bezier(0.34, 1.56, 0.64, 1), opacity 0.7s ease-out';
         portrait.style.transform = 'scale(1)';
         portrait.style.opacity = '1';
-      }
+      });
     }, delay));
     
     delay += 500;
     
     // 4. AVAILABILITY BADGE - Fade up
-    timers.push(setTimeout(() => {
-      if (availability) {
+    timers.push(motionTimeout(() => {
+      availabilities.forEach((availability) => {
         availability.style.transition = 'opacity 0.5s ease-out, transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
         availability.style.opacity = '1';
         availability.style.transform = 'translateY(0)';
-      }
+      });
     }, delay));
     
     delay += 300;
@@ -174,7 +177,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     // 5. BIO + CTAs - Staggered cascade
     bioElements.forEach((el, index) => {
       const element = el as HTMLElement;
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         element.style.transition = 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
         element.style.opacity = '1';
         element.style.transform = 'translateY(0)';
@@ -193,6 +196,8 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     if (!titleBottom || typeof window === 'undefined') return;
     
     // Only run on desktop (md+ breakpoint)
+    // Animations switched off (Global → Animations): no scroll-driven parallax.
+    if (isPortfolioMotionOff()) return;
     const mediaQuery = window.matchMedia('(min-width: 768px)');
     if (!mediaQuery.matches) {
       console.log('[CirclePortrait] Scroll animation skipped: viewport too narrow');
@@ -233,7 +238,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     };
 
     // Delay initial bounds calculation to ensure layout is complete
-    setTimeout(updateBounds, 100);
+    motionTimeout(updateBounds, 100);
 
     const handleScroll = () => {
       const scrollY = window.scrollY;
@@ -322,7 +327,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     };
 
     // Wait for load animations to complete before enabling scroll effects
-    setTimeout(() => {
+    motionTimeout(() => {
       setupTransitions();
       window.addEventListener('scroll', throttledScroll, { passive: true });
       window.addEventListener('resize', updateBounds, { passive: true });

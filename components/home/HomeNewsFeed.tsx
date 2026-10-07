@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { CreatorContentPublishModal } from '@/components/creator/CreatorContentPublishModal';
 import { NewsComposer } from '@/components/home/NewsComposer';
-import { NewsDiscoverRail, PortfolioCta } from '@/components/home/NewsDiscoverRail';
+import { NewsDiscoverRail, NewsInterestChips, PortfolioCta } from '@/components/home/NewsDiscoverRail';
 import { NewsFeedPostCard } from '@/components/home/NewsFeedPostCard';
 import { NEWS_OPEN_PUBLISH_EVENT } from '@/components/home/NewsPublishHeaderCta';
 import { HomeNewsFeedSkeleton } from '@/components/home/HomeNewsSkeleton';
@@ -29,7 +29,6 @@ export function HomeNewsFeed() {
   const [searchDraft, setSearchDraft] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const sentinelRef = useRef<HTMLDivElement>(null);
-
   const activeQuery = searchQuery.trim() || interest;
 
   const loadPage = useCallback(
@@ -102,6 +101,14 @@ export function HomeNewsFeed() {
     void loadPage(0, false, activeQuery);
   }, [loadPage, activeQuery]);
 
+  /** A repost the viewer just made lands at the top of the feed, like any other new post. */
+  const handleReposted = useCallback((repost: PublicContentFeedItem) => {
+    setItems((prev) => [
+      { ...repost, commentCount: 0, viewerReaction: null, viewerSaved: false, viewerReposted: true },
+      ...prev,
+    ]);
+  }, []);
+
   const handleInterestSelect = useCallback((value: string | null) => {
     setInterest(value);
     setSearchDraft('');
@@ -137,11 +144,11 @@ export function HomeNewsFeed() {
       <ErrorAlert message={error} onDismiss={() => setError(null)} />
     </div>
   ) : items.length === 0 ? (
-    <div className="mx-4 rounded-lg border sm:mx-8 md:mx-0 border-dashed border-black/[0.12] px-6 py-16 text-center dark:border-white/[0.12]">
-      <p className="text-[17px] font-semibold text-[#111111] dark:text-white">
+    <div className="gn-card mx-4 px-6 py-14 text-center sm:mx-8 md:mx-0">
+      <p className="text-[16px] font-semibold text-[#111111] dark:text-white">
         {activeQuery ? `Nothing for “${activeQuery}” yet` : 'No publications yet'}
       </p>
-      <p className="mx-auto mt-2 max-w-sm text-[16px] leading-relaxed text-neutral-500 dark:text-neutral-400">
+      <p className="mx-auto mt-2 max-w-sm text-[14px] leading-relaxed text-neutral-500 dark:text-neutral-400">
         {activeQuery
           ? 'Try another interest or a different search.'
           : 'New work from creators will show up here. Check back soon.'}
@@ -150,7 +157,7 @@ export function HomeNewsFeed() {
         <button
           type="button"
           onClick={clearFilters}
-          className="mt-6 inline-flex items-center rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.12] dark:text-white dark:hover:bg-white/[0.06]"
+          className="mt-6 inline-flex h-10 items-center rounded-full bg-[#111111] px-5 text-[14px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
         >
           Show everything
         </button>
@@ -158,25 +165,27 @@ export function HomeNewsFeed() {
     </div>
   ) : (
     <>
-      <div className="space-y-8">
+      <div className="space-y-2 sm:space-y-3">
         {items.map((post, index) => (
-          <NewsFeedPostCard key={post.id} post={post} priority={index === 0} />
+          <NewsFeedPostCard key={post.id} post={post} priority={index === 0} onReposted={handleReposted} />
         ))}
       </div>
       {hasMore && <div ref={sentinelRef} className="h-8" aria-hidden />}
       {loadingMore && (
-        <div className="pt-8">
+        <div className="pt-1 sm:pt-3">
           <HomeNewsFeedSkeleton count={1} />
         </div>
       )}
       {!hasMore && !loadingMore ? (
-        <p className="pt-12 text-center text-[15px] text-neutral-400 dark:text-neutral-500">You&apos;re all caught up.</p>
+        <p className="pt-12 text-center text-[14px] text-neutral-400 dark:text-neutral-500">
+          You\u2019re all caught up.
+        </p>
       ) : null}
     </>
   );
 
   return (
-    <div className={`${PORTFOLIO_FRAME_CLASS} pb-24 pt-1 sm:pt-3 lg:pt-12`}>
+    <div className={`news-theme ${PORTFOLIO_FRAME_CLASS} pb-24 pt-1 sm:pt-3 lg:pt-12`}>
       {canPublish ? (
         <CreatorContentPublishModal
           open={publishOpen}
@@ -188,28 +197,30 @@ export function HomeNewsFeed() {
       <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_18rem] xl:gap-16">
         <div className="-mx-4 min-w-0 max-w-[760px] sm:-mx-8 md:mx-auto md:w-full">
           <h1 className="sr-only">News</h1>
-          <div className="mb-6 lg:hidden">
+          <div className="mb-1 sm:mb-6 lg:hidden">
             <PortfolioCta />
           </div>
 
           <NewsComposer canPublish={canPublish} onCompose={() => setPublishOpen(true)} />
 
+          <NewsInterestChips selected={interest} onSelect={handleInterestSelect} />
+
           {activeQuery && !loading ? (
-            <div className="mx-4 mt-8 flex items-center justify-between gap-4 border-b sm:mx-8 md:mx-0 border-black/[0.06] pb-4 dark:border-white/[0.08]">
-              <p className="min-w-0 truncate text-[15px] text-neutral-500 dark:text-neutral-400">
+            <div className="mx-4 mt-6 flex items-center justify-between gap-4 sm:mx-8 md:mx-0">
+              <p className="min-w-0 truncate text-[14px] text-neutral-500 dark:text-neutral-400">
                 Showing <span className="font-medium text-[#111111] dark:text-white">{activeQuery}</span>
               </p>
               <button
                 type="button"
                 onClick={clearFilters}
-                className="shrink-0 text-[15px] font-medium text-[#111111] transition-colors hover:text-neutral-500 dark:text-white dark:hover:text-neutral-300"
+                className="shrink-0 text-[14px] font-medium text-[#111111] transition-colors hover:text-neutral-500 dark:text-white dark:hover:text-neutral-300"
               >
                 Clear
               </button>
             </div>
           ) : null}
 
-          <div className="mt-8">{feedBody}</div>
+          <div className="mt-3 sm:mt-6">{feedBody}</div>
         </div>
 
         <div className="hidden self-start lg:block">

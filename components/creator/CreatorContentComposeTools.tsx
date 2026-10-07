@@ -3,8 +3,8 @@
 import { useEffect, useId, useRef, useState } from 'react';
 import api from '@/lib/api';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { normalizeSpringPage } from '@/lib/ecosystem';
-import type { SpringPageRaw } from '@/types/ecosystem';
+import { normalizeSpringPage } from '@/lib/pagination';
+import type { SpringPageRaw } from '@/types/profile';
 import type { TaggedUserRef } from '@/types/creator-content';
 import { CONTENT_MOODS, type ContentMood } from '@/components/creator/creator-content-enrichments';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';

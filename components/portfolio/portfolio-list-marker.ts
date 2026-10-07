@@ -41,8 +41,8 @@ export const LIST_MARKER_SIZE_PRESET_PX: Record<'sm' | 'md' | 'lg' | 'xl', numbe
   xl: 24,
 };
 
-export const LIST_MARKER_SIZE_PX_MIN = 10;
-export const LIST_MARKER_SIZE_PX_MAX = 48;
+const LIST_MARKER_SIZE_PX_MIN = 10;
+const LIST_MARKER_SIZE_PX_MAX = 48;
 
 /** SVG stroke width (viewBox 20×20) for outline markers. */
 export const LIST_MARKER_WEIGHT_PRESET_AMOUNT: Record<'light' | 'regular' | 'bold' | 'heavy', number> = {
@@ -52,11 +52,11 @@ export const LIST_MARKER_WEIGHT_PRESET_AMOUNT: Record<'light' | 'regular' | 'bol
   heavy: 2.6,
 };
 
-export const LIST_MARKER_WEIGHT_AMOUNT_MIN = 0.75;
-export const LIST_MARKER_WEIGHT_AMOUNT_MAX = 3.5;
-export const LIST_MARKER_WEIGHT_AMOUNT_STEP = 0.05;
+const LIST_MARKER_WEIGHT_AMOUNT_MIN = 0.75;
+const LIST_MARKER_WEIGHT_AMOUNT_MAX = 3.5;
+const LIST_MARKER_WEIGHT_AMOUNT_STEP = 0.05;
 
-export const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
+const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
   value: PortfolioListMarkerStyle;
   label: string;
   description: string;
@@ -85,45 +85,6 @@ export const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
   { value: 'chevron-double', label: 'Double chevron', description: 'Double chevron ».', preview: '»' },
   { value: 'triangle', label: 'Triangle', description: 'Pointe ▶.', preview: '▶' },
   { value: 'none', label: 'Aucun', description: 'Texte seul — pas de puce.', preview: '—' },
-];
-
-export const PORTFOLIO_LIST_MARKER_SIZE_OPTIONS: {
-  value: PortfolioListMarkerSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'S', description: 'Petite puce.' },
-  { value: 'md', label: 'M', description: 'Taille moyenne.' },
-  { value: 'lg', label: 'L', description: 'Grande puce.' },
-  { value: 'xl', label: 'XL', description: 'Très grande puce.' },
-];
-
-export const PORTFOLIO_LIST_MARKER_WEIGHT_OPTIONS: {
-  value: PortfolioListMarkerWeight;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'light', label: 'Light', description: 'Trait / texte fin.' },
-  { value: 'regular', label: 'Regular', description: 'Graisse normale.' },
-  { value: 'bold', label: 'Bold', description: 'Trait / texte gras.' },
-  { value: 'heavy', label: 'Heavy', description: 'Très gras / trait épais.' },
-];
-
-export const PORTFOLIO_LIST_MARKER_SOURCE_OPTIONS: {
-  value: PortfolioListMarkerSource;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'global',
-    label: 'Global',
-    description: 'Use Global → Task list bullets for this section.',
-  },
-  {
-    value: 'section',
-    label: 'Section',
-    description: 'Override with styles set below for this section only.',
-  },
 ];
 
 const LIST_MARKER_STYLE_VALUES = PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.map(
@@ -223,7 +184,7 @@ const ROMAN_MAP: [number, string][] = [
   [1, 'I'],
 ];
 
-export function listMarkerRomanNumeral(value: number): string {
+function listMarkerRomanNumeral(value: number): string {
   let n = Math.max(1, Math.floor(value));
   if (n > 399) n = 399;
   let out = '';
@@ -245,52 +206,6 @@ export function formatListMarkerIndexLabel(
   return null;
 }
 
-export function listMarkerGlyphSizeClass(size: PortfolioListMarkerSize): string {
-  switch (size) {
-    case 'sm':
-      return 'h-3.5 w-3.5';
-    case 'lg':
-      return 'h-5 w-5';
-    case 'xl':
-      return 'h-6 w-6';
-    case 'custom':
-      return '';
-    default:
-      return 'h-4 w-4';
-  }
-}
-
-export function listMarkerIndexTextClass(size: PortfolioListMarkerSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-[10px] tabular-nums leading-none tracking-wide';
-    case 'lg':
-      return 'text-sm tabular-nums leading-none tracking-wide';
-    case 'xl':
-      return 'text-base tabular-nums leading-none tracking-wide';
-    case 'custom':
-      return 'tabular-nums leading-none tracking-wide';
-    default:
-      return 'text-[11px] tabular-nums leading-none tracking-wide';
-  }
-}
-
-/** Font-weight class for number / roman markers (preset only — prefer amount for custom). */
-export function listMarkerWeightFontClass(weight: PortfolioListMarkerWeight | undefined): string {
-  switch (weight) {
-    case 'light':
-      return 'font-medium';
-    case 'bold':
-      return 'font-extrabold';
-    case 'heavy':
-      return 'font-black';
-    case 'custom':
-      return '';
-    default:
-      return 'font-bold';
-  }
-}
-
 /** SVG stroke width for outline glyphs (viewBox 20×20). Prefer resolveListMarkerWeightAmount. */
 export function listMarkerStrokeWidth(
   weight: PortfolioListMarkerWeight | undefined,
@@ -305,22 +220,6 @@ export function listMarkerDashHeightPx(weightAmount: number | undefined): number
   return Math.max(1, Math.round(a));
 }
 
-/** @deprecated Prefer listMarkerDashHeightPx with resolved amount. */
-export function listMarkerDashHeightClass(weight: PortfolioListMarkerWeight | undefined): string {
-  switch (weight) {
-    case 'light':
-      return 'h-px';
-    case 'bold':
-      return 'h-[2px]';
-    case 'heavy':
-      return 'h-[3px]';
-    case 'custom':
-      return '';
-    default:
-      return 'h-px';
-  }
-}
-
 function sanitizeHex(value: unknown, fallback: string): string {
   if (typeof value !== 'string') return fallback;
   const trimmed = value.trim();
@@ -328,7 +227,7 @@ function sanitizeHex(value: unknown, fallback: string): string {
   return fallback;
 }
 
-export type ResolvedTaskListMarker = {
+type ResolvedTaskListMarker = {
   style: PortfolioListMarkerStyle;
   color: string;
   size: PortfolioListMarkerSize;
@@ -337,7 +236,7 @@ export type ResolvedTaskListMarker = {
   weightAmount: number;
 };
 
-export type TaskListMarkerSectionSettings = {
+type TaskListMarkerSectionSettings = {
   taskBulletSource: PortfolioListMarkerSource;
   taskBulletStyle: PortfolioListMarkerStyle;
   taskBulletColor: string;

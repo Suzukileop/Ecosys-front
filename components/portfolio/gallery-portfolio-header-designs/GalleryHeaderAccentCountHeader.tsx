@@ -8,6 +8,7 @@ import {
   type PortfolioGalleryHeaderTitleSize,
   type PortfolioGalleryHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-gallery-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ moments';
 const DEFAULT_LEAD_TEXT = 'A curated set of images and moments worth revisiting.';
@@ -59,7 +60,8 @@ export function GalleryHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_GALLERY_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

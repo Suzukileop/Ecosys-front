@@ -1,6 +1,6 @@
 export type CreatorStudioHeaderContentStyle = 'DEFAULT' | 'COMPACT' | 'CENTERED' | 'GRID';
 
-export const CREATOR_STUDIO_HEADER_CONTENT_STYLES: {
+const CREATOR_STUDIO_HEADER_CONTENT_STYLES: {
   id: CreatorStudioHeaderContentStyle;
   label: string;
 }[] = [
@@ -16,8 +16,4 @@ export function parseCreatorStudioHeaderContentStyle(value: unknown): CreatorStu
   const raw = typeof value === 'string' ? value.trim().toUpperCase() : '';
   if (STYLE_SET.has(raw)) return raw as CreatorStudioHeaderContentStyle;
   return 'DEFAULT';
-}
-
-export function headerLayoutSupportsContentStyle(layout: string): boolean {
-  return layout === 'BANNER' || layout === 'SPLIT';
 }

@@ -10,14 +10,12 @@ import {
 } from '@/components/creator/creator-profile-header-types';
 import { ProfileVisitStat } from '@/components/creator/ProfileVisitStat';
 import { creatorAppRoleRingClass, normalizeCreatorAppRole, type CreatorAppRole } from '@/lib/creator-app-role';
-import { mediaImageResponsive } from '@/lib/media-image-url';
+import { MediaImage } from '@/components/ui/MediaImage';
 import { collapseRepeatedBio } from '@/lib/profile-bio';
 import { nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { parseSpecialtyList } from '@/lib/specialties';
 import { resolveAvailabilityStatusLabel } from '@/lib/availability-status';
 import { CountryFlag } from '@/components/ui/CountryFlag';
-
-export type { CreatorProfileHeaderProps } from '@/components/creator/creator-profile-header-types';
 
 export const CREATOR_PROFILE_IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
 
@@ -26,7 +24,7 @@ function headerSpecialties(props: Pick<CreatorProfileHeaderProps, 'specialties' 
 }
 
 /** Primary specialties inside the header card (previous placement). */
-export function ProfileHeaderSpecialtyBlock(props: Pick<CreatorProfileHeaderProps, 'specialties' | 'specialite'>) {
+function ProfileHeaderSpecialtyBlock(props: Pick<CreatorProfileHeaderProps, 'specialties' | 'specialite'>) {
   const specialties = headerSpecialties(props);
   if (specialties.length === 0) return null;
 
@@ -118,19 +116,20 @@ function ProfileAvatar({
 
   const mediaClass = `h-full w-full overflow-hidden ${radius} bg-neutral-100 shadow-sm dark:bg-neutral-800`;
 
-  const avatarInner = avatarUrl ? (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      {...mediaImageResponsive(avatarUrl, [256, 384, 640])}
+  const avatarInner = (
+    <MediaImage
+      src={avatarUrl}
+      widths={[256, 384, 640]}
       sizes="(min-width: 640px) 220px, 140px"
-      alt=""
-      decoding="async"
+      priority
+      referrerPolicy="no-referrer"
+      fallback={
+        <div className="flex h-full w-full items-center justify-center bg-neutral-200 text-3xl font-semibold text-[#111111] dark:bg-neutral-800 dark:text-white sm:text-4xl">
+          {initials(fullName)}
+        </div>
+      }
       className="h-full w-full object-cover"
     />
-  ) : (
-    <div className="flex h-full w-full items-center justify-center bg-neutral-200 text-3xl font-semibold text-[#111111] dark:bg-neutral-800 dark:text-white sm:text-4xl">
-      {initials(fullName)}
-    </div>
   );
 
   if (!editable) {
@@ -206,7 +205,7 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
       className={
         flat
           ? ''
-          : `border-y border-black/[0.06] !bg-white px-5 py-7 max-sm:border-[#DADDE1] dark:max-sm:border-white/[0.16] dark:border-white/[0.08] dark:!bg-[#111111] sm:rounded-lg sm:border sm:p-10 ${
+          : `!bg-[#FFFFFF] px-5 py-7 dark:!bg-[#111111] sm:rounded-xl sm:p-10 ${
               props.flushBottom ? 'sm:rounded-b-none' : ''
             }`
       }
@@ -332,7 +331,7 @@ function HorizontalProfileHeader(props: CreatorProfileHeaderProps) {
 
 function headerSurfaceClass(props: CreatorProfileHeaderProps): string {
   if (props.flat) return '';
-  return `border-y border-black/[0.06] !bg-white px-5 py-7 max-sm:border-[#DADDE1] dark:max-sm:border-white/[0.16] dark:border-white/[0.08] dark:!bg-[#111111] sm:rounded-lg sm:border sm:p-10 ${
+  return `!bg-[#FFFFFF] px-5 py-7 dark:!bg-[#111111] sm:rounded-xl sm:p-10 ${
     props.flushBottom ? 'sm:rounded-b-none' : ''
   }`;
 }

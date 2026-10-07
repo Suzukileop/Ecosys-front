@@ -24,6 +24,7 @@ import {
   resolveExperienceTextColor,
   resolveMarqueeInkColor,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const MARQUEE_REPEATS = 4;
 
@@ -111,6 +112,7 @@ export function ExperienceSpotlightHeader({
   const rootRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
+  const motionOff = usePortfolioMotionOff();
 
   const presentation: PortfolioExperiencePresentationSettings =
     presentationProp ?? DEFAULT_EXPERIENCE_PRESENTATION;
@@ -152,7 +154,8 @@ export function ExperienceSpotlightHeader({
   const showSeparator = (presentation.marqueeSeparator ?? 'dot') !== 'none';
   const motionEnabled =
     presentation.spotlightHeaderAnimationEnabled !== false &&
-    presentation.marqueeMotion !== false;
+    presentation.marqueeMotion !== false &&
+    !motionOff;
   const scrollLink = presentation.spotlightScrollSpeedBoost === true;
   const pauseOnHover = presentation.spotlightMarqueePauseOnHover !== false;
   const wordGap = SPOTLIGHT_MARQUEE_GAP[presentation.spotlightMarqueeGap ?? 'md'];

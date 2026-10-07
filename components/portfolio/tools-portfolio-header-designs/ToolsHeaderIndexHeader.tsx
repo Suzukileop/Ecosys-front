@@ -8,6 +8,7 @@ import {
   type PortfolioToolsHeaderTitleSize,
   type PortfolioToolsHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-tools-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_LABEL_TEXT = 'Index';
 const DEFAULT_TITLE_TEXT = 'Daily workflow';
@@ -77,7 +78,8 @@ export function ToolsHeaderIndexHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_TOOLS_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerIndexTitleText || DEFAULT_TITLE_TEXT).trim();
   const subtitle = (presentation.headerIndexSubtitleText || DEFAULT_SUBTITLE_TEXT).trim();
   const label = (presentation.headerIndexLabelText || DEFAULT_LABEL_TEXT).trim();

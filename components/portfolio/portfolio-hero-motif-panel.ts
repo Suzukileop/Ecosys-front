@@ -4,11 +4,6 @@ export type MotifPanelPosition = { x: number; y: number };
 
 export type MotifPanelSize = { width: number; height: number };
 
-export type MotifPanelTransform = {
-  position: MotifPanelPosition;
-  size: MotifPanelSize;
-};
-
 export const DEFAULT_RIGHT_MOTIF_POSITION: MotifPanelPosition = { x: 75, y: 50 };
 
 /**
@@ -16,11 +11,6 @@ export const DEFAULT_RIGHT_MOTIF_POSITION: MotifPanelPosition = { x: 75, y: 50 }
  * (start of the right side margin / content-width bound).
  */
 export const DEFAULT_RIGHT_MOTIF_SIZE: MotifPanelSize = { width: 50, height: 76 };
-
-export const DEFAULT_RIGHT_MOTIF_TRANSFORM: MotifPanelTransform = {
-  position: { ...DEFAULT_RIGHT_MOTIF_POSITION },
-  size: { ...DEFAULT_RIGHT_MOTIF_SIZE },
-};
 
 function clamp(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
@@ -137,30 +127,6 @@ export function motifPanelContainerStyle(
   };
 }
 
-/** Map hero vw/vh to editor viewBox (0–100). */
-export function heroToEditorPoint(position: MotifPanelPosition): MotifPanelPosition {
-  return { x: position.x, y: position.y };
-}
-
-export function editorToHeroPoint(point: MotifPanelPosition, side: 'left' | 'right'): MotifPanelPosition {
-  return clampMotifPanelPosition(point, side);
-}
-
-export function getMotifPanelDefaultsForLayout(
-  layout: 'centered' | 'full'
-): MotifPanelTransform {
-  if (layout === 'full') {
-    return {
-      position: { x: 75, y: 50 },
-      size: { width: 50, height: 96 },
-    };
-  }
-  return {
-    position: { ...DEFAULT_RIGHT_MOTIF_POSITION },
-    size: { ...DEFAULT_RIGHT_MOTIF_SIZE },
-  };
-}
-
 /**
  * Keep a motif inside the content frame (clamp only).
  * Soft-snap to the frame edge was removed: for large circles / ovals it created a
@@ -182,12 +148,4 @@ export function normalizeMotifPositionForContentFrame(
     x: Math.min(Math.max(position.x, minX), maxX),
     y: Math.min(Math.max(position.y, minY), maxY),
   };
-}
-
-/** @deprecated Prefer normalizeMotifPositionForContentFrame(..., 'right') */
-export function normalizeRightMotifPositionForContentFrame(
-  position: MotifPanelPosition,
-  size: MotifPanelSize
-): MotifPanelPosition {
-  return normalizeMotifPositionForContentFrame(position, size, 'right');
 }

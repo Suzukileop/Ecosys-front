@@ -10,6 +10,7 @@ import {
   type PortfolioStackHeaderTitleSize,
   type PortfolioStackHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-stack-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Label is a small uppercase kicker — sizes stay compact at every step. */
 const LABEL_SIZE: Record<PortfolioStackHeaderTitleSize, string> = {
@@ -110,10 +111,12 @@ export function StackHeaderSerifLeadHeader({
   const align = presentation.headerDesignAlignment ?? 'left';
   const centered = align === 'center';
   const alignRight = align === 'right';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerSerifLeadTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSerifLeadLabelText || DEFAULT_LABEL_TEXT).trim();
   const lines = splitSerifLeadLines(title);
+  const subtitleText = presentation.headerSerifLeadSubtitleText?.trim() || subtitle?.trim() || '';
 
   const labelTone = stackHeaderPaletteTokenColor(presentation.headerSerifLeadLabelColor ?? 'texteFort');
   const titleTone = stackHeaderPaletteTokenColor(presentation.headerSerifLeadTitleColor ?? 'texteFort');
@@ -249,12 +252,12 @@ export function StackHeaderSerifLeadHeader({
               ))}
             </h2>
           ) : null}
-          {subtitle ? (
+          {subtitleText ? (
             <p
               className="mb-0 mt-3 max-w-xl leading-relaxed"
               style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight }}
             >
-              {subtitle}
+              {subtitleText}
             </p>
           ) : null}
         </div>

@@ -17,9 +17,9 @@ import {
   profileSectionSubheadingClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
-import type { ProfileEducationEntry } from '@/types/ecosystem';
+import type { ProfileEducationEntry } from '@/types/profile';
 
-export const MAX_ABOUT_EDUCATION = 8;
+const MAX_ABOUT_EDUCATION = 8;
 
 type AboutEducationFieldProps = {
   control: Control<ProfileFormValues>;

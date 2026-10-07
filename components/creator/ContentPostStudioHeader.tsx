@@ -7,6 +7,7 @@ import {
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
 import type { TaggedUserRef } from '@/types/creator-content';
+import { MediaImage } from '@/components/ui/MediaImage';
 
 function userInitials(name: string) {
   return name
@@ -66,16 +67,19 @@ export function ContentPostStudioHeader({
 
   const avatar = (
     <span
-      className={`inline-flex h-11 w-11 shrink-0 overflow-hidden rounded-full ring-[3px] ring-offset-2 ring-offset-white dark:ring-offset-neutral-900 ${ringClass}`}
+      className={`inline-flex h-11 w-11 shrink-0 overflow-hidden rounded-full bg-neutral-200 ring-[3px] ring-offset-2 ring-offset-white dark:bg-neutral-800 dark:ring-offset-neutral-900 ${ringClass}`}
     >
-      {avatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={avatarUrl} alt="" className="h-full w-full object-cover" />
-      ) : (
-        <span className="flex h-full w-full items-center justify-center bg-orange-500 text-sm font-bold text-white">
-          {userInitials(creatorName)}
-        </span>
-      )}
+      <MediaImage
+        src={avatarUrl}
+        width={44}
+        referrerPolicy="no-referrer"
+        fallback={
+          <span className="flex h-full w-full items-center justify-center bg-orange-500 text-sm font-bold text-white">
+            {userInitials(creatorName)}
+          </span>
+        }
+        className="h-full w-full object-cover"
+      />
     </span>
   );
 

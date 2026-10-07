@@ -1,43 +1,32 @@
-/** Product marketplace: catalog, favorites, purchases (hub + detail routes). */
+import { ROUTES, isPathWithin, providerPath } from '@/lib/routes';
+
+/** Product marketplace: catalogue, product pages and the buyer's purchases. */
 export function isMarketplaceHubPath(pathname: string): boolean {
-  if (pathname === '/marketplace') return true;
-  if (pathname.startsWith('/marketplace/favorites') || pathname.startsWith('/marketplace/purchases')) {
-    return true;
-  }
-  if (pathname.startsWith('/marketplace/products')) {
-    return true;
-  }
-  return false;
+  return (
+    pathname === ROUTES.marketplace ||
+    isPathWithin(pathname, `${ROUTES.marketplace}/products`) ||
+    isPathWithin(pathname, ROUTES.purchases)
+  );
 }
 
-const MARKETPLACE_PRODUCT_SECTIONS = new Set([
-  'favorites',
-  'purchases',
-  'products',
-  'portfolio',
-  'creators',
-  'my-services',
-  'my-products',
-]);
+const CREATOR_PROFILE_PATTERN = /^\/providers\/[^/]+\/?$/;
+const CREATOR_SHOP_PATTERN = /^\/providers\/[^/]+\/shop\/?$/;
 
-/** Public creator profile: /marketplace/{creatorId} (not list, not content post). */
+/** Public creator profile: `/providers/{creatorId}`. */
 export function isMarketplaceCreatorProfilePath(pathname: string): boolean {
-  if (!pathname.startsWith('/marketplace/')) return false;
-  const segment = pathname.slice('/marketplace/'.length).split('/')[0];
-  if (!segment || pathname.slice('/marketplace/'.length).includes('/')) return false;
-  return !MARKETPLACE_PRODUCT_SECTIONS.has(segment) && segment !== 'content';
+  return CREATOR_PROFILE_PATTERN.test(pathname);
 }
 
-/** `/marketplace/{creatorId}/shop` — a creator's product shop. */
+/** `/providers/{creatorId}/shop` — a creator's product shop. */
 export function isCreatorShopPath(pathname: string): boolean {
-  return /^\/marketplace\/[^/]+\/shop\/?$/.test(pathname);
+  return CREATOR_SHOP_PATTERN.test(pathname);
 }
 
 /**
  * Safe internal path for profile "back" navigation (`from` query).
  * Rejects protocol-relative / external URLs.
  */
-export function sanitizeMarketplaceReturnTo(value: string | null | undefined): string | null {
+function sanitizeMarketplaceReturnTo(value: string | null | undefined): string | null {
   if (!value) return null;
   const trimmed = value.trim();
   if (!trimmed.startsWith('/') || trimmed.startsWith('//')) return null;
@@ -50,28 +39,21 @@ export function marketplaceCreatorProfileHref(
   creatorId: string,
   returnTo?: string | null
 ): string {
-  const base = `/marketplace/${encodeURIComponent(creatorId)}`;
+  const base = providerPath(creatorId);
   const safe = sanitizeMarketplaceReturnTo(returnTo);
   if (!safe) return base;
   return `${base}?from=${encodeURIComponent(safe)}`;
 }
 
-/** Service Provider directory (not a single creator profile). */
+/** Service Provider directory itself (not a single creator profile). */
 export function isServiceProvidersCatalogPath(pathname: string): boolean {
-  return pathname === '/marketplace/creators' || pathname.startsWith('/marketplace/creators/');
+  return pathname === ROUTES.providers || pathname === `${ROUTES.providers}/`;
 }
 
-/** Client-facing creator browse: directory, profiles, portfolio posts. */
+/** Client-facing creator browse: directory, profiles, shops, portfolio posts. */
 export function isContentCreatorsPath(pathname: string): boolean {
-  if (pathname.startsWith('/marketplace/creators')) {
-    return true;
-  }
-  if (pathname.startsWith('/marketplace/content/')) {
-    return true;
-  }
-  if (!pathname.startsWith('/marketplace/')) {
-    return false;
-  }
-  const segment = pathname.slice('/marketplace/'.length).split('/')[0];
-  return segment.length > 0 && !MARKETPLACE_PRODUCT_SECTIONS.has(segment);
+  return (
+    isPathWithin(pathname, ROUTES.providers) ||
+    pathname.startsWith(`${ROUTES.marketplace}/content/`)
+  );
 }

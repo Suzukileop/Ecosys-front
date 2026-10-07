@@ -3,7 +3,7 @@
 import { Fragment, useLayoutEffect, useRef, type CSSProperties, type RefObject } from 'react';
 import { useReducedMotion } from 'framer-motion';
 import gsap from 'gsap';
-import type { LanguageProficiencyLevel, ProfileEducationEntry, ProfileSkillEntry } from '@/types/ecosystem';
+import type { LanguageProficiencyLevel, ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
 import {
   noirBodySizeClass,
   noirHeadingSizeClass,

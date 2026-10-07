@@ -1,15 +1,6 @@
 'use client';
 
-import {
-  useEffect,
-  useLayoutEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type KeyboardEvent as ReactKeyboardEvent,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent, type RefObject } from 'react';
 import Image from 'next/image';
 import Link from 'next/link';
 import gsap from 'gsap';
@@ -844,136 +835,6 @@ function CarouselSlide({
   );
 }
 
-/**
- * Carousel header — kicker, italic last word, film-counter.
- * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
- */
-export function ProjectsCarouselSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  titleClassName = '',
-  titleStyle,
-  trailing,
-  entryCount,
-  accent,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  titleClassName?: string;
-  titleStyle?: CSSProperties;
-  trailing?: ReactNode;
-  entryCount?: number;
-  accent?: string;
-  className?: string;
-}) {
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-  const rootRef = useCarouselEntrance<HTMLElement>(
-    `${heading}|${sub}|${entryCount ?? 0}`,
-    'descendants'
-  );
-  const mark = accent || subtitleColor;
-  const countLabel =
-    typeof entryCount === 'number' && entryCount > 0 ? String(entryCount).padStart(2, '0') : '';
-  const restTitleStyle: CSSProperties = { ...(titleStyle ?? {}) };
-  const incomingFontStyle = restTitleStyle.fontStyle;
-  delete restTitleStyle.fontSize;
-  delete restTitleStyle.lineHeight;
-  delete restTitleStyle.letterSpacing;
-  delete restTitleStyle.fontStyle;
-  const allowItalicWord = incomingFontStyle !== 'italic';
-  const resolvedTitleColor =
-    (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={rootRef}
-      className={`mb-10 w-full sm:mb-14 lg:mb-16 ${className}`.trim()}
-      data-pf-no-color-transition=""
-    >
-      <div className="flex items-end justify-between gap-6 sm:gap-10">
-        <div className="min-w-0 max-w-3xl">
-          <div
-            data-carousel-enter=""
-            data-enter-delay="40"
-            className="mb-5 flex items-center gap-3 sm:mb-6"
-            style={ENTER_HIDDEN}
-          >
-            <span
-              className="h-px w-7 shrink-0 sm:w-9"
-              style={{ backgroundColor: mark, opacity: 0.7 }}
-              aria-hidden
-            />
-            <p
-              className="text-[10px] font-semibold uppercase tracking-[0.28em] sm:text-[11px]"
-              style={{ color: subtitleColor }}
-              data-pf-no-color-transition=""
-            >
-              Selected
-            </p>
-          </div>
-          {heading ? (
-            <h2
-              data-carousel-enter=""
-              data-enter-delay="120"
-              className={titleClassName.trim() || 'font-semibold tracking-[-0.045em]'}
-              style={{
-                ...restTitleStyle,
-                color: resolvedTitleColor,
-                fontSize: 'clamp(2.2rem, 5.2vw, 3.85rem)',
-                lineHeight: 1.06,
-                ...ENTER_HIDDEN,
-              }}
-              data-pf-no-color-transition=""
-            >
-              {allowItalicWord ? <EditorialTitleText text={heading} /> : heading}
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              data-carousel-enter=""
-              data-enter-delay={heading ? '200' : '80'}
-              className={`max-w-xl text-[15px] leading-[1.7] sm:text-base sm:leading-[1.75] ${
-                heading ? 'mt-4 sm:mt-5' : ''
-              }`}
-              style={{ color: subtitleColor, ...ENTER_HIDDEN }}
-              data-pf-no-color-transition=""
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        <div
-          data-carousel-enter=""
-          data-enter-delay="160"
-          className="flex shrink-0 flex-col items-end gap-3 pb-1"
-          style={ENTER_HIDDEN}
-        >
-          {countLabel ? (
-            <span
-              className="text-[2.15rem] font-light tabular-nums leading-none tracking-[-0.06em] sm:text-[2.65rem]"
-              style={{ color: resolvedTitleColor }}
-              data-pf-no-color-transition=""
-              aria-hidden
-            >
-              {countLabel}
-            </span>
-          ) : null}
-          {trailing}
-        </div>
-      </div>
-    </header>
-  );
-}
-
 /** Image-led film strip — quiet nav, drag, editorial caption. */
 export function ProjectsCarouselSection({
   title,
@@ -1199,10 +1060,4 @@ export function ProjectsCarouselSection({
       </div>
     </div>
   );
-}
-
-export function isProjectsCarouselDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-carousel';
 }

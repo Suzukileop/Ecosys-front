@@ -56,8 +56,8 @@ export type PortfolioHeroBackgroundSettings = {
   heroMotifGradientAngle: number;
 };
 
-export const DEFAULT_HERO_SECTION_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_HERO_MOTIF_GRADIENT_TO = '#0a0a0a';
+const DEFAULT_HERO_SECTION_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_HERO_MOTIF_GRADIENT_TO = '#0a0a0a';
 
 export const DEFAULT_HERO_BACKGROUND_SETTINGS: PortfolioHeroBackgroundSettings = {
   // 'none' = today's existing behavior (each banner design repaints its own Hero-palette
@@ -91,7 +91,7 @@ export const DEFAULT_HERO_BACKGROUND_SETTINGS: PortfolioHeroBackgroundSettings =
   heroMotifGradientAngle: 135,
 };
 
-export const PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS: {
+const PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS: {
   value: Exclude<HeroBackgroundFill, 'image' | 'none' | 'transparent'>;
   label: string;
   description: string;
@@ -135,17 +135,6 @@ export const PORTFOLIO_HERO_BACKGROUND_SPLIT_AXIS_OPTIONS: {
 }[] = [
   { value: 'y', label: 'Horizontal', description: 'Top zone / bottom zone.' },
   { value: 'x', label: 'Vertical', description: 'Left zone / right zone.' },
-];
-
-export const PORTFOLIO_HERO_BACKGROUND_DIVIDER_SHAPE_OPTIONS: {
-  value: PortfolioServicesCardDividerShape;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'straight', label: 'Droite', description: 'Ligne droite horizontale ou verticale.' },
-  { value: 'diagonal', label: 'Diagonale', description: 'Séparation inclinée — angle et position réglables.' },
-  { value: 'curve', label: 'Courbe', description: 'Arc doux entre les deux zones.' },
-  { value: 'wave', label: 'Vague', description: 'Ligne ondulée pour un rendu organique.' },
 ];
 
 export const PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS: {

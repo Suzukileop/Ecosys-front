@@ -236,9 +236,3 @@ export function ProjectsPressGallery({
     </div>
   );
 }
-
-export function isProjectsPressDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-press';
-}

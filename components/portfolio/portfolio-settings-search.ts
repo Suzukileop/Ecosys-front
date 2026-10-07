@@ -38,7 +38,7 @@ const SECTION_SEARCH_KEYWORDS: Partial<Record<PortfolioSettingsSectionId, string
 };
 
 /** Searchable settings destinations (sections, subsections, and common controls). */
-export const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
+const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ...PORTFOLIO_SETTINGS_SECTIONS.map((section) =>
     entry(section.id, section.label, [
       section.description,

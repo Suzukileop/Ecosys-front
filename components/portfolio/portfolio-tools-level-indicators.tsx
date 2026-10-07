@@ -1,26 +1,14 @@
 import type { CSSProperties, ReactNode } from 'react';
 import { resolveToolLevelPercent } from '@/components/creator/studio/creator-tool-logo-color';
-import type {
-  PortfolioToolsBrandDirectoryLevelStyle,
-  PortfolioToolsLevelBarSize,
-  PortfolioToolsLevelBarStyle,
-  PortfolioToolsLevelIndicatorDisplayStyle,
-  PortfolioToolsPresentationSettings,
-} from '@/components/portfolio/portfolio-tools-settings';
-import {
-  resolveToolsLevelBarStyle,
-  resolveToolsLevelBarSize,
-  resolveToolsLevelIndicatorDisplayStyle,
-  toolsLevelBarHeightClass,
-  toolsLevelBarPercentClass,
-} from '@/components/portfolio/portfolio-tools-settings';
+import type { PortfolioToolsBrandDirectoryLevelStyle, PortfolioToolsLevelBarSize, PortfolioToolsLevelBarStyle, PortfolioToolsPresentationSettings } from '@/components/portfolio/portfolio-tools-settings';
+import { resolveToolsLevelBarStyle, resolveToolsLevelBarSize, toolsLevelBarHeightClass } from '@/components/portfolio/portfolio-tools-settings';
 import {
   resolveSkillLevel,
   resolveSkillLevelLabel,
   resolveSkillName,
   type PortfolioSkillRef,
 } from '@/components/portfolio/skill-usage-descriptions';
-import type { ProfileStrengthToolLevel } from '@/types/ecosystem';
+import type { ProfileStrengthToolLevel } from '@/types/profile';
 
 const LEVEL_SEGMENT_COUNT: Record<ProfileStrengthToolLevel, number> = {
   beginner: 1,
@@ -58,7 +46,7 @@ function progressBarFillBackground(fillColor: string, barStyle: PortfolioToolsLe
   return fillColor;
 }
 
-export function resolveLevelSegmentCount(level: ProfileStrengthToolLevel | null | undefined): number {
+function resolveLevelSegmentCount(level: ProfileStrengthToolLevel | null | undefined): number {
   if (!level) return 0;
   return LEVEL_SEGMENT_COUNT[level] ?? 0;
 }
@@ -118,7 +106,7 @@ export function ToolsLevelStatBar({
 }
 
 /** Circular donut — percentage in the center (brand directory). */
-export function ToolsLevelCircularPercent({
+function ToolsLevelCircularPercent({
   percent,
   fillColor,
   trackColor,
@@ -187,7 +175,7 @@ export function ToolsLevelCircularPercent({
 }
 
 /** Four signal dots — alternative level read (brand directory). */
-export function ToolsLevelSignalDots({
+function ToolsLevelSignalDots({
   level,
   toolName,
   fillColor,
@@ -503,7 +491,7 @@ export function resolveToolsLevelSemanticColor(
   return LEVEL_SEMANTIC_COLORS[level];
 }
 
-export function resolveLevelStarCount(level: ProfileStrengthToolLevel | null | undefined): number {
+function resolveLevelStarCount(level: ProfileStrengthToolLevel | null | undefined): number {
   const percent = resolveToolLevelPercent(level);
   if (percent >= 100) return 5;
   if (percent >= 75) return 4;
@@ -572,167 +560,6 @@ export function ToolsLevelStarRating({
           </svg>
         );
       })}
-    </div>
-  );
-}
-
-/** 5 glowing dots — semantic level color, no text label. */
-export function ToolsLevelGlowDots({
-  level,
-  toolName,
-  fillColor,
-  trackColor,
-  className,
-}: {
-  level: ProfileStrengthToolLevel | null | undefined;
-  toolName: string;
-  fillColor: string;
-  trackColor: string;
-  className?: string;
-}) {
-  const filled = resolveLevelDotCount(level);
-  if (!level || filled === 0) return null;
-
-  return (
-    <div
-      role="meter"
-      aria-valuemin={0}
-      aria-valuemax={5}
-      aria-valuenow={filled}
-      aria-label={`${toolName} proficiency`}
-      className={`flex items-center gap-1.5 ${className ?? ''}`}
-    >
-      {Array.from({ length: 5 }, (_, index) => {
-        const active = index < filled;
-        return (
-          <span
-            key={index}
-            aria-hidden="true"
-            className="h-2 w-2 rounded-full transition-all duration-200 sm:h-2.5 sm:w-2.5"
-            style={{
-              backgroundColor: active ? fillColor : trackColor,
-              boxShadow: active ? `0 0 8px ${fillColor}99` : 'none',
-            }}
-          />
-        );
-      })}
-    </div>
-  );
-}
-
-/** Shared level read for bento / table / list rows — text or visual without labels. */
-export function ToolsLevelIndicatorDisplay({
-  tool,
-  presentation,
-  style,
-  className,
-  showPercent = false,
-  layout = 'inline',
-  logosGrayscale = false,
-  semanticFillColor,
-  barColor,
-}: {
-  tool: PortfolioSkillRef;
-  presentation: PortfolioToolsPresentationSettings;
-  style?: PortfolioToolsLevelIndicatorDisplayStyle;
-  className?: string;
-  showPercent?: boolean;
-  /** `stacked` places a full-width bar under the name row (bento). */
-  layout?: 'inline' | 'stacked';
-  logosGrayscale?: boolean;
-  semanticFillColor?: string;
-  barColor?: string;
-}) {
-  const level = resolveSkillLevel(tool);
-  if (!level) return null;
-
-  const name = resolveSkillName(tool);
-  const displayStyle = style ?? resolveToolsLevelIndicatorDisplayStyle(presentation);
-  const { fillColor: paletteFill, trackColor } = resolveToolsLevelBarColors(presentation);
-  const semanticColor =
-    semanticFillColor ??
-    resolveToolsLevelSemanticColor(level, presentation, logosGrayscale);
-  const percent = resolveToolLevelPercent(level);
-  const barStyle = resolveToolsLevelBarStyle(presentation);
-  const barSize = resolveToolsLevelBarSize(presentation);
-  const progressFill = barColor ?? semanticColor;
-
-  if (displayStyle === 'text') {
-    return (
-      <span
-        className={`text-sm font-medium leading-none sm:text-[0.9375rem] ${className ?? ''}`}
-        style={{ color: semanticColor }}
-      >
-        {resolveSkillLevelLabel(tool)}
-      </span>
-    );
-  }
-
-  if (displayStyle === 'stars') {
-    return (
-      <ToolsLevelStarRating
-        level={level}
-        toolName={name}
-        fillColor={presentation.levelAccentColor?.trim() || paletteFill}
-        trackColor={trackColor}
-        className={className}
-      />
-    );
-  }
-
-  if (displayStyle === 'dots') {
-    return (
-      <ToolsLevelGlowDots
-        level={level}
-        toolName={name}
-        fillColor={semanticColor}
-        trackColor={trackColor}
-        className={className}
-      />
-    );
-  }
-
-  const bar = (
-    <ToolsLevelProgressBar
-      level={level}
-      toolName={name}
-      fillColor={progressFill}
-      trackColor={trackColor}
-      percent={percent}
-      barStyle={barStyle}
-      barSize={barSize}
-      barHeightVariant={layout === 'stacked' ? 'default' : 'thin'}
-      className={layout === 'stacked' ? 'min-w-0 flex-1' : 'w-16 sm:w-20'}
-    />
-  );
-
-  if (layout === 'stacked') {
-    return (
-      <div className={`flex w-full min-w-0 items-center gap-3 ${className ?? ''}`}>
-        {bar}
-        {showPercent ? (
-          <span
-            className={`shrink-0 font-semibold tabular-nums leading-none ${toolsLevelBarPercentClass(barSize)}`}
-            style={{ color: progressFill }}
-          >
-            {percent}%
-          </span>
-        ) : null}
-      </div>
-    );
-  }
-
-  return (
-    <div className={`flex shrink-0 items-center gap-2 ${className ?? ''}`}>
-      {bar}
-      {showPercent ? (
-        <span
-          className={`font-semibold tabular-nums leading-none ${toolsLevelBarPercentClass(barSize)}`}
-          style={{ color: progressFill }}
-        >
-          {percent}%
-        </span>
-      ) : null}
     </div>
   );
 }

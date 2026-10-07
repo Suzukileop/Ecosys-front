@@ -34,7 +34,7 @@ export type PortfolioServicesCardDecorSettings = {
   cardDecorAlternation: PortfolioServicesCardDecorAlternation;
 };
 
-export const DEFAULT_SERVICES_CARD_DECOR_COLOR = '#e5e5e5';
+const DEFAULT_SERVICES_CARD_DECOR_COLOR = '#e5e5e5';
 
 export const DEFAULT_SERVICES_CARD_DECOR_SETTINGS: PortfolioServicesCardDecorSettings = {
   cardDecorEnabled: false,
@@ -47,33 +47,6 @@ export const DEFAULT_SERVICES_CARD_DECOR_SETTINGS: PortfolioServicesCardDecorSet
   cardDecorRotation: 0,
   cardDecorAlternation: 'none',
 };
-
-export const PORTFOLIO_SERVICES_CARD_DECOR_SHAPE_OPTIONS: {
-  value: PortfolioServicesCardDecorShape;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'circle', label: 'Cercle', description: 'Disque plein — classique en coin.' },
-  { value: 'blob', label: 'Blob', description: 'Forme organique adoucie.' },
-  { value: 'square', label: 'Carré', description: 'Carré aux coins légèrement arrondis.' },
-  { value: 'diamond', label: 'Losange', description: 'Carré tourné à 45°.' },
-  { value: 'triangle', label: 'Triangle', description: 'Pointe géométrique nette.' },
-  { value: 'ring', label: 'Anneau', description: 'Cercle creux — contour seulement.' },
-  { value: 'tint', label: 'Teinte douce', description: 'Tache floue large — wash de couleur.' },
-];
-
-export const PORTFOLIO_SERVICES_CARD_DECOR_ALTERNATION_OPTIONS: {
-  value: PortfolioServicesCardDecorAlternation;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Toutes', description: 'Le décor apparaît sur chaque carte.' },
-  { value: 'even', label: 'Paires (1, 3, 5…)', description: 'Uniquement les cartes d’index pair.' },
-  { value: 'odd', label: 'Impaires (2, 4, 6…)', description: 'Uniquement les cartes d’index impair.' },
-  { value: 'every-third', label: '1 sur 3 (A)', description: 'Cartes 1, 4, 7…' },
-  { value: 'every-third-b', label: '1 sur 3 (B)', description: 'Cartes 2, 5, 8…' },
-  { value: 'every-third-c', label: '1 sur 3 (C)', description: 'Cartes 3, 6, 9…' },
-];
 
 function sanitizeHex(value: unknown, fallback: string): string {
   if (typeof value === 'string' && isValidProfileHexColor(value)) return value.trim();

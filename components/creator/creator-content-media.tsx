@@ -6,12 +6,8 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 
-export const CONTENT_MEDIA_ACCEPT =
-  'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,audio/mpeg,audio/wav,audio/aac,audio/ogg,audio/mp4,application/pdf,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov,.mp3,.wav,.aac,.m4a,.ogg,.pdf';
-
-export type ContentMediaKind = 'image' | 'video' | 'pdf' | 'gif' | 'audio' | null;
+type ContentMediaKind = 'image' | 'video' | 'pdf' | 'gif' | 'audio' | null;
 
 export function contentMediaKind(
   url: string,
@@ -76,6 +72,127 @@ export function useContentMediaUpload({
   };
 
   return { inputRef, uploading, fileName, uploadError, pickFile, onFileChange, uploadFile, setFileName };
+}
+
+/** Images (and GIF files) can share one post as a collage; video, audio and PDF stand alone. */
+export function isCollageImage(url: string, fileName?: string | null): boolean {
+  const kind = contentMediaKind(url, fileName, null);
+  return kind === 'image' || kind === 'gif';
+}
+
+export const MAX_POST_IMAGES = 10;
+
+/**
+ * Composer upload for a multi-image post. Picking several images appends them (up to
+ * {@link MAX_POST_IMAGES}); picking a video, audio or PDF replaces everything — those cannot be mixed
+ * into a collage. Files upload in parallel and land in the order they were picked.
+ */
+export function useContentGalleryUpload({
+  locale = 'en',
+  urls,
+  onChange,
+}: {
+  locale?: 'fr' | 'en';
+  urls: string[];
+  onChange: (urls: string[]) => void;
+}) {
+  const inputRef = useRef<HTMLInputElement>(null);
+  const [uploading, setUploading] = useState(false);
+  const [fileName, setFileName] = useState<string | null>(null);
+  const [uploadError, setUploadError] = useState<string | null>(null);
+
+  const pickFiles = () => inputRef.current?.click();
+
+  const addFiles = async (picked: File[]) => {
+    if (picked.length === 0) return;
+    setUploadError(null);
+
+    const standalone = picked.find((file) => !isCollageImage(file.name, file.name));
+    const currentIsCollage = urls.length === 0 || urls.every((url) => isCollageImage(url));
+    /* A video / PDF / audio replaces the whole post media; images only append to other images. */
+    const replacing = Boolean(standalone) || !currentIsCollage;
+    const base = replacing ? [] : urls;
+    const incoming = standalone ? [standalone] : picked;
+    const room = MAX_POST_IMAGES - base.length;
+    const batch = standalone ? incoming : incoming.slice(0, Math.max(0, room));
+
+    if (batch.length === 0) {
+      setUploadError(
+        locale === 'fr'
+          ? `Une publication contient au plus ${MAX_POST_IMAGES} images.`
+          : `A post can hold at most ${MAX_POST_IMAGES} images.`
+      );
+      return;
+    }
+
+    setUploading(true);
+    try {
+      const results = await Promise.allSettled(batch.map((file) => uploadContentMedia(file)));
+      const uploaded = results.flatMap((result) => (result.status === 'fulfilled' ? [result.value] : []));
+      const failed = results.length - uploaded.length;
+      if (uploaded.length > 0) {
+        onChange([...base, ...uploaded]);
+        setFileName(standalone ? standalone.name : null);
+      }
+      const notes: string[] = [];
+      if (failed > 0) {
+        const firstError = results.find((result) => result.status === 'rejected') as PromiseRejectedResult | undefined;
+        notes.push(
+          getApiErrorMessage(
+            firstError?.reason,
+            locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed. Please try again.'
+          )
+        );
+      }
+      if (!standalone && incoming.length > batch.length) {
+        notes.push(
+          locale === 'fr'
+            ? `Seules ${MAX_POST_IMAGES} images sont conservées.`
+            : `Only the first ${MAX_POST_IMAGES} images were kept.`
+        );
+      }
+      if (notes.length > 0) setUploadError(notes.join(' '));
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const onFilesChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const files = Array.from(event.target.files ?? []);
+    try {
+      await addFiles(files);
+    } finally {
+      event.target.value = '';
+    }
+  };
+
+  const removeAt = (index: number) => {
+    const next = urls.filter((_, i) => i !== index);
+    onChange(next);
+    if (next.length === 0) setFileName(null);
+  };
+
+  /** Moves one image to the front (it becomes the cover). */
+  const makeCover = (index: number) => {
+    if (index <= 0 || index >= urls.length) return;
+    onChange([urls[index]!, ...urls.filter((_, i) => i !== index)]);
+  };
+
+  return {
+    inputRef,
+    uploading,
+    fileName,
+    uploadError,
+    pickFiles,
+    onFilesChange,
+    removeAt,
+    makeCover,
+    clear: () => {
+      onChange([]);
+      setFileName(null);
+    },
+    setUploadError,
+  };
 }
 
 type ContentMediaPreviewProps = {
@@ -518,64 +635,6 @@ export function ContentMediaPreview({
               : `h-full ${large ? (compact ? 'min-h-[min(28vh,220px)]' : 'min-h-[min(38vh,320px)]') : ''} w-full object-contain`
           }
         />
-      )}
-    </div>
-  );
-}
-
-type ContentMediaUploadButtonProps = {
-  locale?: 'fr' | 'en';
-  inputRef: React.RefObject<HTMLInputElement | null>;
-  uploading: boolean;
-  hasMedia: boolean;
-  fileName?: string | null;
-  onPick: () => void;
-  onFileChange: (event: React.ChangeEvent<HTMLInputElement>) => void;
-};
-
-export function ContentMediaUploadButton({
-  locale = 'en',
-  inputRef,
-  uploading,
-  hasMedia,
-  fileName,
-  onPick,
-  onFileChange,
-}: ContentMediaUploadButtonProps) {
-  const label = hasMedia
-    ? locale === 'fr'
-      ? 'Remplacer'
-      : 'Replace file'
-    : locale === 'fr'
-      ? 'Choisir un fichier'
-      : 'Choose file';
-
-  return (
-    <div className="flex min-w-0 items-center gap-2">
-      <input
-        ref={inputRef as React.Ref<HTMLInputElement>}
-        type="file"
-        accept={CONTENT_MEDIA_ACCEPT}
-        className="sr-only"
-        onChange={(e) => void onFileChange(e)}
-      />
-      <button
-        type="button"
-        onClick={onPick}
-        disabled={uploading}
-        className="inline-flex shrink-0 items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
-      >
-        {uploading ? (
-          <LoadingSpinner size="sm" />
-        ) : (
-          <svg className="h-4 w-4 shrink-0 text-orange-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-            <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
-          </svg>
-        )}
-        <span>{uploading ? (locale === 'fr' ? 'Envoi…' : 'Uploading…') : label}</span>
-      </button>
-      {fileName && !uploading && (
-        <span className="hidden max-w-[9rem] truncate text-xs text-neutral-500 sm:inline">{fileName}</span>
       )}
     </div>
   );

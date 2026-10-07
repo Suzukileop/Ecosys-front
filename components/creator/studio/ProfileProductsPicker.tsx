@@ -347,7 +347,7 @@ export function ProfileProductsPicker({
               </button>
             ) : (
               <Link
-                href="/marketplace/my-products"
+                href="/my-products"
                 className="mt-5 inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
                 Create a product

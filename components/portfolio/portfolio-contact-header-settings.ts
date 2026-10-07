@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { PortfolioContactHeaderFont } from '@/components/portfolio/portfolio-contact-settings';
 
 /**
@@ -81,84 +80,6 @@ export const CONTACT_HEADER_BILLBOARD_WORD_STYLES: PortfolioContactHeaderBillboa
   'simple',
 ];
 
-/** Header designs — one shared, GSAP-animated header mounted above the Contact section. */
-export const PORTFOLIO_CONTACT_HEADER_DESIGN_OPTIONS: {
-  value: PortfolioContactHeaderDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'editorial',
-    label: 'Editorial',
-    description: 'Kicker + masked line-reveal title + subtitle — premium GSAP entrance.',
-  },
-  {
-    value: 'marquee',
-    label: 'Marquee',
-    description: 'Bold title over a scrolling decorative word band.',
-  },
-  {
-    value: 'index',
-    label: 'Index',
-    description: 'Ledger-style divider rule, a counting numeral, and the title split by a vertical rule.',
-  },
-  {
-    value: 'accent-count',
-    label: 'Accent count',
-    description: 'Small accent badge with a live count, lead line, and title.',
-  },
-  {
-    value: 'serif-lead',
-    label: 'Serif lead',
-    description: 'Small label above a large serif title.',
-  },
-  {
-    value: 'billboard',
-    label: 'Billboard',
-    description: 'Big faint background word behind the title, with a count line.',
-  },
-  {
-    value: 'masthead',
-    label: 'Masthead',
-    description: 'Monumental uppercase headline with an intro line underneath.',
-  },
-  {
-    value: 'split-heading',
-    label: 'Split heading',
-    description: 'Title left with an editorial italic word, small label top-right.',
-  },
-];
-
-export const CONTACT_HEADER_PALETTE_TOKEN_OPTIONS: {
-  value: PortfolioContactHeaderPaletteToken;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'principal', label: 'Principal', description: 'Global principal token.' },
-  { value: 'secondaire', label: 'Secondary', description: 'Global secondary token.' },
-  { value: 'texteFort', label: 'Strong text', description: 'Strong ink token.' },
-];
-
-export const CONTACT_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS: {
-  value: PortfolioContactHeaderAccentCountAlignment;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Default editorial alignment.' },
-  { value: 'center', label: 'Center', description: 'Centered line.' },
-  { value: 'right', label: 'Right', description: 'Right-aligned line.' },
-];
-
-export const CONTACT_HEADER_BILLBOARD_WORD_STYLE_OPTIONS: {
-  value: PortfolioContactHeaderBillboardWordStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'outline', label: 'Outline', description: 'Stroke only, with a soft glow.' },
-  { value: 'fill', label: 'Fill', description: 'Solid characters, with a soft glow.' },
-  { value: 'simple', label: 'Simple', description: 'Solid characters, no glow — plain.' },
-];
-
 /** Resolves a palette-token choice to a concrete color — no free-form hex,
  *  every Header element bound to one of our actual palette colors. */
 export function contactHeaderPaletteTokenColor(token: PortfolioContactHeaderPaletteToken): string {
@@ -189,8 +110,4 @@ export function contactHeaderDesignFontClass(
     default:
       return 'leading-relaxed';
   }
-}
-
-export function contactHeaderDesignFontStyle(_font: PortfolioContactHeaderFont): CSSProperties | undefined {
-  return undefined;
 }

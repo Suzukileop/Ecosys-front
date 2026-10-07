@@ -53,14 +53,16 @@ export function PublicContentPostCard({
   }, [post.id, post.commentsEnabled]);
 
   const profileHref = post.creator.id
-    ? `/marketplace/${post.creator.id}`
+    ? `/providers/${post.creator.id}`
     : '/marketplace';
 
-  const title = post.title?.trim() || 'Untitled';
+  /* A repost carries no media of its own: show what it points at. */
+  const shown = post.repostOf ?? post;
+  const title = shown.title?.trim() || post.title?.trim() || 'Untitled';
   const openLightbox = () => setLightboxOpen(true);
   const isSplit = layout === 'split';
 
-  const mediaBlock = post.mediaUrl ? (
+  const mediaBlock = shown.mediaUrl ? (
     <div
       role="button"
       tabIndex={0}
@@ -75,7 +77,7 @@ export function PublicContentPostCard({
       className="relative w-full cursor-pointer bg-neutral-100 dark:bg-neutral-950"
     >
       <div className="pointer-events-none w-full">
-        <ContentPostFeedMediaFrame mediaUrl={post.mediaUrl} mediaType={post.mediaType} layout="feed" />
+        <ContentPostFeedMediaFrame mediaUrl={shown.mediaUrl!} mediaType={shown.mediaType} layout="feed" />
       </div>
     </div>
   ) : null;
@@ -147,7 +149,7 @@ export function PublicContentPostCard({
             commentsEnabled={post.commentsEnabled !== false}
             onCommentsToggle={setCommentsOpen}
             onCountChange={setCommentCount}
-            loginRedirect="/login?redirect=/dashboard/home"
+            loginRedirect="/login?redirect=/feed"
             isAuthenticated={isAuthenticated}
             className="min-h-0 h-full w-full"
           />
@@ -155,10 +157,10 @@ export function PublicContentPostCard({
       </div>
 
       <ContentPostLightbox
-        post={post}
+        post={shown}
         open={lightboxOpen}
         onClose={() => setLightboxOpen(false)}
-        loginRedirect="/login?redirect=/dashboard/home"
+        loginRedirect="/login?redirect=/feed"
         appRole={post.creator.appRole}
         specialite={post.creator.specialite}
         specialties={post.creator.specialties}

@@ -77,7 +77,7 @@ function VisitorRow({ visit }: { visit: CreatorProfileVisitItem }) {
       {visit.anonymous || !visit.viewerUserId ? (
         identity
       ) : (
-        <Link href={`/marketplace/${visit.viewerUserId}`} className="min-w-0 transition hover:opacity-80">
+        <Link href={`/providers/${visit.viewerUserId}`} className="min-w-0 transition hover:opacity-80">
           {identity}
         </Link>
       )}

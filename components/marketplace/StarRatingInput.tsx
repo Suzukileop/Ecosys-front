@@ -1,6 +1,6 @@
 'use client';
 
-export type StarRatingInputProps = {
+type StarRatingInputProps = {
   value: number;
   onChange: (value: number) => void;
   disabled?: boolean;

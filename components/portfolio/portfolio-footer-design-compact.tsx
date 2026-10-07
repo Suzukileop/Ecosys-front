@@ -25,7 +25,7 @@ function Dot({ muted }: { muted: string }) {
   );
 }
 
-export interface FooterDesignCompactProps {
+interface FooterDesignCompactProps {
   creatorName: string;
   creatorId: string;
   bio?: string | null;

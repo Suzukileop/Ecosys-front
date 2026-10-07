@@ -19,12 +19,7 @@ import {
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
-import {
-  createElementTextStyle,
-  normalizeElementStylesRecord,
-  patchElementStylesRecord,
-  type PortfolioElementTextStyle,
-} from '@/components/portfolio/portfolio-element-text-style';
+import { createElementTextStyle, normalizeElementStylesRecord, type PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 import {
   FOOTER_HEADER_BILLBOARD_WORD_STYLES,
   FOOTER_HEADER_DESIGNS,
@@ -43,7 +38,7 @@ import {
   type PortfolioFooterHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-footer-header-settings';
 
-export type PortfolioFooterStyleTarget =
+type PortfolioFooterStyleTarget =
   | 'brand'
   | 'description'
   | 'columnHeading'
@@ -57,7 +52,7 @@ export type PortfolioFooterStyleTarget =
 
 export type PortfolioFooterElementStyles = Record<PortfolioFooterStyleTarget, PortfolioElementTextStyle>;
 
-export const FOOTER_STYLE_TARGET_IDS: PortfolioFooterStyleTarget[] = [
+const FOOTER_STYLE_TARGET_IDS: PortfolioFooterStyleTarget[] = [
   'brand',
   'description',
   'columnHeading',
@@ -70,24 +65,7 @@ export const FOOTER_STYLE_TARGET_IDS: PortfolioFooterStyleTarget[] = [
   'ctaButton',
 ];
 
-export const PORTFOLIO_FOOTER_STYLE_TARGET_OPTIONS: {
-  value: PortfolioFooterStyleTarget;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'brand', label: 'Brand name', description: 'Creator name in compact and centered footers.' },
-  { value: 'description', label: 'Description', description: 'Bio or why-me blurb under the brand.' },
-  { value: 'columnHeading', label: 'Column heading', description: '“Contact” or link-column titles.' },
-  { value: 'contactLine', label: 'Contact / link line', description: 'Phone, email, and landing-style column links.' },
-  { value: 'socialLabel', label: 'Social label', description: 'Text labels beside social icons.' },
-  { value: 'meta', label: 'Meta / copyright', description: 'Copyright label and design credit.' },
-  { value: 'marketplaceLink', label: 'Marketplace CTA', description: 'Label color for text-arrow marketplace CTA.' },
-  { value: 'ctaTitle', label: 'CTA title', description: 'Minimal design band headline.' },
-  { value: 'ctaSubtitle', label: 'CTA subtitle', description: 'Availability line under the CTA title.' },
-  { value: 'ctaButton', label: 'CTA button', description: 'Contact me button label typography.' },
-];
-
-export const DEFAULT_FOOTER_ELEMENT_STYLES: PortfolioFooterElementStyles = {
+const DEFAULT_FOOTER_ELEMENT_STYLES: PortfolioFooterElementStyles = {
   brand: createElementTextStyle({ color: '#0a0a0a', size: 'xl', bold: true }),
   description: createElementTextStyle({ color: '#a3a3a3', size: 'md' }),
   columnHeading: createElementTextStyle({
@@ -126,7 +104,7 @@ function inheritGlobalFooterFonts(
   return next ?? styles;
 }
 
-export function buildFooterElementStyleDefaults(
+function buildFooterElementStyleDefaults(
   presentation: Pick<
     PortfolioFooterPresentationSettings,
     | 'primaryColor'
@@ -211,33 +189,7 @@ export function normalizeFooterElementStyles(
   );
 }
 
-export function patchFooterElementStyle(
-  styles: PortfolioFooterElementStyles,
-  target: PortfolioFooterStyleTarget,
-  patch: Partial<PortfolioElementTextStyle>,
-  presentation: Pick<
-    PortfolioFooterPresentationSettings,
-    | 'primaryColor'
-    | 'textColor'
-    | 'ctaTitleColor'
-    | 'ctaSubtitleColor'
-    | 'ctaButtonTextColor'
-    | 'accentColor'
-  >
-): PortfolioFooterElementStyles {
-  const defaults = buildFooterElementStyleDefaults(presentation);
-  return inheritGlobalFooterFonts(
-    patchElementStylesRecord(
-      styles,
-      target,
-      { ...patch, font: 'sans' },
-      defaults,
-      FOOTER_STYLE_TARGET_IDS
-    )
-  );
-}
-
-export function syncFooterLegacyTypographyFromElementStyles(
+function syncFooterLegacyTypographyFromElementStyles(
   styles: PortfolioFooterElementStyles
 ): Pick<
   PortfolioFooterPresentationSettings,
@@ -252,7 +204,7 @@ export function syncFooterLegacyTypographyFromElementStyles(
   };
 }
 
-export function syncFooterElementStylesFromLegacyPatch(
+function syncFooterElementStylesFromLegacyPatch(
   styles: PortfolioFooterElementStyles,
   patch: unknown,
   presentation: PortfolioFooterPresentationSettings
@@ -339,7 +291,7 @@ export type PortfolioFooterPremiumFontSize = 'small' | 'medium' | 'large' | 'xla
  *  needs a real color, not a CSS var reference, to compute its own text-ink contrast). */
 export type PortfolioFooterContactCardColorToken = 'principal' | 'secondaire' | 'texteMuted' | 'neutre';
 
-export const FOOTER_CONTACT_CARD_COLOR_TOKENS: PortfolioFooterContactCardColorToken[] = [
+const FOOTER_CONTACT_CARD_COLOR_TOKENS: PortfolioFooterContactCardColorToken[] = [
   'principal',
   'secondaire',
   'texteMuted',
@@ -374,7 +326,7 @@ export type PortfolioFooterMiniBarDesign =
   | 'inverted-wordmark'
   | 'services-reveal';
 
-export const FOOTER_MINI_BAR_DESIGNS: PortfolioFooterMiniBarDesign[] = [
+const FOOTER_MINI_BAR_DESIGNS: PortfolioFooterMiniBarDesign[] = [
   'minimal',
   'kinetic',
   'split-caps',
@@ -714,32 +666,32 @@ export type PortfolioFooterSectionSettings = {
   enabled: boolean;
 } & PortfolioFooterPresentationSettings;
 
-export const DEFAULT_FOOTER_TEXT_COLOR = '#a3a3a3';
-export const DEFAULT_FOOTER_PRIMARY_COLOR = '#fafafa';
-export const DEFAULT_FOOTER_PRIMARY_ON_LIGHT = '#0a0a0a';
-export const DEFAULT_FOOTER_ICON_COLOR = '#737373';
+const DEFAULT_FOOTER_TEXT_COLOR = '#a3a3a3';
+const DEFAULT_FOOTER_PRIMARY_COLOR = '#fafafa';
+const DEFAULT_FOOTER_PRIMARY_ON_LIGHT = '#0a0a0a';
+const DEFAULT_FOOTER_ICON_COLOR = '#737373';
 export const DEFAULT_FOOTER_ACCENT_COLOR = '#ea580c';
-export const DEFAULT_FOOTER_BACKGROUND_COLOR = '#0a0a0a';
-export const DEFAULT_FOOTER_PATTERN_COLOR = '#a3a3a3';
-export const DEFAULT_FOOTER_CTA_TITLE = 'Have a project in mind?';
-export const DEFAULT_FOOTER_CTA_SUBTITLE = 'Available this week · response within 24h';
-export const DEFAULT_FOOTER_CTA_BUTTON = 'Contact me';
-export const DEFAULT_FOOTER_CTA_TITLE_COLOR = '#ffffff';
-export const DEFAULT_FOOTER_CTA_SUBTITLE_COLOR = '#ffffff';
-export const DEFAULT_FOOTER_CTA_BUTTON_BG = '#ffffff';
-export const DEFAULT_FOOTER_CTA_BUTTON_TEXT = '#0a0a0a';
-export const DEFAULT_FOOTER_CTA_BUTTON_BORDER = '#e5e5e5';
-export const DEFAULT_FOOTER_COPYRIGHT_LABEL = '© {year} {name}';
-export const DEFAULT_FOOTER_MONUMENTAL_HEADLINE = "Let's build\nsomething remarkable";
-export const DEFAULT_FOOTER_HERO_COLUMNS_MANIFESTO =
+const DEFAULT_FOOTER_BACKGROUND_COLOR = '#0a0a0a';
+const DEFAULT_FOOTER_PATTERN_COLOR = '#a3a3a3';
+const DEFAULT_FOOTER_CTA_TITLE = 'Have a project in mind?';
+const DEFAULT_FOOTER_CTA_SUBTITLE = 'Available this week · response within 24h';
+const DEFAULT_FOOTER_CTA_BUTTON = 'Contact me';
+const DEFAULT_FOOTER_CTA_TITLE_COLOR = '#ffffff';
+const DEFAULT_FOOTER_CTA_SUBTITLE_COLOR = '#ffffff';
+const DEFAULT_FOOTER_CTA_BUTTON_BG = '#ffffff';
+const DEFAULT_FOOTER_CTA_BUTTON_TEXT = '#0a0a0a';
+const DEFAULT_FOOTER_CTA_BUTTON_BORDER = '#e5e5e5';
+const DEFAULT_FOOTER_COPYRIGHT_LABEL = '© {year} {name}';
+const DEFAULT_FOOTER_MONUMENTAL_HEADLINE = "Let's build\nsomething remarkable";
+const DEFAULT_FOOTER_HERO_COLUMNS_MANIFESTO =
   'A short note on how we work: thoughtful collaboration, careful craft, and a bias for clarity over noise.';
-export const DEFAULT_FOOTER_SPLIT_FORM_HEADLINE = 'Start a\nproject.';
-export const DEFAULT_FOOTER_SPLIT_FORM_DESCRIPTION =
+const DEFAULT_FOOTER_SPLIT_FORM_HEADLINE = 'Start a\nproject.';
+const DEFAULT_FOOTER_SPLIT_FORM_DESCRIPTION =
   "Tell us a little about what you're building — we'll get back to you within a day or two.";
-export const DEFAULT_FOOTER_SPLIT_FORM_QUOTE =
+const DEFAULT_FOOTER_SPLIT_FORM_QUOTE =
   "I'll personally review your project and respond within 24 hours.";
-export const DEFAULT_FOOTER_INVERTED_WORDMARK_CREDIT = 'Designed & built with care.';
-export const DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE = 'Feel the fear,\ndo it anyway.';
+const DEFAULT_FOOTER_INVERTED_WORDMARK_CREDIT = 'Designed & built with care.';
+const DEFAULT_FOOTER_EDITORIAL_GRID_TAGLINE = 'Feel the fear,\ndo it anyway.';
 
 export function resolveFooterCopyrightLabel(
   label: string | undefined,
@@ -755,24 +707,10 @@ export function resolveFooterCopyrightLabel(
     .replaceAll('{{name}}', creatorName);
 }
 
-export const DEFAULT_FOOTER_MARKETPLACE_CTA_LABEL = 'Marketplace profile';
-export const DEFAULT_FOOTER_MARKETPLACE_CTA_BG = '#0a0a0a';
-export const DEFAULT_FOOTER_MARKETPLACE_CTA_TEXT = '#fafafa';
-export const DEFAULT_FOOTER_MARKETPLACE_CTA_BORDER = '#0a0a0a';
-
-export const PORTFOLIO_FOOTER_MARKETPLACE_CTA_DESIGN_OPTIONS: {
-  value: PortfolioFooterCtaDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'pill-dark', label: 'Dark pill', description: 'Solid dark capsule — primary CTA.' },
-  { value: 'pill-outline', label: 'Outline pill', description: 'Bordered capsule — light fill.' },
-  { value: 'pill-accent', label: 'Accent pill', description: 'Filled with the footer accent color.' },
-  { value: 'text-arrow', label: 'Text + arrow', description: 'Minimal linked text with ↗.' },
-];
-
-/** Same presets for Contact me (Contact CTA design). */
-export const PORTFOLIO_FOOTER_CONTACT_CTA_DESIGN_OPTIONS = PORTFOLIO_FOOTER_MARKETPLACE_CTA_DESIGN_OPTIONS;
+const DEFAULT_FOOTER_MARKETPLACE_CTA_LABEL = 'Marketplace profile';
+const DEFAULT_FOOTER_MARKETPLACE_CTA_BG = '#0a0a0a';
+const DEFAULT_FOOTER_MARKETPLACE_CTA_TEXT = '#fafafa';
+const DEFAULT_FOOTER_MARKETPLACE_CTA_BORDER = '#0a0a0a';
 
 /** Landing columns — Contact + useful creator links (not Product/Creators/Legal). */
 export const DEFAULT_FOOTER_LINK_COLUMNS: PortfolioFooterLinkColumn[] = [
@@ -792,7 +730,7 @@ export const DEFAULT_FOOTER_LINK_COLUMNS: PortfolioFooterLinkColumn[] = [
   },
 ];
 
-export const DEFAULT_FOOTER_CENTERED_LINKS: PortfolioFooterLinkItem[] = [
+const DEFAULT_FOOTER_CENTERED_LINKS: PortfolioFooterLinkItem[] = [
   { id: 'centered-home', label: 'Home', href: '#hero' },
   { id: 'centered-about', label: 'About', href: '#about' },
   { id: 'centered-portfolio', label: 'Portfolio', href: '#work' },
@@ -810,12 +748,12 @@ export function isLegacyLandingMarketingColumns(columns: PortfolioFooterLinkColu
 export function resolveFooterLinkHref(href: string, creatorId: string): string {
   const raw = href.trim();
   if (raw === '__profile__' || raw === '{{profile}}') {
-    return `/marketplace/${creatorId}`;
+    return `/providers/${creatorId}`;
   }
   return raw || '#';
 }
 
-export function isFooterNopbProfileLink(link: Pick<PortfolioFooterLinkItem, 'id' | 'label' | 'href'>): boolean {
+function isFooterNopbProfileLink(link: Pick<PortfolioFooterLinkItem, 'id' | 'label' | 'href'>): boolean {
   const href = link.href.trim();
   const id = link.id.trim().toLowerCase();
   const label = link.label.trim().toLowerCase();
@@ -829,7 +767,7 @@ export function isFooterNopbProfileLink(link: Pick<PortfolioFooterLinkItem, 'id'
   );
 }
 
-export function isFooterMarketplaceColumnLink(
+function isFooterMarketplaceColumnLink(
   link: Pick<PortfolioFooterLinkItem, 'id' | 'label' | 'href'>
 ): boolean {
   const href = link.href.trim().toLowerCase().replace(/\/$/, '');
@@ -843,9 +781,9 @@ export function isFooterMarketplaceColumnLink(
   );
 }
 
-export type PortfolioFooterAutoSectionKey = 'aboutUs' | 'team' | 'gallery' | 'services' | 'work';
+type PortfolioFooterAutoSectionKey = 'aboutUs' | 'team' | 'gallery' | 'services' | 'work';
 
-export const FOOTER_AUTO_SECTION_LINKS: {
+const FOOTER_AUTO_SECTION_LINKS: {
   section: PortfolioFooterAutoSectionKey;
   id: string;
   label: string;
@@ -869,7 +807,7 @@ function isFooterAutoSectionLink(
 }
 
 /** Landing Links — section anchors, only when that portfolio section is visible. */
-export function resolveFooterLandingSectionLinks(
+function resolveFooterLandingSectionLinks(
   stored: PortfolioFooterLinkItem[],
   visible?: Partial<Record<PortfolioFooterAutoSectionKey, boolean>>
 ): PortfolioFooterLinkItem[] {
@@ -931,7 +869,7 @@ function newFooterLinkId(prefix: string): string {
   return `${prefix}-${Math.random().toString(36).slice(2, 9)}`;
 }
 
-export function createFooterLinkItem(
+function createFooterLinkItem(
   partial?: Partial<PortfolioFooterLinkItem>
 ): PortfolioFooterLinkItem {
   return {
@@ -941,7 +879,7 @@ export function createFooterLinkItem(
   };
 }
 
-export function createFooterLinkColumn(
+function createFooterLinkColumn(
   partial?: Partial<PortfolioFooterLinkColumn>
 ): PortfolioFooterLinkColumn {
   return {
@@ -956,7 +894,7 @@ export function createFooterLinkColumn(
   };
 }
 
-export function normalizeFooterLinkColumns(
+function normalizeFooterLinkColumns(
   value: unknown,
   fallback: PortfolioFooterLinkColumn[] = DEFAULT_FOOTER_LINK_COLUMNS
 ): PortfolioFooterLinkColumn[] {
@@ -1013,7 +951,7 @@ export function normalizeFooterLinkColumns(
   return columns;
 }
 
-export function normalizeFooterCenteredLinks(
+function normalizeFooterCenteredLinks(
   value: unknown,
   fallback: PortfolioFooterLinkItem[] = DEFAULT_FOOTER_CENTERED_LINKS
 ): PortfolioFooterLinkItem[] {
@@ -1042,7 +980,7 @@ const FOOTER_LAYOUT_KEY_MAX = 40;
 const FOOTER_LAYOUT_TEXT_MAX = 600;
 const FOOTER_LAYOUT_SECTION_LINKS_MAX = 24;
 
-export function normalizeFooterDesignLayouts(value: unknown): PortfolioFooterDesignLayouts {
+function normalizeFooterDesignLayouts(value: unknown): PortfolioFooterDesignLayouts {
   if (!value || typeof value !== 'object' || Array.isArray(value)) return {};
   const designs = new Set<string>(PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => option.value));
   const result: PortfolioFooterDesignLayouts = {};
@@ -1241,18 +1179,6 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   headerTimezoneTitleColor: 'texteFort',
 };
 
-export const PORTFOLIO_FOOTER_PATTERN_OPTIONS: {
-  value: PortfolioFooterPattern;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Solid or gradient fill only.' },
-  { value: 'dots', label: 'Dots', description: 'Soft dotted texture.' },
-  { value: 'grid', label: 'Grid', description: 'Fine editorial grid lines.' },
-  { value: 'diagonal', label: 'Diagonal', description: '45° stripe hatching.' },
-  { value: 'crosshatch', label: 'Crosshatch', description: 'Intersecting diagonal weave.' },
-];
-
 export const PORTFOLIO_FOOTER_MINI_BAR_DESIGN_OPTIONS: {
   value: PortfolioFooterMiniBarDesign;
   label: string;
@@ -1300,7 +1226,7 @@ export const PORTFOLIO_FOOTER_MINI_BAR_DESIGN_OPTIONS: {
   },
 ];
 
-export const FOOTER_PREMIUM_FONT_SIZES: PortfolioFooterPremiumFontSize[] = [
+const FOOTER_PREMIUM_FONT_SIZES: PortfolioFooterPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -1416,58 +1342,6 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_FOOTER_CTA_BUTTON_BORDER_OPTIONS: {
-  value: PortfolioFooterCtaButtonBorder;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No outline around the button.' },
-  { value: 'soft', label: 'Soft', description: 'Light 1px border.' },
-  { value: 'solid', label: 'Solid', description: 'Clear 1.5px border.' },
-];
-
-export const PORTFOLIO_FOOTER_CTA_BUTTON_RADIUS_OPTIONS: {
-  value: PortfolioFooterCtaButtonRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Square', description: 'No rounding.' },
-  { value: 'sm', label: 'S', description: 'Slightly rounded.' },
-  { value: 'md', label: 'M', description: 'Default rounded rectangle.' },
-  { value: 'lg', label: 'L', description: 'Softer corners.' },
-  { value: 'full', label: 'Pill', description: 'Fully rounded capsule.' },
-];
-
-export const PORTFOLIO_FOOTER_CTA_BUTTON_PADDING_OPTIONS: {
-  value: PortfolioFooterCtaButtonPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Compact', description: 'Tighter hit area.' },
-  { value: 'md', label: 'Medium', description: 'Balanced padding.' },
-  { value: 'lg', label: 'Large', description: 'Roomier button.' },
-];
-
-export const PORTFOLIO_FOOTER_CTA_BUTTONS_ALIGN_OPTIONS: {
-  value: PortfolioFooterCtaButtonsAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Flush left on large screens.' },
-  { value: 'center', label: 'Center', description: 'Centered (default).' },
-  { value: 'right', label: 'Right', description: 'Flush right on large screens.' },
-];
-
-export const PORTFOLIO_FOOTER_CONTACT_ICON_SIZE_OPTIONS: {
-  value: PortfolioFooterContactIconSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'S', description: 'Compact glyphs.' },
-  { value: 'md', label: 'M', description: 'Default size.' },
-  { value: 'lg', label: 'L', description: 'Larger contact icons.' },
-];
-
 export function footerContactIconSizeClass(size: PortfolioFooterContactIconSize = 'md'): string {
   switch (size) {
     case 'sm':
@@ -1479,43 +1353,10 @@ export function footerContactIconSizeClass(size: PortfolioFooterContactIconSize 
   }
 }
 
-export function footerContactIconSizeClassCompact(size: PortfolioFooterContactIconSize = 'md'): string {
-  switch (size) {
-    case 'sm':
-      return 'h-3 w-3';
-    case 'lg':
-      return 'h-4 w-4';
-    default:
-      return 'h-3.5 w-3.5';
-  }
-}
+const FOOTER_PADDING_PX_MIN = 0;
+const FOOTER_PADDING_PX_MAX = 120;
 
-export function footerCtaButtonsAlignClass(align: PortfolioFooterCtaButtonsAlign = 'center'): string {
-  switch (align) {
-    case 'left':
-      return 'justify-center lg:justify-start';
-    case 'right':
-      return 'justify-center lg:justify-end';
-    default:
-      return 'justify-center';
-  }
-}
-
-export const PORTFOLIO_FOOTER_PADDING_OPTIONS: {
-  value: Exclude<PortfolioFooterPadding, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'compact', label: 'Compact', description: 'Tighter space on all sides inside the footer.' },
-  { value: 'standard', label: 'Standard', description: 'Default balanced padding on every side.' },
-  { value: 'comfortable', label: 'Comfortable', description: 'More breathing room on all sides.' },
-  { value: 'spacious', label: 'Spacious', description: 'Maximum padding on all sides.' },
-];
-
-export const FOOTER_PADDING_PX_MIN = 0;
-export const FOOTER_PADDING_PX_MAX = 120;
-
-export const FOOTER_PADDING_PRESET_PX: Record<
+const FOOTER_PADDING_PRESET_PX: Record<
   Exclude<PortfolioFooterPadding, 'custom'>,
   { top: number; bottom: number; left: number; right: number }
 > = {
@@ -1525,13 +1366,13 @@ export const FOOTER_PADDING_PRESET_PX: Record<
   spacious: { top: 64, bottom: 20, left: 64, right: 64 },
 };
 
-export function clampFooterPaddingPx(value: unknown, fallback = 0): number {
+function clampFooterPaddingPx(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.round(Math.min(FOOTER_PADDING_PX_MAX, Math.max(FOOTER_PADDING_PX_MIN, n)));
 }
 
-export function resolveFooterPaddingSides(
+function resolveFooterPaddingSides(
   settings: Pick<
     PortfolioFooterPresentationSettings,
     | 'padding'
@@ -1553,11 +1394,6 @@ export function resolveFooterPaddingSides(
     right: clampFooterPaddingPx(settings.paddingRightPx, fallback.right),
   };
 }
-
-/** Mobile floors — always restore safe inset even if custom padding is 0. */
-export const FOOTER_PADDING_MOBILE_MIN_X_PX = 20;
-export const FOOTER_PADDING_MOBILE_MIN_TOP_PX = 24;
-export const FOOTER_PADDING_MOBILE_MIN_BOTTOM_PX = 16;
 
 /**
  * CSS variables for `.pf-footer-content-pad`.
@@ -1592,21 +1428,9 @@ export function footerContentPaddingClassName(): string {
   return 'pf-footer-content-pad';
 }
 
-export const PORTFOLIO_FOOTER_MARGIN_TOP_OPTIONS: {
-  value: Exclude<PortfolioFooterMarginTop, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Flush with the section above.' },
-  { value: 'compact', label: 'Compact', description: 'Small gap above the footer.' },
-  { value: 'standard', label: 'Standard', description: 'Balanced margin above the footer.' },
-  { value: 'comfortable', label: 'Comfortable', description: 'More space above the footer.' },
-  { value: 'spacious', label: 'Spacious', description: 'Large gap above the footer.' },
-];
-
-export const FOOTER_MARGIN_TOP_PX_MIN = 0;
-export const FOOTER_MARGIN_TOP_PX_MAX = 160;
-export const FOOTER_MARGIN_TOP_PRESET_PX: Record<
+const FOOTER_MARGIN_TOP_PX_MIN = 0;
+const FOOTER_MARGIN_TOP_PX_MAX = 160;
+const FOOTER_MARGIN_TOP_PRESET_PX: Record<
   Exclude<PortfolioFooterMarginTop, 'custom'>,
   number
 > = {
@@ -1617,11 +1441,11 @@ export const FOOTER_MARGIN_TOP_PRESET_PX: Record<
   spacious: 80,
 };
 
-export const FOOTER_LANDING_BRAND_GAP_PX_MIN = 0;
-export const FOOTER_LANDING_BRAND_GAP_PX_MAX = 64;
+const FOOTER_LANDING_BRAND_GAP_PX_MIN = 0;
+const FOOTER_LANDING_BRAND_GAP_PX_MAX = 64;
 export const DEFAULT_FOOTER_LANDING_BRAND_GAP_PX = 28;
 
-export function clampFooterMarginTopPx(value: unknown, fallback = 0): number {
+function clampFooterMarginTopPx(value: unknown, fallback = 0): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.round(
@@ -1629,7 +1453,7 @@ export function clampFooterMarginTopPx(value: unknown, fallback = 0): number {
   );
 }
 
-export function resolveFooterMarginTopPx(
+function resolveFooterMarginTopPx(
   settings: Pick<PortfolioFooterPresentationSettings, 'marginTop' | 'marginTopPx'>
 ): number {
   const preset = settings.marginTop ?? 'none';
@@ -1647,7 +1471,7 @@ export function footerTopMarginStyle(
   return px > 0 ? { marginTop: px } : { marginTop: 0 };
 }
 
-export function clampFooterLandingBrandGapPx(
+function clampFooterLandingBrandGapPx(
   value: unknown,
   fallback = DEFAULT_FOOTER_LANDING_BRAND_GAP_PX
 ): number {
@@ -1658,17 +1482,9 @@ export function clampFooterLandingBrandGapPx(
   );
 }
 
-export function footerLandingBrandGapStyle(
-  settings: Pick<PortfolioFooterPresentationSettings, 'landingBrandGapPx'>
-): CSSProperties {
-  return {
-    gap: `${clampFooterLandingBrandGapPx(settings.landingBrandGapPx)}px`,
-  };
-}
-
-export const FOOTER_COLUMN_HEADING_GAP_PX_MIN = 0;
-export const FOOTER_COLUMN_HEADING_GAP_PX_MAX = 64;
-export const DEFAULT_FOOTER_COLUMN_HEADING_GAP_PX = 16;
+const FOOTER_COLUMN_HEADING_GAP_PX_MIN = 0;
+const FOOTER_COLUMN_HEADING_GAP_PX_MAX = 64;
+const DEFAULT_FOOTER_COLUMN_HEADING_GAP_PX = 16;
 
 export function clampFooterColumnHeadingGapPx(
   value: unknown,
@@ -1680,46 +1496,6 @@ export function clampFooterColumnHeadingGapPx(
     Math.min(FOOTER_COLUMN_HEADING_GAP_PX_MAX, Math.max(FOOTER_COLUMN_HEADING_GAP_PX_MIN, n))
   );
 }
-
-/** Margin under Contact / Links / Networks titles before list items. */
-export function footerColumnHeadingGapStyle(
-  settings: Pick<PortfolioFooterPresentationSettings, 'columnHeadingGapPx'>
-): CSSProperties {
-  return {
-    marginBottom: `${clampFooterColumnHeadingGapPx(settings.columnHeadingGapPx)}px`,
-  };
-}
-
-export const PORTFOLIO_FOOTER_ALIGNMENT_OPTIONS: {
-  value: PortfolioFooterAlignment;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'split',
-    label: 'Spread',
-    description: 'Three equal columns across the full width — no empty side.',
-  },
-  {
-    value: 'center',
-    label: 'Center',
-    description: 'Columns centered; content centered inside each column.',
-  },
-  {
-    value: 'left',
-    label: 'Left pack',
-    description: 'Columns grouped toward the left with a max width.',
-  },
-];
-
-export const PORTFOLIO_FOOTER_DESCRIPTION_SOURCE_OPTIONS: {
-  value: PortfolioFooterDescriptionSource;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'bio', label: 'Bio', description: 'Uses your profile bio.' },
-  { value: 'custom', label: 'Custom', description: 'Write a short footer blurb.' },
-];
 
 function sanitizeHex(value: unknown, fallback: string): string {
   if (typeof value === 'string' && isValidProfileHexColor(value)) return value.trim();
@@ -1774,7 +1550,7 @@ export function isFooterBackgroundLight(
   return footerColorLuminance(sample) > 0.55;
 }
 
-export function footerContrastingPrimary(settings: PortfolioSectionBackgroundSettings): string {
+function footerContrastingPrimary(settings: PortfolioSectionBackgroundSettings): string {
   return isFooterBackgroundLight(settings)
     ? DEFAULT_FOOTER_PRIMARY_ON_LIGHT
     : DEFAULT_FOOTER_PRIMARY_COLOR;
@@ -1789,7 +1565,7 @@ function isNearBlack(hex: string): boolean {
 }
 
 /** Keep primary text readable when the section fill is light/dark. */
-export function resolveFooterPrimaryColor(
+function resolveFooterPrimaryColor(
   settings: Pick<
     PortfolioFooterPresentationSettings,
     | 'primaryColor'
@@ -1883,97 +1659,6 @@ export function footerLayoutClass(
   }
 }
 
-/** @deprecated Prefer {@link footerContentPaddingStyle}. */
-export function footerContentPaddingClass(padding: PortfolioFooterPadding = 'standard'): string {
-  const key = padding === 'custom' ? 'standard' : padding;
-  switch (key) {
-    case 'compact':
-      return 'px-6 pt-6 pb-3 sm:px-8 sm:pt-8 sm:pb-4';
-    case 'comfortable':
-      return 'px-12 pt-12 pb-4 sm:px-16 sm:pt-16 sm:pb-5 lg:px-20 lg:pt-20 lg:pb-5';
-    case 'spacious':
-      return 'px-16 pt-16 pb-5 sm:px-20 sm:pt-20 sm:pb-6 lg:px-24 lg:pt-24 lg:pb-6';
-    default:
-      return 'px-10 pt-10 pb-3 sm:px-12 sm:pt-12 sm:pb-4 lg:px-14 lg:pt-14 lg:pb-4';
-  }
-}
-
-/** @deprecated Prefer {@link footerContentPaddingStyle}. Kept for older call sites. */
-export function footerInnerInsetClass(design: PortfolioFooterDesign): string {
-  void design;
-  return footerContentPaddingClass('standard');
-}
-
-export function footerTextStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_FOOTER_TEXT_COLOR) };
-}
-
-export function footerPrimaryStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_FOOTER_PRIMARY_COLOR) };
-}
-
-export function footerCtaTitleStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_FOOTER_CTA_TITLE_COLOR) };
-}
-
-export function footerCtaSubtitleStyle(color: string): CSSProperties {
-  const hex = sanitizeHex(color, DEFAULT_FOOTER_CTA_SUBTITLE_COLOR);
-  return { color: hex === DEFAULT_FOOTER_CTA_SUBTITLE_COLOR ? 'rgba(255,255,255,0.85)' : hex };
-}
-
-export function footerCtaButtonRadiusClass(radius: PortfolioFooterCtaButtonRadius): string {
-  switch (radius) {
-    case 'none':
-      return 'rounded-none';
-    case 'sm':
-      return 'rounded-lg';
-    case 'lg':
-      return 'rounded-2xl';
-    case 'full':
-      return 'rounded-full';
-    default:
-      return 'rounded-xl';
-  }
-}
-
-export function footerCtaButtonPaddingClass(padding: PortfolioFooterCtaButtonPadding): string {
-  switch (padding) {
-    case 'sm':
-      return 'px-4 py-2 text-xs';
-    case 'lg':
-      return 'px-8 py-3.5 text-sm';
-    default:
-      return 'px-6 py-3 text-sm';
-  }
-}
-
-export function footerCtaButtonClass(
-  border: PortfolioFooterCtaButtonBorder,
-  radius: PortfolioFooterCtaButtonRadius,
-  padding: PortfolioFooterCtaButtonPadding
-): string {
-  const borderClass =
-    border === 'soft' ? 'border' : border === 'solid' ? 'border-[1.5px]' : 'border border-transparent';
-  return `inline-flex shrink-0 items-center justify-center font-bold transition ${borderClass} ${footerCtaButtonRadiusClass(radius)} ${footerCtaButtonPaddingClass(padding)}`;
-}
-
-export function footerCtaButtonStyle(
-  backgroundColor: string,
-  textColor: string,
-  border: PortfolioFooterCtaButtonBorder,
-  borderColor: string
-): CSSProperties {
-  const style: CSSProperties = {
-    backgroundColor: sanitizeHex(backgroundColor, DEFAULT_FOOTER_CTA_BUTTON_BG),
-    color: sanitizeHex(textColor, DEFAULT_FOOTER_CTA_BUTTON_TEXT),
-  };
-  if (border !== 'none') {
-    style.borderStyle = 'solid';
-    style.borderColor = sanitizeHex(borderColor, DEFAULT_FOOTER_CTA_BUTTON_BORDER);
-  }
-  return style;
-}
-
 export function footerPresetCtaClass(design: PortfolioFooterCtaDesign = 'pill-outline'): string {
   /** Shared size so Contact me + Marketplace match exactly. */
   const base =
@@ -1999,7 +1684,7 @@ export function footerReadableOnBackground(hex: string, lightBackground: boolean
   return lum < 0.38 ? DEFAULT_FOOTER_PRIMARY_COLOR : sample;
 }
 
-export function footerPresetCtaStyle(
+function footerPresetCtaStyle(
   design: PortfolioFooterCtaDesign,
   colors: {
     backgroundColor: string;
@@ -2079,7 +1764,7 @@ export function footerContactCtaStyle(
 
 export function resolveFooterMarketplaceCtaHref(href: string | undefined, creatorId: string): string {
   const raw = typeof href === 'string' ? href.trim() : '';
-  if (!raw) return `/marketplace/${creatorId}`;
+  if (!raw) return `/providers/${creatorId}`;
   return resolveFooterLinkHref(raw, creatorId);
 }
 
@@ -2121,43 +1806,8 @@ export function footerIconStyle(color: string): CSSProperties {
   return { color: sanitizeHex(color, DEFAULT_FOOTER_ICON_COLOR) };
 }
 
-export function footerAccentStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_FOOTER_ACCENT_COLOR) };
-}
-
 export function footerDividerClass(lightBackground: boolean): string {
   return lightBackground ? 'border-neutral-200/90' : 'border-white/10';
-}
-
-export function footerContentDividerColor(
-  settings: Pick<
-    PortfolioFooterPresentationSettings,
-    'contentDividerColor' | 'contentDividerOpacity'
-  >,
-  lightBackground: boolean
-): string {
-  const opacity = Math.min(100, Math.max(0, settings.contentDividerOpacity ?? 40)) / 100;
-  const custom = settings.contentDividerColor?.trim();
-  if (custom && isValidProfileHexColor(custom)) {
-    const hex = custom.replace('#', '');
-    const r = parseInt(hex.slice(0, 2), 16);
-    const g = parseInt(hex.slice(2, 4), 16);
-    const b = parseInt(hex.slice(4, 6), 16);
-    return `rgba(${r},${g},${b},${opacity})`;
-  }
-  return lightBackground
-    ? `rgba(0,0,0,${Math.min(0.22, opacity * 0.55)})`
-    : `rgba(255,255,255,${Math.min(0.28, opacity * 0.7)})`;
-}
-
-export function footerContentDividerStyle(
-  settings: Pick<
-    PortfolioFooterPresentationSettings,
-    'contentDividerColor' | 'contentDividerOpacity'
-  >,
-  lightBackground: boolean
-): CSSProperties {
-  return { backgroundColor: footerContentDividerColor(settings, lightBackground) };
 }
 
 function svgDataUrl(svg: string): string {
@@ -2211,33 +1861,6 @@ export function resolveFooterDescription(options: {
   if (!raw) return null;
   if (raw.length <= max) return raw;
   return `${raw.slice(0, max - 1).trimEnd()}…`;
-}
-
-export function resolveFooterCtaSubtitle(options: {
-  custom: string;
-  isAvailable?: boolean | null;
-  responseTimeLabel?: string | null;
-  hoursLabel?: string | null;
-}): string {
-  if (options.custom.trim()) {
-    const custom = options.custom.trim();
-    if (LEGACY_FR_CTA_SUBTITLES.has(custom)) return DEFAULT_FOOTER_CTA_SUBTITLE;
-    return custom;
-  }
-  const parts: string[] = [];
-  if (options.isAvailable !== false) {
-    parts.push('Available this week');
-  } else {
-    parts.push('Currently unavailable');
-  }
-  if (options.responseTimeLabel?.trim()) {
-    parts.push(`response ${options.responseTimeLabel.trim().toLowerCase()}`);
-  } else if (options.hoursLabel?.trim()) {
-    parts.push(options.hoursLabel.trim());
-  } else {
-    parts.push('response within 24h');
-  }
-  return parts.join(' · ');
 }
 
 function migrateFooterCtaCopy(value: unknown, legacy: Set<string>, fallback: string): string {

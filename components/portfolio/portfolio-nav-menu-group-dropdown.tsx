@@ -8,13 +8,7 @@ import {
   DEFAULT_NAV_PALETTE,
   mergeNavPalette,
 } from '@/components/portfolio/portfolio-nav-palette-settings';
-import {
-  formatNavLabel,
-  portfolioNavInkOnAccentFill,
-  portfolioNavPageIsDark,
-  portfolioNavTexteFortInk,
-  resolvePortfolioNavMenuGroupActiveStyle,
-} from '@/components/portfolio/portfolio-nav-settings';
+import { formatNavLabel, portfolioNavPageIsDark, portfolioNavTexteFortInk, resolvePortfolioNavMenuGroupActiveStyle } from '@/components/portfolio/portfolio-nav-settings';
 import { scrollToPortfolioSection } from '@/components/portfolio/portfolio-nav-top-clearance';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
 

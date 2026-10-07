@@ -300,7 +300,7 @@ export function resolveContactLayoutVisible(p: Presentation, design: PortfolioCo
 }
 
 /** Override, else the design default; `null` when hidden or empty. */
-export function resolveContactLayoutText(p: Presentation, design: PortfolioContactPremiumDesign, key: string): string | null {
+function resolveContactLayoutText(p: Presentation, design: PortfolioContactPremiumDesign, key: string): string | null {
   if (!resolveContactLayoutVisible(p, design, key)) return null;
   const spec = findSpec(design, key);
   const defaultText = spec?.kind === 'text' ? spec.defaultText(p) : '';

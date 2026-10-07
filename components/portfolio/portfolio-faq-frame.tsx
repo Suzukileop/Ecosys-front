@@ -126,7 +126,7 @@ export function normalizeFaqFrame(value: unknown, base: PortfolioFaqFrameSetting
 /** Inline style for the `.pf-faq-frame` wrapper, or `undefined` when the frame is off. The
  *  glass blur lives on the wrapper's `::before` (globals.css), never on the wrapper itself — a
  *  `backdrop-filter` ancestor would trap Floating Gallery's mobile `position: fixed` sheet. */
-export function faqFrameWrapperStyle(frame: PortfolioFaqFrameSettings): CSSProperties | undefined {
+function faqFrameWrapperStyle(frame: PortfolioFaqFrameSettings): CSSProperties | undefined {
   if (!frame.enabled) return undefined;
   const borderPx = FAQ_FRAME_BORDER_PX[frame.borderWidth];
   const [paddingBlock, paddingInline] = FAQ_FRAME_PADDING[frame.padding];

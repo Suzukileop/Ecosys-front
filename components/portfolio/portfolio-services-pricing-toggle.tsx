@@ -12,10 +12,8 @@ import {
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
-import {
-  handleServicesOrderCtaClick,
-  useServicesOrderCtaNav,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
+import { readServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-style';
 import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
 
 type BillingCycle = 'monthly' | 'yearly';
@@ -326,7 +324,10 @@ function PriceSwap({ text, ink }: { text: string; ink: string }) {
     <span
       ref={ref}
       className="inline-block font-sans font-black leading-none tracking-tight will-change-transform"
-      style={{ color: ink, fontSize: 'clamp(2.4rem, 4.2vw, 3.5rem)' }}
+      style={{
+        color: ink,
+        fontSize: 'calc(clamp(2.4rem, 4.2vw, 3.5rem) * var(--pf-services-font-scale, 1))',
+      }}
       data-pf-no-color-transition=""
     >
       {rendered}
@@ -343,11 +344,13 @@ function PricingRow({
   accentInk,
   billing,
   settings,
+  presentation,
   canHoverTilt,
   registerRow,
   onFocusRow,
   onBlurRow,
 }: {
+  presentation: PortfolioServicesPresentationSettings;
   item: PortfolioServiceItem;
   index: number;
   isPopular: boolean;
@@ -363,7 +366,7 @@ function PricingRow({
 }) {
   const rowRef = useRef<HTMLDivElement>(null);
   const ctaRef = useRef<HTMLAnchorElement>(null);
-  const { href, onNavigate } = useServicesOrderCtaNav();
+  const pricingStyle = useServicesPricingStyle(presentation);
 
   useEffect(() => {
     registerRow(index, rowRef.current);
@@ -448,7 +451,14 @@ function PricingRow({
       className="relative rounded-[1.75rem] px-6 py-8 will-change-transform sm:px-8 sm:py-9 md:rounded-[2rem] md:px-10 md:py-10"
       style={{
         backgroundColor: isPopular ? accent : tokens.cardBg,
-        border: isPopular ? 'none' : `1px solid ${tokens.border}`,
+        ...(pricingStyle.borderWidthPx != null || pricingStyle.borderColor != null
+          ? {
+              borderStyle: 'solid',
+              borderWidth: pricingStyle.borderWidthPx ?? (isPopular ? 0 : 1),
+              borderColor: pricingStyle.borderColor ?? (isPopular ? 'transparent' : tokens.border),
+            }
+          : { border: isPopular ? 'none' : `1px solid ${tokens.border}` }),
+        ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
         boxShadow: isPopular ? '0 28px 64px -30px rgba(0,0,0,0.5)' : 'none',
       }}
       data-pf-no-color-transition=""
@@ -500,10 +510,13 @@ function PricingRow({
         <div className="flex md:justify-end">
           <a
             ref={ctaRef}
-            href={href}
-            onClick={(event) => handleServicesOrderCtaClick(event, href, onNavigate)}
+            {...pricingStyle.anchorProps}
             className="inline-flex min-h-[48px] w-full items-center justify-center whitespace-nowrap rounded-full px-7 text-sm font-semibold will-change-transform md:w-auto"
-            style={{ border: `1.5px solid ${withAlpha(ink, 0.4)}`, color: ink }}
+            style={{
+              border: `1.5px solid ${withAlpha(ink, 0.4)}`,
+              color: ink,
+              ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
+            }}
             data-pf-no-color-transition=""
           >
             {settings.ctaLabel}
@@ -530,6 +543,7 @@ export function ServicesPricingToggleSection({
   presentation: PortfolioServicesPresentationSettings;
 }) {
   const settings = readPricingToggleSettings(presentation);
+  const showFrame = readServicesPricingStyle(presentation).showFrame;
   const items = useMemo(
     () => services.filter((service) => service.title?.trim()),
     [services]
@@ -627,7 +641,7 @@ export function ServicesPricingToggleSection({
     <div
       ref={rootRef}
       className="relative left-1/2 w-screen -translate-x-1/2 px-5 py-20 sm:px-8 md:py-24"
-      style={{ backgroundColor: tokens.bg }}
+      style={showFrame ? { backgroundColor: tokens.bg } : undefined}
       data-pf-no-color-transition=""
     >
       <div className="mx-auto flex max-w-5xl flex-col items-center">
@@ -653,6 +667,7 @@ export function ServicesPricingToggleSection({
               accentInk={accentInk}
               billing={billing}
               settings={settings}
+              presentation={presentation}
               canHoverTilt={canHoverTilt}
               registerRow={registerRow}
               onFocusRow={handleFocusRow}
@@ -663,10 +678,4 @@ export function ServicesPricingToggleSection({
       </div>
     </div>
   );
-}
-
-export function isServicesPricingToggleDesign(
-  presentation: Pick<PortfolioServicesPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return (presentation?.sectionDesign as string | undefined) === 'services-pricing-toggle';
 }

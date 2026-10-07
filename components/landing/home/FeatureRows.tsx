@@ -38,7 +38,7 @@ const SHOWCASES = [
     thumb: '/landing/showcase/hiring.jpg',
     headline: 'Find proven talent and hire in a few messages.',
     steps: ['Browse portfolios', 'Shortlist profiles', 'Reach out directly'],
-    cta: { label: 'Start hiring', href: '/marketplace/creators' },
+    cta: { label: 'Start hiring', href: '/providers' },
   },
   {
     key: 'services',

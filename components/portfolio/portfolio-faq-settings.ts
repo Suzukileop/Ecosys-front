@@ -47,12 +47,7 @@ import {
   type PortfolioSectionBackgroundSettings,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
-import {
-  createElementTextStyle,
-  normalizeElementStylesRecord,
-  patchElementStylesRecord,
-  type PortfolioElementTextStyle,
-} from '@/components/portfolio/portfolio-element-text-style';
+import { createElementTextStyle, normalizeElementStylesRecord, type PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 import { normalizeDesignLayouts, type DesignLayout } from '@/components/portfolio/portfolio-design-layout-core';
 import {
   DEFAULT_FAQ_FRAME,
@@ -83,12 +78,6 @@ import {
 } from '@/components/portfolio/portfolio-faq-header-settings';
 
 export {
-  PORTFOLIO_FAQ_HEADER_DESIGN_OPTIONS,
-  PORTFOLIO_FAQ_HEADER_PALETTE_TOKEN_OPTIONS,
-  PORTFOLIO_FAQ_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
-  PORTFOLIO_FAQ_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
-  faqHeaderPaletteTokenColor,
-  FAQ_HEADER_MARGIN_BOTTOM_REM,
   type PortfolioFaqHeaderDesign,
   type PortfolioFaqHeaderDesignAlignment,
   type PortfolioFaqHeaderMarginBottom,
@@ -166,14 +155,14 @@ export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS: {
   { value: 'solid', label: 'Solid', description: 'Crisper, more visible line.' },
 ];
 
-export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_TOKENS: PortfolioFaqBentoDualCardColorToken[] = [
+const PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_TOKENS: PortfolioFaqBentoDualCardColorToken[] = [
   'principal',
   'secondaire',
   'neutre',
   'texteMuted',
 ];
-export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADII: PortfolioFaqBentoDualCardRadius[] = ['sm', 'md', 'lg', 'xl'];
-export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDERS: PortfolioFaqBentoDualCardBorder[] = ['none', 'soft', 'solid'];
+const PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADII: PortfolioFaqBentoDualCardRadius[] = ['sm', 'md', 'lg', 'xl'];
+const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDERS: PortfolioFaqBentoDualCardBorder[] = ['none', 'soft', 'solid'];
 
 export type PortfolioFaqPanelShadow = 'none' | 'soft' | 'medium' | 'strong';
 
@@ -233,7 +222,7 @@ export type PortfolioFaqIllustrationVariant =
 export type PortfolioFaqIllustrationPlacement = 'left' | 'right';
 
 /** Which FAQ text element can be styled independently (color, font, size, weight). */
-export type PortfolioFaqStyleTarget = 'question' | 'answer' | 'number';
+type PortfolioFaqStyleTarget = 'question' | 'answer' | 'number';
 
 export type PortfolioFaqElementStyles = Record<PortfolioFaqStyleTarget, PortfolioElementTextStyle>;
 
@@ -426,14 +415,14 @@ export type PortfolioFaqPresentationSettings = PortfolioSectionBackgroundSetting
 
 export type PortfolioFaqSectionSettings = PortfolioSectionCopy & PortfolioFaqPresentationSettings;
 
-export const DEFAULT_FAQ_TITLE_COLOR = '#0a0a0a';
-export const DEFAULT_FAQ_SUBTITLE_COLOR = '#737373';
-export const DEFAULT_FAQ_ACCENT_COLOR = '#f97316';
-export const DEFAULT_FAQ_QUESTION_COLOR = '#0a0a0a';
-export const DEFAULT_FAQ_ANSWER_COLOR = '#525252';
-export const DEFAULT_FAQ_NUMBER_COLOR = '#f97316';
-export const DEFAULT_FAQ_CARD_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_FAQ_CARD_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_FAQ_TITLE_COLOR = '#0a0a0a';
+const DEFAULT_FAQ_SUBTITLE_COLOR = '#737373';
+const DEFAULT_FAQ_ACCENT_COLOR = '#f97316';
+const DEFAULT_FAQ_QUESTION_COLOR = '#0a0a0a';
+const DEFAULT_FAQ_ANSWER_COLOR = '#525252';
+const DEFAULT_FAQ_NUMBER_COLOR = '#f97316';
+const DEFAULT_FAQ_CARD_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_FAQ_CARD_BACKGROUND_COLOR = '#ffffff';
 
 const FAQ_ITEM_DESIGNS = [
   'editorial',
@@ -459,9 +448,9 @@ const FAQ_DESIGNS = [
   'bento-dual',
 ] as const;
 
-export const FAQ_STYLE_TARGET_IDS: PortfolioFaqStyleTarget[] = ['question', 'answer', 'number'];
+const FAQ_STYLE_TARGET_IDS: PortfolioFaqStyleTarget[] = ['question', 'answer', 'number'];
 
-export const DEFAULT_FAQ_ELEMENT_STYLES: PortfolioFaqElementStyles = {
+const DEFAULT_FAQ_ELEMENT_STYLES: PortfolioFaqElementStyles = {
   question: createElementTextStyle({
     color: DEFAULT_FAQ_QUESTION_COLOR,
     font: 'sans',
@@ -480,16 +469,6 @@ export const DEFAULT_FAQ_ELEMENT_STYLES: PortfolioFaqElementStyles = {
     bold: true,
   }),
 };
-
-export const PORTFOLIO_FAQ_STYLE_TARGET_OPTIONS: {
-  value: PortfolioFaqStyleTarget;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'question', label: 'Question', description: 'The question text in each FAQ row.' },
-  { value: 'answer', label: 'Answer', description: 'The expanded answer paragraph.' },
-  { value: 'number', label: 'Item number', description: 'The numbered label before each question.' },
-];
 
 export const DEFAULT_FAQ_PRESENTATION: PortfolioFaqPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
@@ -645,72 +624,11 @@ Object.assign(
   })
 );
 
-export const PORTFOLIO_FAQ_TITLE_PRESET_OPTIONS: {
-  value: PortfolioFaqTitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'faq', label: 'FAQ', description: 'Classic short label.' },
-  {
-    value: 'frequently-asked',
-    label: 'Frequently asked',
-    description: 'Frequently Asked Questions — default for Two columns.',
-  },
-  { value: 'questions', label: 'Questions', description: 'Simple and direct.' },
-  { value: 'common-questions', label: 'Common questions', description: 'Client-friendly wording.' },
-  { value: 'q-and-a', label: 'Q & A', description: 'Compact editorial style.' },
-  { value: 'custom', label: 'Custom', description: 'Your own section title.' },
-];
-
-export const PORTFOLIO_FAQ_SUBTITLE_PRESET_OPTIONS: {
-  value: PortfolioFaqSubtitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'default', label: 'Default', description: 'Uses the subtitle field below.' },
-  { value: 'short', label: 'Short', description: 'One concise supporting line.' },
-  { value: 'reassurance', label: 'Reassurance', description: 'Builds trust before contact.' },
-  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Write your own subtitle.' },
-];
-
-export const PORTFOLIO_FAQ_HEADER_FONT_OPTIONS: {
-  value: PortfolioFaqHeaderFont;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
-  { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
-];
-
-export const PORTFOLIO_FAQ_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioFaqSectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Stacked',
-    description: 'Title above, questions below.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Title left',
-    description: 'Title on the left, FAQ list on the right (side by side).',
-  },
-  {
-    value: 'aside-right',
-    label: 'Title right',
-    description: 'FAQ list on the left, title on the right (side by side).',
-  },
-];
-
-export function isPortfolioFaqSectionLayout(value: unknown): value is PortfolioFaqSectionLayout {
+function isPortfolioFaqSectionLayout(value: unknown): value is PortfolioFaqSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
 }
 
-export const FAQ_PREMIUM_FONT_SIZES: PortfolioFaqPremiumFontSize[] = [
+const FAQ_PREMIUM_FONT_SIZES: PortfolioFaqPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -824,54 +742,24 @@ export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
   },
 ];
 
-export function isPortfolioFaqDesign(value: unknown): value is PortfolioFaqDesign {
+function isPortfolioFaqDesign(value: unknown): value is PortfolioFaqDesign {
   return (FAQ_DESIGNS as readonly string[]).includes(String(value));
 }
 
-export const PORTFOLIO_FAQ_PANEL_SHADOW_OPTIONS: {
-  value: PortfolioFaqPanelShadow;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No shadow around the card.' },
-  { value: 'soft', label: 'Soft', description: 'Light halo.' },
-  { value: 'medium', label: 'Medium', description: 'Diffuse shadow — default.' },
-  { value: 'strong', label: 'Strong', description: 'Pronounced relief.' },
-];
-
-export const PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY: Record<PortfolioFaqPanelShadow, number> = {
+const PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY: Record<PortfolioFaqPanelShadow, number> = {
   none: 0,
   soft: 28,
   medium: 55,
   strong: 82,
 };
 
-export function isPortfolioFaqPanelShadow(value: unknown): value is PortfolioFaqPanelShadow {
+function isPortfolioFaqPanelShadow(value: unknown): value is PortfolioFaqPanelShadow {
   return value === 'none' || value === 'soft' || value === 'medium' || value === 'strong';
 }
 
-export function clampFaqPanelShadowIntensity(value: unknown, fallback = 55): number {
+function clampFaqPanelShadowIntensity(value: unknown, fallback = 55): number {
   if (typeof value !== 'number' || !Number.isFinite(value)) return fallback;
   return Math.min(100, Math.max(0, Math.round(value)));
-}
-
-export function faqPanelShadowStyle(
-  shadow: PortfolioFaqPanelShadow | undefined,
-  intensity: number | undefined
-): CSSProperties | undefined {
-  const kind = shadow ?? 'medium';
-  if (kind === 'none') return undefined;
-  const amount = clampFaqPanelShadowIntensity(
-    intensity,
-    PORTFOLIO_FAQ_PANEL_SHADOW_PRESET_INTENSITY[kind]
-  );
-  if (amount <= 0) return undefined;
-  const t = amount / 100;
-  const y = Math.round(10 + t * 22);
-  const blur = Math.round(28 + t * 48);
-  const spread = Math.round(-12 - t * 8);
-  const alpha = (0.06 + t * 0.2).toFixed(3);
-  return { boxShadow: `0 ${y}px ${blur}px ${spread}px rgba(15, 23, 42, ${alpha})` };
 }
 
 export function defaultsForFaqDesign(design: PortfolioFaqDesign): Partial<PortfolioFaqPresentationSettings> {
@@ -897,116 +785,6 @@ export function defaultsForFaqDesign(design: PortfolioFaqDesign): Partial<Portfo
 export function faqSectionLayoutIsAside(layout: PortfolioFaqSectionLayout | undefined): boolean {
   return layout === 'aside-left' || layout === 'aside-right';
 }
-
-/** Two-column shell for title + FAQ list (large screens). */
-export function faqAsideLayoutClass(layout: PortfolioFaqSectionLayout): string {
-  if (layout === 'aside-right') {
-    return 'grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-  }
-  return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-}
-
-export const PORTFOLIO_FAQ_ITEM_DESIGN_OPTIONS: {
-  value: PortfolioFaqItemDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'raised',
-    label: 'Raised cards',
-    description: 'Soft elevated cards with Q. labels.',
-  },
-  { value: 'editorial', label: 'Editorial', description: 'Framed list with soft panel.' },
-  { value: 'pill', label: 'Soft pills', description: 'Standalone rounded rows with light fill.' },
-  { value: 'minimal', label: 'Minimal', description: 'Clean dividers, no outer frame.' },
-  { value: 'bordered', label: 'Bordered cards', description: 'Separate cards with controllable gap.' },
-  { value: 'accent', label: 'Accent edge', description: 'Warm left border on each item.' },
-  { value: 'numbered-rail', label: 'Numbered rail', description: 'Accent step numbers with connector line.' },
-  { value: 'two-column', label: 'Two columns', description: 'Grid layout on large screens — default for this design.' },
-  { value: 'compact', label: 'Compact', description: 'Dense spacing and smaller type.' },
-];
-
-export const PORTFOLIO_FAQ_ITEM_GAP_OPTIONS: {
-  value: PortfolioFaqItemGap;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Tight', description: 'Minimal vertical gap (hairline dividers).' },
-  { value: 'md', label: 'Standard', description: 'Balanced space between every question (default).' },
-  { value: 'lg', label: 'Relaxed', description: 'Generous vertical gap between items.' },
-  { value: 'xl', label: 'Airy', description: 'Maximum vertical separation.' },
-];
-
-export const PORTFOLIO_FAQ_LIST_MAX_WIDTH_OPTIONS: {
-  value: PortfolioFaqListMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'narrow', label: 'Narrow', description: 'Compact reading column.' },
-  { value: 'default', label: 'Default', description: 'Standard FAQ width.' },
-  { value: 'wide', label: 'Wide', description: 'Roomier layout.' },
-  { value: 'full', label: 'Full', description: 'Use the full section width.' },
-];
-
-export const PORTFOLIO_FAQ_LIST_PLACEMENT_OPTIONS: {
-  value: PortfolioFaqListPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Align FAQ block to the left.' },
-  { value: 'center', label: 'Center', description: 'Center FAQ block (default).' },
-  { value: 'right', label: 'Right', description: 'Align FAQ block to the right.' },
-];
-
-export const PORTFOLIO_FAQ_TEXT_SIZE_OPTIONS: {
-  value: PortfolioFaqTextSize;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
-];
-
-export const PORTFOLIO_FAQ_CONTENT_ALIGN_OPTIONS: {
-  value: PortfolioFaqContentAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Default left alignment for rows and answers.' },
-  { value: 'center', label: 'Center', description: 'Center question, icon, and answer content.' },
-  { value: 'right', label: 'Right', description: 'Right-aligned FAQ content.' },
-];
-
-export const PORTFOLIO_FAQ_EXPAND_ICON_OPTIONS: {
-  value: PortfolioFaqExpandIconStyle;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'plus', label: 'Plus', description: 'Rotates 45° when open.' },
-  { value: 'chevron', label: 'Chevron', description: 'Rotates downward when open.' },
-];
-
-export const PORTFOLIO_FAQ_ILLUSTRATION_OPTIONS: {
-  value: PortfolioFaqIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No decorative SVG beside the list.' },
-  { value: 'chat', label: 'Chat', description: 'Speech bubbles — conversation feel.' },
-  { value: 'question', label: 'Question', description: 'Bold question mark badge.' },
-  { value: 'docs', label: 'Docs', description: 'Stacked documents with tip.' },
-  { value: 'support', label: 'Support', description: 'Headset support character.' },
-  { value: 'hex', label: 'Hex', description: 'Geometric hexagon mark.' },
-];
-
-export const PORTFOLIO_FAQ_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioFaqIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Illustration to the left of the FAQ list.' },
-  { value: 'right', label: 'Right', description: 'Illustration to the right of the FAQ list.' },
-];
 
 const SUBTITLE_PRESET_COPY: Record<
   Exclude<PortfolioFaqSubtitlePreset, 'default' | 'custom' | 'minimal'>,
@@ -1081,14 +859,6 @@ export function faqHeaderFontClass(font: PortfolioFaqHeaderFont, kind: 'title' |
   }
 }
 
-/** Matches About us split heading: size + semibold, without the narrow left-column max-width. */
-export const FAQ_READY_TITLE_CLASS =
-  'font-semibold leading-[1.14] tracking-tight text-[2.05rem] sm:text-[2.55rem] lg:text-[2.95rem]';
-
-export function faqHeaderFontStyle(_font: PortfolioFaqHeaderFont): CSSProperties | undefined {
-  return undefined;
-}
-
 export function faqTitleColorStyle(color: string): CSSProperties {
   return { color: sanitizeHex(color, DEFAULT_FAQ_TITLE_COLOR) };
 }
@@ -1121,7 +891,7 @@ export function faqListPlacementClass(placement: PortfolioFaqListPlacement): str
   }
 }
 
-export function faqItemGapClass(gap: PortfolioFaqItemGap): string {
+function faqItemGapClass(gap: PortfolioFaqItemGap): string {
   switch (gap) {
     case 'sm':
       return 'gap-2';
@@ -1144,17 +914,6 @@ function faqCardBorderWidthClass(border: PortfolioServicesCardBorder): string {
     default:
       return 'border-0';
   }
-}
-
-export function faqPanelInnerClass(p: PortfolioFaqPresentationSettings): string {
-  const radius = servicesCardRadiusClass(p.cardBorderRadius);
-  const pad =
-    p.cardPadding === 'sm'
-      ? 'px-6 py-8 sm:px-8 sm:py-10'
-      : p.cardPadding === 'lg'
-        ? 'px-8 py-10 sm:px-12 sm:py-14'
-        : 'px-7 py-9 sm:px-10 sm:py-12';
-  return `${radius} ${pad} relative overflow-x-hidden`;
 }
 
 export function faqFrameClass(p: PortfolioFaqPresentationSettings): string {
@@ -1323,61 +1082,6 @@ export function faqItemAccentStyle(
     borderLeftColor: accent,
     backgroundImage: `linear-gradient(90deg, ${accent}10 0%, transparent 40%)`,
   };
-}
-
-export function faqQuestionClass(size: PortfolioFaqTextSize, font: PortfolioFaqHeaderFont): string {
-  const parts = ['min-w-0 flex-1 font-semibold leading-snug', faqHeaderFontClass(font, 'title')];
-
-  switch (size) {
-    case 'sm':
-      parts.push('text-sm sm:text-base');
-      break;
-    case 'lg':
-      parts.push('text-lg sm:text-xl');
-      break;
-    default:
-      parts.push('text-base sm:text-lg');
-  }
-
-  return parts.join(' ');
-}
-
-export function faqQuestionStyle(
-  color: string,
-  font: PortfolioFaqHeaderFont
-): CSSProperties {
-  return {
-    color: sanitizeHex(color, DEFAULT_FAQ_QUESTION_COLOR),
-    ...faqHeaderFontStyle(font),
-  };
-}
-
-export function faqAnswerClass(size: PortfolioFaqTextSize, font: PortfolioFaqHeaderFont): string {
-  const parts = ['whitespace-pre-line leading-relaxed', faqHeaderFontClass(font, 'subtitle')];
-
-  switch (size) {
-    case 'sm':
-      parts.push('text-sm');
-      break;
-    case 'lg':
-      parts.push('text-base sm:text-lg');
-      break;
-    default:
-      parts.push('text-base');
-  }
-
-  return parts.join(' ');
-}
-
-export function faqAnswerStyle(color: string, font: PortfolioFaqHeaderFont): CSSProperties {
-  return {
-    color: sanitizeHex(color, DEFAULT_FAQ_ANSWER_COLOR),
-    ...faqHeaderFontStyle(font),
-  };
-}
-
-export function faqNumberStyle(numberColor: string): CSSProperties {
-  return { color: sanitizeHex(numberColor, DEFAULT_FAQ_NUMBER_COLOR) };
 }
 
 export function faqAnswerBorderStyle(borderColor: string): CSSProperties {
@@ -1699,10 +1403,8 @@ export function mergeFaqPresentation(
     elementStyles,
 
     headerDesign: pick(record.headerDesign, FAQ_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -2028,12 +1730,4 @@ export function mergeFaqPresentation(
     ...(applyFaqPaletteToSettings(merged) as Partial<PortfolioFaqPresentationSettings>),
     useHeroPalette: true,
   };
-}
-
-export function patchFaqElementStyle(
-  styles: PortfolioFaqElementStyles,
-  target: PortfolioFaqStyleTarget,
-  patch: Partial<PortfolioElementTextStyle>
-): PortfolioFaqElementStyles {
-  return patchElementStylesRecord(styles, target, patch, DEFAULT_FAQ_ELEMENT_STYLES, FAQ_STYLE_TARGET_IDS);
 }

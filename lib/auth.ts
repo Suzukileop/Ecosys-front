@@ -1,6 +1,5 @@
 import api from './api';
 import { clearRefreshCookie, setRefreshCookie } from './refreshCookie';
-import { refreshSession } from './sessionRefresh';
 import { AuthResponse, LoginData, SignupData } from '@/types/auth';
 
 export { clearRefreshCookie, setRefreshCookie };
@@ -22,11 +21,7 @@ export async function logoutApi(): Promise<void> {
   await api.post('/api/auth/logout');
 }
 
-export async function refreshApi(): Promise<AuthResponse> {
-  return refreshSession();
-}
-
-export async function exchangeOAuthCode(code: string): Promise<AuthResponse> {
+async function exchangeOAuthCode(code: string): Promise<AuthResponse> {
   const existing = oauthExchangePromises.get(code);
   if (existing) {
     return existing;

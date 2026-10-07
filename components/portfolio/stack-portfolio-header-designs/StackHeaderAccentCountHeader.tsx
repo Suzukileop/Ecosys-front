@@ -8,6 +8,7 @@ import {
   type PortfolioStackHeaderTitleSize,
   type PortfolioStackHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-stack-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ technologies';
 const DEFAULT_LEAD_TEXT = 'A curated set of tools I rely on.';
@@ -59,7 +60,8 @@ export function StackHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_STACK_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

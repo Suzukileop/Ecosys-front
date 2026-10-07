@@ -100,25 +100,6 @@ function bucketBadge(bucket?: ContentPostBucket) {
 const editInputClass =
   'w-full rounded-none border-0 border-b border-black/[0.08] bg-transparent px-0 py-1.5 caret-[#FF5722] outline-none transition placeholder:text-neutral-400 focus:border-[#FF5722] dark:border-white/[0.1] dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]';
 
-export function ContentPostTitle({
-  post,
-  bucket,
-}: Pick<ContentPostDetailsBlockProps, 'post' | 'bucket'>) {
-  const title = post.title?.trim() || 'Untitled';
-
-  return (
-    <div className="flex flex-wrap items-center gap-2">
-      <h3
-        className="text-lg font-bold leading-tight text-neutral-900 dark:text-white"
-        style={post.textColor ? { color: post.textColor } : undefined}
-      >
-        {title}
-      </h3>
-      {bucketBadge(bucket)}
-    </div>
-  );
-}
-
 function ContentPostPriceEstimate({ priceInfo }: { priceInfo?: string | null }) {
   const priceLabel = priceInfo?.trim() ? priceInfo.trim() : null;
   if (!priceLabel) return null;
@@ -410,16 +391,6 @@ export function ContentPostDetailsBlock({
           )}
         </div>
       )}
-    </div>
-  );
-}
-
-export function ContentPostCardFooter({ priceInfo }: { priceInfo?: string | null }) {
-  const priceLabel = priceInfo?.trim() ? priceInfo.trim() : null;
-
-  return (
-    <div className="border-t border-neutral-200 py-2.5 text-center text-[10px] font-semibold uppercase tracking-[0.2em] text-neutral-400 dark:border-neutral-800">
-      {priceLabel ?? 'No price'}
     </div>
   );
 }

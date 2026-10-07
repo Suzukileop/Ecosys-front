@@ -9,7 +9,8 @@ import { uploadShopCover } from '@/lib/marketplace-api';
 import api from '@/lib/api';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import { MediaImage } from '@/components/ui/MediaImage';
+import type { CreatorProfileDto } from '@/types/profile';
 
 const COVER_ACCEPT = 'image/jpeg,image/png,image/webp,video/mp4,video/webm,.jpg,.jpeg,.png,.webp,.mp4,.webm';
 
@@ -220,8 +221,12 @@ export function CreatorShopSettingsFields() {
                   autoPlay
                 />
               ) : (
-                // eslint-disable-next-line @next/next/no-img-element
-                <img src={displayCover} alt="" className="absolute inset-0 h-full w-full object-cover" />
+                <MediaImage
+                  src={displayCover}
+                  widths={[640, 828, 1080]}
+                  sizes="(min-width: 768px) 640px, 100vw"
+                  className="absolute inset-0 h-full w-full object-cover"
+                />
               )
             ) : (
               <span className="absolute inset-0 flex items-center justify-center text-neutral-400 dark:text-neutral-500">

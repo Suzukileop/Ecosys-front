@@ -13,6 +13,7 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -72,7 +73,8 @@ export function WorkEditorialHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const centered = presentation.headerAlignment === 'center';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = sectionTitle.trim();
   const subtitle = sectionSubtitle?.trim() || '';
   const titleInk = workTitleColorStyle(presentation.titleColor).color as string;

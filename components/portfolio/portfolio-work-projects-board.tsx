@@ -2,14 +2,7 @@
 
 import Image from 'next/image';
 import Link from 'next/link';
-import {
-  useEffect,
-  useRef,
-  useState,
-  type CSSProperties,
-  type ReactNode,
-  type RefObject,
-} from 'react';
+import { useEffect, useRef, useState, type CSSProperties, type RefObject } from 'react';
 import type { MarketplaceContentItem } from '@/types/marketplace';
 import type {
   PortfolioWorkPresentationSettings,
@@ -21,10 +14,6 @@ import {
 } from '@/components/portfolio/portfolio-work-settings';
 
 const BOARD_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-
-const ENTER_KICKER: CSSProperties = { opacity: 0, transform: 'translateY(14px)' };
-const ENTER_HEADLINE: CSSProperties = { opacity: 0, transform: 'translateY(22px)' };
-const ENTER_TRAIL: CSSProperties = { opacity: 0, transform: 'translateY(12px)' };
 const ENTER_CARD: CSSProperties = { opacity: 0, transform: 'translateY(28px)' };
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
@@ -46,37 +35,6 @@ function workCategoryLabel(item: MarketplaceContentItem): string {
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-/** Nested portfolio shells (pages mode) often scroll instead of `window`. */
-function boardScrollRoots(el: HTMLElement | null): EventTarget[] {
-  const targets: EventTarget[] = [window];
-  let node = el?.parentElement ?? null;
-  while (node && node !== document.body) {
-    const overflowY = String(getComputedStyle(node).overflowY);
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
-      node.scrollHeight > node.clientHeight + 1
-    ) {
-      targets.push(node);
-    }
-    node = node.parentElement;
-  }
-  return targets;
-}
-
-function editorialHeadline(text: string): ReactNode {
-  const trimmed = text.trim();
-  const idx = trimmed.search(/\s+/);
-  if (idx === -1) {
-    return <span className="font-semibold">{trimmed}</span>;
-  }
-  return (
-    <>
-      <span className="font-light italic">{trimmed.slice(0, idx)}</span>{' '}
-      <span className="font-semibold">{trimmed.slice(idx).trimStart()}</span>
-    </>
-  );
 }
 
 function boardEnterStyle(
@@ -129,163 +87,6 @@ function useBoardInView(
   }, [readyKey]);
 
   return { entered, instant };
-}
-
-function useBoardScrollKinetic(
-  rootRef: RefObject<HTMLElement | null>,
-  onFrame: (root: HTMLElement, relative: number) => void,
-  readyKey: string | number
-): void {
-  const onFrameRef = useRef(onFrame);
-  onFrameRef.current = onFrame;
-
-  useEffect(() => {
-    const root = rootRef.current;
-    if (!root) return;
-    if (prefersReducedMotion()) return;
-
-    const mq = window.matchMedia('(min-width: 768px)');
-    const scrollRoots = boardScrollRoots(root);
-    let raf = 0;
-
-    const tick = () => {
-      raf = 0;
-      if (!mq.matches) {
-        onFrameRef.current(root, 0);
-        return;
-      }
-      const rect = root.getBoundingClientRect();
-      const vh = window.innerHeight;
-      if (rect.bottom < 0 || rect.top > vh) return;
-      const relative = Math.max(0, vh * 0.4 - rect.top);
-      onFrameRef.current(root, relative);
-    };
-
-    const onScroll = () => {
-      if (raf) return;
-      raf = window.requestAnimationFrame(tick);
-    };
-
-    scrollRoots.forEach((target) => {
-      target.addEventListener('scroll', onScroll, { passive: true });
-    });
-    mq.addEventListener('change', onScroll);
-    tick();
-
-    return () => {
-      scrollRoots.forEach((target) => {
-        target.removeEventListener('scroll', onScroll);
-      });
-      mq.removeEventListener('change', onScroll);
-      if (raf) window.cancelAnimationFrame(raf);
-      onFrameRef.current(root, 0);
-    };
-  }, [readyKey]);
-}
-
-/**
- * Header for Projects board: micro kicker → editorial headline.
- * Extra space below the title lets the grid breathe.
- */
-export function ProjectsBoardSectionHeader({
-  title,
-  subtitle,
-  accentColor,
-  titleColor,
-  subtitleColor,
-  trailing,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  accentColor: string;
-  titleColor: string;
-  subtitleColor: string;
-  trailing?: ReactNode;
-  className?: string;
-}) {
-  const headerRef = useRef<HTMLElement | null>(null);
-  const kicker = title.trim();
-  const headline = subtitle?.trim() || '';
-  const ink = titleColor || subtitleColor;
-  const { entered, instant } = useBoardInView(headerRef, `${kicker}|${headline}`);
-
-  useBoardScrollKinetic(
-    headerRef,
-    (root, relative) => {
-      const kickerEl = root.querySelector<HTMLElement>('[data-board-scroll="kicker"]');
-      const headlineEl = root.querySelector<HTMLElement>('[data-board-scroll="headline"]');
-      const trailEl = root.querySelector<HTMLElement>('[data-board-scroll="trail"]');
-      if (kickerEl) {
-        kickerEl.style.transform = `translateY(${(-relative * 0.04).toFixed(2)}px)`;
-      }
-      if (headlineEl) {
-        headlineEl.style.transform = `translateY(${(-relative * 0.08).toFixed(2)}px)`;
-      }
-      if (trailEl) {
-        trailEl.style.transform = `translateY(${(-relative * 0.03).toFixed(2)}px)`;
-      }
-    },
-    `${kicker}|${headline}`
-  );
-
-  const headingClass =
-    'max-w-[19ch] text-[2.05rem] font-normal leading-[1.12] tracking-[-0.038em] sm:text-[2.75rem] lg:text-[3.35rem] lg:leading-[1.06]';
-
-  return (
-    <header
-      ref={headerRef}
-      className={`mb-16 w-full pt-2 sm:mb-24 sm:pt-4 lg:mb-32 lg:pt-6 ${className}`.trim()}
-    >
-      <div className="flex flex-col gap-7 sm:flex-row sm:items-start sm:justify-between sm:gap-12 lg:gap-20">
-        <div className="min-w-0 max-w-3xl">
-          {kicker && headline ? (
-            <div data-board-scroll="kicker">
-              <p
-                className="text-[0.68rem] font-medium uppercase tracking-[0.22em]"
-                style={{
-                  color: accentColor,
-                  ...boardEnterStyle(entered, ENTER_KICKER, 40, instant),
-                }}
-              >
-                {kicker}
-              </p>
-            </div>
-          ) : null}
-          {headline ? (
-            <div data-board-scroll="headline">
-              <h2
-                className={`${headingClass} ${kicker ? 'mt-5 sm:mt-6' : ''}`}
-                style={{
-                  color: ink,
-                  ...boardEnterStyle(entered, ENTER_HEADLINE, 140, instant),
-                }}
-              >
-                {editorialHeadline(headline)}
-              </h2>
-            </div>
-          ) : kicker ? (
-            <div data-board-scroll="headline">
-              <h2
-                className={headingClass}
-                style={{
-                  color: titleColor,
-                  ...boardEnterStyle(entered, ENTER_HEADLINE, 80, instant),
-                }}
-              >
-                {editorialHeadline(kicker)}
-              </h2>
-            </div>
-          ) : null}
-        </div>
-        {trailing ? (
-          <div data-board-scroll="trail" className="shrink-0 sm:pt-1.5">
-            <div style={boardEnterStyle(entered, ENTER_TRAIL, 240, instant)}>{trailing}</div>
-          </div>
-        ) : null}
-      </div>
-    </header>
-  );
 }
 
 /** Minimalist bottom-of-card CTA: uppercase text + a 1px underline that grows in from
@@ -573,10 +374,4 @@ export function ProjectsBoardGallery({
       ))}
     </div>
   );
-}
-
-export function isProjectsBoardDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-board';
 }

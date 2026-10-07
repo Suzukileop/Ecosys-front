@@ -60,7 +60,7 @@ const SECTIONS: LegalSection[] = [
         <ul>
           <li>Products, services, posts, images, videos and files you upload.</li>
           <li>Comments, reactions, ratings, favourites, follows, shares and reports.</li>
-          <li>Purchases, credits and their transaction history.</li>
+          <li>Purchases and their transaction history.</li>
         </ul>
 
         <h3>Messages and calls</h3>
@@ -74,15 +74,8 @@ const SECTIONS: LegalSection[] = [
 
         <h3>Payments</h3>
         <p>
-          Payments are handled by our payment provider. We receive the amount, a payment reference, the payment status,
-          the mobile money transaction reference and the phone number used to pay. We never receive or store card
-          numbers or mobile money PINs.
-        </p>
-
-        <h3>Agent service</h3>
-        <p>
-          If you use the done-for-you content service, we collect the brief you fill in (niche, goals, platforms,
-          language, posting volume) and your conversation with our AI assistant.
+          Payments are handled by our payment provider. We receive the amount, a payment reference and the payment
+          status. We never receive or store card numbers or mobile money PINs.
         </p>
 
         <h3>Technical data</h3>
@@ -108,8 +101,7 @@ const SECTIONS: LegalSection[] = [
         <p>We only use your data for the purposes below, each with a legal basis under the GDPR:</p>
         <ul>
           <li>
-            <strong>Providing Skraft</strong> — your account, portfolio, store, messaging, calls, purchases and the
-            Agent service. Basis: performance of our contract with you (the <Link href="/terms">Terms</Link>).
+            <strong>Providing Skraft</strong> — your account, portfolio, store, messaging, calls and purchases. Basis: performance of our contract with you (the <Link href="/terms">Terms</Link>).
           </li>
           <li>
             <strong>Security and abuse prevention</strong> — protecting accounts, rate limiting, investigating reports.
@@ -173,13 +165,6 @@ const SECTIONS: LegalSection[] = [
             delivery.
           </li>
           <li>
-            <strong>Vanilla Pay International</strong> — payment processing (mobile money).
-          </li>
-          <li>
-            <strong>DeepSeek</strong> — the AI model behind the Agent service assistant. It receives your brief and
-            your conversation with the assistant, nothing else from your account.
-          </li>
-          <li>
             <strong>Our email delivery provider</strong> — sending notifications and contact-form messages.
           </li>
           <li>
@@ -204,14 +189,10 @@ const SECTIONS: LegalSection[] = [
     content: (
       <>
         <p>
-          Some providers above process data outside your country, including in the United States (Google, Cloudflare)
-          and in China (DeepSeek). These countries may not offer the same level of protection as the European Union.
-          Where possible, we rely on the safeguards these providers offer, such as the European Commission&apos;s
-          Standard Contractual Clauses.
-        </p>
-        <p>
-          The Agent assistant is the only feature that sends data to DeepSeek. Please do not share sensitive personal
-          information in that conversation.
+          Some providers above process data outside your country, including in the United States (Google,
+          Cloudflare). These countries may not offer the same level of protection as the European Union. Where
+          possible, we rely on the safeguards these providers offer, such as the European Commission&apos;s Standard
+          Contractual Clauses.
         </p>
       </>
     ),
@@ -260,8 +241,7 @@ const SECTIONS: LegalSection[] = [
           <li>
             When you delete your account, we immediately sign you out everywhere, anonymise your account details
             (name, username, email, phone, photo, password and Google link) and erase your profile, portfolio, posts,
-            products, uploaded files, comments, reactions, reviews, follows, profile visits, credits, notifications and
-            Agent service conversations.
+            products, uploaded files, comments, reactions, reviews, follows, profile visits and notifications.
           </li>
           <li>
             Messages you sent remain visible to the people you sent them to, shown as from a &ldquo;Deleted
@@ -287,8 +267,7 @@ const SECTIONS: LegalSection[] = [
         </p>
         <p>
           Messages are encrypted in transit but are <strong>not end-to-end encrypted</strong>: they are stored on our
-          servers so you can read them on any device. Members of our team who deliver the Agent service can read your
-          conversation with the AI assistant in order to prepare your content.
+          servers so you can read them on any device.
         </p>
         <p>
           No system is perfectly secure. If a breach puts your rights at risk, we will notify you and the competent

@@ -14,13 +14,9 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import {
   portfolioInlineInputClass,
 } from '@/components/portfolio/portfolio-section-shared';
-import {
-  emptyAboutUsForm,
-  type AboutUsForm,
-} from '@/components/creator/studio/profile-form-schema';
+import { type AboutUsForm } from '@/components/creator/studio/profile-form-schema';
 
 const MEDIA_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
-const MAX_IMAGES = 2;
 const MAX_TASKS = 12;
 
 const itemActionVisibilityClass =
@@ -465,8 +461,4 @@ function AboutUsFields({
       </div>
     </div>
   );
-}
-
-export function createEmptyAboutUsForm(): AboutUsForm {
-  return emptyAboutUsForm();
 }

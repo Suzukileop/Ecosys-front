@@ -2,7 +2,7 @@
 
 import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { useReducedMotion } from 'framer-motion';
-import type { LanguageProficiencyLevel, ProfileEducationEntry, ProfileSkillEntry } from '@/types/ecosystem';
+import type { LanguageProficiencyLevel, ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
 import type { PortfolioInfoLanguageLevelDisplayStyle } from '@/components/portfolio/portfolio-info-settings';
 import {
   terminalHeadingSizeClass,

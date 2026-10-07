@@ -1,9 +1,36 @@
-import type { ProfileServiceItem } from '@/types/ecosystem';
+import type { ProfileServiceItem } from '@/types/profile';
 
 export type ServicePricingType = 'FIXED' | 'FROM' | 'QUOTE' | 'FREE';
 export type ServiceStatus = 'ACTIVE' | 'PAUSED' | 'ARCHIVED';
 export type ServiceDeliveryUnit = 'DAYS' | 'WEEKS';
 export type ServiceCurrencyPreset = 'EUR' | 'USD' | 'OTHER';
+export type ServiceBillingPeriod = 'DAY' | 'MONTH' | 'YEAR';
+
+export const SERVICE_BILLING_PERIOD_OPTIONS: { value: ServiceBillingPeriod; label: string }[] = [
+  { value: 'DAY', label: 'Per day' },
+  { value: 'MONTH', label: 'Per month' },
+  { value: 'YEAR', label: 'Per year' },
+];
+
+export function normalizeBillingPeriod(raw: string | null | undefined): ServiceBillingPeriod | null {
+  const key = (raw ?? '').trim().toUpperCase();
+  if (key === 'DAY' || key === 'MONTH' || key === 'YEAR') return key;
+  return null;
+}
+
+/** Suffix shown after a price, e.g. "/ month" — null when the service has no period. */
+export function formatBillingPeriodSuffix(service: { billingPeriod?: string | null }): string | null {
+  switch (normalizeBillingPeriod(service.billingPeriod)) {
+    case 'DAY':
+      return '/ day';
+    case 'MONTH':
+      return '/ month';
+    case 'YEAR':
+      return '/ year';
+    default:
+      return null;
+  }
+}
 
 export const SERVICE_PRICING_OPTIONS: { value: ServicePricingType; label: string }[] = [
   { value: 'FIXED', label: 'Fixed price' },
@@ -46,9 +73,9 @@ export const SERVICE_DELIVERY_UNIT_OPTIONS: { value: ServiceDeliveryUnit; label:
 
 export const MAX_PROFILE_SERVICES = 8;
 export const SERVICE_DESCRIPTION_SOFT_LIMIT = 180;
-export const DEFAULT_SERVICE_CURRENCY = 'EUR';
+const DEFAULT_SERVICE_CURRENCY = 'EUR';
 
-export function normalizeServicePricingType(
+function normalizeServicePricingType(
   raw: string | null | undefined,
   basePriceCents?: number | null
 ): ServicePricingType {
@@ -79,7 +106,7 @@ export function currencyPresetFromCode(code: string | null | undefined): Service
   return 'OTHER';
 }
 
-export function formatCurrencySymbol(currency: string | null | undefined): string {
+function formatCurrencySymbol(currency: string | null | undefined): string {
   const code = normalizeServiceCurrency(currency);
   switch (code) {
     case 'MGA':
@@ -93,7 +120,7 @@ export function formatCurrencySymbol(currency: string | null | undefined): strin
   }
 }
 
-export function formatServiceAmount(
+function formatServiceAmount(
   cents: number | null | undefined,
   currency?: string | null
 ): string {
@@ -110,6 +137,7 @@ export function formatServicePrice(service: {
   pricingType?: string | null;
   basePriceCents?: number | null;
   currency?: string | null;
+  billingPeriod?: string | null;
 }): string {
   const type = normalizeServicePricingType(service.pricingType, service.basePriceCents);
   if (type === 'QUOTE') return 'On request';
@@ -117,11 +145,12 @@ export function formatServicePrice(service: {
   const cents = service.basePriceCents;
   if (cents == null || Number.isNaN(cents)) return 'On request';
   if (cents === 0) return type === 'FROM' ? 'Starting at Free' : 'Free';
-  const amount = formatServiceAmount(cents, service.currency);
+  const suffix = formatBillingPeriodSuffix(service);
+  const amount = `${formatServiceAmount(cents, service.currency)}${suffix ? ` ${suffix}` : ''}`;
   return type === 'FROM' ? `Starting at ${amount}` : amount;
 }
 
-export function normalizeDeliveryUnit(raw: string | null | undefined): ServiceDeliveryUnit | null {
+function normalizeDeliveryUnit(raw: string | null | undefined): ServiceDeliveryUnit | null {
   const key = (raw ?? '').trim().toUpperCase();
   if (!key) return null;
   if (key === 'DAY' || key === 'DAYS' || key === 'JOUR' || key === 'JOURS') return 'DAYS';
@@ -129,7 +158,7 @@ export function normalizeDeliveryUnit(raw: string | null | undefined): ServiceDe
   return null;
 }
 
-export function parseLegacyDeadline(deadline: string | null | undefined): {
+function parseLegacyDeadline(deadline: string | null | undefined): {
   value: number;
   unit: ServiceDeliveryUnit;
 } | null {
@@ -175,17 +204,12 @@ export function serviceStatusLabel(status: string | null | undefined): string {
   return SERVICE_STATUS_OPTIONS.find((item) => item.value === normalized)?.label ?? 'Active';
 }
 
-export function isActiveService(service: Pick<ProfileServiceItem, 'status'>): boolean {
+function isActiveService(service: Pick<ProfileServiceItem, 'status'>): boolean {
   return normalizeServiceStatus(service.status) === 'ACTIVE';
 }
 
 export function filterActiveServices<T extends Pick<ProfileServiceItem, 'status'>>(services: T[]): T[] {
   return services.filter(isActiveService);
-}
-
-export function countActiveServices(services: Array<Pick<ProfileServiceItem, 'status'>> | null | undefined): number {
-  if (!services?.length) return 0;
-  return filterActiveServices(services).length;
 }
 
 export function solidCoverHueFromTitle(title: string): number {

@@ -25,8 +25,7 @@ const primaryButtonClass =
   'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200 dark:focus-visible:ring-white/30';
 
 export function OrderCreatorCta({ creatorId, creatorName, isAuthenticated }: OrderCreatorCtaProps) {
-  const profileUrl = `/marketplace/${creatorId}`;
-  const discussUrl = `/dashboard/discussions?user=${encodeURIComponent(creatorId)}`;
+  const discussUrl = `/messages?user=${encodeURIComponent(creatorId)}`;
   const a11yLabel = creatorName ? `Discuss with ${creatorName}` : 'Discuss with creator';
 
   if (!isAuthenticated) {

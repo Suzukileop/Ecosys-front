@@ -5,16 +5,16 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
 import {
   DEFAULT_TEAM_PRESENTATION,
-  teamTitleColorStyle,
-  teamSubtitleColorStyle,
   type PortfolioTeamPresentationSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
   TEAM_HEADER_MARGIN_BOTTOM_REM,
   teamHeaderDesignFontClass,
+  teamHeaderPaletteTokenColor,
   type PortfolioTeamHeaderTitleSize,
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -48,6 +48,33 @@ const TITLE_SIZE_CLASS: Record<PortfolioTeamHeaderTitleSize, string> = {
   xl: 'text-7xl sm:text-8xl lg:text-9xl',
 };
 
+/** Kicker — small uppercase label; "regular" keeps the prior semibold default. */
+const LABEL_SIZE: Record<PortfolioTeamHeaderTitleSize, string> = {
+  sm: '0.625rem',
+  md: '0.68rem',
+  lg: '0.8rem',
+  xl: '0.92rem',
+};
+const LABEL_WEIGHT: Record<PortfolioTeamHeaderTitleWeight, number> = {
+  light: 500,
+  regular: 600,
+  semibold: 700,
+  bold: 800,
+};
+/** Subtitle — "regular" keeps the prior text-sm / sm:text-base default. */
+const SUBTITLE_SIZE: Record<PortfolioTeamHeaderTitleSize, string> = {
+  sm: '0.8125rem',
+  md: 'clamp(0.875rem, 0.35vw + 0.8rem, 1rem)',
+  lg: 'clamp(1rem, 0.4vw + 0.92rem, 1.125rem)',
+  xl: 'clamp(1.125rem, 0.5vw + 1rem, 1.3rem)',
+};
+const SUBTITLE_WEIGHT: Record<PortfolioTeamHeaderTitleWeight, number> = {
+  light: 300,
+  regular: 400,
+  semibold: 500,
+  bold: 600,
+};
+
 /** Editorial's identity is a light title — "regular" here preserves that prior default,
  *  the other 3 steps adjust from it, rather than the generic light/normal/semibold/bold scale. */
 const TITLE_WEIGHT_CLASS: Record<PortfolioTeamHeaderTitleWeight, string> = {
@@ -74,11 +101,16 @@ export function TeamHeaderEditorialHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
-  const titleText = title.trim();
-  const subtitleText = subtitle?.trim() || '';
-  const titleInk = teamTitleColorStyle(presentation.titleColor).color as string;
-  const kickerInk = `color-mix(in srgb, ${titleInk} 38%, transparent)`;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  /* Each text is the design's own setting; empty falls back to the section-level value. */
+  const labelText = presentation.headerEditorialLabelText?.trim() || 'Team';
+  const titleText = presentation.headerEditorialTitleText?.trim() || title.trim();
+  const subtitleText = presentation.headerEditorialSubtitleText?.trim() || subtitle?.trim() || '';
+  const labelInk = teamHeaderPaletteTokenColor(presentation.headerEditorialLabelColor ?? 'texteFort');
+  const titleInk = teamHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
+  const subtitleInk = teamHeaderPaletteTokenColor(presentation.headerEditorialSubtitleColor ?? 'texteFort');
+  const kickerInk = `color-mix(in srgb, ${labelInk} 38%, transparent)`;
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -180,7 +212,7 @@ export function TeamHeaderEditorialHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, titleText, subtitleText]);
+  }, [animationEnabled, labelText, titleText, subtitleText]);
 
   return (
     <header
@@ -191,14 +223,18 @@ export function TeamHeaderEditorialHeader({
       <div className={`pf-team-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
         <div className="min-w-0 max-w-3xl">
           <p
-            className="pf-team-header-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
-            style={{ color: kickerInk }}
+            className="pf-team-header-editorial-kicker mb-0 uppercase tracking-[0.24em]"
+            style={{
+              color: kickerInk,
+              fontSize: LABEL_SIZE[presentation.headerEditorialLabelSize ?? 'md'],
+              fontWeight: LABEL_WEIGHT[presentation.headerEditorialLabelWeight ?? 'regular'],
+            }}
           >
-            Team
+            {labelText}
           </p>
           <h2
-            className={`mb-0 mt-3 ${teamHeaderDesignFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={teamTitleColorStyle(presentation.titleColor)}
+            className={`mb-0 mt-3 ${teamHeaderDesignFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerEditorialTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerEditorialTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
+            style={{ color: titleInk }}
           >
             <span className="pf-team-header-editorial-title-mask block overflow-hidden">
               <span className="pf-team-header-editorial-title-line block">{titleText}</span>
@@ -206,8 +242,12 @@ export function TeamHeaderEditorialHeader({
           </h2>
           {subtitleText ? (
             <p
-              className={`pf-team-header-editorial-sub mb-0 mt-6 max-w-xl ${teamHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-              style={teamSubtitleColorStyle(presentation.subtitleColor)}
+              className={`pf-team-header-editorial-sub mb-0 mt-6 max-w-xl ${teamHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
+              style={{
+                color: subtitleInk,
+                fontSize: SUBTITLE_SIZE[presentation.headerEditorialSubtitleSize ?? 'md'],
+                fontWeight: SUBTITLE_WEIGHT[presentation.headerEditorialSubtitleWeight ?? 'regular'],
+              }}
             >
               {subtitleText}
             </p>

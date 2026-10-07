@@ -26,7 +26,7 @@ import api from '@/lib/api';
 import { getApiErrorMessage, UserFacingError } from '@/lib/api-error';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
 import { parseSpecialtyTags } from '@/lib/specialties';
-import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/ecosystem';
+import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/profile';
 
 type WorkEntry = {
   id: string;

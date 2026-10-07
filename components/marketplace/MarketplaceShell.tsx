@@ -57,7 +57,7 @@ export function MarketplaceShell({ children, authenticated }: MarketplaceShellPr
         }
       >
         {patternVariant && <MarketplacePatternBackground variant={patternVariant} />}
-        <div className="relative z-10">
+        <div className="news-theme relative z-10">
           <MarketplacePublicNav transparent={patternVariant === 'hub'} />
           {children}
         </div>
@@ -69,7 +69,8 @@ export function MarketplaceShell({ children, authenticated }: MarketplaceShellPr
     <>
       {patternVariant && <MarketplacePatternBackground variant={patternVariant} />}
       <DashboardShell transparentContent={hasPattern} transparentHeader={patternVariant === 'hub'}>
-        {children}
+        {/* `contents`: scopes the News palette without adding a box to the shell's layout. */}
+        <div className="news-theme contents">{children}</div>
       </DashboardShell>
     </>
   );

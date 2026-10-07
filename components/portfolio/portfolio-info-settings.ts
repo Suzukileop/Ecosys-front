@@ -1,9 +1,5 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
-import {
-  resolveHeroPaletteColor,
-  type PortfolioHeroPalette,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   createElementTextStyle,
@@ -132,8 +128,6 @@ export {
   INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
   INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   INFO_HEADER_PALETTE_TOKEN_OPTIONS,
-  infoHeaderDesignFontClass,
-  infoHeaderDesignFontStyle,
   infoHeaderPaletteTokenColor,
   type PortfolioInfoHeaderAccentCountAlignment,
   type PortfolioInfoHeaderBillboardWordStyle,
@@ -277,6 +271,8 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   headerSerifLeadLabelText: string;
   /** Header serif lead — the large serif title itself, independent of the section title. */
   headerSerifLeadTitleText: string;
+  /** Header serif lead — the line under the title; empty = the section subtitle. */
+  headerSerifLeadSubtitleText: string;
   /** Header serif lead — each element bound to a palette token, independently. */
   headerSerifLeadLabelColor: PortfolioInfoHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioInfoHeaderPaletteToken;
@@ -288,6 +284,23 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   headerSerifLeadLabelWeight: PortfolioInfoHeaderTitleWeight;
   headerSerifLeadTitleWeight: PortfolioInfoHeaderTitleWeight;
   headerSerifLeadSubtitleWeight: PortfolioInfoHeaderTitleWeight;
+  /** Header editorial — kicker above the title; empty = "Info". */
+  headerEditorialLabelText: string;
+  /** Header editorial — the big title; empty = the section title. */
+  headerEditorialTitleText: string;
+  /** Header editorial — the line under the title; empty = the section subtitle. */
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, independently. */
+  headerEditorialLabelColor: PortfolioInfoHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioInfoHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioInfoHeaderPaletteToken;
+  /** Header editorial — each text sized/weighted independently. */
+  headerEditorialLabelSize: PortfolioInfoHeaderTitleSize;
+  headerEditorialTitleSize: PortfolioInfoHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioInfoHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioInfoHeaderTitleWeight;
+  headerEditorialTitleWeight: PortfolioInfoHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioInfoHeaderTitleWeight;
   /** Header billboard — big faint background word + a {count}-token line. */
   headerBillboardBigWord: string;
   headerBillboardCountText: string;
@@ -375,107 +388,29 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
 
 export type PortfolioInfoSectionSettings = PortfolioSectionCopy & PortfolioInfoPresentationSettings;
 
-export const DEFAULT_INFO_TITLE = 'About me';
-export const DEFAULT_INFO_VALUE_TITLE = 'My Values';
+const DEFAULT_INFO_TITLE = 'About me';
+const DEFAULT_INFO_VALUE_TITLE = 'My Values';
 export const DEFAULT_INFO_SUBTITLE = 'Background, education and how I work.';
-export const DEFAULT_ABOUT_ME_TRAIT_HEADLINE =
+const DEFAULT_ABOUT_ME_TRAIT_HEADLINE =
   'Turning Hard\nProblems Into\nSimple Software';
 
 /** About · banner — default XXL centered headline (3 lines). */
-export const DEFAULT_ABOUT_BANNER_HEADLINE = 'Built To Ship\nDesigned To\nScale';
+const DEFAULT_ABOUT_BANNER_HEADLINE = 'Built To Ship\nDesigned To\nScale';
 
 export const DEFAULT_ABOUT_PLATFORM_HEADLINE = 'Built for clarity\nand real-world impact';
-export const DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE = 'Skills I have';
-export const DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE = 'What I bring';
+const DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE = 'Skills I have';
+const DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE = 'What I bring';
 
 /** About · portrait skills — intro label above the languages list. */
-export const DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD = 'I speak';
+const DEFAULT_ABOUT_PORTRAIT_SKILLS_META_LEAD = 'I speak';
 
 const LEGACY_ABOUT_PORTRAIT_SKILLS_META_LEAD =
   'Lorem ipsum dolor sit amet, consectetur adipiscing elit — beyond the craft,';
 
-/** About · platform — headline presets (Jasper-style hero). */
-export const PORTFOLIO_INFO_ABOUT_PLATFORM_HEADLINE_PRESETS: {
-  id: string;
-  label: string;
-  description: string;
-  text: string;
-}[] = [
-  {
-    id: 'clarity-impact',
-    label: 'Clarity & Impact',
-    description: 'Product clarity and real-world impact.',
-    text: 'Built for clarity\nand real-world impact',
-  },
-  {
-    id: 'marketing-success',
-    label: 'Marketing Success',
-    description: 'Jasper-style tone — marketing success.',
-    text: 'Built for\nmarketing success',
-  },
-  {
-    id: 'ship-scale',
-    label: 'Ship & Scale',
-    description: 'Sturdy product, built to last.',
-    text: 'Built to ship\nproducts that scale',
-  },
-  {
-    id: 'real-people',
-    label: 'Real People',
-    description: 'Software that helps every day.',
-    text: 'Software that works\nfor real people',
-  },
-];
-
-/** About · banner — XXL headline presets (hero / manifesto tone). */
-export const PORTFOLIO_INFO_ABOUT_BANNER_HEADLINE_PRESETS: {
-  id: string;
-  label: string;
-  description: string;
-  text: string;
-}[] = [
-  {
-    id: 'ship-scale',
-    label: 'Ship & Scale',
-    description: 'Sturdy product, built to last.',
-    text: 'Built To Ship\nDesigned To\nScale',
-  },
-  {
-    id: 'flex-convert',
-    label: 'Flex & Convert',
-    description: 'Editorial impact, portfolio-hero style.',
-    text: 'Built To Flex\nDesigned To\nConvert',
-  },
-  {
-    id: 'sketch-production',
-    label: 'Sketch → Prod',
-    description: 'From first sketch to production.',
-    text: 'From First Sketch\nTo Production\nWithout Noise',
-  },
-  {
-    id: 'clear-clean',
-    label: 'Clear & Clean',
-    description: 'Clarity, execution, lasting products.',
-    text: 'Clear Thinking\nClean Builds\nLasting Products',
-  },
-  {
-    id: 'real-people',
-    label: 'Real People',
-    description: 'Technology that helps every day.',
-    text: 'Software That\nWorks For\nReal People',
-  },
-  {
-    id: 'ideas-live',
-    label: 'Ideas Live',
-    description: 'From ideas to real products.',
-    text: 'Where Bold Ideas\nBecome Real\nWorking Products',
-  },
-];
-
-export const DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_1 =
+const DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_1 =
   'I thrive on curiosity, originality, and attention to detail, approaching each project with care and collaboration to create experiences that leave a lasting impression in various markets.';
 
-export const DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_2 =
+const DEFAULT_ABOUT_VALUE_STEPS_INTRO_PARAGRAPH_2 =
   'Guided by creativity, integrity, and collaboration, striving to turn bold ideas into meaningful work while ensuring every project reflects innovation and purpose.';
 
 /** About · value steps — editorial section labels (My Values title stays separate). */
@@ -486,51 +421,6 @@ export const ABOUT_VALUE_STEPS_SECTION_LABELS = {
   systemsTools: 'Toolbox',
   languages: 'I speak',
 } as const;
-
-/** About · me trait — editorial headline presets (3-line intro phrases). */
-export const PORTFOLIO_INFO_ABOUT_ME_TRAIT_HEADLINE_PRESETS: {
-  id: string;
-  label: string;
-  description: string;
-  text: string;
-}[] = [
-  {
-    id: 'hard-to-simple',
-    label: 'Hard → Simple',
-    description: 'Complexity turned into simple software.',
-    text: 'Turning Hard\nProblems Into\nSimple Software',
-  },
-  {
-    id: 'effortless-products',
-    label: 'Effortless',
-    description: 'Digital products that feel fluid and natural.',
-    text: 'Building Digital\nProducts That\nFeel Effortless',
-  },
-  {
-    id: 'ideas-to-products',
-    label: 'Ideas → Products',
-    description: 'From idea to real product.',
-    text: 'From Complex Ideas\nTo Clear\nWorking Products',
-  },
-  {
-    id: 'clarity-purpose',
-    label: 'Clarity & Purpose',
-    description: 'Thoughtful code, clear intent.',
-    text: 'Crafting Software\nWith Clarity\nAnd Purpose',
-  },
-  {
-    id: 'tech-for-people',
-    label: 'Tech for People',
-    description: 'Accessible, human-centered technology.',
-    text: 'Making Technology\nSimple For\nReal People',
-  },
-  {
-    id: 'real-world-impact',
-    label: 'Real Impact',
-    description: 'Useful code, real-world impact.',
-    text: 'Where Thoughtful Code\nMeets Real\nWorld Impact',
-  },
-];
 
 export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
@@ -612,6 +502,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   headerAccentCountAlignment: 'left',
   headerSerifLeadLabelText: '',
   headerSerifLeadTitleText: '',
+  headerSerifLeadSubtitleText: '',
   headerSerifLeadLabelColor: 'texteFort',
   headerSerifLeadTitleColor: 'texteFort',
   headerSerifLeadSubtitleColor: 'texteFort',
@@ -620,7 +511,19 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   headerSerifLeadSubtitleSize: 'md',
   headerSerifLeadLabelWeight: 'regular',
   headerSerifLeadTitleWeight: 'regular',
-  headerSerifLeadSubtitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular' as const,
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialTitleSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialTitleWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
   headerBillboardBigWord: '',
   headerBillboardCountText: '',
   headerBillboardTitleText: '',
@@ -678,7 +581,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   colorModeOverride: 'auto',
 };
 
-export const PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS: {
+const PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS: {
   value: PortfolioInfoAboutValueValuesLayout;
   label: string;
   description: string;
@@ -713,7 +616,7 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS: {
   ...PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS,
 ];
 
-export function isPortfolioInfoAboutValueValuesLayout(
+function isPortfolioInfoAboutValueValuesLayout(
   value: unknown
 ): value is PortfolioInfoAboutValueValuesLayout {
   return (
@@ -733,55 +636,13 @@ export function resolveInfoAboutValueValuesLayout(
   return presentation.design === 'about-value-steps' ? 'value-steps' : 'editorial';
 }
 
-export const PORTFOLIO_INFO_ABOUT_VALUE_BLOCKS_LAYOUT_OPTIONS: {
-  value: PortfolioInfoAboutValueBlocksLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'split',
-    label: 'Split',
-    description: 'Title on the left, list on the right — one section per row (desktop).',
-  },
-  {
-    value: 'grid-2',
-    label: '2-column grid',
-    description: 'My Values, Strengths, etc. side by side — title on top, content below.',
-  },
-];
-
-export function isPortfolioInfoAboutValueBlocksLayout(
+function isPortfolioInfoAboutValueBlocksLayout(
   value: unknown
 ): value is PortfolioInfoAboutValueBlocksLayout {
   return value === 'split' || value === 'grid-2';
 }
 
-export function resolveInfoAboutValueBlocksLayout(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutValueBlocksLayout'>
-): PortfolioInfoAboutValueBlocksLayout {
-  return isPortfolioInfoAboutValueBlocksLayout(presentation.aboutValueBlocksLayout)
-    ? presentation.aboutValueBlocksLayout
-    : 'split';
-}
-
-export const PORTFOLIO_INFO_ABOUT_MANIFESTO_BLOCKS_LAYOUT_OPTIONS: {
-  value: PortfolioInfoAboutManifestoBlocksLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'grid',
-    label: 'Grid',
-    description: 'Two blocks per row — aligned in a grid (Education | Skills, etc.).',
-  },
-  {
-    value: 'zigzag',
-    label: 'Zigzag',
-    description: 'One block per row — alternating left then right.',
-  },
-];
-
-export function isPortfolioInfoAboutManifestoBlocksLayout(
+function isPortfolioInfoAboutManifestoBlocksLayout(
   value: unknown
 ): value is PortfolioInfoAboutManifestoBlocksLayout {
   return value === 'grid' || value === 'zigzag';
@@ -826,7 +687,7 @@ export const PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS: {
   },
 ];
 
-export function isPortfolioInfoAboutManifestoPortraitFrame(
+function isPortfolioInfoAboutManifestoPortraitFrame(
   value: unknown
 ): value is PortfolioInfoAboutManifestoPortraitFrame {
   return (
@@ -863,7 +724,7 @@ export const PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS: {
   },
 ];
 
-export function isPortfolioInfoAboutSplitPortraitSide(
+function isPortfolioInfoAboutSplitPortraitSide(
   value: unknown
 ): value is PortfolioInfoAboutSplitPortraitSide {
   return value === 'left' || value === 'right';
@@ -883,7 +744,7 @@ export type AboutSplitSectionLabels = {
   languages: string;
 };
 
-export const ABOUT_SPLIT_SECTION_LABELS_BY_STYLE: Record<
+const ABOUT_SPLIT_SECTION_LABELS_BY_STYLE: Record<
   PortfolioInfoAboutSplitSectionLabelsStyle,
   AboutSplitSectionLabels
 > = {
@@ -914,45 +775,7 @@ export const ABOUT_SPLIT_SECTION_LABELS_BY_STYLE: Record<
   },
 };
 
-export const PORTFOLIO_INFO_ABOUT_SPLIT_SECTION_LABELS_OPTIONS: {
-  value: PortfolioInfoAboutSplitSectionLabelsStyle;
-  label: string;
-  description: string;
-  preview: AboutSplitSectionLabels;
-}[] = [
-  {
-    value: 'default',
-    label: 'Standard',
-    description: 'Skills · Strengths · Languages — classic titles.',
-    preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.default,
-  },
-  {
-    value: 'conversational',
-    label: 'Conversational',
-    description: 'What I do · What I bring · I speak — personal tone.',
-    preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.conversational,
-  },
-  {
-    value: 'professional',
-    label: 'Professional',
-    description: 'Core competencies · Key strengths · Languages spoken.',
-    preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.professional,
-  },
-  {
-    value: 'editorial',
-    label: 'Editorial',
-    description: 'Expertise · Qualities · Spoken languages — magazine style.',
-    preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.editorial,
-  },
-  {
-    value: 'creative',
-    label: 'Creative',
-    description: 'Capabilities · Superpowers · Languages — creative portfolio.',
-    preview: ABOUT_SPLIT_SECTION_LABELS_BY_STYLE.creative,
-  },
-];
-
-export function isPortfolioInfoAboutSplitSectionLabelsStyle(
+function isPortfolioInfoAboutSplitSectionLabelsStyle(
   value: unknown
 ): value is PortfolioInfoAboutSplitSectionLabelsStyle {
   return (
@@ -964,7 +787,7 @@ export function isPortfolioInfoAboutSplitSectionLabelsStyle(
   );
 }
 
-export function isPortfolioInfoLabelsMode(value: unknown): value is PortfolioInfoLabelsMode {
+function isPortfolioInfoLabelsMode(value: unknown): value is PortfolioInfoLabelsMode {
   return value === 'standard' || value === 'custom';
 }
 
@@ -986,7 +809,7 @@ export function resolveAboutSplitSectionLabels(
   };
 }
 
-export type AboutBannerSectionLabels = Pick<AboutSplitSectionLabels, 'skills' | 'strengths'> & {
+type AboutBannerSectionLabels = Pick<AboutSplitSectionLabels, 'skills' | 'strengths'> & {
   education: string;
   interests: string;
 };
@@ -1065,7 +888,7 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS: {
   { value: 'none', label: 'None', description: 'Hide bullets — text only.', preview: '∅' },
 ];
 
-export function isPortfolioInfoAboutValueListMarkerStyle(
+function isPortfolioInfoAboutValueListMarkerStyle(
   value: unknown
 ): value is PortfolioInfoAboutValueListMarkerStyle {
   return (
@@ -1117,69 +940,25 @@ export function resolveInfoShowInterests(
   return presentation.showInterests !== false;
 }
 
-export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_SIZE_OPTIONS: {
-  value: PortfolioInfoAboutValueBioSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'S', description: 'Compact — text-2xl / 3xl.' },
-  { value: 'md', label: 'M', description: 'Medium — text-3xl / 4xl.' },
-  { value: 'lg', label: 'L', description: 'Large — text-4xl / 5xl.' },
-  { value: 'xl', label: 'XL', description: 'Statement — text-4xl / 6xl.' },
-];
-
-export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_WIDTH_OPTIONS: {
-  value: PortfolioInfoAboutValueBioWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'full', label: 'Full width', description: 'The bio fills the full width of the container.' },
-  {
-    value: 'half',
-    label: 'Half width',
-    description: 'The bio takes up ~50% — left, center, or right aligned.',
-  },
-];
-
-export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_ALIGN_OPTIONS: {
-  value: PortfolioInfoAboutValueBioAlign;
-  label: string;
-}[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
-];
-
-export const PORTFOLIO_INFO_ABOUT_VALUE_BIO_COLOR_OPTIONS: {
-  value: PortfolioInfoAboutValueBioColorToken;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'principal', label: 'Principal', description: 'Main accent from the Hero palette.' },
-  { value: 'texteFort', label: 'Text', description: 'Strong text — titles and main copy.' },
-  { value: 'texteMuted', label: 'Muted', description: 'Muted secondary text.' },
-  { value: 'texteFaint', label: 'Faint', description: 'Subtle text — hints and labels.' },
-];
-
-export function isPortfolioInfoAboutValueBioSize(
+function isPortfolioInfoAboutValueBioSize(
   value: unknown
 ): value is PortfolioInfoAboutValueBioSize {
   return value === 'sm' || value === 'md' || value === 'lg' || value === 'xl';
 }
 
-export function isPortfolioInfoAboutValueBioWidth(
+function isPortfolioInfoAboutValueBioWidth(
   value: unknown
 ): value is PortfolioInfoAboutValueBioWidth {
   return value === 'full' || value === 'half';
 }
 
-export function isPortfolioInfoAboutValueBioAlign(
+function isPortfolioInfoAboutValueBioAlign(
   value: unknown
 ): value is PortfolioInfoAboutValueBioAlign {
   return value === 'left' || value === 'center' || value === 'right';
 }
 
-export function isPortfolioInfoAboutValueBioColorToken(
+function isPortfolioInfoAboutValueBioColorToken(
   value: unknown
 ): value is PortfolioInfoAboutValueBioColorToken {
   return (
@@ -1188,61 +967,6 @@ export function isPortfolioInfoAboutValueBioColorToken(
     value === 'texteMuted' ||
     value === 'texteFaint'
   );
-}
-
-export function resolveInfoAboutValueBioSize(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutValueBioSize'>
-): PortfolioInfoAboutValueBioSize {
-  return isPortfolioInfoAboutValueBioSize(presentation.aboutValueBioSize)
-    ? presentation.aboutValueBioSize
-    : 'xl';
-}
-
-export function resolveInfoAboutValueBioWidth(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutValueBioWidth'>
-): PortfolioInfoAboutValueBioWidth {
-  return isPortfolioInfoAboutValueBioWidth(presentation.aboutValueBioWidth)
-    ? presentation.aboutValueBioWidth
-    : 'full';
-}
-
-export function resolveInfoAboutValueBioAlign(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutValueBioAlign'>
-): PortfolioInfoAboutValueBioAlign {
-  return isPortfolioInfoAboutValueBioAlign(presentation.aboutValueBioAlign)
-    ? presentation.aboutValueBioAlign
-    : 'left';
-}
-
-export function resolveInfoAboutValueBioColorToken(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutValueBioColorToken'>
-): PortfolioInfoAboutValueBioColorToken {
-  return isPortfolioInfoAboutValueBioColorToken(presentation.aboutValueBioColorToken)
-    ? presentation.aboutValueBioColorToken
-    : 'texteMuted';
-}
-
-export function aboutValueBioSizeClass(size: PortfolioInfoAboutValueBioSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-2xl sm:text-3xl';
-    case 'md':
-      return 'text-3xl sm:text-4xl';
-    case 'lg':
-      return 'text-4xl sm:text-5xl';
-    case 'xl':
-    default:
-      return 'text-4xl sm:text-5xl lg:text-6xl';
-  }
-}
-
-export function resolveAboutValueBioText(
-  customText: string | undefined,
-  profileBio: string | null | undefined
-): string {
-  const custom = customText?.trim();
-  if (custom) return custom;
-  return profileBio?.trim() ?? '';
 }
 
 export function resolveAboutValueStepsIntroParagraphs(
@@ -1266,20 +990,6 @@ export function resolveAboutMeTraitHeadlineText(customText: string | undefined):
   return DEFAULT_ABOUT_ME_TRAIT_HEADLINE;
 }
 
-export function resolveAboutBannerHeadlineText(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    'aboutBannerHeadlineCustomText' | 'aboutMeTraitHeadlineCustomText'
-  >
-): string {
-  const banner = presentation.aboutBannerHeadlineCustomText?.trim();
-  if (banner) return banner;
-  // Legacy — banner previously reused the trait headline field.
-  const legacy = presentation.aboutMeTraitHeadlineCustomText?.trim();
-  if (legacy && legacy !== DEFAULT_ABOUT_ME_TRAIT_HEADLINE) return legacy;
-  return DEFAULT_ABOUT_BANNER_HEADLINE;
-}
-
 export function resolveAboutPlatformHeadlineText(
   presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPlatformHeadlineCustomText'>,
   specialty?: string | null
@@ -1291,14 +1001,6 @@ export function resolveAboutPlatformHeadlineText(
   return DEFAULT_ABOUT_PLATFORM_HEADLINE;
 }
 
-export function resolveAboutPlatformSkillsSectionTitle(
-  presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPlatformSkillsSectionTitle'>
-): string {
-  return (
-    presentation.aboutPlatformSkillsSectionTitle?.trim() || DEFAULT_ABOUT_PLATFORM_SKILLS_TITLE
-  );
-}
-
 export function resolveAboutPlatformStrengthsSectionTitle(
   presentation: Pick<PortfolioInfoPresentationSettings, 'aboutPlatformStrengthsSectionTitle'>
 ): string {
@@ -1306,34 +1008,6 @@ export function resolveAboutPlatformStrengthsSectionTitle(
     presentation.aboutPlatformStrengthsSectionTitle?.trim() ||
     DEFAULT_ABOUT_PLATFORM_STRENGTHS_TITLE
   );
-}
-
-export function resolveAboutValueBioColor(
-  presentation: Pick<
-    PortfolioInfoPresentationSettings,
-    | 'aboutValueBioColorToken'
-    | 'useHeroPalette'
-    | 'titleColor'
-    | 'subtitleColor'
-    | 'bodyColor'
-  >,
-  palette?: PortfolioHeroPalette
-): string {
-  const token = resolveInfoAboutValueBioColorToken(presentation);
-  if (presentation.useHeroPalette !== false && palette) {
-    return resolveHeroPaletteColor(palette, token);
-  }
-  switch (token) {
-    case 'principal':
-      return presentation.titleColor;
-    case 'texteFort':
-      return presentation.subtitleColor;
-    case 'texteFaint':
-      return presentation.bodyColor;
-    case 'texteMuted':
-    default:
-      return presentation.bodyColor;
-  }
 }
 
 export const PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS: {
@@ -1363,7 +1037,7 @@ export const PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS: {
   },
 ];
 
-export function isPortfolioInfoEducationDisplayStyle(
+function isPortfolioInfoEducationDisplayStyle(
   value: unknown
 ): value is PortfolioInfoEducationDisplayStyle {
   return (
@@ -1431,7 +1105,7 @@ export function resolveInfoEducationCascadeScrollShift(
   return presentation.educationCascadeScrollShift === true;
 }
 
-export const INFO_PREMIUM_FONT_SIZES: PortfolioInfoPremiumFontSize[] = [
+const INFO_PREMIUM_FONT_SIZES: PortfolioInfoPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -1455,7 +1129,7 @@ export const PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS: {
   },
 ];
 
-export function isPortfolioInfoPremiumFontSize(value: unknown): value is PortfolioInfoPremiumFontSize {
+function isPortfolioInfoPremiumFontSize(value: unknown): value is PortfolioInfoPremiumFontSize {
   return (
     value === 'small' ||
     value === 'medium' ||
@@ -1560,39 +1234,6 @@ export function infoContentEducationMetaSizeClass(size: PortfolioInfoPremiumFont
     case 'medium':
     default:
       return 'text-sm sm:text-base';
-  }
-}
-
-export function aboutMeTraitSectionTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
-  switch (size) {
-    case 'small':
-      return 'text-xl sm:text-2xl lg:text-[1.75rem]';
-    case 'large':
-      return 'text-3xl sm:text-4xl lg:text-[2.25rem]';
-    case 'xlarge':
-      return 'text-4xl sm:text-5xl lg:text-[2.5rem]';
-    case 'xxlarge':
-      return 'text-5xl sm:text-6xl lg:text-[2.75rem]';
-    case 'medium':
-    default:
-      return 'text-2xl sm:text-3xl lg:text-[2rem]';
-  }
-}
-
-/** About · banner — centered XXL headline scale. */
-export function aboutBannerHeadlineSizeClass(size: PortfolioInfoPremiumFontSize): string {
-  switch (size) {
-    case 'small':
-      return 'text-[clamp(2.75rem,9vw,5.5rem)]';
-    case 'large':
-      return 'text-[clamp(3.75rem,12vw,8.5rem)]';
-    case 'xlarge':
-      return 'text-[clamp(4.25rem,13.5vw,10rem)]';
-    case 'xxlarge':
-      return 'text-[clamp(4.75rem,15vw,11.5rem)]';
-    case 'medium':
-    default:
-      return 'text-[clamp(3.25rem,10.5vw,7rem)]';
   }
 }
 
@@ -1828,40 +1469,6 @@ export function manifestoStatementSecondarySizeClass(size: PortfolioInfoPremiumF
     case 'medium':
     default:
       return 'text-lg sm:text-xl';
-  }
-}
-
-/** Classic about-me — section subtitle (h2). */
-export function infoContentSectionTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
-  switch (size) {
-    case 'small':
-      return 'text-2xl sm:text-3xl lg:text-[2.25rem] lg:leading-[1.15]';
-    case 'large':
-      return 'text-4xl sm:text-5xl lg:text-[3.25rem] lg:leading-[1.12]';
-    case 'xlarge':
-      return 'text-5xl sm:text-6xl lg:text-[3.75rem] lg:leading-[1.1]';
-    case 'xxlarge':
-      return 'text-6xl sm:text-7xl lg:text-[4.25rem] lg:leading-[1.08]';
-    case 'medium':
-    default:
-      return 'text-3xl sm:text-4xl lg:text-[2.75rem] lg:leading-[1.15]';
-  }
-}
-
-/** About · split — large uppercase title. */
-export function aboutSplitTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
-  switch (size) {
-    case 'small':
-      return 'text-3xl sm:text-4xl lg:text-[2.75rem] xl:text-5xl';
-    case 'large':
-      return 'text-5xl sm:text-6xl lg:text-[3.75rem] xl:text-7xl';
-    case 'xlarge':
-      return 'text-6xl sm:text-7xl lg:text-[4.25rem] xl:text-8xl';
-    case 'xxlarge':
-      return 'text-7xl sm:text-8xl lg:text-[4.75rem] xl:text-9xl';
-    case 'medium':
-    default:
-      return 'text-4xl sm:text-5xl lg:text-[3.25rem] xl:text-6xl';
   }
 }
 
@@ -2131,7 +1738,7 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
   },
 ];
 
-export function isPortfolioInfoDesign(value: unknown): value is PortfolioInfoDesign {
+function isPortfolioInfoDesign(value: unknown): value is PortfolioInfoDesign {
   return (
     value === 'about-me' ||
     value === 'about-me-trait' ||
@@ -2169,7 +1776,7 @@ export function resolveInfoDesign(
   return fallback;
 }
 
-export function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<PortfolioInfoSectionSettings> {
+function defaultsForInfoDesign(design: PortfolioInfoDesign): Partial<PortfolioInfoSectionSettings> {
   switch (design) {
     case 'about-me-trait':
       return {
@@ -2387,36 +1994,6 @@ function sanitizeHex(value: unknown, fallback: string): string {
 
 const DEFAULT_INFO_HEADER_TITLE_COLOR = '#e2572e';
 const DEFAULT_INFO_HEADER_SUBTITLE_COLOR = '#f5f5f5';
-
-export function infoHeaderFontClass(font: PortfolioInfoHeaderFont, kind: 'title' | 'subtitle'): string {
-  if (kind === 'title') {
-    switch (font) {
-      case 'serif':
-        return 'font-serif font-bold tracking-[-0.03em]';
-      case 'display':
-        return 'font-black tracking-[-0.02em]';
-      default:
-        return 'font-extrabold tracking-[-0.04em]';
-    }
-  }
-  switch (font) {
-    case 'serif':
-      return 'font-serif leading-relaxed';
-    case 'display':
-      return 'font-bold leading-relaxed tracking-[-0.01em]';
-    default:
-      return 'leading-relaxed';
-  }
-}
-
-export function infoHeaderFontStyle(
-  _font: PortfolioInfoHeaderFont,
-  _subtitleSerif: boolean,
-  _kind: 'title' | 'subtitle'
-): CSSProperties | undefined {
-  // Font family is controlled only by Global → Police principale.
-  return undefined;
-}
 
 export function infoTitleColorStyle(color: string): CSSProperties {
   return { color: sanitizeHex(color, DEFAULT_INFO_HEADER_TITLE_COLOR) };
@@ -2768,10 +2345,8 @@ export function mergeInfoPresentation(
     titleFont: pick(record.titleFont, ['sans', 'serif', 'display'], base.titleFont),
     subtitleFont: pick(record.subtitleFont, ['sans', 'serif', 'display'], base.subtitleFont),
     headerDesign: pick(record.headerDesign, INFO_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
-    headerAnimationEnabled:
-      typeof record.headerAnimationEnabled === 'boolean'
-        ? record.headerAnimationEnabled
-        : (base.headerAnimationEnabled ?? true),
+    // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
+    headerAnimationEnabled: true,
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'],
@@ -2829,6 +2404,10 @@ export function mergeInfoPresentation(
       typeof record.headerSerifLeadTitleText === 'string'
         ? record.headerSerifLeadTitleText
         : (base.headerSerifLeadTitleText ?? ''),
+    headerSerifLeadSubtitleText:
+      typeof record.headerSerifLeadSubtitleText === 'string'
+        ? record.headerSerifLeadSubtitleText
+        : (base.headerSerifLeadSubtitleText ?? ''),
     headerSerifLeadLabelColor: pick(
       record.headerSerifLeadLabelColor,
       INFO_HEADER_PALETTE_TOKENS,
@@ -2873,6 +2452,63 @@ export function mergeInfoPresentation(
       record.headerSerifLeadSubtitleWeight,
       INFO_HEADER_TITLE_WEIGHTS,
       base.headerSerifLeadSubtitleWeight ?? 'regular'
+    ),
+    headerEditorialLabelText:
+      typeof record.headerEditorialLabelText === 'string'
+        ? record.headerEditorialLabelText
+        : (base.headerEditorialLabelText ?? ''),
+    headerEditorialTitleText:
+      typeof record.headerEditorialTitleText === 'string'
+        ? record.headerEditorialTitleText
+        : (base.headerEditorialTitleText ?? ''),
+    headerEditorialSubtitleText:
+      typeof record.headerEditorialSubtitleText === 'string'
+        ? record.headerEditorialSubtitleText
+        : (base.headerEditorialSubtitleText ?? ''),
+    headerEditorialLabelColor: pick(
+      record.headerEditorialLabelColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerEditorialLabelColor ?? 'texteFort'
+    ),
+    headerEditorialTitleColor: pick(
+      record.headerEditorialTitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerEditorialTitleColor ?? 'texteFort'
+    ),
+    headerEditorialSubtitleColor: pick(
+      record.headerEditorialSubtitleColor,
+      INFO_HEADER_PALETTE_TOKENS,
+      base.headerEditorialSubtitleColor ?? 'texteFort'
+    ),
+    headerEditorialLabelSize: pick(
+      record.headerEditorialLabelSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerEditorialLabelSize ?? 'md'
+    ),
+    headerEditorialTitleSize: pick(
+      record.headerEditorialTitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerEditorialTitleSize ?? 'md'
+    ),
+    headerEditorialSubtitleSize: pick(
+      record.headerEditorialSubtitleSize,
+      INFO_HEADER_TITLE_SIZES,
+      base.headerEditorialSubtitleSize ?? 'md'
+    ),
+    headerEditorialLabelWeight: pick(
+      record.headerEditorialLabelWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialLabelWeight ?? 'regular'
+    ),
+    headerEditorialTitleWeight: pick(
+      record.headerEditorialTitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialTitleWeight ?? 'regular'
+    ),
+    headerEditorialSubtitleWeight: pick(
+      record.headerEditorialSubtitleWeight,
+      INFO_HEADER_TITLE_WEIGHTS,
+      base.headerEditorialSubtitleWeight ?? 'regular'
     ),
     headerBillboardBigWord:
       typeof record.headerBillboardBigWord === 'string'

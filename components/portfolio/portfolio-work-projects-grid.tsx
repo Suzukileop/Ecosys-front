@@ -537,128 +537,6 @@ function ProjectsGridNavButtons({
   );
 }
 
-/**
- * Grid design header — kicker + editorial title + airy subtitle.
- * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
- */
-export function ProjectsGridSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  trailing,
-  className = '',
-  entryCount,
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  trailing?: ReactNode;
-  className?: string;
-  entryCount?: number;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-  const countLabel =
-    typeof entryCount === 'number' && entryCount > 0
-      ? String(entryCount).padStart(2, '0')
-      : '';
-
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || isEmpty) return;
-
-    if (prefersReducedMotion()) {
-      showElementNow(header);
-      return;
-    }
-
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      revealElement(header, 0);
-    };
-
-    const ioRoot = gridScrollRoot(header);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            reveal();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
-    );
-    observer.observe(header);
-    const failSafe = window.setTimeout(reveal, 1600);
-
-    return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [heading, sub, isEmpty]);
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={headerRef}
-      className={`pf-work-grid-header mb-14 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
-      data-pf-no-color-transition=""
-      style={GRID_HIDDEN}
-    >
-      <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between sm:gap-12 lg:gap-16">
-        <div className="min-w-0 max-w-3xl">
-          {countLabel ? (
-            <div className="mb-5 flex items-center gap-3 sm:mb-6">
-              <span
-                className="h-px w-7 shrink-0 sm:w-9"
-                style={{ backgroundColor: titleColor, opacity: 0.45 }}
-                aria-hidden
-              />
-              <p
-                className="text-[10px] font-medium uppercase tracking-[0.28em] sm:text-[11px]"
-                style={{ color: subtitleColor, opacity: 0.78 }}
-              >
-                {countLabel}
-              </p>
-            </div>
-          ) : null}
-          {heading ? (
-            <h2
-              className="font-semibold tracking-[-0.045em]"
-              style={{
-                color: titleColor,
-                fontSize: 'clamp(2.15rem, 5.1vw, 3.85rem)',
-                lineHeight: 1.16,
-              }}
-            >
-              <EditorialTitleText text={heading} />
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              className={`max-w-md text-[15px] font-normal leading-[1.7] sm:text-base sm:leading-[1.72] ${
-                heading ? 'mt-4 sm:mt-5' : ''
-              }`}
-              style={{ color: subtitleColor, opacity: 0.84 }}
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        {trailing ? <div className="shrink-0 pb-0.5 sm:pb-1">{trailing}</div> : null}
-      </div>
-    </header>
-  );
-}
-
 function GridCard({
   item,
   index,
@@ -813,7 +691,7 @@ function GridCard({
 }
 
 /** Thumbnail + title + description grid — Projects grid design only. */
-export function ProjectsGridGallery({
+function ProjectsGridGallery({
   items,
   presentation = DEFAULT_WORK_PRESENTATION,
   forceSingleColumn = false,
@@ -983,10 +861,4 @@ export function ProjectsGridSection({
       />
     </div>
   );
-}
-
-export function isProjectsGridDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-grid';
 }

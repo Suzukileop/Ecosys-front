@@ -8,7 +8,7 @@ import { HeaderCountBadge } from '@/components/layout/HeaderCountBadge';
 import { listConversations } from '@/lib/messaging';
 
 const POLL_MS = 20_000;
-const MESSAGES_HREF = '/dashboard/discussions';
+const MESSAGES_HREF = '/messages';
 
 function sumUnread(conversations: { unreadCount?: number }[]): number {
   return conversations.reduce((sum, c) => sum + (c.unreadCount ?? 0), 0);

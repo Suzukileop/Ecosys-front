@@ -10,7 +10,7 @@ import { marketplaceProductGridClassName } from '@/components/marketplace/Produc
 import { PurchaseLibraryCard } from '@/components/marketplace/PurchaseLibraryCard';
 import { useAuth } from '@/context/AuthContext';
 
-export function PurchasesPanel() {
+function PurchasesPanel() {
   const { user, isLoading } = useAuth();
   const [items, setItems] = useState<Awaited<ReturnType<typeof listMyPurchases>>['content']>([]);
   const [loading, setLoading] = useState(true);

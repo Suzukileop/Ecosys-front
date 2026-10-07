@@ -1,10 +1,7 @@
 import api from '@/lib/api';
-import { normalizeSpringPage } from '@/lib/ecosystem';
-import {
-  hrefWithNotificationHighlight,
-  NOTIFICATION_TARGET,
-} from '@/lib/notification-highlight';
-import type { NotificationDto, PagedResponse, SpringPageRaw } from '@/types/ecosystem';
+import { normalizeSpringPage } from '@/lib/pagination';
+import type { NotificationDto, PagedResponse, SpringPageRaw } from '@/types/profile';
+import { SIGNED_IN_HOME } from '@/lib/routes';
 
 const BADGE_BASELINE_KEY = 'notification_badge_baseline';
 export const NOTIFICATION_BADGE_DISMISS_EVENT = 'notification-badge-dismiss';
@@ -13,7 +10,7 @@ export const NOTIFICATION_BADGE_DISMISS_EVENT = 'notification-badge-dismiss';
  * Profile visits stay as individual rows (no same-day aggregation).
  * Kept as a pass-through for callers that previously collapsed groups.
  */
-export const PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX = Number.POSITIVE_INFINITY;
+const PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX = Number.POSITIVE_INFINITY;
 
 export const CREATOR_PROFILE_VISIT_TYPE = 'CREATOR_PROFILE_VISIT';
 export const CREATOR_PROFILE_VISIT_GROUP_TYPE = 'CREATOR_PROFILE_VISIT_GROUP';
@@ -23,7 +20,7 @@ export const FOLLOWER_NEW_CONTENT_TYPE = 'FOLLOWER_NEW_CONTENT';
 export const FOLLOWER_NEW_SERVICE_TYPE = 'FOLLOWER_NEW_SERVICE';
 
 export type NotificationFilter = 'all' | 'unread';
-export type NotificationTimeGroup = 'nouveau' | 'aujourdhui' | 'plus_tot';
+type NotificationTimeGroup = 'nouveau' | 'aujourdhui' | 'plus_tot';
 
 export const NOTIFICATION_GROUP_LABELS: Record<NotificationTimeGroup, string> = {
   nouveau: 'New',
@@ -46,7 +43,7 @@ export async function fetchUnreadCount(): Promise<number> {
   return typeof res.data === 'number' ? res.data : 0;
 }
 
-export async function markNotificationRead(id: string): Promise<void> {
+async function markNotificationRead(id: string): Promise<void> {
   await api.put(`/api/notifications/${id}/read`);
 }
 
@@ -86,7 +83,7 @@ export function filterNotifications(
 /**
  * Profile-visit notifications are shown individually (no same-day bundle).
  */
-export function collapseProfileVisitNotifications(
+function collapseProfileVisitNotifications(
   items: NotificationDto[],
   _individualMax = PROFILE_VISIT_NOTIFICATION_INDIVIDUAL_MAX,
 ): NotificationDto[] {
@@ -143,20 +140,19 @@ export function formatNotificationTimestamp(iso: string, nowMs = Date.now()): st
   return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
-export type ResolveNotificationHrefOptions = {
+type ResolveNotificationHrefOptions = {
   actorProfileAvailable?: boolean | null;
 };
 
-/** Lien cible selon le type de notification et le rôle de l'utilisateur. */
+/** Lien cible selon le type de notification. */
 export function resolveNotificationHref(
   type: string,
   refId?: string | null,
-  isAgent = false,
   refSecondaryId?: string | null,
   options?: ResolveNotificationHrefOptions,
 ): string | null {
   if (type === CREATOR_PROFILE_VISIT_GROUP_TYPE) {
-    return '/dashboard/creator?tab=visitors';
+    return '/profile?tab=visitors';
   }
 
   if (type === CREATOR_PROFILE_VISIT_TYPE) {
@@ -164,9 +160,9 @@ export function resolveNotificationHref(
       if (options?.actorProfileAvailable === false) {
         return null;
       }
-      return `/marketplace/${encodeURIComponent(refSecondaryId)}`;
+      return `/providers/${encodeURIComponent(refSecondaryId)}`;
     }
-    return '/dashboard/creator?tab=visitors';
+    return '/profile?tab=visitors';
   }
 
   if (type === CREATOR_NEW_FOLLOWER_TYPE) {
@@ -174,54 +170,28 @@ export function resolveNotificationHref(
       if (options?.actorProfileAvailable === false) {
         return null;
       }
-      return `/marketplace/${encodeURIComponent(refSecondaryId)}`;
+      return `/providers/${encodeURIComponent(refSecondaryId)}`;
     }
-    return '/dashboard/creator?tab=subscribers';
+    return '/profile?tab=subscribers';
   }
 
-  if (!refId) {
-    if (isAgent && (type === 'NICHE_ACTIVATED' || type === 'NICHE_WAITING_VALIDATION' || type === 'NICHE_REQUEST_NEW')) {
-      return '/dashboard/agent';
-    }
-    return null;
-  }
-
-  if (isAgent) {
-    switch (type) {
-      case 'NICHE_WAITING_VALIDATION':
-      case 'NICHE_REQUEST_NEW':
-      case 'DEMO_REJECTED':
-        return hrefWithNotificationHighlight(`/dashboard/agent/${refId}`, NOTIFICATION_TARGET.AGENT_DEMO);
-      case 'NICHE_ACTIVATED':
-        return hrefWithNotificationHighlight(
-          `/dashboard/agent/deliver/${refId}`,
-          NOTIFICATION_TARGET.AGENT_DELIVER,
-        );
-      default:
-        return '/dashboard/agent';
-    }
-  }
+  if (!refId) return null;
 
   switch (type) {
-    case 'DEMO_READY':
-    case 'NICHE_PENDING_MODEL':
-    case 'ECOSYSTEM_ACTIVE':
-    case 'CONTENT_DELIVERED':
-      return '/dashboard/home';
     case 'CONVERSATION_GUEST_INVITE':
-      return '/dashboard/discussions?filter=temporary';
+      return '/messages?filter=temporary';
     case FOLLOWER_NEW_PRODUCT_TYPE:
       return `/marketplace/products/${encodeURIComponent(refId)}`;
     case FOLLOWER_NEW_CONTENT_TYPE:
       return refSecondaryId
-        ? `/marketplace/${encodeURIComponent(refSecondaryId)}?tab=content&post=${encodeURIComponent(refId)}`
+        ? `/providers/${encodeURIComponent(refSecondaryId)}?tab=content&post=${encodeURIComponent(refId)}`
         : `/marketplace/content/${encodeURIComponent(refId)}`;
     case FOLLOWER_NEW_SERVICE_TYPE:
       return refSecondaryId
-        ? `/marketplace/${encodeURIComponent(refSecondaryId)}?tab=services&service=${encodeURIComponent(refId)}`
-        : '/marketplace/creators';
+        ? `/providers/${encodeURIComponent(refSecondaryId)}?tab=services&service=${encodeURIComponent(refId)}`
+        : '/providers';
     default:
-      return '/dashboard/home';
+      return SIGNED_IN_HOME;
   }
 }
 
@@ -251,7 +221,6 @@ export async function markNotificationItemRead(n: NotificationDto): Promise<stri
 
 export function resolveNotificationNavigation(
   n: NotificationDto,
-  isAgent: boolean,
 ): { href: string | null; unavailableVisitor: boolean } {
   if (
     (n.type === CREATOR_PROFILE_VISIT_TYPE || n.type === CREATOR_NEW_FOLLOWER_TYPE) &&
@@ -261,7 +230,7 @@ export function resolveNotificationNavigation(
     return { href: null, unavailableVisitor: true };
   }
   return {
-    href: resolveNotificationHref(n.type, n.refId, isAgent, n.refSecondaryId, {
+    href: resolveNotificationHref(n.type, n.refId, n.refSecondaryId, {
       actorProfileAvailable: n.actorProfileAvailable,
     }),
     unavailableVisitor: false,
@@ -269,17 +238,6 @@ export function resolveNotificationNavigation(
 }
 
 const NOTIFICATION_TITLES_EN: Record<string, string> = {
-  CONTENT_DELIVERED: 'New content available',
-  ECOSYSTEM_ACTIVE: 'Ecosystem activated',
-  DEMO_READY: 'Validation model ready',
-  NICHE_PENDING_MODEL: 'Request submitted',
-  NICHE_WAITING_VALIDATION: 'Niche awaiting validation model',
-  NICHE_REQUEST_NEW: 'New niche request',
-  NICHE_ACTIVATED: 'Niche activated by client',
-  DEMO_REJECTED: 'Validation model rejected',
-  PAYMENT_FAILED: 'Payment failed',
-  POST_PUBLISHED: 'Published successfully',
-  POST_FAILED: 'Publication failed',
   CONVERSATION_GUEST_INVITE: 'Temporary conversation invite',
   CREATOR_PROFILE_VISIT: 'Profile visit',
   CREATOR_PROFILE_VISIT_GROUP: 'Profile visits',
@@ -288,28 +246,6 @@ const NOTIFICATION_TITLES_EN: Record<string, string> = {
   FOLLOWER_NEW_CONTENT: 'New content',
   FOLLOWER_NEW_SERVICE: 'New service',
 };
-
-function extractQuotedTheme(message: string | null | undefined): string | null {
-  if (!message) return null;
-  const fr = message.match(/«([^»]+)»/);
-  if (fr?.[1]) return fr[1].trim();
-  const en = message.match(/"([^"]+)"/);
-  if (en?.[1]) return en[1].trim();
-  return null;
-}
-
-function extractContentNumber(message: string | null | undefined): string | null {
-  if (!message) return null;
-  const match = message.match(/(?:Contenu n°|Content #)\s*(\d+)/i);
-  return match?.[1] ?? null;
-}
-
-function extractAfterColon(message: string | null | undefined): string | null {
-  if (!message) return null;
-  const idx = message.indexOf(':');
-  if (idx < 0) return null;
-  return message.slice(idx + 1).trim() || null;
-}
 
 export function extractVisitorNameFromVisitMessage(message: string | null | undefined): string | null {
   if (!message) return null;
@@ -332,108 +268,9 @@ export function extractFollowerNameFromFollowMessage(message: string | null | un
 /** English labels for stored notifications (legacy French rows included). */
 export function formatNotificationDisplay(n: NotificationDto): { title: string; message: string | null } {
   const title = NOTIFICATION_TITLES_EN[n.type] ?? n.title;
-  const theme = extractQuotedTheme(n.message);
-  const contentNum = extractContentNumber(n.message);
   const raw = n.message?.trim() ?? null;
 
   switch (n.type) {
-    case 'CONTENT_DELIVERED':
-      if (contentNum && theme) {
-        return { title, message: `Your agent delivered Content #${contentNum} for "${theme}".` };
-      }
-      if (theme) {
-        return { title, message: `Your agent delivered content for "${theme}".` };
-      }
-      return { title, message: 'Your agent delivered new content.' };
-
-    case 'ECOSYSTEM_ACTIVE':
-      if (theme) {
-        return {
-          title,
-          message: `Your ecosystem "${theme}" is active! Set up your publishing schedule.`,
-        };
-      }
-      return { title, message: 'Your ecosystem is active! Set up your publishing schedule.' };
-
-    case 'DEMO_READY':
-      if (theme) {
-        return {
-          title,
-          message: `Your agent published the validation model for "${theme}". Review and approve it.`,
-        };
-      }
-      return {
-        title,
-        message: 'Your validation model is ready. Review and approve it.',
-      };
-
-    case 'NICHE_PENDING_MODEL':
-      if (theme) {
-        return {
-          title,
-          message: `Your niche "${theme}" is being processed. You will be notified when the validation model is ready.`,
-        };
-      }
-      return {
-        title,
-        message: 'Your niche is being processed. You will be notified when the validation model is ready.',
-      };
-
-    case 'NICHE_WAITING_VALIDATION':
-    case 'NICHE_REQUEST_NEW':
-      if (theme) {
-        return {
-          title,
-          message: `The client confirmed "${theme}". Prepare the validation model.`,
-        };
-      }
-      return { title, message: 'A client niche is ready for validation model preparation.' };
-
-    case 'NICHE_ACTIVATED':
-      if (theme) {
-        return {
-          title,
-          message: `The client activated the ecosystem "${theme}". You can deliver content.`,
-        };
-      }
-      return { title, message: 'A client activated their ecosystem. You can deliver content.' };
-
-    case 'DEMO_REJECTED': {
-      const reason = extractAfterColon(raw);
-      const codeMatch = raw?.match(/\(([^)]+)\)/);
-      const code = codeMatch?.[1];
-      if (code && reason) {
-        return { title, message: `The client rejected the validation model (${code}): ${reason}` };
-      }
-      if (reason) {
-        return { title, message: `The client rejected the validation model: ${reason}` };
-      }
-      return { title, message: 'The client rejected the validation model.' };
-    }
-
-    case 'PAYMENT_FAILED':
-      return {
-        title,
-        message: 'Your ecosystem subscription payment failed. Please try again.',
-      };
-
-    case 'POST_PUBLISHED': {
-      const platformMatch = raw?.match(/(?:sur|on)\s+(\w+)/i);
-      const platform = platformMatch?.[1];
-      if (platform) {
-        return { title, message: `Your content was published on ${platform}.` };
-      }
-      return { title, message: 'Your content was published successfully.' };
-    }
-
-    case 'POST_FAILED': {
-      const failMatch = raw?.match(/(?:sur|on)\s+(\w+)\s*:\s*(.+)/i);
-      if (failMatch) {
-        return { title, message: `Failed to publish on ${failMatch[1]}: ${failMatch[2]}` };
-      }
-      return { title, message: raw ?? 'Content publication failed.' };
-    }
-
     case CREATOR_PROFILE_VISIT_TYPE: {
       const name = n.actorFullName?.trim() || extractVisitorNameFromVisitMessage(raw);
       if (name) {

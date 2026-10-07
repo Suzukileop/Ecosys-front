@@ -20,6 +20,7 @@ import {
   createFaqHeaderLayoutResolver,
   faqHeaderCountLabel,
 } from '@/components/portfolio/portfolio-faq-header-layout';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -71,7 +72,8 @@ export function FaqHeaderSignalHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
   const words = splitWords(titleText);

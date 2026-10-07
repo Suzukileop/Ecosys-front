@@ -206,6 +206,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   headerSerifLeadLabelText: string;
   /** Header serif lead — the large serif title itself, independent of the section title. */
   headerSerifLeadTitleText: string;
+  /** Header serif lead — the line under the title; empty = the section subtitle. */
+  headerSerifLeadSubtitleText: string;
   /** Header serif lead — each element bound to a palette token, independently. */
   headerSerifLeadLabelColor: PortfolioStackHeaderPaletteToken;
   headerSerifLeadTitleColor: PortfolioStackHeaderPaletteToken;
@@ -217,6 +219,23 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   headerSerifLeadLabelWeight: PortfolioStackHeaderTitleWeight;
   headerSerifLeadTitleWeight: PortfolioStackHeaderTitleWeight;
   headerSerifLeadSubtitleWeight: PortfolioStackHeaderTitleWeight;
+  /** Header editorial — kicker above the title; empty = "Stack". */
+  headerEditorialLabelText: string;
+  /** Header editorial — the big title; empty = the section title. */
+  headerEditorialTitleText: string;
+  /** Header editorial — the line under the title; empty = the section subtitle. */
+  headerEditorialSubtitleText: string;
+  /** Header editorial — each text bound to a palette token, independently. */
+  headerEditorialLabelColor: PortfolioStackHeaderPaletteToken;
+  headerEditorialTitleColor: PortfolioStackHeaderPaletteToken;
+  headerEditorialSubtitleColor: PortfolioStackHeaderPaletteToken;
+  /** Header editorial — each text sized/weighted independently. */
+  headerEditorialLabelSize: PortfolioStackHeaderTitleSize;
+  headerEditorialTitleSize: PortfolioStackHeaderTitleSize;
+  headerEditorialSubtitleSize: PortfolioStackHeaderTitleSize;
+  headerEditorialLabelWeight: PortfolioStackHeaderTitleWeight;
+  headerEditorialTitleWeight: PortfolioStackHeaderTitleWeight;
+  headerEditorialSubtitleWeight: PortfolioStackHeaderTitleWeight;
   /** Header billboard — big faint background word + a {count}-token line. */
   headerBillboardBigWord: string;
   headerBillboardCountText: string;

@@ -118,7 +118,7 @@ export function useTeamSwipe(
  * alone can compute a stale start position on an image-heavy page and then never cross its
  * one-shot "enter" edge, which would leave the whole team grid permanently invisible.
  */
-export function revealTeamOnceVisible(
+function revealTeamOnceVisible(
   observers: IntersectionObserver[],
   trigger: HTMLElement,
   startPercent: number,
@@ -190,8 +190,8 @@ export function runTeamDesignMotion(
   };
 }
 
-export const TEAM_REVEAL_ATTR = 'data-team-reveal';
-export const TEAM_REVEAL_MEDIA_ATTR = 'data-team-reveal-media';
+const TEAM_REVEAL_ATTR = 'data-team-reveal';
+const TEAM_REVEAL_MEDIA_ATTR = 'data-team-reveal-media';
 
 /**
  * Shared entrance for every Team layout: each `[data-team-reveal]` node rises and fades in on a

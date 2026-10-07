@@ -3,7 +3,7 @@ import { isGuestSessionTraceMessage } from '@/lib/guest-session-trace';
 
 export type InboxPreviewKind = 'text' | 'photo' | 'video' | 'audio' | 'document' | 'call' | 'system';
 
-export type InboxPreviewParts = {
+type InboxPreviewParts = {
   kind: InboxPreviewKind;
   /** Primary label shown in the inbox row (e.g. "Document", "report.pdf", caption). */
   label: string;
@@ -54,7 +54,7 @@ function emojiForKind(kind: InboxPreviewParts['kind']): string {
 }
 
 /** Serialize attachment preview for inbox / realtime (WhatsApp-style). */
-export function formatAttachmentPreviewParts(message: DirectMessage): InboxPreviewParts {
+function formatAttachmentPreviewParts(message: DirectMessage): InboxPreviewParts {
   const caption = message.content?.trim() ?? '';
   const attachment = message.attachments?.[0];
   const kind = attachmentKind(attachment?.contentType);
@@ -69,7 +69,7 @@ export function formatAttachmentPreviewParts(message: DirectMessage): InboxPrevi
   return { kind, label: defaultLabelForKind(kind) };
 }
 
-export function formatAttachmentPreview(message: DirectMessage): string {
+function formatAttachmentPreview(message: DirectMessage): string {
   const parts = formatAttachmentPreviewParts(message);
   const emoji = emojiForKind(parts.kind);
   return emoji ? `${emoji} ${parts.label}` : parts.label;

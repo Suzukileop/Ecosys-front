@@ -6,7 +6,7 @@ import {
   creatorToolHasTechIcon,
   resolveCreatorToolTechIconUrl,
 } from '@/components/creator/studio/creator-tool-tech-icons';
-import type { ProfileStrengthToolLevel } from '@/types/ecosystem';
+import type { ProfileStrengthToolLevel } from '@/types/profile';
 
 const LEVEL_PERCENT: Record<ProfileStrengthToolLevel, number> = {
   beginner: 25,
@@ -21,7 +21,7 @@ export function resolveToolLevelPercent(level: ProfileStrengthToolLevel | null |
 }
 
 /** Upload, TechIcons PNG, or Simple Icons match — letter-only tools return false. */
-export function hasToolLogoBrandSource(
+function hasToolLogoBrandSource(
   label: string,
   iconUrl: string | null | undefined
 ): boolean {
@@ -101,7 +101,7 @@ function isUsableLevelBrandHex(
  * Pick the best ring / bar tint: saturated logo color when visible,
  * otherwise fall back to label ink.
  */
-export function pickToolLevelBrandColor(
+function pickToolLevelBrandColor(
   candidates: Array<string | null | undefined>,
   surfaceHex: string,
   fallback: string
@@ -119,7 +119,7 @@ export function pickToolLevelBrandColor(
 }
 
 /** Official brand hex — skip unusable near-black registry colors (e.g. OpenJDK). */
-export function resolveCreatorToolBrandHex(label: string): string | null {
+function resolveCreatorToolBrandHex(label: string): string | null {
   const resolved = resolveCreatorToolSimpleIcon(label);
   if (!resolved) return null;
   if (resolved.matchedName === 'Java' && hexLuminance(resolved.hex) < 0.07) {
@@ -130,7 +130,7 @@ export function resolveCreatorToolBrandHex(label: string): string | null {
 }
 
 /** Sample uploaded logo pixels and return the most frequent saturated color. */
-export async function extractDominantColorFromImageUrl(url: string): Promise<string | null> {
+async function extractDominantColorFromImageUrl(url: string): Promise<string | null> {
   if (typeof window === 'undefined' || !url.trim()) return null;
 
   return new Promise((resolve) => {

@@ -1,6 +1,6 @@
 'use client';
 
-import { CardsExperienceHeader } from '@/components/portfolio/portfolio-section-primitives';
+import { CardsExperienceHeader } from '@/components/portfolio/portfolio-experience-lists';
 import type { PortfolioExperiencePresentationSettings } from '@/components/portfolio/portfolio-experience-settings';
 import { DEFAULT_EXPERIENCE_PRESENTATION } from '@/components/portfolio/portfolio-experience-settings';
 

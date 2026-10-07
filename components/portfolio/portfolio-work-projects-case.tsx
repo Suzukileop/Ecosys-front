@@ -200,29 +200,6 @@ function workCategoryLabel(item: MarketplaceContentItem): string {
   return '';
 }
 
-/** First word light italic, remainder semibold — type contrast without a new setting. */
-function EditorialTitleText({
-  text,
-  allowItalic,
-}: {
-  text: string;
-  allowItalic: boolean;
-}) {
-  const trimmed = text.trim();
-  const idx = trimmed.search(/\s+/);
-  if (idx === -1) {
-    return <span className="font-semibold">{trimmed}</span>;
-  }
-  return (
-    <>
-      <span className={allowItalic ? 'font-light italic tracking-[-0.03em]' : 'font-light'}>
-        {trimmed.slice(0, idx)}
-      </span>{' '}
-      <span className="font-semibold">{trimmed.slice(idx).trimStart()}</span>
-    </>
-  );
-}
-
 /** Split-text reveal — same first-word-italic contrast as `EditorialTitleText`, but each
  *  word is individually masked so it slides up on its own beat once the row is revealed
  *  (driven by the row's `data-case-revealed` attribute, see CASE_MOTION_CSS). */
@@ -254,34 +231,6 @@ function caseEnterStyle(revealed: boolean, delayMs: number): CSSProperties {
     transform: 'translate3d(0, 0, 0)',
     transition: `opacity 0.92s ${CASE_EASE} ${delayMs}ms, transform 1.08s ${CASE_EASE} ${delayMs}ms`,
   };
-}
-
-function revealCaseElement(el: HTMLElement, delayMs: number): void {
-  el.style.transition = `opacity 0.92s ${CASE_EASE} ${delayMs}ms, transform 1.08s ${CASE_EASE} ${delayMs}ms`;
-  el.style.opacity = '1';
-  el.style.transform = 'translate3d(0, 0, 0)';
-  el.dataset.revealed = 'true';
-}
-
-function showCaseElementNow(el: HTMLElement): void {
-  el.style.transition = 'none';
-  el.style.opacity = '1';
-  el.style.transform = 'none';
-  el.dataset.revealed = 'true';
-}
-
-function stripHeaderTitleMetrics(style?: CSSProperties): {
-  rest: CSSProperties;
-  fontStyle: CSSProperties['fontStyle'];
-} {
-  if (!style) return { rest: {}, fontStyle: undefined };
-  const rest: CSSProperties = { ...style };
-  const fontStyle = rest.fontStyle;
-  delete rest.fontSize;
-  delete rest.lineHeight;
-  delete rest.letterSpacing;
-  delete rest.fontStyle;
-  return { rest, fontStyle };
 }
 
 function CaseConsultAnchor({
@@ -646,51 +595,6 @@ function CaseMagneticCursor({
       <span className="pf-work-case-cursor-label">View project</span>
     </div>
   );
-}
-
-function useCaseHeaderReveal(
-  headerRef: RefObject<HTMLElement | null>,
-  readyKey: string,
-  enabled: boolean
-) {
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || !enabled) return;
-
-    if (prefersReducedMotion()) {
-      showCaseElementNow(header);
-      return;
-    }
-
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      revealCaseElement(header, 0);
-    };
-
-    const scrollRoot = getScrollParent(header);
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries.some((entry) => entry.isIntersecting)) {
-          reveal();
-          observer.disconnect();
-        }
-      },
-      {
-        threshold: 0.12,
-        rootMargin: '48px 0px',
-        root: scrollRoot instanceof Window ? null : scrollRoot,
-      }
-    );
-    observer.observe(header);
-    const failSafe = window.setTimeout(reveal, 1600);
-
-    return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [headerRef, readyKey, enabled]);
 }
 
 function useCaseGalleryMotion(itemsKey: string): {
@@ -1121,103 +1025,6 @@ function CaseSheet({
   );
 }
 
-/**
- * Case header — kicker + editorial title, FOUC-hidden until IntersectionObserver.
- */
-export function ProjectsCaseSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  titleClassName = '',
-  titleStyle,
-  trailing,
-  entryCount,
-  accent,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  titleClassName?: string;
-  titleStyle?: CSSProperties;
-  trailing?: ReactNode;
-  entryCount?: number;
-  accent?: string;
-  className?: string;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-  useCaseHeaderReveal(headerRef, `${heading}|${sub}|${entryCount ?? 0}`, !isEmpty);
-
-  const resolvedTitleColor =
-    (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
-  const { rest: restTitleStyle, fontStyle: incomingFontStyle } = stripHeaderTitleMetrics(titleStyle);
-  const allowItalicWord = incomingFontStyle !== 'italic';
-  const mark = accent || subtitleColor;
-  const countLabel =
-    typeof entryCount === 'number' && entryCount > 0
-      ? String(entryCount).padStart(2, '0')
-      : '';
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={headerRef}
-      className={`pf-work-case-header mb-14 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
-      data-pf-no-color-transition=""
-      style={CASE_HIDDEN}
-    >
-      <style>{CASE_MOTION_CSS}</style>
-      <div className="flex items-end justify-between gap-6 sm:gap-10">
-        <div className="min-w-0 max-w-3xl">
-          <div className="mb-5 flex items-center gap-3 sm:mb-6">
-            <span
-              className="h-px w-8 shrink-0 sm:w-10"
-              style={{ backgroundColor: mark, opacity: 0.7 }}
-              aria-hidden
-            />
-            {countLabel ? (
-              <p
-                className="font-mono text-[10px] font-medium uppercase tracking-[0.28em] tabular-nums sm:text-[11px]"
-                style={{ color: subtitleColor }}
-              >
-                {countLabel}
-              </p>
-            ) : null}
-          </div>
-          {heading ? (
-            <h2
-              className={titleClassName.trim() || 'font-normal tracking-[-0.045em]'}
-              style={{
-                ...restTitleStyle,
-                color: resolvedTitleColor,
-                fontSize: 'clamp(2.45rem, 6.4vw, 5rem)',
-                lineHeight: 1.04,
-              }}
-            >
-              <EditorialTitleText text={heading} allowItalic={allowItalicWord} />
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              className={`max-w-xl text-[15px] leading-[1.8] sm:text-base sm:leading-[1.85] ${heading ? 'mt-4 sm:mt-5' : ''}`}
-              style={{ color: subtitleColor, opacity: 0.86 }}
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        {trailing ? <div className="shrink-0 pb-1 sm:pt-2">{trailing}</div> : null}
-      </div>
-    </header>
-  );
-}
-
 function caseSheetGapClass(gap: PortfolioWorkProjectsCaseSettings['sheetGap']): string {
   if (gap === 'tight') return 'mt-12 sm:mt-14 lg:mt-16';
   if (gap === 'md') return 'mt-20 sm:mt-24 lg:mt-28';
@@ -1267,10 +1074,4 @@ export function ProjectsCaseGallery({
       <CaseMagneticCursor stageRef={rootRef} accent={accent} />
     </section>
   );
-}
-
-export function isProjectsCaseDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-case';
 }

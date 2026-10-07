@@ -215,7 +215,7 @@ function FeatureIcon({
  * Full-page Upgrade / Pricing — aligned with landing brand (orange / lp-*).
  * Theme follows the global landing ThemeProvider (html.dark).
  */
-export function PricingUpgradePage({ backHref = '/dashboard/creator' }: { backHref?: string }) {
+export function PricingUpgradePage({ backHref = '/profile' }: { backHref?: string }) {
   const router = useRouter();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');

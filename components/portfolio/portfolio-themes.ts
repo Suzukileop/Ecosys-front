@@ -25,7 +25,7 @@ export type PortfolioTheme = {
   saved?: boolean;
 };
 
-export const PORTFOLIO_THEMES: PortfolioTheme[] = [
+const PORTFOLIO_THEMES: PortfolioTheme[] = [
   {
     id: 'editorial',
     label: 'Editorial Warm',
@@ -64,7 +64,7 @@ export function isBuiltinPortfolioThemeId(themeId: string): themeId is Portfolio
   return themeId === 'editorial' || themeId === 'noir';
 }
 
-export function isNoirPortfolioTheme(themeId: string): boolean {
+function isNoirPortfolioTheme(themeId: string): boolean {
   return themeId === 'noir';
 }
 
@@ -126,79 +126,8 @@ export function portfolioThemeCssVars(
   } as CSSProperties;
 }
 
-/** Keys / paths that count as a color personalization (triggers custom theme draft). */
-export function patchContainsColorChange(patch: unknown, depth = 0): boolean {
-  if (patch == null || depth > 6) return false;
-  if (typeof patch === 'string') {
-    return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(patch.trim());
-  }
-  if (Array.isArray(patch)) {
-    return patch.some((item) => patchContainsColorChange(item, depth + 1));
-  }
-  if (typeof patch !== 'object') return false;
-
-  for (const [key, value] of Object.entries(patch as Record<string, unknown>)) {
-    const keyLooksColor = /color|accent|motif|swatch|cta|highlight|background/i.test(key);
-    if (keyLooksColor && typeof value === 'string' && value.trim().startsWith('#')) {
-      return true;
-    }
-    if (patchContainsColorChange(value, depth + 1)) return true;
-  }
-  return false;
-}
-
 /** Neutral social brand shells for the Noir theme. */
 export function portfolioMonochromeSocialBrandClass(platform: string): string {
   void platform;
   return 'pf-social-brand bg-neutral-900 text-white';
-}
-
-function expandCssHex(hex: string): string | null {
-  const trimmed = hex.trim();
-  if (!/^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6}|[0-9a-fA-F]{8})$/.test(trimmed)) return null;
-  let body = trimmed.slice(1);
-  if (body.length === 3) {
-    body = body
-      .split('')
-      .map((ch) => `${ch}${ch}`)
-      .join('');
-  }
-  if (body.length === 8) body = body.slice(0, 6);
-  return body.toLowerCase();
-}
-
-function isNearAchromatic(r: number, g: number, b: number): boolean {
-  return Math.max(r, g, b) - Math.min(r, g, b) <= 14;
-}
-
-/** Map any chromatic hex to a luminance-matched gray (Noir enforcement). */
-export function normalizeHexForNoirTheme(hex: string): string {
-  const body = expandCssHex(hex);
-  if (!body) return hex;
-  const r = Number.parseInt(body.slice(0, 2), 16);
-  const g = Number.parseInt(body.slice(2, 4), 16);
-  const b = Number.parseInt(body.slice(4, 6), 16);
-  if (isNearAchromatic(r, g, b)) return `#${body.toUpperCase()}`;
-  const y = Math.round(0.299 * r + 0.587 * g + 0.114 * b);
-  const channel = y.toString(16).padStart(2, '0').toUpperCase();
-  return `#${channel}${channel}${channel}`;
-}
-
-/** Walk settings and force every hex color into black / white / gray. */
-export function normalizeNoirPortfolioSettingsColors<T>(value: T, depth = 0): T {
-  if (depth > 8 || value == null) return value;
-  if (typeof value === 'string') {
-    return (value.trim().startsWith('#') ? normalizeHexForNoirTheme(value) : value) as T;
-  }
-  if (Array.isArray(value)) {
-    return value.map((item) => normalizeNoirPortfolioSettingsColors(item, depth + 1)) as T;
-  }
-  if (typeof value === 'object') {
-    const out: Record<string, unknown> = {};
-    for (const [key, nested] of Object.entries(value as Record<string, unknown>)) {
-      out[key] = normalizeNoirPortfolioSettingsColors(nested, depth + 1);
-    }
-    return out as T;
-  }
-  return value;
 }

@@ -5,6 +5,7 @@ import { usePathname } from 'next/navigation';
 import { NotificationBell } from '@/components/NotificationBell';
 import { MessagesHeaderButton } from '@/components/messaging/MessagesHeaderButton';
 import { isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
+import { ROUTES, isPathWithin } from '@/lib/routes';
 import { APP_GROUND } from '@/components/landing/landingBrand';
 import Link from 'next/link';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
@@ -102,35 +103,19 @@ function HeaderAccountMenu() {
   );
 }
 
-function getDashboardScrollY() {
-  const content = document.querySelector('[data-dashboard-content]');
-  const contentScroll = content instanceof HTMLElement ? content.scrollTop : 0;
-  return Math.max(window.scrollY, contentScroll);
-}
-
-export function DashboardTopHeader({
-  transparent = false,
-}: {
-  transparent?: boolean;
-}) {
+export function DashboardTopHeader() {
   const pathname = usePathname();
-  const [scrolled, setScrolled] = useState(false);
-  const isDiscussionsPage = pathname.startsWith('/dashboard/discussions');
+  const isDiscussionsPage = isPathWithin(pathname, ROUTES.messages);
   const isPortfolioPage =
-    pathname.startsWith('/dashboard/portfolio') ||
-    pathname.startsWith('/dashboard/search') ||
-    pathname.startsWith('/dashboard/notifications') ||
-    pathname === '/marketplace' ||
-    pathname.startsWith('/marketplace/my-products') ||
-    pathname.startsWith('/marketplace/my-services') ||
+    isPathWithin(pathname, ROUTES.studio) ||
+    isPathWithin(pathname, ROUTES.search) ||
+    isPathWithin(pathname, ROUTES.notifications) ||
+    pathname === ROUTES.marketplace ||
+    pathname === ROUTES.myProducts ||
+    isPathWithin(pathname, ROUTES.myServices) ||
     isServiceProvidersCatalogPath(pathname) ||
-    (pathname.startsWith('/dashboard/creator') &&
-      !pathname.startsWith('/dashboard/creator/products') &&
-      !pathname.includes('/new') &&
-      !pathname.includes('/edit')) ||
+    isPathWithin(pathname, ROUTES.profile) ||
     isDiscussionsPage;
-
-  const showSolidBg = !transparent || scrolled;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navPath, setNavPath] = useState(pathname);
 
@@ -164,27 +149,6 @@ export function DashboardTopHeader({
     setNavPath(pathname);
     if (mobileNavOpen) setMobileNavOpen(false);
   }
-
-  useEffect(() => {
-    if (!transparent) {
-      setScrolled(false);
-      return;
-    }
-
-    const update = () => {
-      setScrolled(getDashboardScrollY() > 6);
-    };
-
-    update();
-    window.addEventListener('scroll', update, { passive: true });
-    const content = document.querySelector('[data-dashboard-content]');
-    content?.addEventListener('scroll', update, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', update);
-      content?.removeEventListener('scroll', update);
-    };
-  }, [transparent, pathname]);
 
   /*
    * Phones only: the bar slides away while reading down and returns on the first scroll up.
@@ -246,7 +210,7 @@ export function DashboardTopHeader({
       {/*
        * The bar's surface. Separate from <header> so the bar is not a backdrop root — see above.
        *
-       * Light is flat and matches the page ground (`#F8F8F8`), so the chrome and the page read as one
+       * Light is flat and matches the page ground (`APP_GROUND`), so the chrome and the page read as one
        * sheet. No translucency there on purpose: glass over a surface of its own colour is
        * invisible work, and the blur would still cost a compositor layer on every scroll for
        * nothing.
@@ -258,7 +222,7 @@ export function DashboardTopHeader({
       <span
         aria-hidden
         className={`pointer-events-none absolute inset-0 -z-10 block transition-colors duration-[520ms] ${EASE} ${
-          isDiscussionsPage || pathname.startsWith('/dashboard/settings') ? 'bg-[#F8F8F8]' : APP_GROUND
+          APP_GROUND
         } ${
           isPortfolioPage
             ? 'dark:bg-black'
@@ -292,7 +256,7 @@ export function DashboardTopHeader({
         <div className="flex shrink-0 items-center gap-4 pt-px lg:gap-16">
           <MobileNavTrigger open={mobileNavOpen} onToggle={() => setMobileNavOpen((v) => !v)} />
           <Link
-            href="/dashboard/home"
+            href="/feed"
             className={`shrink-0 text-[0.95rem] font-semibold tracking-[-0.01em] text-[#222222] transition-opacity duration-[420ms] ${EASE} hover:opacity-60 dark:text-white`}
           >
             {/* Placeholder until the real mark ships as an image. */}
@@ -352,8 +316,8 @@ export function DashboardTopHeader({
       open={mobileNavOpen}
       onClose={() => setMobileNavOpen(false)}
       signals={[
-        { href: '/dashboard/discussions', label: 'Messages' },
-        { href: '/dashboard/notifications', label: 'Notifications' },
+        { href: '/messages', label: 'Messages' },
+        { href: '/notifications', label: 'Notifications' },
       ]}
     />
     </>

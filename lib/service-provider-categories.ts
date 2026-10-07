@@ -9,15 +9,13 @@ export const SERVICE_PROVIDER_POPULAR_TAGS = PROFILE_SPECIALTIES.filter(
   (tag) => tag !== 'Writing'
 );
 
-export type ServiceProviderPopularTag = (typeof SERVICE_PROVIDER_POPULAR_TAGS)[number];
-
 export type ServiceProviderCategoryIcon =
   | 'wrench'
   | 'house'
   | 'truck'
   | 'graduation';
 
-export type ServiceProviderCategoryGroup = {
+type ServiceProviderCategoryGroup = {
   id: string;
   title: string;
   icon: ServiceProviderCategoryIcon;

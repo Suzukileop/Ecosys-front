@@ -78,7 +78,7 @@ export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSet
 
 export type PortfolioAboutUsSectionSettings = PortfolioSectionCopy & PortfolioAboutUsPresentationSettings;
 
-export const DEFAULT_ABOUT_US_TITLE = 'About us';
+const DEFAULT_ABOUT_US_TITLE = 'About us';
 export const DEFAULT_ABOUT_US_SUBTITLE = 'Who we are, what we do, and the people behind the work.';
 
 export const DEFAULT_ABOUT_US_PRESENTATION: PortfolioAboutUsPresentationSettings = {
@@ -156,7 +156,7 @@ export const PORTFOLIO_ABOUT_US_DESIGN_OPTIONS: {
   },
 ];
 
-export function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAboutUsDesign {
+function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAboutUsDesign {
   return (
     value === 'stacked' ||
     value === 'split-overlap' ||
@@ -167,23 +167,23 @@ export function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAbou
   );
 }
 
-export function isPortfolioAboutUsMediaSide(value: unknown): value is PortfolioAboutUsMediaSide {
+function isPortfolioAboutUsMediaSide(value: unknown): value is PortfolioAboutUsMediaSide {
   return value === 'left' || value === 'right';
 }
 
-export function isPortfolioAboutUsImageFrame(value: unknown): value is PortfolioAboutUsImageFrame {
+function isPortfolioAboutUsImageFrame(value: unknown): value is PortfolioAboutUsImageFrame {
   return value === 'layered' || value === 'slab' || value === 'duo' || value === 'ring';
 }
 
-export function isPortfolioAboutUsCardRadius(value: unknown): value is PortfolioAboutUsCardRadius {
+function isPortfolioAboutUsCardRadius(value: unknown): value is PortfolioAboutUsCardRadius {
   return value === 'none' || value === 'sm' || value === 'md' || value === 'lg' || value === 'xl';
 }
 
-export function isPortfolioAboutUsCardShadow(value: unknown): value is PortfolioAboutUsCardShadow {
+function isPortfolioAboutUsCardShadow(value: unknown): value is PortfolioAboutUsCardShadow {
   return value === 'none' || value === 'soft' || value === 'medium' || value === 'strong';
 }
 
-export function isPortfolioAboutUsCardBorder(value: unknown): value is PortfolioAboutUsCardBorder {
+function isPortfolioAboutUsCardBorder(value: unknown): value is PortfolioAboutUsCardBorder {
   return value === 'none' || value === 'thin' || value === 'medium';
 }
 
@@ -201,7 +201,7 @@ export function aboutUsDesignUsesSplitChrome(design: PortfolioAboutUsDesign | un
   return aboutUsDesignEmbedsHeader(design);
 }
 
-export function defaultAboutUsMediaSide(design: PortfolioAboutUsDesign | undefined): PortfolioAboutUsMediaSide {
+function defaultAboutUsMediaSide(design: PortfolioAboutUsDesign | undefined): PortfolioAboutUsMediaSide {
   return design === 'split-media-left' || design === 'split-card' ? 'left' : 'right';
 }
 
@@ -441,7 +441,7 @@ export function aboutUsContentPlacementClass(placement: PortfolioAboutUsContentP
   return 'mr-auto';
 }
 
-export function isPortfolioAboutUsSectionLayout(
+function isPortfolioAboutUsSectionLayout(
   value: unknown
 ): value is PortfolioAboutUsSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';

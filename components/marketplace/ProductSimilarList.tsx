@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { formatPrice, listSimilarProducts } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
+import { MediaImage } from '@/components/ui/MediaImage';
 
 type ProductSimilarListProps = {
   productId: string;
@@ -106,16 +107,12 @@ function SimilarProductRow({ product }: { product: MarketplaceProductSummary }) 
       className="group flex items-start gap-5 px-5 py-5 transition hover:bg-black/[0.02] dark:hover:bg-white/[0.03]"
     >
       <div className="h-[76px] w-[76px] shrink-0 overflow-hidden rounded-md bg-black/[0.04] dark:bg-white/[0.06]">
-        {product.thumbnailUrl ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            src={product.thumbnailUrl}
-            alt=""
-            className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
-          />
-        ) : (
-          <div className="flex h-full items-center justify-center text-xs text-neutral-400">No image</div>
-        )}
+        <MediaImage
+          src={product.thumbnailUrl}
+          width={76}
+          fallback={<div className="flex h-full items-center justify-center text-xs text-neutral-400">No image</div>}
+          className="h-full w-full object-cover transition-transform duration-500 group-hover:scale-105"
+        />
       </div>
 
       <div className="flex min-h-[76px] min-w-0 flex-1 flex-col justify-between gap-2">

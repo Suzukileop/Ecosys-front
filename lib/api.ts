@@ -4,7 +4,9 @@ import { refreshAccessToken, invalidateSessionCache } from './sessionRefresh';
 import { reportNetworkFailure } from '@/stores/serverStatusStore';
 import { normalizeStorageUrlsDeep } from './storage-media-url';
 
-export { setAccessToken, getAccessToken };
+export {
+  setAccessToken,
+};
 
 const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
 

@@ -98,20 +98,6 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
 
   const markSpecialty = data.presentation.heroLeftPortraitSpecialtyMark === true;
 
-  const specialtyNode = markSpecialty ? (
-    <span
-      className="box-decoration-clone px-[0.12em]"
-      style={{
-        color: ink,
-        backgroundImage: `linear-gradient(to top, color-mix(in srgb, ${principal} 42%, transparent) 0.38em, transparent 0.38em)`,
-      }}
-    >
-      {specialty}
-    </span>
-  ) : (
-    specialty
-  );
-
   /* ───────────────────────────────────────────────────────────────────────────
    * GSAP Animation & ScrollTrigger
    * ─────────────────────────────────────────────────────────────────────────── */
@@ -135,13 +121,11 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
     // Element selections
     const photoMasks = pick('.pf-left-photo-mask');
     const photoInners = pick('.pf-left-photo-inner');
-    const titleLines = pick('.pf-left-title-line');
     const titleInners = pick('.pf-left-title-inner');
     const availabilityEl = pick('.pf-left-availability');
     const bioElements = pick('.pf-left-bio-entry');
     const ctaElements = pick('.pf-left-cta-entry');
     const photoColumn = pick('.pf-left-photo-column');
-    const contentColumn = pick('.pf-left-content-column');
     const titleBlock = pick('.pf-left-title-block');
     const bottomBlock = pick('.pf-left-bottom-block');
 

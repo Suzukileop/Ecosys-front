@@ -11,10 +11,7 @@ import {
 } from 'react';
 import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
 import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
-import {
-  handleServicesOrderCtaClick,
-  useServicesOrderCtaNav,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
 
 /**
  * Pricing Monolith — Services body design (`sectionDesign === 'services-pricing-monolith'`).
@@ -32,8 +29,6 @@ import {
  * `presentation.cardAccentColor` for the accent.
  */
 
-const DESIGN_ID = 'services-pricing-monolith';
-
 /* ----------------------------------------------------------------------- *
  * This design's own settings — first Services design to need one (Services
  * has no per-design settings machinery yet, unlike Work's 14-design system).
@@ -45,9 +40,9 @@ const DESIGN_ID = 'services-pricing-monolith';
  * standalone.
  * ----------------------------------------------------------------------- */
 
-export type PortfolioServicesPricingMonolithColumns = 1 | 2 | 3 | 4;
+type PortfolioServicesPricingMonolithColumns = 1 | 2 | 3 | 4;
 
-export type PortfolioServicesPricingMonolithSettings = {
+type PortfolioServicesPricingMonolithSettings = {
   /** 0-based item index rendered as the "Popular" focal tier; -1 (or out of range) = none. */
   popularIndex: number;
   /** Suffix after the price on paid tiers, e.g. "/ month", "/ life". */
@@ -60,7 +55,7 @@ export type PortfolioServicesPricingMonolithSettings = {
   cardsPerRow: PortfolioServicesPricingMonolithColumns;
 };
 
-export const DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS: PortfolioServicesPricingMonolithSettings = {
+const DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS: PortfolioServicesPricingMonolithSettings = {
   popularIndex: 1,
   periodLabel: '/ month',
   showPeriod: true,
@@ -68,7 +63,7 @@ export const DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS: PortfolioServicesPricin
   cardsPerRow: 3,
 };
 
-export function mergeServicesPricingMonolithSettings(
+function mergeServicesPricingMonolithSettings(
   base: PortfolioServicesPricingMonolithSettings,
   patch: unknown
 ): PortfolioServicesPricingMonolithSettings {
@@ -276,12 +271,6 @@ function CheckGlyph({ color }: { color: string }) {
 
 const MOBILE_EDGE_STYLE: CSSProperties = { WebkitTapHighlightColor: 'transparent' };
 
-export function isServicesPricingMonolithDesign(
-  presentation: { sectionDesign?: string } | null | undefined
-): boolean {
-  return presentation?.sectionDesign === DESIGN_ID;
-}
-
 export function ServicesPricingMonolithSection({
   services,
   presentation,
@@ -294,7 +283,7 @@ export function ServicesPricingMonolithSection({
   const ctaRefs = useRef<(HTMLAnchorElement | null)[]>([]);
   const arrowRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const isFinePointerDesktop = useFinePointerDesktop();
-  const nav = useServicesOrderCtaNav();
+  const pricingStyle = useServicesPricingStyle(presentation);
 
   const itemsKey = useMemo(() => services.map((item) => item.id).join('|'), [services]);
 
@@ -456,15 +445,17 @@ export function ServicesPricingMonolithSection({
           .pf-svc-pricing-monolith-card { flex-basis: ${desktopBasis}; max-width: ${desktopBasis}; }
         }
       `}</style>
-      {/* Only this backdrop breaks full-bleed — the content below stays in normal flow so it
-          inherits the page's own content max-width + left/right gutter from `<main>`, exactly
-          like every other section (mirrors `PortfolioSectionShell`'s own background layer). */}
-      <div
-        aria-hidden
-        className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
-        style={{ backgroundColor: tokens.bg }}
-        data-pf-no-color-transition=""
-      />
+      {/* Optional backdrop (Design → Background frame). Off by default so the page's own
+          background shows through; when on, only this layer breaks full-bleed — the content
+          below stays in normal flow and inherits the page's content width + gutter. */}
+      {pricingStyle.style.showFrame ? (
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-0 left-1/2 z-0 w-screen -translate-x-1/2"
+          style={{ backgroundColor: tokens.bg }}
+          data-pf-no-color-transition=""
+        />
+      ) : null}
       <div className="relative z-[1] w-full py-20 sm:py-24 md:py-28">
         <div className="pf-svc-pricing-monolith-row">
           {services.map((item, index) => {
@@ -488,7 +479,9 @@ export function ServicesPricingMonolithSection({
                 }`}
                 style={{
                   backgroundColor: cardBg,
-                  borderColor: cardBorder,
+                  borderColor: pricingStyle.borderColor ?? cardBorder,
+                  ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
+                  ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
                   ...MOBILE_EDGE_STYLE,
                 }}
               >
@@ -511,7 +504,7 @@ export function ServicesPricingMonolithSection({
                 <div className="flex min-w-0 flex-wrap items-end gap-x-2 gap-y-1">
                   {priceText ? (
                     <span
-                      className="whitespace-nowrap text-[clamp(2.25rem,13cqi,4.5rem)] font-black leading-[0.9] tracking-[-0.04em]"
+                      className="whitespace-nowrap text-[length:calc(clamp(2.25rem,13cqi,4.5rem)*var(--pf-services-font-scale,1))] font-black leading-[0.9] tracking-[-0.04em]"
                       style={{ color: tokens.ink }}
                     >
                       {priceAmount}
@@ -526,7 +519,7 @@ export function ServicesPricingMonolithSection({
                     </span>
                   ) : (
                     <span
-                      className="text-[clamp(2rem,11cqi,3.75rem)] font-black leading-[0.9] tracking-[-0.04em]"
+                      className="text-[length:calc(clamp(2rem,11cqi,3.75rem)*var(--pf-services-font-scale,1))] font-black leading-[0.9] tracking-[-0.04em]"
                       style={{ color: tokens.ink }}
                     >
                       Custom
@@ -557,8 +550,7 @@ export function ServicesPricingMonolithSection({
                   ref={(el) => {
                     ctaRefs.current[index] = el;
                   }}
-                  href={nav.href}
-                  onClick={(event) => handleServicesOrderCtaClick(event, nav.href, nav.onNavigate)}
+                  {...pricingStyle.anchorProps}
                   data-pf-no-color-transition=""
                   className="mt-auto flex min-h-[48px] w-full items-center justify-center gap-1.5 pt-4 text-sm font-medium tracking-[0.02em] will-change-transform md:w-fit md:justify-start"
                   style={{ color: tokens.ink, borderTop: `1px solid ${tokens.hairline}` }}

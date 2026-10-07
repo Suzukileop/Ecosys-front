@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { PortfolioGalleryHeaderFont } from '@/components/portfolio/portfolio-gallery-settings';
 
 /**
@@ -189,8 +188,4 @@ export function galleryHeaderDesignFontClass(
     default:
       return 'leading-relaxed';
   }
-}
-
-export function galleryHeaderDesignFontStyle(_font: PortfolioGalleryHeaderFont): CSSProperties | undefined {
-  return undefined;
 }

@@ -1,7 +1,7 @@
 'use client';
 
 import { useRef, useEffect, useMemo, type CSSProperties } from 'react';
-import { GalleryFitWidthTitle } from '@/components/portfolio/portfolio-section-primitives';
+import { GalleryFitWidthTitle } from '@/components/portfolio/portfolio-experience-lists';
 import type { PortfolioExperiencePresentationSettings } from '@/components/portfolio/portfolio-experience-settings';
 import {
   DEFAULT_EXPERIENCE_MUTED_COLOR,
@@ -15,6 +15,7 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Billboard/Gallery Experience Header — Premium Editorial Redesign
@@ -82,9 +83,10 @@ export function ExperienceGalleryHeader({
   const showBigTitle = bigTitleEnabled && Boolean(bigTitleText.trim());
 
   // Animation settings
-  const animationEnabled = presentation.galleryHeaderAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.galleryHeaderAnimationEnabled !== false && !motionOff;
   const animationStyle = presentation.galleryHeaderAnimationStyle ?? 'dramatic';
-  const parallaxEnabled = presentation.galleryScrollParallaxEnabled !== false;
+  const parallaxEnabled = presentation.galleryScrollParallaxEnabled !== false && !motionOff;
 
   // Secondary title settings
   const secondaryTitleStyle = presentation.gallerySecondaryTitleStyle ?? 'editorial';

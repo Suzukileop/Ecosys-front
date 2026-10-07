@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import {
   Fragment,
   useCallback,
@@ -22,8 +23,8 @@ import {
   portfolioUsesMonochromeChrome,
   portfolioMonochromeSocialBrandClass,
 } from '@/components/portfolio/portfolio-themes';
-import { SOCIAL_PLATFORMS } from '@/types/ecosystem';
-import type { ProfileServiceItem } from '@/types/ecosystem';
+import { SOCIAL_PLATFORMS } from '@/types/profile';
+import type { ProfileServiceItem } from '@/types/profile';
 import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
@@ -56,19 +57,6 @@ import {
 import { resolveHeroLayoutDivision } from '@/components/portfolio/portfolio-hero-layout-division';
 import {
   EditorialContactSection,
-  EditorialExperienceList,
-  ExperienceEditorialHeader,
-  ExperienceMilestoneHeader,
-  MilestoneExperienceList,
-  TableExperienceList,
-  CardsExperienceList,
-  ReelExperienceList,
-  DuotoneExperienceList,
-  GalleryExperienceList,
-  LoftExperienceList,
-  PressExperienceList,
-  LegacyExperienceList,
-  KineticExperienceList,
   EditorialFaqList,
   EditorialGallerySection,
   EditorialPortfolioFooter,
@@ -138,71 +126,21 @@ import {
   ToolsHeaderSplitHeadingHeader,
 } from '@/components/portfolio/tools-portfolio-header-designs';
 import {
-  isProjectsBoardDesign,
-  ProjectsBoardGallery,
-  ProjectsBoardSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-board';
-import {
-  isProjectsAccordionDesign,
   ProjectsAccordionGallery,
-  ProjectsAccordionSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-accordion';
-import {
-  isProjectsFramesDesign,
-  ProjectsFramesGallery,
-  ProjectsFramesSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-frames';
-import {
-  isProjectsIndexDesign,
-  ProjectsIndexGallery,
-  ProjectsIndexSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-index';
-import {
-  isProjectsGridDesign,
-  ProjectsGridSection,
-} from '@/components/portfolio/portfolio-work-projects-grid';
-import {
-  isProjectsSplitDesign,
-  ProjectsSplitGallery,
-  ProjectsSplitSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-split';
-import {
-  isProjectsCarouselDesign,
+  ProjectsBoardGallery,
   ProjectsCarouselSection,
-  ProjectsCarouselSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-carousel';
-import {
-  isProjectsShowcaseDesign,
-  ProjectsShowcaseGallery,
-  ProjectsShowcaseSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-showcase';
-import {
-  isProjectsLedgerDesign,
-  ProjectsLedgerGallery,
-  ProjectsLedgerSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-ledger';
-import {
-  isProjectsSpecDesign,
-  ProjectsSpecGallery,
-  ProjectsSpecSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-spec';
-import {
-  isProjectsCaseDesign,
-  ProjectsCaseGallery,
-  ProjectsCaseSectionHeader,
-} from '@/components/portfolio/portfolio-work-projects-case';
-import {
-  isProjectsPressDesign,
-  ProjectsPressGallery,
-} from '@/components/portfolio/portfolio-work-projects-press';
-import {
-  isProjectsDuotoneDesign,
-  ProjectsDuotoneGallery,
-} from '@/components/portfolio/portfolio-work-projects-duotone';
-import {
-  isProjectsCascadeDesign,
   ProjectsCascadeGallery,
-} from '@/components/portfolio/portfolio-work-projects-cascade';
+  ProjectsCaseGallery,
+  ProjectsDuotoneGallery,
+  ProjectsFramesGallery,
+  ProjectsGridSection,
+  ProjectsIndexGallery,
+  ProjectsLedgerGallery,
+  ProjectsPressGallery,
+  ProjectsShowcaseGallery,
+  ProjectsSpecGallery,
+  ProjectsSplitGallery,
+} from '@/components/portfolio/portfolio-work-project-layouts';
 import {
   galleryPremiumFontScale,
   gallerySectionLayoutIsAside,
@@ -221,7 +159,6 @@ import {
   GalleryHeaderSplitHeadingHeader,
 } from '@/components/portfolio/gallery-portfolio-header-designs';
 import { applyGalleryPaletteToSettings } from '@/components/portfolio/portfolio-gallery-palette-settings';
-import { PortfolioMotionItem } from '@/components/portfolio/PortfolioMotionItem';
 
 import {
   pickHeroPresentationSettings,
@@ -232,23 +169,8 @@ import {
   resolveHeroStatementCtaTools,
   resolveHeroPortraitBalanceTools,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
-import {
-  pickWorkPresentationSettings,
-  resolveWorkSectionSubtitle,
-  resolveWorkSectionTitle,
-  workHeaderFontClass,
-  workHeaderFontStyle,
-  workSubtitleColorStyle,
-  workTitleColorStyle,
-} from '@/components/portfolio/portfolio-work-settings';
-import {
-  aboutMainGridClass,
-  aboutContentPairAlignClass,
-  aboutSidePanelTwinAlignClass,
-  filterAboutStats,
-  isAboutSideInfoItemVisible,
-  pickAboutPresentationSettings,
-} from '@/components/portfolio/portfolio-about-settings';
+import { pickWorkPresentationSettings, resolveWorkSectionSubtitle, resolveWorkSectionTitle } from '@/components/portfolio/portfolio-work-settings';
+import { aboutContentPairAlignClass, aboutSidePanelTwinAlignClass, filterAboutStats, isAboutSideInfoItemVisible, pickAboutPresentationSettings } from '@/components/portfolio/portfolio-about-settings';
 import {
   pickServicesPresentationSettings,
   resolveServicesSectionSubtitle,
@@ -285,16 +207,7 @@ import {
   FaqHeaderQueryHeader,
   FaqHeaderDialogueHeader,
 } from '@/components/portfolio/faq-portfolio-header-designs';
-import { FaqKineticSplitDesign } from '@/components/portfolio/portfolio-faq-kinetic-split';
 import { FaqDesignFrame } from '@/components/portfolio/portfolio-faq-frame';
-import { FaqFloatingGalleryDesign } from '@/components/portfolio/portfolio-faq-floating-gallery';
-import { FaqEditorialMasonryDesign } from '@/components/portfolio/portfolio-faq-editorial-masonry';
-import { FaqPrismCardsDesign } from '@/components/portfolio/portfolio-faq-prism-cards';
-import { FaqStarScrollDesign } from '@/components/portfolio/portfolio-faq-star-scroll';
-import { FaqTriGridDesign } from '@/components/portfolio/portfolio-faq-tri-grid';
-import { FaqSplitIndexDesign } from '@/components/portfolio/portfolio-faq-split-index';
-import { FaqCenteredFocusDesign } from '@/components/portfolio/portfolio-faq-centered-focus';
-import { FaqBentoDualDesign } from '@/components/portfolio/portfolio-faq-bento-dual';
 import {
   pickTeamPresentationSettings,
   teamPremiumFontScale,
@@ -333,59 +246,12 @@ import {
   ServicesHeaderSplitHeadingHeader,
 } from '@/components/portfolio/services-portfolio-header-designs';
 import {
-  isServicesShowcaseHeroDesign,
-  ServicesShowcaseHero,
-} from '@/components/portfolio/portfolio-services-design-showcase-hero';
-import {
-  isServicesPricingGridDesign,
-  ServicesPricingGridSection,
-} from '@/components/portfolio/portfolio-services-pricing-grid';
-import {
-  isServicesPricingBentoDesign,
-  ServicesPricingBentoSection,
-} from '@/components/portfolio/portfolio-services-pricing-bento';
-import {
-  isServicesPricingMonolithDesign,
-  ServicesPricingMonolithSection,
-} from '@/components/portfolio/portfolio-services-pricing-monolith';
-import {
-  isServicesPricingAuroraDesign,
-  ServicesPricingAuroraSection,
-} from '@/components/portfolio/portfolio-services-pricing-aurora';
-import {
-  isServicesPricingToggleDesign,
-  ServicesPricingToggleSection,
-} from '@/components/portfolio/portfolio-services-pricing-toggle';
-import {
   pickInfoPresentationSettings,
   resolveInfoSectionSubtitle,
   resolveInfoSectionTitle,
 } from '@/components/portfolio/portfolio-info-settings';
-import { EditorialAboutMeSection } from '@/components/portfolio/EditorialAboutMeSection';
-import {
-  pickToolsPresentationSettings,
-  resolveToolsSectionSubtitle,
-  resolveToolsSectionTitle,
-  toolsHeaderFontClass,
-  toolsHeaderFontStyle,
-  toolsSubtitleColorStyle,
-  toolsTitleColorStyle,
-} from '@/components/portfolio/portfolio-tools-settings';
-import {
-  pickStackPresentationSettings,
-  resolveStackSectionSubtitle,
-  resolveStackSectionTitle,
-  resolveStackSubtitleSize,
-  resolveStackTitleSize,
-  stackHeaderFontClass,
-  stackHeaderFontStyle,
-  stackSectionLayoutIsAside,
-  stackSectionSubtitleSizeClass,
-  stackSectionTitleSizeClass,
-  stackSubtitleColorStyle,
-  stackTitleColorStyle,
-  type PortfolioStackPresentationSettings,
-} from '@/components/portfolio/portfolio-stack-settings';
+import { pickToolsPresentationSettings, resolveToolsSectionSubtitle, resolveToolsSectionTitle } from '@/components/portfolio/portfolio-tools-settings';
+import { pickStackPresentationSettings, resolveStackSectionSubtitle, resolveStackSectionTitle, stackSectionLayoutIsAside, type PortfolioStackPresentationSettings } from '@/components/portfolio/portfolio-stack-settings';
 import { EditorialStackGallery } from '@/components/portfolio/portfolio-stack-section';
 import { EditorialToolsGallery } from '@/components/portfolio/portfolio-tools-section';
 import {
@@ -399,23 +265,8 @@ import {
   resolveAboutUsSectionSubtitle,
   resolveAboutUsSectionTitle,
 } from '@/components/portfolio/portfolio-about-us-settings';
-import { EditorialAboutUsSection } from '@/components/portfolio/EditorialAboutUsSection';
 import { portfolioPresenceShowsAboutUs } from '@/components/portfolio/portfolio-presence';
-import {
-  pickExperiencePresentationSettings,
-  resolveExperienceSectionSubtitle,
-  resolveExperienceSectionTitle,
-  experienceDesignUsesFlatHeader,
-  experienceDesignUsesTableHeader,
-  experienceDesignUsesCardsHeader,
-  experienceHeaderDesignIsApplied,
-  accentYearsHasCustomCopy,
-  experienceHeaderFontClass,
-  experienceHeaderFontStyle,
-  experienceSubtitleColorStyle,
-  experienceTitleColorStyle,
-  experiencePremiumFontScale,
-} from '@/components/portfolio/portfolio-experience-settings';
+import { pickExperiencePresentationSettings, resolveExperienceSectionSubtitle, resolveExperienceSectionTitle, experienceDesignUsesFlatHeader, experienceDesignUsesTableHeader, experienceDesignUsesCardsHeader, experienceHeaderDesignIsApplied, accentYearsHasCustomCopy, experiencePremiumFontScale } from '@/components/portfolio/portfolio-experience-settings';
 import { PortfolioLinkArrowProvider } from '@/components/portfolio/portfolio-link-buttons';
 import {
   pickContactPresentationSettings,
@@ -486,8 +337,85 @@ import {
 } from '@/components/portfolio/portfolio-nav-extras';
 import { DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES } from '@/components/portfolio/portfolio-settings-types';
 import { motionProfileEnablesHeroGeomFade } from '@/components/portfolio/portfolio-motion-settings';
+import { PortfolioMotionOffContext, setPortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { PortfolioMotionProvider } from '@/components/portfolio/PortfolioMotionItem';
 import { PortfolioTaskListMarkerProvider } from '@/components/portfolio/portfolio-task-list-marker-context';
+
+/**
+ * About and Experience sections are optional and the page renders one Services and one FAQ
+ * design, so each is its own chunk.
+ */
+const loadExperienceLists = () => import('@/components/portfolio/portfolio-experience-lists');
+const ExperienceEditorialHeader = dynamic(() => loadExperienceLists().then((m) => m.ExperienceEditorialHeader));
+const ExperienceMilestoneHeader = dynamic(() => loadExperienceLists().then((m) => m.ExperienceMilestoneHeader));
+const EditorialExperienceList = dynamic(() => loadExperienceLists().then((m) => m.EditorialExperienceList));
+const MilestoneExperienceList = dynamic(() => loadExperienceLists().then((m) => m.MilestoneExperienceList));
+const TableExperienceList = dynamic(() => loadExperienceLists().then((m) => m.TableExperienceList));
+const CardsExperienceList = dynamic(() => loadExperienceLists().then((m) => m.CardsExperienceList));
+const ReelExperienceList = dynamic(() => loadExperienceLists().then((m) => m.ReelExperienceList));
+const DuotoneExperienceList = dynamic(() => loadExperienceLists().then((m) => m.DuotoneExperienceList));
+const GalleryExperienceList = dynamic(() => loadExperienceLists().then((m) => m.GalleryExperienceList));
+const LoftExperienceList = dynamic(() => loadExperienceLists().then((m) => m.LoftExperienceList));
+const PressExperienceList = dynamic(() => loadExperienceLists().then((m) => m.PressExperienceList));
+const LegacyExperienceList = dynamic(() => loadExperienceLists().then((m) => m.LegacyExperienceList));
+const KineticExperienceList = dynamic(() => loadExperienceLists().then((m) => m.KineticExperienceList));
+const EditorialAboutMeSection = dynamic(() =>
+  import('@/components/portfolio/EditorialAboutMeSection').then((m) => m.EditorialAboutMeSection)
+);
+const EditorialAboutUsSection = dynamic(() =>
+  import('@/components/portfolio/EditorialAboutUsSection').then((m) => m.EditorialAboutUsSection)
+);
+const ServicesShowcaseHero = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-showcase-hero').then((m) => m.ServicesShowcaseHero)
+);
+const ServicesPricingGridSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-pricing-grid').then((m) => m.ServicesPricingGridSection)
+);
+const ServicesPricingBentoSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-pricing-bento').then((m) => m.ServicesPricingBentoSection)
+);
+const ServicesPricingMonolithSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-pricing-monolith').then((m) => m.ServicesPricingMonolithSection)
+);
+const ServicesPricingAuroraSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-pricing-aurora').then((m) => m.ServicesPricingAuroraSection)
+);
+const ServicesMediaColumnsSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-media-columns').then((m) => m.ServicesMediaColumnsSection)
+);
+const ServicesIndexListSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-index-list').then((m) => m.ServicesIndexListSection)
+);
+const ServicesPricingToggleSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-pricing-toggle').then((m) => m.ServicesPricingToggleSection)
+);
+const FaqKineticSplitDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-kinetic-split').then((m) => m.FaqKineticSplitDesign)
+);
+const FaqFloatingGalleryDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-floating-gallery').then((m) => m.FaqFloatingGalleryDesign)
+);
+const FaqEditorialMasonryDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-editorial-masonry').then((m) => m.FaqEditorialMasonryDesign)
+);
+const FaqPrismCardsDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-prism-cards').then((m) => m.FaqPrismCardsDesign)
+);
+const FaqStarScrollDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-star-scroll').then((m) => m.FaqStarScrollDesign)
+);
+const FaqTriGridDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-tri-grid').then((m) => m.FaqTriGridDesign)
+);
+const FaqSplitIndexDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-split-index').then((m) => m.FaqSplitIndexDesign)
+);
+const FaqCenteredFocusDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-centered-focus').then((m) => m.FaqCenteredFocusDesign)
+);
+const FaqBentoDualDesign = dynamic(() =>
+  import('@/components/portfolio/portfolio-faq-bento-dual').then((m) => m.FaqBentoDualDesign)
+);
 
 type PublicCreatorPortfolioPageProps = {
   creatorId: string;
@@ -1960,36 +1888,6 @@ export function PublicCreatorPortfolioPage({
     _section?: Pick<PortfolioSectionBackgroundSettings, 'sectionBackgroundEnabled'> | null
   ) => false;
 
-  const sectionBackgroundByKey = useMemo((): Partial<
-    Record<PortfolioNavSectionKey, PortfolioSectionBackgroundSettings>
-  > => {
-    return {
-      info: infoPresentation,
-      work: workPresentation,
-      services: servicesPresentation,
-      about: aboutPresentation,
-      aboutUs: aboutUsPresentation,
-      experience: experiencePresentation,
-      team: teamPresentation,
-      faq: faqPresentation,
-      contact: contactPresentation,
-      stack: stackPresentation,
-      tools: toolsPresentation,
-    };
-  }, [
-    infoPresentation,
-    workPresentation,
-    servicesPresentation,
-    aboutPresentation,
-    aboutUsPresentation,
-    experiencePresentation,
-    teamPresentation,
-    faqPresentation,
-    contactPresentation,
-    stackPresentation,
-    toolsPresentation,
-  ]);
-
   const footerPaintsOwnBackground = Boolean(footerPresentation.sectionBackgroundEnabled);
   const globalFixedBgStyle = useMemo(
     () => globalFixedBackgroundImageStyle(settings.global),
@@ -2005,7 +1903,10 @@ export function PublicCreatorPortfolioPage({
   );
   const titleScrollBehavior = settings.global.titleScroll;
   const effectiveTitleScroll = titleScrollBehavior;
-  const motionProfile = settings.global.motionProfile;
+  const motionEnabled = settings.global.motionEnabled !== false;
+  // Before any child renders: effects run child-first, so this must happen during render.
+  setPortfolioMotionOff(!motionEnabled);
+  const motionProfile = motionEnabled ? settings.global.motionProfile : 'none';
   const titleChrome = useMemo(
     () => resolveGlobalSectionTitleChrome(settings.global),
     [settings.global]
@@ -2027,52 +1928,6 @@ export function PublicCreatorPortfolioPage({
     () => globalSectionTitleBottomExtraStyle(settings.global.sectionTitleBottomExtraPx ?? 0),
     [settings.global.sectionTitleBottomExtraPx]
   );
-
-  const workHeaderAlign = useMemo(
-    () =>
-      asideAwareHeaderAlign(
-        workPresentation.sectionLayout,
-        resolveSectionHeaderAlign(settings.global, settings.work.headerAlignment)
-      ),
-    [settings.global, settings.work.headerAlignment, workPresentation.sectionLayout]
-  );
-  const experienceHeaderAlign = useMemo(() => {
-    const layout = experiencePresentation.sectionLayout;
-    if (layout === 'aside-left' || layout === 'aside-right') {
-      return asideAwareHeaderAlign(layout, {
-        centered: false,
-        alignRight: false,
-        alwaysCentered: false,
-      });
-    }
-    if (settings.experience.headerAlignment === 'right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
-    }
-    const sectionAlign = settings.experience.headerAlignment === 'center' ? 'center' : 'left';
-    return resolveSectionHeaderAlign(settings.global, sectionAlign);
-  }, [experiencePresentation.sectionLayout, settings.global, settings.experience.headerAlignment]);
-  const toolsHeaderAlign = useMemo(() => {
-    if (toolsPresentation.headerAlignment === 'right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
-    }
-    return resolveSectionHeaderAlign(
-      settings.global,
-      toolsPresentation.headerAlignment === 'center' ? 'center' : 'left'
-    );
-  }, [settings.global, toolsPresentation.headerAlignment]);
-  const stackHeaderAlign = useMemo(() => {
-    const layout = stackPresentation.sectionLayout ?? 'stacked';
-    if (layout === 'aside-left' || layout === 'aside-right') {
-      return { centered: true, alignRight: false, alwaysCentered: true };
-    }
-    if (stackPresentation.headerAlignment === 'right') {
-      return { centered: false, alignRight: true, alwaysCentered: true };
-    }
-    return resolveSectionHeaderAlign(
-      settings.global,
-      stackPresentation.headerAlignment === 'center' ? 'center' : 'left'
-    );
-  }, [settings.global, stackPresentation.headerAlignment, stackPresentation.sectionLayout]);
   const aboutUsHeaderAlign = useMemo(() => {
     const layout = aboutUsPresentation.sectionLayout;
     if (layout === 'aside-left' || layout === 'aside-right') {
@@ -2090,148 +1945,6 @@ export function PublicCreatorPortfolioPage({
       aboutUsPresentation.headerAlignment === 'center' ? 'center' : 'left'
     );
   }, [settings.global, aboutUsPresentation.headerAlignment, aboutUsPresentation.sectionLayout]);
-  const workHeaderTypography = useMemo(() => {
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-      fontClass: workHeaderFontClass(workPresentation.titleFont, 'title'),
-      fontStyle: workHeaderFontStyle(workPresentation.titleFont),
-      colorStyle: workTitleColorStyle(workPresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-      fontClass: workHeaderFontClass(workPresentation.subtitleFont, 'subtitle'),
-      fontStyle: workHeaderFontStyle(workPresentation.subtitleFont),
-      colorStyle: workSubtitleColorStyle(workPresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, workPresentation, globalTypographyContext]);
-
-  const experienceHeaderTypography = useMemo(() => {
-    const titleClass = [
-      experienceHeaderFontClass(experiencePresentation.titleFont, 'title'),
-      experiencePresentation.titleUppercase && experiencePresentation.titleFont !== 'display'
-        ? 'uppercase'
-        : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-    const subtitleClass = [
-      experienceHeaderFontClass(experiencePresentation.subtitleFont, 'subtitle'),
-      experiencePresentation.subtitleUppercase && experiencePresentation.subtitleFont !== 'display'
-        ? 'uppercase'
-        : '',
-    ]
-      .filter(Boolean)
-      .join(' ');
-
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-      fontClass: titleClass,
-      fontStyle: experienceHeaderFontStyle(experiencePresentation.titleFont),
-      colorStyle: experienceTitleColorStyle(experiencePresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-      fontClass: subtitleClass,
-      fontStyle: experienceHeaderFontStyle(experiencePresentation.subtitleFont),
-      colorStyle: experienceSubtitleColorStyle(experiencePresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, experiencePresentation, globalTypographyContext]);
-
-  const toolsHeaderTypography = useMemo(() => {
-    const title = resolveGlobalSectionTitleTypography(
-      settings.global,
-      {
-        fontClass: toolsHeaderFontClass(toolsPresentation.titleFont, 'title'),
-        fontStyle: toolsHeaderFontStyle(toolsPresentation.titleFont),
-        colorStyle: toolsTitleColorStyle(toolsPresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      settings.global,
-      {
-        fontClass: toolsHeaderFontClass(toolsPresentation.subtitleFont, 'subtitle'),
-        fontStyle: toolsHeaderFontStyle(toolsPresentation.subtitleFont),
-        colorStyle: toolsSubtitleColorStyle(toolsPresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return { title, subtitle };
-  }, [settings.global, toolsPresentation, globalTypographyContext]);
-
-  const stackHeaderTypography = useMemo(() => {
-    const titleSize = resolveStackTitleSize(stackPresentation.titleSize);
-    const subtitleSize = resolveStackSubtitleSize(stackPresentation.subtitleSize);
-    const globalTitleScope = settings.global.titleTypography.scope;
-    const globalSubtitleScope = settings.global.subtitleTypography.scope;
-    const globalForTitle =
-      globalTitleScope === 'global'
-        ? {
-            ...settings.global,
-            titleTypography: { ...settings.global.titleTypography, size: titleSize },
-          }
-        : settings.global;
-    const globalForSubtitle =
-      globalSubtitleScope === 'global'
-        ? {
-            ...settings.global,
-            subtitleTypography: { ...settings.global.subtitleTypography, size: subtitleSize },
-          }
-        : settings.global;
-
-    const title = resolveGlobalSectionTitleTypography(
-      globalForTitle,
-      {
-        fontClass: [
-          stackHeaderFontClass(stackPresentation.titleFont, 'title'),
-          globalTitleScope === 'section' ? stackSectionTitleSizeClass(titleSize) : '',
-        ]
-          .filter(Boolean)
-          .join(' '),
-        fontStyle: stackHeaderFontStyle(stackPresentation.titleFont),
-        colorStyle: stackTitleColorStyle(stackPresentation.titleColor),
-      },
-      globalTypographyContext
-    );
-    const subtitle = resolveGlobalSectionSubtitleTypography(
-      globalForSubtitle,
-      {
-        fontClass: [
-          stackHeaderFontClass(stackPresentation.subtitleFont, 'subtitle'),
-          globalSubtitleScope === 'section' ? stackSectionSubtitleSizeClass(subtitleSize) : '',
-        ]
-          .filter(Boolean)
-          .join(' '),
-        fontStyle: stackHeaderFontStyle(stackPresentation.subtitleFont),
-        colorStyle: stackSubtitleColorStyle(stackPresentation.subtitleColor),
-      },
-      globalTypographyContext
-    );
-    return {
-      title: {
-        ...title,
-        customSizing: true,
-      },
-      subtitle: {
-        ...subtitle,
-        customSizing: true,
-      },
-    };
-  }, [settings.global, stackPresentation, globalTypographyContext]);
 
   const aboutUsHeaderTypography = useMemo(() => {
     const title = resolveGlobalSectionTitleTypography(
@@ -2465,20 +2178,21 @@ export function PublicCreatorPortfolioPage({
       case 'work': {
         const layout = workPresentation.sectionLayout ?? 'stacked';
         const aside = faqSectionLayoutIsAside(layout);
-        const projectsBoard = isProjectsBoardDesign(workPresentation);
-        const projectsAccordion = isProjectsAccordionDesign(workPresentation);
-        const projectsFrames = isProjectsFramesDesign(workPresentation);
-        const projectsIndex = isProjectsIndexDesign(workPresentation);
-        const projectsGrid = isProjectsGridDesign(workPresentation);
-        const projectsSplit = isProjectsSplitDesign(workPresentation);
-        const projectsCarousel = isProjectsCarouselDesign(workPresentation);
-        const projectsShowcase = isProjectsShowcaseDesign(workPresentation);
-        const projectsLedger = isProjectsLedgerDesign(workPresentation);
-        const projectsSpec = isProjectsSpecDesign(workPresentation);
-        const projectsCase = isProjectsCaseDesign(workPresentation);
-        const projectsPress = isProjectsPressDesign(workPresentation);
-        const projectsDuotone = isProjectsDuotoneDesign(workPresentation);
-        const projectsCascade = isProjectsCascadeDesign(workPresentation);
+        const workDesign = workPresentation.sectionDesign;
+        const projectsBoard = workDesign === 'projects-board';
+        const projectsAccordion = workDesign === 'projects-accordion';
+        const projectsFrames = workDesign === 'projects-frames';
+        const projectsIndex = workDesign === 'projects-index';
+        const projectsGrid = workDesign === 'projects-grid';
+        const projectsSplit = workDesign === 'projects-split';
+        const projectsCarousel = workDesign === 'projects-carousel';
+        const projectsShowcase = workDesign === 'projects-showcase';
+        const projectsLedger = workDesign === 'projects-ledger';
+        const projectsSpec = workDesign === 'projects-spec';
+        const projectsCase = workDesign === 'projects-case';
+        const projectsPress = workDesign === 'projects-press';
+        const projectsDuotone = workDesign === 'projects-duotone';
+        const projectsCascade = workDesign === 'projects-cascade';
         const namedWorkDesign =
           projectsBoard ||
           projectsAccordion ||
@@ -2635,13 +2349,18 @@ export function PublicCreatorPortfolioPage({
           ) : (
             <ServicesHeaderEditorialHeader {...servicesHeaderProps} />
           );
-        const servicesShowcaseHero = isServicesShowcaseHeroDesign(servicesPresentation);
-        const servicesPricingGrid = isServicesPricingGridDesign(servicesPresentation);
-        const servicesPricingBento = isServicesPricingBentoDesign(servicesPresentation);
-        const servicesPricingMonolith = isServicesPricingMonolithDesign(servicesPresentation);
-        const servicesPricingAurora = isServicesPricingAuroraDesign(servicesPresentation);
-        const servicesPricingToggle = isServicesPricingToggleDesign(servicesPresentation);
+        const servicesDesign = servicesPresentation.sectionDesign;
+        const servicesShowcaseHero = servicesDesign === 'showcase-hero';
+        const servicesPricingGrid = servicesDesign === 'services-pricing-grid';
+        const servicesPricingBento = servicesDesign === 'services-pricing-bento';
+        const servicesPricingMonolith = servicesDesign === 'services-pricing-monolith';
+        const servicesPricingAurora = servicesDesign === 'services-pricing-aurora';
+        const servicesPricingToggle = servicesDesign === 'services-pricing-toggle';
+        const servicesIndexList = servicesDesign === 'services-index-list';
+        const servicesMediaColumns = servicesDesign === 'services-media-columns';
         const namedServicesDesign =
+          servicesMediaColumns ||
+          servicesIndexList ||
           servicesShowcaseHero ||
           servicesPricingGrid ||
           servicesPricingBento ||
@@ -2663,6 +2382,10 @@ export function PublicCreatorPortfolioPage({
               <>
                 {servicesShowcaseHero ? (
                   <ServicesShowcaseHero services={services} presentation={servicesPresentation} />
+                ) : servicesIndexList ? (
+                  <ServicesIndexListSection services={services} presentation={servicesPresentation} />
+                ) : servicesMediaColumns ? (
+                  <ServicesMediaColumnsSection services={services} presentation={servicesPresentation} />
                 ) : servicesPricingGrid ? (
                   <ServicesPricingGridSection
                     services={toPortfolioServiceItems(services)}
@@ -3669,7 +3392,8 @@ export function PublicCreatorPortfolioPage({
   }
 
   return (
-    <PortfolioMotionProvider timing={settings.global.motionTiming}>
+    <PortfolioMotionOffContext.Provider value={!motionEnabled}>
+    <PortfolioMotionProvider key={motionEnabled ? 'motion-on' : 'motion-off'} timing={settings.global.motionTiming}>
     <PortfolioTaskListMarkerProvider
       value={{
         taskListBulletStyle: settings.global.taskListBulletStyle ?? 'disc',
@@ -3994,5 +3718,6 @@ export function PublicCreatorPortfolioPage({
     </PortfolioThemeRoot>
     </PortfolioTaskListMarkerProvider>
     </PortfolioMotionProvider>
+    </PortfolioMotionOffContext.Provider>
   );
 }

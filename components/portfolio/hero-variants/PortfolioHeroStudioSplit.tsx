@@ -15,6 +15,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
 
 const FALLBACK_BIO =
   'We craft distinctive digital products and brand systems for ambitious teams — clear strategy, sharp design, and experiences that feel inevitable.';
@@ -100,8 +101,6 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
   // ========== ANIMATION: On Load Entry Sequence ==========
   useEffect(() => {
     if (typeof window === 'undefined') return;
-
-    const band = bandRef.current;
     const leftBlock = leftBlockRef.current;
     const rightBlock = rightBlockRef.current;
     const mediaFrame = mediaFrameRef.current;
@@ -113,7 +112,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
     if (leftBlock) {
       const leftElements = leftBlock.querySelectorAll('[data-gsap-entry]');
       leftElements.forEach((el, index) => {
-        const t = setTimeout(() => {
+        const t = motionTimeout(() => {
           (el as HTMLElement).style.transition = 'opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
           (el as HTMLElement).style.opacity = '1';
           (el as HTMLElement).style.transform = 'translateY(0)';
@@ -128,7 +127,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
     if (rightBlock) {
       const rightElements = rightBlock.querySelectorAll('[data-gsap-entry]');
       rightElements.forEach((el, index) => {
-        const t = setTimeout(() => {
+        const t = motionTimeout(() => {
           (el as HTMLElement).style.transition = 'opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
           (el as HTMLElement).style.opacity = '1';
           (el as HTMLElement).style.transform = 'translateY(0)';
@@ -141,7 +140,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
 
     // 3. MEDIA FRAME - Scale + blur focus effect
     if (mediaFrame) {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         mediaFrame.style.transition = 'transform 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease-out, filter 1s ease-out';
         mediaFrame.style.transform = 'scale(1)';
         mediaFrame.style.opacity = '1';
@@ -157,6 +156,8 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
+    // Animations switched off (Global → Animations): no scroll-driven parallax.
+    if (isPortfolioMotionOff()) return;
     const mediaQuery = window.matchMedia('(min-width: 768px)');
     if (!mediaQuery.matches) return;
 
@@ -170,19 +171,17 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
     if (!section || !mediaFrame) return;
 
     let sectionTop = 0;
-    let sectionHeight = 0;
     let viewportHeight = window.innerHeight;
     let viewportWidth = window.innerWidth;
 
     const updateBounds = () => {
       const rect = section.getBoundingClientRect();
       sectionTop = rect.top + window.scrollY;
-      sectionHeight = rect.height;
       viewportHeight = window.innerHeight;
       viewportWidth = window.innerWidth;
     };
 
-    setTimeout(updateBounds, 500); // Wait for entry animations
+    motionTimeout(updateBounds, 500); // Wait for entry animations
 
     const handleScroll = () => {
       const scrollY = window.scrollY;

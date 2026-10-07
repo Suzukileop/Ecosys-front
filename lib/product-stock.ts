@@ -4,9 +4,9 @@ export const LOW_STOCK_THRESHOLD = 5;
 /** A physical product listed without a quantity is a single unit. */
 export const DEFAULT_PHYSICAL_STOCK = 1;
 
-export type StockTone = 'ok' | 'low' | 'out' | 'neutral';
+type StockTone = 'ok' | 'low' | 'out' | 'neutral';
 
-export type StockStatus = {
+type StockStatus = {
   tone: StockTone;
   /** Short value for stat strips: "12", "0", "∞". */
   value: string;
@@ -74,11 +74,4 @@ export const STOCK_TONE_DOT: Record<StockTone, string> = {
   low: 'bg-amber-500',
   out: 'bg-[#E0431A] dark:bg-[#FF7A52]',
   neutral: 'bg-neutral-300 dark:bg-neutral-600',
-};
-
-export const STOCK_TONE_TEXT: Record<StockTone, string> = {
-  ok: 'text-emerald-700 dark:text-emerald-400',
-  low: 'text-amber-700 dark:text-amber-400',
-  out: 'text-[#E0431A] dark:text-[#FF7A52]',
-  neutral: 'text-neutral-500 dark:text-neutral-400',
 };

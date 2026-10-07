@@ -49,7 +49,7 @@ import {
   getMissingProfileReadinessFields,
   type ProfileReadinessField,
 } from '@/lib/creator-profile-readiness';
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import type { CreatorProfileDto } from '@/types/profile';
 import type {
   MarketplaceBundleSummary,
   MarketplaceProductGroup,
@@ -327,7 +327,7 @@ export function CreatorStudioProductsTab() {
     const wantsCreate = searchParams.get('create') === '1';
     if (wantsCreate && missingProfileFields.length > 0) {
       setView('list');
-      router.replace('/marketplace/my-products', { scroll: false });
+      router.replace('/my-products', { scroll: false });
       return;
     }
     setView(wantsCreate ? 'create' : 'list');
@@ -341,7 +341,7 @@ export function CreatorStudioProductsTab() {
       setProductFormat('virtual');
     }
     router.replace(
-      next === 'create' ? '/marketplace/my-products?create=1' : '/marketplace/my-products',
+      next === 'create' ? '/my-products?create=1' : '/my-products',
       { scroll: false }
     );
     // Returning to the list used to set loading=true without refetching → stuck skeleton.
@@ -631,7 +631,7 @@ export function CreatorStudioProductsTab() {
                         key={bundle.id}
                         bundle={bundle}
                         isAuthenticated={Boolean(user)}
-                        loginRedirect="/marketplace/my-products"
+                        loginRedirect="/my-products"
                       />
                     ))}
                   </div>

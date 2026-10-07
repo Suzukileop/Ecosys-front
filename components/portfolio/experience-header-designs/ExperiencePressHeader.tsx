@@ -1,7 +1,6 @@
 'use client';
 
 import { useRef, useEffect, useMemo } from 'react';
-import { SERIF } from '@/components/portfolio/portfolio-section-primitives';
 import type { PortfolioExperiencePresentationSettings } from '@/components/portfolio/portfolio-experience-settings';
 import {
   DEFAULT_EXPERIENCE_MUTED_COLOR,
@@ -14,6 +13,7 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Press/Masthead Header — Premium Editorial Typography
@@ -61,12 +61,13 @@ export function ExperiencePressHeader({
   const introText = presentation.pressIntroText?.trim() || '';
 
   // Premium customization options
-  const animationEnabled = presentation.pressHeaderAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.pressHeaderAnimationEnabled !== false && !motionOff;
   const animationStyle = presentation.pressHeaderAnimationStyle ?? 'staggered';
   const headingWeightStyle = presentation.pressHeadingWeightStyle ?? 'alternating';
   const subtitleStyle = presentation.pressSubtitleStyle ?? 'micro';
   const headingAlignment = presentation.pressHeadingAlignment ?? 'left';
-  const parallaxEnabled = presentation.pressScrollParallaxEnabled !== false;
+  const parallaxEnabled = presentation.pressScrollParallaxEnabled !== false && !motionOff;
   const parallaxIntensity = presentation.pressScrollParallaxIntensity ?? 'subtle';
 
   // Split heading into sentences for individual animation
@@ -219,13 +220,6 @@ export function ExperiencePressHeader({
     const handleScroll = () => {
       const rect = section.getBoundingClientRect();
       const viewportHeight = window.innerHeight;
-      
-      // Calculate how far the section has scrolled relative to viewport
-      // When section top is at viewport bottom: progress = 0
-      // When section top is at viewport top: progress = 1
-      const sectionTopInView = viewportHeight - rect.top;
-      const scrollRange = viewportHeight + rect.height;
-      const scrollProgress = Math.max(0, Math.min(1, sectionTopInView / scrollRange));
 
       // Only apply parallax after section enters viewport
       if (rect.top > viewportHeight || rect.bottom < 0) {

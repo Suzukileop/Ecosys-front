@@ -17,7 +17,6 @@ import {
   PROVIDER_INK_CLASS,
   PROVIDER_MUTED_CLASS,
   ProviderChip,
-  ProviderSwitch,
   ProviderTextAction,
 } from '@/components/marketplace/ProviderDirectoryPrimitives';
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
@@ -38,6 +37,42 @@ const PROVIDER_HEADLINES = [
   'Connect with elite digital builders',
   'Work with the top tier of freelance talent',
 ] as const;
+
+/* Same controls as the product marketplace toolbar (its "Filters" button), so both explore pages
+   share one search tray. Inside a white tray, controls are edged by a hairline rather than a shadow. */
+const TRAY_BUTTON_BASE =
+  'inline-flex h-11 shrink-0 items-center justify-center gap-2 rounded-lg border px-4 text-[14px] font-medium transition-colors duration-200';
+const TRAY_BUTTON_ACTIVE =
+  'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]';
+const TRAY_BUTTON_IDLE =
+  'border-[#E5E5E5] bg-[#FFFFFF] text-[#111111] hover:border-[#CCCCCC] dark:border-white/[0.1] dark:bg-[#111111] dark:text-white dark:hover:border-white/25';
+
+function TrayToggle({
+  checked,
+  onChange,
+  label,
+}: {
+  checked: boolean;
+  onChange: (next: boolean) => void;
+  label: string;
+}) {
+  return (
+    <button
+      type="button"
+      role="switch"
+      aria-checked={checked}
+      onClick={() => onChange(!checked)}
+      className={`${TRAY_BUTTON_BASE} ${checked ? TRAY_BUTTON_ACTIVE : TRAY_BUTTON_IDLE}`}
+    >
+      {checked ? (
+        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
+          <path strokeLinecap="round" strokeLinejoin="round" d="m5 12.5 4.5 4.5L19 7.5" />
+        </svg>
+      ) : null}
+      {label}
+    </button>
+  );
+}
 
 function SearchIcon({ className }: { className?: string }) {
   return (
@@ -165,7 +200,7 @@ function CreatorsCatalogContent() {
       else params.set(k, v);
     });
     const qs = params.toString();
-    router.push(qs ? `/marketplace/creators?${qs}` : '/marketplace/creators');
+    router.push(qs ? `/providers?${qs}` : '/providers');
   };
 
   const load = useCallback(async () => {
@@ -271,7 +306,7 @@ function CreatorsCatalogContent() {
     setLocalQ('');
     setCategoriesOpen(false);
     setGeoError(null);
-    router.push('/marketplace/creators');
+    router.push('/providers');
   };
 
   const emptyState = (
@@ -325,9 +360,9 @@ function CreatorsCatalogContent() {
           <form
             onSubmit={onSearchSubmit}
             data-surface-tray
-            className="flex flex-col gap-3 bg-[#EEF0F2] px-5 py-3.5 dark:bg-white/[0.04] sm:rounded-xl sm:p-3 lg:flex-row lg:items-center lg:gap-3"
+            className="flex flex-col gap-2.5 border-y border-[#E5E5E5] bg-[#FFFFFF] px-5 py-3 dark:border-white/[0.1] dark:bg-[#111111] sm:gap-4 sm:rounded-xl sm:border sm:p-5 lg:flex-row lg:items-center"
           >
-            <div className="relative min-w-0 flex-1 rounded-lg bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04)] transition focus-within:ring-2 focus-within:ring-[#FF5722]/20 dark:bg-[#111111]">
+            <div className="relative h-11 w-full rounded-lg border border-[#E5E5E5] bg-[#FFFFFF] transition focus-within:border-[#CCCCCC] focus-within:ring-2 focus-within:ring-[#FF5722]/20 dark:border-white/[0.1] dark:bg-[#111111] dark:focus-within:ring-white/20 lg:max-w-md lg:flex-1">
               <SearchIcon className="pointer-events-none absolute top-1/2 left-3.5 h-[1.1rem] w-[1.1rem] -translate-y-1/2 text-[#222222] dark:text-neutral-300" />
               <label htmlFor="cq" className="sr-only">
                 Search providers
@@ -341,7 +376,7 @@ function CreatorsCatalogContent() {
                 enterKeyHint="search"
                 autoComplete="off"
                 placeholder={isPhone ? 'Search by name, specialty…' : 'Search by name, specialty, or keyword'}
-                className={`h-11 w-full border-0 bg-transparent pl-10 pr-20 text-[16px] font-medium sm:pr-11 sm:text-[14px] ${PROVIDER_INK_CLASS} placeholder:font-normal placeholder:text-[#222222] focus:outline-none focus:ring-0 dark:placeholder:text-neutral-300`}
+                className="h-full w-full border-0 bg-transparent p-0 pl-10 pr-20 text-[16px] font-medium text-[#111111] placeholder:font-normal placeholder:text-[#222222] focus:outline-none focus:ring-0 dark:text-white dark:placeholder:text-neutral-300 sm:pr-11 sm:text-[14px]"
               />
               <button
                 type="submit"
@@ -356,32 +391,28 @@ function CreatorsCatalogContent() {
                 disabled={!hasActiveFilters}
                 title="Reset search and filters"
                 aria-label="Reset search and filters"
-                className="absolute top-1/2 right-11 sm:right-2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-neutral-400 transition-colors duration-200 hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-none"
+                className="absolute top-1/2 right-11 sm:right-2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-lg text-[#606060] dark:text-[#AAAAAA] transition-colors duration-200 hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-0 focus-visible:outline-none"
               >
                 <ResetIcon className="h-4 w-4" />
               </button>
             </div>
 
-            <div className="flex flex-wrap items-center gap-x-5 gap-y-3 px-1 sm:gap-3 lg:border-l lg:border-black/[0.06] lg:pl-3 dark:lg:border-white/[0.08]">
-              <ProviderSwitch
+            <div className="grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center sm:gap-3 lg:ml-auto">
+              <TrayToggle
                 checked={verifiedOnly}
                 onChange={(next) => pushParams({ verified: next ? '1' : undefined, page: '0' })}
                 label="Verified only"
               />
-              <ProviderSwitch
+              <TrayToggle
                 checked={availableOnly}
                 onChange={(next) => pushParams({ available: next ? '1' : undefined, page: '0' })}
                 label="Available only"
               />
               <span className="hidden sm:contents">
-                <ProviderTextAction
-                  type="submit"
-                  variant="primary"
-                  icon={<ArrowIcon className="h-4 w-4 text-[#FF5722]" />}
-                  className="ml-auto lg:ml-1"
-                >
+                <button type="submit" className={`${TRAY_BUTTON_BASE} ${TRAY_BUTTON_ACTIVE}`}>
+                  <SearchIcon className="h-4 w-4" />
                   Search
-                </ProviderTextAction>
+                </button>
               </span>
             </div>
           </form>
@@ -390,8 +421,8 @@ function CreatorsCatalogContent() {
           <div className={`px-5 sm:px-0 ${searchActive || categoriesOpen || genre ? 'block' : 'hidden sm:block'}`}>
             <ServiceProviderCategoriesShell open={categoriesOpen} onOpenChange={setCategoriesOpen}>
               <div className="flex flex-col gap-2.5 sm:flex-row sm:items-center sm:gap-5">
-                <p className={`shrink-0 text-[12px] font-semibold uppercase tracking-[0.14em] sm:text-[14px] sm:font-medium sm:normal-case sm:tracking-normal ${PROVIDER_MUTED_CLASS}`}>Popular</p>
-                <div className="-mx-5 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-5 pb-2.5 [scrollbar-width:none] [&>*]:shrink-0 sm:mx-0 sm:pb-0 sm:flex-wrap sm:gap-x-2 sm:gap-y-3 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
+                <p className={`shrink-0 text-[12px] font-semibold uppercase tracking-[0.12em] sm:text-[14px] sm:font-semibold sm:normal-case sm:tracking-normal ${PROVIDER_INK_CLASS}`}>Popular</p>
+                <div className="-mx-5 flex min-w-0 flex-nowrap items-center gap-2 overflow-x-auto px-5 pb-1 [scrollbar-width:none] [&>*]:shrink-0 sm:mx-0 sm:pb-0 sm:flex-wrap sm:gap-3 sm:overflow-visible sm:px-0 [&::-webkit-scrollbar]:hidden">
                   {SERVICE_PROVIDER_POPULAR_TAGS.map((label) => (
                     <ProviderChip
                       key={label}
@@ -444,11 +475,11 @@ function CreatorsCatalogContent() {
           <div className="flex flex-col gap-3 border-b border-black/[0.06] px-5 pb-4 sm:gap-4 sm:px-0 sm:pb-6 lg:flex-row lg:items-center lg:justify-between dark:border-white/[0.06]">
             <h2
               id="providers-heading"
-              className={`flex items-baseline gap-2 text-[17px] font-semibold tracking-[-0.01em] sm:text-lg ${PROVIDER_INK_CLASS}`}
+              className={`flex items-baseline gap-2 text-[18px] font-bold tracking-[-0.02em] sm:text-[20px] ${PROVIDER_INK_CLASS}`}
             >
               Service providers
               {pageData ? (
-                <span className="text-[13px] font-medium tabular-nums text-neutral-400 dark:text-neutral-500 sm:text-[14px]">
+                <span className={`text-[14px] font-medium tabular-nums ${PROVIDER_MUTED_CLASS}`}>
                   {String(pageData.totalElements ?? creators.length).padStart(2, '0')}
                 </span>
               ) : null}

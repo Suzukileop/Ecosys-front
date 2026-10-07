@@ -1,10 +1,9 @@
 'use client';
 
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faClock, faComment, faEllipsisVertical, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
+import { faClock, faEllipsisVertical, faGripVertical, faPlus } from '@fortawesome/free-solid-svg-icons';
 import {
   createEmptyProfileService,
   parseProfileServices,
@@ -24,7 +23,7 @@ import api from '@/lib/api';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
 import { getMissingProfileReadinessFields, type ProfileReadinessField } from '@/lib/creator-profile-readiness';
 import { uploadContentMedia } from '@/lib/marketplace-api';
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import type { CreatorProfileDto } from '@/types/profile';
 import {
   formatServiceDelivery,
   formatServicePrice,
@@ -39,7 +38,11 @@ import {
   type ServiceStatus,
 } from '@/lib/profile-services';
 import { parseSpecialtyList, parseSpecialtyTags, specialtyKey } from '@/lib/specialties';
-import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+import { MediaImage } from '@/components/ui/MediaImage';
+
+/** Cover box: full width on mobile, 260 px (md) / 300 px (lg) beside the text. */
+const SERVICE_COVER_WIDTHS = [256, 384, 640, 828] as const;
+const SERVICE_COVER_SIZES = '(min-width: 1024px) 300px, (min-width: 768px) 260px, 100vw';
 
 type StatusFilter = 'ALL' | ServiceStatus;
 
@@ -92,21 +95,16 @@ function ServiceCover({
   title,
   coverImageUrl,
   className,
+  priority = false,
 }: {
   title: string;
   coverImageUrl?: string | null;
   className?: string;
+  priority?: boolean;
 }) {
-  const resolved = resolveStorageMediaUrl(coverImageUrl) || coverImageUrl;
-  if (resolved) {
-    return (
-      // eslint-disable-next-line @next/next/no-img-element
-      <img src={resolved} alt="" className={`object-cover ${className ?? ''}`} />
-    );
-  }
   const hue = solidCoverHueFromTitle(title || 'Service');
   const initial = (title.trim()[0] || 'S').toUpperCase();
-  return (
+  const solidCover = (
     <div
       className={`relative flex items-center justify-center overflow-hidden ${className ?? ''}`}
       style={{ backgroundColor: `hsl(${hue} 48% 42%)` }}
@@ -114,6 +112,16 @@ function ServiceCover({
     >
       <span className="relative text-4xl font-bold tracking-tight text-white/90 sm:text-5xl">{initial}</span>
     </div>
+  );
+  return (
+    <MediaImage
+      src={coverImageUrl}
+      widths={SERVICE_COVER_WIDTHS}
+      sizes={SERVICE_COVER_SIZES}
+      priority={priority}
+      fallback={solidCover}
+      className={`object-cover ${className ?? ''}`}
+    />
   );
 }
 
@@ -407,6 +415,7 @@ export function CreatorStudioServicesTab({
       setError('Currency is required.');
       return;
     }
+    const billingPeriod = needsAmount ? draft.billingPeriod ?? null : null;
     const cleaned: ProfileServiceForm = {
       ...draft,
       title: draft.title.trim(),
@@ -426,6 +435,7 @@ export function CreatorStudioServicesTab({
             ? 'WEEKS'
             : 'DAYS'
           : null,
+      billingPeriod,
     };
     const exists = services.some((item) => item.id === cleaned.id);
     const next = exists ? services.map((item) => (item.id === cleaned.id ? cleaned : item)) : [...services, cleaned];
@@ -941,6 +951,7 @@ export function CreatorStudioServicesTab({
                         <ServiceCover
                           title={service.title}
                           coverImageUrl={service.coverImageUrl}
+                          priority={index === 0}
                           className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-[1.04]"
                         />
                         <span className="pointer-events-none absolute left-3 top-3 inline-flex items-center gap-1.5 rounded-full bg-black/55 px-2.5 py-1 text-[12px] font-medium text-white backdrop-blur-md">
@@ -1026,7 +1037,7 @@ export function CreatorStudioServicesTab({
           {dropHint && reorderBlockedByFilters ? (
             <p
               role="status"
-              className={`flex items-center justify-center gap-2 rounded-lg border border-black/[0.06] bg-white px-4 py-3 text-[15px] text-neutral-600 dark:border-white/[0.08] dark:bg-[#111111] dark:text-neutral-300 ${pageInsetMargin}`}
+              className={`flex items-center justify-center gap-2 rounded-xl bg-[#FFFFFF] px-4 py-3 text-[15px] text-neutral-600 dark:bg-[#111111] dark:text-neutral-300 ${pageInsetMargin}`}
             >
               <span className="h-1.5 w-1.5 rounded-full bg-amber-500" aria-hidden />
               Reset filters to reorder your services
@@ -1037,79 +1048,5 @@ export function CreatorStudioServicesTab({
 
       <BackToTopButton visible={backToTop.visible} onClick={backToTop.backToTop} />
     </div>
-  );
-}
-
-type PublicServiceCardProps = {
-  service: {
-    id: string;
-    title: string;
-    description?: string | null;
-    specialty?: string | null;
-    pricingType?: string | null;
-    basePriceCents?: number | null;
-    currency?: string | null;
-    deadline?: string | null;
-    deliveryValue?: number | null;
-    deliveryUnit?: string | null;
-    coverImageUrl?: string | null;
-    tags?: string[];
-  };
-  discussHref: string | null;
-  discussLabel: string;
-};
-
-export function PublicServiceCard({ service, discussHref, discussLabel }: PublicServiceCardProps) {
-  const cover = resolveStorageMediaUrl(service.coverImageUrl) || service.coverImageUrl;
-  const deliveryLabel = formatServiceDelivery(service);
-  const hue = solidCoverHueFromTitle(service.title || 'Service');
-  return (
-    <article className="flex h-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-950">
-      <div className="aspect-[16/9] bg-neutral-100 dark:bg-neutral-800">
-        {cover ? (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img src={cover} alt="" className="h-full w-full object-cover" />
-        ) : (
-          <div
-            className="flex h-full items-center justify-center text-3xl font-bold text-white/90"
-            style={{ backgroundColor: `hsl(${hue} 48% 42%)` }}
-          >
-            {(service.title.trim()[0] || 'S').toUpperCase()}
-          </div>
-        )}
-      </div>
-      <div className="flex flex-1 flex-col gap-4 p-5">
-        <div className="space-y-2">
-          <h3 className="text-base font-semibold leading-snug text-neutral-900 dark:text-white">{service.title}</h3>
-          {service.specialty ? (
-            <span className="inline-flex rounded-full bg-orange-50 px-2.5 py-1 text-[11px] font-medium text-orange-800 dark:bg-orange-500/10 dark:text-orange-300">
-              {service.specialty}
-            </span>
-          ) : null}
-        </div>
-        {service.description ? (
-          <p className="line-clamp-3 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
-            {service.description}
-          </p>
-        ) : null}
-        <div className="mt-auto space-y-3 pt-1">
-          <div className="space-y-1">
-            <p className="text-xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white">
-              {formatServicePrice(service)}
-            </p>
-            {deliveryLabel ? <p className="text-xs text-neutral-500 dark:text-neutral-400">{deliveryLabel}</p> : null}
-          </div>
-          {discussHref ? (
-            <Link
-              href={discussHref}
-              className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-3 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600"
-            >
-              <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
-              {discussLabel}
-            </Link>
-          ) : null}
-        </div>
-      </div>
-    </article>
   );
 }

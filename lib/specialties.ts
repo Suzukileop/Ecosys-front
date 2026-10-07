@@ -15,7 +15,7 @@ export const PROFILE_SPECIALTIES = [
   'DevOps',
 ] as const;
 
-export type ProfileSpecialty = (typeof PROFILE_SPECIALTIES)[number];
+type ProfileSpecialty = (typeof PROFILE_SPECIALTIES)[number];
 
 export const MAX_PROFILE_SPECIALTIES = 20;
 export const MAX_SPECIALTY_LENGTH = 80;
@@ -116,7 +116,7 @@ export function canonicalizeSpecialty(raw: string | null | undefined): ProfileSp
   return exact ?? null;
 }
 
-export function sanitizeSpecialtyLabel(raw: string | null | undefined): string | null {
+function sanitizeSpecialtyLabel(raw: string | null | undefined): string | null {
   if (!raw) return null;
   const trimmed = raw.trim().replace(/\s+/g, ' ').slice(0, MAX_SPECIALTY_LENGTH).trim();
   return trimmed || null;
@@ -160,11 +160,6 @@ export function parseSpecialtyTags(raw: unknown): string[] {
   return result;
 }
 
-export function primarySpecialty(specialties: string[], fallback?: string | null): string | null {
-  if (specialties.length > 0) return specialties[0];
-  return sanitizeSpecialtyLabel(fallback);
-}
-
 export function matchSpecialtyOption(value: string | null | undefined, options: string[]): string {
   if (!value?.trim() || options.length === 0) return '';
   const resolved = canonicalizeSpecialty(value) ?? value;
@@ -174,7 +169,7 @@ export function matchSpecialtyOption(value: string | null | undefined, options: 
   );
 }
 
-export function specialtyGroupLabel(value: string | null | undefined, options: string[] = []): string {
+function specialtyGroupLabel(value: string | null | undefined, options: string[] = []): string {
   return matchSpecialtyOption(value, options) || value?.trim() || 'Other';
 }
 
@@ -196,20 +191,4 @@ export function groupBySpecialty<T>(
     ...[...grouped.keys()].filter((key) => !allowedSpecialties.includes(key)),
   ];
   return orderedKeys.map((group) => ({ group, items: grouped.get(group) ?? [] }));
-}
-
-export function specialtiesMatchFilter(
-  specialties: string[],
-  primary: string | null,
-  filter: string
-): boolean {
-  const needle = specialtyKey(filter);
-  const compactNeedle = compactSpecialtyKey(filter);
-  if (!needle) return false;
-  const haystacks = [...specialties, primary ?? ''].filter(Boolean);
-  return haystacks.some((item) => {
-    const key = specialtyKey(item);
-    const compact = compactSpecialtyKey(item);
-    return key.includes(needle) || (!!compactNeedle && compact.includes(compactNeedle));
-  });
 }

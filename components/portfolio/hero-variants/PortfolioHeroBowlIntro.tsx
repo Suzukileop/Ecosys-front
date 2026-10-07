@@ -15,6 +15,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
 
 const FALLBACK_BIO =
   'Ingénieur informatique passionné par les solutions innovantes et les expériences numériques claires.';
@@ -111,7 +112,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
 
     // 1. PORTRAIT - Fade in with micro-scale
     if (portrait) {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         portrait.style.transition = 'opacity 0.9s cubic-bezier(0.22, 1, 0.36, 1), transform 1s cubic-bezier(0.22, 1, 0.36, 1)';
         portrait.style.opacity = '1';
         portrait.style.transform = 'scale(1)';
@@ -123,7 +124,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
 
     // 2. NAME - Fade in
     if (name) {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         name.style.transition = 'opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
         name.style.opacity = '1';
         name.style.transform = 'translateY(0)';
@@ -133,7 +134,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
 
     // 3. AVAILABILITY BADGE - Fade in
     if (availabilityBadge) {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         availabilityBadge.style.transition = 'opacity 0.6s ease-out, transform 0.6s ease-out';
         availabilityBadge.style.opacity = '1';
         availabilityBadge.style.transform = 'translateY(0)';
@@ -145,7 +146,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
 
     // 4. TITLE LINES - Staggered line-by-line
     titleLines.forEach((line, index) => {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         (line as HTMLElement).style.transition = 'opacity 0.6s cubic-bezier(0.22, 1, 0.36, 1), transform 0.6s cubic-bezier(0.22, 1, 0.36, 1)';
         (line as HTMLElement).style.opacity = '1';
         (line as HTMLElement).style.transform = 'translateY(0)';
@@ -157,7 +158,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
 
     // 5. BIO - Fade in
     if (bioElement) {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         bioElement.style.transition = 'opacity 0.7s cubic-bezier(0.22, 1, 0.36, 1), transform 0.7s cubic-bezier(0.22, 1, 0.36, 1)';
         bioElement.style.opacity = '1';
         bioElement.style.transform = 'translateY(0)';
@@ -169,7 +170,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
 
     // 6. CTAs - Staggered cascade
     ctaElements.forEach((cta, index) => {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         (cta as HTMLElement).style.transition = 'opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1), transform 0.5s cubic-bezier(0.22, 1, 0.36, 1)';
         (cta as HTMLElement).style.opacity = '1';
         (cta as HTMLElement).style.transform = 'translateY(0)';
@@ -182,7 +183,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
     // 7. SCROLL INDICATOR - Final touch, fades in subtly
     const scrollIndicator = section.querySelector('[data-gsap-scroll-indicator]') as HTMLElement;
     if (scrollIndicator) {
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         scrollIndicator.style.transition = 'opacity 0.8s ease-out, transform 0.6s ease-out';
         scrollIndicator.style.transform = 'translateY(0)';
         // Keep opacity at 0.3 (the design spec)
@@ -197,6 +198,8 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
   useEffect(() => {
     if (typeof window === 'undefined') return;
     
+    // Animations switched off (Global → Animations): no scroll-driven parallax.
+    if (isPortfolioMotionOff()) return;
     const mediaQuery = window.matchMedia('(min-width: 768px)');
     if (!mediaQuery.matches) return;
 
@@ -219,7 +222,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
       viewportHeight = window.innerHeight;
     };
 
-    setTimeout(updateBounds, 500);
+    motionTimeout(updateBounds, 500);
 
     const handleScroll = () => {
       const scrollY = window.scrollY;

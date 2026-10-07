@@ -13,6 +13,7 @@ import { ProductDetailPurchasePanel } from '@/components/marketplace/ProductDeta
 import { PRODUCT_PURCHASE_ANCHOR_ID } from '@/components/marketplace/ProductDetailPurchaseCta';
 import { ProductDetailRatingBadge } from '@/components/marketplace/ProductDetailRatingBadge';
 import { CreatorPhysicalProductGallery } from '@/components/creator/CreatorPhysicalProductGallery';
+import { MediaImage } from '@/components/ui/MediaImage';
 import {
   formatPrice,
   getPublicProduct,
@@ -222,17 +223,20 @@ function ProductDetailCreatorCard({
   const specialty = specialite?.trim() || null;
   return (
     <Link
-      href={`/marketplace/${creatorId}`}
+      href={`/providers/${creatorId}`}
       className="group flex items-center gap-4 rounded-lg border border-black/[0.06] bg-white px-5 py-4 transition hover:border-black/[0.14] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]"
     >
-      {creatorAvatarUrl ? (
-        // eslint-disable-next-line @next/next/no-img-element
-        <img src={creatorAvatarUrl} alt="" className="h-12 w-12 shrink-0 rounded-full object-cover" />
-      ) : (
-        <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-[#111111] dark:bg-white/[0.08] dark:text-white">
-          {creatorName.slice(0, 2).toUpperCase()}
-        </div>
-      )}
+      <MediaImage
+        src={creatorAvatarUrl}
+        width={48}
+        referrerPolicy="no-referrer"
+        fallback={
+          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-[#111111] dark:bg-white/[0.08] dark:text-white">
+            {creatorName.slice(0, 2).toUpperCase()}
+          </div>
+        }
+        className="h-12 w-12 shrink-0 rounded-full bg-black/[0.05] object-cover dark:bg-white/[0.08]"
+      />
       <div className="min-w-0 flex-1">
         <p className="text-[13px] text-neutral-500 dark:text-neutral-400">Sold by</p>
         <p className="truncate text-[15px] font-semibold text-[#111111] dark:text-white">

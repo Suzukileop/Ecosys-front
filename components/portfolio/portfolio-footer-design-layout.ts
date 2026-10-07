@@ -18,7 +18,7 @@ export type PortfolioFooterSectionLinkOption = { id: string; label: string; href
 
 /** identity → name/avatar/bio · wordmark → the giant decorative name (text, orientation, color)
  *  · text → headlines, buttons, notes · labels → small column headings. */
-export type FooterLayoutGroup = 'identity' | 'wordmark' | 'text' | 'labels';
+type FooterLayoutGroup = 'identity' | 'wordmark' | 'text' | 'labels';
 
 type FooterLayoutSpecBase = {
   key: string;
@@ -93,7 +93,7 @@ export const FOOTER_INK_TOKEN_OPTIONS: { value: FooterInkToken; label: string; s
   { value: 'texteFaint', label: 'Faint text', swatch: 'var(--pf-palette-texte-faint, #737373)' },
 ];
 
-export type FooterDesignLayoutSpec = {
+type FooterDesignLayoutSpec = {
   sectionLinks?: { defaultSelection: (p: Presentation) => string[] };
   elements: FooterLayoutElementSpec[];
 };
@@ -451,7 +451,7 @@ export function resolveFooterLayoutVisible(p: Presentation, design: PortfolioFoo
 
 /** Visible text for a `text` element — override, else the design default, else `fallback`.
  *  `null` when the element is hidden or everything is empty. */
-export function resolveFooterLayoutText(
+function resolveFooterLayoutText(
   p: Presentation,
   design: PortfolioFooterDesign,
   key: string,
@@ -482,7 +482,7 @@ export function resolveFooterLayoutBioCustom(p: Presentation, design: PortfolioF
   return spec?.kind === 'bio' ? spec.defaultCustom(p) : '';
 }
 
-export function resolveFooterLayoutBio(
+function resolveFooterLayoutBio(
   p: Presentation,
   design: PortfolioFooterDesign,
   key: string,
@@ -558,7 +558,7 @@ export function createFooterDesignLayoutResolver(
   };
 }
 
-export function footerDesignHasSectionLinks(design: PortfolioFooterDesign): boolean {
+function footerDesignHasSectionLinks(design: PortfolioFooterDesign): boolean {
   return Boolean(FOOTER_DESIGN_LAYOUT_SPECS[design]?.sectionLinks);
 }
 

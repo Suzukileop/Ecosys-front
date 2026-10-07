@@ -84,23 +84,6 @@ export function creatorAppRoleLabel(role: CreatorAppRole | null | undefined): st
   return CREATOR_APP_ROLE_OPTIONS.find((option) => option.value === normalized)?.label ?? 'General Member';
 }
 
-/** Call-to-action label for starting a new post, worded for each role. */
-export function creatorComposeLabel(role: CreatorAppRole | null | undefined): string {
-  switch (normalizeCreatorAppRole(role)) {
-    case 'SERVICE_PROVIDER':
-      return 'Share your work';
-    case 'FREELANCER_STUDENT':
-      return 'Share a project';
-    case 'SELLER':
-      return 'Showcase a product';
-    case 'RH_RECRUITER':
-      return 'Post an opportunity';
-    case 'GENERAL_MEMBER':
-    default:
-      return 'Share an update';
-  }
-}
-
 /** Headline above the studio Content tab, worded for each role. */
 export function creatorStudioContentHeadline(role: CreatorAppRole | null | undefined): string {
   switch (normalizeCreatorAppRole(role)) {
@@ -163,7 +146,7 @@ export function creatorPostAvatarRingClass(role: CreatorAppRole | null | undefin
 }
 
 /** Border / accent classes for My Role cards (match avatar ring colors). */
-export type CreatorAppRoleAccent = {
+type CreatorAppRoleAccent = {
   border: string;
   borderSelected: string;
   iconIdle: string;
@@ -235,7 +218,7 @@ export const APP_ROLES_WITHOUT_PRODUCTS_MENU: readonly CreatorAppRole[] = [];
 export const APP_ROLES_WITHOUT_MY_PRODUCTS: readonly CreatorAppRole[] = [];
 
 /** Hide Products tab in creator profile. */
-export const APP_ROLES_WITHOUT_PROFILE_PRODUCTS: readonly CreatorAppRole[] = [];
+const APP_ROLES_WITHOUT_PROFILE_PRODUCTS: readonly CreatorAppRole[] = [];
 
 /** Hide Service Provider sidebar. */
 export const APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU: readonly CreatorAppRole[] = [];
@@ -244,12 +227,7 @@ export const APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU: readonly CreatorAppRole[] 
 export const APP_ROLES_WITHOUT_MY_SERVICES: readonly CreatorAppRole[] = [];
 
 /** Hide Services tab in creator profile. */
-export const APP_ROLES_WITHOUT_PROFILE_SERVICES: readonly CreatorAppRole[] = [];
-
-/** @deprecated Use APP_ROLES_WITHOUT_PRODUCTS_MENU */
-export const APP_ROLES_WITHOUT_PRODUCTS = APP_ROLES_WITHOUT_PRODUCTS_MENU;
-/** @deprecated Use APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU */
-export const APP_ROLES_WITHOUT_SERVICE_PROVIDER = APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU;
+const APP_ROLES_WITHOUT_PROFILE_SERVICES: readonly CreatorAppRole[] = [];
 
 export const CREATOR_APP_ROLE_CHANGED_EVENT = 'creator-app-role-changed';
 

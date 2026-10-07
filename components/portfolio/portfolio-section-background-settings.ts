@@ -55,9 +55,9 @@ export type PortfolioSectionBackgroundSettings = {
 };
 
 export const DEFAULT_SECTION_BACKGROUND_COLOR = '#ffffff';
-export const DEFAULT_SECTION_BACKGROUND_ZONE_A = DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_A;
-export const DEFAULT_SECTION_BACKGROUND_ZONE_B = DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B;
-export const DEFAULT_SECTION_BACKGROUND_DIVIDER_COLOR = DEFAULT_SERVICES_CARD_DIVIDER_COLOR;
+const DEFAULT_SECTION_BACKGROUND_ZONE_A = DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_A;
+const DEFAULT_SECTION_BACKGROUND_ZONE_B = DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B;
+const DEFAULT_SECTION_BACKGROUND_DIVIDER_COLOR = DEFAULT_SERVICES_CARD_DIVIDER_COLOR;
 
 export const DEFAULT_SECTION_BACKGROUND: PortfolioSectionBackgroundSettings = {
   sectionBackgroundEnabled: false,
@@ -98,35 +98,6 @@ export const PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS: {
     description: 'Two color zones separated by a geometric line — like card fills.',
   },
   { value: 'image', label: 'Image', description: 'Uploaded photo only — replaces solid/gradient.' },
-];
-
-export const PORTFOLIO_SECTION_BACKGROUND_GRADIENT_TYPE_OPTIONS: {
-  value: HeroBackgroundGradientType;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'linear', label: 'Linear', description: 'Directional fade — angle controls rotation.' },
-  { value: 'radial', label: 'Radial', description: 'Circular glow from the center outward.' },
-];
-
-export const PORTFOLIO_SECTION_BACKGROUND_SPLIT_AXIS_OPTIONS: {
-  value: PortfolioSectionBackgroundSplitAxis;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'y', label: 'Axe Y (horizontal)', description: 'Zone haut / zone bas.' },
-  { value: 'x', label: 'Axe X (vertical)', description: 'Zone gauche / zone droite.' },
-];
-
-export const PORTFOLIO_SECTION_BACKGROUND_DIVIDER_SHAPE_OPTIONS: {
-  value: PortfolioSectionBackgroundDividerShape;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'straight', label: 'Droite', description: 'Ligne droite horizontale ou verticale.' },
-  { value: 'diagonal', label: 'Diagonale', description: 'Séparation inclinée — angle et position réglables.' },
-  { value: 'curve', label: 'Courbe', description: 'Arc doux entre les deux zones.' },
-  { value: 'wave', label: 'Vague', description: 'Ligne ondulée pour un rendu organique.' },
 ];
 
 function sanitizeHex(value: unknown, fallback: string): string {
@@ -211,7 +182,7 @@ function imageSizeCss(size: PortfolioGlobalBackgroundImageSize): string {
   }
 }
 
-export function sectionSplitBackgroundLayerStyle(
+function sectionSplitBackgroundLayerStyle(
   settings: PortfolioSectionBackgroundSettings
 ): CSSProperties | undefined {
   const splitStyle = servicesCardSplitBackgroundLayerStyle({
@@ -426,8 +397,4 @@ export function mergeSectionBackground(
         ? record.sectionBackgroundEdgeFade
         : (base.sectionBackgroundEdgeFade ?? false),
   };
-}
-
-export function pickSectionBackgroundSettings(source: unknown): PortfolioSectionBackgroundSettings {
-  return mergeSectionBackground(DEFAULT_SECTION_BACKGROUND, source);
 }

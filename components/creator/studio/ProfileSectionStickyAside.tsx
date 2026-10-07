@@ -170,7 +170,7 @@ export function ProfileSectionStickyAside({
         ref={asideRef}
         className={
           surfaceClassName ||
-          `flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`
+          `gn-aside flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`
         }
       >
         {children}

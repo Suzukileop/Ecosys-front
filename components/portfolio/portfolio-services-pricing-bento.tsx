@@ -4,11 +4,16 @@ import { useEffect, useLayoutEffect, useMemo, useRef, useSyncExternalStore } fro
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
-import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
 import {
-  handleServicesOrderCtaClick,
-  useServicesOrderCtaNav,
-} from '@/components/portfolio/portfolio-section-primitives';
+  DEFAULT_SERVICES_PRICING_BENTO_SETTINGS,
+  mergeServicesPricingBentoSettings,
+  type PortfolioServicesPresentationSettings,
+  type PortfolioServicesPricingBentoMotif,
+} from '@/components/portfolio/portfolio-services-settings';
+import {
+  useServicesPricingStyle,
+  type ServicesPricingStyle,
+} from '@/components/portfolio/portfolio-services-pricing-runtime';
 
 /**
  * Services "Pricing Bento" — a two-tier premium bento composition: one card carries a
@@ -30,49 +35,6 @@ import {
  * are read defensively off `presentation` until the coordinator wires the `pricingBento`
  * field onto `PortfolioServicesPresentationSettings`.
  */
-
-/* ------------------------------------------------------------------------------------ *
- * This design's own settings — a single small typed object the creator configures once
- * in Settings > Services > Design, mirroring every `PortfolioWorkProjectsXSettings` in
- * portfolio-work-settings.ts. Kept local (not imported) since this file must not edit
- * portfolio-services-settings.ts — the coordinator pastes an exported copy of this same
- * type/default/merge trio there and wires a `pricingBento` field onto the presentation
- * type, per this design's returned `settingsTypeCode`.
- * ------------------------------------------------------------------------------------ */
-type PortfolioServicesPricingBentoSettings = {
-  /** Index (within the rendered service list) of the card that gets the textured,
-   *  asymmetric graphic header. Clamped to the available items at render time. */
-  graphicHeaderIndex: number;
-  /** Small suffix shown after a non-free price (e.g. "/ project", "/ mo"). Empty hides it. */
-  periodLabel: string;
-  /** Label on every card's CTA button (routes to the Contact section). */
-  ctaLabel: string;
-};
-
-const DEFAULT_SERVICES_PRICING_BENTO_SETTINGS: PortfolioServicesPricingBentoSettings = {
-  graphicHeaderIndex: 0,
-  periodLabel: '/ project',
-  ctaLabel: 'Get Started',
-};
-
-function mergeServicesPricingBentoSettings(
-  base: PortfolioServicesPricingBentoSettings,
-  patch: unknown
-): PortfolioServicesPricingBentoSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  return {
-    graphicHeaderIndex:
-      typeof record.graphicHeaderIndex === 'number' && Number.isFinite(record.graphicHeaderIndex)
-        ? Math.max(0, Math.round(record.graphicHeaderIndex))
-        : base.graphicHeaderIndex,
-    periodLabel: typeof record.periodLabel === 'string' ? record.periodLabel : base.periodLabel,
-    ctaLabel:
-      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
-        ? record.ctaLabel.trim()
-        : base.ctaLabel,
-  };
-}
 
 /** Local equivalents of PortfolioServicesChrome's price helpers — that module does not
  *  currently export `isFreePrice`/`formatPrice` (verified before writing this file), and
@@ -155,9 +117,100 @@ function bentoTokens(presentation: PortfolioServicesPresentationSettings): Bento
   };
 }
 
+/** Alternative patterns for the featured card's header — all drawn from the palette accent. */
+function GraphicMotifLayer({
+  tokens,
+  motif,
+}: {
+  tokens: BentoTokens;
+  motif: Exclude<PortfolioServicesPricingBentoMotif, 'none' | 'shapes'>;
+}) {
+  const fade = `linear-gradient(115deg, transparent 0%, ${tokens.cardBgGraphic} 100%)`;
+  if (motif === 'lines') {
+    return (
+      <>
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `repeating-linear-gradient(135deg, ${tokens.accent} 0 2px, transparent 2px 16px)`,
+            opacity: 0.55,
+          }}
+        />
+        <span className="absolute inset-0" style={{ backgroundImage: fade }} />
+      </>
+    );
+  }
+  if (motif === 'dots') {
+    return (
+      <>
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `radial-gradient(circle, ${tokens.accent} 0 2px, transparent 2.5px)`,
+            backgroundSize: '18px 18px',
+            opacity: 0.6,
+          }}
+        />
+        <span className="absolute inset-0" style={{ backgroundImage: fade }} />
+      </>
+    );
+  }
+  if (motif === 'grid') {
+    return (
+      <>
+        <span
+          className="absolute inset-0"
+          style={{
+            backgroundImage: `linear-gradient(${tokens.accent} 1px, transparent 1px), linear-gradient(90deg, ${tokens.accent} 1px, transparent 1px)`,
+            backgroundSize: '28px 28px',
+            opacity: 0.4,
+          }}
+        />
+        <span className="absolute inset-0" style={{ backgroundImage: fade }} />
+      </>
+    );
+  }
+  return (
+    <svg
+      className="absolute inset-0 h-full w-full"
+      viewBox="0 0 400 160"
+      preserveAspectRatio="none"
+      fill="none"
+      aria-hidden
+    >
+      {[0, 1, 2, 3].map((row) => (
+        <path
+          key={row}
+          d={`M0 ${50 + row * 22} C 60 ${20 + row * 22}, 120 ${80 + row * 22}, 200 ${50 + row * 22} S 340 ${20 + row * 22}, 400 ${50 + row * 22}`}
+          stroke={tokens.accent}
+          strokeOpacity={0.7 - row * 0.14}
+          strokeWidth={2}
+        />
+      ))}
+    </svg>
+  );
+}
+
 /** Textured, asymmetric header — interlocking geometric shapes in the palette accent.
  *  Only the featured card renders this; every other card stays borderless and minimal. */
-function GraphicHeader({ tokens }: { tokens: BentoTokens }) {
+function GraphicHeader({
+  tokens,
+  motif,
+}: {
+  tokens: BentoTokens;
+  motif: Exclude<PortfolioServicesPricingBentoMotif, 'none'>;
+}) {
+  if (motif !== 'shapes') {
+    return (
+      <div
+        className="relative h-36 w-full overflow-hidden sm:h-40"
+        style={{ backgroundColor: tokens.cardBgGraphic }}
+        aria-hidden
+      >
+        <GraphicMotifLayer tokens={tokens} motif={motif} />
+      </div>
+    );
+  }
   return (
     <div
       className="relative h-36 w-full overflow-hidden sm:h-40"
@@ -191,15 +244,15 @@ function GraphicHeader({ tokens }: { tokens: BentoTokens }) {
 /** Magnetic CTA — `gsap.quickTo` follows the cursor within the button while hovered,
  *  elastic-settles back to rest on leave. No glow; a clean flat/outline pill. */
 function MagneticCta({
-  href,
-  onNavigate,
+  anchorProps,
+  radius,
   label,
   tokens,
   magnetic,
   variant,
 }: {
-  href: string;
-  onNavigate?: (href: string) => void;
+  anchorProps: ServicesPricingStyle['anchorProps'];
+  radius: string | null;
   label: string;
   tokens: BentoTokens;
   magnetic: boolean;
@@ -237,11 +290,11 @@ function MagneticCta({
   return (
     <a
       ref={ref}
-      href={href}
-      onClick={(event) => handleServicesOrderCtaClick(event, href, onNavigate)}
+      {...anchorProps}
       className="group relative inline-flex w-full items-center justify-center gap-2 rounded-full px-6 text-[0.95rem] font-semibold will-change-transform md:w-auto"
       style={{
         minHeight: 48,
+        ...(radius != null ? { borderRadius: radius } : null),
         backgroundColor: solid ? tokens.ink : 'transparent',
         color: solid ? tokens.bg : tokens.ink,
         border: `1px solid ${solid ? tokens.ink : tokens.border}`,
@@ -263,8 +316,8 @@ function PricingCard({
   tokens,
   ctaLabel,
   periodLabel,
-  ctaHref,
-  ctaOnNavigate,
+  pricingStyle,
+  motif,
   magnetic,
   cardRef,
 }: {
@@ -274,8 +327,8 @@ function PricingCard({
   tokens: BentoTokens;
   ctaLabel: string;
   periodLabel: string;
-  ctaHref: string;
-  ctaOnNavigate?: (href: string) => void;
+  pricingStyle: ServicesPricingStyle;
+  motif: PortfolioServicesPricingBentoMotif;
   magnetic: boolean;
   cardRef: (el: HTMLDivElement | null) => void;
 }) {
@@ -289,11 +342,16 @@ function PricingCard({
       className={`group relative flex flex-col overflow-hidden rounded-[28px] border will-change-transform ${
         spanFullRow ? 'md:col-span-2' : ''
       }`}
-      style={{ backgroundColor: isGraphic ? tokens.cardBgGraphic : tokens.cardBg, borderColor: tokens.border }}
+      style={{
+        backgroundColor: isGraphic ? tokens.cardBgGraphic : tokens.cardBg,
+        borderColor: pricingStyle.borderColor ?? tokens.border,
+        ...(pricingStyle.borderWidthPx != null ? { borderWidth: pricingStyle.borderWidthPx } : null),
+        ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
+      }}
       data-pf-no-color-transition=""
     >
-      {isGraphic ? (
-        <GraphicHeader tokens={tokens} />
+      {isGraphic && motif !== 'none' ? (
+        <GraphicHeader tokens={tokens} motif={motif} />
       ) : (
         <div className="h-2 w-full" style={{ backgroundColor: tokens.cardBg }} aria-hidden />
       )}
@@ -315,7 +373,7 @@ function PricingCard({
         {free || priceDisplay ? (
           <div className="mt-7 flex items-baseline gap-1.5">
             <span
-              className="text-[2.6rem] font-black leading-none tracking-tight sm:text-5xl"
+              className="text-[length:calc(2.6rem*var(--pf-services-font-scale,1))] font-black leading-none tracking-tight sm:text-[length:calc(3rem*var(--pf-services-font-scale,1))]"
               style={{ color: tokens.ink }}
             >
               {free ? 'Free' : priceDisplay}
@@ -357,8 +415,8 @@ function PricingCard({
 
         <div className="mt-auto pt-9">
           <MagneticCta
-            href={ctaHref}
-            onNavigate={ctaOnNavigate}
+            anchorProps={pricingStyle.anchorProps}
+            radius={pricingStyle.ctaRadius}
             label={ctaLabel}
             tokens={tokens}
             magnetic={magnetic}
@@ -387,7 +445,7 @@ export function ServicesPricingBentoSection({
   );
   const tokens = bentoTokens(presentation);
   const tiltCapable = useTiltCapableViewport();
-  const nav = useServicesOrderCtaNav();
+  const pricingStyle = useServicesPricingStyle(presentation);
 
   const gridRef = useRef<HTMLDivElement>(null);
   const cardRefs = useRef<(HTMLDivElement | null)[]>([]);
@@ -532,7 +590,7 @@ export function ServicesPricingBentoSection({
   return (
     <section
       className="relative w-full px-0 py-14 sm:py-16 md:px-6 md:py-20 lg:px-10"
-      style={{ backgroundColor: tokens.bg }}
+      style={pricingStyle.style.showFrame ? { backgroundColor: tokens.bg } : undefined}
       data-pf-no-color-transition=""
     >
       <div ref={gridRef} className="mx-auto grid w-full max-w-6xl grid-cols-1 gap-4 md:grid-cols-2 md:gap-6">
@@ -545,8 +603,8 @@ export function ServicesPricingBentoSection({
             tokens={tokens}
             ctaLabel={pricingBento.ctaLabel}
             periodLabel={pricingBento.periodLabel}
-            ctaHref={nav.href}
-            ctaOnNavigate={nav.onNavigate}
+            pricingStyle={pricingStyle}
+            motif={pricingBento.graphicMotif}
             magnetic={tiltCapable}
             cardRef={(el) => {
               cardRefs.current[index] = el;
@@ -556,11 +614,4 @@ export function ServicesPricingBentoSection({
       </div>
     </section>
   );
-}
-
-export function isServicesPricingBentoDesign(presentation: PortfolioServicesPresentationSettings): boolean {
-  // Cast: `'services-pricing-bento'` isn't in the `PortfolioServicesSectionDesign` union
-  // yet — the coordinator adds it there (see `unionValue`). Comparing through `string`
-  // keeps this file compiling standalone in the meantime without editing that file.
-  return (presentation.sectionDesign as string) === 'services-pricing-bento';
 }

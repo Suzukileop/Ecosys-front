@@ -3,19 +3,11 @@
  * Concrete hex fields still drive render; bindings choose which token paints each slot.
  */
 
-import {
-  computeLightPalette,
-  DEFAULT_HERO_PALETTE,
-  HERO_PALETTE_TOKEN_IDS,
-  mergeHeroPalette,
-  resolveHeroPaletteColor,
-  type HeroPaletteTokenId,
-  type PortfolioHeroPalette,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_HERO_PALETTE, HERO_PALETTE_TOKEN_IDS, mergeHeroPalette, resolveHeroPaletteColor, type HeroPaletteTokenId, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 
 /** Local mirrors — avoid importing portfolio-footer-settings (circular TDZ). */
-export type FooterElementStyleTarget =
+type FooterElementStyleTarget =
   | 'brand'
   | 'description'
   | 'columnHeading'
@@ -82,7 +74,7 @@ type FooterPresentationColorFields = {
   elementStyles?: FooterElementStyles;
 };
 
-export const FOOTER_COLOR_SLOT_IDS: FooterColorSlot[] = [
+const FOOTER_COLOR_SLOT_IDS: FooterColorSlot[] = [
   'sectionBackground',
   'sectionGradientFrom',
   'sectionGradientTo',
@@ -109,45 +101,8 @@ export const FOOTER_COLOR_SLOT_IDS: FooterColorSlot[] = [
   'ctaButtonLabel',
 ];
 
-export const PORTFOLIO_FOOTER_COLOR_SLOT_OPTIONS: {
-  value: FooterColorSlot;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sectionBackground', label: 'Section background', description: 'Solid section fill.' },
-  { value: 'sectionGradientFrom', label: 'Gradient start', description: 'Start of the section gradient.' },
-  { value: 'sectionGradientTo', label: 'Gradient end', description: 'End of the section gradient.' },
-  { value: 'sectionSplitA', label: 'Split zone A', description: 'First split background zone.' },
-  { value: 'sectionSplitB', label: 'Split zone B', description: 'Second split background zone.' },
-  { value: 'sectionDivider', label: 'Split divider', description: 'Line between split zones.' },
-  { value: 'text', label: 'Muted text', description: 'Meta / secondary labels.' },
-  { value: 'primary', label: 'Primary text', description: 'Brand and contact lines.' },
-  { value: 'icon', label: 'Icons', description: 'Contact and social icons.' },
-  { value: 'accent', label: 'Accent', description: 'CTA / marketplace accent.' },
-  { value: 'pattern', label: 'Pattern', description: 'Background motif color.' },
-  { value: 'ctaTitle', label: 'CTA title', description: 'Contact CTA band headline.' },
-  { value: 'ctaSubtitle', label: 'CTA subtitle', description: 'Line under the CTA title.' },
-  { value: 'ctaButtonBackground', label: 'CTA button fill', description: 'Contact me button background.' },
-  { value: 'ctaButtonText', label: 'CTA button text', description: 'Contact me button label.' },
-  { value: 'ctaButtonBorder', label: 'CTA button border', description: 'Contact me button outline.' },
-  { value: 'brand', label: 'Brand name', description: 'Creator name typography color.' },
-  { value: 'description', label: 'Description', description: 'Bio / tagline under the brand.' },
-  { value: 'columnHeading', label: 'Column heading', description: 'Networks / Contact headings.' },
-  { value: 'contactLine', label: 'Contact line', description: 'Phone, email, location, hours.' },
-  { value: 'socialLabel', label: 'Social label', description: 'Labels beside social icons.' },
-  { value: 'meta', label: 'Meta', description: 'Copyright and credits.' },
-  { value: 'marketplaceLink', label: 'Marketplace link', description: 'Marketplace CTA text color.' },
-  { value: 'ctaButtonLabel', label: 'CTA button label', description: 'Typography color on Contact me.' },
-];
-
-export const DARK_FOOTER_PALETTE: PortfolioFooterPalette = { ...DEFAULT_HERO_PALETTE };
+const DARK_FOOTER_PALETTE: PortfolioFooterPalette = { ...DEFAULT_HERO_PALETTE };
 export const DEFAULT_FOOTER_PALETTE: PortfolioFooterPalette = { ...DARK_FOOTER_PALETTE };
-
-export function computeLightFooterPalette(
-  dark: Partial<PortfolioFooterPalette>
-): PortfolioFooterPalette {
-  return computeLightPalette(mergeHeroPalette(DARK_FOOTER_PALETTE, dark));
-}
 
 export const DEFAULT_FOOTER_COLOR_BINDINGS: PortfolioFooterColorBindings = {
   sectionBackground: 'fond',
@@ -292,26 +247,6 @@ export function applyFooterPaletteToSettings(footer: FooterPaletteHost): FooterP
   return patch as FooterPalettePatch;
 }
 
-export function patchFooterPalette(
-  footer: FooterPaletteHost,
-  palettePatch: Partial<PortfolioFooterPalette>
-): FooterPalettePatch {
-  const palette = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, {
-    ...footer.footerPalette,
-    ...palettePatch,
-  });
-  return applyFooterPaletteToSettings({ ...footer, footerPalette: palette });
-}
-
-export function patchFooterSlotColor(
-  footer: FooterPaletteHost,
-  slot: FooterColorSlot,
-  hex: string
-): FooterPalettePatch {
-  const bindings = mergeFooterColorBindings(DEFAULT_FOOTER_COLOR_BINDINGS, footer.footerColorBindings);
-  return patchFooterPalette(footer, { [bindings[slot]]: hex });
-}
-
 export function patchFooterColorBinding(
   footer: FooterPaletteHost,
   slot: FooterColorSlot,
@@ -339,27 +274,3 @@ export function patchFooterColorFieldManual(
   }
   return { [FOOTER_SLOT_TO_FIELD[slot]]: hex } as FooterPalettePatch;
 }
-
-export function patchFooterColorField(
-  footer: FooterPaletteHost & { useHeroPalette?: boolean },
-  slot: FooterColorSlot,
-  hex: string
-): FooterPalettePatch {
-  if (footer.useHeroPalette === false) {
-    return patchFooterColorFieldManual(footer, slot, hex);
-  }
-  return patchFooterSlotColor(footer, slot, hex);
-}
-
-export const FOOTER_STYLE_TARGET_COLOR_SLOT: Record<FooterElementStyleTarget, FooterColorSlot> = {
-  brand: 'brand',
-  description: 'description',
-  columnHeading: 'columnHeading',
-  contactLine: 'contactLine',
-  socialLabel: 'socialLabel',
-  meta: 'meta',
-  marketplaceLink: 'marketplaceLink',
-  ctaTitle: 'ctaTitle',
-  ctaSubtitle: 'ctaSubtitle',
-  ctaButton: 'ctaButtonLabel',
-};

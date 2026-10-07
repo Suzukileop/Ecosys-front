@@ -13,7 +13,7 @@ import { pushFlashFeedback, pushInsertionLimitFeedback } from '@/stores/flashFee
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { parseSpecialtyTags } from '@/lib/specialties';
 import api from '@/lib/api';
-import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/ecosystem';
+import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/profile';
 import {
   STUDIO_BARE_INPUT_CLASS,
   STUDIO_EMPTY_CLASS,
@@ -30,8 +30,6 @@ import { toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-sche
 
 /** Max manual portfolio works (matches backend MAX_PORTFOLIO_WORKS). */
 export const MAX_PORTFOLIO_WORKS = 6;
-/** @deprecated Use MAX_PORTFOLIO_WORKS */
-export const MAX_PORTFOLIO_PICKS = MAX_PORTFOLIO_WORKS;
 
 const IMAGE_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
 

@@ -28,7 +28,7 @@ type SearchCreatorRowProps = {
 
 export function SearchCreatorRow({ creator }: SearchCreatorRowProps) {
   const profileId = creator.userId ?? creator.id ?? '';
-  const profileHref = profileId ? `/marketplace/${profileId}` : '/marketplace';
+  const profileHref = profileId ? `/providers/${profileId}` : '/marketplace';
   const subtitle = creator.bio?.trim() || creator.specialite?.trim();
   const followerCount = creator.followerCount ?? 0;
   const role = creator.appRole != null ? normalizeCreatorAppRole(creator.appRole) : null;

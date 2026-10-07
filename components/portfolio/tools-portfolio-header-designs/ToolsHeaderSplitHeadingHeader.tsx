@@ -8,6 +8,7 @@ import {
   type PortfolioToolsHeaderTitleSize,
   type PortfolioToolsHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-tools-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_LABEL_TEXT = 'Tools';
 const DEFAULT_TITLE_TEXT = 'Daily workflow';
@@ -61,7 +62,8 @@ export function ToolsHeaderSplitHeadingHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_TOOLS_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerSplitHeadingTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSplitHeadingLabelText || DEFAULT_LABEL_TEXT).trim();
   const ink = toolsHeaderPaletteTokenColor(presentation.headerSplitHeadingTitleColor ?? 'principal');

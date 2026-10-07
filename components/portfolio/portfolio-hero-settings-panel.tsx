@@ -22,6 +22,7 @@ import {
 import type { PortfolioHeroSectionSettings } from '@/components/portfolio/portfolio-settings-types';
 import { PortfolioBackgroundImageUpload, PortfolioHeroBannerMediaUpload } from '@/components/portfolio/portfolio-background-image-upload';
 import { usePortfolioBackgroundLibrary } from '@/components/portfolio/portfolio-background-library-context';
+import { SettingRow, SettingsRowsScope, settingValueLabel, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 export type HeroSettingsSubSection = 'general' | 'banner' | 'background';
 
@@ -129,6 +130,8 @@ function HeroToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked: checked, onChange: onChange }} />;
   return (
     <button
       type="button"
@@ -152,10 +155,12 @@ function HeroColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={value.toUpperCase()} preview={<span aria-hidden className="block h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: value }} />}>
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className="mt-3 flex flex-wrap items-center gap-3">
+      {rows ? null : <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>}
+      <div className={`${rows ? '' : 'mt-3 '}flex flex-wrap items-center gap-3`}>
         <input
           type="color"
           value={value}
@@ -180,6 +185,7 @@ function HeroColorField({
         />
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -196,11 +202,13 @@ function HeroOptionGrid<T extends string | number>({
   onChange: (value: T) => void;
   columns?: 1 | 2 | 3 | 4;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={settingValueLabel(options, value)}>
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      {rows ? null : <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>}
       <div
-        className={`mt-3 grid gap-2 ${
+        className={`${rows ? '' : 'mt-3 '}grid gap-2 ${
           columns === 4
             ? 'grid-cols-2 sm:grid-cols-4'
             : columns === 3
@@ -217,18 +225,15 @@ function HeroOptionGrid<T extends string | number>({
               key={option.value}
               type="button"
               onClick={() => onChange(option.value)}
-              className={`rounded-2xl border px-4 py-3 text-left transition ${
-                active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-              }`}
+              className={`px-3 text-center ${active ? 'pf-choice pf-choice--active' : 'pf-choice'}`}
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
+              <span>{option.label}</span>
             </button>
           );
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -267,9 +272,11 @@ function HeroPxSlider({
   min?: number;
   unit?: string;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={`${value}${unit}`}>
     <div>
-      <div className="flex items-center justify-between gap-4">
+      <div className={rows ? 'hidden' : 'flex items-center justify-between gap-4'}>
         <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
         <span className="text-sm font-semibold text-neutral-700">
           {value}
@@ -283,10 +290,11 @@ function HeroPxSlider({
         step={1}
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
+        className={`${rows ? '' : 'mt-3 '}h-2 w-full cursor-pointer accent-neutral-900`}
         aria-label={label}
       />
     </div>
+    </SettingRow>
   );
 }
 
@@ -435,8 +443,9 @@ export function HeroSettingsPanel({
                 </p>
               </div>
 
+              <SettingsRowsScope title={`${selectedBannerLabel} options`}>
               <HeroToggleRow
-                label="Noir et blanc (images)"
+                label="Black & white images"
                 checked={hero.heroImageGrayscale === true}
                 onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
               />
@@ -444,11 +453,11 @@ export function HeroSettingsPanel({
               {(hero.heroBannerDesign ?? 'swiss-editorial') === 'cinematic-reveal' ? (
                 <div className="space-y-4 border-t border-neutral-200/70 pt-6">
                   <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Contenu Cinematic reveal
+                    Cinematic reveal content
                   </p>
                   <div>
                     <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                      Tools dans le bandeau
+                      Tools in the band
                     </p>
                     {normalizedTools.length > 0 ? (
                       <>
@@ -496,7 +505,7 @@ export function HeroSettingsPanel({
                             onClick={() => onChange({ heroEditorialRailSelectedTools: [] })}
                             className="mt-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800"
                           >
-                            Reset — 8 premiers du profil
+                            Reset to the first 8 from your profile
                           </button>
                         ) : null}
                       </>
@@ -568,24 +577,24 @@ export function HeroSettingsPanel({
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-rail' ? (
             <div className="space-y-4 border-t border-neutral-200/70 pt-6">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Contenu Editorial rail
+                Editorial rail content
               </p>
               <HeroToggleRow
-                label="Description sous le portrait"
+                label="Bio under the portrait"
                 checked={hero.heroEditorialRailBioUnderPortrait === true}
                 onChange={(heroEditorialRailBioUnderPortrait) =>
                   onChange({ heroEditorialRailBioUnderPortrait })
                 }
               />
               <HeroToggleRow
-                label="Nom + spécialité sous le portrait"
+                label="Name + specialty under the portrait"
                 checked={hero.heroEditorialRailIdentityUnderPortrait === true}
                 onChange={(heroEditorialRailIdentityUnderPortrait) =>
                   onChange({ heroEditorialRailIdentityUnderPortrait })
                 }
               />
               <HeroToggleRow
-                label="CTA sous la bio"
+                label="CTA under the bio"
                 checked={hero.heroEditorialRailShowCta === true}
                 onChange={(heroEditorialRailShowCta) =>
                   onChange({ heroEditorialRailShowCta })
@@ -594,7 +603,7 @@ export function HeroSettingsPanel({
 
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Tools affichés
+                  Tools shown
                 </p>
                 {normalizedTools.length > 0 ? (
                   <>
@@ -642,7 +651,7 @@ export function HeroSettingsPanel({
                         onClick={() => onChange({ heroEditorialRailSelectedTools: [] })}
                         className="mt-3 text-sm font-semibold text-neutral-500 hover:text-neutral-800"
                       >
-                        Reset — 4 premiers du profil
+                        Reset to the first 4 from your profile
                       </button>
                     ) : null}
                   </>
@@ -654,10 +663,10 @@ export function HeroSettingsPanel({
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'statement-cta' ? (
             <div className="space-y-4 border-t border-neutral-200/70 pt-6">
               <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Contenu Statement CTA
+                Statement CTA content
               </p>
               <HeroToggleRow
-                label="Portrait rond au centre"
+                label="Round portrait in the center"
                 checked={hero.heroStatementCtaCenterPortrait === true}
                 onChange={(heroStatementCtaCenterPortrait) =>
                   onChange({
@@ -671,14 +680,14 @@ export function HeroSettingsPanel({
               {hero.heroStatementCtaCenterPortrait === true ? (
                 <>
                   <HeroToggleRow
-                    label="Anneau couleur principal"
+                    label="Accent color ring"
                     checked={hero.heroStatementCtaPortraitRing === true}
                     onChange={(heroStatementCtaPortraitRing) =>
                       onChange({ heroStatementCtaPortraitRing })
                     }
                   />
                   <HeroPxSlider
-                    label="Taille portrait (moyen → XL)"
+                    label="Portrait size"
                     value={hero.heroStatementCtaPortraitScale ?? 125}
                     min={100}
                     max={180}
@@ -691,7 +700,7 @@ export function HeroSettingsPanel({
               ) : null}
 
               <HeroToggleRow
-                label="Cover horizontale"
+                label="Horizontal cover"
                 checked={hero.heroStatementCtaCenterCover === true}
                 onChange={(heroStatementCtaCenterCover) =>
                   onChange({
@@ -716,7 +725,7 @@ export function HeroSettingsPanel({
               ) : null}
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Tools affichés
+                  Tools shown
                 </p>
                 {normalizedTools.length > 0 ? (
                   <>
@@ -780,7 +789,7 @@ export function HeroSettingsPanel({
               </p>
               <div>
                 <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Tools affichés
+                  Tools shown
                 </p>
                 {normalizedTools.length > 0 ? (
                   <>
@@ -1150,6 +1159,7 @@ export function HeroSettingsPanel({
               />
             </div>
           ) : null}
+                          </SettingsRowsScope>
             </div>
           )}
         </div>
@@ -1291,13 +1301,4 @@ export function HeroSettingsPanel({
       ) : null}
     </div>
   );
-}
-
-export function HeroPresentationPanel(props: {
-  hero: PortfolioHeroSectionSettings;
-  availableTools: string[];
-  availableWorks?: { id: string; title: string; imageUrl: string }[];
-  onChange: (patch: Partial<PortfolioHeroSectionSettings>) => void;
-}) {
-  return <HeroSettingsPanel {...props} />;
 }

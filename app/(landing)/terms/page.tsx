@@ -65,8 +65,7 @@ const SECTIONS: LegalSection[] = [
       <>
         <p>
           Skraft lets you build a portfolio or CV, open a store, present your services, publish content, message and
-          call other members, find talent and, where offered, use our done-for-you content service (the &ldquo;Agent
-          service&rdquo;).
+          call other members and find talent.
         </p>
         <p>
           We are constantly improving Skraft, so features may change, be added or be removed. Some features may be
@@ -78,7 +77,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'plans-and-payments',
-    title: 'Plans, payments and credits',
+    title: 'Plans and payments',
     content: (
       <>
         <ul>
@@ -91,10 +90,6 @@ const SECTIONS: LegalSection[] = [
           <li>
             Renewal and cancellation terms are shown before you subscribe. When you cancel, you keep access until the end
             of the period you have paid for.
-          </li>
-          <li>
-            Credits are a feature of the service. They have no cash value, cannot be transferred or exchanged for money,
-            and may be corrected if they were granted by mistake or obtained through abuse.
           </li>
         </ul>
         <h3>Right of withdrawal (consumers in the EU)</h3>
@@ -138,29 +133,6 @@ const SECTIONS: LegalSection[] = [
           If something goes wrong with a purchase, first contact the seller. If you cannot resolve it, report it to us
           and we will help where we can.
         </p>
-      </>
-    ),
-  },
-  {
-    id: 'agent-service',
-    title: 'The Agent service',
-    content: (
-      <>
-        <p>
-          With the Agent service, you describe your project to an AI assistant, and our team prepares a proposal and
-          then content for your social media. By using it, you agree that:
-        </p>
-        <ul>
-          <li>
-            Your brief and your conversation with the assistant are processed by an AI provider and read by the team
-            member preparing your content, as described in our <Link href="/privacy">Privacy policy</Link>.
-          </li>
-          <li>
-            AI-generated suggestions can be inaccurate. Review everything before it is published; you remain responsible
-            for what is published on your accounts.
-          </li>
-          <li>The price and what is included are shown in the proposal you accept before paying.</li>
-        </ul>
       </>
     ),
   },

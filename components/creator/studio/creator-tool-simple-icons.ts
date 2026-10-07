@@ -203,9 +203,9 @@ import {
   SiZoomHex,
 } from '@icons-pack/react-simple-icons';
 
-export type SimpleIconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; color?: string; title?: string }>;
+type SimpleIconComponent = ComponentType<SVGProps<SVGSVGElement> & { size?: number | string; color?: string; title?: string }>;
 
-export type ResolvedCreatorToolIcon = {
+type ResolvedCreatorToolIcon = {
   /** Matched display name for UI hints. */
   matchedName: string;
   Icon: SimpleIconComponent;
@@ -375,8 +375,4 @@ export function resolveCreatorToolSimpleIcon(
   }
 
   return null;
-}
-
-export function creatorToolHasAutoIcon(label: string): boolean {
-  return resolveCreatorToolSimpleIcon(label) != null;
 }

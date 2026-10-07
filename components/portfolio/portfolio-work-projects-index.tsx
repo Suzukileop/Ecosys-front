@@ -29,10 +29,6 @@ if (typeof window !== 'undefined') {
 }
 
 const INDEX_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
-const INDEX_HIDDEN: CSSProperties = {
-  opacity: 0,
-  transform: 'translate3d(0, 28px, 0)',
-};
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
@@ -60,17 +56,6 @@ function splitEditorialTitle(title: string): { lead: string; italic: string } | 
   const last = words[words.length - 1];
   if (wordLetterCount(last) < 4) return null;
   return { lead: words.slice(0, -1).join(' '), italic: last };
-}
-
-function EditorialTitleText({ text }: { text: string }) {
-  const parts = splitEditorialTitle(text);
-  if (!parts) return <>{text}</>;
-  return (
-    <>
-      {parts.lead}{' '}
-      <span className="font-medium italic tracking-[-0.03em]">{parts.italic}</span>
-    </>
-  );
 }
 
 /** Per-word masked reveal — the last (italicized) word keeps its editorial styling. */
@@ -134,168 +119,6 @@ function IndexTitleAnchor({
     >
       {children}
     </Link>
-  );
-}
-
-function revealElement(el: HTMLElement, delayMs: number): void {
-  el.style.transition = `opacity 0.85s ${INDEX_EASE} ${delayMs}ms, transform 0.95s ${INDEX_EASE} ${delayMs}ms`;
-  el.style.opacity = '1';
-  el.style.transform = 'translate3d(0, 0, 0)';
-  el.dataset.revealed = 'true';
-}
-
-function showElementNow(el: HTMLElement): void {
-  el.style.transition = 'none';
-  el.style.opacity = '1';
-  el.style.transform = 'none';
-  el.dataset.revealed = 'true';
-}
-
-/**
- * Index header — editorial kicker, italic last word, trailing hairline.
- * Hidden in JSX (FOUC-safe), revealed via IntersectionObserver.
- * Kept for backward compatibility — the shared Header (Header → Design) mounts
- * above every project layout now, so this is no longer rendered by default.
- */
-export function ProjectsIndexSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  titleClassName = '',
-  titleStyle,
-  trailing,
-  entryCount,
-  accent,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  titleClassName?: string;
-  titleStyle?: CSSProperties;
-  trailing?: ReactNode;
-  entryCount?: number;
-  accent?: string;
-  className?: string;
-}) {
-  const headerRef = useRef<HTMLElement>(null);
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const isEmpty = !heading && !sub && !trailing;
-  const resolvedTitleColor =
-    (typeof titleStyle?.color === 'string' && titleStyle.color.trim()) || titleColor;
-  const {
-    fontSize: _fs,
-    lineHeight: _lh,
-    letterSpacing: _ls,
-    fontStyle: incomingFontStyle,
-    ...restTitleStyle
-  } = titleStyle ?? {};
-  const allowItalicWord = incomingFontStyle !== 'italic';
-  const mark = accent || subtitleColor;
-  const countLabel =
-    typeof entryCount === 'number' && entryCount > 0
-      ? String(entryCount).padStart(2, '0')
-      : '';
-
-  useEffect(() => {
-    const header = headerRef.current;
-    if (!header || isEmpty) return;
-
-    if (prefersReducedMotion()) {
-      showElementNow(header);
-      return;
-    }
-
-    let revealed = false;
-    const reveal = () => {
-      if (revealed) return;
-      revealed = true;
-      revealElement(header, 0);
-    };
-
-    const ioRoot = aboutBannerScrollParent(header) ?? null;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        entries.forEach((entry) => {
-          if (entry.isIntersecting) {
-            reveal();
-            observer.disconnect();
-          }
-        });
-      },
-      { threshold: 0.12, root: ioRoot, rootMargin: '40px 0px' }
-    );
-    observer.observe(header);
-    const failSafe = window.setTimeout(reveal, 1600);
-
-    return () => {
-      window.clearTimeout(failSafe);
-      observer.disconnect();
-    };
-  }, [heading, sub, isEmpty]);
-
-  if (isEmpty) return null;
-
-  return (
-    <header
-      ref={headerRef}
-      className={`pf-work-index-header mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}
-      data-pf-no-color-transition=""
-      style={INDEX_HIDDEN}
-    >
-      <div className="flex items-end justify-between gap-6 sm:gap-10">
-        <div className="min-w-0 max-w-3xl">
-          <div className="mb-5 flex items-center gap-3 sm:mb-6">
-            <span
-              className="h-px w-7 shrink-0 sm:w-9"
-              style={{ backgroundColor: mark, opacity: 0.7 }}
-              aria-hidden
-            />
-            <p
-              className="text-xs font-semibold uppercase tracking-[0.24em] sm:text-sm"
-              style={{ color: subtitleColor }}
-            >
-              {countLabel || 'Index'}
-            </p>
-          </div>
-          {heading ? (
-            <h2
-              className={
-                titleClassName.trim() ||
-                'font-semibold tracking-[-0.045em]'
-              }
-              style={{
-                ...restTitleStyle,
-                color: resolvedTitleColor,
-                fontSize: 'clamp(2.35rem, 5.6vw, 4.25rem)',
-                lineHeight: 1.06,
-              }}
-            >
-              {allowItalicWord ? <EditorialTitleText text={heading} /> : heading}
-            </h2>
-          ) : null}
-          {sub ? (
-            <p
-              className={`max-w-md text-[15px] leading-[1.6] sm:text-base ${heading ? 'mt-4' : ''}`}
-              style={{ color: subtitleColor, opacity: 0.86 }}
-            >
-              {sub}
-            </p>
-          ) : null}
-        </div>
-        <div className="flex shrink-0 flex-col items-end gap-3 pb-1">
-          {trailing}
-          <span
-            className="hidden h-px w-16 sm:block lg:w-24"
-            style={{ backgroundColor: mark, opacity: 0.35 }}
-            aria-hidden
-          />
-        </div>
-      </div>
-    </header>
   );
 }
 
@@ -829,10 +652,4 @@ export function ProjectsIndexGallery({
       <MagneticCursor stageRef={stageRef} accent={accent} />
     </div>
   );
-}
-
-export function isProjectsIndexDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-index';
 }

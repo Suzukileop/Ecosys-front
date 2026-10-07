@@ -16,6 +16,7 @@ import {
   type PortfolioFaqHeaderEditorialTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
 import { createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -76,7 +77,8 @@ export function FaqHeaderEditorialHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
   const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;

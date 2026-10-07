@@ -9,6 +9,7 @@ import {
   faqHeaderPaletteTokenColor,
   type PortfolioFaqHeaderTitleSize,
 } from '@/components/portfolio/portfolio-faq-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
  *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
@@ -99,7 +100,8 @@ export function FaqHeaderMarqueeHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const rawWords = [
     presentation.headerMarqueeWord1Text,
     presentation.headerMarqueeWord2Text,

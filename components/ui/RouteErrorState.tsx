@@ -43,7 +43,7 @@ export function RouteErrorState({
             Try again
           </button>
           <Link
-            href="/dashboard/home"
+            href="/feed"
             className="inline-flex h-11 items-center rounded-lg border border-black/[0.12] px-5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 dark:border-white/[0.14] dark:text-white dark:hover:border-white/25"
           >
             Go to home

@@ -22,13 +22,7 @@ import {
   INFO_HEADER_PALETTE_TOKEN_OPTIONS,
   infoHeaderPaletteTokenColor,
   type PortfolioInfoDesign,
-  type PortfolioInfoHeaderAccentCountAlignment,
-  type PortfolioInfoHeaderBillboardWordStyle,
   type PortfolioInfoHeaderDesign,
-  type PortfolioInfoHeaderDesignAlignment,
-  type PortfolioInfoHeaderPaletteToken,
-  type PortfolioInfoHeaderTitleSize,
-  type PortfolioInfoHeaderTitleWeight,
   type PortfolioInfoSectionSettings,
   resolveInfoAboutValueValuesLayout,
 } from '@/components/portfolio/portfolio-info-settings';
@@ -39,6 +33,15 @@ import {
   type HeroPaletteTokenId,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
+import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
+import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
+import {
+  HeaderBlock,
+  HeaderStyleTargetsEditor,
+  HeaderTextField,
+} from '@/components/portfolio/portfolio-header-style-controls';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 /** Same general / design / header / background pill-switcher mechanism as the Stack section settings panel.
  *  Header is one shared, GSAP-animated header (copied from the Portfolio/Work section's Header mechanism)
@@ -52,7 +55,7 @@ const INFO_SUB_SECTIONS: { id: InfoSubSection; label: string }[] = [
   { id: 'background', label: 'Background' },
 ];
 
-export function normalizeInfoSubSection(value: string | undefined): InfoSubSection {
+function normalizeInfoSubSection(value: string | undefined): InfoSubSection {
   return INFO_SUB_SECTIONS.some((item) => item.id === value)
     ? (value as InfoSubSection)
     : 'general';
@@ -74,9 +77,11 @@ function InfoTextField({
   placeholder: string;
   onChange: (value: string) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(value ?? '')}>
     <label className="block">
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
       <input
         type="text"
         value={value}
@@ -85,6 +90,7 @@ function InfoTextField({
         className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
       />
     </label>
+    </SettingRow>
   );
 }
 
@@ -111,10 +117,12 @@ function InfoPaletteSwatchPicker({
   tokens?: { value: HeroPaletteTokenId; label: string }[];
   onChange: (hex: string) => void;
 }) {
+  const rows = useSettingsRows();
   const activeHex = value.trim().toLowerCase();
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
       <div className="mt-2 flex flex-wrap gap-3">
         {tokens.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -141,6 +149,7 @@ function InfoPaletteSwatchPicker({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -235,48 +244,6 @@ function InfoPickerCard({
   );
 }
 
-function InfoPreviewCardGrid<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-  columns,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string; glyph: ReactNode }[];
-  onChange: (value: T) => void;
-  columns?: number;
-}) {
-  const cols = columns ?? Math.min(options.length, 4);
-  return (
-    <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="grid gap-2"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => (
-          <InfoPickerCard
-            key={option.value}
-            active={option.value === value}
-            label={option.label}
-            onClick={() => onChange(option.value)}
-            compact
-          >
-            <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
-              <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
-              {option.glyph}
-            </svg>
-          </InfoPickerCard>
-        ))}
-      </div>
-    </div>
-  );
-}
-
 /** Same animated switch + row as the Stack section settings panel's design controls
  *  (StackSwitchTrack/StackToggleRow) — used for boolean settings inside the Design band,
  *  where the plain checkbox Toggle (General tab) would feel out of place. */
@@ -358,6 +325,8 @@ function InfoToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -398,12 +367,14 @@ function InfoOptionGrid<T extends string>({
   columns?: number;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const rows = useSettingsRows();
   const count = options.length;
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
   const compact = cols === count && count >= 2 && count <= 5;
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -432,6 +403,7 @@ function InfoOptionGrid<T extends string>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -714,74 +686,6 @@ function InfoDesignChoiceGrid({
   );
 }
 
-/** Mini swatch for a palette-token color picker — the actual resolved color,
- *  not just a text label. Same mechanism as Stack/Tools/Contact. */
-function infoHeaderPaletteTokenGlyph(token: PortfolioInfoHeaderPaletteToken): ReactNode {
-  return (
-    <circle
-      cx="32"
-      cy="17"
-      r="8"
-      fill={infoHeaderPaletteTokenColor(token)}
-      style={{
-        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
-        strokeWidth: 1,
-      }}
-    />
-  );
-}
-
-function infoHeaderBillboardWordStyleGlyph(style: PortfolioInfoHeaderBillboardWordStyle): ReactNode {
-  switch (style) {
-    case 'outline':
-      return (
-        <text
-          x="32"
-          y="23"
-          textAnchor="middle"
-          fontSize="19"
-          fontWeight={900}
-          stroke="currentColor"
-          strokeWidth="1"
-          className="pf-stack-mini-ink"
-          style={{ fill: 'none' }}
-        >
-          Aa
-        </text>
-      );
-    case 'fill':
-      return (
-        <>
-          <text
-            x="32"
-            y="23"
-            textAnchor="middle"
-            fontSize="19"
-            fontWeight={900}
-            className="pf-stack-mini-ink"
-            opacity={0.4}
-            style={{ filter: 'blur(2px)' }}
-          >
-            Aa
-          </text>
-          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-            Aa
-          </text>
-        </>
-      );
-    case 'simple':
-      return (
-        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-          Aa
-        </text>
-      );
-    default: {
-      const _exhaustive: never = style;
-      return _exhaustive;
-    }
-  }
-}
-
 /** Mini wireframes for the 8 Header design picker cards — same InfoMiniSlide mechanism
  *  as the generic shapes Stack/Tools/Contact use for their own Header design picker. */
 function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesign }) {
@@ -909,11 +813,15 @@ function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesi
 function InfoHeaderDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioInfoHeaderDesign;
   onChange: (value: PortfolioInfoHeaderDesign) => void;
+  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS[0];
@@ -935,17 +843,18 @@ function InfoHeaderDesignChoiceGrid({
           {PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
             return (
-              <InfoPickerCard
-                key={option.value}
-                active={active}
-                label={option.label}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <InfoHeaderDesignWireframe design={option.value} />
-              </InfoPickerCard>
+              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+                <InfoPickerCard
+                  active={active}
+                  label={option.label}
+                  onClick={() => {
+                    onChange(option.value);
+                    setShowGrid(false);
+                  }}
+                >
+                  <InfoHeaderDesignWireframe design={option.value} />
+                </InfoPickerCard>
+              </PortfolioHeaderDesignOption>
             );
           })}
         </div>
@@ -960,176 +869,8 @@ function InfoHeaderDesignChoiceGrid({
   );
 }
 
-/** Ordered-scale slider — for size/spacing progressions. Same mechanism as Stack/Tools/Contact's
- *  Slider: one drag surface snapping between steps. */
-function InfoSlider<T extends string>({
-  label,
-  value,
-  options,
-  onChange,
-}: {
-  label: string;
-  value: T;
-  options: { value: T; label: string }[];
-  onChange: (value: T) => void;
-}) {
-  const index = Math.max(0, options.findIndex((option) => option.value === value));
-  const lastIndex = options.length - 1;
-  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
-  const current = options[index] ?? options[0];
-  return (
-    <div>
-      <div className="pf-stack-slider-row">
-        <span className="pf-stack-slider-label">{label}</span>
-        <span className="pf-stack-slider-value">{current?.label}</span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={Math.max(lastIndex, 0)}
-        step={1}
-        value={index}
-        onChange={(event) => {
-          const next = options[Number(event.target.value)];
-          if (next) onChange(next.value);
-        }}
-        aria-label={label}
-        className="pf-stack-slider-input"
-        style={{
-          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
-        }}
-      />
-    </div>
-  );
-}
-
-/** S/M/L/XL, each button's own label rendered at the size it represents —
- *  the pill illustrates the scale directly, no separate value readout needed. */
-const INFO_SIZE_PILL_OPTIONS: { value: PortfolioInfoHeaderTitleSize; label: string; fontPx: number }[] = [
-  { value: 'sm', label: 'S', fontPx: 12 },
-  { value: 'md', label: 'M', fontPx: 15 },
-  { value: 'lg', label: 'L', fontPx: 18 },
-  { value: 'xl', label: 'XL', fontPx: 22 },
-];
-
-function InfoSizePill({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: PortfolioInfoHeaderTitleSize;
-  onChange: (value: PortfolioInfoHeaderTitleSize) => void;
-}) {
-  return (
-    <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid grid-cols-4 gap-[3px] p-[3px]"
-        data-compact="true"
-      >
-        {INFO_SIZE_PILL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={option.label}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
-              style={{ fontSize: `${option.fontPx}px` }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-const INFO_HEADER_MARGIN_BOTTOM_OPTIONS = [
-  { value: 'sm' as const, label: 'Small' },
-  { value: 'md' as const, label: 'Medium' },
-  { value: 'lg' as const, label: 'Large' },
-  { value: 'xl' as const, label: 'XL' },
-];
-
-const INFO_HEADER_TITLE_WEIGHT_OPTIONS = [
-  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
-  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
-  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
-  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
-];
-
-/** Shared across every header design — bottom spacing, title size, and title weight.
- *  Appended to each design's own advanced-settings branch in the Header tab.
- *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
- *  actually consume (e.g. Billboard has no adjustable title size/weight and
- *  ignores header alignment) — dead controls left visible are confusing. */
-function InfoHeaderSharedAdvancedControls({
-  info,
-  onChange,
-  hideAlignment = false,
-  hideTitleControls = false,
-}: {
-  info: PortfolioInfoSectionSettings;
-  onChange: (patch: Partial<PortfolioInfoSectionSettings>) => void;
-  hideAlignment?: boolean;
-  hideTitleControls?: boolean;
-}) {
-  return (
-    <>
-      {hideAlignment ? null : (
-        <InfoOptionGrid
-          label="Header alignment"
-          options={[
-            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
-          ]}
-          value={info.headerDesignAlignment}
-          onChange={(headerDesignAlignment: PortfolioInfoHeaderDesignAlignment) =>
-            onChange({ headerDesignAlignment })
-          }
-          columns={3}
-        />
-      )}
-      <InfoSlider
-        label="Bottom spacing"
-        options={INFO_HEADER_MARGIN_BOTTOM_OPTIONS}
-        value={info.headerMarginBottom ?? 'md'}
-        onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
-      />
-      {hideTitleControls ? null : (
-        <>
-          <InfoSizePill
-            label="Title size"
-            value={info.headerTitleSize ?? 'md'}
-            onChange={(headerTitleSize) => onChange({ headerTitleSize })}
-          />
-          <InfoOptionGrid
-            label="Title weight"
-            options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-            value={info.headerTitleWeight ?? 'regular'}
-            onChange={(headerTitleWeight: PortfolioInfoHeaderTitleWeight) => onChange({ headerTitleWeight })}
-            columns={4}
-          />
-        </>
-      )}
-    </>
-  );
-}
-
-/** Same titled "Design settings" band as the Stack section settings panel — re-plays its fade-in
- *  whenever the design variant changes (motionKey), so switching Info designs feels identical to
- *  switching Stack designs. */
 function InfoLayoutSettingsBand({
+  flush = false,
   children,
   motionKey,
   title = 'Design settings',
@@ -1137,16 +878,147 @@ function InfoLayoutSettingsBand({
   children: ReactNode;
   motionKey: string;
   title?: string;
+  /** Drops the boxed frame so the fields use the dock's full width. */
+  flush?: boolean;
 }) {
   return (
-    <section className="pf-stack-layout-settings" aria-labelledby="info-layout-settings-title">
+    <section className={`pf-stack-layout-settings${flush ? ' pf-stack-layout-settings--flush' : ''}`} aria-labelledby="info-layout-settings-title">
       <h3 id="info-layout-settings-title" className="pf-stack-layout-settings-title">
         {title}
       </h3>
-      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+      <div key={motionKey} className={`pf-stack-layout-settings-body ${flush ? 'space-y-9' : 'space-y-6'}`}>
         {children}
       </div>
     </section>
+  );
+}
+
+
+/** Info's two own header designs (chapter, cover) — same layout as the shared ones. */
+function infoExtraHeaderDesign(
+  design: string,
+  info: PortfolioInfoSectionSettings,
+  onPatch: (patch: HeaderPatch) => void,
+  shared: (opts?: { hideAlignment?: boolean; hideTitleControls?: boolean }) => ReactNode
+): ReactNode {
+  const colorProps = { colorOptions: INFO_HEADER_PALETTE_TOKEN_OPTIONS, resolveColor: infoHeaderPaletteTokenColor };
+  if (design === 'chapter') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Index"
+            value={info.headerChapterIndexText}
+            placeholder="02 /"
+            onChange={(headerChapterIndexText) => onPatch({ headerChapterIndexText })}
+          />
+          <HeaderTextField
+            label="Title"
+            value={info.headerChapterTitleText}
+            placeholder="Expertise & Mindset"
+            onChange={(headerChapterTitleText) => onPatch({ headerChapterTitleText })}
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={info}
+            onPatch={onPatch}
+            initialId="title"
+            targets={[
+              { id: 'index', label: 'Index', color: { key: 'headerChapterIndexColor', fallback: 'principal' } },
+              {
+                id: 'title',
+                label: 'Title',
+                color: { key: 'headerChapterTitleColor', fallback: 'texteFort' },
+                size: { key: 'headerChapterTitleSize', fallback: 'md' },
+                weight: { key: 'headerChapterTitleWeight', fallback: 'regular' },
+              },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        {shared({ hideTitleControls: true })}
+      </>
+    );
+  }
+  if (design === 'cover') {
+    return (
+      <>
+        <div className="space-y-6">
+          <HeaderTextField
+            label="Line 1"
+            value={info.headerCoverLine1Text}
+            placeholder="Built To Ship"
+            onChange={(headerCoverLine1Text) => onPatch({ headerCoverLine1Text })}
+          />
+          <HeaderTextField
+            label="Line 2"
+            value={info.headerCoverLine2Text}
+            placeholder="Designed To"
+            onChange={(headerCoverLine2Text) => onPatch({ headerCoverLine2Text })}
+          />
+          <HeaderTextField
+            label="Line 3"
+            value={info.headerCoverLine3Text}
+            placeholder="Scale"
+            onChange={(headerCoverLine3Text) => onPatch({ headerCoverLine3Text })}
+          />
+        </div>
+        <HeaderBlock>
+          <HeaderStyleTargetsEditor
+            settings={info}
+            onPatch={onPatch}
+            title="Headline style"
+            targets={[
+              {
+                id: 'headline',
+                label: 'Headline',
+                color: { key: 'headerCoverHeadlineColor', fallback: 'texteFort' },
+                size: { key: 'headerCoverHeadlineSize', fallback: 'md' },
+                weight: { key: 'headerCoverHeadlineWeight', fallback: 'regular' },
+              },
+            ]}
+            {...colorProps}
+          />
+        </HeaderBlock>
+        {shared({ hideAlignment: true, hideTitleControls: true })}
+      </>
+    );
+  }
+  return null;
+}
+
+const INFO_HEADER_COPY: HeaderCopy = {
+  editorial: { label: 'Info', title: 'About me', subtitle: 'Background, education, and how I work.' },
+  index: { rule: 'Index', title: 'About me', subtitle: 'Background, education, and how I work.', count: 'Highlights' },
+  marquee: ['About', 'Optional', 'Optional', 'Optional'],
+  accent: { badge: '{count}+ highlights', lead: 'A few things worth knowing about me.' },
+  serif: { label: 'Info', title: 'A closer look at who I am and how I work.', subtitle: 'Background, education, and how I work.' },
+  billboard: { word: 'INFO', title: 'About me', count: '{count} things worth knowing' },
+  masthead: ['Get to know me.', 'A bit of my story.', 'Background, skills, and how I work.'],
+  split: { title: 'About me', label: 'Info' },
+};
+
+/** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
+function InfoHeaderDesignFields({
+  info,
+  onChange,
+}: {
+  info: PortfolioInfoSectionSettings;
+  onChange: (patch: Partial<PortfolioInfoSectionSettings>) => void;
+}) {
+  const onPatch = (patch: HeaderPatch) => onChange(patch as Partial<PortfolioInfoSectionSettings>);
+  return (
+    <HeaderDesignFields
+      settings={info}
+      onPatch={onPatch}
+      copy={INFO_HEADER_COPY}
+      colorOptions={INFO_HEADER_PALETTE_TOKEN_OPTIONS}
+      resolveColor={infoHeaderPaletteTokenColor}
+      accentAlignmentOptions={INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+      billboardStyleOptions={INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
+      extra={(design, shared) => infoExtraHeaderDesign(design, info, onPatch, shared)}
+    />
   );
 }
 
@@ -1164,6 +1036,7 @@ export function InfoSettingsPanel({
   heroPalette?: PortfolioHeroPalette;
 }) {
   const [uncontrolled, setUncontrolled] = useState<InfoSubSection>('general');
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const subSection = normalizeInfoSubSection(controlledSubSection ?? uncontrolled);
   const setSubSection = (value: InfoSubSection) => {
     const next = normalizeInfoSubSection(value);
@@ -1173,7 +1046,7 @@ export function InfoSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {INFO_SUB_SECTIONS.map((section) => (
           <button
             key={section.id}
@@ -1300,6 +1173,7 @@ export function InfoSettingsPanel({
           />
 
           <InfoLayoutSettingsBand motionKey={info.design ?? 'about-me'}>
+<SettingsRowsScope title="Layout options">
           {(info.design ?? 'about-me') !== 'about-manifesto' ? (
             <InfoToggleRow
               label="Language flags"
@@ -1555,742 +1429,26 @@ export function InfoSettingsPanel({
                 ) : null}
               </div>
             ) : null}
-          </InfoLayoutSettingsBand>
+          </SettingsRowsScope>
+</InfoLayoutSettingsBand>
         </div>
       ) : null}
 
       {subSection === 'header' ? (
         <div className="space-y-6">
-          <div>
-            <InfoHeaderDesignChoiceGrid
-              value={info.headerDesign ?? 'editorial'}
-              onChange={(headerDesign) => onChange({ headerDesign })}
-            />
+          <InfoHeaderDesignChoiceGrid
+            value={info.headerDesign ?? 'editorial'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+            open={headerCatalogOpen}
+            onOpenChange={setHeaderCatalogOpen}
+          />
 
-            <InfoLayoutSettingsBand motionKey={info.headerDesign ?? 'editorial'} title="Header design settings">
-              {info.headerDesign === 'index' ? (
-                <>
-                  <div>
-                    <p className="pf-stack-block-label">Rule label</p>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={info.headerIndexLabelText}
-                          onChange={(event) => onChange({ headerIndexLabelText: event.target.value })}
-                          placeholder="Index"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <InfoPreviewCardGrid
-                        label="Color"
-                        options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: infoHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={info.headerIndexLabelColor ?? 'texteFort'}
-                        onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
-                        columns={3}
-                      />
-                      <InfoSizePill
-                        label="Size"
-                        value={info.headerIndexLabelSize ?? 'md'}
-                        onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
-                      />
-                      <InfoOptionGrid
-                        label="Weight"
-                        options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={info.headerIndexLabelWeight ?? 'regular'}
-                        onChange={(headerIndexLabelWeight: PortfolioInfoHeaderTitleWeight) =>
-                          onChange({ headerIndexLabelWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Counter</p>
-                    <div className="mt-3 space-y-4">
-                      <InfoPreviewCardGrid
-                        label="Numeral color"
-                        options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: infoHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={info.headerIndexNumberColor ?? 'principal'}
-                        onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
-                        columns={3}
-                      />
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
-                        <input
-                          type="text"
-                          value={info.headerIndexCountLabelText}
-                          onChange={(event) => onChange({ headerIndexCountLabelText: event.target.value })}
-                          placeholder="Highlights"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Title</p>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={info.headerIndexTitleText}
-                          onChange={(event) => onChange({ headerIndexTitleText: event.target.value })}
-                          placeholder="About me"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <InfoPreviewCardGrid
-                        label="Color"
-                        options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: infoHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={info.headerIndexTitleColor ?? 'texteFort'}
-                        onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
-                        columns={3}
-                      />
-                      <InfoSizePill
-                        label="Size"
-                        value={info.headerIndexTitleSize ?? 'md'}
-                        onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
-                      />
-                      <InfoOptionGrid
-                        label="Weight"
-                        options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={info.headerIndexTitleWeight ?? 'regular'}
-                        onChange={(headerIndexTitleWeight: PortfolioInfoHeaderTitleWeight) =>
-                          onChange({ headerIndexTitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Subtitle</p>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={info.headerIndexSubtitleText}
-                          onChange={(event) => onChange({ headerIndexSubtitleText: event.target.value })}
-                          placeholder="Background, education, and how I work."
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <InfoPreviewCardGrid
-                        label="Color"
-                        options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: infoHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={info.headerIndexSubtitleColor ?? 'texteFort'}
-                        onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
-                        columns={3}
-                      />
-                      <InfoSizePill
-                        label="Size"
-                        value={info.headerIndexSubtitleSize ?? 'md'}
-                        onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
-                      />
-                      <InfoOptionGrid
-                        label="Weight"
-                        options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={info.headerIndexSubtitleWeight ?? 'regular'}
-                        onChange={(headerIndexSubtitleWeight: PortfolioInfoHeaderTitleWeight) =>
-                          onChange({ headerIndexSubtitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideTitleControls />
-                  </div>
-                </>
-              ) : info.headerDesign === 'marquee' ? (
-                <>
-                  <div>
-                    <p className="pf-stack-block-label">Words</p>
-                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
-                        <input
-                          type="text"
-                          value={info.headerMarqueeWord1Text}
-                          onChange={(event) => onChange({ headerMarqueeWord1Text: event.target.value })}
-                          placeholder="About"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
-                        <input
-                          type="text"
-                          value={info.headerMarqueeWord2Text}
-                          onChange={(event) => onChange({ headerMarqueeWord2Text: event.target.value })}
-                          placeholder="Me"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
-                        <input
-                          type="text"
-                          value={info.headerMarqueeWord3Text}
-                          onChange={(event) => onChange({ headerMarqueeWord3Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
-                        <input
-                          type="text"
-                          value={info.headerMarqueeWord4Text}
-                          onChange={(event) => onChange({ headerMarqueeWord4Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <p className="pf-stack-block-label">Style</p>
-                    <div className="mt-3 space-y-4">
-                      <InfoPreviewCardGrid
-                        label="Word color"
-                        options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: infoHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={info.headerMarqueeWordColor ?? 'principal'}
-                        onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
-                        columns={3}
-                      />
-                      <InfoSizePill
-                        label="Size"
-                        value={info.headerMarqueeSize ?? 'md'}
-                        onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideAlignment hideTitleControls />
-                  </div>
-                </>
-              ) : info.headerDesign === 'accent-count' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
-                    <input
-                      type="text"
-                      value={info.headerAccentCountBadgeText}
-                      onChange={(event) => onChange({ headerAccentCountBadgeText: event.target.value })}
-                      placeholder="{count}+ highlights"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
-                    <input
-                      type="text"
-                      value={info.headerAccentCountLeadText}
-                      onChange={(event) => onChange({ headerAccentCountLeadText: event.target.value })}
-                      placeholder="A few things worth knowing about me."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Badge color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerAccentCountBadgeColor ?? 'principal'}
-                    onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
-                    columns={3}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Lead color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerAccentCountLeadColor ?? 'secondaire'}
-                    onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Size"
-                    value={info.headerAccentCountSize ?? 'md'}
-                    onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Lead weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerAccentCountWeight ?? 'regular'}
-                    onChange={(headerAccentCountWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerAccentCountWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoOptionGrid
-                    label="Alignment"
-                    options={INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
-                    value={info.headerAccentCountAlignment ?? 'left'}
-                    onChange={(headerAccentCountAlignment: PortfolioInfoHeaderAccentCountAlignment) =>
-                      onChange({ headerAccentCountAlignment })
-                    }
-                    columns={3}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : info.headerDesign === 'serif-lead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={info.headerSerifLeadLabelText}
-                      onChange={(event) => onChange({ headerSerifLeadLabelText: event.target.value })}
-                      placeholder="Info"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Label color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerSerifLeadLabelColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Label size"
-                    value={info.headerSerifLeadLabelSize ?? 'md'}
-                    onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Label weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerSerifLeadLabelWeight ?? 'regular'}
-                    onChange={(headerSerifLeadLabelWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={info.headerSerifLeadTitleText}
-                      onChange={(event) => onChange({ headerSerifLeadTitleText: event.target.value })}
-                      placeholder="A closer look at who I am and how I work."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Title color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerSerifLeadTitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Title size"
-                    value={info.headerSerifLeadTitleSize ?? 'md'}
-                    onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Title weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerSerifLeadTitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadTitleWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Subtitle color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerSerifLeadSubtitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Subtitle size"
-                    value={info.headerSerifLeadSubtitleSize ?? 'md'}
-                    onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Subtitle weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerSerifLeadSubtitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadSubtitleWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadSubtitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideTitleControls />
-                </>
-              ) : info.headerDesign === 'billboard' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
-                    <input
-                      type="text"
-                      value={info.headerBillboardBigWord}
-                      onChange={(event) => onChange({ headerBillboardBigWord: event.target.value })}
-                      placeholder="INFO"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count line</p>
-                    <input
-                      type="text"
-                      value={info.headerBillboardCountText}
-                      onChange={(event) => onChange({ headerBillboardCountText: event.target.value })}
-                      placeholder="{count} things worth knowing"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={info.headerBillboardTitleText}
-                      onChange={(event) => onChange({ headerBillboardTitleText: event.target.value })}
-                      placeholder="About me"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Big word style"
-                    options={INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderBillboardWordStyleGlyph(option.value),
-                    }))}
-                    value={info.headerBillboardWordStyle ?? 'outline'}
-                    onChange={(headerBillboardWordStyle: PortfolioInfoHeaderBillboardWordStyle) =>
-                      onChange({ headerBillboardWordStyle })
-                    }
-                    columns={3}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Big word color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerBillboardWordColor ?? 'principal'}
-                    onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
-                    columns={3}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Title color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerBillboardTitleColor ?? 'principal'}
-                    onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
-                    columns={3}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Count line color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerBillboardMetaColor ?? 'secondaire'}
-                    onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
-                    columns={3}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : info.headerDesign === 'masthead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
-                    <input
-                      type="text"
-                      value={info.headerMastheadLine1Text}
-                      onChange={(event) => onChange({ headerMastheadLine1Text: event.target.value })}
-                      placeholder="Get to know me."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
-                    <input
-                      type="text"
-                      value={info.headerMastheadLine2Text}
-                      onChange={(event) => onChange({ headerMastheadLine2Text: event.target.value })}
-                      placeholder="A bit of my story."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
-                    <input
-                      type="text"
-                      value={info.headerMastheadLine3Text}
-                      onChange={(event) => onChange({ headerMastheadLine3Text: event.target.value })}
-                      placeholder="Background, skills, and how I work."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Headline color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerMastheadHeadlineColor ?? 'principal'}
-                    onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Headline size"
-                    value={info.headerMastheadHeadlineSize ?? 'md'}
-                    onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Headline weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerMastheadHeadlineWeight ?? 'regular'}
-                    onChange={(headerMastheadHeadlineWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerMastheadHeadlineWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideTitleControls />
-                </>
-              ) : info.headerDesign === 'split-heading' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={info.headerSplitHeadingTitleText}
-                      onChange={(event) => onChange({ headerSplitHeadingTitleText: event.target.value })}
-                      placeholder="About me"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={info.headerSplitHeadingLabelText}
-                      onChange={(event) => onChange({ headerSplitHeadingLabelText: event.target.value })}
-                      placeholder="Info"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Title color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerSplitHeadingTitleColor ?? 'principal'}
-                    onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Title size"
-                    value={info.headerSplitHeadingTitleSize ?? 'md'}
-                    onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Title weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerSplitHeadingTitleWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingTitleWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Label color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerSplitHeadingLabelColor ?? 'secondaire'}
-                    onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Label size"
-                    value={info.headerSplitHeadingLabelSize ?? 'md'}
-                    onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Label weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerSplitHeadingLabelWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingLabelWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : info.headerDesign === 'chapter' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Index</p>
-                    <input
-                      type="text"
-                      value={info.headerChapterIndexText}
-                      onChange={(event) => onChange({ headerChapterIndexText: event.target.value })}
-                      placeholder="02 /"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={info.headerChapterTitleText}
-                      onChange={(event) => onChange({ headerChapterTitleText: event.target.value })}
-                      placeholder="Expertise & Mindset"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Index color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerChapterIndexColor ?? 'principal'}
-                    onChange={(headerChapterIndexColor) => onChange({ headerChapterIndexColor })}
-                    columns={3}
-                  />
-                  <InfoPreviewCardGrid
-                    label="Title color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerChapterTitleColor ?? 'texteFort'}
-                    onChange={(headerChapterTitleColor) => onChange({ headerChapterTitleColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Title size"
-                    value={info.headerChapterTitleSize ?? 'md'}
-                    onChange={(headerChapterTitleSize) => onChange({ headerChapterTitleSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Title weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerChapterTitleWeight ?? 'regular'}
-                    onChange={(headerChapterTitleWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerChapterTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideTitleControls />
-                </>
-              ) : info.headerDesign === 'cover' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
-                    <input
-                      type="text"
-                      value={info.headerCoverLine1Text}
-                      onChange={(event) => onChange({ headerCoverLine1Text: event.target.value })}
-                      placeholder="Built To Ship"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
-                    <input
-                      type="text"
-                      value={info.headerCoverLine2Text}
-                      onChange={(event) => onChange({ headerCoverLine2Text: event.target.value })}
-                      placeholder="Designed To"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
-                    <input
-                      type="text"
-                      value={info.headerCoverLine3Text}
-                      onChange={(event) => onChange({ headerCoverLine3Text: event.target.value })}
-                      placeholder="Scale"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <InfoPreviewCardGrid
-                    label="Headline color"
-                    options={INFO_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: infoHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={info.headerCoverHeadlineColor ?? 'texteFort'}
-                    onChange={(headerCoverHeadlineColor) => onChange({ headerCoverHeadlineColor })}
-                    columns={3}
-                  />
-                  <InfoSizePill
-                    label="Headline size"
-                    value={info.headerCoverHeadlineSize ?? 'md'}
-                    onChange={(headerCoverHeadlineSize) => onChange({ headerCoverHeadlineSize })}
-                  />
-                  <InfoOptionGrid
-                    label="Headline weight"
-                    options={INFO_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={info.headerCoverHeadlineWeight ?? 'regular'}
-                    onChange={(headerCoverHeadlineWeight: PortfolioInfoHeaderTitleWeight) =>
-                      onChange({ headerCoverHeadlineWeight })
-                    }
-                    columns={4}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : (
-                <>
-                  <InfoToggleRow
-                    label="Header motion"
-                    info="Respects reduced-motion preference"
-                    checked={info.headerAnimationEnabled !== false}
-                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
-                  />
-                  <InfoHeaderSharedAdvancedControls info={info} onChange={onChange} />
-                </>
-              )}
+          {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
+          {headerCatalogOpen ? null : (
+            <InfoLayoutSettingsBand motionKey={info.headerDesign ?? 'editorial'} title="Header settings" flush>
+              <InfoHeaderDesignFields info={info} onChange={onChange} />
             </InfoLayoutSettingsBand>
-          </div>
+          )}
         </div>
       ) : null}
 

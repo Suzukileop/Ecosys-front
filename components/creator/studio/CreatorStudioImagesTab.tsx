@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { MediaImage } from '@/components/ui/MediaImage';
 import { getApiErrorMessage } from '@/lib/api-error';
 import {
   listCreatorProfileImages,
@@ -33,14 +34,14 @@ function ImageTile({
       <div
         className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-900 ${
           item.current
-            ? 'ring-2 ring-[#111111] ring-offset-4 ring-offset-[#F8F8F8] dark:ring-white dark:ring-offset-black'
+            ? 'ring-2 ring-[#111111] ring-offset-4 ring-offset-[#F9F9F9] dark:ring-white dark:ring-offset-black'
             : ''
         }`}
       >
-        {/* eslint-disable-next-line @next/next/no-img-element */}
-        <img
+        <MediaImage
           src={item.url}
-          alt=""
+          widths={[256, 384, 640]}
+          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
           className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
         {!item.current ? (
@@ -142,7 +143,7 @@ export function CreatorStudioImagesTab({ onImagesUpdated }: CreatorStudioImagesT
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]">
+        <div className="rounded-xl bg-[#FFFFFF] px-6 py-16 text-center dark:bg-[#111111]">
           <p className="text-base text-neutral-500 dark:text-neutral-400">
             No profile photos yet. Upload one from the profile header.
           </p>

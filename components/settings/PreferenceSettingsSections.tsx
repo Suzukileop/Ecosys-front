@@ -138,7 +138,7 @@ export function PrivacySettingsSection({ settings, onUpdate }: PreferenceProps) 
             label="Profile information"
             description="Choose which details — contact, location, languages — are visible on your public portfolio."
           >
-            <Link href="/dashboard/creator" className={SECONDARY_BUTTON_CLASS}>
+            <Link href="/profile" className={SECONDARY_BUTTON_CLASS}>
               Manage in studio
             </Link>
           </SettingRow>

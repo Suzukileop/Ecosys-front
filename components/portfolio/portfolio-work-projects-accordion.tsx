@@ -133,12 +133,6 @@ function accordionTitleInk(presentation: PortfolioWorkPresentationSettings): str
   return title;
 }
 
-function alignClass(align: 'left' | 'center' | 'right'): string {
-  if (align === 'right') return 'text-right items-end';
-  if (align === 'left') return 'text-left items-start';
-  return 'text-center items-center';
-}
-
 function workRoleLabel(item: MarketplaceContentItem): string {
   const role = item.role?.trim();
   if (role) return role;
@@ -360,79 +354,6 @@ function useDesktopKineticShift(
       reduceMq.removeEventListener('change', sync);
     };
   }, [rootRef, previewRef, listRef, enabled]);
-}
-
-/**
- * Accordion design header — editorial light/semibold contrast, rule that stops with the title.
- */
-export function ProjectsAccordionSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  align = 'center',
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  align?: 'left' | 'center' | 'right';
-  className?: string;
-}) {
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  const rootRef = useRef<HTMLElement>(null);
-  useAccordionEntrance(rootRef, heading);
-
-  if (!heading && !sub) return null;
-
-  const { lead, rest } = splitEditorialTitle(heading);
-
-  return (
-    <header
-      ref={rootRef}
-      className={`mb-12 flex w-full flex-col sm:mb-16 ${alignClass(align)} ${className}`.trim()}
-    >
-      <AccordionMotionStyles />
-      {heading ? (
-        <div
-          className="portfolio-acc-enter inline-flex max-w-3xl flex-col"
-          style={enterStyle(40)}
-          data-pf-no-color-transition=""
-        >
-          <h2
-            className="text-3xl tracking-[-0.035em] sm:text-4xl lg:text-[3.15rem] lg:leading-[1.08]"
-            style={{ color: titleColor }}
-          >
-            <span className="font-light">{lead}</span>
-            {rest ? (
-              <>
-                {' '}
-                <span className="font-semibold">{rest}</span>
-              </>
-            ) : null}
-          </h2>
-          <span
-            className="mt-5 h-px w-full"
-            style={{ backgroundColor: titleColor, opacity: 0.28 }}
-            aria-hidden
-          />
-        </div>
-      ) : null}
-      {sub ? (
-        <p
-          className={`portfolio-acc-enter max-w-xl text-base leading-[1.7] sm:text-lg sm:leading-[1.75] ${
-            heading ? 'mt-5' : ''
-          }`}
-          style={enterStyle(heading ? 130 : 40, { color: subtitleColor })}
-          data-pf-no-color-transition=""
-        >
-          {sub}
-        </p>
-      ) : null}
-    </header>
-  );
 }
 
 /**
@@ -965,10 +886,4 @@ export function ProjectsAccordionGallery({
       )}
     </div>
   );
-}
-
-export function isProjectsAccordionDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-accordion';
 }

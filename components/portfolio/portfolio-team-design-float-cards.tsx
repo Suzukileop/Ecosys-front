@@ -59,7 +59,7 @@ import {
   type PortfolioTeamProfileView,
   type PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
-import type { ProfileTeamMember } from '@/types/ecosystem';
+import type { ProfileTeamMember } from '@/types/profile';
 
 /** The one curve for this design — nothing here eases on anything else. */
 const FLOAT_EASE = 'cubic-bezier(0.25, 1, 0.5, 1)';

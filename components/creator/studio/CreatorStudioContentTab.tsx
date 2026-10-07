@@ -75,7 +75,7 @@ export function CreatorStudioContentTab({
   useEffect(() => {
     if (searchParams.get('publish') === '1') {
       setPublishOpen(true);
-      router.replace('/dashboard/creator?tab=content', { scroll: false });
+      router.replace('/profile?tab=content', { scroll: false });
     }
   }, [router, searchParams, setPublishOpen]);
 
@@ -130,7 +130,7 @@ export function CreatorStudioContentTab({
       {loading ? (
         <CreatorStudioContentPostsSkeleton />
       ) : items.length === 0 ? (
-        <div className="mx-auto w-full max-w-[760px] rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]">
+        <div className="mx-auto w-full max-w-[760px] rounded-xl bg-[#FFFFFF] px-6 py-16 text-center dark:bg-[#111111]">
           <p className="text-[16px] leading-relaxed text-neutral-500 dark:text-neutral-400">
             {BUCKETS.find((b) => b.id === bucket)?.empty}
           </p>

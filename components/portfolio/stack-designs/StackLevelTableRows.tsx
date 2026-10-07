@@ -5,7 +5,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { resolveToolLevelPercent } from '@/components/creator/studio/creator-tool-logo-color';
-import type { ProfileStrengthToolLevel } from '@/types/ecosystem';
+import type { ProfileStrengthToolLevel } from '@/types/profile';
 import {
   resolveLevelDotCount,
   resolveToolsLevelBarColors,

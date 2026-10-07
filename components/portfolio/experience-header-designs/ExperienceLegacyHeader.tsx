@@ -14,6 +14,7 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Legacy/Accent Title Header — Premium Editorial Redesign
@@ -39,7 +40,14 @@ export function ExperienceLegacyHeader({
   };
 
   if (presentation.legacyHeadingEnabled === false) return null;
+  return <ExperienceLegacyHeaderContent presentation={presentation} />;
+}
 
+function ExperienceLegacyHeaderContent({
+  presentation,
+}: {
+  presentation: PortfolioExperiencePresentationSettings;
+}) {
   // Refs for GSAP animations
   const sectionRef = useRef<HTMLDivElement>(null);
 
@@ -67,9 +75,10 @@ export function ExperienceLegacyHeader({
     'A selection of roles, teams, and problems solved along the way.';
 
   // ========== NEW OPTIONS ==========
-  const animationEnabled = presentation.legacyHeaderAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.legacyHeaderAnimationEnabled !== false && !motionOff;
   const animationStyle = presentation.legacyHeaderAnimationStyle ?? 'bloom';
-  const scrollParallaxEnabled = presentation.legacyScrollParallaxEnabled !== false;
+  const scrollParallaxEnabled = presentation.legacyScrollParallaxEnabled !== false && !motionOff;
   const prefixWeight = presentation.legacyPrefixWeight ?? 'light';
   const accentStyle = presentation.legacyAccentStyle ?? 'italic-bold';
   const accentSize = presentation.legacyAccentSize ?? 'dramatic';

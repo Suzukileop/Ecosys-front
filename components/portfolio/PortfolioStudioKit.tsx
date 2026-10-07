@@ -6,8 +6,6 @@ import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import { faCheck, faChevronLeft, faChevronRight, faCircleExclamation, faCircleInfo, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
 
-export const STUDIO_ACCENT = '#FF5722';
-
 export const STUDIO_LABEL_CLASS =
   'block text-[15px] font-bold text-[#111111] group-focus-within:text-[#111111] dark:text-neutral-300 dark:group-focus-within:text-white';
 export const STUDIO_INLINE_TEXT_CLASS =
@@ -335,7 +333,7 @@ export function StudioRemoveButton({ label, onClick }: { label: string; onClick:
   );
 }
 
-export function FloatingSaveBar({
+function FloatingSaveBar({
   visible,
   saving,
   count,
@@ -386,9 +384,9 @@ export function FloatingSaveBar({
   );
 }
 
-export type StudioToast = { id: number; tone: 'success' | 'error' | 'idle'; message: string };
+type StudioToast = { id: number; tone: 'success' | 'error' | 'idle'; message: string };
 
-export function StudioSaveToast({ toast }: { toast: StudioToast | null }) {
+function StudioSaveToast({ toast }: { toast: StudioToast | null }) {
   if (!toast) return null;
   const dot =
     toast.tone === 'success' ? 'bg-[#FF5722]' : toast.tone === 'error' ? 'bg-red-500' : 'bg-neutral-400';

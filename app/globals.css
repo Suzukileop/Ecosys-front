@@ -4,8 +4,10 @@
 
 /* ── Light (default) ── */
 :root {
+  /* Roboto is self-hosted through @fontsource (lib/fonts/portfolio-fonts). */
+  --font-app: 'Roboto', 'Segoe UI', system-ui, -apple-system, Arial, sans-serif;
   --background: #ffffff;
-  --foreground: #171717;
+  --foreground: #0f0f0f;
 
   /* Landing page tokens — light */
   --lp-bg:       #F5F6FF;
@@ -23,9 +25,6 @@
   --gradient: linear-gradient(135deg, #7C3AED, #2563EB, #06B6D4);
   --glow-purple: 0 0 40px rgba(124, 58, 237, 0.4);
   --glow-blue:   0 0 40px rgba(37,  99, 235, 0.4);
-
-  /** Zone preview éditeur — aligné sur TIMELINE_LIGHT.previewWorkspaceBg */
-  --preview-workspace-bg: #f0f5f7;
 
   /* Messages — aligned with dashboard neutrals (DASHBOARD_MAIN_BG / sidebar search) */
   --msg-bg: #f5f5f5; /* neutral-100 */
@@ -58,8 +57,8 @@
 
 /* ── Dark ── */
 .dark {
-  --background: #0a0a0a;
-  --foreground: #ededed;
+  --background: #0f0f0f;
+  --foreground: #f1f1f1;
 
   --lp-bg:       #06060F;
   --lp-card:     #0D0D1A;
@@ -114,7 +113,7 @@
 
    The charter, in three rules:
    - One surface, and it is the dashboard's own: `#F8F8F8`, the same ground My Portfolio
-     (`/dashboard/portfolio`) and the top bar already sit on. Bar, page and all three
+     (`/studio`) and the top bar already sit on. Bar, page and all three
      panels share it, so nothing on this screen is a step above anything else. Two
      earlier passes gave the panels their own tone — `#EBEAE8` over an `#E6E5E3` ground,
      then one flat `#EBEAE8` — and both read as a patch of a different material laid
@@ -132,7 +131,7 @@
 .msg-mineral {
   /* One surface, shared with My Portfolio and the bar. Both names kept so the rest of
      the section can go on saying "ground" and "panel" where that is what it means. */
-  --msg-ground: #f8f8f8;
+  --msg-ground: #f9f9f9;
   --msg-panel: #ffffff;
   --msg-hairline: rgba(0, 0, 0, 0.06);
   --msg-hairline-strong: rgba(0, 0, 0, 0.12);
@@ -267,7 +266,7 @@ html {
 body {
   color: var(--foreground);
   background: var(--background);
-  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+  font-family: var(--font-app);
 }
 
 /* Landing audience switcher: copy eases in on each change */
@@ -287,7 +286,7 @@ body {
   /* Brand zone — hero → before/after (orange + mono) */
   .lp-brand-zone,
   .lp-mono-zone {
-    --lp-font: var(--font-geist), ui-sans-serif, system-ui, sans-serif;
+    --lp-font: var(--font-app);
     --lp-bg: #ffffff;
     --lp-card: #fafafa;
     --lp-surface: #f5f5f5;
@@ -508,7 +507,8 @@ body {
   animation: msg-media-panel-in 260ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-.msg-media-reveal {
+.msg-media-reveal,
+.media-reveal {
   animation: msg-media-reveal 280ms ease-out both;
 }
 
@@ -564,6 +564,7 @@ body {
   .msg-media-backdrop-in,
   .msg-media-panel-in,
   .msg-media-reveal,
+  .media-reveal,
   .follow-btn-pop,
   .follow-label-in,
   .follow-count-in {
@@ -756,16 +757,7 @@ body {
   50%       { transform: scale(1.8); opacity: 0; }
 }
 
-@keyframes niche-marquee-vertical {
-  0% {
-    transform: translateY(0);
-  }
-  100% {
-    transform: translateY(-50%);
-  }
-}
-
-/* ── Geometric page background (Ecosystem) ── */
+/* ── Geometric page background ── */
 @keyframes geo-drift {
   0% { transform: translate3d(0, 0, 0) scale(1); }
   50% { transform: translate3d(-36px, -24px, 0) scale(1.015); }
@@ -1042,29 +1034,6 @@ body {
 .geo-delay-5 { animation-delay: -8.5s; }
 .geo-delay-6 { animation-delay: -11s; }
 
-html.ecosystem-geo-bg [data-dashboard-main],
-html.ecosystem-geo-bg [data-dashboard-content] {
-  background-color: transparent !important;
-}
-
-/*
- * The light app ground is white, so the white cards and panels drawn for the old grey ground
- * read as grey `#EEF0F2` blocks instead. Fields, buttons, pills, floating layers (menus,
- * popovers, dialogs) keep their white, and the user's portfolio preview keeps its own theme.
- */
-html:not(.dark)
-  [data-app-surfaces]
-  .bg-white[class*='rounded']:not(input, textarea, select, button, [class*='rounded-full'], .absolute, .fixed, .sticky):not(
-    [role='dialog'] *,
-    [role='menu'] *,
-    [role='listbox'] *,
-    .pf-theme-root *,
-    .portfolio-live-preview-frame *,
-    [data-surface-tray] *
-  ) {
-  background-color: #eef0f2;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .geo-bg-pattern-drift,
   .geo-bg-pattern-drift-reverse,
@@ -1084,72 +1053,6 @@ html:not(.dark)
     animation: none !important;
     will-change: auto;
   }
-}
-
-.niche-marquee-viewport {
-  -webkit-mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.1) 2%,
-    rgba(0, 0, 0, 0.32) 5%,
-    rgba(0, 0, 0, 0.58) 7%,
-    rgba(0, 0, 0, 0.82) 9%,
-    #000 12%,
-    #000 88%,
-    rgba(0, 0, 0, 0.82) 91%,
-    rgba(0, 0, 0, 0.58) 93%,
-    rgba(0, 0, 0, 0.32) 95%,
-    rgba(0, 0, 0, 0.1) 98%,
-    transparent 100%
-  );
-  mask-image: linear-gradient(
-    to bottom,
-    transparent 0%,
-    rgba(0, 0, 0, 0.1) 2%,
-    rgba(0, 0, 0, 0.32) 5%,
-    rgba(0, 0, 0, 0.58) 7%,
-    rgba(0, 0, 0, 0.82) 9%,
-    #000 12%,
-    #000 88%,
-    rgba(0, 0, 0, 0.82) 91%,
-    rgba(0, 0, 0, 0.58) 93%,
-    rgba(0, 0, 0, 0.32) 95%,
-    rgba(0, 0, 0, 0.1) 98%,
-    transparent 100%
-  );
-}
-
-.niche-marquee-track {
-  animation: niche-marquee-vertical 45s linear infinite;
-  will-change: transform;
-  backface-visibility: hidden;
-}
-
-@media (prefers-reduced-motion: reduce) {
-  .niche-marquee-track {
-    animation: none;
-  }
-}
-
-.ecosystem-form-field:-webkit-autofill,
-.ecosystem-form-field:-webkit-autofill:hover,
-.ecosystem-form-field:-webkit-autofill:focus,
-.ecosystem-form-field:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #fafafa inset !important;
-  box-shadow: 0 0 0 1000px #fafafa inset !important;
-  -webkit-text-fill-color: #171717 !important;
-  caret-color: #171717;
-  transition: background-color 5000s ease-in-out 0s;
-}
-
-.dark .ecosystem-form-field:-webkit-autofill,
-.dark .ecosystem-form-field:-webkit-autofill:hover,
-.dark .ecosystem-form-field:-webkit-autofill:focus,
-.dark .ecosystem-form-field:-webkit-autofill:active {
-  -webkit-box-shadow: 0 0 0 1000px #262626 inset !important;
-  box-shadow: 0 0 0 1000px #262626 inset !important;
-  -webkit-text-fill-color: #fafafa !important;
-  caret-color: #fafafa;
 }
 
 /* Studio field underline: only the innermost underlined control darkens on focus. */
@@ -1417,28 +1320,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
   border-color: rgba(249, 115, 22, 0.35);
 }
 
-/* Notification target highlight — orange pulse ring */
-@keyframes notification-highlight-pulse {
-  0%,
-  100% {
-    box-shadow:
-      0 0 0 2px rgba(249, 115, 22, 0.95),
-      0 0 0 6px rgba(249, 115, 22, 0.18);
-  }
-  50% {
-    box-shadow:
-      0 0 0 3px rgba(249, 115, 22, 1),
-      0 0 0 14px rgba(249, 115, 22, 0.08);
-  }
-}
-
-.notification-highlight-ring {
-  animation: notification-highlight-pulse 1.1s ease-in-out 3;
-  z-index: 5;
-}
-
 @media (prefers-reduced-motion: reduce) {
-  .notification-highlight-ring,
   .product-why-title,
   .product-why-opinion,
   .product-demo-opinion {
@@ -1454,10 +1336,6 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
 
 @layer utilities {
   .text-balance { text-wrap: balance; }
-  /** Survol format picker + menus contextuels (teinte preview) */
-  .preview-workspace-hover:hover {
-    background-color: var(--preview-workspace-bg);
-  }
 }
 
 /* Landing social platforms — seamless infinite strip (two identical tracks, -50%). */
@@ -3489,7 +3367,7 @@ html[data-portfolio-color-mode='light'] body::-webkit-scrollbar-thumb:hover,
  */
 .pf-theme-root[data-portfolio-force-font='true'],
 .pf-theme-root[data-portfolio-force-font='true'] *:not(svg):not(svg *) {
-  font-family: var(--portfolio-body-font, var(--font-geist), ui-sans-serif, system-ui, sans-serif) !important;
+  font-family: var(--portfolio-body-font, var(--font-app)) !important;
 }
 
 /*
@@ -4748,7 +4626,7 @@ footer#footer {
 
 .pf-theme-root .pf-gallery-media-title.pf-gallery-media-title--plain,
 .pf-theme-root[data-portfolio-force-font='true'] .pf-gallery-media-title.pf-gallery-media-title--plain {
-  font-family: var(--font-geist), ui-sans-serif, system-ui, sans-serif !important;
+  font-family: var(--font-app) !important;
   font-weight: 400 !important;
   font-size: calc(2.25rem * var(--pf-gallery-font-scale, 1)) !important;
   line-height: 1.3 !important;
@@ -6034,6 +5912,15 @@ footer#footer {
   background: color-mix(in srgb, var(--pf-palette-texte-fort) 3.5%, var(--pf-palette-fond));
 }
 
+/* Frameless variant: the settings sit directly on the dock instead of in a boxed card. */
+.portfolio-studio-dock-surface .pf-exp-layout-settings.pf-exp-layout-settings--flush {
+  margin: 0;
+  padding: 0.5rem 0.25rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
 .pf-exp-segment {
   border-radius: 12px;
   color: var(--pf-palette-texte-fort, inherit);
@@ -6446,23 +6333,30 @@ footer#footer {
    (cards-per-row), where the card holds a 64×34 glyph instead of a full wireframe. */
 .pf-services-design-card {
   position: relative;
-  border: none;
-  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 2%, transparent);
-  transition: background-color 0.28s ease, transform 0.28s ease;
+  border: 1px solid transparent;
+  border-radius: 1rem;
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 3%, transparent);
+  transition: background-color 0.24s ease, border-color 0.24s ease;
 }
 
 .pf-services-design-card:hover {
-  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 4.5%, transparent);
-  transform: translateY(-1px);
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 6%, transparent);
 }
 
+.pf-services-design-card:focus-visible {
+  outline: none;
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 55%, transparent);
+}
+
+/* Chosen design: a light border and a faint tint, never the accent fill. */
 .pf-services-design-card[data-active='true'] {
-  background-color: color-mix(in srgb, var(--pf-palette-principal, #f97316) 6%, transparent);
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 40%, transparent);
+  background-color: color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 7%, transparent);
 }
 
 .pf-services-design-card .pf-stack-mini {
-  opacity: 0.72;
-  transition: opacity 0.28s ease;
+  opacity: 0.9;
+  transition: opacity 0.24s ease;
 }
 
 .pf-services-design-card:hover .pf-stack-mini,
@@ -6470,25 +6364,62 @@ footer#footer {
   opacity: 1;
 }
 
+/* Titles use the strong text color so each design name stays easy to read. */
 .pf-services-card-label {
-  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 58%, transparent);
-  transition: color 0.28s ease;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 90%, transparent);
+  transition: color 0.24s ease;
 }
 
-.pf-services-design-card:hover .pf-services-card-label {
+.pf-services-design-card:hover .pf-services-card-label,
+.pf-services-design-card[data-active='true'] .pf-services-card-label {
   color: var(--pf-palette-texte-fort, #f5f5f5);
 }
 
-.pf-services-design-card[data-active='true'] .pf-services-card-label {
-  color: var(--pf-palette-principal, #f97316);
-}
-
 .portfolio-studio-dock-surface .pf-services-design-card:not([data-active='true']) .pf-services-card-label {
-  color: color-mix(in srgb, var(--pf-palette-texte-fort) 58%, transparent) !important;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort) 90%, transparent) !important;
 }
 
 .portfolio-studio-dock-surface .pf-services-design-card[data-active='true'] .pf-services-card-label {
-  color: var(--pf-palette-principal) !important;
+  color: var(--pf-palette-texte-fort) !important;
+}
+
+/* Settings rows (Expanded / Compact views): blocks that are not rows keep some air around them. */
+.pf-settings-rows > :not([data-setting-row]):not(:first-child),
+.pf-settings-rows > [data-setting-row] + :not([data-setting-row]) {
+  margin-top: 1.75rem;
+}
+
+.pf-settings-rows > :not([data-setting-row]) + [data-setting-row] {
+  margin-top: 0.5rem;
+}
+
+/* Sub-section tabs (General / Design / Header / Background): always one row, on every width. */
+.pf-subtabs {
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: minmax(0, 1fr);
+  gap: 0.25rem;
+}
+
+.pf-subtabs > button {
+  min-width: 0;
+  height: 2.25rem;
+  padding: 0 0.375rem;
+  border-radius: 999px;
+  font-size: 13px;
+  font-weight: 600;
+  line-height: 1;
+  letter-spacing: 0;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+@media (max-width: 360px) {
+  .pf-subtabs > button {
+    font-size: 12px;
+    padding: 0 0.25rem;
+  }
 }
 
 .pf-stack-block-label {
@@ -6561,6 +6492,15 @@ footer#footer {
   border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort) 5%, transparent);
   border-radius: 0.875rem;
   background: color-mix(in srgb, var(--pf-palette-texte-fort) 3.5%, var(--pf-palette-fond));
+}
+
+/* Frameless variant: the settings sit directly on the dock instead of in a boxed card. */
+.portfolio-studio-dock-surface .pf-stack-layout-settings.pf-stack-layout-settings--flush {
+  margin: 0;
+  padding: 0.5rem 0.25rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
 }
 
 /* Stack layout-settings segmented control — same mechanism as Experience's .pf-exp-segment. */
@@ -7278,12 +7218,89 @@ footer#footer {
   --pf-exp-centered-surface: var(--pf-palette-fond, #0a0a0a);
 }
 
+/*
+ * Layout settings bands are frameless in the dock, in every section: no boxed card, the options
+ * sit directly on the dock at its full width (same look as the old `--flush` variant).
+ */
+.portfolio-studio-dock-surface :is(.pf-exp-layout-settings, .pf-stack-layout-settings, .pf-work-layout-settings),
 .portfolio-studio-dock-surface .pf-exp-centered-config.pf-exp-layout-settings {
-  background: color-mix(in srgb, var(--pf-palette-fond) 38%, transparent);
-  backdrop-filter: blur(22px) saturate(1.25);
-  -webkit-backdrop-filter: blur(22px) saturate(1.25);
-  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort) 10%, transparent);
-  box-shadow: inset 0 1px 0 color-mix(in srgb, var(--pf-palette-texte-fort) 6%, transparent);
+  margin: 0;
+  padding: 0.5rem 0.25rem 1rem;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  box-shadow: none;
+  backdrop-filter: none;
+  -webkit-backdrop-filter: none;
+}
+
+/* The Expanded / Compact switch already titles the options ("Layout options"): drop the band's own heading. */
+:is(.pf-exp-layout-settings, .pf-stack-layout-settings, .pf-work-layout-settings):has(> * > * > .pf-settings-rows)
+  > :is(.pf-exp-layout-settings-title, .pf-stack-layout-settings-title, .pf-work-layout-settings-title),
+.pf-settings-rows > :is(.pf-exp-layout-settings, .pf-stack-layout-settings, .pf-work-layout-settings):first-child
+  > :is(.pf-exp-layout-settings-title, .pf-stack-layout-settings-title, .pf-work-layout-settings-title) {
+  display: none;
+}
+
+.pf-settings-rows > :is(.pf-exp-layout-settings, .pf-stack-layout-settings, .pf-work-layout-settings):first-child {
+  padding-top: 0;
+}
+
+/*
+ * Choice buttons in the dock (Portrait left / right, Block titles, alignments…): separate, frameless
+ * options instead of a grey track holding pills. Idle = hairline outline, active = slightly stronger
+ * outline + faint tint + strong text (never a solid dark fill). Shared by the segment families
+ * (.pf-exp/stack/work-segment) and the panels' plain chips (.pf-choice).
+ */
+.portfolio-studio-dock-surface :is(.pf-exp-segment, .pf-stack-segment, .pf-work-segment) {
+  gap: 0.5rem;
+  padding: 0;
+  border-radius: 0;
+  background: transparent;
+}
+
+.portfolio-studio-dock-surface :has(> .pf-choice) {
+  gap: 0.5rem;
+}
+
+.portfolio-studio-dock-surface :is(.pf-exp-segment-btn, .pf-stack-segment-btn, .pf-work-segment-btn, .pf-choice) {
+  min-height: 2.5rem;
+  padding: 0.55rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 11%, transparent);
+  border-radius: 10px;
+  background: transparent;
+  box-shadow: none;
+  color: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 58%, transparent);
+  -webkit-text-fill-color: currentColor;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: -0.005em;
+  line-height: 1.25;
+  transition:
+    color 0.18s ease,
+    border-color 0.18s ease,
+    background-color 0.18s ease;
+}
+
+.portfolio-studio-dock-surface :is(.pf-exp-segment-btn, .pf-stack-segment-btn, .pf-work-segment-btn, .pf-choice):hover {
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 26%, transparent);
+  color: var(--pf-palette-texte-fort, #171717);
+}
+
+.portfolio-studio-dock-surface
+  :is(.pf-exp-segment-btn, .pf-stack-segment-btn, .pf-work-segment-btn)[data-active='true'],
+.portfolio-studio-dock-surface .pf-choice.pf-choice--active {
+  border-color: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 45%, transparent);
+  background: color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 5%, transparent);
+  box-shadow: none;
+  color: var(--pf-palette-texte-fort, #171717) !important;
+  -webkit-text-fill-color: currentColor !important;
+  font-weight: 600;
+}
+
+.portfolio-studio-dock-surface :is(.pf-exp-segment-btn, .pf-stack-segment-btn, .pf-work-segment-btn, .pf-choice):focus-visible {
+  outline: 2px solid color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 40%, transparent);
+  outline-offset: 2px;
 }
 
 .pf-exp-centered-field {
@@ -7442,6 +7459,36 @@ footer#footer {
   height: 1px;
   background: var(--pf-exp-centered-ink);
   border: 0;
+}
+
+/* Thicker bar for the stepped sliders that need to be easy to grab (Services header text style). */
+.pf-exp-centered-slider.pf-exp-centered-slider--thick {
+  height: 6px;
+  margin: 1.1rem 0 0.7rem;
+}
+
+.pf-exp-centered-slider--thick::-webkit-slider-runnable-track {
+  height: 6px;
+  background: transparent;
+}
+
+.pf-exp-centered-slider--thick::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -6px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pf-exp-centered-ink) 14%, transparent);
+}
+
+.pf-exp-centered-slider--thick::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  box-shadow: 0 0 0 4px color-mix(in srgb, var(--pf-exp-centered-ink) 14%, transparent);
+}
+
+.pf-exp-centered-slider--thick::-moz-range-track,
+.pf-exp-centered-slider--thick::-moz-range-progress {
+  height: 6px;
+  border-radius: 999px;
 }
 
 .pf-exp-centered-slider-ticks {
@@ -7646,7 +7693,9 @@ footer#footer {
   width: 100%;
   height: 100%;
   padding: 0;
-  background: #0a0a0a;
+  /* No hard-coded ground here: the element already carries `APP_GROUND dark:bg-black`, so the
+     focus-mode toolbar follows the light/dark theme like the rest of the studio. A fixed dark
+     fill left the light-mode (dark-grey) toolbar text and icons invisible. */
 }
 
 .portfolio-live-preview:fullscreen .portfolio-live-preview-chrome,
@@ -17077,4 +17126,350 @@ footer#footer {
   .cv-sheet {
     margin: 0 !important;
   }
+}
+
+/* Global → Animations → "Motion effects" off: freezes CSS keyframes and transitions on the whole
+   public portfolio (GSAP + reveal logic is neutralised in portfolio-motion-off.ts). Removing the
+   animation shows each element's natural, final state. */
+html[data-pf-motion='off'] *,
+html[data-pf-motion='off'] *::before,
+html[data-pf-motion='off'] *::after {
+  animation: none !important;
+  transition: none !important;
+  scroll-behavior: auto !important;
+}
+
+/* Hero "Work duo" card zoom is a hover transform (not an animation), so the rule above doesn't reach it. */
+html[data-pf-motion='off'] .pf-work-duo-card:hover .pf-work-duo-card-zoom,
+html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoom {
+  transform: none !important;
+}
+
+/* ==========================================================================
+   News — skin tokens
+   --------------------------------------------------------------------------
+   A token scope (`.news-theme`, carried by HomeNewsFeed's root). The page sits on the app's own
+   ground like every other section (white / dark black); the feed itself stays in the product
+   palette: black / white ink, white (dark: #111) cards on a hairline, and the orange #FF5722
+   accent.
+
+   The feed tree is built from a small, fixed vocabulary of neutral / orange Tailwind utilities
+   (and shares post components with other pages), so the scope re-maps THOSE utilities to the
+   tokens below instead of forking every component. The override block is generated — if a new
+   colour utility appears in the News tree, add it to the matching group and regenerate rather
+   than hand-editing. (The token names keep their historical `--gn-blue*` spelling: "blue" now
+   means "the action fill", i.e. black on light / white on dark.)
+   ========================================================================== */
+.news-theme {
+  /* A card is a soft fill on the white page — no outline. Inputs / chips / the Hire pill sit on it
+     as white (--gn-inset), so every surface is separated by tone, never by a line. */
+  --gn-surface: #f5f5f6;
+  --gn-inset: #ffffff;
+  --gn-ink: #111111;
+  --gn-ink2: #5f5f5f;
+  --gn-ink3: #858585;
+  --gn-line: #e5e5e5;
+  --gn-line-soft: #ededed;
+  --gn-field: #ffffff;
+  --gn-hover: rgba(0, 0, 0, 0.06);
+  --gn-blue: #111111;
+  --gn-blue-hover: #333333;
+  --gn-blue-tonal: rgba(255, 87, 34, 0.1);
+  /* Orange as TEXT is the burnt tone: brand #ff5722 is only 3.2:1 on white, this is 5.2:1 (4.7:1 on
+     the soft card). Fills, rings and icons keep the brand orange via --gn-accent-fill. */
+  --gn-blue-ink: #c73a0b;
+  --gn-accent: #c73a0b;
+  --gn-accent-fill: #ff5722;
+  --gn-red: #b91c1c;
+  --gn-green: #047857;
+  --gn-amber: #b45309;
+}
+
+.dark .news-theme {
+  --gn-surface: #1c1c1e;
+  --gn-inset: rgba(255, 255, 255, 0.08);
+  --gn-ink: #f5f5f5;
+  --gn-ink2: #a8a8a8;
+  --gn-ink3: #7a7a7a;
+  --gn-line: rgba(255, 255, 255, 0.1);
+  --gn-line-soft: rgba(255, 255, 255, 0.08);
+  --gn-field: rgba(255, 255, 255, 0.08);
+  --gn-hover: rgba(255, 255, 255, 0.08);
+  --gn-blue: #ffffff;
+  --gn-blue-hover: #e5e5e5;
+  --gn-blue-tonal: rgba(255, 87, 34, 0.16);
+  --gn-blue-ink: #ff7043;
+  --gn-accent: #ff7043;
+  --gn-accent-fill: #ff5722;
+  --gn-red: #f87171;
+  --gn-green: #34d399;
+  --gn-amber: #fbbf24;
+}
+
+/* Cards: a soft tonal fill on the page, no outline (the big social products draw almost no lines —
+   tone and space do the separating). 16px corners; edge-to-edge and square on phones. */
+.news-theme article,
+.news-theme .gn-card {
+  background-color: var(--gn-surface);
+  border-color: transparent;
+  border-radius: 16px;
+}
+@media (max-width: 639px) {
+  .news-theme article,
+  .news-theme .gn-card {
+    border-radius: 0;
+  }
+}
+
+/* A sections rail (the Information sidebar of My Profile / My Portfolio): no grey box — it takes the
+   page's own background and keeps only a hairline edge. */
+/* Doubled class: has to outrank the generic `dark:bg-white/[0.06]` remap (3 classes, !important). */
+.news-theme aside.gn-aside.gn-aside {
+  background-color: transparent !important;
+  box-shadow: inset 0 0 0 1px var(--gn-line) !important;
+  border-radius: 16px;
+}
+
+/* Tonal pieces: a white pill / field / quote-box ON a card (`gn-inset`), or a soft chip on the
+   bare page (`gn-soft`). */
+.news-theme .gn-inset {
+  background-color: var(--gn-inset);
+}
+.news-theme .gn-soft {
+  background-color: var(--gn-surface);
+}
+
+/* Type scale of a post — body 16/1.5, name 15, meta 13, labels 13: one step apart, not five. */
+.news-theme article h3 {
+  font-size: 16px;
+  line-height: 1.5;
+}
+
+/* Post layout — "framed + lighter card".
+   framed:  the media sits inside the card's own padding with rounded corners, so a black image on a
+            black page still has a visible edge (the card's tone shows all the way round it).
+   lighter: in dark mode the card steps up from #111 to #1c1c1e, so its edge reads against #000. */
+.news-theme .gn-media {
+  margin-left: 0;
+  margin-right: 0;
+  border-radius: 12px;
+}
+@media (max-width: 639px) {
+  /* Phones keep full-bleed cards; the framed image still gets its inset from the card padding. */
+  .news-theme .gn-media {
+    border-radius: 10px;
+  }
+}
+/* Post actions: ghost icons, no ring. Hover shows a soft disc instead of an outline. */
+.news-theme [aria-label='Post actions'] .sm\:border {
+  border-width: 0 !important;
+}
+.news-theme [aria-label='Post actions'] .group\/rail:hover .sm\:h-10 {
+  background-color: var(--gn-hover);
+}
+.news-theme [aria-label='Post actions'] .text-\[12\.5px\] {
+  font-size: 13px;
+}
+/* Comments opened under a post: part of the card, not a second box. No divider lines (tone and
+   space separate things on this page), the thread lines up with the card's own 20px gutter, and the
+   composer is a soft field instead of an outlined input. */
+.news-theme .gn-comments {
+  border-top-width: 0 !important;
+  padding: 0 4px 12px;
+}
+.news-theme .gn-comments header,
+.news-theme .gn-comments footer {
+  border-color: transparent !important;
+}
+.news-theme .gn-comments header {
+  padding-top: 4px;
+}
+.news-theme .gn-comments input[type='text'] {
+  background-color: var(--gn-field);
+  border-color: transparent !important;
+}
+.news-theme .gn-comments input[type='text']:focus {
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--gn-ink) 18%, transparent);
+}
+
+/* Active state of a bar button (comments open, reposted): a solid ink disc with a surface-coloured
+   glyph. The generic remap below turns the glyph's `dark:text-[#111]` into light ink, which on the
+   light disc made the icon vanish — so the pair is set here, explicitly, and as a unit. */
+.news-theme [aria-label='Post actions'] span.gn-disc-on {
+  color: var(--gn-ink) !important;
+}
+@media (min-width: 640px) {
+  .news-theme [aria-label='Post actions'] span.gn-disc-on {
+    background-color: var(--gn-ink) !important;
+    color: var(--gn-surface) !important;
+  }
+}
+/* Saved bookmark: a quiet neutral disc. The generic remap of `dark:sm:bg-white/[0.1]` is the orange
+   tonal tint (meant for the like), so the neutral tone is set here, outranking it. */
+@media (min-width: 640px) {
+  .news-theme [aria-label='Post actions'] span.gn-disc-soft {
+    background-color: var(--gn-hover) !important;
+  }
+}
+/* The like is the one orange thing in the bar — its count must beat the neutral-ink remap below. */
+.news-theme [aria-label='Post actions'] span.gn-like {
+  color: #ff5722 !important;
+}
+
+/* The tile behind the portfolio shortcut icon: ink square, surface-coloured glyph. */
+.news-theme .gn-tile {
+  background-color: var(--gn-ink) !important;
+  color: var(--gn-surface) !important;
+}
+
+/* Side navigation (Discover): the selected entry is orange, nothing else changes. */
+.news-theme .gn-nav-item[aria-pressed='true'] {
+  color: var(--gn-accent) !important;
+  font-weight: 500;
+}
+
+/* Focus ring: the accent orange everywhere inside the page. */
+.news-theme :focus-visible {
+  --tw-ring-color: color-mix(in srgb, var(--gn-accent-fill) 50%, transparent) !important;
+}
+
+/* Overrides for the neutral / orange utilities the News tree is built from (generated). */
+.news-theme .bg-\[\#FFFFFF\] { background-color: var(--gn-surface) !important; }
+.news-theme .bg-white { background-color: var(--gn-surface) !important; }
+.dark .news-theme .dark\:bg-\[\#111111\] { background-color: var(--gn-surface) !important; }
+.dark .news-theme .dark\:bg-\[\#161616\] { background-color: var(--gn-surface) !important; }
+.dark .news-theme .dark\:bg-neutral-950 { background-color: var(--gn-surface) !important; }
+.news-theme .bg-\[\#F9F9F9\] { background-color: var(--gn-field) !important; }
+.news-theme .bg-\[\#EEF0F2\] { background-color: var(--gn-field) !important; }
+.news-theme .bg-neutral-100 { background-color: var(--gn-field) !important; }
+.news-theme .bg-neutral-200 { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:bg-neutral-800 { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:bg-white\/\[0\.06\] { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:bg-white\/\[0\.08\] { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:bg-white\/\[0\.1\] { background-color: var(--gn-field) !important; }
+.news-theme .hover\:bg-\[\#F2F2F2\]:hover { background-color: var(--gn-field) !important; }
+.news-theme .hover\:bg-neutral-50:hover { background-color: var(--gn-field) !important; }
+.news-theme .hover\:bg-neutral-200:hover { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:hover\:bg-neutral-700:hover { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:hover\:bg-neutral-800:hover { background-color: var(--gn-field) !important; }
+.news-theme .bg-black\/\[0\.06\] { background-color: var(--gn-field) !important; }
+.news-theme .bg-black\/\[0\.08\] { background-color: var(--gn-field) !important; }
+.dark .news-theme .dark\:bg-white\/20 { background-color: var(--gn-field) !important; }
+.news-theme .hover\:bg-black\/\[0\.03\]:hover { background-color: var(--gn-hover) !important; }
+.news-theme .hover\:bg-black\/\[0\.04\]:hover { background-color: var(--gn-hover) !important; }
+.news-theme .hover\:bg-black\/\[0\.05\]:hover { background-color: var(--gn-hover) !important; }
+.news-theme .focus-visible\:bg-black\/\[0\.04\]:focus-visible { background-color: var(--gn-hover) !important; }
+.dark .news-theme .dark\:hover\:bg-white\/\[0\.05\]:hover { background-color: var(--gn-hover) !important; }
+.dark .news-theme .dark\:hover\:bg-white\/\[0\.06\]:hover { background-color: var(--gn-hover) !important; }
+.dark .news-theme .dark\:hover\:bg-white\/\[0\.08\]:hover { background-color: var(--gn-hover) !important; }
+.dark .news-theme .dark\:hover\:bg-white\/\[0\.09\]:hover { background-color: var(--gn-hover) !important; }
+.dark .news-theme .dark\:hover\:bg-\[\#181818\]:hover { background-color: var(--gn-hover) !important; }
+.dark .news-theme .dark\:focus-visible\:bg-white\/\[0\.06\]:focus-visible { background-color: var(--gn-hover) !important; }
+.news-theme .bg-\[\#111111\] { background-color: var(--gn-blue) !important; }
+.news-theme .bg-\[\#FF5722\] { background-color: var(--gn-blue) !important; }
+.dark .news-theme .dark\:bg-white { background-color: var(--gn-blue) !important; }
+@media (min-width: 640px) { .news-theme .sm\:bg-\[\#111111\] { background-color: var(--gn-blue) !important; } }
+@media (min-width: 640px) { .dark .news-theme .dark\:sm\:bg-white { background-color: var(--gn-blue) !important; } }
+@media (min-width: 640px) { .news-theme .sm\:bg-\[\#FF5722\]\/10 { background-color: var(--gn-blue-tonal) !important; } }
+@media (min-width: 640px) { .dark .news-theme .dark\:sm\:bg-white\/\[0\.1\] { background-color: var(--gn-blue-tonal) !important; } }
+.news-theme .border-\[\#E5E5E5\] { border-color: var(--gn-line) !important; }
+.news-theme .border-black\/\[0\.06\] { border-color: var(--gn-line) !important; }
+.news-theme .border-black\/\[0\.08\] { border-color: var(--gn-line) !important; }
+.news-theme .border-black\/\[0\.1\] { border-color: var(--gn-line) !important; }
+.news-theme .border-black\/\[0\.12\] { border-color: var(--gn-line) !important; }
+.news-theme .border-black\/\[0\.14\] { border-color: var(--gn-line) !important; }
+.news-theme .border-black\/20 { border-color: var(--gn-line) !important; }
+.news-theme .border-neutral-200 { border-color: var(--gn-line) !important; }
+.news-theme .border-neutral-300 { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-white\/\[0\.08\] { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-white\/\[0\.1\] { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-white\/\[0\.12\] { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-white\/\[0\.14\] { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-white\/\[0\.16\] { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-white\/25 { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-neutral-800 { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:border-neutral-600 { border-color: var(--gn-line) !important; }
+.news-theme .focus\:border-black\/25:focus { border-color: var(--gn-line) !important; }
+.dark .news-theme .dark\:focus\:border-white\/25:focus { border-color: var(--gn-line) !important; }
+.news-theme .border-neutral-400 { border-color: var(--gn-ink3) !important; }
+.news-theme .hover\:border-neutral-400:hover { border-color: var(--gn-ink3) !important; }
+.dark .news-theme .dark\:border-neutral-500 { border-color: var(--gn-ink3) !important; }
+.news-theme .border-\[\#111111\] { border-color: var(--gn-blue) !important; }
+.news-theme .border-\[\#111111\]\/40 { border-color: var(--gn-blue) !important; }
+.news-theme .border-\[\#FF5722\]\/40 { border-color: var(--gn-blue) !important; }
+.dark .news-theme .dark\:border-white { border-color: var(--gn-blue) !important; }
+.dark .news-theme .dark\:border-white\/50 { border-color: var(--gn-blue) !important; }
+.news-theme .focus\:border-\[\#FF5722\]:focus { border-color: var(--gn-blue) !important; }
+.dark .news-theme .dark\:focus\:border-\[\#FF5722\]:focus { border-color: var(--gn-blue) !important; }
+.news-theme .text-\[\#111111\] { color: var(--gn-ink) !important; }
+.news-theme .text-\[\#222222\] { color: var(--gn-ink) !important; }
+.news-theme .text-neutral-800 { color: var(--gn-ink) !important; }
+.news-theme .text-neutral-900 { color: var(--gn-ink) !important; }
+.news-theme .text-neutral-950 { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:text-white { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:text-white\/90 { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:text-\[\#E4E6EB\] { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:text-neutral-200 { color: var(--gn-ink) !important; }
+.news-theme .hover\:text-\[\#111111\]:hover { color: var(--gn-ink) !important; }
+.news-theme .hover\:text-\[\#0A0A0A\]:hover { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:hover\:text-white:hover { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:hover\:text-neutral-200:hover { color: var(--gn-ink) !important; }
+.dark .news-theme .dark\:hover\:text-neutral-300:hover { color: var(--gn-ink) !important; }
+.news-theme .text-neutral-700 { color: var(--gn-ink2) !important; }
+.news-theme .text-neutral-600 { color: var(--gn-ink2) !important; }
+.news-theme .text-neutral-500 { color: var(--gn-ink2) !important; }
+.news-theme .text-\[\#555555\] { color: var(--gn-ink2) !important; }
+.news-theme .text-\[\#666666\] { color: var(--gn-ink2) !important; }
+.dark .news-theme .dark\:text-neutral-300 { color: var(--gn-ink2) !important; }
+.dark .news-theme .dark\:text-neutral-400 { color: var(--gn-ink2) !important; }
+.news-theme .hover\:text-neutral-700:hover { color: var(--gn-ink2) !important; }
+.news-theme .hover\:text-neutral-500:hover { color: var(--gn-ink2) !important; }
+.news-theme .disabled\:hover\:text-neutral-500:disabled:hover { color: var(--gn-ink2) !important; }
+.news-theme .text-neutral-400 { color: var(--gn-ink3) !important; }
+.news-theme .text-neutral-300 { color: var(--gn-ink3) !important; }
+.dark .news-theme .dark\:text-neutral-500 { color: var(--gn-ink3) !important; }
+.dark .news-theme .dark\:text-neutral-600 { color: var(--gn-ink3) !important; }
+.news-theme .placeholder\:text-neutral-400::placeholder { color: var(--gn-ink3) !important; }
+.dark .news-theme .dark\:placeholder\:text-neutral-500::placeholder { color: var(--gn-ink3) !important; }
+.dark .news-theme .dark\:placeholder\:text-neutral-600::placeholder { color: var(--gn-ink3) !important; }
+.news-theme .text-\[\#FF5722\] { color: var(--gn-blue-ink) !important; }
+.news-theme .text-orange-500 { color: var(--gn-blue-ink) !important; }
+.news-theme .text-orange-600 { color: var(--gn-blue-ink) !important; }
+.dark .news-theme .dark\:text-orange-400 { color: var(--gn-blue-ink) !important; }
+.news-theme .hover\:text-\[\#FF5722\]:hover { color: var(--gn-blue-ink) !important; }
+.news-theme .hover\:text-orange-500:hover { color: var(--gn-blue-ink) !important; }
+.news-theme .hover\:text-orange-700:hover { color: var(--gn-blue-ink) !important; }
+.dark .news-theme .dark\:hover\:text-orange-300:hover { color: var(--gn-blue-ink) !important; }
+.news-theme .text-emerald-600 { color: var(--gn-green) !important; }
+.dark .news-theme .dark\:text-emerald-400 { color: var(--gn-green) !important; }
+.news-theme .text-emerald-400 { color: var(--gn-green) !important; }
+.news-theme .text-red-600 { color: var(--gn-red) !important; }
+.dark .news-theme .dark\:text-red-400 { color: var(--gn-red) !important; }
+.news-theme .text-red-500\/80 { color: var(--gn-red) !important; }
+.dark .news-theme .dark\:text-red-400\/80 { color: var(--gn-red) !important; }
+.news-theme .text-amber-600 { color: var(--gn-amber) !important; }
+.dark .news-theme .dark\:text-amber-400 { color: var(--gn-amber) !important; }
+
+/* The same surfaces written with Tailwind's important modifier (`!bg-…`), used by the My profile
+   studio (post cards, header card, media frames) — the plain-utility remaps above do not match them. */
+.news-theme .\!bg-\[\#FFFFFF\] { background-color: var(--gn-surface) !important; }
+.news-theme .\!bg-white { background-color: var(--gn-surface) !important; }
+.dark .news-theme .dark\:\!bg-\[\#111111\] { background-color: var(--gn-surface) !important; }
+@media (min-width: 640px) {
+  .news-theme .sm\:\!border-\[\#DADDE1\] { border-color: var(--gn-line) !important; }
+  .dark .news-theme .sm\:\!border-white\/\[0\.16\] { border-color: var(--gn-line) !important; }
+}
+.dark .news-theme .dark\:\!border-white\/\[0\.08\] { border-color: var(--gn-line) !important; }
+.news-theme .\!border-black\/\[0\.06\] { border-color: var(--gn-line) !important; }
+
+/* Orange (#FF5722) utilities that must stay the ACCENT, not the action fill the generated block
+   would give them: the liked / hover state in ContentPostSocialBar and the search focus border.
+   Must stay after the generated block so it wins the tie. */
+.news-theme .border-\[\#FF5722\]\/40,
+.news-theme .focus\:border-\[\#FF5722\]:focus,
+.dark .news-theme .dark\:focus\:border-\[\#FF5722\]:focus {
+  border-color: color-mix(in srgb, var(--gn-accent-fill) 55%, transparent) !important;
+}
+.news-theme .bg-\[\#FF5722\] {
+  background-color: var(--gn-accent-fill) !important;
 }

@@ -6,6 +6,7 @@ import {
   useLayoutEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   type CSSProperties,
   type MouseEvent,
   type ReactNode,
@@ -13,7 +14,7 @@ import {
 } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import { AnimatePresence, motion, useReducedMotion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import {
   aboutBannerScrollParent,
   aboutBannerWatchEnter,
@@ -28,8 +29,7 @@ import type {
   LanguageProficiencyLevel,
   ProfileEducationEntry,
   ProfileSpokenLanguage,
-} from '@/types/ecosystem';
-import { resolveToolLevelPercent } from '@/components/creator/studio/creator-tool-logo-color';
+} from '@/types/profile';
 import {
   aboutMeTraitHeadlineSizeClass,
   aboutBannerBioSizeClass,
@@ -100,22 +100,12 @@ import {
   AboutTerminalLayout,
 } from '@/components/portfolio/EditorialAboutMeNoirLayouts';
 import { AboutIndexEditorialLayout } from '@/components/portfolio/EditorialAboutMeIndexLayout';
-import {
-  ToolsLevelGlowDots,
-  ToolsLevelProgressBar,
-  ToolsLevelStarRating,
-} from '@/components/portfolio/portfolio-tools-level-indicators';
-import {
-  resolveSpokenLanguageLevelLabel,
-  resolveSpokenLanguageFlagIso2,
-  spokenLanguageMatchKey,
-} from '@/lib/spoken-languages';
+import { resolveSpokenLanguageLevelLabel, spokenLanguageMatchKey } from '@/lib/spoken-languages';
 import {
   resolveAboutSkillEntries,
   skillEntryLabels,
   type ProfileSkillEntry,
 } from '@/lib/about-skills';
-import { CountryFlag } from '@/components/ui/CountryFlag';
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import type { PortfolioListMarkerStyle } from '@/components/portfolio/portfolio-list-marker';
 import { readPortfolioNavTopClearancePx } from '@/components/portfolio/portfolio-nav-top-clearance';
@@ -126,7 +116,7 @@ const ABOUT_MEDIA_WIDTHS = [256, 384, 640, 828] as const;
 const ABOUT_MEDIA_SIZES = '(min-width: 1024px) 420px, 90vw';
 
 
-export type EditorialAboutMeSectionProps = {
+type EditorialAboutMeSectionProps = {
   title: string;
   subtitle: string;
   bio?: string | null;
@@ -185,127 +175,6 @@ function resolveLanguageItems(
     .map((name) => ({ name, level: null }));
 }
 
-function InfoLanguageLevelIndicator({
-  name,
-  level,
-  style,
-  accent,
-  track,
-}: {
-  name: string;
-  level?: LanguageProficiencyLevel | null;
-  style: PortfolioInfoLanguageLevelDisplayStyle;
-  accent: string;
-  track: string;
-}) {
-  if (!level) return null;
-
-  if (style === 'text') {
-    const label = resolveSpokenLanguageLevelLabel(level);
-    if (!label) return null;
-    return (
-      <span className="text-sm font-medium tabular-nums" style={{ color: accent }}>
-        {label}
-      </span>
-    );
-  }
-
-  if (style === 'dots') {
-    return (
-      <ToolsLevelGlowDots
-        level={level}
-        toolName={name}
-        fillColor={accent}
-        trackColor={track}
-        className="shrink-0"
-      />
-    );
-  }
-
-  if (style === 'progress-bar') {
-    const percent = resolveToolLevelPercent(level);
-    return (
-      <ToolsLevelProgressBar
-        level={level}
-        toolName={name}
-        fillColor={accent}
-        trackColor={track}
-        percent={percent}
-        barStyle="pill"
-        barSize="small"
-        className="w-[5.5rem] shrink-0 sm:w-28"
-      />
-    );
-  }
-
-  return (
-    <ToolsLevelStarRating
-      level={level}
-      toolName={name}
-      fillColor={accent}
-      trackColor={track}
-      className="shrink-0"
-    />
-  );
-}
-
-function InfoLanguageList({
-  items,
-  accent,
-  body,
-  track,
-  levelStyle,
-  square = false,
-  showMarker = true,
-  bodySizeClass,
-  className = 'mt-5',
-}: {
-  items: LanguageDisplayItem[];
-  accent: string;
-  body: string;
-  track: string;
-  levelStyle: PortfolioInfoLanguageLevelDisplayStyle;
-  square?: boolean;
-  showMarker?: boolean;
-  bodySizeClass?: string;
-  className?: string;
-}) {
-  if (items.length === 0) return null;
-  return (
-    <ul className={`inline-grid grid-cols-[max-content_auto] items-center gap-x-3 gap-y-3 sm:gap-x-4 ${className}`}>
-      {items.map((item) => {
-        const flagIso = resolveSpokenLanguageFlagIso2(item.name);
-        return (
-          <li key={item.name} className="contents">
-            <span
-              className={`flex items-center gap-2.5 leading-relaxed ${bodySizeClass ?? 'text-[0.95rem]'}`}
-              style={{ color: body }}
-            >
-              {flagIso ? (
-                <CountryFlag iso2={flagIso} size="sm" className="mt-0.5 shrink-0" />
-              ) : showMarker ? (
-                <span
-                  aria-hidden
-                  className={`mt-0.5 h-1.5 w-1.5 shrink-0 ${square ? 'rounded-none' : 'rounded-full'}`}
-                  style={{ backgroundColor: accent }}
-                />
-              ) : null}
-              <span className="whitespace-nowrap">{item.name}</span>
-            </span>
-            <InfoLanguageLevelIndicator
-              name={item.name}
-              level={item.level}
-              style={levelStyle}
-              accent={accent}
-              track={track}
-            />
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
 function InfoBulletList({
   items,
   accent,
@@ -341,37 +210,6 @@ function InfoBulletList({
         </li>
       ))}
     </ul>
-  );
-}
-
-function InfoCard({
-  label,
-  accent,
-  cardBg,
-  cardBorder,
-  labelSizeClass,
-  children,
-}: {
-  label: string;
-  accent: string;
-  cardBg: string;
-  cardBorder: string;
-  labelSizeClass?: string;
-  children: ReactNode;
-}) {
-  return (
-    <div
-      className="relative flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border p-5 sm:p-6"
-      style={{ backgroundColor: cardBg, borderColor: cardBorder }}
-    >
-      <p
-        className={`font-bold uppercase tracking-[0.18em] ${labelSizeClass ?? 'text-[0.7rem]'}`}
-        style={{ color: accent }}
-      >
-        {label}
-      </p>
-      {children}
-    </div>
   );
 }
 
@@ -3777,6 +3615,23 @@ function AboutSplitLanguageList({
   );
 }
 
+const REDUCED_MOTION_QUERY = '(prefers-reduced-motion: reduce)';
+function subscribeReducedMotion(onChange: () => void) {
+  const mq = window.matchMedia(REDUCED_MOTION_QUERY);
+  mq.addEventListener('change', onChange);
+  return () => mq.removeEventListener('change', onChange);
+}
+/** Same answer as framer's `useReducedMotion`, but `false` during hydration. Framer's hook is
+ *  `false` on the server and already `true` on the first client render for a reduced-motion
+ *  visitor — the armed (hidden) SSR markup then never matches, and React won't patch it up. */
+function useHydrationSafeReducedMotion() {
+  return useSyncExternalStore(
+    subscribeReducedMotion,
+    () => window.matchMedia(REDUCED_MOTION_QUERY).matches,
+    () => false
+  );
+}
+
 function AboutSplitLayout({
   title: _title,
   subtitle: _subtitle,
@@ -3836,7 +3691,7 @@ function AboutSplitLayout({
   sectionLabels: AboutSplitSectionLabels;
   portraitGrayscale: boolean;
 }) {
-  const reduceMotion = Boolean(useReducedMotion());
+  const reduceMotion = useHydrationSafeReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
@@ -3887,6 +3742,7 @@ function AboutSplitLayout({
 
   return (
     <div
+      key={reduceMotion ? 'reduced' : 'full'}
       ref={rootRef}
       className="pf-about-split relative left-1/2 w-screen max-w-[100vw] -translate-x-1/2 lg:static lg:w-full lg:max-w-none lg:translate-x-0"
       data-pf-entry={reduceMotion ? 'ready' : 'armed'}
@@ -4225,7 +4081,6 @@ function ManifestoEducationList({
   labelColor,
   subtitleColor,
   bodyColor,
-  cardBorder,
   contentSize,
   includeLabel = true,
 }: {
@@ -4504,13 +4359,9 @@ function ManifestoDetailsBlocks({
 
 function ManifestoDetailsSection({
   educationItems,
-  skillItems,
-  strengthItems,
   interestItems,
   toolItems,
   showEducation,
-  showSkills,
-  showStrengths,
   showInterests,
   showSystemsTools,
   accent,
@@ -7104,7 +6955,6 @@ export function EditorialAboutMeSection({
   languagesFallback,
   systemsTools,
   presentation,
-  heroPalette,
   terminalDarkColors,
 }: EditorialAboutMeSectionProps) {
   const accent = presentation.accentColor || '#e2572e';
@@ -7131,7 +6981,6 @@ export function EditorialAboutMeSection({
   const showEducation = presentation.showEducation !== false && educationItems.length > 0;
   const showSkills = presentation.showSkills !== false;
   const showStrengths = resolveInfoShowStrengths(presentation);
-  const showInterests = presentation.showInterests !== false;
   const showLanguages = presentation.showLanguages !== false;
   const showSystemsTools = presentation.showSystemsTools !== false && toolItems.length > 0;
   const contentSize = resolveInfoPremiumFontSize(presentation);

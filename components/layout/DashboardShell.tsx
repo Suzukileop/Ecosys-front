@@ -29,45 +29,20 @@ import {
   creatorCanAccessProductsMenu,
   creatorCanAccessServiceProviderMenu,
 } from '@/lib/creator-app-role';
-import { isMyProductNavPath, isMyServiceNavPath } from '@/components/layout/dashboard/navConfig';
+import { isMyServiceNavPath } from '@/components/layout/dashboard/navConfig';
+import { ROUTES, SIGNED_IN_HOME, isPathWithin, isProtectedPath } from '@/lib/routes';
 
-function isCreatorStudioPath(pathname: string): boolean {
-  if (!pathname.startsWith('/dashboard/creator')) return false;
-  if (pathname.startsWith('/dashboard/creator/products')) return false;
-  // Sub-pages (new/edit) keep the default dashboard shell
-  if (pathname.includes('/new') || pathname.includes('/edit')) return false;
-  return true;
+/** Product consult page (`/my-products/[id]`) — plain surface, same as the My Products list. */
+function isMyProductConsultPath(pathname: string): boolean {
+  return /^\/my-products\/[^/]+\/?$/.test(pathname);
 }
 
-/** Product edit / new — hub motif background. */
-function isCreatorProductsWorkspacePath(pathname: string): boolean {
-  return pathname.startsWith('/dashboard/creator/products') && !isCreatorProductConsultPath(pathname);
-}
-
-/** Product consult page — plain surface, same as My Product. */
-function isCreatorProductConsultPath(pathname: string): boolean {
-  return /^\/dashboard\/creator\/products\/[^/]+\/?$/.test(pathname) && !pathname.endsWith('/new');
-}
-
-function isNewsFeedPath(pathname: string): boolean {
-  return pathname === '/dashboard/home' || pathname.startsWith('/dashboard/home/');
-}
-
-function isMyProductPath(pathname: string): boolean {
+/** Product editing (`/my-products/[id]/edit`) — hub motif background. */
+function isMyProductWorkspacePath(pathname: string): boolean {
   return (
-    pathname === '/marketplace/my-products' ||
-    pathname.startsWith('/marketplace/my-products/') ||
-    pathname === '/dashboard/products' ||
-    pathname.startsWith('/dashboard/products/')
-  );
-}
-
-function isMyServicePath(pathname: string): boolean {
-  return (
-    pathname === '/marketplace/my-services' ||
-    pathname.startsWith('/marketplace/my-services/') ||
-    pathname === '/dashboard/services' ||
-    pathname.startsWith('/dashboard/services/')
+    isPathWithin(pathname, ROUTES.myProducts) &&
+    pathname !== ROUTES.myProducts &&
+    !isMyProductConsultPath(pathname)
   );
 }
 
@@ -114,7 +89,7 @@ function SessionErrorScreen({
   const progress = retrying ? 100 : ((SESSION_AUTO_RETRY_SECONDS - countdown) / SESSION_AUTO_RETRY_SECONDS) * 100;
 
   return (
-    <div className="relative flex min-h-screen flex-col bg-[#F8F8F8] px-6 dark:bg-black">
+    <div className={`relative flex min-h-screen flex-col ${APP_GROUND} px-6 dark:bg-black`}>
       <div
         aria-hidden
         className="pointer-events-none absolute inset-0 opacity-[0.5] [background-image:radial-gradient(rgba(0,0,0,0.07)_1px,transparent_1px)] [background-size:22px_22px] [mask-image:radial-gradient(ellipse_at_center,black_20%,transparent_70%)] dark:[background-image:radial-gradient(rgba(255,255,255,0.07)_1px,transparent_1px)]"
@@ -218,7 +193,6 @@ function SessionErrorScreen({
 export function DashboardShell({
   children,
   transparentContent = false,
-  transparentHeader = false,
 }: {
   children: React.ReactNode;
   transparentContent?: boolean;
@@ -244,12 +218,12 @@ export function DashboardShell({
     };
   }, []);
 
-  const creatorStudioPattern = isCreatorStudioPath(pathname);
-  const creatorProductsPattern = isCreatorProductsWorkspacePath(pathname);
-  const newsFeedPattern = isNewsFeedPath(pathname);
-  const settingsPage = pathname.startsWith('/dashboard/settings');
-  const myProductPattern = isMyProductPath(pathname);
-  const myServicePattern = isMyServicePath(pathname);
+  const creatorStudioPattern = isPathWithin(pathname, ROUTES.profile);
+  const creatorProductsPattern = isMyProductWorkspacePath(pathname);
+  const newsFeedPattern = isPathWithin(pathname, ROUTES.feed);
+  const settingsPage = isPathWithin(pathname, ROUTES.settings);
+  const myProductPattern = pathname === ROUTES.myProducts;
+  const myServicePattern = isPathWithin(pathname, ROUTES.myServices);
   const publicCreatorProfile = isMarketplaceCreatorProfilePath(pathname);
   const contentCreatorsPattern =
     isContentCreatorsPath(pathname) &&
@@ -257,58 +231,49 @@ export function DashboardShell({
     !publicCreatorProfile &&
     !isCreatorShopPath(pathname);
   const serviceProvidersCatalog = isServiceProvidersCatalogPath(pathname);
-  const portfolioWorkspace = pathname.startsWith('/dashboard/portfolio');
-  const marketplaceDirectory = serviceProvidersCatalog || pathname === '/marketplace';
+  const portfolioWorkspace = isPathWithin(pathname, ROUTES.studio);
+  const marketplaceDirectory = serviceProvidersCatalog || pathname === ROUTES.marketplace;
   const usePatternBackground =
     transparentContent ||
     creatorProductsPattern ||
     contentCreatorsPattern;
-  const useTransparentHeader =
-    transparentHeader ||
-    creatorProductsPattern ||
-    contentCreatorsPattern;
   const compactContentTop = isMarketplaceCreatorProfilePath(pathname);
-  const discussionsLayout = pathname.startsWith('/dashboard/discussions');
+  const discussionsLayout = isPathWithin(pathname, ROUTES.messages);
   const fillMainLayout = discussionsLayout || myProductPattern || myServicePattern;
 
   // Only redirect to /login when the session is definitively gone.
   // 'error' (rate-limit / network) must NOT trigger a redirect because
-  // the middleware would immediately bounce the user back to /dashboard,
+  // the middleware would immediately bounce the user back into the app,
   // creating an infinite loop that exhausts the rate limit even further.
   // Prefer hard navigation from logout handlers; this soft replace is a
   // fallback for expired sessions cleared without a full page reload.
   useEffect(() => {
     if (sessionStatus !== 'unauthenticated') return;
-    if (!pathname.startsWith('/dashboard')) return;
-    if (typeof window !== 'undefined' && window.location.pathname.startsWith('/login')) return;
-    window.location.replace('/login');
+    if (!isProtectedPath(pathname)) return;
+    if (typeof window !== 'undefined' && window.location.pathname.startsWith(ROUTES.login)) return;
+    window.location.replace(ROUTES.login);
   }, [sessionStatus, pathname]);
 
   // Keep creators off role-gated marketplace sections when deep-linking.
   useEffect(() => {
     if (!appRoleReady || !appRole) return;
 
-    const onMyProducts =
-      isMyProductNavPath(pathname) ||
-      pathname.startsWith('/dashboard/creator/products') ||
-      pathname.startsWith('/dashboard/products');
-    if (onMyProducts && !creatorCanAccessMyProducts(appRole)) {
-      router.replace('/dashboard/home');
+    if (isPathWithin(pathname, ROUTES.myProducts) && !creatorCanAccessMyProducts(appRole)) {
+      router.replace(SIGNED_IN_HOME);
       return;
     }
 
     const onProductsExplore =
-      pathname === '/marketplace' ||
-      pathname.startsWith('/marketplace/favorites') ||
-      pathname.startsWith('/marketplace/purchases') ||
-      pathname.startsWith('/marketplace/products');
+      pathname === ROUTES.marketplace ||
+      isPathWithin(pathname, ROUTES.purchases) ||
+      isPathWithin(pathname, '/marketplace/products');
     if (onProductsExplore && !creatorCanAccessProductsMenu(appRole)) {
-      router.replace('/dashboard/home');
+      router.replace(SIGNED_IN_HOME);
       return;
     }
 
     if (isMyServiceNavPath(pathname) && !creatorCanAccessMyServices(appRole)) {
-      router.replace('/dashboard/home');
+      router.replace(SIGNED_IN_HOME);
       return;
     }
 
@@ -316,7 +281,7 @@ export function DashboardShell({
       isServiceProvidersCatalogPath(pathname) &&
       !creatorCanAccessServiceProviderMenu(appRole)
     ) {
-      router.replace('/dashboard/home');
+      router.replace(SIGNED_IN_HOME);
     }
   }, [appRole, appRoleReady, pathname, router]);
 
@@ -354,16 +319,11 @@ export function DashboardShell({
   }
 
   /*
-   * One page ground (`APP_GROUND`, white) across the app, with blocks drawn as grey panels on it;
-   * the header bar and search field follow it. Messages and Settings keep the `#F8F8F8` ground
-   * and white panels they were built against.
+   * One page ground (`APP_GROUND`, faint grey) across every section, with blocks drawn in pure
+   * white on it; the header bar follows the ground so chrome and page read as one sheet.
    */
   const appSurfaces = !discussionsLayout && !settingsPage;
-  const shellBg = usePatternBackground
-    ? 'bg-transparent'
-    : discussionsLayout || settingsPage
-      ? 'bg-[#F8F8F8] dark:bg-black'
-      : `${APP_GROUND} dark:bg-black`;
+  const shellBg = usePatternBackground ? 'bg-transparent' : `${APP_GROUND} dark:bg-black`;
 
   return (
     <>
@@ -382,7 +342,7 @@ export function DashboardShell({
         data-dashboard-main
         className={`flex min-w-0 flex-1 flex-col ${fillMainLayout ? 'h-screen max-h-screen overflow-hidden' : ''} ${shellBg}`}
       >
-        <DashboardTopHeader transparent={useTransparentHeader} />
+        <DashboardTopHeader />
         <div
           data-dashboard-content
           data-app-surfaces={appSurfaces ? '' : undefined}
@@ -398,7 +358,9 @@ export function DashboardShell({
               : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : creatorStudioPattern ? 'pt-0 sm:pt-6' : newsFeedPattern || serviceProvidersCatalog ? 'pt-2 lg:pt-6' : 'pt-6'} ${
                   marketplaceDirectory || creatorStudioPattern || newsFeedPattern || settingsPage
                     ? 'px-0'
-                    : 'px-6'
+                    : publicCreatorProfile
+                      ? 'px-0 sm:px-6'
+                      : 'px-6'
                 }`
           } ${shellBg}`}
         >

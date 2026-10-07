@@ -1,6 +1,6 @@
 export type CreatorStudioHeaderLayout = 'BANNER' | 'SPLIT' | 'VIP_GOLD' | 'VIP_AURORA' | 'STAGE';
 
-export const CREATOR_STUDIO_HEADER_LAYOUTS: {
+const CREATOR_STUDIO_HEADER_LAYOUTS: {
   id: CreatorStudioHeaderLayout;
   label: string;
   description: string;
@@ -42,12 +42,4 @@ export function parseCreatorStudioHeaderLayout(value: unknown): CreatorStudioHea
   const raw = typeof value === 'string' ? value.trim().toUpperCase() : '';
   if (LAYOUT_SET.has(raw)) return raw as CreatorStudioHeaderLayout;
   return 'BANNER';
-}
-
-export function creatorHeaderNeedsInset(layout: CreatorStudioHeaderLayout): boolean {
-  return layout === 'SPLIT' || layout === 'VIP_GOLD' || layout === 'VIP_AURORA' || layout === 'STAGE';
-}
-
-export function isPremiumCreatorHeaderLayout(layout: CreatorStudioHeaderLayout): boolean {
-  return layout === 'VIP_GOLD' || layout === 'VIP_AURORA' || layout === 'STAGE';
 }

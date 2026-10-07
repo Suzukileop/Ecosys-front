@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   DEFAULT_META_VERTICAL_CELL,
@@ -8,20 +7,9 @@ import {
   type HeroVerticalCellPlacement,
 } from '@/components/portfolio/portfolio-hero-vertical-cell-placement';
 
-/** @deprecated Legacy — migrated on read into showMetaFrame + metaFrameShape. */
-export type PortfolioHeroMetaFrameStyle =
-  | 'circle-pill'
-  | 'rounded-square'
-  | 'square'
-  | 'pill'
-  | 'outline'
-  | 'minimal';
-
 export type PortfolioHeroMetaFrameShape = 'circle' | 'rounded' | 'square' | 'pill';
 
 export type PortfolioHeroMetaFrameShapeMode = 'uniform' | 'per-card';
-
-export type PortfolioHeroMetaCardId = 'years' | 'projects' | 'location';
 
 /** What part of “city, country” to show on the location badge. */
 export type PortfolioHeroMetaLocationContent = 'country' | 'city' | 'both';
@@ -112,31 +100,24 @@ export type PortfolioHeroMetaSettings = {
   metaValueInterchangeSeconds: number;
 };
 
-export const DEFAULT_META_ROW_POSITION: MetaRowPosition = { x: 80, y: 88 };
-
 /** Default free placement for vertical (Copy/Visual) screen division — flush under midline. */
-export const DEFAULT_META_ROW_POSITION_VERTICAL: MetaRowPosition = {
+const DEFAULT_META_ROW_POSITION_VERTICAL: MetaRowPosition = {
   ...heroVerticalCellToPosition(DEFAULT_META_VERTICAL_CELL),
 };
+const DEFAULT_META_YEARS_ACCENT = '#ea580c';
+const DEFAULT_META_PROJECTS_ACCENT = '#14b8a6';
+const DEFAULT_META_LOCATION_ACCENT = '#ea580c';
+const META_CARD_GAP_PX_MIN = 0;
+const META_CARD_GAP_PX_MAX = 220;
+const META_BOTTOM_BAR_HEIGHT_PX_MIN = 1;
+const META_BOTTOM_BAR_HEIGHT_PX_MAX = 16;
+const META_BOTTOM_BAR_RADIUS_PX_MIN = 0;
+const META_BOTTOM_BAR_RADIUS_PX_MAX = 32;
+const META_VALUE_INTERCHANGE_SECONDS_MIN = 2;
+const META_VALUE_INTERCHANGE_SECONDS_MAX = 12;
+const DEFAULT_META_VALUE_INTERCHANGE_SECONDS = 5;
 
-/** Recommended surface tokens for dark spit / noir heroes. */
-export const DARK_META_CARD_SURFACE = '#17171B';
-export const DARK_META_CARD_BORDER = '#2A2A30';
-export const DARK_META_LABEL_COLOR = '#9A9AA2';
-export const DEFAULT_META_YEARS_ACCENT = '#ea580c';
-export const DEFAULT_META_PROJECTS_ACCENT = '#14b8a6';
-export const DEFAULT_META_LOCATION_ACCENT = '#ea580c';
-export const META_CARD_GAP_PX_MIN = 0;
-export const META_CARD_GAP_PX_MAX = 220;
-export const META_BOTTOM_BAR_HEIGHT_PX_MIN = 1;
-export const META_BOTTOM_BAR_HEIGHT_PX_MAX = 16;
-export const META_BOTTOM_BAR_RADIUS_PX_MIN = 0;
-export const META_BOTTOM_BAR_RADIUS_PX_MAX = 32;
-export const META_VALUE_INTERCHANGE_SECONDS_MIN = 2;
-export const META_VALUE_INTERCHANGE_SECONDS_MAX = 12;
-export const DEFAULT_META_VALUE_INTERCHANGE_SECONDS = 5;
-
-export function sanitizeMetaValueInterchangeSeconds(
+function sanitizeMetaValueInterchangeSeconds(
   value: unknown,
   fallback = DEFAULT_META_VALUE_INTERCHANGE_SECONDS
 ): number {
@@ -148,11 +129,11 @@ export function sanitizeMetaValueInterchangeSeconds(
   );
 }
 
-export function metaSpreadGapPx(spread: PortfolioHeroMetaSpread): number {
+function metaSpreadGapPx(spread: PortfolioHeroMetaSpread): number {
   return spread === 'compact' ? 24 : spread === 'wide' ? 48 : 36;
 }
 
-export function sanitizeMetaCardGapPx(
+function sanitizeMetaCardGapPx(
   value: unknown,
   fallback: number = metaSpreadGapPx('compact')
 ): number {
@@ -161,14 +142,7 @@ export function sanitizeMetaCardGapPx(
   return Math.min(META_CARD_GAP_PX_MAX, Math.max(META_CARD_GAP_PX_MIN, Math.round(number)));
 }
 
-export function resolveMetaCardGapPx(meta: {
-  metaCardGapPx?: number;
-  metaSpread: PortfolioHeroMetaSpread;
-}): number {
-  return sanitizeMetaCardGapPx(meta.metaCardGapPx, metaSpreadGapPx(meta.metaSpread));
-}
-
-export function sanitizeMetaBottomBarHeightPx(
+function sanitizeMetaBottomBarHeightPx(
   value: unknown,
   fallback = 3
 ): number {
@@ -180,7 +154,7 @@ export function sanitizeMetaBottomBarHeightPx(
   );
 }
 
-export function sanitizeMetaBottomBarRadiusPx(
+function sanitizeMetaBottomBarRadiusPx(
   value: unknown,
   fallback = 32
 ): number {
@@ -191,47 +165,6 @@ export function sanitizeMetaBottomBarRadiusPx(
     META_BOTTOM_BAR_RADIUS_PX_MAX,
     Math.max(META_BOTTOM_BAR_RADIUS_PX_MIN, Math.round(number))
   );
-}
-
-export function resolveShowMetaCardIcon(
-  meta: Pick<
-    PortfolioHeroMetaSettings,
-    'showMetaIcons' | 'showYearsIcon' | 'showProjectsIcon' | 'showLocationIcon'
-  >,
-  cardId: PortfolioHeroMetaCardId
-): boolean {
-  if (!meta.showMetaIcons) return false;
-  if (cardId === 'years') return meta.showYearsIcon !== false;
-  if (cardId === 'projects') return meta.showProjectsIcon !== false;
-  return meta.showLocationIcon !== false;
-}
-
-/** Inline style for the optional accent bar under a stat card. */
-export function metaCardBottomBarStyle(
-  meta: PortfolioHeroMetaSettings,
-  cardId: PortfolioHeroMetaCardId
-): CSSProperties | null {
-  if (!meta.showMetaBottomBar) return null;
-  const height = sanitizeMetaBottomBarHeightPx(meta.metaBottomBarHeightPx);
-  const radius = sanitizeMetaBottomBarRadiusPx(meta.metaBottomBarRadiusPx);
-  return {
-    height,
-    borderRadius: radius,
-    backgroundColor: resolveMetaCardAccentColor(meta, cardId),
-    width: meta.showMetaFrame ? '68%' : '56%',
-  };
-}
-
-export function resolveMetaCardsOrientation(meta: {
-  metaCardsOrientation?: PortfolioHeroMetaCardsOrientation;
-}): PortfolioHeroMetaCardsOrientation {
-  return meta.metaCardsOrientation === 'vertical' ? 'vertical' : 'horizontal';
-}
-
-export function resolveMetaCardsFillWidth(meta: {
-  metaCardsFillWidth?: boolean;
-}): boolean {
-  return meta.metaCardsFillWidth === true;
 }
 
 export const DEFAULT_HERO_META_SETTINGS: PortfolioHeroMetaSettings = {
@@ -281,299 +214,23 @@ export const DEFAULT_HERO_META_SETTINGS: PortfolioHeroMetaSettings = {
   metaValueInterchangeSeconds: DEFAULT_META_VALUE_INTERCHANGE_SECONDS,
 };
 
-export const PORTFOLIO_HERO_META_FRAME_SHAPE_OPTIONS: {
-  value: PortfolioHeroMetaFrameShape;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'circle', label: 'Round', description: 'Fully circular chips (location becomes a capsule).' },
-  { value: 'rounded', label: 'Rounded', description: 'Soft rounded rectangles on every card.' },
-  { value: 'square', label: 'Square frame', description: 'Sharp corners — graphic and bold.' },
-  { value: 'pill', label: 'Pill', description: 'Capsule shapes — elongated soft ends.' },
-];
-
-export const PORTFOLIO_HERO_META_FRAME_SHAPE_MODE_OPTIONS: {
-  value: PortfolioHeroMetaFrameShapeMode;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'uniform',
-    label: 'Uniform',
-    description: 'One shape for years, projects, and location.',
-  },
-  {
-    value: 'per-card',
-    label: 'Per card',
-    description: 'Set round / rounded / square independently for each badge.',
-  },
-];
-
-export const PORTFOLIO_HERO_META_LOCATION_CONTENT_OPTIONS: {
-  value: PortfolioHeroMetaLocationContent;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'country',
-    label: 'Country only',
-    description: 'Show the country — default, fits a round badge.',
-  },
-  {
-    value: 'city',
-    label: 'City only',
-    description: 'Show the city name alone.',
-  },
-  {
-    value: 'both',
-    label: 'Country & city',
-    description: 'Show “country / city” on two lines when needed.',
-  },
-];
-
-export function parseLocationParts(label: string): { city: string; country: string } {
-  const trimmed = label.trim();
-  const commaIndex = trimmed.indexOf(',');
-  if (commaIndex === -1) return { city: trimmed, country: '' };
-  const city = trimmed.slice(0, commaIndex).trim();
-  const country = trimmed.slice(commaIndex + 1).trim();
-  return { city, country };
-}
-
-/** Format location for the hero badge from “city, country” storage. */
-export function formatMetaLocationDisplay(
-  label: string,
-  content: PortfolioHeroMetaLocationContent = 'country'
-): string {
-  const { city, country } = parseLocationParts(label);
-  if (content === 'city') return city || country || label.trim();
-  if (content === 'country') return country || city || label.trim();
-  if (!city || !country) return (country || city || label).trim();
-  return `${country} / ${city}`;
-}
-
-export const PORTFOLIO_HERO_META_BORDER_WIDTH_OPTIONS: { value: number; label: string }[] = [
-  { value: 0, label: 'None' },
-  { value: 1, label: 'Thin' },
-  { value: 2, label: 'Medium' },
-  { value: 3, label: 'Bold' },
-];
-
-export const PORTFOLIO_HERO_META_INNER_LAYOUT_OPTIONS: {
-  value: PortfolioHeroMetaInnerLayout;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'stacked', label: 'Stacked', description: 'Icon on top, value, then label — classic layout.' },
-  { value: 'inline', label: 'Inline', description: 'Icon beside the value — compact horizontal row.' },
-  { value: 'value-first', label: 'Value first', description: 'Number prominent, label below, icon last.' },
-  { value: 'icon-bottom', label: 'Icon bottom', description: 'Value and label first, icon anchored below.' },
-];
-
-export const PORTFOLIO_HERO_META_PADDING_OPTIONS: {
-  value: PortfolioHeroMetaCardPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'tight', label: 'Tight', description: 'Compact card — less padding and smaller footprint.' },
-  { value: 'standard', label: 'Standard', description: 'Default editorial proportions.' },
-  { value: 'relaxed', label: 'Relaxed', description: 'More breathing room inside each card.' },
-];
-
-export const PORTFOLIO_HERO_META_VALUE_SIZE_OPTIONS: {
-  value: PortfolioHeroMetaValueSize;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
-];
-
-export const PORTFOLIO_HERO_META_DISPLAY_OPTIONS: {
-  value: PortfolioHeroMetaDisplayDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'elevated', label: 'Elevated', description: 'White cards with shadow — current default.' },
-  { value: 'flat', label: 'Flat', description: 'Clean white surface, thin border, no shadow.' },
-  { value: 'soft', label: 'Soft gray', description: 'Neutral fill — subtle on white.' },
-  { value: 'glass', label: 'Glass', description: 'Frosted translucent cards.' },
-  { value: 'dark', label: 'Dark', description: 'Surface #17171B + #2A2A30 border — fits dark spit heroes.' },
-];
-
-export const PORTFOLIO_HERO_META_PLACEMENT_OPTIONS: {
-  value: PortfolioHeroMetaPlacementMode;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'on-motif',
-    label: 'On motif panel',
-    description: 'Even row fully on the grey motif — no circle straddling the diagonal.',
-  },
-  {
-    value: 'straddle-bottom',
-    label: 'Straddle motif edge',
-    description: 'Cards spaced across the motif edge — some may sit across the split.',
-  },
-  { value: 'free', label: 'Free placement', description: 'Drag the whole row anywhere on the hero.' },
-];
-
-export const PORTFOLIO_HERO_META_SPREAD_OPTIONS: {
-  value: PortfolioHeroMetaSpread;
-  label: string;
-}[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'wide', label: 'Wide' },
-];
-
-export const PORTFOLIO_HERO_META_CARDS_ORIENTATION_OPTIONS: {
-  value: PortfolioHeroMetaCardsOrientation;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'horizontal',
-    label: 'Horizontal',
-    description: 'Stat cards side by side in a row — default.',
-  },
-  {
-    value: 'vertical',
-    label: 'Vertical',
-    description: 'Stat cards stacked in a column, one under the other.',
-  },
-];
-
-export const PORTFOLIO_HERO_META_POSITION_PRESETS: {
-  id: string;
-  label: string;
-  position: MetaRowPosition;
-}[] = [
-  { id: 'motif-panel', label: 'Motif panel', position: { x: 78, y: 86 } },
-  { id: 'default', label: 'Motif edge', position: { x: 75, y: 88 } },
-  { id: 'center', label: 'Motif center', position: { x: 79, y: 55 } },
-  { id: 'lower-right', label: 'Lower right', position: { x: 85, y: 92 } },
-  { id: 'upper-right', label: 'Upper right', position: { x: 82, y: 35 } },
-];
-
-export function resolveMetaCardAccentColor(
-  meta: PortfolioHeroMetaSettings,
-  cardId: PortfolioHeroMetaCardId
-): string {
-  const fallback = isValidProfileHexColor(meta.metaAccentColor)
-    ? meta.metaAccentColor.trim()
-    : DEFAULT_META_YEARS_ACCENT;
-  if (cardId === 'years') {
-    return isValidProfileHexColor(meta.metaYearsAccentColor)
-      ? meta.metaYearsAccentColor.trim()
-      : fallback;
-  }
-  if (cardId === 'projects') {
-    return isValidProfileHexColor(meta.metaProjectsAccentColor)
-      ? meta.metaProjectsAccentColor.trim()
-      : DEFAULT_META_PROJECTS_ACCENT;
-  }
-  return isValidProfileHexColor(meta.metaLocationAccentColor)
-    ? meta.metaLocationAccentColor.trim()
-    : fallback;
-}
-
-/** Apply dark spit stats surface / rhythm when display design is Dark. */
-export function applyDarkMetaStatSurface(): Partial<PortfolioHeroMetaSettings> {
-  return {
-    metaDisplayDesign: 'dark',
-    metaCardBackgroundColor: DARK_META_CARD_SURFACE,
-    metaFrameBorderColor: DARK_META_CARD_BORDER,
-    metaFrameBorderWidth: 1,
-    metaLabelColor: DARK_META_LABEL_COLOR,
-    metaYearsAccentColor: DEFAULT_META_YEARS_ACCENT,
-    metaProjectsAccentColor: DEFAULT_META_PROJECTS_ACCENT,
-    metaLocationAccentColor: DEFAULT_META_LOCATION_ACCENT,
-    metaValueUsesCardAccent: true,
-    metaPlacementMode: 'on-motif',
-    metaPosition: { x: 78, y: 86 },
-    metaSpread: 'compact',
-    metaCardGapPx: metaSpreadGapPx('compact'),
-  };
-}
-
 function clampAxis(value: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, value));
 }
 
-export function clampMetaRowPosition(position: MetaRowPosition): MetaRowPosition {
+function clampMetaRowPosition(position: MetaRowPosition): MetaRowPosition {
   return {
     x: clampAxis(position.x, 4, 96),
     y: clampAxis(position.y, 20, 98),
   };
 }
 
-/** Wider Y range so top-half visual cells (vertical-copy-bottom) are not crushed to 20%. */
-export function clampMetaRowPositionVertical(position: MetaRowPosition): MetaRowPosition {
-  return {
-    x: clampAxis(position.x, 4, 96),
-    y: clampAxis(position.y, 4, 98),
-  };
-}
-
-export function sanitizeMetaRowPosition(value: unknown, base: MetaRowPosition): MetaRowPosition {
+function sanitizeMetaRowPosition(value: unknown, base: MetaRowPosition): MetaRowPosition {
   if (!value || typeof value !== 'object') return base;
   const record = value as Record<string, unknown>;
   const x = typeof record.x === 'number' ? record.x : base.x;
   const y = typeof record.y === 'number' ? record.y : base.y;
   return clampMetaRowPosition({ x, y });
-}
-
-export function metaRowPositionStyle(position: MetaRowPosition): CSSProperties {
-  const clamped = clampMetaRowPosition(position);
-  return {
-    left: `${clamped.x}%`,
-    top: `${clamped.y}%`,
-    transform: 'translate(-50%, -50%)',
-  };
-}
-
-/** Pick horizontal vs vertical placement coords for the active screen division. */
-export function resolveMetaPositionForDivision(
-  meta: {
-    metaPosition: MetaRowPosition;
-    metaPositionVertical?: MetaRowPosition;
-    metaVerticalCell?: HeroVerticalCellPlacement;
-  },
-  vertical: boolean
-): MetaRowPosition {
-  if (vertical) {
-    const cell =
-      meta.metaVerticalCell ??
-      (meta.metaPositionVertical
-        ? heroVerticalCellFromPosition(meta.metaPositionVertical)
-        : DEFAULT_META_VERTICAL_CELL);
-    return clampMetaRowPosition(heroVerticalCellToPosition(cell));
-  }
-  return { ...meta.metaPosition };
-}
-
-export function resolveMetaVerticalCell(meta: {
-  metaVerticalCell?: HeroVerticalCellPlacement;
-  metaPositionVertical?: MetaRowPosition;
-}): HeroVerticalCellPlacement {
-  if (meta.metaVerticalCell) return meta.metaVerticalCell;
-  if (meta.metaPositionVertical) {
-    return heroVerticalCellFromPosition(meta.metaPositionVertical);
-  }
-  return DEFAULT_META_VERTICAL_CELL;
-}
-
-export function resolveMetaCardAnchors(
-  count: number,
-  centerX: number,
-  spread: PortfolioHeroMetaSpread
-): number[] {
-  const gap = spread === 'compact' ? 12 : spread === 'wide' ? 22 : 17;
-  if (count <= 1) return [centerX];
-  if (count === 2) return [centerX - gap, centerX + gap];
-  return [centerX - gap, centerX, centerX + gap];
 }
 
 function migrateLegacyFrameStyle(
@@ -607,203 +264,6 @@ function migrateLegacyFrameStyle(
 
 function isMetaFrameShape(value: unknown): value is PortfolioHeroMetaFrameShape {
   return value === 'circle' || value === 'rounded' || value === 'square' || value === 'pill';
-}
-
-function metaCardShapeClass(shape: PortfolioHeroMetaFrameShape): string {
-  switch (shape) {
-    case 'square':
-      return 'rounded-none';
-    case 'rounded':
-      return 'rounded-2xl';
-    case 'pill':
-    case 'circle':
-      return 'rounded-full';
-    default:
-      return 'rounded-full';
-  }
-}
-
-export function resolveMetaCardFrameShape(
-  meta: PortfolioHeroMetaSettings,
-  cardId: PortfolioHeroMetaCardId
-): PortfolioHeroMetaFrameShape {
-  if (meta.metaFrameShapeMode === 'uniform') return meta.metaFrameShape;
-  if (cardId === 'years') return meta.metaYearsFrameShape;
-  if (cardId === 'projects') return meta.metaProjectsFrameShape;
-  return meta.metaLocationFrameShape;
-}
-
-function metaCardSurfaceClass(displayDesign: PortfolioHeroMetaDisplayDesign): string {
-  // Fill color comes from metaCardBackgroundColor (inline). Classes only add depth.
-  switch (displayDesign) {
-    case 'flat':
-      return 'shadow-none ring-0';
-    case 'soft':
-      return 'shadow-none ring-0';
-    case 'glass':
-      return 'shadow-md ring-0 backdrop-blur-md';
-    case 'dark':
-      return 'shadow-lg ring-0';
-    default:
-      return 'shadow-[0_16px_48px_-20px_rgba(0,0,0,0.35)] ring-0';
-  }
-}
-
-function metaCardDimensions(
-  padding: PortfolioHeroMetaCardPadding,
-  isLocation: boolean,
-  shape: PortfolioHeroMetaFrameShape
-): string {
-  // Match years/projects footprint when round so location looks like the other circles.
-  const useCompactCircle = isLocation && shape === 'circle';
-
-  if (isLocation && !useCompactCircle) {
-    switch (padding) {
-      case 'tight':
-        return 'h-[4rem] min-w-[5.5rem] shrink-0 px-1.5 sm:h-[5.5rem] sm:min-w-[8rem] sm:px-3';
-      case 'relaxed':
-        return 'h-[5.25rem] min-w-[7.5rem] shrink-0 px-2.5 sm:h-[7.5rem] sm:min-w-[10.5rem] sm:px-5';
-      default:
-        return 'h-[4.5rem] min-w-[6.25rem] shrink-0 px-2 sm:h-[6.75rem] sm:min-w-[9.5rem] sm:px-4';
-    }
-  }
-
-  switch (padding) {
-    case 'tight':
-      return 'h-[4rem] w-[4rem] shrink-0 px-0.5 sm:h-[5.5rem] sm:w-[5.5rem] sm:px-1';
-    case 'relaxed':
-      return 'h-[5.25rem] w-[5.25rem] shrink-0 px-1 sm:h-[7.5rem] sm:w-[7.5rem] sm:px-2';
-    default:
-      return 'h-[4.5rem] w-[4.5rem] shrink-0 px-0.5 sm:h-[6.75rem] sm:w-[6.75rem] sm:px-1';
-  }
-}
-
-export function metaCardShellClass(
-  meta: PortfolioHeroMetaSettings,
-  cardId: PortfolioHeroMetaCardId
-): string {
-  const isLocation = cardId === 'location';
-  const frameShape = resolveMetaCardFrameShape(meta, cardId);
-  const dimensions = metaCardDimensions(meta.metaCardPadding, isLocation, frameShape);
-  const shape = metaCardShapeClass(frameShape);
-
-  if (!meta.showMetaFrame) {
-    return `relative flex ${dimensions} flex-col items-center justify-center overflow-visible text-center`;
-  }
-
-  const surface = metaCardSurfaceClass(meta.metaDisplayDesign);
-  return `relative flex ${dimensions} flex-col items-center justify-center overflow-hidden text-center ${shape} ${surface}`;
-}
-
-export function metaCardBorderStyle(meta: PortfolioHeroMetaSettings): CSSProperties | undefined {
-  if (!meta.showMetaFrame) return undefined;
-
-  const hasCustomBg =
-    typeof meta.metaCardBackgroundColor === 'string' &&
-    isValidProfileHexColor(meta.metaCardBackgroundColor);
-  const hasCustomBorder =
-    typeof meta.metaFrameBorderColor === 'string' && isValidProfileHexColor(meta.metaFrameBorderColor);
-
-  const backgroundColor = hasCustomBg
-    ? meta.metaCardBackgroundColor.trim()
-    : meta.metaDisplayDesign === 'dark'
-      ? DARK_META_CARD_SURFACE
-      : meta.metaDisplayDesign === 'soft'
-        ? '#f5f5f5'
-        : '#ffffff';
-
-  const borderColor = hasCustomBorder
-    ? meta.metaFrameBorderColor.trim()
-    : meta.metaDisplayDesign === 'dark'
-      ? DARK_META_CARD_BORDER
-      : '#e5e5e5';
-
-  if (meta.metaFrameBorderWidth <= 0) {
-    return {
-      backgroundColor,
-      borderWidth: 0,
-      borderStyle: 'solid',
-      borderColor: 'transparent',
-    };
-  }
-
-  return {
-    backgroundColor,
-    borderWidth: meta.metaFrameBorderWidth,
-    borderStyle: 'solid',
-    borderColor,
-  };
-}
-
-export function metaCardInnerClass(layout: PortfolioHeroMetaInnerLayout): string {
-  switch (layout) {
-    case 'inline':
-      return 'flex flex-row items-center gap-2.5 text-left';
-    case 'value-first':
-      return 'flex flex-col items-center justify-center gap-0.5';
-    case 'icon-bottom':
-      return 'flex flex-col items-center justify-center gap-1';
-    default:
-      return 'flex flex-col items-center justify-center';
-  }
-}
-
-export function metaValueSizeClass(
-  size: PortfolioHeroMetaValueSize,
-  isLocation: boolean,
-  locationCompact = false
-): string {
-  if (isLocation && !locationCompact) {
-    switch (size) {
-      case 'sm':
-        return 'text-[10px] leading-snug sm:text-[11px]';
-      case 'lg':
-        return 'text-sm leading-snug sm:text-base';
-      default:
-        return 'text-[11px] leading-snug sm:text-xs';
-    }
-  }
-
-  switch (size) {
-    case 'sm':
-      return 'text-sm leading-tight sm:text-base';
-    case 'lg':
-      return 'text-xl leading-tight sm:text-2xl';
-    default:
-      return 'text-base leading-tight sm:text-lg';
-  }
-}
-
-export function metaLabelSizeClass(size: PortfolioHeroMetaValueSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-[7px] sm:text-[8px]';
-    case 'lg':
-      return 'text-[9px] sm:text-[10px]';
-    default:
-      return 'text-[8px] sm:text-[9px]';
-  }
-}
-
-export function metaCardValueClass(displayDesign: PortfolioHeroMetaDisplayDesign): string {
-  return displayDesign === 'dark' ? 'text-white' : 'text-neutral-950';
-}
-
-export function metaCardLabelClass(displayDesign: PortfolioHeroMetaDisplayDesign): string {
-  return displayDesign === 'dark' ? 'text-neutral-400' : 'text-neutral-500';
-}
-
-export function metaValueTextStyle(valueColor: string): CSSProperties {
-  return isValidProfileHexColor(valueColor) ? { color: valueColor.trim() } : { color: '#171717' };
-}
-
-export function metaLabelTextStyle(labelColor: string): CSSProperties {
-  return isValidProfileHexColor(labelColor) ? { color: labelColor.trim() } : { color: '#737373' };
-}
-
-export function metaCardIconStyle(accentColor: string): CSSProperties | undefined {
-  if (!isValidProfileHexColor(accentColor) || accentColor === '#f97316') return undefined;
-  return { color: accentColor };
 }
 
 export function mergeHeroMetaSettings(

@@ -52,18 +52,8 @@ function hexEq(a: string, b: string): boolean {
   return a.trim().toLowerCase() === b.trim().toLowerCase();
 }
 
-export function isLegacyDefaultServicesCardBackground(
-  p: PortfolioServicesCardBackgroundSettings
-): boolean {
-  return (
-    p.cardBackgroundFill === 'solid' &&
-    hexEq(p.cardBackgroundColorA, DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_A) &&
-    hexEq(p.cardBackgroundColorB, DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B)
-  );
-}
-
 /** Factory diagonal white / gray split that users keep seeing as an unwanted default. */
-export function isFactoryDiagonalServicesCardBackground(
+function isFactoryDiagonalServicesCardBackground(
   p: PortfolioServicesCardBackgroundSettings
 ): boolean {
   return (
@@ -75,7 +65,7 @@ export function isFactoryDiagonalServicesCardBackground(
 }
 
 /** Earlier diagonal default (165° / 52%) — same unwanted factory look. */
-export function isLegacyServicesDiagonalBackground(
+function isLegacyServicesDiagonalBackground(
   p: PortfolioServicesCardBackgroundSettings
 ): boolean {
   return (
@@ -86,39 +76,6 @@ export function isLegacyServicesDiagonalBackground(
     (p.cardDividerAngle === 165 || p.cardBackgroundSplitPosition === 52)
   );
 }
-
-export const PORTFOLIO_SERVICES_CARD_BACKGROUND_FILL_OPTIONS: {
-  value: PortfolioServicesCardBackgroundFill;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'solid', label: 'Uni', description: 'Une seule couleur de fond sur toute la carte.' },
-  {
-    value: 'split',
-    label: 'Divisé X / Y',
-    description: 'Deux zones de couleur séparées par une ligne géométrique.',
-  },
-];
-
-export const PORTFOLIO_SERVICES_CARD_SPLIT_AXIS_OPTIONS: {
-  value: PortfolioServicesCardSplitAxis;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'y', label: 'Axe Y (horizontal)', description: 'Zone haut / zone bas — idéal titre + prix.' },
-  { value: 'x', label: 'Axe X (vertical)', description: 'Zone gauche / zone droite.' },
-];
-
-export const PORTFOLIO_SERVICES_CARD_DIVIDER_SHAPE_OPTIONS: {
-  value: PortfolioServicesCardDividerShape;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'straight', label: 'Droite', description: 'Ligne droite horizontale ou verticale.' },
-  { value: 'diagonal', label: 'Diagonale', description: 'Séparation inclinée — angle et position réglables.' },
-  { value: 'curve', label: 'Courbe', description: 'Arc doux entre les deux zones.' },
-  { value: 'wave', label: 'Vague', description: 'Ligne ondulée pour un rendu organique.' },
-];
 
 function sanitizeHex(value: unknown, fallback: string): string {
   if (typeof value === 'string' && isValidProfileHexColor(value)) return value.trim();
@@ -312,7 +269,7 @@ function buildZonePaths(settings: PortfolioServicesCardBackgroundSettings): Zone
   }
 }
 
-export function buildCardSplitBackgroundSvg(settings: PortfolioServicesCardBackgroundSettings): string | null {
+function buildCardSplitBackgroundSvg(settings: PortfolioServicesCardBackgroundSettings): string | null {
   const colorA = sanitizeHex(settings.cardBackgroundColorA, DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_A);
   const colorB = sanitizeHex(settings.cardBackgroundColorB, DEFAULT_SERVICES_CARD_BACKGROUND_ZONE_B);
   const paths = buildZonePaths(settings);

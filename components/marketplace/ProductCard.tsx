@@ -50,7 +50,7 @@ export function ProductCard({
   const authorName = product.creatorName?.trim() || null;
 
   const isOwnProduct = Boolean(user?.id && user.id === product.creatorId);
-  const discussionPath = `/dashboard/discussions?user=${encodeURIComponent(product.creatorId)}&product=${encodeURIComponent(product.id)}`;
+  const discussionPath = `/messages?user=${encodeURIComponent(product.creatorId)}&product=${encodeURIComponent(product.id)}`;
   const messageHref = user ? discussionPath : `/login?redirect=${encodeURIComponent(discussionPath)}`;
   const messageLabel = authorName ? `Message ${authorName}` : 'Message creator';
 
@@ -146,7 +146,7 @@ export function ProductCard({
           <p className="flex min-w-0 items-center gap-1.5 text-[14px] text-neutral-500 dark:text-neutral-400">
             {authorName ? (
               <Link
-                href={`/marketplace/${product.creatorId}`}
+                href={`/providers/${product.creatorId}`}
                 className="truncate font-medium text-neutral-700 transition-colors hover:text-[#FF5722] dark:text-neutral-200"
                 onClick={(e) => e.stopPropagation()}
               >

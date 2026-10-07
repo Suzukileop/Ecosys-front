@@ -127,7 +127,7 @@ function HeadlineRevealContactButton({
   );
 }
 
-export interface FooterDesignHeadlineRevealProps {
+interface FooterDesignHeadlineRevealProps {
   creatorName: string;
   creatorId: string;
   bio?: string | null;

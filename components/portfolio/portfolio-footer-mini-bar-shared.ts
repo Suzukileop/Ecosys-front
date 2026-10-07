@@ -51,7 +51,7 @@ export function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 }
 
-export interface FooterMiniBarLiveClockParts {
+interface FooterMiniBarLiveClockParts {
   hour: string;
   minute: string;
   period: string;

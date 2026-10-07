@@ -4,6 +4,9 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { fetchPublicProductClient, formatPrice } from '@/lib/marketplace-api';
 import type { MarketplaceProductDetail } from '@/types/marketplace';
+import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
+import { MediaImage } from '@/components/ui/MediaImage';
+import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 
 function useProduct(productId: string) {
   const [product, setProduct] = useState<MarketplaceProductDetail | null | undefined>(undefined);
@@ -25,20 +28,15 @@ function productHref(productId: string) {
   return `/marketplace/products/${encodeURIComponent(productId)}`;
 }
 
-function FadeInImage({ src, className = '' }: { src: string; className?: string }) {
-  const [loaded, setLoaded] = useState(false);
+function ProductMedia({ src, width, className = '' }: { src: string; width: number; className?: string }) {
+  if (isVideoThumbnailUrl(src)) {
+    return <ProductThumbnailMedia url={src} className={`h-full w-full ${className}`} />;
+  }
   return (
-    // eslint-disable-next-line @next/next/no-img-element
-    <img
-      ref={(el) => {
-        if (el?.complete && !loaded) setLoaded(true);
-      }}
+    <MediaImage
       src={src}
-      alt=""
-      onLoad={() => setLoaded(true)}
-      className={`h-full w-full object-cover transition-[opacity,transform] duration-500 ${
-        loaded ? 'opacity-100' : 'opacity-0'
-      } ${className}`}
+      width={width}
+      className={`h-full w-full object-cover transition-transform duration-500 ${className}`}
     />
   );
 }
@@ -74,7 +72,7 @@ export function MessageProductPreview({ productId }: { productId: string }) {
     >
       <div className="aspect-[4/3] w-full overflow-hidden bg-black/[0.04] dark:bg-white/[0.05]">
         {product.thumbnailUrl ? (
-          <FadeInImage src={product.thumbnailUrl} className="group-hover:scale-[1.03]" />
+          <ProductMedia src={product.thumbnailUrl} width={300} className="group-hover:scale-[1.03]" />
         ) : null}
       </div>
       <div className="flex items-end justify-between gap-3 p-3.5">
@@ -101,7 +99,7 @@ export function ComposerProductAttachment({ productId, onRemove }: { productId: 
   return (
     <div className="flex items-center gap-3.5 rounded-lg border border-black/[0.08] bg-white p-2.5 pr-3 dark:border-white/[0.1] dark:bg-[#161616]">
       <div className="h-16 w-16 shrink-0 overflow-hidden rounded-md bg-black/[0.05] dark:bg-white/[0.06]">
-        {product?.thumbnailUrl ? <FadeInImage src={product.thumbnailUrl} /> : null}
+        {product?.thumbnailUrl ? <ProductMedia src={product.thumbnailUrl} width={64} /> : null}
       </div>
       <div className="min-w-0 flex-1">
         <p className="text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-400">Product</p>

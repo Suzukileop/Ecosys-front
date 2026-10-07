@@ -1,6 +1,6 @@
 /** Public creator portfolio — standalone CV page (not marketplace shell). */
 
-export function resolvePortfolioSlug(creatorId: string, username?: string | null): string {
+function resolvePortfolioSlug(creatorId: string, username?: string | null): string {
   const handle = username?.trim();
   return handle || creatorId;
 }

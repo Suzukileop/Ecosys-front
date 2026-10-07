@@ -8,6 +8,7 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_INDEX_TEXT = '02 /';
 const DEFAULT_TITLE_TEXT = 'Expertise & Mindset';
@@ -54,7 +55,8 @@ export function InfoHeaderChapterHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_INFO_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerDesignAlignment ?? 'left';
   const indexText = (presentation.headerChapterIndexText || DEFAULT_INDEX_TEXT).trim();
   const titleText = (presentation.headerChapterTitleText || DEFAULT_TITLE_TEXT).trim();

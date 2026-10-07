@@ -36,10 +36,6 @@ import {
 
 export type AboutUsSubSection = 'general' | 'header' | 'background';
 
-export function normalizeAboutUsSubSection(value: string | undefined): AboutUsSubSection {
-  return value === 'header' || value === 'background' ? value : 'general';
-}
-
 function Toggle({
   label,
   description,

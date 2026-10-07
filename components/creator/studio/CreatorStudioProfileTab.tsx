@@ -1,5 +1,6 @@
 'use client';
 
+import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useFieldArray, useForm } from 'react-hook-form';
@@ -36,7 +37,7 @@ import {
   normalizeCreatorAppRole,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
-import { CreatorProfileDto } from '@/types/ecosystem';
+import { CreatorProfileDto } from '@/types/profile';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
 import { ProfileAppRoleField } from '@/components/creator/studio/ProfileAppRoleField';
 import {
@@ -65,50 +66,7 @@ import { MAX_SERVICES } from '@/components/creator/studio/ProfileServicesField';
 import {
   MAX_EXPERIENCE_ENTRIES,
 } from '@/components/portfolio/PortfolioExperienceChrome';
-import {
-  buildProfileLinksFromLegacy,
-  createEmptyContactEntry,
-  createEmptyFaqItem,
-  createEmptyGalleryItem,
-  createEmptyProfileBlock,
-  createEmptyProfileLink,
-  createEmptyProfileService,
-  createEmptyTeamMember,
-  deriveProfileLinkLabel,
-  inferProfileMediaType,
-  parseContactEntries,
-  parseFaqItems,
-  parseGalleryItems,
-  parseExperienceBlocks,
-  parseProfileBlocks,
-  parseProfileServices,
-  parseSpokenLanguages,
-  parseStrengthsTools,
-  parseAboutUs,
-  parseAboutStringList,
-  parseAboutEducation,
-  serializeAboutUs,
-  serializeAboutStringList,
-  serializeAboutEducation,
-  emptyAboutUsForm,
-  parseTeamMembers,
-  primaryContactValue,
-  profileSchema,
-  serializeContactEntries,
-  serializeFaqItems,
-  serializeGalleryItems,
-  serializeProfileBlocks,
-  serializeProfileLinks,
-  serializeProfileServices,
-  serializeTeamMembers,
-  syncContactLegacyFields,
-  hasProfileFormChanges,
-  areStrengthsToolsEqual,
-  firstProfileErrorMessage,
-  profileErrorPathToSection,
-  type ProfileFormValues,
-  type StrengthFormItem,
-} from '@/components/creator/studio/profile-form-schema';
+import { buildProfileLinksFromLegacy, createEmptyContactEntry, createEmptyFaqItem, createEmptyGalleryItem, createEmptyProfileBlock, createEmptyProfileLink, createEmptyProfileService, createEmptyTeamMember, deriveProfileLinkLabel, inferProfileMediaType, parseContactEntries, parseFaqItems, parseGalleryItems, parseExperienceBlocks, parseProfileServices, parseSpokenLanguages, parseStrengthsTools, parseAboutUs, parseAboutStringList, parseAboutEducation, serializeAboutUs, serializeAboutStringList, serializeAboutEducation, emptyAboutUsForm, parseTeamMembers, primaryContactValue, profileSchema, serializeContactEntries, serializeFaqItems, serializeGalleryItems, serializeProfileBlocks, serializeProfileLinks, serializeProfileServices, serializeTeamMembers, syncContactLegacyFields, hasProfileFormChanges, areStrengthsToolsEqual, firstProfileErrorMessage, profileErrorPathToSection, type ProfileFormValues, type StrengthFormItem } from '@/components/creator/studio/profile-form-schema';
 import { formatPhoneDisplay, toStoredPhoneNumber } from '@/lib/phone';
 import { updateUserProfile } from '@/lib/user-profile-api';
 import { pushFlashFeedback, pushInsertionLimitFeedback } from '@/stores/flashFeedbackStore';
@@ -153,27 +111,45 @@ import {
   toDraft as experienceBlockToDraft,
   type PortfolioExperienceBlockDraft,
 } from '@/components/portfolio/PortfolioExperienceChrome';
-import { PortfolioExperienceStudio } from '@/components/portfolio/PortfolioExperienceStudio';
-import { PortfolioSkillStudio, toStrengthDraft } from '@/components/portfolio/PortfolioSkillStudio';
+import { toStrengthDraft } from '@/components/portfolio/PortfolioStrengthsChrome';
 import { PortfolioServicesReadOnly } from '@/components/portfolio/PortfolioServicesChrome';
-import { PortfolioTeamStudio } from '@/components/portfolio/PortfolioTeamStudio';
 import { PortfolioAboutUsReadOnly } from '@/components/portfolio/PortfolioAboutUsChrome';
-import { PortfolioAboutUsStudio } from '@/components/portfolio/PortfolioAboutUsStudio';
 import { PortfolioShowcaseChrome } from '@/components/portfolio/PortfolioShowcaseChrome';
-import { PortfolioWorksStudio } from '@/components/portfolio/PortfolioWorksStudio';
-import { PortfolioFaqStudio } from '@/components/portfolio/PortfolioFaqStudio';
-import { PortfolioContactStudio } from '@/components/portfolio/PortfolioContactStudio';
-import { PortfolioGalleryStudio } from '@/components/portfolio/PortfolioGalleryStudio';
-import { PortfolioLinksStudio } from '@/components/portfolio/PortfolioLinksStudio';
-import {
-  type PortfolioLocationFieldKey,
-  type PortfolioLocationFieldValue,
-} from '@/components/portfolio/PortfolioLocationChrome';
+import { type PortfolioLocationFieldValue } from '@/components/portfolio/PortfolioLocationChrome';
 import {
   type PortfolioContactKind,
   type PortfolioContactLists,
 } from '@/components/portfolio/PortfolioContactChrome';
 import { PORTFOLIO_CHROME_SECTIONS } from '@/components/portfolio/portfolio-section-shared';
+
+/** The studio edits one section at a time, so each section editor is its own chunk. */
+const PortfolioExperienceStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioExperienceStudio').then((m) => m.PortfolioExperienceStudio)
+);
+const PortfolioSkillStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioSkillStudio').then((m) => m.PortfolioSkillStudio)
+);
+const PortfolioTeamStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioTeamStudio').then((m) => m.PortfolioTeamStudio)
+);
+const PortfolioAboutUsStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioAboutUsStudio').then((m) => m.PortfolioAboutUsStudio)
+);
+const PortfolioWorksStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioWorksStudio').then((m) => m.PortfolioWorksStudio)
+);
+const PortfolioFaqStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioFaqStudio').then((m) => m.PortfolioFaqStudio)
+);
+const PortfolioContactStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioContactStudio').then((m) => m.PortfolioContactStudio)
+);
+const PortfolioGalleryStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioGalleryStudio').then((m) => m.PortfolioGalleryStudio)
+);
+const PortfolioLinksStudio = dynamic(() =>
+  import('@/components/portfolio/PortfolioLinksStudio').then((m) => m.PortfolioLinksStudio)
+);
 
 /** Surface Zod validation on form fields; never promote field issues to the section banner. */
 function applyZodIssuesToProfileForm(
@@ -468,7 +444,16 @@ function buildProfileFormValues(p: CreatorProfileDto, user: ProfileUserFallback)
   };
 }
 
-export function CreatorStudioProfileTab({
+type SessionUser = NonNullable<ReturnType<typeof useAuth>['user']>;
+
+export function CreatorStudioProfileTab(props: CreatorStudioProfileTabProps) {
+  const { user } = useAuth();
+  if (!user) return null;
+  return <CreatorStudioProfileTabContent {...props} user={user} />;
+}
+
+function CreatorStudioProfileTabContent({
+  user,
   onProfileUpdated,
   variant = 'studio',
   portfolioNavSide: portfolioNavSideProp,
@@ -478,7 +463,7 @@ export function CreatorStudioProfileTab({
   showProfileHero = true,
   sectionsNavPlacement = 'rail',
   sectionsNavFooter,
-}: CreatorStudioProfileTabProps) {
+}: CreatorStudioProfileTabProps & { user: SessionUser }) {
   const isPortfolioLayout = variant === 'portfolio';
   const sectionsNavTop = isPortfolioLayout && sectionsNavPlacement === 'top';
   const navTitle = sectionsNavTitle ?? (allowedSections?.length ? 'Information' : 'Portfolio Sections');
@@ -490,7 +475,7 @@ export function CreatorStudioProfileTab({
       links: 'Link',
     };
   }, [isStoreInformationNav]);
-  const { user, updateUser } = useAuth();
+  const { updateUser } = useAuth();
   const [initialCachedProfile] = useState(() =>
     user?.id ? profileCache.get(user.id) : undefined
   );
@@ -529,7 +514,7 @@ export function CreatorStudioProfileTab({
   const [portfolioGlobalHasChanges, setPortfolioGlobalHasChanges] = useState(false);
   const [toolsDeleteMode, setToolsDeleteMode] = useState(false);
   const [toolsAddingItem, setToolsAddingItem] = useState(false);
-  const [stackDeleteMode, setStackDeleteMode] = useState(false);
+  const [, setStackDeleteMode] = useState(false);
   const [stackAddingItem, setStackAddingItem] = useState(false);
   const [faqDeleteMode, setFaqDeleteMode] = useState(false);
   const [faqAddingItem, setFaqAddingItem] = useState(false);
@@ -755,15 +740,12 @@ export function CreatorStudioProfileTab({
     move: moveExperience,
   } = useFieldArray({ control: form.control, name: 'experienceBlocks' });
   const {
-    append: appendContactAddress,
     remove: removeContactAddress,
   } = useFieldArray({ control: form.control, name: 'contactAddresses' });
   const {
-    append: appendContactPhone,
     remove: removeContactPhone,
   } = useFieldArray({ control: form.control, name: 'contactPhones' });
   const {
-    append: appendContactEmail,
     remove: removeContactEmail,
   } = useFieldArray({ control: form.control, name: 'contactEmails' });
   const {
@@ -878,34 +860,6 @@ export function CreatorStudioProfileTab({
     removeContactEmail,
     removeContactPhone,
   ]);
-
-  const addContactEntry = useCallback(
-    (kind: PortfolioContactKind) => {
-      if (contactAddingKind) return;
-      setContactDeleteMode(false);
-      if (kind === 'address') {
-        const current = form.getValues('contactAddresses');
-        if (current.length >= 8) return;
-        appendContactAddress(createEmptyContactEntry(current.length));
-      } else if (kind === 'phone') {
-        const current = form.getValues('contactPhones');
-        if (current.length >= 8) return;
-        appendContactPhone(createEmptyContactEntry(current.length));
-      } else {
-        const current = form.getValues('contactEmails');
-        if (current.length >= 8) return;
-        appendContactEmail(createEmptyContactEntry(current.length));
-      }
-      setContactAddingKind(kind);
-    },
-    [
-      appendContactAddress,
-      appendContactEmail,
-      appendContactPhone,
-      contactAddingKind,
-      form,
-    ]
-  );
 
   const cancelStackCompose = useCallback(() => {
     const current = form.getValues('stackItems');
@@ -1671,8 +1625,6 @@ export function CreatorStudioProfileTab({
     // Keep errors on the invalid fields — do not show a section-level banner.
   };
 
-  if (!user) return null;
-
   const values = form.watch();
   const locationCity = values.locationCity;
   const locationCountry = values.locationCountry;
@@ -2100,7 +2052,6 @@ export function CreatorStudioProfileTab({
       setSaving(true);
       setSubmitError(null);
       try {
-        const raw = form.getValues();
         let nextSchedule = availabilitySchedule;
 
         if (field === 'fullName') {
@@ -3320,21 +3271,6 @@ export function CreatorStudioProfileTab({
       loadProfile,
       onProfileUpdated,
     ]
-  );
-
-  const persistPortfolioLocationField = useCallback(
-    async (
-      field: PortfolioLocationFieldKey,
-      value: PortfolioLocationFieldValue[PortfolioLocationFieldKey]
-    ) => {
-      const latest = form.getValues();
-      await persistPortfolioLocation({
-        city: field === 'city' ? value : latest.locationCity ?? '',
-        country: field === 'country' ? value : latest.locationCountry ?? '',
-        timezone: field === 'timezone' ? value : latest.timezoneId ?? '',
-      });
-    },
-    [form, persistPortfolioLocation]
   );
 
   const persistPortfolioGeneralInfo = useCallback(
@@ -4907,7 +4843,7 @@ export function CreatorStudioProfileTab({
                 className={`${portfolioNavCollapsed ? 'w-[3.25rem]' : 'w-[15.5rem]'}${
                   portfolioNavSide === 'right' ? ' md:col-start-2 md:row-start-1' : ''
                 }`}
-                surfaceClassName={`flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`}
+                surfaceClassName={`gn-aside flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`}
               >
                 {renderSectionNav('desktop')}
               </ProfileSectionStickyAside>

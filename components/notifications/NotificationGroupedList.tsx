@@ -16,7 +16,7 @@ import {
   NOTIFICATION_GROUP_LABELS,
   resolveNotificationHref,
 } from '@/lib/notifications';
-import type { NotificationDto } from '@/types/ecosystem';
+import type { NotificationDto } from '@/types/profile';
 
 function followerKindLabel(type: string): string | null {
   switch (type) {
@@ -92,8 +92,8 @@ function viewLabel(n: NotificationDto): string {
   return n.type === CREATOR_PROFILE_VISIT_GROUP_TYPE ? 'View all' : 'View';
 }
 
-function canView(n: NotificationDto, isAgent: boolean): boolean {
-  const href = resolveNotificationHref(n.type, n.refId, isAgent, n.refSecondaryId, {
+function canView(n: NotificationDto): boolean {
+  const href = resolveNotificationHref(n.type, n.refId, n.refSecondaryId, {
     actorProfileAvailable: n.actorProfileAvailable,
   });
   return (
@@ -106,12 +106,10 @@ function canView(n: NotificationDto, isAgent: boolean): boolean {
 /** Full-page layout: one white frame per time group, airy rows, reading-size type. */
 function NotificationPageList({
   groups,
-  isAgent,
   onItemClick,
   emptyMessage,
 }: {
   groups: ReturnType<typeof groupNotificationsByTime>;
-  isAgent: boolean;
   onItemClick: (n: NotificationDto) => void;
   emptyMessage: string;
 }) {
@@ -150,7 +148,7 @@ function NotificationPageList({
             {group.items.map((n) => {
               const display = formatNotificationDisplay(n);
               const kindLabel = followerKindLabel(n.type);
-              const showView = canView(n, isAgent);
+              const showView = canView(n);
               return (
                 <li key={n.id} className="border-b border-black/[0.06] last:border-b-0 dark:border-white/[0.06]">
                   <button
@@ -209,13 +207,11 @@ function NotificationPageList({
 
 export function NotificationGroupedList({
   items,
-  isAgent,
   onItemClick,
   emptyMessage = 'No notifications',
   variant = 'panel',
 }: {
   items: NotificationDto[];
-  isAgent: boolean;
   onItemClick: (n: NotificationDto) => void;
   emptyMessage?: string;
   variant?: 'panel' | 'page';
@@ -223,7 +219,7 @@ export function NotificationGroupedList({
   const groups = groupNotificationsByTime(items);
 
   if (variant === 'page') {
-    return <NotificationPageList groups={groups} isAgent={isAgent} onItemClick={onItemClick} emptyMessage={emptyMessage} />;
+    return <NotificationPageList groups={groups} onItemClick={onItemClick} emptyMessage={emptyMessage} />;
   }
 
   if (groups.length === 0) {
@@ -243,7 +239,7 @@ export function NotificationGroupedList({
           </h3>
           <ul>
             {group.items.map((n) => {
-              const showView = canView(n, isAgent);
+              const showView = canView(n);
               const display = formatNotificationDisplay(n);
               const kindLabel = followerKindLabel(n.type);
               return (

@@ -165,7 +165,7 @@ export function CreatorFollowButton({
   if (!user) {
     return (
       <Link
-        href={`/login?redirect=${encodeURIComponent(`/marketplace/${creatorId}`)}`}
+        href={`/login?redirect=${encodeURIComponent(`/providers/${creatorId}`)}`}
         className={`${secondaryIdleClass} ${sizeClass}`}
       >
         Follow

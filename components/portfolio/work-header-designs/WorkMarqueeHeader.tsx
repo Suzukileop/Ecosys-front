@@ -10,6 +10,7 @@ import {
   type PortfolioWorkHeaderTitleSize,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
  *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
@@ -100,7 +101,8 @@ export function WorkMarqueeHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const rawWords = [
     presentation.marqueeWord1Text,
     presentation.marqueeWord2Text,

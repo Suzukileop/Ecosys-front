@@ -1,10 +1,7 @@
 'use client';
 
 import type { ReactNode } from 'react';
-import type {
-  PortfolioNavIconVariant,
-  PortfolioNavSectionKey,
-} from '@/components/portfolio/portfolio-nav-items';
+import type { PortfolioNavIconVariant } from '@/components/portfolio/portfolio-nav-items';
 
 function NavIconBase({ className, children }: { className?: string; children: ReactNode }) {
   return (
@@ -219,24 +216,4 @@ export function PortfolioNavIcon({
     );
   }
   return <Icon className={className} />;
-}
-
-/** @deprecated Use PortfolioNavIcon with an explicit variant. */
-export function PortfolioNavSectionIcon({
-  id,
-  className = 'h-5 w-5',
-}: {
-  id: PortfolioNavSectionKey | string;
-  className?: string;
-}) {
-  const legacyMap: Partial<Record<string, PortfolioNavIconVariant>> = {
-    work: 'grid',
-    services: 'star',
-    about: 'user',
-    aboutUs: 'id-card',
-    experience: 'briefcase',
-    faq: 'help-circle',
-    contact: 'mail',
-  };
-  return <PortfolioNavIcon variant={legacyMap[id] ?? 'grid'} className={className} />;
 }

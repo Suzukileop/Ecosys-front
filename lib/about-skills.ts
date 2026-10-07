@@ -1,4 +1,4 @@
-import type { ProfileSkillEntry } from '@/types/ecosystem';
+import type { ProfileSkillEntry } from '@/types/profile';
 
 export type { ProfileSkillEntry };
 
@@ -70,17 +70,4 @@ export function resolveAboutSkillEntries(
 
 export function skillEntryLabels(entries: ProfileSkillEntry[]): string[] {
   return entries.map((entry) => entry.title.trim()).filter(Boolean);
-}
-
-export function sameAboutSkills(left: ProfileSkillEntry[], right: ProfileSkillEntry[]): boolean {
-  if (left.length !== right.length) return false;
-  return left.every((item, index) => {
-    const other = right[index];
-    return (
-      item.id === other.id &&
-      item.sortOrder === other.sortOrder &&
-      item.title.trim() === other.title.trim() &&
-      item.description.trim() === other.description.trim()
-    );
-  });
 }

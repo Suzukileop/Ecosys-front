@@ -28,7 +28,7 @@ import {
   normalizeCreatorAppRole,
 } from '@/lib/creator-app-role';
 
-export type PublicCreatorProfileTab = 'content' | 'products' | 'info' | 'services';
+type PublicCreatorProfileTab = 'content' | 'products' | 'info' | 'services';
 
 const PUBLIC_CREATOR_TABS: { id: PublicCreatorProfileTab; label: string }[] = [
   { id: 'info', label: 'Info' },
@@ -158,7 +158,7 @@ export function PublicCreatorProfileShell({
           isAvailable={profile.isAvailable}
           availabilityLabel={profile.availabilityLabel}
           isVerified={profile.isVerified}
-          shopHref={`/marketplace/${creatorId}/shop`}
+          shopHref={`/providers/${creatorId}/shop`}
           trailingActions={
             <>
               <OrderCreatorCta
@@ -260,7 +260,7 @@ export function PublicCreatorProfileShell({
               </div>
               {products.length > 0 ? (
                 <Link
-                  href={`/marketplace/${encodeURIComponent(creatorId)}/shop`}
+                  href={`/providers/${encodeURIComponent(creatorId)}/shop`}
                   className="group inline-flex h-10 shrink-0 items-center gap-2 text-[15px] font-medium text-[#111111] transition-colors dark:text-white sm:h-11 sm:rounded-lg sm:border sm:border-black/10 sm:px-5 sm:hover:border-black/25 sm:dark:border-white/15 sm:dark:hover:border-white/30"
                 >
                   Explore shop

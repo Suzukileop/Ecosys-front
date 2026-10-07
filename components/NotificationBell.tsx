@@ -4,9 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { HeaderCountBadge } from '@/components/layout/HeaderCountBadge';
-import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { dispatchAgentContentSync } from '@/lib/agent-content-sync';
 import { useNotificationBadge } from '@/hooks/useNotificationBadge';
 import {
   extractVisitorNameFromVisitMessage,
@@ -22,14 +20,12 @@ import {
 import { NotificationFilterTabs } from '@/components/notifications/NotificationFilterTabs';
 import { NotificationGroupedList } from '@/components/notifications/NotificationGroupedList';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import { NotificationDto } from '@/types/ecosystem';
+import { NotificationDto } from '@/types/profile';
 
 const POLL_MS = 15_000;
 
 export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const router = useRouter();
-  const { hasRole } = useAuth();
-  const isAgent = hasRole('ROLE_AGENT') || hasRole('ROLE_ADMIN');
 
   const [items, setItems] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -103,7 +99,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         );
       }
 
-      const { href, unavailableVisitor } = resolveNotificationNavigation(n, isAgent);
+      const { href, unavailableVisitor } = resolveNotificationNavigation(n);
       setOpen(false);
 
       if (unavailableVisitor) {
@@ -114,18 +110,13 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           variant: 'info',
           title: fallback.title,
           description: fallback.description,
-          actionHref: '/dashboard/creator?tab=visitors',
+          actionHref: '/profile?tab=visitors',
           actionLabel: 'Open Visitors',
         });
         return;
       }
 
-      if (href) {
-        if (n.type === 'CONTENT_DELIVERED' && n.refId) {
-          dispatchAgentContentSync(n.refId, n.refSecondaryId);
-        }
-        router.push(href);
-      }
+      if (href) router.push(href);
     } catch (e) {
       setError(getApiErrorMessage(e));
     }
@@ -215,7 +206,6 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           <div className="max-h-[min(26rem,70vh)] overflow-y-auto [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent]">
             <NotificationGroupedList
               items={filteredItems}
-              isAgent={isAgent}
               onItemClick={(n) => void handleNotificationClick(n)}
               emptyMessage={filter === 'unread' ? 'You’re all caught up.' : 'No notifications yet.'}
               variant="panel"
@@ -223,7 +213,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           </div>
 
           <Link
-            href="/dashboard/notifications"
+            href="/notifications"
             className="flex items-center justify-center gap-1.5 border-t border-black/[0.06] px-5 py-3.5 text-[14px] font-medium text-neutral-600 transition-colors hover:text-[#FF5722] dark:border-white/[0.08] dark:text-neutral-300"
             onClick={openAllPage}
           >

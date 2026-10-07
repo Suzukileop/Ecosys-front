@@ -5,15 +5,7 @@ import {
   sanitizeMotifPoints,
   type MotifPoint,
 } from '@/components/portfolio/portfolio-hero-motif-geometry';
-import {
-  clampMotifPanelPosition,
-  clampMotifPanelSize,
-  motifPanelContainerStyle,
-  sanitizeMotifPanelPosition,
-  sanitizeMotifPanelSize,
-  type MotifPanelPosition,
-  type MotifPanelSize,
-} from '@/components/portfolio/portfolio-hero-motif-panel';
+import { sanitizeMotifPanelPosition, sanitizeMotifPanelSize, type MotifPanelPosition, type MotifPanelSize } from '@/components/portfolio/portfolio-hero-motif-panel';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 
 export type { MotifPoint };
@@ -43,11 +35,9 @@ export type PortfolioHeroLeftMotifSettings = {
   leftCustomMotifPoints: MotifPoint[];
 };
 
-export const DEFAULT_LEFT_MOTIF_POSITION: LeftMotifPosition = { x: 22, y: 82 };
+const DEFAULT_LEFT_MOTIF_POSITION: LeftMotifPosition = { x: 22, y: 82 };
 
-export const DEFAULT_LEFT_MOTIF_SIZE: LeftMotifSize = { width: 44, height: 40 };
-
-export { DEFAULT_LEFT_CUSTOM_MOTIF_POINTS } from '@/components/portfolio/portfolio-hero-motif-geometry';
+const DEFAULT_LEFT_MOTIF_SIZE: LeftMotifSize = { width: 44, height: 40 };
 
 export const DEFAULT_HERO_LEFT_MOTIF_SETTINGS: PortfolioHeroLeftMotifSettings = {
   leftMotifEnabled: false,
@@ -59,46 +49,7 @@ export const DEFAULT_HERO_LEFT_MOTIF_SETTINGS: PortfolioHeroLeftMotifSettings = 
   leftCustomMotifPoints: DEFAULT_LEFT_CUSTOM_MOTIF_POINTS.map((point) => ({ ...point })),
 };
 
-export const PORTFOLIO_HERO_LEFT_MOTIF_OPTIONS: {
-  value: PortfolioHeroLeftMotifPattern;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No background pattern.' },
-  { value: 'dots', label: 'Dots', description: 'Soft dotted texture — subtle and clean.' },
-  { value: 'grid', label: 'Grid', description: 'Fine editorial grid lines.' },
-  { value: 'diagonal', label: 'Diagonal lines', description: '45° stripe hatching.' },
-  { value: 'waves', label: 'Waves', description: 'Flowing wave lines at the bottom.' },
-  { value: 'crosshatch', label: 'Crosshatch', description: 'Intersecting diagonal weave.' },
-  { value: 'circles', label: 'Rings', description: 'Concentric circle outlines.' },
-  { value: 'hexagons', label: 'Hexagons', description: 'Honeycomb geometric mesh.' },
-  {
-    value: 'custom',
-    label: 'Custom editor',
-    description: 'Draw freely — drag points to create any shape on the left.',
-  },
-];
-
-export const PORTFOLIO_HERO_LEFT_MOTIF_POSITION_PRESETS: {
-  id: string;
-  label: string;
-  position: LeftMotifPosition;
-}[] = [
-  { id: 'default', label: 'Bottom left', position: { x: 22, y: 82 } },
-  { id: 'lower', label: 'Lower center', position: { x: 28, y: 90 } },
-  { id: 'mid', label: 'Mid left', position: { x: 24, y: 62 } },
-  { id: 'upper', label: 'Upper left', position: { x: 20, y: 38 } },
-];
-
-export function clampLeftMotifPosition(position: LeftMotifPosition, size?: LeftMotifSize): LeftMotifPosition {
-  return clampMotifPanelPosition(position, 'left', size);
-}
-
-export function clampLeftMotifSize(size: LeftMotifSize): LeftMotifSize {
-  return clampMotifPanelSize(size, 'left');
-}
-
-export function sanitizeLeftMotifPosition(
+function sanitizeLeftMotifPosition(
   value: unknown,
   base: LeftMotifPosition,
   size?: LeftMotifSize
@@ -106,15 +57,8 @@ export function sanitizeLeftMotifPosition(
   return sanitizeMotifPanelPosition(value, base, 'left', size);
 }
 
-export function sanitizeLeftMotifSize(value: unknown, base: LeftMotifSize): LeftMotifSize {
+function sanitizeLeftMotifSize(value: unknown, base: LeftMotifSize): LeftMotifSize {
   return sanitizeMotifPanelSize(value, base, 'left');
-}
-
-export function leftMotifContainerStyle(settings: PortfolioHeroLeftMotifSettings): CSSProperties {
-  const size = clampLeftMotifSize(settings.leftMotifSize);
-  const position = clampLeftMotifPosition(settings.leftMotifPosition, size);
-  const opacity = Math.min(100, Math.max(0, settings.leftMotifOpacity)) / 100;
-  return motifPanelContainerStyle(position, size, opacity);
 }
 
 function svgDataUrl(svg: string): string {
@@ -160,12 +104,8 @@ function patternSize(pattern: Exclude<PortfolioHeroLeftMotifPattern, 'none' | 'c
   }
 }
 
-export function resolveLeftMotifClipPath(points: MotifPoint[]): string {
+function resolveLeftMotifClipPath(points: MotifPoint[]): string {
   return motifPointsToClipPath(points);
-}
-
-export function shouldRenderLeftMotif(settings: PortfolioHeroLeftMotifSettings): boolean {
-  return settings.leftMotifEnabled && settings.leftMotifPattern !== 'none';
 }
 
 export function leftMotifInnerStyle(

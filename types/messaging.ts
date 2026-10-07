@@ -87,15 +87,6 @@ export interface CreateGroupRequest {
   memberIds: string[];
 }
 
-export interface ConversationInvite {
-  id: string;
-  token: string;
-  joinPath: string;
-  expiresAt: string;
-  maxUses: number;
-  useCount: number;
-}
-
 export interface PendingConversationInvite {
   id: string;
   conversationId: string;

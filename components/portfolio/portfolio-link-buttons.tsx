@@ -11,9 +11,9 @@ import type {
  * Every variant takes the same 5 palette tokens — none invent a color.
  */
 
-export type PortfolioLinkButtonVariant = PortfolioExperienceRepoLinkStyle;
+type PortfolioLinkButtonVariant = PortfolioExperienceRepoLinkStyle;
 
-export type PortfolioLinkButtonPalette = {
+type PortfolioLinkButtonPalette = {
   background: string;
   ink: string;
   muted: string;
@@ -40,7 +40,7 @@ export function experienceLinkButtonPalette(tokens: {
 
 const LINK_BUTTON_FONT = "'Inter', sans-serif";
 
-export type PortfolioLinkButtonProps = {
+type PortfolioLinkButtonProps = {
   href: string;
   label: string;
   palette: PortfolioLinkButtonPalette;

@@ -13,6 +13,7 @@ import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/p
 import {
   portfolioHeroContentShellClass,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Portrait balance — Brutalist Asymmetric Edition
@@ -95,7 +96,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     const portraits = [portraitDesktopRef.current, portraitMobileRef.current].filter(Boolean);
     
     // Animate blur removal on load
-    const timer = setTimeout(() => {
+    const timer = motionTimeout(() => {
       portraits.forEach((portrait) => {
         if (portrait) {
           portrait.style.transition = 'filter 1.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 0.8s ease-out';
@@ -121,7 +122,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     
     revealElements.forEach((el, index) => {
       const element = el as HTMLElement;
-      const t = setTimeout(() => {
+      const t = motionTimeout(() => {
         // Check for custom final opacity (e.g., bio = 0.6, hairline-2 = 0.5)
         const finalOpacity = element.dataset.finalOpacity || '1';
         
@@ -139,6 +140,8 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
   useEffect(() => {
     // Only run on desktop (md+)
     if (typeof window === 'undefined') return;
+    // Animations switched off (Global → Animations): no scroll-driven parallax.
+    if (isPortfolioMotionOff()) return;
     const mediaQuery = window.matchMedia('(min-width: 768px)');
     if (!mediaQuery.matches) return;
 

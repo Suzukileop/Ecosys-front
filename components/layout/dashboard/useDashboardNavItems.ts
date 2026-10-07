@@ -5,6 +5,7 @@ import { useAuth } from '@/context/AuthContext';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import { dashboardNavItems, type DashboardNavChild, type DashboardNavItem } from '@/components/layout/dashboard/navConfig';
 import type { CreatorAppRole } from '@/lib/creator-app-role';
+import { isPathWithin } from '@/lib/routes';
 import type { Role } from '@/types/auth';
 
 /**
@@ -41,16 +42,10 @@ function isHiddenForAppRole(
 }
 
 export function isNavActive(pathname: string, href: string) {
-  if (href === '/dashboard') {
-    return pathname === '/dashboard';
-  }
-  if (href === '/dashboard/home') {
-    return pathname === '/dashboard/home' || pathname.startsWith('/dashboard/home/');
-  }
-  return pathname === href || pathname.startsWith(`${href}/`);
+  return isPathWithin(pathname, href);
 }
 
-export type ResolvedNavItem = {
+type ResolvedNavItem = {
   item: DashboardNavItem;
   /** Children this account may see — empty for a leaf entry *and* for a group left with one. */
   children: DashboardNavChild[];
@@ -77,10 +72,6 @@ export function useDashboardNavItems(): ResolvedNavItem[] {
 
   return dashboardNavItems
     .filter((item) => {
-      const isAgentOnly = hasRole('ROLE_AGENT') && !hasRole('ROLE_ADMIN');
-      if (isAgentOnly) {
-        return item.href === '/dashboard' || item.href === '/dashboard/agent';
-      }
       if (!matchesRoles(item.roles, hasRole)) return false;
       if (!matchesAppRoles(item.appRoles, appRole, appRoleReady)) return false;
       if (isHiddenForAppRole(item.hiddenForAppRoles, appRole, appRoleReady)) return false;

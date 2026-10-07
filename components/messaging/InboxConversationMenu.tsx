@@ -139,7 +139,7 @@ export function InboxConversationMenu({
     isDirect && otherUserId
       ? marketplaceCreatorProfileHref(
           otherUserId,
-          `/dashboard/discussions?conversation=${encodeURIComponent(conversationId)}`
+          `/messages?conversation=${encodeURIComponent(conversationId)}`
         )
       : null;
 

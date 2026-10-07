@@ -68,7 +68,7 @@ import {
   type PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
 import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
-import type { ProfileTeamMember } from '@/types/ecosystem';
+import type { ProfileTeamMember } from '@/types/profile';
 
 /* ---------------------------------------------------------------------- */
 /* Proportions                                                             */

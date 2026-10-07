@@ -3,44 +3,7 @@
 import { useId, useState, type ReactNode } from 'react';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import {
-  PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS,
-  PORTFOLIO_STACK_DESIGN_OPTIONS,
-  PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS,
-  PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS,
-  PORTFOLIO_STACK_TAGS_SIZE_OPTIONS,
-  PORTFOLIO_STACK_TITLE_PRESET_OPTIONS,
-  STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
-  STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
-  STACK_HEADER_PALETTE_TOKEN_OPTIONS,
-  stackHeaderPaletteTokenColor,
-  stackBrandCardsDesignDefaults,
-  stackBrandIndexDesignDefaults,
-  stackBrandRowDesignDefaults,
-  stackLevelBentoCategoriesDesignDefaults,
-  stackLevelCategoryRowsDesignDefaults,
-  stackLevelCircularCardsDesignDefaults,
-  stackLevelIndicatorDesignSupportsCardFrame,
-  stackLevelProgressRowsDesignDefaults,
-  stackLevelStarCardsDesignDefaults,
-  stackLevelSvgRingsDesignDefaults,
-  stackLevelTableRowsDesignDefaults,
-  stackSectionLayoutIsAside,
-  resolveStackIconBackgroundEnabled,
-  resolveStackShowLevel,
-  DEFAULT_STACK_TITLE,
-  type PortfolioStackAsideTitlePlacement,
-  type PortfolioStackDesign,
-  type PortfolioStackHeaderAccentCountAlignment,
-  type PortfolioStackHeaderBillboardWordStyle,
-  type PortfolioStackHeaderDesign,
-  type PortfolioStackHeaderPaletteToken,
-  type PortfolioStackHeaderTitleSize,
-  type PortfolioStackHeaderTitleWeight,
-  type PortfolioStackSectionLayout,
-  type PortfolioStackSectionSettings,
-  type PortfolioStackTagsSize,
-} from '@/components/portfolio/portfolio-stack-settings';
+import { PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS, PORTFOLIO_STACK_DESIGN_OPTIONS, PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS, PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS, PORTFOLIO_STACK_TAGS_SIZE_OPTIONS, PORTFOLIO_STACK_TITLE_PRESET_OPTIONS, STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS, STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS, STACK_HEADER_PALETTE_TOKEN_OPTIONS, stackHeaderPaletteTokenColor, stackBrandCardsDesignDefaults, stackBrandIndexDesignDefaults, stackBrandRowDesignDefaults, stackLevelBentoCategoriesDesignDefaults, stackLevelCategoryRowsDesignDefaults, stackLevelCircularCardsDesignDefaults, stackLevelIndicatorDesignSupportsCardFrame, stackLevelProgressRowsDesignDefaults, stackLevelStarCardsDesignDefaults, stackLevelSvgRingsDesignDefaults, stackLevelTableRowsDesignDefaults, stackSectionLayoutIsAside, DEFAULT_STACK_TITLE, type PortfolioStackAsideTitlePlacement, type PortfolioStackDesign, type PortfolioStackHeaderDesign, type PortfolioStackSectionLayout, type PortfolioStackSectionSettings, type PortfolioStackTagsSize } from '@/components/portfolio/portfolio-stack-settings';
 import {
   PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS,
   PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS,
@@ -73,21 +36,12 @@ import {
   type PortfolioToolsSubtitlePreset,
   type PortfolioToolsTileSize,
 } from '@/components/portfolio/portfolio-tools-settings';
-import {
-  applyToolsPaletteToSettings,
-  DEFAULT_TOOLS_COLOR_BINDINGS,
-  DEFAULT_TOOLS_PALETTE,
-  mergeToolsColorBindings,
-  mergeToolsPalette,
-  patchToolsColorBinding,
-  PORTFOLIO_TOOLS_COLOR_SLOT_OPTIONS,
-  type ToolsColorSlot,
-} from '@/components/portfolio/portfolio-tools-palette-settings';
-import {
-  PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
-  resolveHeroPaletteColor,
-  type HeroPaletteTokenId,
-} from '@/components/portfolio/portfolio-hero-palette-settings';
+import { DEFAULT_TOOLS_COLOR_BINDINGS, DEFAULT_TOOLS_PALETTE, mergeToolsColorBindings, mergeToolsPalette, patchToolsColorBinding, type ToolsColorSlot } from '@/components/portfolio/portfolio-tools-palette-settings';
+import { resolveHeroPaletteColor, type HeroPaletteTokenId } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
+import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
+import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 /** Same general / design / header mechanism as the Experience section settings panel, plus its own Background tab.
  *  Header is one shared, GSAP-animated header (copied from the Portfolio/Work section's Header mechanism)
@@ -200,12 +154,6 @@ function StackQuickColorPicker({
   );
 }
 
-function StackSectionLabel({ children }: { children: ReactNode }) {
-  return (
-    <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{children}</p>
-  );
-}
-
 /** Maps SectionBackgroundFillControls' field labels to the matching ToolsColorSlot and, for the
  *  custom-color fallback (useHeroPalette off), the concrete settings field it should write to —
  *  same label-keyed pattern portfolio-work-settings-panel.tsx uses for its own background fields. */
@@ -241,6 +189,7 @@ function StackBackgroundColorField({
   const mapping = STACK_BACKGROUND_LABEL_SLOTS[label] ?? STACK_BACKGROUND_LABEL_SLOTS.Color;
   const usingPalette = stack.useHeroPalette !== false;
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <StackQuickColorPicker
       label={label}
       palette={palette}
@@ -255,6 +204,7 @@ function StackBackgroundColorField({
         )
       }
     />
+    </SettingRow>
   );
 }
 
@@ -636,6 +586,8 @@ function StackToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -670,14 +622,16 @@ function StackOptionGrid<T extends string | number>({
   columns?: number;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const rows = useSettingsRows();
   const count = options.length;
   // Keep every option on one horizontal row up to 4 choices (Taille/Espacement/Écart-style fields);
   // larger sets fall back to a 2-column wrap so buttons don't get too cramped.
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
   const compact = cols === count && count >= 2 && count <= 5;
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -713,6 +667,7 @@ function StackOptionGrid<T extends string | number>({
         })}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -731,6 +686,7 @@ function StackSlider<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const rows = useSettingsRows();
   const index = Math.max(
     0,
     options.findIndex((option) => option.value === value)
@@ -739,11 +695,12 @@ function StackSlider<T extends string>({
   const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
   const current = options[index] ?? options[0];
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <div className="pf-stack-slider-row">
+      {rows ? null : (<div className="pf-stack-slider-row">
         <span className="pf-stack-slider-label">{label}</span>
         <span className="pf-stack-slider-value">{current?.label}</span>
-      </div>
+      </div>)}
       <input
         type="range"
         min={0}
@@ -761,6 +718,7 @@ function StackSlider<T extends string>({
         }}
       />
     </div>
+    </SettingRow>
   );
 }
 
@@ -781,10 +739,12 @@ function StackPreviewCardGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
+      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -807,6 +767,7 @@ function StackPreviewCardGrid<T extends string>({
         ))}
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -1141,124 +1102,6 @@ function StackDesignChoiceGrid({
   );
 }
 
-/** S/M/L/XL, each button's own label rendered at the size it represents —
- *  the pill illustrates the scale directly, no separate value readout needed. */
-const STACK_SIZE_PILL_OPTIONS: { value: PortfolioStackHeaderTitleSize; label: string; fontPx: number }[] = [
-  { value: 'sm', label: 'S', fontPx: 12 },
-  { value: 'md', label: 'M', fontPx: 15 },
-  { value: 'lg', label: 'L', fontPx: 18 },
-  { value: 'xl', label: 'XL', fontPx: 22 },
-];
-
-function StackSizePill({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: PortfolioStackHeaderTitleSize;
-  onChange: (value: PortfolioStackHeaderTitleSize) => void;
-}) {
-  return (
-    <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid grid-cols-4 gap-[3px] p-[3px]"
-        data-compact="true"
-      >
-        {STACK_SIZE_PILL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={option.label}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
-              style={{ fontSize: `${option.fontPx}px` }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-/** Mini swatch for a palette-token color picker — the actual resolved color,
- *  not just a text label. */
-function stackHeaderPaletteTokenGlyph(token: PortfolioStackHeaderPaletteToken): ReactNode {
-  return (
-    <circle
-      cx="32"
-      cy="17"
-      r="8"
-      fill={stackHeaderPaletteTokenColor(token)}
-      style={{
-        stroke: 'color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 22%, transparent)',
-        strokeWidth: 1,
-      }}
-    />
-  );
-}
-
-function stackHeaderBillboardWordStyleGlyph(style: PortfolioStackHeaderBillboardWordStyle): ReactNode {
-  switch (style) {
-    case 'outline':
-      return (
-        <text
-          x="32"
-          y="23"
-          textAnchor="middle"
-          fontSize="19"
-          fontWeight={900}
-          stroke="currentColor"
-          strokeWidth="1"
-          className="pf-stack-mini-ink"
-          style={{ fill: 'none' }}
-        >
-          Aa
-        </text>
-      );
-    case 'fill':
-      return (
-        <>
-          <text
-            x="32"
-            y="23"
-            textAnchor="middle"
-            fontSize="19"
-            fontWeight={900}
-            className="pf-stack-mini-ink"
-            opacity={0.4}
-            style={{ filter: 'blur(2px)' }}
-          >
-            Aa
-          </text>
-          <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-            Aa
-          </text>
-        </>
-      );
-    case 'simple':
-      return (
-        <text x="32" y="23" textAnchor="middle" fontSize="19" fontWeight={900} className="pf-stack-mini-ink">
-          Aa
-        </text>
-      );
-    default: {
-      const _exhaustive: never = style;
-      return _exhaustive;
-    }
-  }
-}
-
 /** Mini wireframes for the 8 Header design picker cards — same StackMiniSlide mechanism as Header. */
 function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDesign }) {
   switch (design) {
@@ -1359,11 +1202,15 @@ function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDe
 function StackHeaderChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioStackHeaderDesign;
   onChange: (value: PortfolioStackHeaderDesign) => void;
+  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS[0];
@@ -1385,17 +1232,18 @@ function StackHeaderChoiceGrid({
           {PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
             return (
-              <StackPickerCard
-                key={option.value}
-                active={active}
-                label={option.label}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <StackHeaderDesignWireframe design={option.value} />
-              </StackPickerCard>
+              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+                <StackPickerCard
+                  active={active}
+                  label={option.label}
+                  onClick={() => {
+                    onChange(option.value);
+                    setShowGrid(false);
+                  }}
+                >
+                  <StackHeaderDesignWireframe design={option.value} />
+                </StackPickerCard>
+              </PortfolioHeaderDesignOption>
             );
           })}
         </div>
@@ -1407,77 +1255,6 @@ function StackHeaderChoiceGrid({
     <StackDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
       <StackHeaderDesignWireframe design={value} />
     </StackDesignSummaryRow>
-  );
-}
-
-const STACK_HEADER_MARGIN_BOTTOM_OPTIONS = [
-  { value: 'sm' as const, label: 'Small' },
-  { value: 'md' as const, label: 'Medium' },
-  { value: 'lg' as const, label: 'Large' },
-  { value: 'xl' as const, label: 'XL' },
-];
-
-const STACK_HEADER_TITLE_WEIGHT_OPTIONS = [
-  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
-  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
-  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
-  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
-];
-
-/** Shared across every Header design — bottom spacing, title size, and title weight.
- *  Appended to each design's own advanced-settings branch in the Header tab.
- *  `hideAlignment`/`hideTitleControls` drop controls a given design doesn't
- *  actually consume (e.g. Billboard has no adjustable title size/weight and
- *  ignores header alignment) — dead controls left visible are confusing. */
-function StackHeaderSharedAdvancedControls({
-  stack,
-  onChange,
-  hideAlignment = false,
-  hideTitleControls = false,
-}: {
-  stack: PortfolioStackSectionSettings;
-  onChange: (patch: Partial<PortfolioStackSectionSettings>) => void;
-  hideAlignment?: boolean;
-  hideTitleControls?: boolean;
-}) {
-  return (
-    <>
-      {hideAlignment ? null : (
-        <StackOptionGrid
-          label="Header alignment"
-          options={[
-            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
-          ]}
-          value={stack.headerDesignAlignment}
-          onChange={(headerDesignAlignment: PortfolioStackHeaderAccentCountAlignment) => onChange({ headerDesignAlignment })}
-          columns={3}
-        />
-      )}
-      <StackSlider
-        label="Bottom spacing"
-        options={STACK_HEADER_MARGIN_BOTTOM_OPTIONS}
-        value={stack.headerMarginBottom ?? 'md'}
-        onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
-      />
-      {hideTitleControls ? null : (
-        <>
-          <StackSizePill
-            label="Title size"
-            value={stack.headerTitleSize ?? 'md'}
-            onChange={(headerTitleSize) => onChange({ headerTitleSize })}
-          />
-          <StackOptionGrid
-            label="Title weight"
-            options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-            value={stack.headerTitleWeight ?? 'regular'}
-            onChange={(headerTitleWeight: PortfolioStackHeaderTitleWeight) => onChange({ headerTitleWeight })}
-            columns={4}
-          />
-        </>
-      )}
-    </>
   );
 }
 
@@ -1514,18 +1291,23 @@ function stackSectionLayoutAsideRightGlyph(): ReactNode {
 }
 
 function StackLayoutSettingsBand({
+  flush = false,
   children,
   motionKey,
+  title = 'Design settings',
 }: {
   children: ReactNode;
   motionKey: string;
+  title?: string;
+  /** Drops the boxed frame so the fields use the dock's full width. */
+  flush?: boolean;
 }) {
   return (
-    <section className="pf-stack-layout-settings" aria-labelledby="stack-layout-settings-title">
+    <section className={`pf-stack-layout-settings${flush ? ' pf-stack-layout-settings--flush' : ''}`} aria-labelledby="stack-layout-settings-title">
       <h3 id="stack-layout-settings-title" className="pf-stack-layout-settings-title">
-        Design settings
+        {title}
       </h3>
-      <div key={motionKey} className="pf-stack-layout-settings-body space-y-6">
+      <div key={motionKey} className={`pf-stack-layout-settings-body ${flush ? 'space-y-9' : 'space-y-6'}`}>
         {children}
       </div>
     </section>
@@ -1601,6 +1383,39 @@ type StackSettingsPanelProps = {
   onSubSectionChange?: (value: StackSubSection) => void;
 };
 
+const STACK_HEADER_COPY: HeaderCopy = {
+  editorial: { label: 'Stack', title: 'Core stack', subtitle: 'Languages, frameworks, and tools.' },
+  index: { rule: 'Index', title: 'Core stack', subtitle: 'Languages, frameworks, and tools.', count: 'Technologies' },
+  marquee: ['Stack', 'Optional', 'Optional', 'Optional'],
+  accent: { badge: '{count}+ technologies', lead: 'A curated set of tools I rely on.' },
+  serif: { label: 'Stack', title: 'A curated set of languages, frameworks, and tools.', subtitle: 'Languages, frameworks, and tools.' },
+  billboard: { word: 'STACK', title: 'Core stack', count: '{count} technologies' },
+  masthead: ['Core stack.', 'Chosen with intent.', 'Kept up to date.'],
+  split: { title: 'Core stack', label: 'Stack' },
+};
+
+/** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
+function StackHeaderDesignFields({
+  stack,
+  onChange,
+}: {
+  stack: PortfolioStackSectionSettings;
+  onChange: (patch: Partial<PortfolioStackSectionSettings>) => void;
+}) {
+  const onPatch = (patch: HeaderPatch) => onChange(patch as Partial<PortfolioStackSectionSettings>);
+  return (
+    <HeaderDesignFields
+      settings={stack}
+      onPatch={onPatch}
+      copy={STACK_HEADER_COPY}
+      colorOptions={STACK_HEADER_PALETTE_TOKEN_OPTIONS}
+      resolveColor={stackHeaderPaletteTokenColor}
+      accentAlignmentOptions={STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+      billboardStyleOptions={STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
+    />
+  );
+}
+
 export function StackSettingsPanel({
   stack,
   onChange,
@@ -1610,9 +1425,9 @@ export function StackSettingsPanel({
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, stack.toolsPalette);
   const bindings = mergeToolsColorBindings(DEFAULT_TOOLS_COLOR_BINDINGS, stack.toolsColorBindings);
   const current = normalizeStackSubSection(subSection);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const sectionLayout = stack.sectionLayout ?? 'stacked';
   const stackAside = stackSectionLayoutIsAside(sectionLayout);
-  const isRichStackDesign = stack.design === 'brand-cards' || stack.design === 'brand-index';
   const isLevelIndicatorDesign =
     stack.design === 'level-progress-rows' ||
     stack.design === 'level-category-rows' ||
@@ -1621,45 +1436,10 @@ export function StackSettingsPanel({
     stack.design === 'level-star-cards' ||
     stack.design === 'level-svg-rings' ||
     stack.design === 'level-bento-categories';
-  const isBrandRowFrames =
-    stack.design === 'brand-row' && (stack.brandRowCellStyle ?? 'dividers') === 'frames';
-  // Core stack tags renders names as chips (chipText/chipBackground), not the generic label ink —
-  // point the "Nom" quick picker at whichever slot actually drives that design's name color.
-  const nameColorSlot: ToolsColorSlot = stack.design === 'stack-tags' ? 'chipText' : 'label';
-  const nameColorHex = nameColorSlot === 'chipText' ? stack.chipTextColor : stack.labelColor;
-  const paletteSlots = PORTFOLIO_TOOLS_COLOR_SLOT_OPTIONS.filter((slot) => {
-    // Nom / Description get their own dedicated 3-swatch quick picker (StackQuickColorPicker) below.
-    if (slot.value === 'label' || slot.value === 'description') return false;
-    if (
-      slot.value === 'title' ||
-      slot.value === 'tileBackground' ||
-      slot.value === 'sectionBackground'
-    ) {
-      return true;
-    }
-    if (!isRichStackDesign && !isLevelIndicatorDesign && !isBrandRowFrames) return false;
-    if (isLevelIndicatorDesign) {
-      return (
-        slot.value === 'cardBackground' ||
-        slot.value === 'cardBorder' ||
-        slot.value === 'levelAccent'
-      );
-    }
-    if (isBrandRowFrames) {
-      return slot.value === 'cardBackground' || slot.value === 'cardBorder';
-    }
-    return (
-      slot.value === 'cardBackground' ||
-      slot.value === 'cardBorder' ||
-      slot.value === 'chipBackground' ||
-      slot.value === 'chipText' ||
-      slot.value === 'levelAccent'
-    );
-  });
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {SUBSECTIONS.map((item) => (
           <button
             key={item.value}
@@ -1785,6 +1565,7 @@ export function StackSettingsPanel({
             />
           ) : null}
           <StackLayoutSettingsBand motionKey={stack.design}>
+<SettingsRowsScope title="Layout options">
           {stack.design === 'stack-tags' ? (
             <StackOptionGrid
               label="Tag alignment"
@@ -2222,7 +2003,8 @@ export function StackSettingsPanel({
               }
             />
           ) : null}
-          </StackLayoutSettingsBand>
+          </SettingsRowsScope>
+</StackLayoutSettingsBand>
         </div>
       ) : null}
 
@@ -2247,620 +2029,19 @@ export function StackSettingsPanel({
 
       {current === 'header' ? (
         <div className="space-y-6">
-          <div>
-            <StackHeaderChoiceGrid
-              value={stack.headerDesign ?? 'editorial'}
-              onChange={(headerDesign) => onChange({ headerDesign })}
-            />
+          <StackHeaderChoiceGrid
+            value={stack.headerDesign ?? 'editorial'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+            open={headerCatalogOpen}
+            onOpenChange={setHeaderCatalogOpen}
+          />
 
-            <StackLayoutSettingsBand motionKey={stack.headerDesign ?? 'editorial'}>
-              {stack.headerDesign === 'index' ? (
-                <>
-                  <div>
-                    <StackSectionLabel>Rule label</StackSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={stack.headerIndexLabelText}
-                          onChange={(event) => onChange({ headerIndexLabelText: event.target.value })}
-                          placeholder="Index"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <StackPreviewCardGrid
-                        label="Color"
-                        options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: stackHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={stack.headerIndexLabelColor ?? 'texteFort'}
-                        onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
-                        columns={3}
-                      />
-                      <StackSizePill
-                        label="Size"
-                        value={stack.headerIndexLabelSize ?? 'md'}
-                        onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
-                      />
-                      <StackOptionGrid
-                        label="Weight"
-                        options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={stack.headerIndexLabelWeight ?? 'regular'}
-                        onChange={(headerIndexLabelWeight: PortfolioStackHeaderTitleWeight) =>
-                          onChange({ headerIndexLabelWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <StackSectionLabel>Counter</StackSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <StackPreviewCardGrid
-                        label="Numeral color"
-                        options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: stackHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={stack.headerIndexNumberColor ?? 'principal'}
-                        onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
-                        columns={3}
-                      />
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
-                        <input
-                          type="text"
-                          value={stack.headerIndexCountLabelText}
-                          onChange={(event) => onChange({ headerIndexCountLabelText: event.target.value })}
-                          placeholder="Technologies"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <StackSectionLabel>Title</StackSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={stack.headerIndexTitleText}
-                          onChange={(event) => onChange({ headerIndexTitleText: event.target.value })}
-                          placeholder="Core stack"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <StackPreviewCardGrid
-                        label="Color"
-                        options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: stackHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={stack.headerIndexTitleColor ?? 'texteFort'}
-                        onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
-                        columns={3}
-                      />
-                      <StackSizePill
-                        label="Size"
-                        value={stack.headerIndexTitleSize ?? 'md'}
-                        onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
-                      />
-                      <StackOptionGrid
-                        label="Weight"
-                        options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={stack.headerIndexTitleWeight ?? 'regular'}
-                        onChange={(headerIndexTitleWeight: PortfolioStackHeaderTitleWeight) =>
-                          onChange({ headerIndexTitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <StackSectionLabel>Subtitle</StackSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
-                        <input
-                          type="text"
-                          value={stack.headerIndexSubtitleText}
-                          onChange={(event) => onChange({ headerIndexSubtitleText: event.target.value })}
-                          placeholder="Languages, frameworks, and tools."
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <StackPreviewCardGrid
-                        label="Color"
-                        options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: stackHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={stack.headerIndexSubtitleColor ?? 'texteFort'}
-                        onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
-                        columns={3}
-                      />
-                      <StackSizePill
-                        label="Size"
-                        value={stack.headerIndexSubtitleSize ?? 'md'}
-                        onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
-                      />
-                      <StackOptionGrid
-                        label="Weight"
-                        options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                        value={stack.headerIndexSubtitleWeight ?? 'regular'}
-                        onChange={(headerIndexSubtitleWeight: PortfolioStackHeaderTitleWeight) =>
-                          onChange({ headerIndexSubtitleWeight })
-                        }
-                        columns={4}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideTitleControls />
-                  </div>
-                </>
-              ) : stack.headerDesign === 'marquee' ? (
-                <>
-                  <div>
-                    <StackSectionLabel>Words</StackSectionLabel>
-                    <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
-                        <input
-                          type="text"
-                          value={stack.headerMarqueeWord1Text}
-                          onChange={(event) => onChange({ headerMarqueeWord1Text: event.target.value })}
-                          placeholder="Core"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
-                        <input
-                          type="text"
-                          value={stack.headerMarqueeWord2Text}
-                          onChange={(event) => onChange({ headerMarqueeWord2Text: event.target.value })}
-                          placeholder="Stack"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
-                        <input
-                          type="text"
-                          value={stack.headerMarqueeWord3Text}
-                          onChange={(event) => onChange({ headerMarqueeWord3Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                      <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
-                        <input
-                          type="text"
-                          value={stack.headerMarqueeWord4Text}
-                          onChange={(event) => onChange({ headerMarqueeWord4Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                        />
-                      </div>
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <StackSectionLabel>Style</StackSectionLabel>
-                    <div className="mt-3 space-y-4">
-                      <StackPreviewCardGrid
-                        label="Word color"
-                        options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                          ...option,
-                          glyph: stackHeaderPaletteTokenGlyph(option.value),
-                        }))}
-                        value={stack.headerMarqueeWordColor ?? 'principal'}
-                        onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
-                        columns={3}
-                      />
-                      <StackSizePill
-                        label="Size"
-                        value={stack.headerMarqueeSize ?? 'md'}
-                        onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
-                      />
-                    </div>
-                  </div>
-
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideAlignment hideTitleControls />
-                  </div>
-                </>
-              ) : stack.headerDesign === 'accent-count' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
-                    <input
-                      type="text"
-                      value={stack.headerAccentCountBadgeText}
-                      onChange={(event) => onChange({ headerAccentCountBadgeText: event.target.value })}
-                      placeholder="{count}+ technologies"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
-                    <input
-                      type="text"
-                      value={stack.headerAccentCountLeadText}
-                      onChange={(event) => onChange({ headerAccentCountLeadText: event.target.value })}
-                      placeholder="A curated set of tools I rely on."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <StackPreviewCardGrid
-                    label="Badge color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerAccentCountBadgeColor ?? 'principal'}
-                    onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
-                    columns={3}
-                  />
-                  <StackPreviewCardGrid
-                    label="Lead color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerAccentCountLeadColor ?? 'secondaire'}
-                    onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Size"
-                    value={stack.headerAccentCountSize ?? 'md'}
-                    onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
-                  />
-                  <StackOptionGrid
-                    label="Lead weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerAccentCountWeight ?? 'regular'}
-                    onChange={(headerAccentCountWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerAccentCountWeight })
-                    }
-                    columns={4}
-                  />
-                  <StackOptionGrid
-                    label="Alignment"
-                    options={STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
-                    value={stack.headerAccentCountAlignment ?? 'left'}
-                    onChange={(headerAccentCountAlignment: PortfolioStackHeaderAccentCountAlignment) =>
-                      onChange({ headerAccentCountAlignment })
-                    }
-                    columns={3}
-                  />
-                  <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : stack.headerDesign === 'serif-lead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={stack.headerSerifLeadLabelText}
-                      onChange={(event) => onChange({ headerSerifLeadLabelText: event.target.value })}
-                      placeholder="Stack"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <StackPreviewCardGrid
-                    label="Label color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerSerifLeadLabelColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Label size"
-                    value={stack.headerSerifLeadLabelSize ?? 'md'}
-                    onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
-                  />
-                  <StackOptionGrid
-                    label="Label weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerSerifLeadLabelWeight ?? 'regular'}
-                    onChange={(headerSerifLeadLabelWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={stack.headerSerifLeadTitleText}
-                      onChange={(event) => onChange({ headerSerifLeadTitleText: event.target.value })}
-                      placeholder="A curated set of languages, frameworks, and tools."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <StackPreviewCardGrid
-                    label="Title color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerSerifLeadTitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Title size"
-                    value={stack.headerSerifLeadTitleSize ?? 'md'}
-                    onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
-                  />
-                  <StackOptionGrid
-                    label="Title weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerSerifLeadTitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadTitleWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <StackPreviewCardGrid
-                    label="Subtitle color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerSerifLeadSubtitleColor ?? 'texteFort'}
-                    onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Subtitle size"
-                    value={stack.headerSerifLeadSubtitleSize ?? 'md'}
-                    onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
-                  />
-                  <StackOptionGrid
-                    label="Subtitle weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerSerifLeadSubtitleWeight ?? 'regular'}
-                    onChange={(headerSerifLeadSubtitleWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerSerifLeadSubtitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideTitleControls />
-                </>
-              ) : stack.headerDesign === 'billboard' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
-                    <input
-                      type="text"
-                      value={stack.headerBillboardBigWord}
-                      onChange={(event) => onChange({ headerBillboardBigWord: event.target.value })}
-                      placeholder="STACK"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count line</p>
-                    <input
-                      type="text"
-                      value={stack.headerBillboardCountText}
-                      onChange={(event) => onChange({ headerBillboardCountText: event.target.value })}
-                      placeholder="{count} technologies"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={stack.headerBillboardTitleText}
-                      onChange={(event) => onChange({ headerBillboardTitleText: event.target.value })}
-                      placeholder="Core stack"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <StackPreviewCardGrid
-                    label="Big word style"
-                    options={STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderBillboardWordStyleGlyph(option.value),
-                    }))}
-                    value={stack.headerBillboardWordStyle ?? 'outline'}
-                    onChange={(headerBillboardWordStyle: PortfolioStackHeaderBillboardWordStyle) =>
-                      onChange({ headerBillboardWordStyle })
-                    }
-                    columns={3}
-                  />
-                  <StackPreviewCardGrid
-                    label="Big word color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerBillboardWordColor ?? 'principal'}
-                    onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
-                    columns={3}
-                  />
-                  <StackPreviewCardGrid
-                    label="Title color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerBillboardTitleColor ?? 'principal'}
-                    onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
-                    columns={3}
-                  />
-                  <StackPreviewCardGrid
-                    label="Count line color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerBillboardMetaColor ?? 'secondaire'}
-                    onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
-                    columns={3}
-                  />
-                  <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : stack.headerDesign === 'masthead' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
-                    <input
-                      type="text"
-                      value={stack.headerMastheadLine1Text}
-                      onChange={(event) => onChange({ headerMastheadLine1Text: event.target.value })}
-                      placeholder="Core stack."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
-                    <input
-                      type="text"
-                      value={stack.headerMastheadLine2Text}
-                      onChange={(event) => onChange({ headerMastheadLine2Text: event.target.value })}
-                      placeholder="Chosen with intent."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
-                    <input
-                      type="text"
-                      value={stack.headerMastheadLine3Text}
-                      onChange={(event) => onChange({ headerMastheadLine3Text: event.target.value })}
-                      placeholder="Kept up to date."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <StackPreviewCardGrid
-                    label="Headline color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerMastheadHeadlineColor ?? 'principal'}
-                    onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Headline size"
-                    value={stack.headerMastheadHeadlineSize ?? 'md'}
-                    onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
-                  />
-                  <StackOptionGrid
-                    label="Headline weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerMastheadHeadlineWeight ?? 'regular'}
-                    onChange={(headerMastheadHeadlineWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerMastheadHeadlineWeight })
-                    }
-                    columns={4}
-                  />
-                  <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideTitleControls />
-                </>
-              ) : stack.headerDesign === 'split-heading' ? (
-                <>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
-                    <input
-                      type="text"
-                      value={stack.headerSplitHeadingTitleText}
-                      onChange={(event) => onChange({ headerSplitHeadingTitleText: event.target.value })}
-                      placeholder="Core stack"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
-                    <input
-                      type="text"
-                      value={stack.headerSplitHeadingLabelText}
-                      onChange={(event) => onChange({ headerSplitHeadingLabelText: event.target.value })}
-                      placeholder="Stack"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                    />
-                  </div>
-                  <StackPreviewCardGrid
-                    label="Title color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerSplitHeadingTitleColor ?? 'principal'}
-                    onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Title size"
-                    value={stack.headerSplitHeadingTitleSize ?? 'md'}
-                    onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
-                  />
-                  <StackOptionGrid
-                    label="Title weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerSplitHeadingTitleWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingTitleWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingTitleWeight })
-                    }
-                    columns={4}
-                  />
-                  <StackPreviewCardGrid
-                    label="Label color"
-                    options={STACK_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => ({
-                      ...option,
-                      glyph: stackHeaderPaletteTokenGlyph(option.value),
-                    }))}
-                    value={stack.headerSplitHeadingLabelColor ?? 'secondaire'}
-                    onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
-                    columns={3}
-                  />
-                  <StackSizePill
-                    label="Label size"
-                    value={stack.headerSplitHeadingLabelSize ?? 'md'}
-                    onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
-                  />
-                  <StackOptionGrid
-                    label="Label weight"
-                    options={STACK_HEADER_TITLE_WEIGHT_OPTIONS}
-                    value={stack.headerSplitHeadingLabelWeight ?? 'regular'}
-                    onChange={(headerSplitHeadingLabelWeight: PortfolioStackHeaderTitleWeight) =>
-                      onChange({ headerSplitHeadingLabelWeight })
-                    }
-                    columns={4}
-                  />
-                  <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} hideAlignment hideTitleControls />
-                </>
-              ) : (
-                <>
-                  <StackToggleRow
-                    label="Header motion"
-                    info="Respects reduced-motion preference"
-                    checked={stack.headerAnimationEnabled !== false}
-                    onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
-                  />
-                  <StackHeaderSharedAdvancedControls stack={stack} onChange={onChange} />
-                </>
-              )}
+          {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
+          {headerCatalogOpen ? null : (
+            <StackLayoutSettingsBand motionKey={stack.headerDesign ?? 'editorial'} title="Header settings" flush>
+              <StackHeaderDesignFields stack={stack} onChange={onChange} />
             </StackLayoutSettingsBand>
-          </div>
+          )}
         </div>
       ) : null}
     </div>

@@ -220,7 +220,7 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
             label="Public profile"
             description="Bio, skills, languages and the fields visitors can see are edited in your studio."
           >
-            <Link href="/dashboard/creator" className={SECONDARY_BUTTON_CLASS}>
+            <Link href="/profile" className={SECONDARY_BUTTON_CLASS}>
               Open studio
             </Link>
           </SettingRow>

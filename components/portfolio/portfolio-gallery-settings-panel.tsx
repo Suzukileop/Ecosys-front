@@ -26,8 +26,6 @@ import {
   PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS,
   PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS,
   PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS,
-  PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS,
-  PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS,
   type PortfolioGalleryDesign,
   type PortfolioGallerySectionSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
@@ -38,10 +36,11 @@ import {
   galleryHeaderPaletteTokenColor,
   PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS,
   type PortfolioGalleryHeaderDesign,
-  type PortfolioGalleryHeaderPaletteToken,
-  type PortfolioGalleryHeaderTitleSize,
-  type PortfolioGalleryHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-gallery-header-settings';
+import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
+import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
+import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
+import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -56,8 +55,8 @@ export type GallerySettingsSubSection = GallerySubSection;
 const GALLERY_SUB_SECTIONS: { id: GallerySubSection; label: string }[] = [
   { id: 'general', label: 'General' },
   { id: 'design', label: 'Design' },
-  { id: 'background', label: 'Background' },
   { id: 'header', label: 'Header' },
+  { id: 'background', label: 'Background' },
 ];
 
 /** Maps legacy subsection ids (saved UI state / search) onto the current Gallery menu. */
@@ -75,9 +74,6 @@ type GalleryPatch = (patch: Partial<PortfolioGallerySectionSettings>) => void;
 /* ---------------------------------------------------------------------- */
 /* Shared settings chrome — the Footer panel's controls, Gallery-scoped.   */
 /* ---------------------------------------------------------------------- */
-
-const GALLERY_INPUT_CLASS =
-  'w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400';
 
 function GallerySectionLabel({ children }: { children: string }) {
   return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
@@ -120,6 +116,8 @@ function GalleryToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <button
       type="button"
@@ -146,6 +144,8 @@ function GalleryVisibilityRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
+  const rows = useSettingsRows();
+  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
     <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
       <span
@@ -184,9 +184,11 @@ function GalleryOptionGrid<T extends string>({
   /** Keeps `label` as the accessible name only — for a pill that sits right under its own heading. */
   hideLabel?: boolean;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      {hideLabel ? null : <GalleryGroupLabel>{label}</GalleryGroupLabel>}
+      {hideLabel ? null : (rows ? null : <GalleryGroupLabel>{label}</GalleryGroupLabel>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -203,7 +205,7 @@ function GalleryOptionGrid<T extends string>({
               aria-checked={active}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
               {option.label}
@@ -212,128 +214,7 @@ function GalleryOptionGrid<T extends string>({
         })}
       </div>
     </div>
-  );
-}
-
-const GALLERY_SIZE_PILL_OPTIONS: { value: PortfolioGalleryHeaderTitleSize; label: string; fontPx: number }[] = [
-  { value: 'sm', label: 'S', fontPx: 12 },
-  { value: 'md', label: 'M', fontPx: 15 },
-  { value: 'lg', label: 'L', fontPx: 18 },
-  { value: 'xl', label: 'XL', fontPx: 22 },
-];
-
-function GallerySizePill({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: PortfolioGalleryHeaderTitleSize;
-  onChange: (value: PortfolioGalleryHeaderTitleSize) => void;
-}) {
-  return (
-    <div>
-      <GalleryGroupLabel>{label}</GalleryGroupLabel>
-      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-4 gap-1.5">
-        {GALLERY_SIZE_PILL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              className={`rounded-lg px-2.5 py-2 text-center font-semibold leading-none transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              }`}
-              style={{ fontSize: `${option.fontPx}px` }}
-            >
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function GalleryPaletteSwatches({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: PortfolioGalleryHeaderPaletteToken;
-  onChange: (value: PortfolioGalleryHeaderPaletteToken) => void;
-}) {
-  return (
-    <div>
-      <GalleryGroupLabel>{label}</GalleryGroupLabel>
-      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-3 gap-1.5">
-        {GALLERY_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-              }`}
-            >
-              <span
-                aria-hidden
-                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
-                style={{ backgroundColor: galleryHeaderPaletteTokenColor(option.value) }}
-              />
-              {option.label}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function GalleryTextField({
-  label,
-  value,
-  placeholder,
-  onChange,
-  multiline = false,
-}: {
-  label: string;
-  value: string;
-  placeholder?: string;
-  onChange: (value: string) => void;
-  multiline?: boolean;
-}) {
-  return (
-    <div>
-      <GallerySectionLabel>{label}</GallerySectionLabel>
-      {multiline ? (
-        <textarea
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          rows={2}
-          aria-label={label}
-          className={`mt-2 ${GALLERY_INPUT_CLASS} resize-y`}
-        />
-      ) : (
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          placeholder={placeholder}
-          aria-label={label}
-          className={`mt-2 ${GALLERY_INPUT_CLASS}`}
-        />
-      )}
-    </div>
+    </SettingRow>
   );
 }
 
@@ -383,9 +264,11 @@ function GalleryManualColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const rows = useSettingsRows();
   return (
+    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      <GallerySectionLabel>{label}</GallerySectionLabel>
+      {rows ? null : (<GallerySectionLabel>{label}</GallerySectionLabel>)}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input
           type="color"
@@ -406,6 +289,7 @@ function GalleryManualColorField({
         />
       </div>
     </div>
+    </SettingRow>
   );
 }
 
@@ -779,11 +663,15 @@ function GalleryHeaderWireframe({ design }: { design: PortfolioGalleryHeaderDesi
 function GalleryHeaderDesignGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioGalleryHeaderDesign;
   onChange: (value: PortfolioGalleryHeaderDesign) => void;
+  /** Whether the catalog of designs is open (owned by the panel so it can hide the settings below). */
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS[0];
@@ -803,17 +691,18 @@ function GalleryHeaderDesignGrid({
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.map((option) => (
-            <GalleryPickerCard
-              key={option.value}
-              active={option.value === value}
-              label={option.label}
-              onClick={() => {
-                onChange(option.value);
-                setShowGrid(false);
-              }}
-            >
-              <GalleryHeaderWireframe design={option.value} />
-            </GalleryPickerCard>
+            <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+              <GalleryPickerCard
+                active={option.value === value}
+                label={option.label}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              >
+                <GalleryHeaderWireframe design={option.value} />
+              </GalleryPickerCard>
+            </PortfolioHeaderDesignOption>
           ))}
         </div>
       </div>
@@ -829,6 +718,7 @@ function GalleryHeaderDesignGrid({
 
 /** The Footer's settings band — one titled card under a design picker. */
 function GallerySettingsBand({
+  flush = false,
   id,
   title,
   motionKey,
@@ -838,9 +728,11 @@ function GallerySettingsBand({
   title: string;
   motionKey: string;
   children: ReactNode;
+  /** Drops the boxed frame so the fields use the dock's full width. */
+  flush?: boolean;
 }) {
   return (
-    <section className="pf-exp-layout-settings" aria-labelledby={id}>
+    <section className={`pf-exp-layout-settings${flush ? ' pf-exp-layout-settings--flush' : ''}`} aria-labelledby={id}>
       <h3 id={id} className="pf-exp-layout-settings-title">
         {title}
       </h3>
@@ -864,537 +756,38 @@ function GalleryBandGroup({ title, children }: { title: string; children: ReactN
 /* Header tab — per-design fields, then the controls every design shares.  */
 /* ---------------------------------------------------------------------- */
 
-const GALLERY_WEIGHT_OPTIONS: { value: PortfolioGalleryHeaderTitleWeight; label: string }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'regular', label: 'Regular' },
-  { value: 'semibold', label: 'Semibold' },
-  { value: 'bold', label: 'Bold' },
-];
+const GALLERY_HEADER_COPY: HeaderCopy = {
+  editorial: { label: 'Gallery', title: 'Visual journal', subtitle: 'Images, films, and chosen moments.' },
+  index: { rule: 'Index', title: 'Visual journal', subtitle: 'Images, films, and chosen moments.', count: 'Images' },
+  marquee: ['Gallery', 'Optional', 'Optional', 'Optional'],
+  accent: { badge: '{count}+ moments', lead: 'A curated set of images and moments worth revisiting.' },
+  serif: { label: 'Gallery', title: 'A curated collection of images, films, and chosen moments.', subtitle: 'Images, films, and chosen moments.' },
+  billboard: { word: 'GALLERY', title: 'Visual journal', count: '{count} images — visual journal below' },
+  masthead: ['Visual stories.', 'Chosen with intent.', 'Captured over time.'],
+  split: { title: 'Visual journal', label: 'Gallery' },
+};
 
-const GALLERY_HEADER_MARGIN_BOTTOM_OPTIONS = [
-  { value: 'sm' as const, label: 'Small' },
-  { value: 'md' as const, label: 'Medium' },
-  { value: 'lg' as const, label: 'Large' },
-  { value: 'xl' as const, label: 'XL' },
-];
-
-/** Bottom spacing and header motion — plus alignment and the shared title size/weight, but
- *  only where the chosen design actually reads them (dead controls left visible are
- *  confusing, so each branch passes `hideAlignment`/`hideTitleControls` to match). */
-function GalleryHeaderSharedControls({
-  gallery,
-  onChange,
-  hideAlignment = false,
-  hideTitleControls = false,
-}: {
-  gallery: PortfolioGallerySectionSettings;
-  onChange: GalleryPatch;
-  hideAlignment?: boolean;
-  hideTitleControls?: boolean;
-}) {
-  return (
-    <div className="space-y-5 border-t border-neutral-200/70 pt-6">
-      {hideAlignment ? null : (
-        <GalleryOptionGrid
-          label="Header alignment"
-          options={[
-            { value: 'left' as const, label: 'Left' },
-            { value: 'center' as const, label: 'Center' },
-            { value: 'right' as const, label: 'Right' },
-          ]}
-          value={gallery.headerDesignAlignment ?? 'left'}
-          onChange={(headerDesignAlignment) => onChange({ headerDesignAlignment })}
-          columns={3}
-        />
-      )}
-      <GalleryOptionGrid
-        label="Bottom spacing"
-        options={GALLERY_HEADER_MARGIN_BOTTOM_OPTIONS}
-        value={gallery.headerMarginBottom ?? 'md'}
-        onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
-        columns={4}
-      />
-      {hideTitleControls ? null : (
-        <>
-          <GallerySizePill
-            label="Title size"
-            value={gallery.headerTitleSize ?? 'md'}
-            onChange={(headerTitleSize) => onChange({ headerTitleSize })}
-          />
-          <GalleryOptionGrid
-            label="Title weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerTitleWeight ?? 'regular'}
-            onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
-            columns={4}
-          />
-        </>
-      )}
-      <div className="space-y-1.5">
-        <GalleryToggleRow
-          label="Header motion"
-          checked={gallery.headerAnimationEnabled !== false}
-          onChange={(headerAnimationEnabled) => onChange({ headerAnimationEnabled })}
-        />
-        <p className="text-xs text-neutral-400">Reduced-motion preferences are always respected.</p>
-      </div>
-    </div>
-  );
-}
-
+/** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
 function GalleryHeaderDesignFields({
   gallery,
   onChange,
 }: {
   gallery: PortfolioGallerySectionSettings;
-  onChange: GalleryPatch;
+  onChange: (patch: Partial<PortfolioGallerySectionSettings>) => void;
 }) {
-  const design = gallery.headerDesign ?? 'editorial';
-
-  if (design === 'index') {
-    return (
-      <>
-        <GalleryTextField
-          label="Rule label"
-          value={gallery.headerIndexLabelText}
-          placeholder="Index"
-          onChange={(headerIndexLabelText) => onChange({ headerIndexLabelText })}
-        />
-        <GalleryTextField
-          label="Title"
-          value={gallery.headerIndexTitleText}
-          placeholder="Visual journal"
-          onChange={(headerIndexTitleText) => onChange({ headerIndexTitleText })}
-        />
-        <GalleryTextField
-          label="Subtitle"
-          value={gallery.headerIndexSubtitleText}
-          placeholder="Images, films, and chosen moments."
-          onChange={(headerIndexSubtitleText) => onChange({ headerIndexSubtitleText })}
-          multiline
-        />
-        <GalleryTextField
-          label="Count label"
-          value={gallery.headerIndexCountLabelText}
-          placeholder="Images"
-          onChange={(headerIndexCountLabelText) => onChange({ headerIndexCountLabelText })}
-        />
-        <GalleryBandGroup title="Label">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerIndexLabelColor ?? 'texteFort'}
-            onChange={(headerIndexLabelColor) => onChange({ headerIndexLabelColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerIndexLabelSize ?? 'md'}
-            onChange={(headerIndexLabelSize) => onChange({ headerIndexLabelSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerIndexLabelWeight ?? 'regular'}
-            onChange={(headerIndexLabelWeight) => onChange({ headerIndexLabelWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Title">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerIndexTitleColor ?? 'texteFort'}
-            onChange={(headerIndexTitleColor) => onChange({ headerIndexTitleColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerIndexTitleSize ?? 'md'}
-            onChange={(headerIndexTitleSize) => onChange({ headerIndexTitleSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerIndexTitleWeight ?? 'regular'}
-            onChange={(headerIndexTitleWeight) => onChange({ headerIndexTitleWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Subtitle">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerIndexSubtitleColor ?? 'texteFort'}
-            onChange={(headerIndexSubtitleColor) => onChange({ headerIndexSubtitleColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerIndexSubtitleSize ?? 'md'}
-            onChange={(headerIndexSubtitleSize) => onChange({ headerIndexSubtitleSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerIndexSubtitleWeight ?? 'regular'}
-            onChange={(headerIndexSubtitleWeight) => onChange({ headerIndexSubtitleWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Counter">
-          <GalleryPaletteSwatches
-            label="Numeral color"
-            value={gallery.headerIndexNumberColor ?? 'principal'}
-            onChange={(headerIndexNumberColor) => onChange({ headerIndexNumberColor })}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideAlignment hideTitleControls />
-      </>
-    );
-  }
-
-  if (design === 'marquee') {
-    return (
-      <>
-        <GalleryBandGroup title="Words">
-          <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-            <GalleryTextField
-              label="Word 1"
-              value={gallery.headerMarqueeWord1Text}
-              placeholder="Visual"
-              onChange={(headerMarqueeWord1Text) => onChange({ headerMarqueeWord1Text })}
-            />
-            <GalleryTextField
-              label="Word 2"
-              value={gallery.headerMarqueeWord2Text}
-              placeholder="Gallery"
-              onChange={(headerMarqueeWord2Text) => onChange({ headerMarqueeWord2Text })}
-            />
-            <GalleryTextField
-              label="Word 3"
-              value={gallery.headerMarqueeWord3Text}
-              placeholder="Optional"
-              onChange={(headerMarqueeWord3Text) => onChange({ headerMarqueeWord3Text })}
-            />
-            <GalleryTextField
-              label="Word 4"
-              value={gallery.headerMarqueeWord4Text}
-              placeholder="Optional"
-              onChange={(headerMarqueeWord4Text) => onChange({ headerMarqueeWord4Text })}
-            />
-          </div>
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Style">
-          <GalleryPaletteSwatches
-            label="Word color"
-            value={gallery.headerMarqueeWordColor ?? 'principal'}
-            onChange={(headerMarqueeWordColor) => onChange({ headerMarqueeWordColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerMarqueeSize ?? 'md'}
-            onChange={(headerMarqueeSize) => onChange({ headerMarqueeSize })}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideAlignment hideTitleControls />
-      </>
-    );
-  }
-
-  if (design === 'accent-count') {
-    return (
-      <>
-        <GalleryTextField
-          label="Badge text"
-          value={gallery.headerAccentCountBadgeText}
-          placeholder="{count}+ moments"
-          onChange={(headerAccentCountBadgeText) => onChange({ headerAccentCountBadgeText })}
-        />
-        <GalleryTextField
-          label="Lead text"
-          value={gallery.headerAccentCountLeadText}
-          placeholder="A curated set of images and moments worth revisiting."
-          onChange={(headerAccentCountLeadText) => onChange({ headerAccentCountLeadText })}
-          multiline
-        />
-        <GalleryBandGroup title="Style">
-          <GalleryPaletteSwatches
-            label="Badge color"
-            value={gallery.headerAccentCountBadgeColor ?? 'principal'}
-            onChange={(headerAccentCountBadgeColor) => onChange({ headerAccentCountBadgeColor })}
-          />
-          <GalleryPaletteSwatches
-            label="Lead color"
-            value={gallery.headerAccentCountLeadColor ?? 'secondaire'}
-            onChange={(headerAccentCountLeadColor) => onChange({ headerAccentCountLeadColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerAccentCountSize ?? 'md'}
-            onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
-          />
-          <GalleryOptionGrid
-            label="Lead weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerAccentCountWeight ?? 'regular'}
-            onChange={(headerAccentCountWeight) => onChange({ headerAccentCountWeight })}
-            columns={4}
-          />
-          <GalleryOptionGrid
-            label="Alignment"
-            options={GALLERY_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
-            value={gallery.headerAccentCountAlignment ?? 'left'}
-            onChange={(headerAccentCountAlignment) => onChange({ headerAccentCountAlignment })}
-            columns={3}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideAlignment hideTitleControls />
-      </>
-    );
-  }
-
-  if (design === 'serif-lead') {
-    return (
-      <>
-        <GalleryTextField
-          label="Label"
-          value={gallery.headerSerifLeadLabelText}
-          placeholder="Gallery"
-          onChange={(headerSerifLeadLabelText) => onChange({ headerSerifLeadLabelText })}
-        />
-        <GalleryTextField
-          label="Title"
-          value={gallery.headerSerifLeadTitleText}
-          placeholder="A curated collection of images, films, and chosen moments."
-          onChange={(headerSerifLeadTitleText) => onChange({ headerSerifLeadTitleText })}
-          multiline
-        />
-        <GalleryBandGroup title="Label">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerSerifLeadLabelColor ?? 'texteFort'}
-            onChange={(headerSerifLeadLabelColor) => onChange({ headerSerifLeadLabelColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerSerifLeadLabelSize ?? 'md'}
-            onChange={(headerSerifLeadLabelSize) => onChange({ headerSerifLeadLabelSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerSerifLeadLabelWeight ?? 'regular'}
-            onChange={(headerSerifLeadLabelWeight) => onChange({ headerSerifLeadLabelWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Title">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerSerifLeadTitleColor ?? 'texteFort'}
-            onChange={(headerSerifLeadTitleColor) => onChange({ headerSerifLeadTitleColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerSerifLeadTitleSize ?? 'md'}
-            onChange={(headerSerifLeadTitleSize) => onChange({ headerSerifLeadTitleSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerSerifLeadTitleWeight ?? 'regular'}
-            onChange={(headerSerifLeadTitleWeight) => onChange({ headerSerifLeadTitleWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Subtitle">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerSerifLeadSubtitleColor ?? 'texteFort'}
-            onChange={(headerSerifLeadSubtitleColor) => onChange({ headerSerifLeadSubtitleColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerSerifLeadSubtitleSize ?? 'md'}
-            onChange={(headerSerifLeadSubtitleSize) => onChange({ headerSerifLeadSubtitleSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerSerifLeadSubtitleWeight ?? 'regular'}
-            onChange={(headerSerifLeadSubtitleWeight) => onChange({ headerSerifLeadSubtitleWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideTitleControls />
-      </>
-    );
-  }
-
-  if (design === 'billboard') {
-    return (
-      <>
-        <GalleryTextField
-          label="Big background word"
-          value={gallery.headerBillboardBigWord}
-          placeholder="GALLERY"
-          onChange={(headerBillboardBigWord) => onChange({ headerBillboardBigWord })}
-        />
-        <GalleryTextField
-          label="Title"
-          value={gallery.headerBillboardTitleText}
-          placeholder="Visual journal"
-          onChange={(headerBillboardTitleText) => onChange({ headerBillboardTitleText })}
-        />
-        <GalleryTextField
-          label="Count line"
-          value={gallery.headerBillboardCountText}
-          placeholder="{count} images — visual journal below"
-          onChange={(headerBillboardCountText) => onChange({ headerBillboardCountText })}
-        />
-        <GalleryBandGroup title="Style">
-          <GalleryOptionGrid
-            label="Big word style"
-            options={GALLERY_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
-            value={gallery.headerBillboardWordStyle ?? 'outline'}
-            onChange={(headerBillboardWordStyle) => onChange({ headerBillboardWordStyle })}
-            columns={3}
-          />
-          <GalleryPaletteSwatches
-            label="Big word color"
-            value={gallery.headerBillboardWordColor ?? 'principal'}
-            onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })}
-          />
-          <GalleryPaletteSwatches
-            label="Title color"
-            value={gallery.headerBillboardTitleColor ?? 'principal'}
-            onChange={(headerBillboardTitleColor) => onChange({ headerBillboardTitleColor })}
-          />
-          <GalleryPaletteSwatches
-            label="Count line color"
-            value={gallery.headerBillboardMetaColor ?? 'secondaire'}
-            onChange={(headerBillboardMetaColor) => onChange({ headerBillboardMetaColor })}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideAlignment hideTitleControls />
-      </>
-    );
-  }
-
-  if (design === 'masthead') {
-    return (
-      <>
-        <GalleryTextField
-          label="Line 1"
-          value={gallery.headerMastheadLine1Text}
-          placeholder="Visual stories."
-          onChange={(headerMastheadLine1Text) => onChange({ headerMastheadLine1Text })}
-        />
-        <GalleryTextField
-          label="Line 2"
-          value={gallery.headerMastheadLine2Text}
-          placeholder="Chosen with intent."
-          onChange={(headerMastheadLine2Text) => onChange({ headerMastheadLine2Text })}
-        />
-        <GalleryTextField
-          label="Line 3"
-          value={gallery.headerMastheadLine3Text}
-          placeholder="Captured over time."
-          onChange={(headerMastheadLine3Text) => onChange({ headerMastheadLine3Text })}
-        />
-        <GalleryBandGroup title="Headline">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerMastheadHeadlineColor ?? 'principal'}
-            onChange={(headerMastheadHeadlineColor) => onChange({ headerMastheadHeadlineColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerMastheadHeadlineSize ?? 'md'}
-            onChange={(headerMastheadHeadlineSize) => onChange({ headerMastheadHeadlineSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerMastheadHeadlineWeight ?? 'regular'}
-            onChange={(headerMastheadHeadlineWeight) => onChange({ headerMastheadHeadlineWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideTitleControls />
-      </>
-    );
-  }
-
-  if (design === 'split-heading') {
-    return (
-      <>
-        <GalleryTextField
-          label="Title"
-          value={gallery.headerSplitHeadingTitleText}
-          placeholder="Visual journal"
-          onChange={(headerSplitHeadingTitleText) => onChange({ headerSplitHeadingTitleText })}
-        />
-        <GalleryTextField
-          label="Label"
-          value={gallery.headerSplitHeadingLabelText}
-          placeholder="Gallery"
-          onChange={(headerSplitHeadingLabelText) => onChange({ headerSplitHeadingLabelText })}
-        />
-        <GalleryBandGroup title="Title">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerSplitHeadingTitleColor ?? 'principal'}
-            onChange={(headerSplitHeadingTitleColor) => onChange({ headerSplitHeadingTitleColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerSplitHeadingTitleSize ?? 'md'}
-            onChange={(headerSplitHeadingTitleSize) => onChange({ headerSplitHeadingTitleSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerSplitHeadingTitleWeight ?? 'regular'}
-            onChange={(headerSplitHeadingTitleWeight) => onChange({ headerSplitHeadingTitleWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryBandGroup title="Label">
-          <GalleryPaletteSwatches
-            label="Color"
-            value={gallery.headerSplitHeadingLabelColor ?? 'secondaire'}
-            onChange={(headerSplitHeadingLabelColor) => onChange({ headerSplitHeadingLabelColor })}
-          />
-          <GallerySizePill
-            label="Size"
-            value={gallery.headerSplitHeadingLabelSize ?? 'md'}
-            onChange={(headerSplitHeadingLabelSize) => onChange({ headerSplitHeadingLabelSize })}
-          />
-          <GalleryOptionGrid
-            label="Weight"
-            options={GALLERY_WEIGHT_OPTIONS}
-            value={gallery.headerSplitHeadingLabelWeight ?? 'regular'}
-            onChange={(headerSplitHeadingLabelWeight) => onChange({ headerSplitHeadingLabelWeight })}
-            columns={4}
-          />
-        </GalleryBandGroup>
-        <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} hideAlignment hideTitleControls />
-      </>
-    );
-  }
-
-  // Editorial — the one design with no text of its own: it renders the section title and
-  // subtitle set above, so it only exposes the shared controls.
+  const onPatch = (patch: HeaderPatch) => onChange(patch as Partial<PortfolioGallerySectionSettings>);
   return (
-    <>
-      <p className="text-sm text-neutral-500">
-        Editorial renders the section title and subtitle — set them in Section title and Subtitle above.
-      </p>
-      <GalleryHeaderSharedControls gallery={gallery} onChange={onChange} />
-    </>
+    <HeaderDesignFields
+      settings={gallery}
+      onPatch={onPatch}
+      copy={GALLERY_HEADER_COPY}
+      colorOptions={GALLERY_HEADER_PALETTE_TOKEN_OPTIONS}
+      resolveColor={galleryHeaderPaletteTokenColor}
+      accentAlignmentOptions={GALLERY_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
+      billboardStyleOptions={GALLERY_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
+    />
   );
 }
-
-/* ---------------------------------------------------------------------- */
-/* Design tab → Layout settings — one band per selected design, listing    */
-/* only the options that design actually renders.                          */
-/* ---------------------------------------------------------------------- */
 
 const GALLERY_CAPTION_PAGER_OPTIONS = [
   { value: 'chevrons' as const, label: 'Chevrons' },
@@ -1427,6 +820,7 @@ function GalleryLayoutSettingsBand({
 
   return (
     <GallerySettingsBand id="gallery-layout-settings-title" title="Layout settings" motionKey={gallery.design}>
+<SettingsRowsScope title="Layout options">
       {isHeroMosaic ? (
         <GalleryBandGroup title="Hover">
           <GalleryToggleRow
@@ -1556,7 +950,8 @@ function GalleryLayoutSettingsBand({
           ) : null}
         </GalleryBandGroup>
       ) : null}
-    </GallerySettingsBand>
+    </SettingsRowsScope>
+</GallerySettingsBand>
   );
 }
 
@@ -1574,6 +969,7 @@ export function GallerySettingsPanel({
   onSubSectionChange?: (value: GallerySubSection) => void;
 }) {
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<GallerySubSection>('general');
   const subSection = normalizeGallerySubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: GallerySubSection) => {
@@ -1584,7 +980,7 @@ export function GallerySettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
+      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
         {GALLERY_SUB_SECTIONS.map((section) => (
           <button
             key={section.id}
@@ -1678,60 +1074,16 @@ export function GallerySettingsPanel({
           <GalleryHeaderDesignGrid
             value={gallery.headerDesign ?? 'editorial'}
             onChange={(headerDesign) => onChange({ headerDesign })}
+            open={headerCatalogOpen}
+            onOpenChange={setHeaderCatalogOpen}
           />
 
-          <GallerySettingsBand
-            id="gallery-header-settings-title"
-            title="Header settings"
-            motionKey={gallery.headerDesign ?? 'editorial'}
-          >
-            <GalleryBandGroup title="Section title">
-              <GalleryOptionGrid
-                label="Title preset"
-                hideLabel
-                options={PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS}
-                value={gallery.titlePreset}
-                onChange={(titlePreset) => onChange({ titlePreset })}
-                columns={3}
-              />
-              {gallery.titlePreset === 'custom' ? (
-                <input
-                  type="text"
-                  value={gallery.titleCustom}
-                  placeholder="Gallery"
-                  aria-label="Custom section title"
-                  onChange={(event) => onChange({ titleCustom: event.target.value })}
-                  className={GALLERY_INPUT_CLASS}
-                />
-              ) : null}
-            </GalleryBandGroup>
-
-            <GalleryBandGroup title="Subtitle">
-              <GalleryOptionGrid
-                label="Subtitle preset"
-                hideLabel
-                options={PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS}
-                value={gallery.subtitlePreset}
-                onChange={(subtitlePreset) => onChange({ subtitlePreset })}
-                columns={3}
-              />
-              {gallery.subtitlePreset === 'custom' ? (
-                <textarea
-                  value={gallery.subtitleCustom}
-                  rows={2}
-                  placeholder="Images, films, and chosen moments."
-                  aria-label="Custom subtitle"
-                  onChange={(event) => onChange({ subtitleCustom: event.target.value })}
-                  className={`${GALLERY_INPUT_CLASS} resize-y`}
-                />
-              ) : null}
-              <p className="text-xs text-neutral-400">
-                With both the title and the subtitle set to None, no header is shown at all.
-              </p>
-            </GalleryBandGroup>
-
-            <GalleryHeaderDesignFields gallery={gallery} onChange={onChange} />
-          </GallerySettingsBand>
+          {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
+          {headerCatalogOpen ? null : (
+            <GallerySettingsBand id="gallery-header-settings-title" title="Header settings" motionKey={gallery.headerDesign ?? 'editorial'} flush>
+              <GalleryHeaderDesignFields gallery={gallery} onChange={onChange} />
+            </GallerySettingsBand>
+          )}
         </div>
       ) : null}
     </div>

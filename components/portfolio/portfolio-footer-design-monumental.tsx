@@ -289,7 +289,6 @@ function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: bo
 export function FooterDesignMonumental({
   creatorName,
   creatorId,
-  email,
   phone,
   locationLabel,
   links,

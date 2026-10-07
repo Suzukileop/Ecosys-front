@@ -31,12 +31,7 @@ import {
 } from '@/components/portfolio/portfolio-section-background-settings';
 import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
 import { normalizeDesignLayouts, type DesignLayout } from '@/components/portfolio/portfolio-design-layout-core';
-import {
-  createElementTextStyle,
-  normalizeElementStylesRecord,
-  patchElementStylesRecord,
-  type PortfolioElementTextStyle,
-} from '@/components/portfolio/portfolio-element-text-style';
+import { createElementTextStyle, normalizeElementStylesRecord, type PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 import {
   CONTACT_HEADER_ACCENT_COUNT_ALIGNMENTS,
   CONTACT_HEADER_BILLBOARD_WORD_STYLES,
@@ -69,7 +64,7 @@ import {
  */
 export type PortfolioContactPremiumFontSize = 'small' | 'medium' | 'large' | 'xlarge' | 'xxlarge';
 
-export const CONTACT_PREMIUM_FONT_SIZES: PortfolioContactPremiumFontSize[] = [
+const CONTACT_PREMIUM_FONT_SIZES: PortfolioContactPremiumFontSize[] = [
   'small',
   'medium',
   'large',
@@ -119,7 +114,7 @@ export type PortfolioContactStyleTarget =
 
 export type PortfolioContactElementStyles = Record<PortfolioContactStyleTarget, PortfolioElementTextStyle>;
 
-export const CONTACT_STYLE_TARGET_IDS: PortfolioContactStyleTarget[] = [
+const CONTACT_STYLE_TARGET_IDS: PortfolioContactStyleTarget[] = [
   'channelValue',
   'linksHeading',
   'linkLabel',
@@ -128,14 +123,14 @@ export const CONTACT_STYLE_TARGET_IDS: PortfolioContactStyleTarget[] = [
   'ctaLabel',
 ];
 
-export const DEFAULT_CONTACT_CHANNEL_VALUE_COLOR = '#0a0a0a';
-export const DEFAULT_CONTACT_LINKS_HEADING_COLOR = '#a3a3a3';
-export const DEFAULT_CONTACT_LINK_LABEL_COLOR = '#0a0a0a';
-export const DEFAULT_CONTACT_LINK_URL_COLOR = '#737373';
-export const DEFAULT_CONTACT_LOCATION_VALUE_COLOR = '#0a0a0a';
-export const DEFAULT_CONTACT_CTA_LABEL_COLOR = '#ffffff';
+const DEFAULT_CONTACT_CHANNEL_VALUE_COLOR = '#0a0a0a';
+const DEFAULT_CONTACT_LINKS_HEADING_COLOR = '#a3a3a3';
+const DEFAULT_CONTACT_LINK_LABEL_COLOR = '#0a0a0a';
+const DEFAULT_CONTACT_LINK_URL_COLOR = '#737373';
+const DEFAULT_CONTACT_LOCATION_VALUE_COLOR = '#0a0a0a';
+const DEFAULT_CONTACT_CTA_LABEL_COLOR = '#ffffff';
 
-export const DEFAULT_CONTACT_ELEMENT_STYLES: PortfolioContactElementStyles = {
+const DEFAULT_CONTACT_ELEMENT_STYLES: PortfolioContactElementStyles = {
   channelValue: createElementTextStyle({
     color: DEFAULT_CONTACT_CHANNEL_VALUE_COLOR,
     size: 'md',
@@ -165,19 +160,6 @@ export const DEFAULT_CONTACT_ELEMENT_STYLES: PortfolioContactElementStyles = {
   }),
 };
 
-export const PORTFOLIO_CONTACT_STYLE_TARGET_OPTIONS: {
-  value: PortfolioContactStyleTarget;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'channelValue', label: 'Channel value', description: 'Email and phone display text.' },
-  { value: 'locationValue', label: 'Location', description: 'Location line in the contact card.' },
-  { value: 'linksHeading', label: 'Links heading', description: '“Links & social” section label.' },
-  { value: 'linkLabel', label: 'Link label', description: 'Social row title (Instagram, Website…).' },
-  { value: 'linkUrl', label: 'Link URL', description: 'Muted URL under each social row.' },
-  { value: 'ctaLabel', label: 'CTA label', description: 'Contact button text typography.' },
-];
-
 /** Content text targets — always semibold across contact designs. */
 const CONTACT_SEMIBOLD_STYLE_TARGETS: PortfolioContactStyleTarget[] = [
   'channelValue',
@@ -197,20 +179,6 @@ export function normalizeContactElementStyles(raw: unknown): PortfolioContactEle
   return styles;
 }
 
-export function patchContactElementStyle(
-  styles: PortfolioContactElementStyles,
-  target: PortfolioContactStyleTarget,
-  patch: Partial<PortfolioElementTextStyle>
-): PortfolioContactElementStyles {
-  return patchElementStylesRecord(
-    styles,
-    target,
-    patch,
-    DEFAULT_CONTACT_ELEMENT_STYLES,
-    CONTACT_STYLE_TARGET_IDS
-  );
-}
-
 export type PortfolioContactTitlePreset = 'contact' | 'get-in-touch' | 'lets-talk' | 'start-a-project' | 'custom';
 
 export type PortfolioContactSubtitlePreset = 'default' | 'short' | 'response-time' | 'minimal' | 'custom';
@@ -220,13 +188,6 @@ export type PortfolioContactHeaderFont = 'sans' | 'serif' | 'display';
 export type PortfolioContactHeaderAlignment = 'left' | 'center';
 
 export {
-  PORTFOLIO_CONTACT_HEADER_DESIGN_OPTIONS,
-  CONTACT_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
-  CONTACT_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
-  CONTACT_HEADER_PALETTE_TOKEN_OPTIONS,
-  contactHeaderDesignFontClass,
-  contactHeaderDesignFontStyle,
-  contactHeaderPaletteTokenColor,
   type PortfolioContactHeaderAccentCountAlignment,
   type PortfolioContactHeaderBillboardWordStyle,
   type PortfolioContactHeaderDesign,
@@ -308,7 +269,7 @@ export function isContactPremiumDesign(design: PortfolioContactCardDesign | unde
 }
 
 /** Either Inquiry layout (illustration or panel). */
-export function isContactInquiryFamily(
+function isContactInquiryFamily(
   design: PortfolioContactCardDesign | undefined
 ): boolean {
   return design === 'inquiry' || design === 'inquiry-panel';
@@ -398,7 +359,7 @@ export type PortfolioContactFormDesign =
   | 'minimal-underline'
   | 'swiss-editorial';
 
-export const PORTFOLIO_CONTACT_FORM_DESIGN_VALUES: PortfolioContactFormDesign[] = [
+const PORTFOLIO_CONTACT_FORM_DESIGN_VALUES: PortfolioContactFormDesign[] = [
   'classic',
   'inquiry',
   'inquiry-panel',
@@ -412,7 +373,7 @@ export const PORTFOLIO_CONTACT_FORM_DESIGN_VALUES: PortfolioContactFormDesign[] 
 ];
 
 /** Map legacy layout-owned chrome onto an explicit form design. */
-export function migrateContactFormDesignFromCardDesign(
+function migrateContactFormDesignFromCardDesign(
   cardDesign: PortfolioContactCardDesign | undefined
 ): PortfolioContactFormDesign {
   switch (cardDesign) {
@@ -444,7 +405,7 @@ export function resolveContactFormDesign(p: {
   return migrateContactFormDesignFromCardDesign(p.cardDesign);
 }
 
-export function isContactFormDesign(
+function isContactFormDesign(
   value: unknown
 ): value is PortfolioContactFormDesign {
   return (
@@ -710,11 +671,11 @@ export type PortfolioContactFormShadow = 'none' | 'soft' | 'float' | 'deep';
 
 export type PortfolioContactSectionSettings = PortfolioSectionCopy & PortfolioContactPresentationSettings;
 
-export const DEFAULT_CONTACT_TITLE_COLOR = '#0a0a0a';
-export const DEFAULT_CONTACT_SUBTITLE_COLOR = '#737373';
-export const DEFAULT_CONTACT_CTA_COLOR = '#ea580c';
-export const DEFAULT_CONTACT_CARD_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_CONTACT_CARD_BACKGROUND_COLOR = '#ffffff';
+const DEFAULT_CONTACT_TITLE_COLOR = '#0a0a0a';
+const DEFAULT_CONTACT_SUBTITLE_COLOR = '#737373';
+const DEFAULT_CONTACT_CTA_COLOR = '#ea580c';
+const DEFAULT_CONTACT_CARD_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_CONTACT_CARD_BACKGROUND_COLOR = '#ffffff';
 
 export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
@@ -864,153 +825,23 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   elementStyles: DEFAULT_CONTACT_ELEMENT_STYLES,
 };
 
-export const PORTFOLIO_CONTACT_FORM_SHADOW_OPTIONS: {
-  value: PortfolioContactFormShadow;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Flat form — no drop shadow.' },
-  { value: 'soft', label: 'Soft', description: 'Light lift around the form.' },
-  { value: 'float', label: 'Float', description: 'Soft halo — default for split layouts.' },
-  { value: 'deep', label: 'Deep', description: 'Strong shadow for extra depth.' },
-];
-
-export const PORTFOLIO_CONTACT_FORM_DESIGN_OPTIONS: {
-  value: PortfolioContactFormDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'classic',
-    label: 'Classic',
-    description: 'Standard title + name, email, subject, and message.',
-  },
-  {
-    value: 'inquiry',
-    label: 'Inquiry',
-    description: 'Conversational labels for the split inquiry layout.',
-  },
-  {
-    value: 'inquiry-panel',
-    label: 'Inquiry panel',
-    description: 'Name, email, and message — no phone or company fields.',
-  },
-  {
-    value: 'desk',
-    label: 'Desk',
-    description: 'Two-column fields with optional topic chips.',
-  },
-  {
-    value: 'info-panel',
-    label: 'Info panel',
-    description: 'Accent-filled form with light or dark field chrome.',
-  },
-  {
-    value: 'project-brief',
-    label: 'Project brief',
-    description: 'Framed brief with header, full-width CTA, and contact footer.',
-  },
-  {
-    value: 'stepped-inquiry',
-    label: 'Step inquiry',
-    description: 'Four numbered steps — one field group at a time.',
-  },
-  {
-    value: 'workspace-chat',
-    label: 'Workspace chat',
-    description: 'Message / Quote toggle with numbered identity blocks.',
-  },
-  {
-    value: 'minimal-underline',
-    label: 'Minimal underline',
-    description: 'Underline-only fields with a compact contact footer.',
-  },
-  {
-    value: 'swiss-editorial',
-    label: 'Swiss editorial',
-    description: 'Full name, email, message — thin borders and cobalt button.',
-  },
-];
-
-export const PORTFOLIO_CONTACT_FORM_SHADOW_PRESET_INTENSITY: Record<PortfolioContactFormShadow, number> = {
+const PORTFOLIO_CONTACT_FORM_SHADOW_PRESET_INTENSITY: Record<PortfolioContactFormShadow, number> = {
   none: 0,
   soft: 28,
   float: 55,
   deep: 82,
 };
 
-export function clampContactFormShadowIntensity(value: unknown, fallback = 55): number {
+function clampContactFormShadowIntensity(value: unknown, fallback = 55): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(0, Math.min(100, Math.round(n)));
 }
 
-export const PORTFOLIO_CONTACT_TITLE_PRESET_OPTIONS: {
-  value: PortfolioContactTitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'contact', label: 'Contact', description: 'Classic professional label.' },
-  { value: 'get-in-touch', label: 'Get in touch', description: 'Friendly and open.' },
-  { value: 'lets-talk', label: "Let's talk", description: 'Conversational tone.' },
-  { value: 'start-a-project', label: 'Start a project', description: 'Action-oriented CTA feel.' },
-  { value: 'custom', label: 'Custom', description: 'Your own section title.' },
-];
-
-export const PORTFOLIO_CONTACT_SUBTITLE_PRESET_OPTIONS: {
-  value: PortfolioContactSubtitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'default', label: 'Default', description: 'Uses the subtitle field below.' },
-  { value: 'short', label: 'Short', description: 'One concise supporting line.' },
-  { value: 'response-time', label: 'Response time', description: 'Mentions typical reply speed.' },
-  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Write your own subtitle.' },
-];
-
-export const PORTFOLIO_CONTACT_HEADER_FONT_OPTIONS: {
-  value: PortfolioContactHeaderFont;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
-  { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
-];
-
-export const PORTFOLIO_CONTACT_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioContactSectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre au-dessus, contenu en dessous.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, contenu contact à droite (côte à côte).',
-  },
-  {
-    value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Contenu contact à gauche, titre à droite (côte à côte).',
-  },
-];
-
-export function isPortfolioContactSectionLayout(
+function isPortfolioContactSectionLayout(
   value: unknown
 ): value is PortfolioContactSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
-}
-
-export function contactSectionLayoutIsAside(
-  layout: PortfolioContactSectionLayout | undefined
-): boolean {
-  return layout === 'aside-left' || layout === 'aside-right';
 }
 
 /** Two-column shell for title + contact content (large screens). */
@@ -1021,29 +852,7 @@ export function contactAsideLayoutClass(layout: PortfolioContactSectionLayout): 
   return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-stretch lg:gap-x-12 xl:gap-x-16';
 }
 
-export const PORTFOLIO_CONTACT_ILLUSTRATION_OPTIONS: {
-  value: PortfolioContactIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif à côté du contenu.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support / casque.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
-];
-
-export const PORTFOLIO_CONTACT_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioContactIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche du contenu contact.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite du contenu contact.' },
-];
-
-export function isPortfolioContactIllustrationVariant(
+function isPortfolioContactIllustrationVariant(
   value: unknown
 ): value is PortfolioContactIllustrationVariant {
   return (
@@ -1056,7 +865,7 @@ export function isPortfolioContactIllustrationVariant(
   );
 }
 
-export function isPortfolioContactIllustrationPlacement(
+function isPortfolioContactIllustrationPlacement(
   value: unknown
 ): value is PortfolioContactIllustrationPlacement {
   return value === 'left' || value === 'right';
@@ -1171,153 +980,6 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
   },
 ];
 
-export const PORTFOLIO_CONTACT_ICON_PLACEMENT_OPTIONS: {
-  value: PortfolioContactIconPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Icon to the left of the label.' },
-  { value: 'top', label: 'Top', description: 'Icon above the label.' },
-  { value: 'right', label: 'Right', description: 'Icon to the right of the label.' },
-];
-
-export const PORTFOLIO_CONTACT_ICON_SIZE_OPTIONS: {
-  value: PortfolioContactIconSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Compact badges.' },
-  { value: 'md', label: 'Medium', description: 'Default size.' },
-  { value: 'lg', label: 'Large', description: 'More visible icons.' },
-  { value: 'xl', label: 'Extra large', description: 'Hero-sized badges.' },
-];
-
-export const PORTFOLIO_CONTACT_ICON_RADIUS_OPTIONS: {
-  value: PortfolioContactIconRadius;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'md', label: 'Rounded', description: 'Soft corners.' },
-  { value: 'lg', label: 'Soft square', description: 'Default rounded-2xl look.' },
-  { value: 'xl', label: 'Very soft', description: 'Larger radius.' },
-  { value: 'full', label: 'Circle', description: 'Fully round badges.' },
-];
-
-export const PORTFOLIO_CONTACT_ICON_BORDER_OPTIONS: {
-  value: PortfolioContactIconBorder;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No outline around the badge.' },
-  { value: 'soft', label: 'Soft', description: 'Light hairline border.' },
-  { value: 'solid', label: 'Solid', description: 'Clear border in the icon border color.' },
-];
-
-export const PORTFOLIO_CONTACT_ITEM_GAP_OPTIONS: {
-  value: PortfolioContactItemGap;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'Flush rows — hairline dividers where the design uses them.' },
-  { value: 'sm', label: 'Small', description: 'Tight vertical spacing.' },
-  { value: 'md', label: 'Medium', description: 'Balanced spacing — default.' },
-  { value: 'lg', label: 'Large', description: 'Airy vertical spacing.' },
-];
-
-export const PORTFOLIO_CONTACT_FORM_STACK_GAP_OPTIONS: {
-  value: PortfolioContactItemGap;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Compact', description: 'Smaller gap between list and form.' },
-  { value: 'sm', label: 'Small', description: 'Light separation.' },
-  { value: 'md', label: 'Medium', description: 'Clear separation.' },
-  { value: 'lg', label: 'Large', description: 'Wide space — form clearly below the list.' },
-];
-
-export const PORTFOLIO_CONTACT_CARD_PADDING_OPTIONS: {
-  value: PortfolioServicesCardPadding;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: 'No frame inset.' },
-  { value: 'sm', label: 'Small', description: 'Tight padding inside the card.' },
-  { value: 'md', label: 'Medium', description: 'Balanced padding — shared by list + form.' },
-  { value: 'lg', label: 'Large', description: 'Roomy padding for both blocks.' },
-];
-
-export const PORTFOLIO_CONTACT_CTA_DESIGN_OPTIONS: {
-  value: PortfolioContactCtaDesign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'pill-dark', label: 'Dark pill', description: 'Solid Texte fort fill — default.' },
-  { value: 'pill-outline', label: 'Outline pill', description: 'Bordered button using Texte fort.' },
-  { value: 'pill-accent', label: 'Accent pill', description: 'Principal accent fill.' },
-  { value: 'full-width', label: 'Full width', description: 'Wide CTA bar below channels.' },
-];
-
-export const PORTFOLIO_CONTACT_BLOCK_ORDER_OPTIONS: {
-  value: PortfolioContactBlockOrder;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'primary-first', label: 'Channels first', description: 'Email / phone / location appear before social links.' },
-  { value: 'links-first', label: 'Links first', description: 'Social links appear before email / phone / location.' },
-];
-
-export const PORTFOLIO_CONTACT_CARD_MAX_WIDTH_OPTIONS: {
-  value: PortfolioContactCardMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'md', label: 'Medium', description: 'Compact centered card.' },
-  { value: 'lg', label: 'Large', description: 'Balanced width.' },
-  { value: 'xl', label: 'XL', description: 'Default wide card.' },
-  { value: 'full', label: 'Full width', description: 'Stretches to section width.' },
-];
-
-/** Desk-focused width labels (same values, clearer copy). */
-export const PORTFOLIO_CONTACT_DESK_WIDTH_OPTIONS: {
-  value: PortfolioContactCardMaxWidth;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'lg', label: 'Large', description: 'Roomy but compact.' },
-  { value: 'xl', label: 'Wide', description: 'Wide with a slight side inset.' },
-  { value: 'full', label: 'Full width', description: 'Uses the full section width.' },
-];
-
-/** Shared by Desk + Info panel. */
-export const PORTFOLIO_CONTACT_WIDE_LAYOUT_WIDTH_OPTIONS = PORTFOLIO_CONTACT_DESK_WIDTH_OPTIONS;
-
-export const PORTFOLIO_CONTACT_CARD_PLACEMENT_OPTIONS: {
-  value: PortfolioContactCardPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Left', description: 'Align the contact card to the left.' },
-  { value: 'center', label: 'Center', description: 'Center the card in the section.' },
-  { value: 'right', label: 'Right', description: 'Align the contact card to the right.' },
-];
-
-export const PORTFOLIO_CONTACT_FORM_PLACEMENT_OPTIONS: {
-  value: PortfolioContactFormPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'side',
-    label: 'Side by side',
-    description: 'Info and form in two columns on large screens — same Frame padding on both.',
-  },
-  {
-    value: 'below',
-    label: 'Vertical stack',
-    description: 'One combined card — contact info on top, form pinned at the bottom.',
-  },
-];
-
 const SUBTITLE_PRESET_COPY: Record<
   Exclude<PortfolioContactSubtitlePreset, 'default' | 'custom' | 'minimal' | 'response-time'>,
   string
@@ -1328,13 +990,6 @@ const SUBTITLE_PRESET_COPY: Record<
 function sanitizeHex(value: unknown, fallback: string): string {
   if (typeof value === 'string' && isValidProfileHexColor(value)) return value.trim();
   return fallback;
-}
-
-/** Contact section headings always use sentence case (never ALL CAPS). */
-export function contactDesignUsesTitleCaseHeading(
-  _design?: PortfolioContactCardDesign
-): boolean {
-  return true;
 }
 
 export function resolveContactSectionTitle(
@@ -1569,7 +1224,7 @@ export function contactCardMaxWidthClass(maxWidth: PortfolioContactCardMaxWidth)
 }
 
 /** Unified list layout for every contact item (channels + links share the same rows). */
-export function contactItemGapClass(gap: PortfolioContactItemGap = 'md'): string {
+function contactItemGapClass(gap: PortfolioContactItemGap = 'md'): string {
   switch (gap) {
     case 'none':
       return 'gap-0';
@@ -1660,7 +1315,7 @@ export function contactIconPlacementClass(placement: PortfolioContactIconPlaceme
   }
 }
 
-export function contactIconShellSizeClass(size: PortfolioContactIconSize = 'md'): string {
+function contactIconShellSizeClass(size: PortfolioContactIconSize = 'md'): string {
   switch (size) {
     case 'sm':
       return 'h-9 w-9';
@@ -1686,7 +1341,7 @@ export function contactIconGlyphClass(size: PortfolioContactIconSize = 'md'): st
   }
 }
 
-export function contactIconRadiusClass(radius: PortfolioContactIconRadius = 'lg'): string {
+function contactIconRadiusClass(radius: PortfolioContactIconRadius = 'lg'): string {
   switch (radius) {
     case 'md':
       return 'rounded-xl';
@@ -1766,40 +1421,6 @@ export function contactIconShellStyle(
   return style;
 }
 
-/** @deprecated Prefer contactItemsLayoutClass. */
-export function contactChannelGridClass(
-  design: PortfolioContactCardDesign,
-  _channelCount?: number,
-  itemGap: PortfolioContactItemGap = 'md'
-): string {
-  return contactItemsLayoutClass(design, itemGap);
-}
-
-/** @deprecated Prefer contactItemRowShellClass. */
-export function contactChannelPaddingClass(
-  design: PortfolioContactCardDesign,
-  cardPadding: PortfolioServicesCardPadding = 'md'
-): string {
-  return contactItemRowShellClass(design, cardPadding);
-}
-
-/** @deprecated Channels and links share one list. */
-export function contactLinksBlockClass(
-  _design: PortfolioContactCardDesign,
-  _blockOrder: PortfolioContactBlockOrder
-): string {
-  return 'bg-transparent';
-}
-
-/** @deprecated Split layout removed. */
-export function contactBodyLayoutClass(_design: PortfolioContactCardDesign): string {
-  return '';
-}
-
-export function contactStackedChannelShellClass(): string {
-  return 'rounded-[1.35rem] border bg-transparent border-[color:var(--contact-border,#e5e5e5)]';
-}
-
 /** Spacing between contact list and form when stacked vertically. */
 export function contactFormStackGapClass(gap: PortfolioContactItemGap = 'lg'): string {
   switch (gap) {
@@ -1846,7 +1467,7 @@ function contactFormShadowIntensityValue(
   );
 }
 
-export function contactFormLiftStyle(
+function contactFormLiftStyle(
   p: Pick<PortfolioContactPresentationSettings, 'formShadow' | 'formShadowIntensity'>
 ): CSSProperties | undefined {
   const intensity = contactFormShadowIntensityValue(p);
@@ -1996,20 +1617,6 @@ export function contactInquiryChannelCardClass(): string {
   return 'flex items-center gap-3.5 rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-3.5 py-3.5 transition hover:border-[color:var(--contact-accent,#ea580c)]';
 }
 
-/** @deprecated Prefer contactInquiryChannelCardClass — kept for callers. */
-export function contactInquiryPanelStatCardClass(): string {
-  return contactInquiryChannelCardClass();
-}
-
-export const PORTFOLIO_CONTACT_CHANNEL_CARDS_BORDER_OPTIONS: {
-  value: PortfolioContactChannelCardsBorder;
-  label: string;
-}[] = [
-  { value: 'none', label: 'Aucune' },
-  { value: 'thin', label: 'Fine' },
-  { value: 'medium', label: 'Moyenne' },
-];
-
 /** Contact cards — centered Phone / Email / Address tiles. */
 export function contactChannelCardsCardClass(
   p: Pick<PortfolioContactPresentationSettings, 'channelCardsBorder' | 'cardBorderRadius'>
@@ -2075,7 +1682,7 @@ export function contactChannelCardsIconClass(): string {
   return 'flex h-16 w-16 items-center justify-center rounded-full bg-[color:color-mix(in_srgb,var(--contact-ink,#0a0a0a)_7%,transparent)] text-[color:var(--contact-accent,#ea580c)]';
 }
 
-export const DEFAULT_CONTACT_SWISS_IVORY = '#F7F4EF';
+const DEFAULT_CONTACT_SWISS_IVORY = '#F7F4EF';
 export const DEFAULT_CONTACT_SWISS_COBALT = '#1E4FD6';
 export const DEFAULT_CONTACT_SWISS_TITLE = "Let's talk";
 export const DEFAULT_CONTACT_SWISS_SUBTITLE =
@@ -2145,20 +1752,6 @@ export function contactDeskMaxWidthClass(maxWidth: PortfolioContactCardMaxWidth 
       // xl — wide but slightly restrained
       return 'max-w-6xl';
   }
-}
-
-/** Alias — same scale for Info panel and Desk. */
-export const contactWideLayoutMaxWidthClass = contactDeskMaxWidthClass;
-
-/** Desk topic chips (one label per line in settings). */
-export function parseContactDeskTopicOptions(raw: string | undefined): string[] {
-  if (!raw?.trim()) return ['Development', 'Others'];
-  const parsed = raw
-    .split(/[\n,]+/)
-    .map((item) => item.trim())
-    .filter(Boolean)
-    .slice(0, 8);
-  return parsed.length > 0 ? parsed : ['Development', 'Others'];
 }
 
 /** Info panel — outer framed shell (border + optional card background). */

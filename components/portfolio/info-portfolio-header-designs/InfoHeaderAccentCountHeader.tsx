@@ -8,6 +8,7 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
+import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_BADGE_TEXT = '{count}+ highlights';
 const DEFAULT_LEAD_TEXT = 'A few things worth knowing about me.';
@@ -59,7 +60,8 @@ export function InfoHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_INFO_PRESENTATION;
-  const animationEnabled = presentation.headerAnimationEnabled !== false;
+  const motionOff = usePortfolioMotionOff();
+  const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const align = presentation.headerAccentCountAlignment ?? 'left';
   const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;

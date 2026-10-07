@@ -50,7 +50,7 @@ type TextKey = 'fullName' | 'username' | 'bio';
 type ChoiceKey = 'gender' | 'nationality';
 type ChangeHandler = StudioChangeHandler<PortfolioGeneralInfoDraft>;
 
-export type GeneralInfoVisibilityKey = 'gender' | 'availability' | 'location';
+type GeneralInfoVisibilityKey = 'gender' | 'availability' | 'location';
 
 type ChoiceOption = { value: string; label: string };
 

@@ -55,15 +55,6 @@ export const GLOBAL_SEARCH_CONTENT_MEDIA_OPTIONS: {
   { value: 'video', label: 'Videos only' },
 ];
 
-export const GLOBAL_SEARCH_MIN_YEARS_OPTIONS = [
-  { value: '', label: 'Any experience' },
-  { value: '1', label: '1+ years' },
-  { value: '3', label: '3+ years' },
-  { value: '5', label: '5+ years' },
-  { value: '10', label: '10+ years' },
-  { value: '15', label: '15+ years' },
-] as const;
-
 export const GLOBAL_SEARCH_CATEGORY_OPTIONS: { value: GlobalSearchCategory; label: string }[] = [
   { value: 'creators', label: 'Profiles' },
   { value: 'serviceProviders', label: 'Service Provider' },
@@ -123,7 +114,7 @@ function isContentPhoto(mediaUrl: string | null | undefined, mediaType?: string 
   return /\.(jpg|jpeg|png|webp|gif|avif|bmp)(\?|$)/.test(url) || Boolean(mediaUrl);
 }
 
-export function matchesContentMediaFilter(
+function matchesContentMediaFilter(
   mediaUrl: string | null | undefined,
   mediaType: string | null | undefined,
   filter: GlobalSearchContentMediaFilter
@@ -145,7 +136,7 @@ function matchesProductFormatFilter(
 }
 
 /** Product text fields only — never match creator name (avoids dumping all of a person's products). */
-export function productMatchesSearchQuery(
+function productMatchesSearchQuery(
   product: MarketplaceProductSummary,
   query: string
 ): boolean {

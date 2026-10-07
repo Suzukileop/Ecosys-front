@@ -13,8 +13,10 @@ import {
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import {
   PROVIDER_FRAME_CLASS,
+  PROVIDER_BODY_CLASS,
   PROVIDER_INK_CLASS,
-  providerPillClass,
+  PROVIDER_MUTED_CLASS,
+  providerChipClass,
 } from '@/components/marketplace/ProviderDirectoryPrimitives';
 import {
   countServiceProviderSubcategories,
@@ -94,14 +96,12 @@ export function ServiceProviderCategoriesButton({
       aria-haspopup="true"
       title={`${subcategoryCount} more categories`}
       onClick={() => onOpenChange(!open)}
-      className={providerPillClass(hasActiveCategory)}
+      className={providerChipClass(hasActiveCategory)}
     >
       More
       <FontAwesomeIcon
         icon={faChevronDown}
-        className={`h-3 w-3 transition-transform duration-300 ease-out ${open ? 'rotate-180' : ''} ${
-          hasActiveCategory ? '' : 'text-neutral-400'
-        }`}
+        className={`h-3 w-3 transition-transform duration-300 ease-out ${open ? 'rotate-180' : ''}`}
         aria-hidden
       />
     </button>
@@ -152,7 +152,7 @@ export function ServiceProviderCategoriesPanel({
                   <div className="flex items-center gap-2.5 border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
                     <FontAwesomeIcon
                       icon={ICON_MAP[group.icon]}
-                      className="h-3.5 w-3.5 shrink-0 text-neutral-400 dark:text-neutral-500"
+                      className={`h-3.5 w-3.5 shrink-0 ${PROVIDER_MUTED_CLASS}`}
                       aria-hidden
                     />
                     <h3 className={`text-[15px] font-semibold ${PROVIDER_INK_CLASS}`}>{group.title}</h3>
@@ -173,7 +173,7 @@ export function ServiceProviderCategoriesPanel({
                             className={`inline-flex items-center gap-2 text-left text-[15px] transition-colors duration-200 hover:text-[#FF5722] focus-visible:text-[#FF5722] focus-visible:outline-none ${
                               active
                                 ? `font-medium ${PROVIDER_INK_CLASS}`
-                                : 'text-neutral-500 dark:text-neutral-400'
+                                : PROVIDER_BODY_CLASS
                             }`}
                           >
                             {item}

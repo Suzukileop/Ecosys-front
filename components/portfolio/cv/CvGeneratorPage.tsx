@@ -25,7 +25,7 @@ import { CvSectionLabelsPanel } from '@/components/portfolio/cv/CvSectionLabelsP
 import { DensityGlyph, TemplateThumb, VariantThumb } from '@/components/portfolio/cv/CvSidebarThumbs';
 import { useCvSectionLabels } from '@/components/portfolio/cv/use-cv-section-labels';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import type { CreatorProfileDto } from '@/types/ecosystem';
+import type { CreatorProfileDto } from '@/types/profile';
 
 /** A4 size in CSS pixels (96 dpi). */
 const A4_HEIGHT_PX = (297 / 25.4) * 96;
@@ -210,7 +210,7 @@ export function CvGeneratorPage() {
 
   const backLink = (
     <Link
-      href="/dashboard/portfolio"
+      href="/studio"
       className="whitespace-nowrap text-[13px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
     >
       ← Portfolio
@@ -356,7 +356,7 @@ export function CvGeneratorPage() {
         <p className="text-[13px] leading-relaxed text-neutral-500 dark:text-neutral-400">
           Add {missing.join(', ')} in{' '}
           <Link
-            href="/dashboard/portfolio"
+            href="/studio"
             className="font-medium text-[#111111] underline-offset-4 hover:underline dark:text-white"
           >
             My Portfolio

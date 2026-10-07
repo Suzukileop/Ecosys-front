@@ -9,7 +9,7 @@ import type { ContentMediaType } from '@/types/creator-content';
 
 /** Feed frames top out around the post card width; the optimizer picks the closest rung. */
 const FRAME_WIDTHS = [384, 640, 828, 1080, 1200] as const;
-const FRAME_SIZES = '(min-width: 1024px) 720px, 100vw';
+const FRAME_SIZES = '(min-width: 1024px) 800px, 100vw';
 /** The backdrop copy is blurred and scaled 110% — a thumbnail is indistinguishable from the original. */
 const BACKDROP_WIDTH = 64;
 
@@ -135,7 +135,11 @@ export function ContentPostFeedMediaFrame({
   }, [kind, mediaUrl, updateFrame, fillParent]);
 
   const mediaClass =
-    fit === 'cover' ? 'h-full w-full object-cover' : 'max-h-full max-w-full object-contain';
+    fit === 'cover'
+      ? 'h-full w-full object-cover'
+      : fit === 'social'
+        ? 'h-full w-full object-contain'
+        : 'max-h-full max-w-full object-contain';
   const responsiveImage = mediaImageResponsive(mediaUrl, FRAME_WIDTHS);
 
   return (

@@ -226,48 +226,6 @@ function useFramesGalleryMotion(itemsKey: string): {
   return { rootRef, revealed };
 }
 
-/**
- * Frames design header — compact title + optional subtitle.
- */
-export function ProjectsFramesSectionHeader({
-  title,
-  subtitle,
-  titleColor,
-  subtitleColor,
-  className = '',
-}: {
-  title: string;
-  subtitle?: string;
-  titleColor: string;
-  subtitleColor: string;
-  className?: string;
-}) {
-  const heading = title.trim();
-  const sub = subtitle?.trim() || '';
-  if (!heading && !sub) return null;
-
-  return (
-    <header className={`mb-12 w-full sm:mb-16 lg:mb-20 ${className}`.trim()}>
-      {heading ? (
-        <h2
-          className="max-w-3xl text-3xl font-semibold tracking-[-0.038em] sm:text-4xl lg:text-[3.05rem] lg:leading-[1.08]"
-          style={{ color: titleColor }}
-        >
-          {heading}
-        </h2>
-      ) : null}
-      {sub ? (
-        <p
-          className={`max-w-2xl text-base leading-[1.8] sm:text-lg sm:leading-[1.85] ${heading ? 'mt-4 sm:mt-5' : ''}`}
-          style={{ color: subtitleColor }}
-        >
-          {sub}
-        </p>
-      ) : null}
-    </header>
-  );
-}
-
 /** Tools as one quiet uppercase line, dot-separated — each word animates on hover without
  * shifting its neighbors (transform/opacity only), and scrolls sideways if it overflows. */
 function FramesStackList({ tools, ink }: { tools: string[]; ink: string }) {
@@ -728,10 +686,4 @@ export function ProjectsFramesGallery({
       })}
     </div>
   );
-}
-
-export function isProjectsFramesDesign(
-  presentation: Pick<PortfolioWorkPresentationSettings, 'sectionDesign'> | undefined
-): boolean {
-  return presentation?.sectionDesign === 'projects-frames';
 }

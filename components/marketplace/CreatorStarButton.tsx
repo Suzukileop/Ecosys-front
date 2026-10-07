@@ -152,7 +152,7 @@ export function CreatorStarButton({
   if (!user) {
     return (
       <Link
-        href={`/login?redirect=${encodeURIComponent(loginRedirect ?? `/marketplace/${creatorId}`)}`}
+        href={`/login?redirect=${encodeURIComponent(loginRedirect ?? `/providers/${creatorId}`)}`}
         className={`${idle} ${sizeClass}`}
       >
         {content(false, 'Star')}

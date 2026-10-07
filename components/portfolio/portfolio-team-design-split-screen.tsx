@@ -49,7 +49,7 @@ import {
   TeamMemberImage,
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
-import type { ProfileTeamMember } from '@/types/ecosystem';
+import type { ProfileTeamMember } from '@/types/profile';
 
 /**
  * The portrait frame's own corners. Kept local rather than imported from the catalogue file: that

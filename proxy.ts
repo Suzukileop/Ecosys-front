@@ -1,74 +1,59 @@
 import { NextRequest, NextResponse } from 'next/server';
-
-const DASHBOARD_HOME = '/dashboard/home';
+import { ROUTES, SIGNED_IN_HOME, isProtectedPath } from '@/lib/routes';
 
 function safeRedirectPath(value: string | null): string | null {
   if (!value || !value.startsWith('/') || value.startsWith('//')) {
     return null;
   }
-  // Overview hub is hidden — never land on bare /dashboard.
-  if (value === '/dashboard') {
-    return DASHBOARD_HOME;
-  }
   return value;
 }
 
+/**
+ * Edge gate on the session cookie only: anonymous visitors are sent to `/login` (with a return
+ * path), signed-in users skip the landing and auth pages. Roles are enforced by the pages and API.
+ */
 export function proxy(request: NextRequest) {
-  const { pathname } = request.nextUrl;
-  const refreshToken = request.cookies.get('refresh_token');
+  const { pathname, search } = request.nextUrl;
+  const signedIn = Boolean(request.cookies.get('refresh_token'));
 
-  if (refreshToken) {
-    if (pathname === '/') {
-      return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
+  if (signedIn) {
+    if (pathname === ROUTES.home) {
+      return NextResponse.redirect(new URL(SIGNED_IN_HOME, request.url));
     }
-
-    if (pathname === '/dashboard') {
-      return NextResponse.redirect(new URL(DASHBOARD_HOME, request.url));
-    }
-
-    if (pathname === '/login' || pathname === '/register') {
-      const redirectTo =
-        safeRedirectPath(request.nextUrl.searchParams.get('redirect')) ?? DASHBOARD_HOME;
+    if (pathname === ROUTES.login || pathname === ROUTES.register) {
+      const redirectTo = safeRedirectPath(request.nextUrl.searchParams.get('redirect')) ?? SIGNED_IN_HOME;
       return NextResponse.redirect(new URL(redirectTo, request.url));
     }
+    return NextResponse.next();
   }
 
-  if (pathname.startsWith('/dashboard')) {
-    if (!refreshToken) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-  }
-
-  if (
-    pathname.startsWith('/marketplace/favorites') ||
-    pathname.startsWith('/marketplace/purchases')
-  ) {
-    if (!refreshToken) {
-      const login = new URL('/login', request.url);
-      login.searchParams.set('redirect', pathname);
-      return NextResponse.redirect(login);
-    }
-  }
-
-  if (pathname.startsWith('/admin')) {
-    if (!refreshToken) {
-      return NextResponse.redirect(new URL('/login', request.url));
-    }
-    // Role-based access is enforced at the page level after client-side auth
+  if (isProtectedPath(pathname)) {
+    const login = new URL(ROUTES.login, request.url);
+    login.searchParams.set('redirect', `${pathname}${search}`);
+    return NextResponse.redirect(login);
   }
 
   return NextResponse.next();
 }
 
+// Next reads the matcher statically, so it must be literal: keep it in sync with
+// PROTECTED_ROUTE_PREFIXES in lib/routes.ts.
 export const config = {
   matcher: [
     '/',
     '/login',
     '/register',
-    '/dashboard',
-    '/dashboard/:path*',
+    '/feed/:path*',
+    '/studio/:path*',
+    '/profile/:path*',
+    '/my-products/:path*',
+    '/my-services/:path*',
+    '/purchases/:path*',
+    '/messages/:path*',
+    '/notifications/:path*',
+    '/search/:path*',
+    '/settings/:path*',
+    '/cv/:path*',
     '/admin/:path*',
-    '/marketplace/favorites',
-    '/marketplace/purchases/:path*',
   ],
 };

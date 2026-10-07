@@ -1,6 +1,5 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
-import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import {
   mergeSectionColorMode,
@@ -22,40 +21,15 @@ import {
   type PortfolioServicesCardBackgroundSettings,
 } from '@/components/portfolio/portfolio-services-card-background-settings';
 import {
-  mergeServicesCardDecorSettings,
-  type PortfolioServicesCardDecorSettings,
-} from '@/components/portfolio/portfolio-services-card-decor-settings';
-import type { PortfolioCardFrameSettings } from '@/components/portfolio/portfolio-card-frame-settings-fields';
-import {
   servicesCardPaddingClass,
   servicesCardRadiusClass,
   type PortfolioServicesCardBorder,
   type PortfolioServicesCardPadding,
   type PortfolioServicesCardRadius,
 } from '@/components/portfolio/portfolio-services-settings';
-import {
-  DEFAULT_SECTION_BACKGROUND,
-  mergeSectionBackground,
-  sectionBackgroundBlockColor,
-  type PortfolioSectionBackgroundSettings,
-} from '@/components/portfolio/portfolio-section-background-settings';
-import type { PortfolioSectionCopy } from '@/components/portfolio/portfolio-settings-types';
-import {
-  createElementTextStyle,
-  normalizeElementStylesRecord,
-  patchElementStylesRecord,
-  DEFAULT_ELEMENT_BODY_COLOR,
-  DEFAULT_ELEMENT_MUTED_COLOR,
-  type PortfolioElementTextStyle,
-} from '@/components/portfolio/portfolio-element-text-style';
-import {
-  isPortfolioListMarkerWeight,
-  clampListMarkerSizePx,
-  clampListMarkerWeightAmount,
-  LIST_MARKER_SIZE_PRESET_PX,
-  LIST_MARKER_WEIGHT_PRESET_AMOUNT,
-  type PortfolioListMarkerWeight,
-} from '@/components/portfolio/portfolio-list-marker';
+import { DEFAULT_SECTION_BACKGROUND, mergeSectionBackground, type PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
+import { createElementTextStyle, normalizeElementStylesRecord, DEFAULT_ELEMENT_MUTED_COLOR, type PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
+import { isPortfolioListMarkerWeight, clampListMarkerSizePx, clampListMarkerWeightAmount, LIST_MARKER_WEIGHT_PRESET_AMOUNT, type PortfolioListMarkerWeight } from '@/components/portfolio/portfolio-list-marker';
 
 /** Larger glyph scale for Why me / side-panel list markers. */
 export const ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX: Record<'sm' | 'md' | 'lg' | 'xl', number> = {
@@ -168,7 +142,7 @@ export type PortfolioAboutStatsIconSize = 'sm' | 'md' | 'lg';
 export type AboutStatValueSizeContext = 'featured' | 'bar' | 'band' | 'editorial';
 
 /** Which about text element can be styled independently (color, font, size, weight). */
-export type PortfolioAboutStyleTarget =
+type PortfolioAboutStyleTarget =
   | 'sideLabel'
   | 'sideTitle'
   | 'sideSubtitle';
@@ -313,21 +287,19 @@ export type PortfolioAboutPresentationSettings = PortfolioSectionBackgroundSetti
   elementStyles: PortfolioAboutElementStyles;
 };
 
-export type PortfolioAboutSectionSettings = PortfolioSectionCopy & PortfolioAboutPresentationSettings;
-
-export const DEFAULT_ABOUT_TITLE_COLOR = '#0a0a0a';
-export const DEFAULT_ABOUT_SUBTITLE_COLOR = '#737373';
-export const DEFAULT_ABOUT_ACCENT_COLOR = '#ea580c';
-export const DEFAULT_ABOUT_CARD_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_ABOUT_CARD_BACKGROUND_COLOR = '#f5f5f5';
-export const DEFAULT_ABOUT_STATS_VALUE_COLOR = '#0a0a0a';
-export const DEFAULT_ABOUT_STATS_LABEL_COLOR = '#525252';
-export const DEFAULT_ABOUT_STATS_ICON_COLOR = '#525252';
-export const DEFAULT_ABOUT_SIDE_PANEL_BORDER_COLOR = '#e5e5e5';
-export const DEFAULT_ABOUT_SIDE_PANEL_BACKGROUND_COLOR = '#f5f5f5';
-export const DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR = '#0a0a0a';
+const DEFAULT_ABOUT_TITLE_COLOR = '#0a0a0a';
+const DEFAULT_ABOUT_SUBTITLE_COLOR = '#737373';
+const DEFAULT_ABOUT_ACCENT_COLOR = '#ea580c';
+const DEFAULT_ABOUT_CARD_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_ABOUT_CARD_BACKGROUND_COLOR = '#f5f5f5';
+const DEFAULT_ABOUT_STATS_VALUE_COLOR = '#0a0a0a';
+const DEFAULT_ABOUT_STATS_LABEL_COLOR = '#525252';
+const DEFAULT_ABOUT_STATS_ICON_COLOR = '#525252';
+const DEFAULT_ABOUT_SIDE_PANEL_BORDER_COLOR = '#e5e5e5';
+const DEFAULT_ABOUT_SIDE_PANEL_BACKGROUND_COLOR = '#f5f5f5';
+const DEFAULT_ABOUT_SIDE_PANEL_HEADING_COLOR = '#0a0a0a';
 /** v2: profile side panel is borderless by default. */
-export const ABOUT_SIDE_PANEL_SETTINGS_REVISION = 3;
+const ABOUT_SIDE_PANEL_SETTINGS_REVISION = 3;
 
 
 const DEFAULT_ABOUT_SIDE_PANEL_BACKGROUND: Pick<
@@ -456,13 +428,13 @@ export function isIllegibleDarkAboutStatsCard(
   return false;
 }
 
-export const ABOUT_STYLE_TARGET_IDS: PortfolioAboutStyleTarget[] = [
+const ABOUT_STYLE_TARGET_IDS: PortfolioAboutStyleTarget[] = [
   'sideLabel',
   'sideTitle',
   'sideSubtitle',
 ];
 
-export const DEFAULT_ABOUT_ELEMENT_STYLES: PortfolioAboutElementStyles = {
+const DEFAULT_ABOUT_ELEMENT_STYLES: PortfolioAboutElementStyles = {
   sideLabel: createElementTextStyle({
     color: DEFAULT_ELEMENT_MUTED_COLOR,
     size: 'sm',
@@ -472,28 +444,6 @@ export const DEFAULT_ABOUT_ELEMENT_STYLES: PortfolioAboutElementStyles = {
   sideTitle: createElementTextStyle({ color: DEFAULT_ABOUT_TITLE_COLOR, size: 'md', bold: true }),
   sideSubtitle: createElementTextStyle({ color: DEFAULT_ELEMENT_MUTED_COLOR, size: 'sm' }),
 };
-
-export const PORTFOLIO_ABOUT_STYLE_TARGET_OPTIONS: {
-  value: PortfolioAboutStyleTarget;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'sideLabel',
-    label: 'Side panel label',
-    description: 'Muted caption above each profile side panel item (LOCATION, LANGUAGES…).',
-  },
-  {
-    value: 'sideTitle',
-    label: 'Side panel title',
-    description: 'Main value line in the profile side panel.',
-  },
-  {
-    value: 'sideSubtitle',
-    label: 'Side panel subtitle',
-    description: 'Secondary line under the side panel title.',
-  },
-];
 
 export const DEFAULT_ABOUT_PRESENTATION: PortfolioAboutPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
@@ -595,364 +545,9 @@ Object.assign(
   })
 );
 
-export const PORTFOLIO_ABOUT_TITLE_PRESET_OPTIONS: {
-  value: PortfolioAboutTitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'about', label: 'About', description: 'Classic section label.' },
-  { value: 'my-story', label: 'My story', description: 'Personal narrative tone.' },
-  { value: 'who-i-am', label: 'Who I am', description: 'Human and approachable.' },
-  { value: 'behind-the-work', label: 'Behind the work', description: 'Process and background focus.' },
-  { value: 'custom', label: 'Custom', description: 'Your own section title.' },
-];
-
-export const PORTFOLIO_ABOUT_SUBTITLE_PRESET_OPTIONS: {
-  value: PortfolioAboutSubtitlePreset;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'default', label: 'Default', description: 'Uses the subtitle field below.' },
-  { value: 'short', label: 'Short', description: 'One line about approach and background.' },
-  { value: 'personal', label: 'Personal', description: 'Warmer, relationship-focused line.' },
-  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Write your own subtitle.' },
-];
-
-export const PORTFOLIO_ABOUT_HEADER_FONT_OPTIONS: {
-  value: PortfolioAboutHeaderFont;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sans', label: 'Modern sans', description: 'Bold geometric sans-serif.' },
-  { value: 'serif', label: 'Editorial serif', description: 'Playfair Display — magazine feel.' },
-  { value: 'display', label: 'Display caps', description: 'Uppercase poster style.' },
-];
-
-export const PORTFOLIO_ABOUT_SECTION_LAYOUT_OPTIONS: {
-  value: PortfolioAboutSectionLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre au-dessus, contenu en dessous.',
-  },
-  {
-    value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, contenu à droite (côte à côte).',
-  },
-  {
-    value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Contenu à gauche, titre à droite (côte à côte).',
-  },
-];
-
-export function isPortfolioAboutSectionLayout(value: unknown): value is PortfolioAboutSectionLayout {
+function isPortfolioAboutSectionLayout(value: unknown): value is PortfolioAboutSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
 }
-
-export function aboutSectionLayoutIsAside(layout: PortfolioAboutSectionLayout | undefined): boolean {
-  return layout === 'aside-left' || layout === 'aside-right';
-}
-
-/** Two-column shell for title + About body (large screens). */
-export function aboutAsideLayoutClass(layout: PortfolioAboutSectionLayout): string {
-  if (layout === 'aside-right') {
-    return 'grid w-full gap-10 lg:grid-cols-[minmax(0,1.15fr)_minmax(14rem,0.85fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-  }
-  return 'grid w-full gap-10 lg:grid-cols-[minmax(14rem,0.85fr)_minmax(0,1.15fr)] lg:items-start lg:gap-x-12 xl:gap-x-16';
-}
-
-export const PORTFOLIO_ABOUT_ILLUSTRATION_OPTIONS: {
-  value: PortfolioAboutIllustrationVariant;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de SVG décoratif.' },
-  { value: 'chat', label: 'Chat', description: 'Bulles de conversation.' },
-  { value: 'question', label: 'Question', description: 'Point d’interrogation graphique.' },
-  { value: 'docs', label: 'Docs', description: 'Documents superposés.' },
-  { value: 'support', label: 'Support', description: 'Illustration support.' },
-  { value: 'hex', label: 'Hex', description: 'Symbole hexagonal.' },
-];
-
-export const PORTFOLIO_ABOUT_ILLUSTRATION_PLACEMENT_OPTIONS: {
-  value: PortfolioAboutIllustrationPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'SVG à gauche du contenu.' },
-  { value: 'right', label: 'Droite', description: 'SVG à droite du contenu.' },
-];
-
-export function isPortfolioAboutIllustrationVariant(
-  value: unknown
-): value is PortfolioAboutIllustrationVariant {
-  return (
-    value === 'none' ||
-    value === 'chat' ||
-    value === 'question' ||
-    value === 'docs' ||
-    value === 'support' ||
-    value === 'hex'
-  );
-}
-
-export function isPortfolioAboutIllustrationPlacement(
-  value: unknown
-): value is PortfolioAboutIllustrationPlacement {
-  return value === 'left' || value === 'right';
-}
-
-export const PORTFOLIO_ABOUT_LAYOUT_MODE_OPTIONS: {
-  value: PortfolioAboutLayoutMode;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sidebar-right', label: 'Sidebar right', description: 'Main content left, profile panel right.' },
-  { value: 'sidebar-left', label: 'Sidebar left', description: 'Profile panel on the left.' },
-  { value: 'full-width', label: 'Full width', description: 'No sidebar column — panel stacks below.' },
-  {
-    value: 'twin-columns',
-    label: 'Two columns',
-    description:
-      'Why me and infos side by side — Why me can take more width (70/30, auto, or equal).',
-  },
-];
-
-export const PORTFOLIO_ABOUT_SIDE_PANEL_TWIN_ALIGN_OPTIONS: {
-  value: PortfolioAboutSidePanelTwinAlign;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Panneau infos collé à gauche de sa colonne.' },
-  { value: 'center', label: 'Centre', description: 'Panneau infos centré dans sa colonne.' },
-  { value: 'right', label: 'Droite', description: 'Panneau infos collé à droite de sa colonne.' },
-];
-
-export const PORTFOLIO_ABOUT_TWIN_COLUMNS_SPLIT_OPTIONS: {
-  value: PortfolioAboutTwinColumnsSplit;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'equal',
-    label: 'Égal',
-    description: '50 / 50 — Why me et Infos partagent la même largeur.',
-  },
-  {
-    value: 'main-70',
-    label: '70 / 30',
-    description: 'Why me ~70 %, panneau Infos ~30 %.',
-  },
-  {
-    value: 'auto',
-    label: 'Auto',
-    description: 'Infos épouse son contenu ; Why me prend le reste.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_CONTENT_PAIR_ALIGN_OPTIONS: {
-  value: PortfolioAboutContentPairAlign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'start',
-    label: 'Gauche',
-    description: 'Le duo Infos + Why me reste à gauche de la section.',
-  },
-  {
-    value: 'center',
-    label: 'Centre',
-    description: 'Centre les deux blocs ensemble au milieu de la page.',
-  },
-  {
-    value: 'end',
-    label: 'Droite',
-    description: 'Place le duo Infos + Why me à droite de la section.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_FULL_WIDTH_PANEL_PLACEMENT_OPTIONS: {
-  value: PortfolioAboutFullWidthPanelPlacement;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'above-stats',
-    label: 'Au-dessus des stats',
-    description: 'Panneau profil placé entre le titre et la rangée de stats.',
-  },
-  {
-    value: 'below-stats',
-    label: 'Sous les stats',
-    description: 'Juste après les stats, avant Why me.',
-  },
-  {
-    value: 'below-content',
-    label: 'Après le contenu',
-    description: 'Sous Why me — position par défaut en pleine largeur.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_STATS_DESIGN_OPTIONS: {
-  value: PortfolioAboutStatsDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'unified-band',
-    label: 'Bande unifiée',
-    description: 'Une seule barre avec séparateurs verticaux — 4 stats alignées.',
-  },
-  {
-    value: 'featured',
-    label: 'Stat en vedette',
-    description: 'Note / rating mise en avant à gauche, autres stats en barres à droite.',
-  },
-  {
-    value: 'editorial-list',
-    label: 'Liste éditoriale',
-    description: 'Icônes et libellés inline, sans grands cadres.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_STATS_GROUP_MODE_OPTIONS: {
-  value: PortfolioAboutStatsGroupMode;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'unified',
-    label: 'Bande unifiée',
-    description: 'Cartes rapprochées — même style séparé, espacement plus serré.',
-  },
-  {
-    value: 'separated',
-    label: 'Cartes séparées',
-    description: 'Chaque stat dans son propre cadre — espacement réglable (défaut).',
-  },
-];
-
-export const PORTFOLIO_ABOUT_STATS_VALUE_SIZE_OPTIONS: {
-  value: PortfolioAboutStatsValueSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'S', description: 'Chiffres compacts.' },
-  { value: 'md', label: 'M', description: 'Taille équilibrée.' },
-  { value: 'lg', label: 'L', description: 'Valeurs bien visibles — défaut.' },
-  { value: 'xl', label: 'XL', description: 'Très grand — idéal stat en vedette.' },
-];
-
-export const PORTFOLIO_ABOUT_STATS_LABEL_SIZE_OPTIONS: {
-  value: PortfolioAboutStatsLabelSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'xs', label: 'XS', description: 'Petit libellé uppercase — défaut.' },
-  { value: 'sm', label: 'S', description: 'Libellé légèrement plus grand.' },
-  { value: 'md', label: 'M', description: 'Libellé lisible, style phrase.' },
-];
-
-export const PORTFOLIO_ABOUT_STATS_VALUE_WEIGHT_OPTIONS: {
-  value: PortfolioAboutStatsValueWeight;
-  label: string;
-}[] = [
-  { value: 'semibold', label: 'Semi-bold' },
-  { value: 'bold', label: 'Bold' },
-  { value: 'extrabold', label: 'Extra-bold' },
-  { value: 'black', label: 'Black' },
-];
-
-export const PORTFOLIO_ABOUT_STATS_LABEL_WEIGHT_OPTIONS: {
-  value: PortfolioAboutStatsLabelWeight;
-  label: string;
-}[] = [
-  { value: 'medium', label: 'Medium' },
-  { value: 'semibold', label: 'Semi-bold' },
-  { value: 'bold', label: 'Bold' },
-];
-
-export const PORTFOLIO_ABOUT_STATS_LABEL_TRACKING_OPTIONS: {
-  value: PortfolioAboutStatsLabelTracking;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'tight', label: 'Serré', description: 'Lettres rapprochées.' },
-  { value: 'normal', label: 'Normal', description: 'Espacement standard.' },
-  { value: 'wide', label: 'Large', description: 'Tracking modéré.' },
-  { value: 'extra', label: 'Très large', description: 'Style uppercase éditorial.' },
-];
-
-export const PORTFOLIO_ABOUT_STATS_ICON_SIZE_OPTIONS: {
-  value: PortfolioAboutStatsIconSize;
-  label: string;
-}[] = [
-  { value: 'sm', label: 'S' },
-  { value: 'md', label: 'M' },
-  { value: 'lg', label: 'L' },
-];
-
-export const PORTFOLIO_ABOUT_SIDE_PANEL_DESIGN_OPTIONS: {
-  value: PortfolioAboutSidePanelDesign;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'framed',
-    label: 'Framed panel',
-    description: 'One shared panel — border, fill and radius follow the palette.',
-  },
-  {
-    value: 'cards',
-    label: 'Separate cards',
-    description: 'Each detail in its own framed card, synced to the About palette.',
-  },
-  {
-    value: 'minimal',
-    label: 'Minimal',
-    description: 'Open list with soft palette dividers — no heavy surface.',
-  },
-  {
-    value: 'info-bar',
-    label: 'Bande infos',
-    description:
-      'Barre horizontale à colonnes égales — icône, libellé et valeur, séparateurs fins.',
-  },
-  {
-    value: 'list',
-    label: 'Liste à puces',
-    description: 'Infos en liste avec marqueurs (comme Why me) — pas de trait vertical.',
-  },
-  {
-    value: 'info-strip',
-    label: 'Ligne d’infos',
-    description:
-      'Pleine largeur épurée — colonnes égales, icône en haut, libellé gris, valeur en gras (sans grand fond blanc).',
-  },
-  {
-    value: 'profile-cv',
-    label: 'Profil CV',
-    description:
-      'Grille 4 cartes égales pleine largeur (sans Gender) — même langage visuel que Why me.',
-  },
-];
-
-export const PORTFOLIO_ABOUT_SIDE_PANEL_ICON_PLACEMENT_OPTIONS: {
-  value: PortfolioAboutSidePanelIconPlacement;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'left', label: 'Gauche', description: 'Icône à gauche du texte.' },
-  { value: 'top', label: 'Haut', description: 'Icône au-dessus du libellé et de la valeur.' },
-  { value: 'right', label: 'Droite', description: 'Icône à droite du texte.' },
-];
 
 export function sidePanelIconPlacementClass(placement: PortfolioAboutSidePanelIconPlacement): {
   row: string;
@@ -981,25 +576,13 @@ export function sidePanelIconPlacementClass(placement: PortfolioAboutSidePanelIc
   }
 }
 
-export function isPortfolioAboutSidePanelIconPlacement(
+function isPortfolioAboutSidePanelIconPlacement(
   value: unknown
 ): value is PortfolioAboutSidePanelIconPlacement {
   return value === 'left' || value === 'top' || value === 'right';
 }
 
-export const PORTFOLIO_ABOUT_SIDE_PANEL_CONTENT_GAP_OPTIONS: {
-  value: Exclude<PortfolioAboutSidePanelContentGap, 'custom'>;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'none', label: 'None', description: '0px — rows touch, no vertical gap.' },
-  { value: 'sm', label: 'Tight', description: '24px — compact but readable spacing.' },
-  { value: 'md', label: 'Medium', description: '32px — balanced spacing (default).' },
-  { value: 'lg', label: 'Large', description: '48px — generous air between rows.' },
-  { value: 'xl', label: 'Extra large', description: '72px — wide, editorial spacing.' },
-];
-
-export const ABOUT_SIDE_PANEL_CONTENT_GAP_PRESET_PX: Record<
+const ABOUT_SIDE_PANEL_CONTENT_GAP_PRESET_PX: Record<
   Exclude<PortfolioAboutSidePanelContentGap, 'custom'>,
   number
 > = {
@@ -1010,10 +593,10 @@ export const ABOUT_SIDE_PANEL_CONTENT_GAP_PRESET_PX: Record<
   xl: 72,
 };
 
-export const ABOUT_SIDE_PANEL_CONTENT_GAP_PX_MIN = 0;
-export const ABOUT_SIDE_PANEL_CONTENT_GAP_PX_MAX = 100;
+const ABOUT_SIDE_PANEL_CONTENT_GAP_PX_MIN = 0;
+const ABOUT_SIDE_PANEL_CONTENT_GAP_PX_MAX = 100;
 
-export function clampAboutSidePanelContentGapPx(value: unknown, fallback = 28): number {
+function clampAboutSidePanelContentGapPx(value: unknown, fallback = 28): number {
   const n = typeof value === 'number' ? value : Number(value);
   if (!Number.isFinite(n)) return fallback;
   return Math.max(
@@ -1022,7 +605,7 @@ export function clampAboutSidePanelContentGapPx(value: unknown, fallback = 28): 
   );
 }
 
-export function resolveAboutSidePanelContentGapPx(
+function resolveAboutSidePanelContentGapPx(
   p: Pick<PortfolioAboutPresentationSettings, 'sidePanelContentGap' | 'sidePanelContentGapPx'>
 ): number {
   const gap = p.sidePanelContentGap ?? 'md';
@@ -1043,7 +626,7 @@ export function aboutSidePanelContentGapStyle(
   return { gap: `${px}px` };
 }
 
-export function isPortfolioAboutSidePanelContentGap(
+function isPortfolioAboutSidePanelContentGap(
   value: unknown
 ): value is PortfolioAboutSidePanelContentGap {
   return (
@@ -1055,45 +638,8 @@ export function isPortfolioAboutSidePanelContentGap(
     value === 'custom'
   );
 }
-export const PORTFOLIO_ABOUT_SIDE_PANEL_FULL_WIDTH_LAYOUT_OPTIONS: {
-  value: PortfolioAboutSidePanelFullWidthLayout;
-  label: string;
-  description: string;
-}[] = [
-  {
-    value: 'stacked',
-    label: 'Liste verticale',
-    description: 'Infos empilées dans un seul cadre — idéal pleine largeur.',
-  },
-  {
-    value: 'grid-2',
-    label: 'Grille 2 colonnes',
-    description: 'Deux colonnes équilibrées sur grand écran.',
-  },
-  {
-    value: 'grid-3',
-    label: 'Grille 3 colonnes',
-    description: 'Disposition compacte sur toute la largeur.',
-  },
-  {
-    value: 'horizontal',
-    label: 'Ligne souple',
-    description: 'Items côte à côte avec retour à la ligne.',
-  },
-  {
-    value: 'inline-band',
-    label: 'Bande horizontale',
-    description: 'Une seule ligne avec séparateurs verticaux entre items.',
-  },
-  {
-    value: 'profile-frame',
-    label: 'Cadre profil',
-    description:
-      'Grand écran : location à gauche (~40%), grille 2×2 des autres infos à droite — idéal au-dessus de Why me.',
-  },
-];
 
-export const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
+const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
   value: PortfolioAboutWhyMeMarkerStyle;
   label: string;
   description: string;
@@ -1114,24 +660,6 @@ export const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
   { value: 'triangle', label: 'Triangle', description: 'Pointe pleine ▶.', preview: '▶' },
   { value: 'none', label: 'Aucun', description: 'Pas de marqueur d’index.', preview: '—' },
 ];
-
-/** Infos / side panel markers — same shapes as Why me, separate settings fields. */
-export const PORTFOLIO_ABOUT_SIDE_PANEL_MARKER_STYLE_OPTIONS =
-  PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS;
-
-
-export const PORTFOLIO_ABOUT_WHY_ME_MARKER_SIZE_OPTIONS: {
-  value: PortfolioAboutWhyMeMarkerSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'S', description: 'Petite puce (~14px).' },
-  { value: 'md', label: 'M', description: 'Taille moyenne (~20px).' },
-  { value: 'lg', label: 'L', description: 'Grande puce (~28px).' },
-  { value: 'xl', label: 'XL', description: 'Très grande puce (~36–40px).' },
-];
-
-export { PORTFOLIO_LIST_MARKER_WEIGHT_OPTIONS as PORTFOLIO_ABOUT_WHY_ME_MARKER_WEIGHT_OPTIONS } from '@/components/portfolio/portfolio-list-marker';
 
 
 export function resolveSidePanelMarkerColor(
@@ -1154,18 +682,6 @@ export function aboutPalettePrincipalColor(
     return resolveHeroPaletteColor(mergeAboutPalette(DEFAULT_ABOUT_PALETTE, p.aboutPalette), 'principal');
   }
   return aboutAccentColor(p.accentColor);
-}
-
-/**
- * Which text color channel to read for About element styles.
- * Palette mode: hex is already painted for the active mode → always use `color`.
- * Manual mode: honor `activeColorMode` so `colorDark` applies in dark.
- */
-export function aboutActiveColorMode(
-  p: Pick<PortfolioAboutPresentationSettings, 'activeColorMode' | 'useHeroPalette'>
-): 'light' | 'dark' {
-  if (p.useHeroPalette !== false) return 'light';
-  return p.activeColorMode === 'light' ? 'light' : 'dark';
 }
 
 /**
@@ -1229,19 +745,10 @@ const WHY_ME_MARKER_STYLE_VALUES = PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS.m
   (option) => option.value
 ) as PortfolioAboutWhyMeMarkerStyle[];
 
-export function isPortfolioAboutWhyMeMarkerStyle(
+function isPortfolioAboutWhyMeMarkerStyle(
   value: unknown
 ): value is PortfolioAboutWhyMeMarkerStyle {
   return typeof value === 'string' && (WHY_ME_MARKER_STYLE_VALUES as string[]).includes(value);
-}
-
-/** True when the marker is a glyph bullet (not digits / roman / none). */
-export function isWhyMeHyperBulletMarker(style: PortfolioAboutWhyMeMarkerStyle): boolean {
-  return (
-    style !== 'number' &&
-    style !== 'roman' &&
-    style !== 'none'
-  );
 }
 
 const ROMAN_MAP: [number, string][] = [
@@ -1256,7 +763,7 @@ const ROMAN_MAP: [number, string][] = [
   [1, 'I'],
 ];
 
-export function toRomanNumeral(value: number): string {
+function toRomanNumeral(value: number): string {
   let n = Math.max(1, Math.floor(value));
   if (n > 399) n = 399;
   let out = '';
@@ -1279,15 +786,6 @@ export function formatWhyMeIndexLabel(
   return null;
 }
 
-
-const SUBTITLE_PRESET_COPY: Record<
-  Exclude<PortfolioAboutSubtitlePreset, 'default' | 'custom' | 'minimal'>,
-  string
-> = {
-  short: 'Strengths, approach, and how I work with clients.',
-  personal: 'A bit about me, how I work, and what you can expect when we collaborate.',
-};
-
 function sanitizeHex(value: unknown, fallback: string): string {
   if (typeof value === 'string' && isValidProfileHexColor(value)) return value.trim();
   return fallback;
@@ -1303,80 +801,6 @@ export function aboutStatsGapStyle(gap: number): CSSProperties | undefined {
   const px = clampStatsGap(gap, 0);
   if (px <= 0) return undefined;
   return { gap: `${px}px` };
-}
-
-export function resolveAboutSectionTitle(
-  settings: Pick<PortfolioAboutSectionSettings, 'titlePreset' | 'titleCustom' | 'title'>
-): string {
-  const raw = (() => {
-    switch (settings.titlePreset) {
-      case 'my-story':
-        return 'MY STORY';
-      case 'who-i-am':
-        return 'WHO I AM';
-      case 'behind-the-work':
-        return 'BEHIND THE WORK';
-      case 'custom':
-        return settings.titleCustom.trim() || settings.title.trim() || 'About';
-      default:
-        return settings.title.trim() || 'About';
-    }
-  })();
-  return portfolioSectionTitleSentenceCase(raw);
-}
-
-export function resolveAboutSectionSubtitle(
-  settings: Pick<PortfolioAboutSectionSettings, 'subtitlePreset' | 'subtitleCustom' | 'subtitle'>
-): string {
-  switch (settings.subtitlePreset) {
-    case 'minimal':
-      return '';
-    case 'short':
-      return SUBTITLE_PRESET_COPY.short;
-    case 'personal':
-      return SUBTITLE_PRESET_COPY.personal;
-    case 'custom':
-      return settings.subtitleCustom.trim() || settings.subtitle.trim();
-    default:
-      return settings.subtitle.trim();
-  }
-}
-
-export function aboutHeaderFontClass(font: PortfolioAboutHeaderFont, kind: 'title' | 'subtitle'): string {
-  if (kind === 'title') {
-    switch (font) {
-      case 'serif':
-        return 'font-serif font-bold tracking-[-0.03em]';
-      case 'display':
-        return 'font-black uppercase tracking-[0.08em]';
-      default:
-        return 'font-extrabold tracking-[-0.04em]';
-    }
-  }
-  switch (font) {
-    case 'serif':
-      return 'font-serif leading-relaxed';
-    case 'display':
-      return 'font-bold uppercase tracking-[0.1em]';
-    default:
-      return 'leading-relaxed';
-  }
-}
-
-export function aboutHeaderFontStyle(
-  _font: PortfolioAboutHeaderFont,
-  _subtitleSerif: boolean,
-  _kind: 'title' | 'subtitle'
-): CSSProperties | undefined {
-  return undefined;
-}
-
-export function aboutTitleColorStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_ABOUT_TITLE_COLOR) };
-}
-
-export function aboutSubtitleColorStyle(color: string): CSSProperties {
-  return { color: sanitizeHex(color, DEFAULT_ABOUT_SUBTITLE_COLOR) };
 }
 
 export function aboutAccentColor(accent: string): string {
@@ -1407,44 +831,6 @@ export function aboutContentPairAlignClass(
     default:
       return 'justify-start';
   }
-}
-
-export function aboutMainGridClass(
-  layoutMode: PortfolioAboutLayoutMode,
-  hasSidebar: boolean,
-  contentPairAlign: PortfolioAboutContentPairAlign = 'start',
-  twinColumnsSplit: PortfolioAboutTwinColumnsSplit = 'equal'
-): string {
-  if (!hasSidebar || layoutMode === 'full-width') return '';
-  const pairCentered = contentPairAlign === 'center' || contentPairAlign === 'end';
-  if (layoutMode === 'twin-columns') {
-    // Hug content width when the pair is centered/ended so both blocks sit together.
-    if (pairCentered) {
-      if (twinColumnsSplit === 'equal') {
-        return 'w-fit max-w-full lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:items-start lg:gap-10 xl:gap-14';
-      }
-      if (twinColumnsSplit === 'auto') {
-        return 'w-fit max-w-full lg:grid-cols-[auto_auto] lg:items-start lg:gap-10 xl:gap-14';
-      }
-      return 'w-fit max-w-full lg:grid-cols-[minmax(0,1.7fr)_minmax(0,0.7fr)] lg:items-start lg:gap-10 xl:gap-14';
-    }
-    if (twinColumnsSplit === 'equal') {
-      return 'w-full lg:grid-cols-2 lg:items-start lg:gap-10 xl:gap-14';
-    }
-    if (twinColumnsSplit === 'auto') {
-      return 'w-full lg:grid-cols-[minmax(0,1fr)_auto] lg:items-start lg:gap-10 xl:gap-14';
-    }
-    // why-me-70 (default): Why me gets the larger share
-    return 'w-full lg:grid-cols-[minmax(0,7fr)_minmax(12rem,3fr)] lg:items-start lg:gap-10 xl:gap-14';
-  }
-  if (layoutMode === 'sidebar-left') {
-    return pairCentered
-      ? 'w-fit max-w-full lg:grid-cols-[20rem_auto] lg:gap-10 xl:grid-cols-[22rem_auto] xl:gap-14'
-      : 'w-full lg:grid-cols-[20rem_minmax(0,1fr)] lg:gap-10 xl:grid-cols-[22rem_minmax(0,1fr)] xl:gap-14';
-  }
-  return pairCentered
-    ? 'w-fit max-w-full lg:grid-cols-[auto_20rem] lg:gap-10 xl:grid-cols-[auto_22rem] xl:gap-14'
-    : 'w-full lg:grid-cols-[minmax(0,1fr)_20rem] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_22rem] xl:gap-14';
 }
 
 export function aboutStatEditorialSuffix(label: string): string {
@@ -1676,47 +1062,6 @@ export function aboutSidePanelCardBackgroundSettings(
   };
 }
 
-export function aboutSidePanelToCardFrameSettings(
-  p: PortfolioAboutPresentationSettings
-): PortfolioCardFrameSettings {
-  return {
-    ...aboutSidePanelCardBackgroundSettings(p),
-    cardBorder: p.sidePanelBorder,
-    cardBorderColor: p.sidePanelBorderColor,
-    cardBackgroundEnabled: p.sidePanelBackgroundEnabled,
-    cardBackgroundColor: p.sidePanelBackgroundColor,
-    cardBorderRadius: p.sidePanelBorderRadius,
-    cardPadding: p.sidePanelPadding,
-  };
-}
-
-export function patchAboutSidePanelFromCardFrame(
-  patch: Partial<PortfolioCardFrameSettings>
-): Partial<PortfolioAboutPresentationSettings> {
-  const next: Partial<PortfolioAboutPresentationSettings> = {};
-  if (patch.cardBorder !== undefined) next.sidePanelBorder = patch.cardBorder;
-  if (patch.cardBorderColor !== undefined) next.sidePanelBorderColor = patch.cardBorderColor;
-  if (patch.cardBackgroundEnabled !== undefined) next.sidePanelBackgroundEnabled = patch.cardBackgroundEnabled;
-  if (patch.cardBackgroundColor !== undefined) next.sidePanelBackgroundColor = patch.cardBackgroundColor;
-  if (patch.cardBorderRadius !== undefined) next.sidePanelBorderRadius = patch.cardBorderRadius;
-  if (patch.cardPadding !== undefined) next.sidePanelPadding = patch.cardPadding;
-  if (patch.cardBackgroundFill !== undefined) next.sidePanelBackgroundFill = patch.cardBackgroundFill;
-  if (patch.cardBackgroundColorA !== undefined) next.sidePanelBackgroundColorA = patch.cardBackgroundColorA;
-  if (patch.cardBackgroundColorB !== undefined) next.sidePanelBackgroundColorB = patch.cardBackgroundColorB;
-  if (patch.cardBackgroundSplitAxis !== undefined) next.sidePanelBackgroundSplitAxis = patch.cardBackgroundSplitAxis;
-  if (patch.cardBackgroundSplitPosition !== undefined) {
-    next.sidePanelBackgroundSplitPosition = patch.cardBackgroundSplitPosition;
-  }
-  if (patch.cardDividerEnabled !== undefined) next.sidePanelDividerEnabled = patch.cardDividerEnabled;
-  if (patch.cardDividerShape !== undefined) next.sidePanelDividerShape = patch.cardDividerShape;
-  if (patch.cardDividerAngle !== undefined) next.sidePanelDividerAngle = patch.cardDividerAngle;
-  if (patch.cardDividerCurveDepth !== undefined) next.sidePanelDividerCurveDepth = patch.cardDividerCurveDepth;
-  if (patch.cardDividerColor !== undefined) next.sidePanelDividerColor = patch.cardDividerColor;
-  if (patch.cardDividerThickness !== undefined) next.sidePanelDividerThickness = patch.cardDividerThickness;
-  if (patch.cardDividerOpacity !== undefined) next.sidePanelDividerOpacity = patch.cardDividerOpacity;
-  return next;
-}
-
 function mergeSidePanelBackgroundFields(
   base: PortfolioAboutPresentationSettings,
   record: Record<string, unknown>
@@ -1899,7 +1244,7 @@ export function filterAboutStats(
   });
 }
 
-export type AboutSideInfoItemId = 'location' | 'languages' | 'gender' | 'member-since' | 'availability';
+type AboutSideInfoItemId = 'location' | 'languages' | 'gender' | 'member-since' | 'availability';
 
 export function isAboutSideInfoItemVisible(
   id: AboutSideInfoItemId,
@@ -1945,11 +1290,6 @@ export function aboutSidePanelShellClass(design: PortfolioAboutSidePanelDesign):
   }
 }
 
-/** Designs that own their full-width composition (ignore Disposition pleine largeur). */
-export function aboutSidePanelDesignOwnsLayout(design: PortfolioAboutSidePanelDesign): boolean {
-  return design === 'info-strip' || design === 'profile-cv' || design === 'info-bar' || design === 'list';
-}
-
 export function aboutSidePanelDividerColor(p: PortfolioAboutPresentationSettings): string {
   return sanitizeHex(p.sidePanelDividerColor, DEFAULT_ABOUT_SIDE_PANEL_BORDER_COLOR);
 }
@@ -1957,14 +1297,6 @@ export function aboutSidePanelDividerColor(p: PortfolioAboutPresentationSettings
 /** Soft principal wash for icon badges (cards / info-bar / profile-cv). */
 export function aboutSidePanelAccentSoftBackground(accent: string): string {
   return `color-mix(in srgb, ${aboutAccentColor(accent)} 16%, transparent)`;
-}
-
-export function patchAboutElementStyle(
-  styles: PortfolioAboutElementStyles,
-  target: PortfolioAboutStyleTarget,
-  patch: Partial<PortfolioElementTextStyle>
-): PortfolioAboutElementStyles {
-  return patchElementStylesRecord(styles, target, patch, DEFAULT_ABOUT_ELEMENT_STYLES, ABOUT_STYLE_TARGET_IDS);
 }
 
 export function pickAboutPresentationSettings(about: unknown): PortfolioAboutPresentationSettings {

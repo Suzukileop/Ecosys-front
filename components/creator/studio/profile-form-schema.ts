@@ -14,9 +14,9 @@ import {
 } from '@/lib/specialties';
 import { isRepeatedBioContent } from '@/lib/profile-bio';
 import { MAX_CUSTOM_EMPLOYMENT_LENGTH, parseEmploymentType } from '@/lib/experience-employment';
-import { parseAboutSkills, serializeAboutSkills } from '@/lib/about-skills';
+import { serializeAboutSkills } from '@/lib/about-skills';
 
-export const platformEnum = z.enum([
+const platformEnum = z.enum([
   'INSTAGRAM',
   'YOUTUBE',
   'TIKTOK',
@@ -26,7 +26,7 @@ export const platformEnum = z.enum([
   'OTHER',
 ]);
 
-export const linkTypeEnum = z.enum(['WEBSITE', 'CTA', 'CUSTOM', 'SOCIAL']);
+const linkTypeEnum = z.enum(['WEBSITE', 'CTA', 'CUSTOM', 'SOCIAL']);
 
 /** Accepts absolute http(s) URLs, or bare hostnames / paths (normalized with https://). */
 export function toAbsoluteHttpUrl(value: string): string | null {
@@ -93,7 +93,7 @@ export function deriveProfileLinkLabel(url: string): string {
 }
 
 /** Empty draft rows are allowed; filled = non-empty URL (label is auto-derived on save). */
-export const profileLinkSchema = z
+const profileLinkSchema = z
   .object({
     id: z.string().uuid(),
     type: linkTypeEnum.or(z.string()),
@@ -129,6 +129,7 @@ export const profileServiceSchema = z
     currency: z.string().max(8).optional().or(z.literal('')).nullable(),
     deliveryValue: z.number().int().min(1).nullable().optional(),
     deliveryUnit: z.enum(['DAYS', 'WEEKS']).nullable().optional(),
+    billingPeriod: z.enum(['DAY', 'MONTH', 'YEAR']).nullable().optional(),
   })
   .superRefine((data, ctx) => {
     const title = data.title.trim();
@@ -162,7 +163,7 @@ export const profileServiceSchema = z
     }
   });
 
-export const faqItemSchema = z
+const faqItemSchema = z
   .object({
     id: z.string().uuid(),
     sortOrder: z.number().int().min(0),
@@ -185,7 +186,7 @@ export const faqItemSchema = z
     }
   });
 
-export const contactEntrySchema = z.object({
+const contactEntrySchema = z.object({
   id: z.string().uuid(),
   sortOrder: z.number().int().min(0),
   value: z.string().max(300),
@@ -237,7 +238,7 @@ export function inferTeamSocialPlatform(
   return 'WEBSITE';
 }
 
-export const teamSocialLinkSchema = z
+const teamSocialLinkSchema = z
   .object({
     id: z.string().uuid(),
     platform: teamSocialPlatformEnum,
@@ -263,7 +264,7 @@ export const teamSocialLinkSchema = z
     }
   });
 
-export const teamMemberSchema = z
+const teamMemberSchema = z
   .object({
     id: z.string().uuid(),
     sortOrder: z.number().int().min(0),
@@ -292,7 +293,7 @@ export const teamMemberSchema = z
     }
   });
 
-export const galleryItemSchema = z
+const galleryItemSchema = z
   .object({
     id: z.string().uuid(),
     sortOrder: z.number().int().min(0),
@@ -326,11 +327,11 @@ export const subtitleItemSchema = z.object({
   value: z.string().max(500),
 });
 
-export const aboutStringItemSchema = z.object({
+const aboutStringItemSchema = z.object({
   value: z.string().max(120),
 });
 
-export const aboutSkillEntrySchema = z
+const aboutSkillEntrySchema = z
   .object({
     id: z.string().uuid(),
     sortOrder: z.number().int().min(0),
@@ -350,9 +351,7 @@ export const aboutSkillEntrySchema = z
     }
   });
 
-export type AboutSkillForm = z.infer<typeof aboutSkillEntrySchema>;
-
-export const aboutEducationEntrySchema = z
+const aboutEducationEntrySchema = z
   .object({
     id: z.string().uuid(),
     sortOrder: z.number().int().min(0),
@@ -374,9 +373,9 @@ export const aboutEducationEntrySchema = z
     }
   });
 
-export type AboutEducationForm = z.infer<typeof aboutEducationEntrySchema>;
+type AboutEducationForm = z.infer<typeof aboutEducationEntrySchema>;
 
-export const taskItemSchema = z.object({
+const taskItemSchema = z.object({
   value: z.string().max(300),
 });
 
@@ -413,7 +412,7 @@ export const strengthItemSchema = z
 
 export type StrengthFormItem = z.infer<typeof strengthItemSchema>;
 
-export const experienceStatusEnum = z.enum(['ONGOING', 'FINISHED']);
+const experienceStatusEnum = z.enum(['ONGOING', 'FINISHED']);
 
 export const experienceProofPlatformEnum = z.enum([
   'GITHUB',
@@ -425,7 +424,7 @@ export const experienceProofPlatformEnum = z.enum([
   'OTHER',
 ]);
 
-export const experienceProofLinkSchema = z
+const experienceProofLinkSchema = z
   .object({
     id: z.string().uuid(),
     label: z.string().max(100),
@@ -484,7 +483,7 @@ export const profileMediaBlockSchema = z
     }
   });
 
-export const spokenLanguageSchema = z
+const spokenLanguageSchema = z
   .object({
     value: z.string().max(50),
     level: strengthToolLevelEnum.nullable().optional(),
@@ -652,7 +651,7 @@ export function profileErrorPathToSection(path: string): ProfileSectionIdForErro
   return 'about';
 }
 
-export type ProfileSectionIdForErrors =
+type ProfileSectionIdForErrors =
   | 'about'
   | 'aboutPage'
   | 'aboutUs'
@@ -696,13 +695,13 @@ export function firstProfileErrorMessage(
 
 export type ProfileFormValues = z.infer<typeof profileSchema>;
 export type ProfileMediaBlockForm = z.infer<typeof profileMediaBlockSchema>;
-export type ProfileLinkForm = z.infer<typeof profileLinkSchema>;
+type ProfileLinkForm = z.infer<typeof profileLinkSchema>;
 export type ProfileServiceForm = z.infer<typeof profileServiceSchema>;
-export type FaqItemForm = z.infer<typeof faqItemSchema>;
-export type ContactEntryForm = z.infer<typeof contactEntrySchema>;
-export type TeamSocialLinkForm = z.infer<typeof teamSocialLinkSchema>;
-export type TeamMemberForm = z.infer<typeof teamMemberSchema>;
-export type GalleryItemForm = z.infer<typeof galleryItemSchema>;
+type FaqItemForm = z.infer<typeof faqItemSchema>;
+type ContactEntryForm = z.infer<typeof contactEntrySchema>;
+type TeamSocialLinkForm = z.infer<typeof teamSocialLinkSchema>;
+type TeamMemberForm = z.infer<typeof teamMemberSchema>;
+type GalleryItemForm = z.infer<typeof galleryItemSchema>;
 export type AboutUsForm = z.infer<typeof aboutUsSchema>;
 
 export function emptyAboutUsForm(): AboutUsForm {
@@ -779,6 +778,7 @@ export function createEmptyProfileService(
     currency: 'EUR',
     deliveryValue: null,
     deliveryUnit: 'DAYS',
+    billingPeriod: null,
   };
 }
 
@@ -843,7 +843,7 @@ export function parseContactEntries(
   return [];
 }
 
-export type ContactEntrySerializeKind = 'address' | 'phone' | 'email';
+type ContactEntrySerializeKind = 'address' | 'phone' | 'email';
 
 /** Filter empty values; phones use E.164 storage; emails are trimmed. */
 export function serializeContactEntries(
@@ -993,7 +993,7 @@ export function serializeAboutEducation(items: AboutEducationForm[]) {
     }));
 }
 
-export function parseSubtitleItems(raw: unknown): Array<{ value: string }> {
+function parseSubtitleItems(raw: unknown): Array<{ value: string }> {
   if (!Array.isArray(raw)) return [];
   return raw
     .map((item) => {
@@ -1013,7 +1013,7 @@ export function parseSpokenLanguages(
   return parseSpokenLanguageEntries(raw, legacyLanguages);
 }
 
-export function parseProfileLinks(raw: unknown): ProfileLinkForm[] {
+function parseProfileLinks(raw: unknown): ProfileLinkForm[] {
   if (!Array.isArray(raw)) return [];
   const links: ProfileLinkForm[] = [];
   raw.forEach((item, index) => {
@@ -1079,6 +1079,7 @@ export function parseProfileServices(raw: unknown): ProfileServiceForm[] {
       service.deliveryUnit != null ? String(service.deliveryUnit).toUpperCase() : '';
     let deliveryUnit: 'DAYS' | 'WEEKS' | null =
       deliveryUnitRaw === 'WEEKS' || deliveryUnitRaw === 'DAYS' ? deliveryUnitRaw : null;
+    const billingPeriodRaw = service.billingPeriod != null ? String(service.billingPeriod).toUpperCase() : '';
     const deadline = service.deadline != null ? String(service.deadline) : '';
     if (deliveryValue == null && deadline) {
       const match = deadline.trim().match(/^(\d+)\s*(day|days|jour|jours|week|weeks|semaine|semaines)?$/i);
@@ -1104,6 +1105,10 @@ export function parseProfileServices(raw: unknown): ProfileServiceForm[] {
       currency,
       deliveryValue,
       deliveryUnit: deliveryUnit ?? (deliveryValue != null ? 'DAYS' : null),
+      billingPeriod:
+        billingPeriodRaw === 'DAY' || billingPeriodRaw === 'MONTH' || billingPeriodRaw === 'YEAR'
+          ? billingPeriodRaw
+          : null,
     });
   });
   return services.sort((a, b) => a.sortOrder - b.sortOrder);
@@ -1320,7 +1325,7 @@ export function parseDemoSubtitles(
   return legacy ? [{ value: legacy }] : [];
 }
 
-export function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
+function parseProfileBlocks(raw: unknown): ProfileMediaBlockForm[] {
   if (!Array.isArray(raw)) return [];
   const blocks: ProfileMediaBlockForm[] = [];
   raw.forEach((item, index) => {
@@ -1587,6 +1592,8 @@ export function serializeProfileServices(
       const matched =
         matchSpecialtyOption(rawSpecialty, allowed) ||
         (allowed[0] ?? rawSpecialty);
+      const billingPeriod =
+        pricingType === 'FIXED' || pricingType === 'FROM' ? service.billingPeriod ?? null : null;
       return {
         id: service.id,
         sortOrder: index,
@@ -1604,6 +1611,7 @@ export function serializeProfileServices(
         currency: pricingType === 'QUOTE' ? currency : currency,
         deliveryValue,
         deliveryUnit,
+        billingPeriod,
       };
     });
 }

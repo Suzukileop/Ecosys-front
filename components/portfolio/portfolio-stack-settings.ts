@@ -1,5 +1,4 @@
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
-import type { PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import {
   applyToolsPaletteToSettings,
   DEFAULT_TOOLS_COLOR_BINDINGS,
@@ -22,48 +21,29 @@ import {
   type PortfolioStackTitlePresetLegacy,
   type PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
-import {
-  mergeLevelIndicatorDisplayStyle,
-  LEVEL_STAR_CARDS_COLUMNS_PER_ROW,
-  toolsHeaderFontClass,
-  toolsHeaderFontStyle,
-  toolsSubtitleColorStyle,
-  toolsTitleColorStyle,
-  type PortfolioToolsContentAlignment,
-  type PortfolioToolsHeaderAlignment,
-} from '@/components/portfolio/portfolio-tools-settings';
+import { mergeLevelIndicatorDisplayStyle, LEVEL_STAR_CARDS_COLUMNS_PER_ROW, toolsSubtitleColorStyle, toolsTitleColorStyle, type PortfolioToolsContentAlignment, type PortfolioToolsHeaderAlignment } from '@/components/portfolio/portfolio-tools-settings';
 
 export type {
   PortfolioStackAsideTitlePlacement,
   PortfolioStackDesign,
   PortfolioStackPresentationSettings,
   PortfolioStackSectionLayout,
-  PortfolioStackSubtitleSize,
   PortfolioStackTagsSize,
-  PortfolioStackTitlePreset,
-  PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
 export {
   PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS,
   STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
   STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   STACK_HEADER_PALETTE_TOKEN_OPTIONS,
-  stackHeaderDesignFontClass,
-  stackHeaderDesignFontStyle,
   stackHeaderPaletteTokenColor,
   type PortfolioStackHeaderAccentCountAlignment,
-  type PortfolioStackHeaderDesignAlignment,
   type PortfolioStackHeaderBillboardWordStyle,
   type PortfolioStackHeaderDesign,
-  type PortfolioStackHeaderFont,
-  type PortfolioStackHeaderMarginBottom,
   type PortfolioStackHeaderPaletteToken,
   type PortfolioStackHeaderTitleSize,
   type PortfolioStackHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-stack-header-settings';
 export type { PortfolioStackSectionSettings } from '@/components/portfolio/portfolio-stack-merge';
-export { pickStackPresentationFields, mergeStackPresentationBase, resolveStackShowLevel, resolveStackIconBackgroundEnabled } from '@/components/portfolio/portfolio-stack-merge';
-export { stackPresentationToToolsGallery } from '@/components/portfolio/portfolio-stack-gallery-mapper';
 
 export const PORTFOLIO_STACK_TAGS_SIZE_OPTIONS: {
   value: PortfolioStackTagsSize;
@@ -76,77 +56,22 @@ export const PORTFOLIO_STACK_TAGS_SIZE_OPTIONS: {
   { value: 'xlarge', label: 'Extra large', description: 'Maximum — pastilles XXL.' },
 ];
 
-export const PORTFOLIO_STACK_TITLE_SIZE_OPTIONS: {
-  value: PortfolioStackTitleSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Titre compact.' },
-  { value: 'md', label: 'Medium', description: 'Taille équilibrée (défaut).' },
-  { value: 'lg', label: 'Large', description: 'Titre plus affirmé.' },
-  { value: 'xl', label: 'Extra large', description: 'Impact maximum.' },
-];
-
-export const PORTFOLIO_STACK_SUBTITLE_SIZE_OPTIONS: {
-  value: PortfolioStackSubtitleSize;
-  label: string;
-  description: string;
-}[] = [
-  { value: 'sm', label: 'Small', description: 'Sous-titre compact.' },
-  { value: 'md', label: 'Medium', description: 'Taille de lecture par défaut.' },
-  { value: 'lg', label: 'Large', description: 'Sous-titre plus aéré.' },
-];
-
 export function resolveStackTagsSize(
   size: PortfolioStackTagsSize | undefined
 ): PortfolioStackTagsSize {
   return size ?? 'medium';
 }
 
-export function resolveStackTitleSize(
+function resolveStackTitleSize(
   size: PortfolioStackTitleSize | undefined
 ): PortfolioStackTitleSize {
   return size ?? 'md';
 }
 
-export function resolveStackSubtitleSize(
+function resolveStackSubtitleSize(
   size: PortfolioStackSubtitleSize | undefined
 ): PortfolioStackSubtitleSize {
   return size ?? 'md';
-}
-
-/** Sticky / section header title sizes (workflow-rail). */
-export function stackSectionTitleSizeClass(size: PortfolioStackTitleSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-3xl sm:text-4xl lg:text-5xl lg:leading-[0.95]';
-    case 'lg':
-      return 'text-4xl sm:text-5xl lg:text-7xl lg:leading-[0.95]';
-    case 'xl':
-      return 'text-4xl sm:text-5xl lg:text-8xl lg:leading-[0.92]';
-    default:
-      return 'text-4xl sm:text-5xl lg:text-6xl lg:leading-[0.95]';
-  }
-}
-
-/** Sticky / section header subtitle sizes (workflow-rail). */
-export function stackSectionSubtitleSizeClass(size: PortfolioStackSubtitleSize): string {
-  switch (size) {
-    case 'sm':
-      return 'text-sm sm:text-base';
-    case 'lg':
-      return 'text-lg sm:text-xl';
-    default:
-      return 'text-base sm:text-lg';
-  }
-}
-
-export function stackTagsContainerMaxWidth(
-  _size: PortfolioStackTagsSize,
-  _alignment: 'left' | 'center' | 'right'
-): string {
-  // Full-bleed section width — alignment uses flex justify, not a capped box.
-  return '100%';
 }
 
 export function stackTagsListClass(size: PortfolioStackTagsSize): string {
@@ -179,7 +104,7 @@ export function stackTagsChipClass(size: PortfolioStackTagsSize): string {
  * stack-tags title alignment — center by default.
  * Legacy: title left + tags centered (workflow-rail carry-over) → center title.
  */
-export function resolveStackTagsHeaderAlignment(
+function resolveStackTagsHeaderAlignment(
   presentation: Pick<
     PortfolioStackPresentationSettings,
     'design' | 'headerAlignment' | 'contentAlignment'
@@ -214,8 +139,8 @@ export function resolveStackTagsContentAlignment(
 }
 
 export const DEFAULT_STACK_TITLE = 'Core Stack';
-export const DEFAULT_STACK_BRAND_CARDS_TITLE = 'Tech Stack';
-export const DEFAULT_STACK_BRAND_CARDS_SUBTITLE =
+const DEFAULT_STACK_BRAND_CARDS_TITLE = 'Tech Stack';
+const DEFAULT_STACK_BRAND_CARDS_SUBTITLE =
   'Languages, frameworks, and platforms I use to ship reliable products.';
 
 /** Stack layouts — workflow rail is the default (first) design. */
@@ -318,7 +243,7 @@ export const PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS: {
   },
 ];
 
-export function isPortfolioStackSectionLayout(
+function isPortfolioStackSectionLayout(
   value: unknown
 ): value is PortfolioStackSectionLayout {
   return value === 'stacked' || value === 'aside-left' || value === 'aside-right';
@@ -358,13 +283,13 @@ export const PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS: {
   },
 ];
 
-export function isPortfolioStackAsideTitlePlacement(
+function isPortfolioStackAsideTitlePlacement(
   value: unknown
 ): value is PortfolioStackAsideTitlePlacement {
   return value === 'top' || value === 'center';
 }
 
-export function resolveStackAsideTitlePlacement(
+function resolveStackAsideTitlePlacement(
   placement: PortfolioStackAsideTitlePlacement | undefined
 ): PortfolioStackAsideTitlePlacement {
   return placement === 'top' ? 'top' : 'center';
@@ -700,6 +625,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   headerAccentCountAlignment: 'left',
   headerSerifLeadLabelText: '',
   headerSerifLeadTitleText: '',
+  headerSerifLeadSubtitleText: '',
   headerSerifLeadLabelColor: 'texteFort',
   headerSerifLeadTitleColor: 'texteFort',
   headerSerifLeadSubtitleColor: 'texteFort',
@@ -708,7 +634,19 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   headerSerifLeadSubtitleSize: 'md',
   headerSerifLeadLabelWeight: 'regular',
   headerSerifLeadTitleWeight: 'regular',
-  headerSerifLeadSubtitleWeight: 'regular',
+  headerSerifLeadSubtitleWeight: 'regular' as const,
+  headerEditorialLabelText: '',
+  headerEditorialTitleText: '',
+  headerEditorialSubtitleText: '',
+  headerEditorialLabelColor: 'texteFort',
+  headerEditorialTitleColor: 'texteFort',
+  headerEditorialSubtitleColor: 'texteFort',
+  headerEditorialLabelSize: 'md',
+  headerEditorialTitleSize: 'md',
+  headerEditorialSubtitleSize: 'md',
+  headerEditorialLabelWeight: 'regular',
+  headerEditorialTitleWeight: 'regular',
+  headerEditorialSubtitleWeight: 'regular',
   headerBillboardBigWord: '',
   headerBillboardCountText: '',
   headerBillboardTitleText: '',
@@ -1285,10 +1223,6 @@ function pickStackSubtitleSize(
 }
 
 export {
-  toolsHeaderFontClass as stackHeaderFontClass,
-  toolsHeaderFontStyle as stackHeaderFontStyle,
   toolsTitleColorStyle as stackTitleColorStyle,
   toolsSubtitleColorStyle as stackSubtitleColorStyle,
 };
-
-export type { PortfolioSectionBackgroundSettings };

@@ -1,4 +1,3 @@
-import type { CSSProperties } from 'react';
 import type { PortfolioToolsHeaderFont } from '@/components/portfolio/portfolio-tools-settings';
 
 /**
@@ -189,8 +188,4 @@ export function toolsHeaderDesignFontClass(
     default:
       return 'leading-relaxed';
   }
-}
-
-export function toolsHeaderDesignFontStyle(_font: PortfolioToolsHeaderFont): CSSProperties | undefined {
-  return undefined;
 }

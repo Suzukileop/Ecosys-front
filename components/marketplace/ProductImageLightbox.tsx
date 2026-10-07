@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
+import { MediaImage } from '@/components/ui/MediaImage';
 
 type ProductImageLightboxProps = {
   images: string[];
@@ -89,9 +90,11 @@ export function ProductImageLightbox({
               className="max-h-[min(80vh,820px)] w-full object-contain"
             />
           ) : (
-            // eslint-disable-next-line @next/next/no-img-element
-            <img
+            <MediaImage
               src={current}
+              widths={[828, 1080, 1920]}
+              sizes="(min-width: 1024px) 1024px, 100vw"
+              priority
               alt={alt}
               className="max-h-[min(80vh,820px)] w-full object-contain"
             />
