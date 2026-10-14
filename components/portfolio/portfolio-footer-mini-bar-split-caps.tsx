@@ -12,6 +12,7 @@ import {
   useFooterMiniBarLiveClock,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const REST_OPACITY = 0.6;
 const FOCUS_OPACITY = 1;
@@ -80,19 +81,22 @@ function useKerningFocus(ref: React.RefObject<HTMLElement | null>) {
  */
 export function FooterMiniBarSplitCaps({
   creatorName,
+  showCopyright = true,
   locationLabel,
   timezoneId,
   colorMode,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   backgroundStyle,
 }: FooterMiniBarVariantProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const ink = isLight ? '#050505' : '#fafafa';
 
   const clock = useFooterMiniBarLiveClock(timezoneId);
   const trimmedLocation = locationLabel?.trim().toUpperCase() || '';
   const abbreviatedName = abbreviateFooterMiniBarName(creatorName);
-  const copyrightText = abbreviatedName ? `© ${new Date().getFullYear()} ${abbreviatedName}` : '';
+  const copyrightText =
+    showCopyright && abbreviatedName ? `© ${new Date().getFullYear()} ${abbreviatedName}` : '';
 
   const copyrightRef = useRef<HTMLParagraphElement>(null);
   const capsuleRef = useRef<HTMLButtonElement>(null);
@@ -153,7 +157,7 @@ export function FooterMiniBarSplitCaps({
             </span>
           ) : null}
           <span aria-hidden>•</span>
-          <span>Back to top ↑</span>
+          <span>{t('Back to top ↑')}</span>
         </button>
       </div>
     </div>

@@ -281,6 +281,35 @@ body {
   }
 }
 
+/* Landing "How it works": no fade between tabs for people who asked for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  #how-panel * {
+    animation: none !important;
+  }
+}
+
+/* Landing nav: no slide or fade for people who asked for reduced motion. */
+@media (prefers-reduced-motion: reduce) {
+  [data-landing-nav],
+  [data-landing-nav] *,
+  #landing-mobile-menu {
+    transition: none !important;
+    animation: none !important;
+  }
+}
+
+/* Landing mobile menu: fades in and settles from just above. */
+@keyframes landing-menu-in {
+  from {
+    opacity: 0;
+    transform: translateY(-12px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
 /* ── Landing page semantic utilities ── */
 @layer components {
   /* Brand zone — hero → before/after (orange + mono) */
@@ -1106,6 +1135,47 @@ html.dark::-webkit-scrollbar-thumb:hover,
 }
 .dark .notification-panel-scroll::-webkit-scrollbar-thumb:hover {
   background: rgba(163, 163, 163, 0.55);
+}
+
+/* Post composer body. Deliberately NOT scrollbar-width / scrollbar-color: in Chrome (121+) any standard scrollbar
+   property switches the ::-webkit-scrollbar styling off and Windows then draws its native bar, track
+   and arrow buttons included. WebKit/Blink get a 6px pill thumb on a transparent track with no
+   buttons; only engines without ::-webkit-scrollbar (Firefox) use the standard properties. */
+.compose-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+.compose-scroll::-webkit-scrollbar-button {
+  display: none;
+  height: 0;
+}
+.compose-scroll::-webkit-scrollbar-track {
+  background: transparent;
+  margin: 4px 0;
+}
+.compose-scroll::-webkit-scrollbar-thumb {
+  background: rgba(0, 0, 0, 0.18);
+  border-radius: 9999px;
+}
+.compose-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(0, 0, 0, 0.32);
+}
+.dark .compose-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+.dark .compose-scroll::-webkit-scrollbar-thumb {
+  background: rgba(255, 255, 255, 0.18);
+}
+.dark .compose-scroll::-webkit-scrollbar-thumb:hover {
+  background: rgba(255, 255, 255, 0.32);
+}
+@supports not selector(::-webkit-scrollbar) {
+  .compose-scroll {
+    scrollbar-width: thin;
+    scrollbar-color: rgba(0, 0, 0, 0.18) transparent;
+  }
+  .dark .compose-scroll {
+    scrollbar-color: rgba(255, 255, 255, 0.18) transparent;
+  }
 }
 
 /* About · terminal — palette-aware scroll area (overrides global orange thumb). */
@@ -4973,7 +5043,10 @@ footer#footer {
   }
 }
 
-/* Live Preview settings dock — follows the portfolio color mode + global palette. */
+/* Live Preview settings dock — app chrome, not portfolio: the `--pf-palette-*` variables every panel
+   reads are set here from the app's black & white palette, by the APP's theme (`data-color-mode` comes
+   from ThemeProvider), so the dock matches the preview bar and the sections pane whatever palette or
+   colour mode the portfolio uses. Values mirror the News tokens (--gn-*) and the studio chrome hairline. */
 .portfolio-studio-dock {
   background: var(--pf-palette-fond);
   color: var(--pf-palette-texte-fort);
@@ -4981,6 +5054,38 @@ footer#footer {
     background-color 0.28s ease,
     color 0.28s ease,
     border-color 0.28s ease;
+}
+.portfolio-studio-dock[data-color-mode='light'] {
+  --pf-palette-fond: #ffffff;
+  --pf-palette-texte-fort: #0f1419;
+  --pf-palette-texte-muted: #536471;
+  --pf-palette-texte-faint: #8b98a5;
+  --pf-palette-neutre: #eff3f4;
+  --pf-palette-bordure: #ebeff1;
+  --pf-palette-principal: #0f1419;
+  --pf-palette-secondaire: #536471;
+  --pf-accent: #0f1419;
+  --pf-surface: #f7f9f9;
+  --pf-muted-surface: #f7f9f9;
+  --pf-motif: #ebeff1;
+  --pf-cta: #0f1419;
+  --pf-cta-hover: #272c30;
+}
+.portfolio-studio-dock[data-color-mode='dark'] {
+  --pf-palette-fond: #000000;
+  --pf-palette-texte-fort: #e7e9ea;
+  --pf-palette-texte-muted: #71767b;
+  --pf-palette-texte-faint: #536471;
+  --pf-palette-neutre: #16181c;
+  --pf-palette-bordure: #1f2226;
+  --pf-palette-principal: #e7e9ea;
+  --pf-palette-secondaire: #71767b;
+  --pf-accent: #e7e9ea;
+  --pf-surface: #16181c;
+  --pf-muted-surface: #16181c;
+  --pf-motif: #1f2226;
+  --pf-cta: #eff3f4;
+  --pf-cta-hover: #d7dbdc;
 }
 
 .portfolio-studio-settings-pane[data-open='true'] .portfolio-studio-dock {
@@ -5004,29 +5109,919 @@ footer#footer {
   }
 }
 
+/* Done: the site's solid ink pill (as Preview / Publish a post). */
 .portfolio-studio-dock-done {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 2rem;
-  min-width: 3.65rem;
-  padding: 0 1.05rem 1px;
-  font-size: 10.5px;
+  height: 2.25rem;
+  padding: 0 1.25rem;
+  font-size: 14px;
   font-weight: 600;
-  letter-spacing: 0.02em;
   line-height: 1;
   background-color: var(--pf-palette-texte-fort);
   color: var(--pf-palette-fond);
 }
 
 .portfolio-studio-dock-done:hover {
-  background-color: var(--pf-palette-principal);
+  background-color: var(--pf-cta-hover);
   color: var(--pf-palette-fond);
 }
 
 .portfolio-studio-dock-surface {
   color: var(--pf-palette-texte-fort);
   accent-color: var(--pf-palette-principal);
+}
+
+/* ------------------------------------------------------------------------------------------------
+ * Navigation settings panel (components/portfolio/portfolio-nav-panel-ui.tsx).
+ * Pro-editor look: dark, airy, a single accent. Change the accent with --np-accent / --np-accent-ink.
+ * --------------------------------------------------------------------------------------------- */
+.np-panel {
+  --np-accent: #f97316;
+  --np-accent-ink: #fb923c;
+  --np-accent-soft: rgb(249 115 22 / 0.14);
+  --np-accent-halo: rgb(249 115 22 / 0.28);
+  --np-on-accent: #ffffff;
+  --np-bg: #121214;
+  --np-card: #18181b;
+  --np-card-border: #26262a;
+  --np-well: #0c0c0e;
+  --np-well-border: #24242a;
+  --np-sep: #222226;
+  --np-text: #f4f4f5;
+  --np-label: #c9c9cf;
+  --np-muted: #8e8e96;
+  --np-seg-active: #2c2c32;
+  --np-seg-shadow: 0 1px 2px rgb(0 0 0 / 0.35), inset 0 0 0 1px rgb(255 255 255 / 0.04);
+  --np-track: #2c2c32;
+  --np-hover: rgb(255 255 255 / 0.06);
+  --np-switch-off: #3a3a42;
+  --np-illus: #34343b;
+  --np-illus-strong: #5a5a64;
+  --np-primary-bg: #f4f4f5;
+  --np-primary-ink: #111113;
+  --np-ok: #34d399;
+  --np-warn: #f5b544;
+  --np-ease: cubic-bezier(0.2, 0, 0, 1);
+
+  /* The Design / Labels tabs reuse the shared settings blocks: give them the panel's surfaces. */
+  --pf-palette-fond: var(--np-bg);
+  --pf-palette-neutre: var(--np-card);
+  --pf-palette-bordure: var(--np-sep);
+  --pf-surface: var(--np-card);
+  --pf-muted-surface: var(--np-card);
+
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  min-height: 0;
+  background: var(--np-bg);
+  color: var(--np-text);
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+.portfolio-studio-dock[data-color-mode='light'] .np-panel {
+  --np-accent: #ea580c;
+  --np-accent-ink: #c2410c;
+  --np-accent-soft: rgb(234 88 12 / 0.1);
+  --np-accent-halo: rgb(234 88 12 / 0.22);
+  --np-bg: #ffffff;
+  --np-card: #fafafa;
+  --np-card-border: #e7e7ea;
+  --np-well: #f4f4f5;
+  --np-well-border: #e4e4e7;
+  --np-sep: #ececef;
+  --np-text: #111113;
+  --np-label: #3f3f46;
+  --np-muted: #6b6b74;
+  --np-seg-active: #ffffff;
+  --np-seg-shadow: 0 1px 2px rgb(0 0 0 / 0.08), 0 0 0 1px rgb(0 0 0 / 0.05);
+  --np-track: #e4e4e7;
+  --np-hover: rgb(0 0 0 / 0.05);
+  --np-switch-off: #d4d4d8;
+  --np-illus: #dcdce0;
+  --np-illus-strong: #a1a1aa;
+  --np-primary-bg: #111113;
+  --np-primary-ink: #ffffff;
+  --np-ok: #059669;
+  --np-warn: #d97706;
+}
+
+.np-panel--embedded {
+  height: auto;
+  background: transparent;
+}
+
+.np-panel :focus-visible {
+  outline: 2px solid var(--np-accent);
+  outline-offset: 2px;
+}
+
+.np-panel button {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* Header */
+.np-header {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 8px;
+  padding: 16px 20px 12px;
+}
+
+.np-title {
+  font-size: 17px;
+  font-weight: 600;
+  line-height: 22px;
+  letter-spacing: -0.01em;
+  color: var(--np-text);
+}
+
+.np-status {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 2px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--np-muted);
+}
+
+.np-status-dot {
+  width: 6px;
+  height: 6px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--np-ok);
+  transition: background-color 180ms ease;
+}
+
+.np-status-dot[data-modified='true'] {
+  background: var(--np-warn);
+}
+
+.np-header-actions {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 2px;
+}
+
+.np-icon-btn {
+  display: inline-flex;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 10px;
+  color: var(--np-muted);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+}
+
+.np-icon-btn:hover:not(:disabled) {
+  background: var(--np-hover);
+  color: var(--np-text);
+}
+
+.np-icon-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.35;
+}
+
+.np-vsep {
+  width: 1px;
+  height: 18px;
+  margin: 0 6px;
+  background: var(--np-sep);
+}
+
+/* Tabs (underline) */
+.np-tabs {
+  display: flex;
+  flex-shrink: 0;
+  gap: 4px;
+  padding: 0 10px;
+  border-bottom: 1px solid var(--np-sep);
+}
+
+.np-panel--embedded .np-tabs {
+  padding: 0;
+}
+
+.np-tab {
+  position: relative;
+  height: 44px;
+  padding: 0 10px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--np-muted);
+  transition: color 150ms ease;
+}
+
+.np-tab:hover {
+  color: var(--np-label);
+}
+
+.np-tab[aria-selected='true'] {
+  color: var(--np-text);
+  font-weight: 600;
+}
+
+.np-tab::after {
+  content: '';
+  position: absolute;
+  right: 10px;
+  bottom: -1px;
+  left: 10px;
+  height: 2px;
+  border-radius: 2px;
+  background: var(--np-text);
+  transform: scaleX(0);
+  transition: transform 180ms var(--np-ease);
+}
+
+.np-tab[aria-selected='true']::after {
+  transform: scaleX(1);
+}
+
+.np-tab:focus-visible {
+  outline-offset: -2px;
+}
+
+/* Scrolling body */
+.np-scroll {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 16px 20px 24px;
+  scrollbar-width: thin;
+  scrollbar-color: var(--np-track) transparent;
+}
+
+.np-scroll::-webkit-scrollbar {
+  width: 6px;
+}
+
+.np-scroll::-webkit-scrollbar-thumb {
+  border-radius: 6px;
+  background: var(--np-track);
+}
+
+.np-scroll::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+.np-body {
+  padding-top: 16px;
+}
+
+/* Footer */
+.np-footer {
+  display: flex;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--np-sep);
+}
+
+.np-ghost-btn {
+  display: inline-flex;
+  height: 42px;
+  align-items: center;
+  gap: 8px;
+  margin-inline-start: -10px;
+  padding: 0 10px;
+  border-radius: 11px;
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--np-label);
+  transition:
+    background-color 150ms ease,
+    color 150ms ease,
+    opacity 150ms ease;
+}
+
+.np-ghost-btn:hover:not(:disabled) {
+  background: var(--np-hover);
+  color: var(--np-text);
+}
+
+.np-ghost-btn:disabled {
+  cursor: not-allowed;
+  opacity: 0.4;
+}
+
+.np-primary-btn {
+  height: 42px;
+  padding: 0 22px;
+  border-radius: 11px;
+  background: var(--np-primary-bg);
+  color: var(--np-primary-ink);
+  font-size: 14px;
+  font-weight: 600;
+  transition:
+    opacity 150ms ease,
+    transform 150ms ease;
+}
+
+.np-primary-btn:hover {
+  opacity: 0.9;
+}
+
+.np-primary-btn:active {
+  transform: scale(0.98);
+}
+
+/* Content building blocks */
+.np-stack {
+  display: flex;
+  flex-direction: column;
+}
+
+.np-stack > .np-toggle-card {
+  margin-bottom: 16px;
+}
+
+.np-dimmable {
+  transition: opacity 180ms ease;
+}
+
+.np-dimmable[data-disabled='true'] {
+  opacity: 0.35;
+  pointer-events: none;
+  user-select: none;
+}
+
+.np-toggle-card {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  padding: 16px;
+  border: 1px solid var(--np-card-border);
+  border-radius: 14px;
+  background: var(--np-card);
+}
+
+.np-card-title {
+  font-size: 15px;
+  font-weight: 600;
+  line-height: 20px;
+  color: var(--np-text);
+}
+
+.np-subtle {
+  font-size: 12.5px;
+  line-height: 1.4;
+  color: var(--np-muted);
+}
+
+.np-toggle-row {
+  display: flex;
+  min-height: 44px;
+  align-items: center;
+  gap: 16px;
+}
+
+.np-field-label {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
+  color: var(--np-label);
+}
+
+.np-input {
+  width: 100%;
+  height: 44px;
+  padding: 0 12px;
+  border: 1px solid var(--np-well-border);
+  border-radius: 11px;
+  background: var(--np-well);
+  color: var(--np-text);
+  font-size: 14px;
+  transition: border-color 150ms ease;
+}
+
+.np-input::placeholder {
+  color: var(--np-muted);
+}
+
+.np-input:focus-visible {
+  border-color: var(--np-accent);
+  outline: none;
+}
+
+.np-help {
+  margin-top: 8px;
+  font-size: 12px;
+  line-height: 1.45;
+  color: var(--np-muted);
+}
+
+/* Toggle: 42×24, hit area stretched to 44px */
+.np-switch {
+  position: relative;
+  width: 42px;
+  height: 24px;
+  flex-shrink: 0;
+  border-radius: 999px;
+  background: var(--np-switch-off);
+  transition: background-color 180ms var(--np-ease);
+}
+
+.np-switch::before {
+  content: '';
+  position: absolute;
+  inset: -10px -1px;
+}
+
+.np-switch[aria-checked='true'] {
+  background: var(--np-accent);
+}
+
+.np-switch-knob {
+  position: absolute;
+  top: 3px;
+  inset-inline-start: 3px;
+  width: 18px;
+  height: 18px;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow: 0 1px 2px rgb(0 0 0 / 0.3);
+  transition: transform 180ms var(--np-ease);
+}
+
+.np-switch[aria-checked='true'] .np-switch-knob {
+  transform: translateX(18px);
+}
+
+[dir='rtl'] .np-switch[aria-checked='true'] .np-switch-knob {
+  transform: translateX(-18px);
+}
+
+/* Collapsible sections */
+.np-section {
+  border-top: 1px solid var(--np-sep);
+}
+
+.np-section-head {
+  display: flex;
+  width: 100%;
+  height: 48px;
+  align-items: center;
+  justify-content: space-between;
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--np-muted);
+  transition: color 150ms ease;
+}
+
+.np-section-head:hover {
+  color: var(--np-label);
+}
+
+.np-section-chevron {
+  transition: transform 200ms var(--np-ease);
+}
+
+.np-section-head[aria-expanded='true'] .np-section-chevron {
+  transform: rotate(180deg);
+}
+
+.np-section-body {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows 200ms var(--np-ease);
+}
+
+.np-section-body[data-open='true'] {
+  grid-template-rows: 1fr;
+}
+
+/* Clips while folding; the side gutter keeps focus rings visible. */
+.np-section-clip {
+  min-height: 0;
+  margin: 0 -4px;
+  padding: 0 4px;
+  overflow: hidden;
+}
+
+.np-section-content {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+  padding: 4px 0 24px;
+}
+
+/* Segmented control: 44px hit areas, the active pill drawn inset */
+.np-seg {
+  display: grid;
+  border: 1px solid var(--np-well-border);
+  border-radius: 11px;
+  background: var(--np-well);
+}
+
+.np-seg-btn {
+  position: relative;
+  display: flex;
+  min-width: 0;
+  height: 44px;
+  align-items: center;
+  justify-content: center;
+  padding: 0 8px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--np-muted);
+  transition: color 150ms ease;
+}
+
+.np-seg-btn::before {
+  content: '';
+  position: absolute;
+  inset: 3px;
+  border-radius: 8px;
+  background: transparent;
+  transition:
+    background-color 180ms ease,
+    box-shadow 180ms ease;
+}
+
+.np-seg-btn:hover {
+  color: var(--np-label);
+}
+
+.np-seg-btn[aria-pressed='true'] {
+  color: var(--np-text);
+}
+
+.np-seg-btn[aria-pressed='true']::before {
+  background: var(--np-seg-active);
+  box-shadow: var(--np-seg-shadow);
+}
+
+.np-seg-btn:focus-visible {
+  border-radius: 8px;
+  outline-offset: -2px;
+}
+
+/* Option cards */
+.np-option {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  padding: 8px 8px 12px;
+  border: 1px solid var(--np-card-border);
+  border-radius: 12px;
+  background: var(--np-card);
+  text-align: start;
+  transition:
+    border-color 150ms ease,
+    box-shadow 150ms ease;
+}
+
+.np-option:hover {
+  border-color: var(--np-illus-strong);
+}
+
+.np-option[aria-pressed='true'] {
+  border-color: var(--np-accent);
+  box-shadow: inset 0 0 0 1px var(--np-accent);
+}
+
+.np-option-illus {
+  display: block;
+  height: 60px;
+  margin-bottom: 10px;
+}
+
+.np-option-title {
+  padding: 0 4px;
+  font-size: 13.5px;
+  font-weight: 600;
+  line-height: 18px;
+  color: var(--np-text);
+}
+
+.np-option-sub {
+  margin-top: 2px;
+  padding: 0 4px;
+  font-size: 12px;
+  line-height: 16px;
+  color: var(--np-muted);
+}
+
+.np-option-badge {
+  position: absolute;
+  top: 6px;
+  inset-inline-end: 6px;
+  display: flex;
+  width: 20px;
+  height: 20px;
+  align-items: center;
+  justify-content: center;
+  border-radius: 999px;
+  background: var(--np-accent);
+  color: var(--np-on-accent);
+  box-shadow: 0 0 0 2px var(--np-card);
+}
+
+/* Mini illustrations */
+.np-illus {
+  position: relative;
+  display: flex;
+  height: 100%;
+  flex-direction: column;
+  gap: 5px;
+  overflow: hidden;
+  padding: 7px 9px;
+  border: 1px solid var(--np-well-border);
+  border-radius: 8px;
+  background: var(--np-well);
+}
+
+.np-illus--stage {
+  align-items: center;
+  justify-content: flex-end;
+  padding: 7px 0 0;
+}
+
+.np-illus-bar {
+  display: flex;
+  height: 10px;
+  flex-shrink: 0;
+  align-items: center;
+  gap: 4px;
+  margin: -2px -4px 3px;
+  padding: 0 4px;
+  border-radius: 3px;
+  background: var(--np-seg-active);
+}
+
+.np-illus-bar--phone {
+  height: 9px;
+  margin: -1px -1px 2px;
+}
+
+.np-illus-logo {
+  width: 14px;
+  height: 4px;
+  border-radius: 2px;
+  background: var(--np-illus-strong);
+}
+
+.np-illus-link {
+  width: 6px;
+  height: 3px;
+  border-radius: 2px;
+  background: var(--np-illus-strong);
+  opacity: 0.7;
+}
+
+.np-illus-line {
+  display: block;
+  height: 3px;
+  flex-shrink: 0;
+  border-radius: 2px;
+  background: var(--np-illus);
+}
+
+.np-illus-line--strong {
+  height: 4px;
+  background: var(--np-illus-strong);
+}
+
+.np-illus-corner {
+  position: absolute;
+  top: 7px;
+  inset-inline-end: 8px;
+  width: 7px;
+  height: 7px;
+  border: 1.5px solid var(--np-illus-strong);
+  border-radius: 2px;
+}
+
+.np-illus-burger {
+  position: relative;
+  width: 9px;
+  height: 6px;
+  flex-shrink: 0;
+  border-top: 1.5px solid var(--np-illus-strong);
+  border-bottom: 1.5px solid var(--np-illus-strong);
+}
+
+.np-illus-burger::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: 0;
+  left: 0;
+  height: 1.5px;
+  margin-top: -0.75px;
+  background: var(--np-illus-strong);
+}
+
+.np-phone {
+  position: relative;
+  display: flex;
+  width: 40px;
+  height: 50px;
+  flex-direction: column;
+  gap: 4px;
+  overflow: hidden;
+  padding: 5px;
+  border: 1.5px solid var(--np-illus-strong);
+  border-bottom: none;
+  border-radius: 8px 8px 0 0;
+}
+
+.np-phone-drawer {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  inset-inline-start: 0;
+  display: flex;
+  width: 64%;
+  flex-direction: column;
+  gap: 4px;
+  padding: 9px 4px;
+  border-inline-end: 1px solid var(--np-illus-strong);
+  background: var(--np-seg-active);
+}
+
+/* Step slider */
+.np-value-badge {
+  padding: 3px 8px;
+  border-radius: 6px;
+  background: var(--np-accent-soft);
+  color: var(--np-accent-ink);
+  font-size: 11.5px;
+  font-weight: 600;
+  line-height: 16px;
+  white-space: nowrap;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Small → large reads left to right in every script. */
+.np-range,
+.np-steps {
+  direction: ltr;
+}
+
+.np-range {
+  --np-fill: 50%;
+  display: block;
+  width: 100%;
+  height: 24px;
+  margin: 0;
+  background: transparent;
+  cursor: pointer;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.np-range:focus-visible {
+  outline: none;
+}
+
+.np-range::-webkit-slider-runnable-track {
+  height: 4px;
+  border-radius: 999px;
+  background: linear-gradient(to right, var(--np-accent) var(--np-fill), var(--np-track) var(--np-fill));
+}
+
+.np-range::-webkit-slider-thumb {
+  width: 18px;
+  height: 18px;
+  margin-top: -7px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 4px var(--np-accent-halo),
+    0 1px 3px rgb(0 0 0 / 0.4);
+  transition: box-shadow 150ms ease;
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+.np-range:hover::-webkit-slider-thumb,
+.np-range:active::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 6px var(--np-accent-halo),
+    0 1px 3px rgb(0 0 0 / 0.4);
+}
+
+.np-range:focus-visible::-webkit-slider-thumb {
+  box-shadow:
+    0 0 0 2px var(--np-bg),
+    0 0 0 4px var(--np-accent);
+}
+
+.np-range::-moz-range-track {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--np-track);
+}
+
+.np-range::-moz-range-progress {
+  height: 4px;
+  border-radius: 999px;
+  background: var(--np-accent);
+}
+
+.np-range::-moz-range-thumb {
+  width: 18px;
+  height: 18px;
+  border: none;
+  border-radius: 999px;
+  background: #ffffff;
+  box-shadow:
+    0 0 0 4px var(--np-accent-halo),
+    0 1px 3px rgb(0 0 0 / 0.4);
+  transition: box-shadow 150ms ease;
+}
+
+.np-range:focus-visible::-moz-range-thumb {
+  box-shadow:
+    0 0 0 2px var(--np-bg),
+    0 0 0 4px var(--np-accent);
+}
+
+.np-steps {
+  position: relative;
+  height: 28px;
+  margin-top: 4px;
+}
+
+.np-step {
+  position: absolute;
+  top: 0;
+  height: 28px;
+  padding: 0;
+  font-size: 11.5px;
+  line-height: 28px;
+  white-space: nowrap;
+  color: var(--np-muted);
+  transition: color 150ms ease;
+}
+
+.np-step:hover {
+  color: var(--np-label);
+}
+
+.np-step[data-active='true'] {
+  color: var(--np-text);
+  font-weight: 600;
+}
+
+/* Live preview of the menu links */
+.np-preview {
+  display: flex;
+  height: 56px;
+  align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  padding: 0 16px;
+  border: 1px solid var(--np-well-border);
+  border-radius: 12px;
+  background: var(--np-well);
+}
+
+.np-preview-links {
+  display: flex;
+  align-items: center;
+  font-weight: 500;
+  white-space: nowrap;
+  color: var(--np-muted);
+  transition:
+    font-size 180ms var(--np-ease),
+    gap 180ms var(--np-ease);
+}
+
+.np-preview-links [data-active='true'] {
+  font-weight: 600;
+  color: var(--np-text);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .np-panel *,
+  .np-panel *::before,
+  .np-panel *::after {
+    transition-duration: 0ms !important;
+  }
 }
 
 .portfolio-studio-dock-surface [class*='text-neutral-95'],
@@ -5064,9 +6059,9 @@ footer#footer {
 }
 
 .portfolio-studio-dock-surface input.portfolio-studio-dock-search {
-  background-color: color-mix(in srgb, var(--pf-palette-texte-fort) 5%, var(--pf-palette-fond)) !important;
+  background-color: var(--pf-surface) !important;
   border: 0 !important;
-  border-radius: 0.375rem !important;
+  border-radius: 9999px !important;
   box-shadow: none !important;
   color: var(--pf-palette-texte-fort) !important;
   padding-left: 2.25rem !important;
@@ -6604,9 +7599,14 @@ footer#footer {
    new section never sits as close to the previous content as a control sits to its own
    label. Applies uniformly instead of per-section ad-hoc spacing. */
 .pf-gs-section {
-  margin-top: 2rem;
-  padding-top: 1.25rem;
-  border-top: 1px solid color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 8%, transparent);
+  margin-top: 2.25rem;
+}
+/* A group's title: the News kicker (11px, semibold, tracked, secondary ink) — space sets groups
+   apart, no hairline between them. */
+.pf-gs-section > .pf-gs-section-header > .pf-stack-block-label,
+.pf-gs-section > .pf-stack-block-label {
+  font-weight: 600;
+  letter-spacing: 0.12em;
 }
 
 .pf-gs-section > .pf-stack-block-label,
@@ -17081,35 +18081,51 @@ footer#footer {
   }
 }
 
-/* ---------------------------------------------------------------------------
-   Service Providers directory — hover spotlight.
+/* Service Providers directory, LIGHT mode: the page ground is neutral-100 (#f4f4f5) and every block
+   on it (cards, the filter bar, the filter triggers) is pure white. `.news-theme` remaps `bg-white`
+   to its grey card tone, which left the cards the same shade as the ground; this out-ranks that
+   remap. Dark mode keeps zinc-900 on zinc-950. */
+html:not(.dark) .news-theme .provider-surface {
+  background-color: #ffffff !important;
+}
 
-   Hovering one card drops its neighbours back so the eye lands in one glance.
-   Done in CSS rather than React state: a mouseenter/mouseleave pair on a grid
-   of cards fights itself as the pointer crosses the gap between two of them,
-   and every crossing costs a render. `:hover` on the container has neither
-   problem.
+/* ---------------------------------------------------------------------------
+   Service Providers directory — card hover.
+
+   The hovered card lifts a couple of pixels and gains a soft shadow; its
+   neighbours are left exactly as they were (an earlier version dropped them to
+   40% opacity, which made the rest of the list look disabled). Done in CSS on
+   the card itself, so there is no pointer state to render and nothing for the
+   pointer to fight with when it crosses the gap between two cards.
 
    Gated behind a real pointer: on touch, `:hover` sticks after a tap and would
-   leave the rest of the grid stranded at 40%.
+   leave one card raised.
    ------------------------------------------------------------------------- */
 .provider-spotlight-grid > * {
-  transition: opacity 500ms cubic-bezier(0.22, 1, 0.36, 1);
+  transition:
+    transform 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 350ms cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 200ms ease;
 }
 
 @media (hover: hover) and (pointer: fine) {
-  .provider-spotlight-grid:hover > * {
-    opacity: 0.4;
+  .provider-spotlight-grid > *:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 18px 36px -22px rgba(10, 10, 10, 0.28);
   }
 
-  .provider-spotlight-grid > *:hover {
-    opacity: 1;
+  .dark .provider-spotlight-grid > *:hover {
+    box-shadow: 0 18px 36px -20px rgba(0, 0, 0, 0.75);
   }
 }
 
 @media (prefers-reduced-motion: reduce) {
   .provider-spotlight-grid > * {
     transition: none;
+  }
+
+  .provider-spotlight-grid > *:hover {
+    transform: none;
   }
 }
 
@@ -17161,63 +18177,133 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
    means "the action fill", i.e. black on light / white on dark.)
    ========================================================================== */
 .news-theme {
-  /* A card is a soft fill on the white page — no outline. Inputs / chips / the Hire pill sit on it
-     as white (--gn-inset), so every surface is separated by tone, never by a line. */
-  --gn-surface: #f5f5f6;
+  /* X palette, light ("Default"): ink #0F1419, secondary #536471, hairline #EFF3F4, modules
+     #F7F9F9 on the white page. Black / white only — no accent hue: the action fill, the like, the
+     focus ring are all ink. Ink on #F7F9F9: 17.9:1; secondary 7.3:1 (AA at 13px); ink3 decoration. */
+  --gn-surface: #f7f9f9;
   --gn-inset: #ffffff;
-  --gn-ink: #111111;
-  --gn-ink2: #5f5f5f;
-  --gn-ink3: #858585;
-  --gn-line: #e5e5e5;
-  --gn-line-soft: #ededed;
-  --gn-field: #ffffff;
-  --gn-hover: rgba(0, 0, 0, 0.06);
-  --gn-blue: #111111;
-  --gn-blue-hover: #333333;
-  --gn-blue-tonal: rgba(255, 87, 34, 0.1);
-  /* Orange as TEXT is the burnt tone: brand #ff5722 is only 3.2:1 on white, this is 5.2:1 (4.7:1 on
-     the soft card). Fills, rings and icons keep the brand orange via --gn-accent-fill. */
-  --gn-blue-ink: #c73a0b;
-  --gn-accent: #c73a0b;
-  --gn-accent-fill: #ff5722;
+  --gn-ink: #0f1419;
+  --gn-ink2: #536471;
+  --gn-ink3: #8b98a5;
+  --gn-line: #eff3f4;
+  --gn-card-line: transparent;
+  --gn-line-soft: #eff3f4;
+  --gn-field: #eff3f4;
+  --gn-hover: rgba(15, 20, 25, 0.06);
+  --gn-blue: #0f1419;
+  --gn-blue-hover: #272c30;
+  --gn-blue-tonal: rgba(15, 20, 25, 0.06);
+  --gn-blue-ink: #0f1419;
+  --gn-accent: #0f1419;
+  --gn-accent-fill: #0f1419;
   --gn-red: #b91c1c;
   --gn-green: #047857;
   --gn-amber: #b45309;
+  /* The like stays brand orange (owner, 2026-10-09): heart #ff5722; its count in the burnt tone
+     #c73a0b, which clears AA at 13px on white (5.2:1). */
+  --gn-like: #ff5722;
+  --gn-like-ink: #c73a0b;
+  --gn-like-tint: rgba(255, 87, 34, 0.1);
+  --gn-ring: rgba(15, 20, 25, 0.35);
+  --gn-primary: #0f1419;
+  --gn-primary-hover: #272c30;
+  --gn-primary-ink: #ffffff;
 }
 
 .dark .news-theme {
-  --gn-surface: #1c1c1e;
-  --gn-inset: rgba(255, 255, 255, 0.08);
-  --gn-ink: #f5f5f5;
-  --gn-ink2: #a8a8a8;
-  --gn-ink3: #7a7a7a;
-  --gn-line: rgba(255, 255, 255, 0.1);
-  --gn-line-soft: rgba(255, 255, 255, 0.08);
-  --gn-field: rgba(255, 255, 255, 0.08);
-  --gn-hover: rgba(255, 255, 255, 0.08);
-  --gn-blue: #ffffff;
-  --gn-blue-hover: #e5e5e5;
-  --gn-blue-tonal: rgba(255, 87, 34, 0.16);
-  --gn-blue-ink: #ff7043;
-  --gn-accent: #ff7043;
-  --gn-accent-fill: #ff5722;
-  --gn-red: #f87171;
-  --gn-green: #34d399;
-  --gn-amber: #fbbf24;
+  /* X palette, dark ("Lights out"): page #000, modules #16181C, fields #202327, hairline #2F3336,
+     ink #E7E9EA, secondary #71767B. The action fill is X's off-white #EFF3F4 with black text. Ink on
+     #16181C: 14.6:1; secondary 4.6:1 (AA). */
+  --gn-surface: #16181c;
+  --gn-inset: #202327;
+  --gn-ink: #e7e9ea;
+  --gn-ink2: #71767b;
+  --gn-ink3: #536471;
+  --gn-line: #2f3336;
+  --gn-card-line: transparent;
+  --gn-line-soft: #2f3336;
+  --gn-field: #202327;
+  --gn-hover: rgba(231, 233, 234, 0.1);
+  --gn-blue: #eff3f4;
+  --gn-blue-hover: #d7dbdc;
+  --gn-blue-tonal: rgba(231, 233, 234, 0.1);
+  --gn-blue-ink: #e7e9ea;
+  --gn-accent: #e7e9ea;
+  --gn-accent-fill: #eff3f4;
+  --gn-red: #f4212e;
+  --gn-green: #00ba7c;
+  --gn-amber: #ffd400;
+  --gn-like: #ff5722;
+  --gn-like-ink: #ff7a4d;
+  --gn-like-tint: rgba(255, 87, 34, 0.14);
+  --gn-ring: rgba(231, 233, 234, 0.45);
+  --gn-primary: #eff3f4;
+  --gn-primary-hover: #d7dbdc;
+  --gn-primary-ink: #0f1419;
 }
 
-/* Cards: a soft tonal fill on the page, no outline (the big social products draw almost no lines —
-   tone and space do the separating). 16px corners; edge-to-edge and square on phones. */
+/* Cards: a tonal fill one step above the page, 12px corners (radius scale: cards 12, inputs 8,
+   tags / pills full); edge-to-edge and square on phones. */
 .news-theme article,
 .news-theme .gn-card {
   background-color: var(--gn-surface);
   border-color: transparent;
-  border-radius: 16px;
+  border-radius: 12px;
 }
 @media (max-width: 639px) {
   .news-theme article,
   .news-theme .gn-card {
     border-radius: 0;
+  }
+}
+/* News in LIGHT mode: elevation the other way round — the page is neutral-100 (#f4f4f5, painted by
+   DashboardShell / DashboardTopHeader on /feed) and cards are crisp white with a neutral-200 border and
+   shadow-sm. Fields and chips ON a card take the page grey. Scoped to the feed: Studio, Marketplace,
+   the Saved settings page keep the white-page / grey-card tokens of .news-theme. */
+html:not(.dark) .news-feed {
+  /* Light News pages: #F7F9F9 blocks on the white page — separated by tone, no hairline. */
+  --gn-surface: #f7f9f9;
+  --gn-inset: #ffffff;
+  --gn-field: #ffffff;
+  --gn-card-line: transparent;
+}
+html:not(.dark) .news-feed article.gn-post,
+html:not(.dark) .news-feed .gn-card {
+  box-shadow: none;
+}
+/* Fields on a card: neutral-100 fill + neutral-200 border, white on focus. */
+html:not(.dark) .news-feed .gn-field-input {
+  border: 1px solid transparent;
+}
+html:not(.dark) .news-feed .gn-field-input:focus,
+html:not(.dark) .news-feed .gn-field-input:focus-visible {
+  background-color: #ffffff;
+}
+
+/* The rail's "Search content" field: white with a neutral-200 border on the white card — the same
+   bordered look as the navbar search — and the brand orange on the border when focused. */
+html:not(.dark) .news-feed .gn-search-input {
+  background-color: var(--gn-field);
+  border: 1px solid transparent;
+  transition: border-color 150ms ease;
+}
+html:not(.dark) .news-feed .gn-search-input:focus,
+html:not(.dark) .news-feed .gn-search-input:focus-visible {
+  background-color: #ffffff;
+  border-color: var(--gn-ink);
+}
+
+/* Every card of the feed is framed by a hairline (zinc-800 in dark): it gives the elevation step a
+   crisp edge, and keeps a black image's edge visible where post media runs edge to edge. */
+.news-theme article.gn-post,
+.news-feed .gn-card {
+  border: 1px solid var(--gn-card-line);
+}
+@media (max-width: 639px) {
+  .news-theme article.gn-post,
+  .news-feed .gn-card {
+    border-left-width: 0;
+    border-right-width: 0;
   }
 }
 
@@ -17227,7 +18313,7 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
 .news-theme aside.gn-aside.gn-aside {
   background-color: transparent !important;
   box-shadow: inset 0 0 0 1px var(--gn-line) !important;
-  border-radius: 16px;
+  border-radius: 12px;
 }
 
 /* Tonal pieces: a white pill / field / quote-box ON a card (`gn-inset`), or a soft chip on the
@@ -17239,27 +18325,36 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
   background-color: var(--gn-surface);
 }
 
-/* Type scale of a post — body 16/1.5, name 15, meta 13, labels 13: one step apart, not five. */
-.news-theme article h3 {
-  font-size: 16px;
-  line-height: 1.5;
+/* Post type scale (News, Studio, Marketplace cards):
+     name 15/20 semibold · body 15/22 regular · meta, chips, counts 13/18 · buttons 14/20 semibold.
+   15px is the body size of X, Threads and Bluesky; the old 16px body sat a step ABOVE the author's
+   name, which inverted the hierarchy. gn-post-text is the post text (ContentPostClampedTitle). */
+.news-theme .gn-post-text {
+  font-size: 15px;
+  line-height: 22px;
+  letter-spacing: 0;
+}
+/* A post with media: its text is the card's headline, 18/26 semibold, one clear step above the
+   author's name (15/20). Text-only posts keep the 15/22 reading size. */
+.news-theme .gn-post-text[data-variant='headline'] {
+  font-size: 18px;
+  line-height: 26px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
 }
 
-/* Post layout — "framed + lighter card".
-   framed:  the media sits inside the card's own padding with rounded corners, so a black image on a
-            black page still has a visible edge (the card's tone shows all the way round it).
-   lighter: in dark mode the card steps up from #111 to #1c1c1e, so its edge reads against #000. */
-.news-theme .gn-media {
-  margin-left: 0;
-  margin-right: 0;
-  border-radius: 12px;
+/* Role ring on post avatars: its gap is painted white / #111 by default, which drew a halo on the
+   tonal card. The gap takes the card's own tone instead. */
+.news-theme article .ring-offset-white {
+  --tw-ring-offset-color: var(--gn-surface);
 }
-@media (max-width: 639px) {
-  /* Phones keep full-bleed cards; the framed image still gets its inset from the card padding. */
-  .news-theme .gn-media {
-    border-radius: 10px;
-  }
+.dark .news-theme article .dark\:ring-offset-\[\#111111\] {
+  --tw-ring-offset-color: var(--gn-surface);
 }
+
+/* Post media is framed in PostMedia itself (inside the 16px gutter, 12px corners) and the dark card
+   is #1c1c1e — the "framed + lighter" layout the owner picked: a black image on the black page keeps
+   a visible card edge. */
 /* Post actions: ghost icons, no ring. Hover shows a soft disc instead of an outline. */
 .news-theme [aria-label='Post actions'] .sm\:border {
   border-width: 0 !important;
@@ -17270,19 +18365,29 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
 .news-theme [aria-label='Post actions'] .text-\[12\.5px\] {
   font-size: 13px;
 }
-/* Comments opened under a post: part of the card, not a second box. No divider lines (tone and
-   space separate things on this page), the thread lines up with the card's own 20px gutter, and the
-   composer is a soft field instead of an outlined input. */
+/* Comments opened under a post: a drawer of the card in a slightly deeper tint (card #F7F9F9 →
+   #EFF3F4, dark #16181C → #0E0F11) so "post" and "conversation" read as two levels of one block;
+   the thread lines up with the card's own 20px gutter and the composer is a white / dark field. */
 .news-theme .gn-comments {
   border-top-width: 0 !important;
   padding: 0 4px 12px;
+  background-color: #eff3f4;
+}
+.dark .news-theme .gn-comments,
+.news-theme.dark .gn-comments {
+  background-color: #0e0f11;
+}
+/* The thread's own panel would repaint the card tone over the drawer (the bg remap beats its
+   !bg-transparent), so it is cleared here. */
+.news-theme .gn-comments > section {
+  background-color: transparent !important;
 }
 .news-theme .gn-comments header,
 .news-theme .gn-comments footer {
   border-color: transparent !important;
 }
 .news-theme .gn-comments header {
-  padding-top: 4px;
+  padding-top: 12px;
 }
 .news-theme .gn-comments input[type='text'] {
   background-color: var(--gn-field);
@@ -17313,7 +18418,7 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
 }
 /* The like is the one orange thing in the bar — its count must beat the neutral-ink remap below. */
 .news-theme [aria-label='Post actions'] span.gn-like {
-  color: #ff5722 !important;
+  color: var(--gn-like) !important;
 }
 
 /* The tile behind the portfolio shortcut icon: ink square, surface-coloured glyph. */
@@ -17322,15 +18427,10 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
   color: var(--gn-surface) !important;
 }
 
-/* Side navigation (Discover): the selected entry is orange, nothing else changes. */
-.news-theme .gn-nav-item[aria-pressed='true'] {
-  color: var(--gn-accent) !important;
-  font-weight: 500;
-}
 
-/* Focus ring: the accent orange everywhere inside the page. */
+/* Focus ring: the brand accent (--gn-ring), the one non-like use of orange inside the page. */
 .news-theme :focus-visible {
-  --tw-ring-color: color-mix(in srgb, var(--gn-accent-fill) 50%, transparent) !important;
+  --tw-ring-color: var(--gn-ring) !important;
 }
 
 /* Overrides for the neutral / orange utilities the News tree is built from (generated). */
@@ -17473,3 +18573,674 @@ html[data-pf-motion='off'] .pf-work-duo-card:focus-visible .pf-work-duo-card-zoo
 .news-theme .bg-\[\#FF5722\] {
   background-color: var(--gn-accent-fill) !important;
 }
+
+/* ==========================================================================
+   News — editorial skin in the X palette (`.news-mono`, on HomeNewsFeed's root)
+   --------------------------------------------------------------------------
+   The /feed page: the editorial layout (square cards, serif post headlines, Inter interface,
+   small-caps kickers) coloured with X's black / white palette — ink #0F1419 / #E7E9EA, secondary
+   #536471 / #8B98A5, modules #F7F9F9 / #16181C on the #FFF / #000 page. No hairlines anywhere:
+   cards, fields and rows are separated by tone alone. No accent hue — fills, the like and focus
+   are ink.
+
+   Dark secondary is #8B98A5, not X's #71767B: X sets that grey on pure black (4.6:1), but our
+   cards are #16181C, where it falls to about 3.9:1 — under WCAG AA (4.5:1) for the 13–15px meta
+   lines ("DevOps · 2d", "See more"). #8B98A5 gives about 6:1 on the cards and 7:1 on the page.
+   ========================================================================== */
+html:not(.dark) .news-theme.news-mono {
+  --gn-surface: #f7f9f9;
+  --gn-inset: #ffffff;
+  --gn-field: #ffffff;
+  --gn-ink: #0f1419;
+  --gn-ink2: #536471;
+  --gn-ink3: #8b98a5;
+  --gn-line: #eff3f4;
+  --gn-card-line: transparent;
+  --gn-hover: rgba(15, 20, 25, 0.06);
+  --gn-hover-strong: #eff3f4;
+}
+.dark .news-theme.news-mono {
+  --gn-surface: #16181c;
+  --gn-inset: #202327;
+  --gn-field: #202327;
+  --gn-ink: #e7e9ea;
+  --gn-ink2: #8b98a5;
+  --gn-ink3: #536471;
+  --gn-line: #2f3336;
+  --gn-card-line: transparent;
+  --gn-hover: rgba(231, 233, 234, 0.1);
+  --gn-hover-strong: #2a2d32;
+}
+.news-mono {
+  font-family: 'Inter', ui-sans-serif, system-ui, sans-serif;
+}
+
+/* Square, flat surfaces with no outline and no shadow: tone is the only edge. */
+html .news-theme.news-mono article.gn-post,
+html .news-theme.news-mono .gn-card {
+  border-color: transparent;
+  border-radius: 0;
+  box-shadow: none;
+}
+/* Light mode, phones only: cards run edge to edge 8px apart, too close for the tone alone, so a
+   hairline in the fill tone (--gn-line, #EFF3F4) closes each post. From sm the 20px gap separates
+   them and no line is drawn. */
+@media (max-width: 639px) {
+  html:not(.dark) .news-theme.news-mono article.gn-post {
+    border-bottom-color: var(--gn-line);
+  }
+}
+.news-mono .gn-field-input,
+.news-mono .gn-search-input:not(.gn-search-pill),
+.news-mono .gn-primary,
+.news-mono .gn-shortcut {
+  border-radius: 0;
+}
+html .news-mono.news-feed .gn-field-input,
+html .news-mono.news-feed .gn-search-input {
+  background-color: var(--gn-field);
+  border-color: transparent;
+}
+html .news-mono.news-feed .gn-field-input:focus-visible,
+html .news-mono.news-feed .gn-search-input:focus,
+html .news-mono.news-feed .gn-search-input:focus-visible {
+  border-color: transparent;
+  box-shadow: inset 0 0 0 2px var(--gn-ink);
+}
+
+/* Rail boxes (portfolio card, "Looking for?"): no fill, a 1px frame (#D6DEE3 / #1F2226). Drawn as an
+   inset shadow, not a border, so it takes no layout space. In light mode the old whisper tone
+   (#EBEFF1, halved to 0.5px on high-density screens) barely showed on white and left the boxes
+   unreadable as boxes; the frame is now a step darker than the #EFF3F4 hover fill and stays a full
+   1px everywhere. */
+.news-mono .gn-rail-box {
+  --gn-rail-line: #d6dee3;
+  --gn-rail-width: 1px;
+  box-shadow: inset 0 0 0 var(--gn-rail-width) var(--gn-rail-line);
+}
+/* Lighter rail: only the left edge is drawn (My Profile's "Manage" list). */
+.news-mono .gn-rail-edge {
+  --gn-rail-line: #e1e8ed;
+  --gn-rail-width: 1px;
+  box-shadow: inset var(--gn-rail-width) 0 0 0 var(--gn-rail-line);
+}
+.dark .news-mono .gn-rail-box {
+  --gn-rail-line: #1f2226;
+}
+/* Same hairline, bottom edge only: closes My Profile's open header off from the content below. */
+.news-mono .gn-rail-under {
+  --gn-rail-line: #e1e8ed;
+  --gn-rail-width: 1px;
+  box-shadow: inset 0 calc(-1 * var(--gn-rail-width)) 0 0 var(--gn-rail-line);
+}
+.dark .news-mono .gn-rail-edge,
+.dark .news-mono .gn-rail-under {
+  --gn-rail-line: #2f3336;
+}
+@media (min-resolution: 2dppx) {
+  .dark .news-mono .gn-rail-box,
+  .news-mono .gn-rail-edge,
+  .news-mono .gn-rail-under {
+    --gn-rail-width: 0.5px;
+  }
+}
+
+/* The rail's search pill sits straight on the page (no card behind it): it takes the card tone. */
+html .news-mono.news-feed .gn-search-input.gn-search-pill {
+  background-color: var(--gn-surface);
+}
+
+/* Composer: a taller writing field, like the top of an editor. */
+.news-mono .gn-field-input {
+  height: 3.25rem;
+}
+@media (min-width: 640px) {
+  .news-mono [aria-label='Create a post'] {
+    padding: 1.5rem;
+  }
+}
+.news-mono .gn-primary {
+  height: 2.5rem;
+  padding-left: 1.5rem;
+  padding-right: 1.5rem;
+}
+
+/* Small-caps section line ("Latest · Professionals", rail kickers): 11px, tracked, secondary ink. */
+.news-mono .gn-kicker {
+  font-size: 11px;
+  font-weight: 600;
+  line-height: 16px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--gn-ink2);
+}
+
+/* Post card: 20px gutter (24px from sm). */
+.news-mono article.gn-post > header {
+  padding: 1.25rem 1.25rem 0;
+}
+.news-mono article.gn-post > header + div {
+  padding-left: 1.25rem;
+  padding-right: 1.25rem;
+}
+.news-mono article.gn-post > footer {
+  padding: 0.5rem 0.75rem 0.625rem;
+}
+@media (min-width: 640px) {
+  .news-mono article.gn-post > header {
+    padding: 1.5rem 1.5rem 0;
+  }
+  .news-mono article.gn-post > header + div {
+    padding-left: 1.5rem;
+    padding-right: 1.5rem;
+  }
+  .news-mono article.gn-post > footer {
+    padding: 0.75rem 1rem 0.875rem;
+  }
+}
+
+/* Edge-to-edge post media (PostMedia `bleed`, -mx-4) follows the wider 20 / 24px gutter. */
+.news-mono article.gn-post > header + div .\-mx-4 {
+  margin-left: -1.25rem;
+  margin-right: -1.25rem;
+}
+@media (min-width: 640px) {
+  .news-mono article.gn-post > header + div .\-mx-4 {
+    margin-left: -1.5rem;
+    margin-right: -1.5rem;
+  }
+}
+
+/* Post headline (ContentPostClampedTitle `editorial`, the post's first line): sans-serif bold in the
+   page's own face — 16px on phones, 17px from sm (the size of My Profile's section headings, one step
+   over the 15px body), one size whatever its length, clamped to 3 lines. */
+.gn-editorial-headline {
+  font-family: inherit;
+  font-weight: 700;
+  font-size: 16px;
+  line-height: 22px;
+  letter-spacing: -0.005em;
+  color: var(--gn-ink, #0f1419);
+  overflow-wrap: anywhere;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
+  overflow: hidden;
+}
+@media (min-width: 640px) {
+  .gn-editorial-headline {
+    font-size: 17px;
+    line-height: 24px;
+  }
+}
+.news-mono .gn-post-text {
+  line-height: 24px;
+}
+html .news-mono .gn-post-text {
+  color: var(--gn-ink);
+}
+
+/* Post actions: thin outline icons in secondary ink; an active state (liked, reposted, comments
+   open) is the filled ink icon alone — the disc only answers the hover. */
+.news-mono [aria-label='Post actions'] span.gn-like {
+  color: var(--gn-ink) !important;
+}
+.news-mono [aria-label='Post actions'] button:is([aria-pressed='true'], [aria-expanded='true']):not(:hover) > span:first-child {
+  background-color: transparent !important;
+}
+
+/* Role rings on avatars keep their role colour (creator-app-role.ts: sky provider, red student,
+   violet seller, yellow recruiter, grey member); only the gap is matched to the card surface. */
+html:not(.dark) .news-mono .ring-2.ring-offset-white {
+  --tw-ring-offset-color: var(--gn-surface);
+}
+.dark .news-mono .ring-2.ring-offset-white {
+  --tw-ring-offset-color: var(--gn-surface);
+}
+/* …except inside a repost's quoted original (`.gn-inset`: white / #202327), where the gap takes the
+   inset tone — the card tone there drew a halo of the wrong colour around the original author's
+   avatar. Same specificity as the light rule above and later in the file, so it wins in both modes. */
+html .news-mono .gn-inset .ring-2.ring-offset-white {
+  --tw-ring-offset-color: var(--gn-inset);
+}
+
+/* Phones: the role ring on a post avatar is thinner and closer (1.5px ring, 2px gap instead of
+   2px + 3px) so the header reads lighter, as on the profile header. */
+@media (max-width: 639px) {
+  .news-mono article.gn-post > header .ring-2 {
+    box-shadow:
+      0 0 0 2px var(--tw-ring-offset-color),
+      0 0 0 3.5px var(--tw-ring-color) !important;
+  }
+}
+
+/* Post chips: the estimate stays a solid ink label, tags a light tone — both square. */
+.news-mono article.gn-post p > span.rounded-full {
+  border-radius: 2px;
+}
+
+/* ==========================================================================
+   X THEME ROLLOUT — app-wide alignment on the News design (2026-10-08)
+   --------------------------------------------------------------------------
+   Every signed-in app page (anything under DashboardShell, incl. its portaled dialogs) uses Inter,
+   the News interface face. Below: one block per section, each owned by one rollout agent — edit
+   ONLY inside your own block (between its START / END markers).
+   ========================================================================== */
+body:has([data-dashboard-main]) {
+  font-family: 'Inter', ui-sans-serif, system-ui, -apple-system, 'Segoe UI', sans-serif;
+}
+
+/* >>> X-ROLLOUT MY-PORTFOLIO START */
+/* My Portfolio (/studio) editor. Its own chrome — the rail, the identity block, the mode chips, the
+   fields — is drawn in the News tokens in its components (MyPortfolioWorkspace, CreatorStudioProfileTab,
+   PortfolioInformationChrome, PortfolioStudioKit) under `news-theme news-feed news-mono`. What stays
+   here re-skins the large shared panels rendered inside the editor that predate the tokens, scoped to
+   `.pf-x` (never on the Live preview), in tokens and without !important:
+   - no hairlines between their rows (space separates, as on News);
+   - their small-caps labels in the News kicker style;
+   - their leftover orange focus rings in the ink ring. */
+.pf-x .gn-card > div > .border-b,
+.pf-x .gn-card > div > .border-t {
+  border-color: transparent;
+}
+.pf-x .gn-card p.uppercase {
+  font-size: 11px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--gn-ink2);
+}
+.pf-x [class*="ring-[#FF5722]"]:focus-visible,
+.pf-x [class*="ring-orange-500"]:focus-visible,
+.pf-x [class*="ring-[#E2692F]"]:focus-visible {
+  --tw-ring-color: var(--gn-ring);
+}
+/* The live preview, full screen: it rises in (fade + a 1.5% scale from slightly below) and sinks
+   out the same way, faster — never a hard cut. */
+@keyframes pf-preview-enter {
+  from {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes pf-preview-exit {
+  from {
+    opacity: 1;
+    transform: none;
+  }
+  to {
+    opacity: 0;
+    transform: translateY(12px) scale(0.985);
+  }
+}
+.pf-preview-enter {
+  animation: pf-preview-enter 340ms cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.pf-preview-exit {
+  animation: pf-preview-exit 220ms cubic-bezier(0.4, 0, 1, 1) both;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pf-preview-enter,
+  .pf-preview-exit {
+    animation: none;
+  }
+}
+/* <<< X-ROLLOUT MY-PORTFOLIO END */
+
+/* >>> X-ROLLOUT PROVIDERS START */
+/*
+ * Providers (/providers, /providers/[id], /providers/[id]/shop): the page roots carry
+ * `providers-x news-theme news-feed news-mono`. The rules below re-colour pieces rendered by shared
+ * components this section does not own (CreatorCard, the profile-section nav icon, the contact icon
+ * badge) — black & white, no hairlines, ink selection — without forking them.
+ */
+/* Provider card (components/CreatorCard.tsx): verified mark = ink disc; rating / "New" / meta badges =
+   one quiet tone on the card, no outline; name hover = underline instead of orange. */
+.providers-x article .bg-\[\#E2692F\] {
+  background-color: var(--gn-ink) !important;
+  color: var(--gn-surface) !important;
+}
+.providers-x article span.border.rounded-full {
+  border-color: transparent !important;
+  background-color: var(--gn-field) !important;
+  color: var(--gn-ink2) !important;
+}
+.providers-x .group\/name:hover h3,
+.providers-x .group\/name:focus-visible h3 {
+  color: var(--gn-ink) !important;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+/* The rule above the card's actions: spacing only. */
+.providers-x article > .border-t {
+  border-top-color: transparent !important;
+  padding-top: 0.25rem;
+}
+/* Presence dot: its gap ring takes the card tone, not white / zinc. */
+.providers-x article [role='status'] {
+  --tw-ring-color: var(--gn-surface);
+}
+/* Profile-section nav icons (studio `NavIcon`): the active glyph follows its ink label. */
+.providers-x nav[aria-label='Profile information sections'] .text-\[\#E2692F\] {
+  color: inherit !important;
+}
+/* Contact icon badge (NeutralIconBadge): a borderless tonal disc. */
+.providers-x .border-neutral-200\/80 {
+  border-color: transparent !important;
+  border-radius: 9999px;
+}
+/* <<< X-ROLLOUT PROVIDERS END */
+
+/* >>> X-ROLLOUT PRODUCTS START */
+/* My products > consult page (`.x-product-view`, CreatorProductViewContent). The manage panel, the
+   details / inventory block and the delete zone are shared components outside this section's files,
+   so their hairlines, rounded boxes and accent dots are re-skinned here, scoped to this page only:
+   square tonal blocks, no rules between rows, ink instead of green / amber / orange. */
+.news-theme .x-product-view .rounded-lg,
+.news-theme .x-product-view .rounded-md {
+  border-radius: 0 !important;
+}
+.news-theme .x-product-view .border-black\/\[0\.06\],
+.news-theme .x-product-view .border-gray-200,
+.news-theme .x-product-view .border-dashed,
+.dark .news-theme .x-product-view .dark\:border-white\/\[0\.08\],
+.dark .news-theme .x-product-view .dark\:border-neutral-800,
+.news-theme .x-product-view .lg\:border-black\/\[0\.06\],
+.dark .news-theme .x-product-view .lg\:dark\:border-white\/\[0\.08\] {
+  border-color: transparent !important;
+}
+.news-theme .x-product-view .border-dashed {
+  background-color: var(--gn-surface);
+}
+.news-theme .x-product-view .divide-black\/\[0\.06\] > :not([hidden]) ~ :not([hidden]),
+.dark .news-theme .x-product-view .dark\:divide-white\/\[0\.08\] > :not([hidden]) ~ :not([hidden]) {
+  border-color: transparent !important;
+}
+/* Secondary buttons and the sale stepper: the X secondary outline. */
+.news-theme .x-product-view .border-black\/\[0\.1\] {
+  border-color: #cfd9de !important;
+}
+.dark .news-theme .x-product-view .dark\:border-white\/\[0\.14\] {
+  border-color: #536471 !important;
+}
+.news-theme .x-product-view .hover\:border-black\/\[0\.25\]:hover {
+  background-color: var(--gn-hover);
+}
+/* Inventory tiles: separated by tone (white / #202327 tiles on the block), not by 1px gaps. */
+.news-theme .x-product-view .gap-px.bg-black\/\[0\.06\],
+.dark .news-theme .x-product-view .gap-px.dark\:bg-white\/\[0\.08\] {
+  background-color: transparent !important;
+  gap: 0.5rem;
+  padding: 0 1.25rem 1.25rem;
+}
+@media (min-width: 1024px) {
+  .news-theme .x-product-view .gap-px.bg-black\/\[0\.06\] {
+    padding: 1.25rem 1.25rem 1.25rem 0;
+  }
+}
+.news-theme .x-product-view .gap-px > div {
+  background-color: var(--gn-inset) !important;
+}
+/* Status and money accents → ink; destructive → the X error red. */
+.news-theme .x-product-view .bg-emerald-500 {
+  background-color: var(--gn-ink) !important;
+}
+.news-theme .x-product-view .bg-amber-500 {
+  background-color: var(--gn-ink3) !important;
+}
+.news-theme .x-product-view .text-emerald-700,
+.dark .news-theme .x-product-view .dark\:text-emerald-400 {
+  color: var(--gn-ink) !important;
+}
+.news-theme .x-product-view .hover\:bg-\[\#F4511E\]:hover {
+  background-color: var(--gn-primary-hover) !important;
+}
+/* "Record sale": the orange fill is remapped to the action fill (off-white in dark) — its text
+   must follow, or the label vanishes in dark mode. */
+.news-theme .x-product-view .bg-\[\#FF5722\].text-white {
+  color: var(--gn-primary-ink) !important;
+}
+.news-theme .x-product-view .origin-left.bg-\[\#FF5722\] {
+  background-color: var(--gn-primary-ink) !important;
+}
+.news-theme .x-product-view .bg-\[\#E0431A\],
+.dark .news-theme .x-product-view .dark\:bg-\[\#FF7A52\] {
+  background-color: #f4212e !important;
+}
+.news-theme .x-product-view .text-\[\#E0431A\],
+.dark .news-theme .x-product-view .dark\:text-\[\#FF7A52\] {
+  color: #f4212e !important;
+}
+/* Section titles (Inventory & sales, Customer reviews): News module titles, 20px extrabold. */
+.news-theme .x-product-view h2.text-xl {
+  font-size: 20px;
+  line-height: 24px;
+  font-weight: 800;
+}
+/* Sections are separated by space alone; tighter rhythm than the old ruled 64 / 80px. */
+.news-theme .x-product-view section.border-t {
+  padding-top: 0 !important;
+}
+.news-theme .x-product-view .space-y-16 > :not([hidden]) ~ :not([hidden]) {
+  margin-top: 2.5rem;
+}
+@media (min-width: 768px) {
+  .news-theme .x-product-view .space-y-16 > :not([hidden]) ~ :not([hidden]) {
+    margin-top: 3.5rem;
+  }
+}
+@media (max-width: 639px) {
+  /* Blocks run edge to edge on phones; their titles keep the 16px gutter. */
+  .news-theme .x-product-view h2.text-xl {
+    padding-inline: 1rem;
+  }
+}
+
+/* Product editor (ProductEditorForm): tonal fields. On the edit page they sit on #F7F9F9 / #16181C
+   sections → white / #202327; inside the "New product" dialog (white / black) → the X page-field
+   grey #EFF3F4 / #202327. */
+.x-editor {
+  --x-field: #eff3f4;
+}
+.x-editor.x-editor-page {
+  --x-field: #ffffff;
+}
+.dark .x-editor,
+.dark .x-editor.x-editor-page {
+  --x-field: #202327;
+}
+/* <<< X-ROLLOUT PRODUCTS END */
+
+/* >>> X-ROLLOUT MESSAGES START */
+/*
+ * Messages on the News X palette. The original `.msg-mineral` scope (top of this file) keeps its
+ * token NAMES; this block re-points their VALUES. Same selectors, later in the file → these win.
+ * - page / conversation: #FFF / #000; inbox + details columns: surface #F7F9F9 / #16181C (lg+ only,
+ *   phones run everything on the ground, edge to edge).
+ * - no hairlines: `--msg-hairline` is transparent; `--msg-hairline-strong` is the X secondary-button
+ *   outline (#CFD9DE / #536471), used only for outlines that are buttons.
+ * - the single accent (`--msg-coral`) is ink now. Bubbles: mine ink-filled, theirs on the surface tone.
+ */
+.msg-mineral {
+  --msg-ground: #ffffff;
+  --msg-panel: #ffffff;
+  --msg-surface: #f7f9f9;
+  --msg-field: #eff3f4;
+  --msg-hairline: transparent;
+  --msg-hairline-strong: #cfd9de;
+  --msg-ink: #0f1419;
+  --msg-ink-soft: #536471;
+  --msg-ink-faint: #536471;
+  --msg-ink-deco: #8b98a5;
+  --msg-coral: #0f1419;
+  --msg-online: #0f1419;
+  --msg-wash: rgba(15, 20, 25, 0.06);
+  --msg-radius: 0px;
+  --msg-primary: #0f1419;
+  --msg-primary-hover: #272c30;
+  --msg-primary-ink: #ffffff;
+  --msg-bubble-mine: #0f1419;
+  --msg-bubble-mine-ink: #ffffff;
+  --msg-bubble-theirs: #f7f9f9;
+  --msg-brand-soft: rgba(15, 20, 25, 0.06);
+
+  --msg-bg: var(--msg-ground);
+  --msg-card: var(--msg-panel);
+  --msg-border: transparent;
+  --msg-text: var(--msg-ink);
+  --msg-muted: var(--msg-ink-soft);
+  --msg-brand: var(--msg-ink);
+  --msg-brand-hover: var(--msg-ink);
+  --msg-thread-bg: var(--msg-panel);
+
+  --cw-page-bg: var(--msg-ground);
+  --cw-surface: var(--msg-panel);
+  --cw-surface-soft: var(--msg-wash);
+  --cw-border: transparent;
+  --cw-text-primary: var(--msg-ink);
+  --cw-text-secondary: var(--msg-ink-soft);
+  --cw-text-muted: var(--msg-ink-faint);
+  --cw-accent: var(--msg-ink);
+  --cw-accent-soft: var(--msg-wash);
+  --cw-incoming-bg: var(--msg-bubble-theirs);
+  --cw-radius: 16px;
+}
+
+.dark .msg-mineral {
+  --msg-ground: #000000;
+  --msg-panel: #000000;
+  --msg-surface: #16181c;
+  --msg-field: #202327;
+  --msg-hairline: transparent;
+  --msg-hairline-strong: #536471;
+  --msg-ink: #e7e9ea;
+  --msg-ink-soft: #71767b;
+  --msg-ink-faint: #71767b;
+  --msg-ink-deco: #536471;
+  --msg-coral: #e7e9ea;
+  --msg-online: #e7e9ea;
+  --msg-wash: rgba(231, 233, 234, 0.1);
+  --msg-primary: #eff3f4;
+  --msg-primary-hover: #d7dbdc;
+  --msg-primary-ink: #0f1419;
+  --msg-bubble-mine: #eff3f4;
+  --msg-bubble-mine-ink: #0f1419;
+  --msg-bubble-theirs: #16181c;
+  --msg-brand-soft: rgba(231, 233, 234, 0.1);
+}
+
+/* Desktop columns that sit on the surface tone (inbox, details): everything that paints "the panel"
+   inside them paints the surface instead, and fields on that card go white (dark: #202327). */
+@media (min-width: 1024px) {
+  .msg-mineral .msg-surface-scope {
+    --msg-panel: var(--msg-surface);
+    --msg-card: var(--msg-surface);
+    --cw-surface: var(--msg-surface);
+    --msg-thread-bg: var(--msg-surface);
+    --msg-field: #ffffff;
+  }
+  .dark .msg-mineral .msg-surface-scope {
+    --msg-field: #202327;
+  }
+}
+
+/* Message text: X's 15/20 body inside the bubble, links readable on both fills. */
+.msg-mineral .msg-bubble a {
+  color: inherit;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+/* <<< X-ROLLOUT MESSAGES END */
+
+/* >>> X-ROLLOUT NOTIFICATIONS-SETTINGS-SEARCH START */
+/* <<< X-ROLLOUT NOTIFICATIONS-SETTINGS-SEARCH END */
+
+/* >>> X-ROLLOUT MY-PROFILE START */
+/* The "New post" composer (CreatorContentPublishModal, root `.x-compose`): shared fields it renders
+   (ContentTitleField, CreatorContentComposeTools) still carry the old orange caret / error / focus —
+   re-coloured here in the X palette, black & white, error #F4212E. */
+.x-compose .caret-\[\#FF5722\] { caret-color: #0f1419; }
+.dark .x-compose .caret-\[\#FF5722\] { caret-color: #e7e9ea; }
+.x-compose .text-\[\#FF5722\] { color: #f4212e; }
+.x-compose .text-\[\#111111\] { color: #0f1419; }
+.dark .x-compose .dark\:text-white { color: #e7e9ea; }
+.x-compose .placeholder\:text-neutral-400::placeholder { color: #536471; }
+.dark .x-compose .dark\:placeholder\:text-neutral-500::placeholder { color: #71767b; }
+.x-compose .bg-orange-50 { background-color: rgba(15, 20, 25, 0.06); }
+.dark .x-compose .dark\:bg-orange-500\/10 { background-color: rgba(231, 233, 234, 0.1); }
+.x-compose .focus\:ring-orange-500\/20:focus { --tw-ring-color: rgba(15, 20, 25, 0.25); }
+.dark .x-compose .focus\:ring-orange-500\/20:focus { --tw-ring-color: rgba(231, 233, 234, 0.3); }
+.x-compose .rounded-xl.shadow-lg { border-color: transparent; border-radius: 16px; box-shadow: 0 0 15px rgba(101, 119, 134, 0.2), 0 0 3px 1px rgba(101, 119, 134, 0.15); }
+.dark .x-compose .rounded-xl.shadow-lg { background-color: #000; box-shadow: 0 0 15px rgba(255, 255, 255, 0.2), 0 0 3px 1px rgba(255, 255, 255, 0.15); }
+/* Compose tool icons (media, tag, emoji): ink, like the X composer's toolbar. */
+.x-compose form .rounded-full.h-9.w-9 { color: #0f1419; }
+.dark .x-compose form .rounded-full.h-9.w-9 { color: #e7e9ea; }
+/* Service cards are <article>s: square like every News block (the generic `.news-theme article`
+   rule rounds them to 12px). */
+.news-theme article[data-service-id] { border-radius: 0; }
+/* <<< X-ROLLOUT MY-PROFILE END */
+
+/* >>> SERVICES-CARD-HOVER START
+   Hover effects for Services cards ([data-svc-card]). Driven by useServicesCardHover, which sets
+   [data-hovered] and the --svc-gx/--svc-gy cursor vars. Nothing here ever touches a sibling card. */
+[data-svc-card][data-svc-hover='lift'][data-hovered='true'] {
+  box-shadow: 0 30px 50px -28px var(--svc-shadow, rgba(0, 0, 0, 0.5)) !important;
+}
+[data-svc-card][data-svc-hover='glow']::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border-radius: inherit;
+  pointer-events: none;
+  opacity: 0;
+  transition: opacity 0.35s ease;
+  background: radial-gradient(
+    440px circle at var(--svc-gx, 50%) var(--svc-gy, 50%),
+    color-mix(in srgb, var(--svc-glow, #ffffff) 16%, transparent),
+    transparent 70%
+  );
+}
+[data-svc-card][data-svc-hover='glow'][data-hovered='true']::after {
+  opacity: 1;
+}
+/* <<< SERVICES-CARD-HOVER END */
+
+/* >>> RAIL-FOLD START
+   Folding / unfolding the catalogue rail (Products, My products): runRailFold (CatalogRailKit) puts
+   .rail-folding on <html> for the length of the view transition and names the cards on screen. */
+:root.rail-folding [data-rail-fold='rail'] > div > aside {
+  view-transition-name: catalog-rail;
+}
+/* The navbar keeps its own layer, so cards gliding near the top pass under it, not over it. */
+:root.rail-folding [data-dashboard-main] > header {
+  view-transition-name: rail-fold-navbar;
+}
+:root.rail-folding::view-transition-group(*) {
+  animation-duration: 0.45s;
+  animation-timing-function: cubic-bezier(0.32, 0.72, 0, 1);
+}
+:root.rail-folding::view-transition-group(root) {
+  animation-duration: 0.3s;
+}
+/* The rail slides on its side like a drawer: its snapshots keep their real size (never squashed)
+   while the box narrows (widens) toward the frame's right edge, and the box clips them. */
+:root.rail-folding::view-transition-image-pair(catalog-rail) {
+  overflow: clip;
+}
+:root.rail-folding::view-transition-old(catalog-rail),
+:root.rail-folding::view-transition-new(catalog-rail) {
+  inline-size: auto;
+  block-size: auto;
+}
+/* A card glides as one card: only its new snapshot, resized (the old one crossfading over it would
+   double its text while the two sizes differ). */
+:root.rail-folding::view-transition-old(.rail-card) {
+  display: none;
+}
+:root.rail-folding::view-transition-new(.rail-card) {
+  animation: none;
+}
+/* <<< RAIL-FOLD END */

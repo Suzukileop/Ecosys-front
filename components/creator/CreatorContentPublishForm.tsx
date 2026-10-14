@@ -27,6 +27,7 @@ import {
   creatorComposeShowsDetails,
   normalizeCreatorAppRole,
 } from '@/lib/creator-app-role';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorContentPublishFormProps = {
   formId: string;
@@ -42,16 +43,26 @@ type CreatorContentPublishFormProps = {
 
 const MAX_LIST_ITEMS = 10;
 
+/* Soft filled fields (the profile / News language): a quiet tone at rest, an ink ring when typing. */
 const FIELD_CLASS =
-  'block w-full rounded-lg border border-black/[0.14] bg-transparent px-3.5 py-2.5 text-[15px] font-medium text-[#111111] caret-[#FF5722] outline-none transition-[border-color,box-shadow] duration-150 placeholder:font-normal placeholder:text-neutral-400 hover:border-black/30 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] focus:ring-0 dark:border-white/[0.16] dark:text-white dark:placeholder:text-neutral-600 dark:hover:border-white/30 dark:focus:border-[#FF5722]';
+  'block w-full rounded-lg border-0 bg-[#F7F9F9] px-3.5 py-3 text-[15px] text-[#0F1419] caret-current outline-none transition-[background-color,box-shadow] duration-150 placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#0F1419] focus:ring-0 dark:bg-[#16181C] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_1.5px_#E7E9EA]';
 
-const LABEL_CLASS = 'mb-2 block text-[14px] font-semibold text-[#111111] dark:text-neutral-200';
+const LABEL_CLASS = 'mb-2 block text-[14px] font-semibold text-[#0F1419] dark:text-[#E7E9EA]';
 
 const ROUND_ICON_BUTTON_CLASS =
-  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full border border-transparent text-[#111111] outline-none transition-colors duration-150 hover:border-black/[0.08] hover:bg-black/[0.06] focus-visible:border-[#FF5722] disabled:pointer-events-none disabled:opacity-40 dark:text-white dark:hover:border-white/[0.12] dark:hover:bg-white/[0.1]';
+  '-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] outline-none transition-colors duration-150 hover:bg-[rgba(15,20,25,0.1)] focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:pointer-events-none disabled:opacity-40 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/50';
 
+/* Facebook's full-width Post: 44px, 8px corners, ink — the one primary of the sheet. */
 const POST_BUTTON_CLASS =
-  'inline-flex h-9 items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-[15px] font-semibold text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-35 dark:bg-white dark:text-[#111111]';
+  'inline-flex h-11 min-w-0 flex-1 items-center justify-center gap-2 rounded-lg bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
+
+/* Small soft chips under the author's name (audience, comments, details). */
+const CHIP_CLASS =
+  'inline-flex h-7 items-center gap-1.5 rounded-md bg-[#EFF3F4] px-2.5 text-[13px] font-semibold text-[#0F1419] transition-colors hover:bg-[#E1E8ED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:bg-[#202327] dark:text-[#E7E9EA] dark:hover:bg-[#2F3336] dark:focus-visible:ring-white/30';
+
+/* Sheet header: icon button · centred title · balancing spacer, then a hairline (Facebook). */
+const SHEET_HEADER_CLASS =
+  'grid shrink-0 grid-cols-[2.5rem_minmax(0,1fr)_2.5rem] items-center border-b border-[#EFF3F4] px-3 pb-2.5 pt-2 dark:border-[#2F3336] sm:px-4 sm:pt-3';
 
 function userInitials(name: string): string {
   const parts = name.trim().split(/\s+/).filter(Boolean);
@@ -61,6 +72,7 @@ function userInitials(name: string): string {
 }
 
 function CharCounter({ length, max }: { length: number; max: number }) {
+  const t = useT();
   if (length === 0) return null;
   const remaining = max - length;
   const warn = remaining <= 20;
@@ -68,11 +80,11 @@ function CharCounter({ length, max }: { length: number; max: number }) {
   const circumference = 2 * Math.PI * radius;
   const progress = Math.min(1, length / max);
   const strokeClass =
-    remaining <= 0 ? 'stroke-[#FF5722]' : warn ? 'stroke-amber-500' : 'stroke-neutral-500 dark:stroke-neutral-400';
+    remaining <= 0 ? 'stroke-[#F4212E]' : warn ? 'stroke-[#0F1419] dark:stroke-[#E7E9EA]' : 'stroke-[#536471] dark:stroke-[#71767B]';
   return (
-    <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-label={`${remaining} characters left`}>
+    <span className="relative inline-flex h-6 w-6 items-center justify-center" aria-label={t('{remaining} characters left', { remaining })}>
       <svg className="h-6 w-6 -rotate-90" viewBox="0 0 24 24" aria-hidden>
-        <circle cx="12" cy="12" r={radius} fill="none" strokeWidth="2" className="stroke-black/[0.1] dark:stroke-white/[0.14]" />
+        <circle cx="12" cy="12" r={radius} fill="none" strokeWidth="2" className="stroke-[#EFF3F4] dark:stroke-[#2F3336]" />
         <circle
           cx="12"
           cy="12"
@@ -86,7 +98,7 @@ function CharCounter({ length, max }: { length: number; max: number }) {
         />
       </svg>
       {warn ? (
-        <span className={`absolute text-[10px] font-semibold tabular-nums ${remaining <= 0 ? 'text-[#FF5722]' : 'text-neutral-500'}`}>
+        <span className={`absolute text-[10px] font-semibold tabular-nums ${remaining <= 0 ? 'text-[#F4212E]' : 'text-[#536471] dark:text-[#71767B]'}`}>
           {remaining}
         </span>
       ) : null}
@@ -95,6 +107,7 @@ function CharCounter({ length, max }: { length: number; max: number }) {
 }
 
 function AudiencePill({ isPublic, onChange }: { isPublic: boolean; onChange: (isPublic: boolean) => void }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const [open, setOpen] = useState(false);
 
@@ -108,8 +121,8 @@ function AudiencePill({ isPublic, onChange }: { isPublic: boolean; onChange: (is
   }, [open]);
 
   const options = [
-    { value: true, label: 'Everyone', hint: 'Visible in the feed', icon: <GlobeIcon className="h-4 w-4" /> },
-    { value: false, label: 'Only me', hint: 'Saved privately to your studio', icon: <LockIcon className="h-4 w-4" /> },
+    { value: true, label: t('Everyone'), hint: t('Visible in the feed'), icon: <GlobeIcon className="h-4 w-4" /> },
+    { value: false, label: t('Only me'), hint: t('Saved privately to your studio'), icon: <LockIcon className="h-4 w-4" /> },
   ];
 
   return (
@@ -119,19 +132,20 @@ function AudiencePill({ isPublic, onChange }: { isPublic: boolean; onChange: (is
         onClick={() => setOpen((v) => !v)}
         aria-haspopup="menu"
         aria-expanded={open}
-        className="inline-flex h-7 items-center gap-1 rounded-full border border-black/[0.14] px-3 text-[14px] font-semibold text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.18] dark:text-white dark:hover:bg-white/[0.06]"
+        className={CHIP_CLASS}
       >
-        {isPublic ? 'Everyone' : 'Only me'}
-        <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
+        {isPublic ? <GlobeIcon className="h-3.5 w-3.5" /> : <LockIcon className="h-3.5 w-3.5" />}
+        {isPublic ? t('Everyone') : t('Only me')}
+        <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
           <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
         </svg>
       </button>
       {open ? (
         <div
           role="menu"
-          className="absolute left-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-xl border border-black/[0.08] bg-white py-1.5 shadow-[0_12px_40px_-12px_rgba(0,0,0,0.3)] dark:border-white/[0.1] dark:bg-[#111111]"
+          className="absolute left-0 top-full z-30 mt-2 w-64 overflow-hidden rounded-2xl bg-white py-1.5 shadow-[0_0_15px_rgba(101,119,134,0.2),0_0_3px_1px_rgba(101,119,134,0.15)] dark:bg-black dark:shadow-[0_0_15px_rgba(255,255,255,0.2),0_0_3px_1px_rgba(255,255,255,0.15)]"
         >
-          <p className="px-4 pb-1.5 pt-1 text-[14px] font-semibold text-[#111111] dark:text-white">Choose audience</p>
+          <p className="px-4 pb-1.5 pt-1 text-[15px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{t('Choose audience')}</p>
           {options.map((option) => {
             const selected = option.value === isPublic;
             return (
@@ -144,17 +158,17 @@ function AudiencePill({ isPublic, onChange }: { isPublic: boolean; onChange: (is
                   onChange(option.value);
                   setOpen(false);
                 }}
-                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-black/[0.04] dark:hover:bg-white/[0.06]"
+                className="flex w-full items-center gap-3 px-4 py-2.5 text-left transition-colors hover:bg-[rgba(15,20,25,0.06)] dark:hover:bg-[rgba(231,233,234,0.1)]"
               >
-                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[#111111] dark:bg-white/[0.08] dark:text-white">
+                <span className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-[#EFF3F4] text-[#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA]">
                   {option.icon}
                 </span>
                 <span className="min-w-0 flex-1">
-                  <span className="block text-[15px] font-semibold text-[#111111] dark:text-white">{option.label}</span>
-                  <span className="block text-[13px] text-neutral-500 dark:text-neutral-400">{option.hint}</span>
+                  <span className="block text-[15px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{t(option.label)}</span>
+                  <span className="block text-[13px] text-[#536471] dark:text-[#71767B]">{t(option.hint)}</span>
                 </span>
                 {selected ? (
-                  <svg className="h-4 w-4 shrink-0 text-[#111111] dark:text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                  <svg className="h-4 w-4 shrink-0 text-[#0F1419] dark:text-[#E7E9EA]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
                   </svg>
                 ) : null}
@@ -184,6 +198,7 @@ function ChipListField({
   onRemove: (index: number) => void;
   error?: string;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState('');
   const full = items.length >= MAX_LIST_ITEMS;
 
@@ -210,22 +225,22 @@ function ChipListField({
         <label htmlFor={id} className={LABEL_CLASS}>
           {label}
         </label>
-        <span className="text-[13px] tabular-nums text-neutral-400">
+        <span className="text-[13px] tabular-nums text-[#536471] dark:text-[#71767B]">
           {items.length} / {MAX_LIST_ITEMS}
         </span>
       </div>
-      <div className="flex flex-wrap items-center gap-2 rounded-lg border border-black/[0.14] px-3 py-2 transition-[border-color,box-shadow] duration-150 focus-within:border-[#FF5722] focus-within:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] hover:border-black/30 dark:border-white/[0.16] dark:hover:border-white/30 dark:focus-within:border-[#FF5722]">
+      <div className="flex flex-wrap items-center gap-2 rounded-lg bg-[#F7F9F9] px-3 py-2.5 transition-[background-color,box-shadow] duration-150 focus-within:bg-white focus-within:shadow-[inset_0_0_0_1.5px_#0F1419] dark:bg-[#16181C] dark:focus-within:bg-black dark:focus-within:shadow-[inset_0_0_0_1.5px_#E7E9EA]">
         {items.map((item, index) => (
           <span
             key={item.id}
-            className="inline-flex items-center gap-1 rounded-full border border-black/[0.1] py-0.5 pl-3 pr-1 text-[14px] font-medium text-[#111111] dark:border-white/[0.14] dark:text-white"
+            className="inline-flex items-center gap-1 rounded-md bg-white py-0.5 pl-2.5 pr-1 text-[14px] font-medium text-[#0F1419] dark:bg-[#2F3336] dark:text-[#E7E9EA]"
           >
             {item.value}
             <button
               type="button"
               onClick={() => onRemove(index)}
-              aria-label={`Remove ${item.value}`}
-              className="inline-flex h-5 w-5 items-center justify-center rounded-full text-neutral-400 transition-colors hover:text-[#111111] dark:hover:text-white"
+              aria-label={t('Remove {value}', { value: item.value })}
+              className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[#536471] transition-colors hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]"
             >
               <svg className="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -245,12 +260,12 @@ function ChipListField({
             }}
             onKeyDown={onKeyDown}
             onBlur={() => commit(draft)}
-            placeholder={items.length === 0 ? placeholder : 'Add another'}
-            className="min-w-[8rem] flex-1 border-0 bg-transparent p-0 py-1 text-[15px] font-medium text-[#111111] caret-[#FF5722] outline-none placeholder:font-normal placeholder:text-neutral-400 focus:ring-0 dark:text-white dark:placeholder:text-neutral-600"
+            placeholder={items.length === 0 ? placeholder : t('Add another')}
+            className="min-w-[8rem] flex-1 border-0 bg-transparent p-0 py-1 text-[15px] text-[#0F1419] caret-current outline-none placeholder:text-[#536471] focus:ring-0 dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
           />
         ) : null}
       </div>
-      {error ? <p className="mt-2 text-[14px] font-medium text-[#FF5722]">{error}</p> : null}
+      {error ? <p className="mt-2 text-[14px] font-medium text-[#F4212E]">{error}</p> : null}
     </div>
   );
 }
@@ -277,6 +292,7 @@ export function CreatorContentPublishForm({
   onStepChange,
   appRole,
 }: CreatorContentPublishFormProps) {
+  const t = useT();
   const { user } = useAuth();
   const role = normalizeCreatorAppRole(appRole);
   const showDetails = creatorComposeShowsDetails(role);
@@ -296,7 +312,6 @@ export function CreatorContentPublishForm({
     mode: 'onTouched',
   });
 
-  const { fields: toolFields, append: appendTool, remove: removeTool } = useFieldArray({ control, name: 'toolsUsed' });
   const { fields: tagFields, append: appendTag, remove: removeTag } = useFieldArray({ control, name: 'tags' });
   const mediaUrls = watch('mediaUrls');
   const mediaType = watch('mediaType');
@@ -330,7 +345,7 @@ export function CreatorContentPublishForm({
   const hasMedia = mediaUrls.length > 0;
   const canPost = (Boolean(title.trim()) || Boolean(description.trim()) || hasMedia) && !media.uploading;
   const detailsCount =
-    (description.trim() ? 1 : 0) + (watch('priceInfo')?.trim() ? 1 : 0) + tagFields.length + toolFields.length;
+    (description.trim() ? 1 : 0) + (watch('priceInfo')?.trim() ? 1 : 0) + tagFields.length;
 
   const publishContent = async (data: CreatorContentPublishFormValues) => {
     onSubmitError(null);
@@ -346,7 +361,6 @@ export function CreatorContentPublishForm({
       moodEmoji: data.moodEmoji ?? null,
       taggedUserIds: data.taggedUsers.map((u) => u.id),
       priceInfo: data.priceInfo?.trim() || null,
-      toolsUsed: data.toolsUsed.map((t) => t.value.trim()).filter(Boolean),
       tags: data.tags.map((t) => t.value.trim()).filter(Boolean),
       isPublic: data.isPublic,
       commentsEnabled: data.commentsEnabled,
@@ -355,7 +369,7 @@ export function CreatorContentPublishForm({
       await api.post('/api/creator/content', body);
       onSuccess();
     } catch (e) {
-      onSubmitError(getApiErrorMessage(e, 'Unable to publish content.'));
+      onSubmitError(getApiErrorMessage(e, t('Unable to publish content.')));
     } finally {
       onSubmittingChange?.(false);
     }
@@ -374,19 +388,19 @@ export function CreatorContentPublishForm({
       {isSubmitting ? (
         <>
           <LoadingSpinner size="sm" />
-          Posting…
+          {t('Posting…')}
         </>
       ) : (
-        'Post'
+        t('Post')
       )}
     </button>
   );
 
   const errorLine = submitError ? (
-    <div className="flex items-start justify-between gap-3 text-[14px] font-medium text-red-600 dark:text-red-400" role="alert">
+    <div className="flex items-start justify-between gap-3 text-[14px] font-medium text-[#F4212E]" role="alert">
       <span>{submitError}</span>
       <button type="button" onClick={() => onSubmitError(null)} className="shrink-0 underline-offset-2 hover:underline">
-        Dismiss
+        {t('Dismiss')}
       </button>
     </div>
   ) : null;
@@ -394,7 +408,7 @@ export function CreatorContentPublishForm({
   return (
     <form
       id={formId}
-      className={step === 2 ? 'flex min-h-0 flex-1 flex-col' : 'flex flex-col'}
+      className="flex min-h-0 flex-1 flex-col"
       onSubmit={onFormSubmit}
       onKeyDown={(event) => {
         if (event.key === 'Enter' && (event.metaKey || event.ctrlKey)) {
@@ -415,82 +429,102 @@ export function CreatorContentPublishForm({
 
       {step === 1 ? (
         <>
-          <div className="flex items-center justify-between px-3 pt-3 sm:px-4">
-            <button type="button" onClick={onCancel} disabled={isSubmitting} className={ROUND_ICON_BUTTON_CLASS} aria-label="Close">
+          {/* Header: close · "New post" · spacer, then a hairline — the Facebook sheet anatomy. */}
+          <div className={SHEET_HEADER_CLASS}>
+            <button type="button" onClick={onCancel} disabled={isSubmitting} className={ROUND_ICON_BUTTON_CLASS} aria-label={t('Close')}>
               <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
               </svg>
             </button>
+            <h2 className="text-center text-[17px] font-bold leading-6 text-[#0F1419] dark:text-[#E7E9EA]">{t('New post')}</h2>
+            <span aria-hidden />
           </div>
 
-          <div className="flex gap-3 px-4 pb-3 pt-1 sm:px-5">
+          {/* Who posts, to whom, and whether people can reply — one block, three soft chips under the
+              name, pinned above the writing area. */}
+          <div className="flex shrink-0 items-center gap-3 px-4 pt-4 sm:px-5">
             {/* AvatarImage resolves the stored URL (relative upload paths, rendition params) and falls
                 back to initials on a load error — a bare <img> rendered as a broken icon. */}
             <AvatarImage
               src={user?.avatarUrl}
-              className="h-10 w-10 shrink-0 rounded-full object-cover"
-              displayWidth={40}
+              className="h-11 w-11 shrink-0 rounded-full object-cover"
+              displayWidth={44}
               fallback={
-                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#111111] text-[13px] font-semibold text-white dark:bg-white dark:text-[#111111]">
+                <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[#EFF3F4] text-[13px] font-semibold text-[#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA]">
                   {userInitials(creatorName)}
                 </div>
               }
             />
-
             <div className="min-w-0 flex-1">
-              <AudiencePill isPublic={isPublic} onChange={(v) => setValue('isPublic', v, { shouldValidate: true })} />
+              <p className="truncate text-[15px] font-bold leading-5 text-[#0F1419] dark:text-[#E7E9EA]">{creatorName}</p>
+              <div className="mt-1.5 flex flex-wrap items-center gap-1.5">
+                <AudiencePill isPublic={isPublic} onChange={(v) => setValue('isPublic', v, { shouldValidate: true })} />
+                <button
+                  type="button"
+                  onClick={() => setValue('commentsEnabled', !commentsEnabled, { shouldValidate: true })}
+                  aria-pressed={commentsEnabled}
+                  title={commentsEnabled ? t('Turn comments off') : t('Turn comments on')}
+                  className={CHIP_CLASS}
+                >
+                  {commentsEnabled ? <ChatIcon className="h-3.5 w-3.5" /> : <ChatOffIcon className="h-3.5 w-3.5" />}
+                  {commentsEnabled ? t('Comments on') : t('Comments off')}
+                </button>
+              </div>
+            </div>
+          </div>
 
-              <ContentTitleField
-                ref={titleFieldRef}
-                id="content-title"
-                value={title}
-                onChange={(v) => setValue('title', v, { shouldValidate: true })}
-                placeholder={creatorComposePlaceholder(role)}
-                error={errors.title?.message}
-                rows={3}
-                size="compose"
-                maxLength={CREATOR_CONTENT_TITLE_MAX}
-                autoFocus
-              />
+          {/* Only the writing area scrolls; the "Add to your post" bar and Post stay at the bottom. */}
+          <div className="min-h-[9rem] flex-1 overflow-y-auto overscroll-contain px-4 pb-2 pt-2 sm:min-h-[11rem] sm:px-5 compose-scroll">
+            <ContentTitleField
+              ref={titleFieldRef}
+              id="content-title"
+              value={title}
+              onChange={(v) => setValue('title', v, { shouldValidate: true })}
+              placeholder={creatorComposePlaceholder(role)}
+              error={errors.title?.message}
+              rows={3}
+              size="compose"
+              maxLength={CREATOR_CONTENT_TITLE_MAX}
+              autoFocus
+            />
 
-              {taggedUsers.length > 0 ? (
-                <p className="mb-3 text-[14px] text-neutral-500 dark:text-neutral-400">
-                  with{' '}
-                  <span className="font-medium text-[#111111] dark:text-white">
-                    {taggedUsers.map((u) => u.fullName).join(', ')}
-                  </span>
-                </p>
-              ) : null}
+            {taggedUsers.length > 0 ? (
+              <p className="mb-3 text-[14px] text-[#536471] dark:text-[#71767B]">
+                {t('with')}{' '}
+                <span className="font-medium text-[#0F1419] dark:text-[#E7E9EA]">
+                  {taggedUsers.map((u) => u.fullName).join(', ')}
+                </span>
+              </p>
+            ) : null}
 
-              {hasMedia || media.uploading ? (
-                <div className="mb-3">
-                  <ContentComposeMedia
-                    urls={mediaUrls}
-                    mediaType={mediaType}
-                    fileName={media.fileName}
-                    uploading={media.uploading}
-                    onRemoveAt={media.removeAt}
-                    onMakeCover={media.makeCover}
-                    onAddMore={media.pickFiles}
-                    onClear={media.clear}
-                  />
-                </div>
-              ) : null}
+            {hasMedia || media.uploading ? (
+              <div className="mb-3">
+                <ContentComposeMedia
+                  urls={mediaUrls}
+                  mediaType={mediaType}
+                  fileName={media.fileName}
+                  uploading={media.uploading}
+                  onRemoveAt={media.removeAt}
+                  onMakeCover={media.makeCover}
+                  onAddMore={media.pickFiles}
+                  onClear={media.clear}
+                />
+              </div>
+            ) : null}
+          </div>
 
-              <button
-                type="button"
-                onClick={() => setValue('commentsEnabled', !commentsEnabled, { shouldValidate: true })}
-                aria-pressed={commentsEnabled}
-                className="-ml-2 inline-flex items-center gap-1.5 rounded-full px-2 py-1 text-[14px] font-medium text-neutral-500 transition-colors hover:bg-black/[0.04] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
-              >
-                {commentsEnabled ? <ChatIcon className="h-4 w-4" /> : <ChatOffIcon className="h-4 w-4" />}
-                {commentsEnabled ? (isPublic ? 'Everyone can comment' : 'Comments on') : 'Comments off'}
-              </button>
-
-              <div className="mt-3 flex flex-wrap items-center justify-between gap-x-3 gap-y-2 border-t border-black/[0.08] pt-3 dark:border-white/[0.08]">
+          <div className="shrink-0 space-y-3 px-4 pb-4 pt-2 sm:px-5">
+            {/* Facebook's "Add to your post": one outlined bar, the label on the left, the tools on the
+                right — what each icon adds is named instead of guessed. */}
+            <div className="relative flex items-center justify-between gap-2 rounded-xl py-1 pl-4 pr-1.5 shadow-[inset_0_0_0_1px_#E1E8ED] dark:shadow-[inset_0_0_0_1px_#2F3336]">
+              <span className="min-w-0 truncate text-[14px] font-semibold text-[#0F1419] dark:text-[#E7E9EA]">
+                {t('Add to your post')}
+              </span>
+              <div className="flex shrink-0 items-center gap-1">
                 <CreatorContentComposeTools
                   locale="en"
                   variant="icons"
+                  panelPlacement="above"
                   showMood={false}
                   moodLabel={moodLabel ?? null}
                   moodEmoji={moodEmoji ?? null}
@@ -505,35 +539,39 @@ export function CreatorContentPublishForm({
                   onInsertEmoji={(emoji) => titleFieldRef.current?.insertEmoji(emoji)}
                   mediaUploading={media.uploading}
                 />
-
-                <div className="ml-auto flex shrink-0 items-center gap-3">
-                  <CharCounter length={title.length} max={CREATOR_CONTENT_TITLE_MAX} />
-                  {title.length > 0 ? <span className="h-6 w-px bg-black/[0.1] dark:bg-white/[0.14]" aria-hidden /> : null}
-                  {showDetails ? (
+                {showDetails ? (
                   <button
                     type="button"
                     onClick={() => setStep(2)}
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[15px] font-medium text-neutral-600 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-300 dark:hover:bg-white/[0.08] dark:hover:text-white"
+                    title={t('Description, price and tags')}
+                    className="relative inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[14px] font-semibold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]"
                   >
-                    Details
+                    {t('Details')}
                     {detailsCount > 0 ? (
-                      <span className="inline-flex h-5 min-w-5 items-center justify-center rounded-full bg-black/[0.08] px-1.5 text-[11px] font-semibold tabular-nums text-[#111111] dark:bg-white/[0.12] dark:text-white">
+                      <span className="inline-flex h-[18px] min-w-[18px] items-center justify-center rounded-full bg-[#0F1419] px-1 text-[11px] font-bold tabular-nums text-white dark:bg-[#E7E9EA] dark:text-[#0F1419]">
                         {detailsCount}
                       </span>
-                    ) : null}
+                    ) : (
+                      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.4} aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="m9 6 6 6-6 6" />
+                      </svg>
+                    )}
                   </button>
-                  ) : null}
-                  {postButton}
-                </div>
+                ) : null}
               </div>
+            </div>
 
-              {errorLine ? <div className="mt-3">{errorLine}</div> : null}
+            {errorLine}
+
+            <div className="flex items-center gap-3">
+              {postButton}
+              <CharCounter length={title.length} max={CREATOR_CONTENT_TITLE_MAX} />
             </div>
           </div>
         </>
       ) : (
         <>
-          <div className="flex shrink-0 items-center gap-2 border-b border-black/[0.08] px-3 py-3 dark:border-white/[0.08] sm:px-4">
+          <div className={SHEET_HEADER_CLASS}>
             <button
               type="button"
               onClick={() => {
@@ -542,68 +580,58 @@ export function CreatorContentPublishForm({
               }}
               disabled={isSubmitting}
               className={ROUND_ICON_BUTTON_CLASS}
-              aria-label="Back to post"
+              aria-label={t('Back to post')}
             >
               <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M19 12H5m6-6l-6 6 6 6" />
               </svg>
             </button>
-            <h2 className="text-[17px] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">Details</h2>
-            <span className="ml-auto pr-2 text-[14px] text-neutral-400">All optional</span>
+            <div className="text-center">
+              <h2 className="text-[17px] font-bold leading-6 text-[#0F1419] dark:text-[#E7E9EA]">{t('Details')}</h2>
+              <p className="text-[12px] leading-4 text-[#536471] dark:text-[#71767B]">{t('All optional')}</p>
+            </div>
+            <span aria-hidden />
           </div>
 
-          <div className="min-h-0 flex-1 space-y-8 overflow-y-auto overscroll-contain px-5 py-7 sm:px-6 [scrollbar-width:thin]">
-            <Field label="Description" htmlFor="content-description">
+          <div className="min-h-0 flex-1 space-y-6 overflow-y-auto overscroll-contain px-4 py-5 sm:px-5 compose-scroll">
+            <Field label={t('Description')} htmlFor="content-description">
               <textarea
                 id="content-description"
                 rows={3}
                 maxLength={2000}
-                placeholder="Tell the story behind this post"
+                placeholder={t('Tell the story behind this post')}
                 className={`${FIELD_CLASS} min-h-[5.5rem] resize-none leading-relaxed [field-sizing:content]`}
                 {...register('description')}
               />
             </Field>
 
-            <div>
-              <Field label="Price to recreate" htmlFor="content-price">
-                <input
-                  id="content-price"
-                  className={FIELD_CLASS}
-                  placeholder="e.g. 500 €"
-                  title="What you would charge to produce the same work again"
-                  {...register('priceInfo')}
-                />
-              </Field>
-            </div>
+            <Field label={t('Price to recreate')} htmlFor="content-price">
+              <input
+                id="content-price"
+                className={FIELD_CLASS}
+                placeholder="500 €"
+                title={t('What you would charge to produce the same work again')}
+                {...register('priceInfo')}
+              />
+            </Field>
 
             <ChipListField
               id="content-tags"
-              label="Tags"
+              label={t('Tags')}
               items={tagFields}
-              placeholder="Type a tag and press Enter"
+              placeholder={t('Type a tag and press Enter')}
               onAdd={(value) => appendTag({ value })}
               onRemove={removeTag}
             />
-
-            <ChipListField
-              id="content-tools"
-              label="Tools used"
-              items={toolFields}
-              placeholder="Figma, After Effects…"
-              onAdd={(value) => appendTool({ value })}
-              onRemove={removeTool}
-              error={errors.toolsUsed?.message}
-            />
           </div>
 
-          <div className="flex shrink-0 flex-col gap-3 border-t border-black/[0.08] px-5 py-3 dark:border-white/[0.08] sm:px-6">
+          <div className="shrink-0 space-y-3 border-t border-[#EFF3F4] px-4 pb-4 pt-3 dark:border-[#2F3336] sm:px-5">
             {errorLine}
-            <div className="flex items-center justify-between gap-3">
-              <p className="text-[14px] text-neutral-500 dark:text-neutral-400">
-                {isPublic ? 'Everyone' : 'Only me'} · {commentsEnabled ? 'Comments on' : 'Comments off'}
-              </p>
-              {postButton}
-            </div>
+            <p className="flex items-center gap-1.5 text-[13px] text-[#536471] dark:text-[#71767B]">
+              {isPublic ? <GlobeIcon className="h-3.5 w-3.5" /> : <LockIcon className="h-3.5 w-3.5" />}
+              {isPublic ? t('Everyone') : t('Only me')} · {commentsEnabled ? t('Comments on') : t('Comments off')}
+            </p>
+            <div className="flex items-center gap-3">{postButton}</div>
           </div>
         </>
       )}

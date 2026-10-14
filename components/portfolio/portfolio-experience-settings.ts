@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -42,6 +43,7 @@ import {
   type PortfolioListMarkerStyle,
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioExperienceDesign =
   | 'editorial'
@@ -100,9 +102,9 @@ export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS: {
   value: PortfolioExperienceAccentYearsFontSize;
   label: string;
 }[] = [
-  { value: 4, label: 'Small' },
-  { value: 5, label: 'Medium' },
-  { value: 6, label: 'Large' },
+  { value: 4, label: msg('Small') },
+  { value: 5, label: msg('Medium') },
+  { value: 6, label: msg('Large') },
   { value: 7, label: 'XL' },
 ];
 
@@ -111,18 +113,18 @@ export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 0, label: 'Sharp', description: 'Square corners — architectural.' },
-  { value: 2, label: 'Soft', description: 'Noticeable 10px round.' },
-  { value: 4, label: 'Rounded', description: '20px round — clearly curved.' },
+  { value: 0, label: msg('Sharp'), description: msg('Square corners — architectural.') },
+  { value: 2, label: msg('Soft'), description: msg('Noticeable 10px round.') },
+  { value: 4, label: msg('Rounded'), description: msg('20px round — clearly curved.') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS: {
   value: PortfolioExperienceAccentYearsBadgeColor;
   label: string;
 }[] = [
-  { value: 'accent', label: 'Accent' },
-  { value: 'principal', label: 'Principal' },
-  { value: 'secondaire', label: 'Secondaire' },
+  { value: 'accent', label: msg('Accent') },
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondaire') },
 ];
 
 export const DEFAULT_ACCENT_YEARS_BADGE_TEXT = '{years}+ years';
@@ -158,73 +160,73 @@ export const PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS: {
   value: PortfolioExperienceCenteredLeadWeight;
   label: string;
 }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'regular', label: 'Regular' },
-  { value: 'medium', label: 'Medium' },
+  { value: 'light', label: msg('Light') },
+  { value: 'regular', label: msg('Regular') },
+  { value: 'medium', label: msg('Medium') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS: {
   value: PortfolioExperienceCenteredAlign;
   label: string;
 }[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
+  { value: 'left', label: msg('Left') },
+  { value: 'center', label: msg('Center') },
+  { value: 'right', label: msg('Right') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS: {
   value: PortfolioExperienceCenteredLeadOpacity;
   label: string;
 }[] = [
-  { value: 'muted', label: 'Muted' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'vibrant', label: 'Vibrant' },
+  { value: 'muted', label: msg('Muted') },
+  { value: 'balanced', label: msg('Balanced') },
+  { value: 'vibrant', label: msg('Vibrant') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS: {
   value: PortfolioExperienceCenteredScale;
   label: string;
 }[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'default', label: 'Default' },
-  { value: 'monumental', label: 'Monumental' },
+  { value: 'compact', label: msg('Compact') },
+  { value: 'default', label: msg('Default') },
+  { value: 'monumental', label: msg('Monumental') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS: {
   value: PortfolioExperienceCenteredMaxWidth;
   label: string;
 }[] = [
-  { value: 'narrow', label: 'Narrow' },
-  { value: 'balanced', label: 'Balanced' },
-  { value: 'wide', label: 'Wide' },
+  { value: 'narrow', label: msg('Narrow') },
+  { value: 'balanced', label: msg('Balanced') },
+  { value: 'wide', label: msg('Wide') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS: {
   value: PortfolioExperienceCenteredLineHeight;
   label: string;
 }[] = [
-  { value: 'tight', label: 'Tight' },
-  { value: 'aery', label: 'Aery' },
-  { value: 'spaced', label: 'Spaced' },
+  { value: 'tight', label: msg('Tight') },
+  { value: 'aery', label: msg('Aery') },
+  { value: 'spaced', label: msg('Spaced') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS: {
   value: PortfolioExperienceCenteredDivider;
   label: string;
 }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'dot', label: 'Minimal dot' },
-  { value: 'full', label: 'Full width' },
-  { value: 'track', label: 'Centered track' },
+  { value: 'none', label: msg('None') },
+  { value: 'dot', label: msg('Minimal dot') },
+  { value: 'full', label: msg('Full width') },
+  { value: 'track', label: msg('Centered track') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS: {
   value: PortfolioExperienceCenteredDividerOpacity;
   label: string;
 }[] = [
-  { value: 'ghost', label: 'Ghost' },
-  { value: 'subtle', label: 'Subtle' },
-  { value: 'accent', label: 'Accent' },
+  { value: 'ghost', label: msg('Ghost') },
+  { value: 'subtle', label: msg('Subtle') },
+  { value: 'accent', label: msg('Accent') },
 ];
 
 export const CENTERED_LEAD_OPACITY: Record<PortfolioExperienceCenteredLeadOpacity, number> = {
@@ -259,28 +261,28 @@ export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS: {
   value: PortfolioExperienceSerifLeadInk;
   label: string;
 }[] = [
-  { value: 'current', label: 'Ink' },
-  { value: 'accent', label: 'Accent' },
-  { value: 'principal', label: 'Principal' },
-  { value: 'secondaire', label: 'Secondaire' },
+  { value: 'current', label: msg('Ink') },
+  { value: 'accent', label: msg('Accent') },
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondaire') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS: {
   value: PortfolioExperienceSerifLeadTracking;
   label: string;
 }[] = [
-  { value: 'tight', label: 'Tight' },
-  { value: 'editorial', label: 'Editorial' },
-  { value: 'open', label: 'Open' },
+  { value: 'tight', label: msg('Tight') },
+  { value: 'editorial', label: msg('Editorial') },
+  { value: 'open', label: msg('Open') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS: {
   value: PortfolioExperienceSerifLeadLabelOpacity;
   label: string;
 }[] = [
-  { value: 'ghost', label: 'Ghost' },
-  { value: 'muted', label: 'Muted' },
-  { value: 'ink', label: 'Ink' },
+  { value: 'ghost', label: msg('Ghost') },
+  { value: 'muted', label: msg('Muted') },
+  { value: 'ink', label: msg('Ink') },
 ];
 
 export const SERIF_LEAD_WEIGHT: Record<PortfolioExperienceCenteredLeadWeight, number> = {
@@ -331,53 +333,53 @@ export const PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS: {
   value: PortfolioExperienceMarqueeStyle;
   label: string;
 }[] = [
-  { value: 'alternate', label: 'Alternate' },
-  { value: 'fill', label: 'Fill' },
-  { value: 'outline', label: 'Outline' },
+  { value: 'alternate', label: msg('Alternate') },
+  { value: 'fill', label: msg('Fill') },
+  { value: 'outline', label: msg('Outline') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS: {
   value: PortfolioExperienceMarqueeDirection;
   label: string;
 }[] = [
-  { value: 'ltr', label: 'Left → right' },
-  { value: 'rtl', label: 'Right → left' },
+  { value: 'ltr', label: msg('Left → right') },
+  { value: 'rtl', label: msg('Right → left') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS: {
   value: PortfolioExperienceMarqueeSpeed;
   label: string;
 }[] = [
-  { value: 'slow', label: 'Slow' },
-  { value: 'cruise', label: 'Cruise' },
-  { value: 'fast', label: 'Fast' },
+  { value: 'slow', label: msg('Slow') },
+  { value: 'cruise', label: msg('Cruise') },
+  { value: 'fast', label: msg('Fast') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS: {
   value: PortfolioExperienceMarqueeEdgeFade;
   label: string;
 }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'soft', label: 'Soft' },
-  { value: 'wide', label: 'Wide' },
+  { value: 'none', label: msg('None') },
+  { value: 'soft', label: msg('Soft') },
+  { value: 'wide', label: msg('Wide') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS: {
   value: PortfolioExperienceMarqueeSeparator;
   label: string;
 }[] = [
-  { value: 'dot', label: 'Dot' },
-  { value: 'none', label: 'None' },
+  { value: 'dot', label: msg('Dot') },
+  { value: 'none', label: msg('None') },
 ];
 
 export const PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS: {
   value: PortfolioExperienceMarqueeWeight;
   label: string;
 }[] = [
-  { value: 'light', label: 'Light' },
-  { value: 'regular', label: 'Regular' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'semibold', label: 'Semibold' },
+  { value: 'light', label: msg('Light') },
+  { value: 'regular', label: msg('Regular') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'semibold', label: msg('Semibold') },
 ];
 
 export const MARQUEE_WEIGHT: Record<PortfolioExperienceMarqueeWeight, number> = {
@@ -477,8 +479,8 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 2, label: '2 per row', description: 'Fewer, larger thumbnails.' },
-  { value: 3, label: '3 per row', description: 'The default — more cards visible at once.' },
+  { value: 2, label: msg('2 per row'), description: msg('Fewer, larger thumbnails.') },
+  { value: 3, label: msg('3 per row'), description: msg('The default — more cards visible at once.') },
 ];
 
 /** Loft design: how many cards per row on large screens. */
@@ -489,9 +491,9 @@ export const PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 2, label: '2 per row', description: 'Fewer, larger cards.' },
-  { value: 3, label: '3 per row', description: 'The default.' },
-  { value: 4, label: '4 per row', description: 'More cards visible at once.' },
+  { value: 2, label: msg('2 per row'), description: msg('Fewer, larger cards.') },
+  { value: 3, label: msg('3 per row'), description: msg('The default.') },
+  { value: 4, label: msg('4 per row'), description: msg('More cards visible at once.') },
 ];
 
 /** Gallery design: how the thumbnail image fits its frame. */
@@ -502,8 +504,8 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'cover', label: 'Cover', description: 'Fills the frame — the default. May crop the image.' },
-  { value: 'contain', label: 'Contain', description: 'Full image, never cropped — letterboxed to fit.' },
+  { value: 'cover', label: msg('Cover'), description: msg('Fills the frame — the default. May crop the image.') },
+  { value: 'contain', label: msg('Contain'), description: msg('Full image, never cropped — letterboxed to fit.') },
 ];
 
 /** Gallery design: the full-bleed word above the section (e.g. "EXPERIENCE"). */
@@ -514,8 +516,8 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'outline', label: 'Outline', description: 'Letters drawn as an outline only — the default.' },
-  { value: 'fill', label: 'Fill', description: 'Solid, fully filled letters.' },
+  { value: 'outline', label: msg('Outline'), description: msg('Letters drawn as an outline only — the default.') },
+  { value: 'fill', label: msg('Fill'), description: msg('Solid, fully filled letters.') },
 ];
 
 export type PortfolioExperienceGalleryBigTitleColor = 'current' | 'accent' | 'simple';
@@ -525,9 +527,9 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'current', label: 'Current', description: 'The design’s own discreet tone — the default.' },
-  { value: 'accent', label: 'Accent', description: 'Your section’s accent / primary color.' },
-  { value: 'simple', label: 'Simple', description: 'Plain, flat color — same as the “Roles I’ve taken on” heading.' },
+  { value: 'current', label: msg('Current'), description: msg('The design’s own discreet tone — the default.') },
+  { value: 'accent', label: msg('Accent'), description: msg('Your section’s accent / primary color.') },
+  { value: 'simple', label: msg('Simple'), description: msg('Plain, flat color — same as the “Roles I’ve taken on” heading.') },
 ];
 
 /** Gallery / Billboard header: entrance animation intensity. */
@@ -538,9 +540,9 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'dramatic', label: 'Dramatic', description: 'Scale + blur reveal — billboard lighting up.' },
-  { value: 'subtle', label: 'Subtle', description: 'Soft fade only, no scale or blur.' },
-  { value: 'none', label: 'None', description: 'No entrance animation.' },
+  { value: 'dramatic', label: msg('Dramatic'), description: msg('Scale + blur reveal — billboard lighting up.') },
+  { value: 'subtle', label: msg('Subtle'), description: msg('Soft fade only, no scale or blur.') },
+  { value: 'none', label: msg('None'), description: msg('No entrance animation.') },
 ];
 
 /** Gallery / Billboard header: secondary title typography. */
@@ -551,8 +553,8 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'editorial', label: 'Editorial', description: 'First word italic light, rest semibold.' },
-  { value: 'uniform', label: 'Uniform', description: 'Same weight on every word.' },
+  { value: 'editorial', label: msg('Editorial'), description: msg('First word italic light, rest semibold.') },
+  { value: 'uniform', label: msg('Uniform'), description: msg('Same weight on every word.') },
 ];
 
 /** Gallery / Billboard header: role-count presentation. */
@@ -563,9 +565,9 @@ export const PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'micro', label: 'Micro', description: 'Uppercase, letter-spaced, small.' },
-  { value: 'normal', label: 'Normal', description: 'Regular body size, sentence case.' },
-  { value: 'hidden', label: 'Hidden', description: 'Hide the role count line.' },
+  { value: 'micro', label: msg('Micro'), description: msg('Uppercase, letter-spaced, small.') },
+  { value: 'normal', label: msg('Normal'), description: msg('Regular body size, sentence case.') },
+  { value: 'hidden', label: msg('Hidden'), description: msg('Hide the role count line.') },
 ];
 
 /** Loft design: how each row's thumbnail is presented. */
@@ -576,8 +578,8 @@ export const PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'cover', label: 'Current', description: 'Fills the frame — the default, cropped to fit.' },
-  { value: 'glass', label: 'Glassmorphism', description: 'Full image, never cropped — frosted glass backdrop.' },
+  { value: 'cover', label: msg('Current'), description: msg('Fills the frame — the default, cropped to fit.') },
+  { value: 'glass', label: msg('Glassmorphism'), description: msg('Full image, never cropped — frosted glass backdrop.') },
 ];
 
 /** Loft design: corner radius of the thumbnail frame. */
@@ -605,18 +607,18 @@ export const PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS: {
 }[] = [
   {
     value: 'curtain',
-    label: 'Project Curtain',
-    description: 'Dimmed at rest, full light + soft scale-out and inner glow on hover.',
+    label: msg('Project Curtain'),
+    description: msg('Dimmed at rest, full light + soft scale-out and inner glow on hover.'),
   },
   {
     value: 'magnetic',
-    label: 'Magnetic Cue',
-    description: 'Title lifts while a blurred [ VIEW CASE ↗ ] cue appears on the thumbnail.',
+    label: msg('Magnetic Cue'),
+    description: msg('Title lifts while a blurred [ VIEW CASE ↗ ] cue appears on the thumbnail.'),
   },
   {
     value: 'press',
-    label: 'Press In',
-    description: 'Thumbnail eases down 4px with a translucent white rim — physical button feel.',
+    label: msg('Press In'),
+    description: msg('Thumbnail eases down 4px with a translucent white rim — physical button feel.'),
   },
 ];
 
@@ -649,13 +651,13 @@ export const PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Stacked',
-    description: 'Classic vertical flow — meta, copy, stack, then repo CTA under STACK.',
+    label: msg('Stacked'),
+    description: msg('Classic vertical flow — meta, copy, stack, then repo CTA under STACK.'),
   },
   {
     value: 'split-actions',
-    label: 'Split actions',
-    description: 'Meta + status top-right, repo bottom-right — copy stays centered.',
+    label: msg('Split actions'),
+    description: msg('Meta + status top-right, repo bottom-right — copy stays centered.'),
   },
 ];
 
@@ -994,12 +996,12 @@ export const PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS: {
   >;
   label: string;
 }[] = [
-  { value: 'editorial', label: 'Editorial' },
-  { value: 'table', label: 'Table' },
-  { value: 'reel', label: 'Reel' },
-  { value: 'duotone', label: 'Duotone' },
-  { value: 'spotlight', label: 'Spotlight' },
-  { value: 'legacy', label: 'Legacy' },
+  { value: 'editorial', label: msg('Editorial') },
+  { value: 'table', label: msg('Table') },
+  { value: 'reel', label: msg('Reel') },
+  { value: 'duotone', label: msg('Duotone') },
+  { value: 'spotlight', label: msg('Spotlight') },
+  { value: 'legacy', label: msg('Legacy') },
 ];
 
 /** Glyph used on Experience proof / repository link buttons that show an arrow. */
@@ -1016,9 +1018,9 @@ export const PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'northeast', label: '↗', description: 'Diagonal exit arrow.' },
-  { value: 'chevron', label: '›', description: 'Simple chevron.' },
-  { value: 'east', label: '→', description: 'Horizontal arrow.' },
+  { value: 'northeast', label: '↗', description: msg('Diagonal exit arrow.') },
+  { value: 'chevron', label: '›', description: msg('Simple chevron.') },
+  { value: 'east', label: '→', description: msg('Horizontal arrow.') },
 ];
 
 /** Concrete button to render. `auto` / legacy default `icon` keep the layout’s own button. */
@@ -1046,28 +1048,28 @@ export const PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'minimal',
-    label: 'Minimal',
-    description: 'A small blinking dot with a monospaced label — the default.',
+    label: msg('Minimal'),
+    description: msg('A small blinking dot with a monospaced label — the default.'),
   },
   {
     value: 'badge',
-    label: 'Badge',
-    description: 'Pill chip with a checkmark / dot icon.',
+    label: msg('Badge'),
+    description: msg('Pill chip with a checkmark / dot icon.'),
   },
   {
     value: 'bar',
-    label: 'Progress bar',
-    description: 'Short horizontal bar instead of a badge.',
+    label: msg('Progress bar'),
+    description: msg('Short horizontal bar instead of a badge.'),
   },
   {
     value: 'square',
-    label: 'Square dot',
-    description: 'Small square marker, no background pill.',
+    label: msg('Square dot'),
+    description: msg('Small square marker, no background pill.'),
   },
   {
     value: 'plain',
-    label: 'Plain text',
-    description: 'Just the label, colored by status — no icon, no chrome.',
+    label: msg('Plain text'),
+    description: msg('Just the label, colored by status — no icon, no chrome.'),
   },
 ];
 
@@ -1084,18 +1086,18 @@ export const PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS: {
 }[] = [
   {
     value: 'index-distort',
-    label: 'Index distort',
-    description: 'Creative skew / stretch / blur on the large “01” watermark as you scroll.',
+    label: msg('Index distort'),
+    description: msg('Creative skew / stretch / blur on the large “01” watermark as you scroll.'),
   },
   {
     value: 'fade-reveal',
-    label: 'Fade & reveal',
-    description: 'Staggered fade-up of title, meta, copy, and footer — fluid block chaining.',
+    label: msg('Fade & reveal'),
+    description: msg('Staggered fade-up of title, meta, copy, and footer — fluid block chaining.'),
   },
   {
     value: 'sticky-vertical',
-    label: 'Sticky vertical',
-    description: 'Bottom story stays pinned; titles morph fluidly as you scroll through roles.',
+    label: msg('Sticky vertical'),
+    description: msg('Bottom story stays pinned; titles morph fluidly as you scroll through roles.'),
   },
 ];
 
@@ -1109,18 +1111,18 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS: {
 }[] = [
   {
     value: 'sticky',
-    label: 'Sticky',
-    description: 'The story card stays pinned centered while the role list scrolls past it.',
+    label: msg('Sticky'),
+    description: msg('The story card stays pinned centered while the role list scrolls past it.'),
   },
   {
     value: 'scroll',
-    label: 'Scroll',
-    description: 'Plain scroll — no pinning, each role and its story move together.',
+    label: msg('Scroll'),
+    description: msg('Plain scroll — no pinning, each role and its story move together.'),
   },
   {
     value: 'slide',
-    label: 'Slide',
-    description: 'One role at a time — navigate with the chevron arrows, a smooth slide transition.',
+    label: msg('Slide'),
+    description: msg('One role at a time — navigate with the chevron arrows, a smooth slide transition.'),
   },
 ];
 
@@ -1134,13 +1136,13 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'chevron',
-    label: 'Chevron',
-    description: 'Round prev/next arrow buttons — the original, quietest option.',
+    label: msg('Chevron'),
+    description: msg('Round prev/next arrow buttons — the original, quietest option.'),
   },
   {
     value: 'text',
-    label: 'Text',
-    description: '"Previous / Next" text links — no icons.',
+    label: msg('Text'),
+    description: msg('"Previous / Next" text links — no icons.'),
   },
 ];
 
@@ -1152,9 +1154,9 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'No frame — the default.' },
-  { value: 'neutral', label: 'Neutral', description: 'The same discreet hairline color used elsewhere in this design.' },
-  { value: 'muted', label: 'Muted', description: 'The secondary text color — a touch more visible than Neutral.' },
+  { value: 'none', label: msg('None'), description: msg('No frame — the default.') },
+  { value: 'neutral', label: msg('Neutral'), description: msg('The same discreet hairline color used elsewhere in this design.') },
+  { value: 'muted', label: msg('Muted'), description: msg('The secondary text color — a touch more visible than Neutral.') },
 ];
 
 /** Duotone design, Scroll / Slide modes only: corner rounding of that same frame. */
@@ -1165,9 +1167,9 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Square corners.' },
-  { value: 'sm', label: 'Small', description: 'A subtle 16px rounding.' },
-  { value: 'lg', label: 'Large', description: 'A more pronounced 28px rounding.' },
+  { value: 'none', label: msg('None'), description: msg('Square corners.') },
+  { value: 'sm', label: msg('Small'), description: msg('A subtle 16px rounding.') },
+  { value: 'lg', label: msg('Large'), description: msg('A more pronounced 28px rounding.') },
 ];
 
 /** Duotone design, Sticky mode only: filter applied to the left-column thumbnail. */
@@ -1178,9 +1180,9 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'grayscale', label: 'Black & white', description: 'Desaturated image (default).' },
-  { value: 'tint', label: 'Accent tint', description: 'Desaturated image tinted with the accent color.' },
-  { value: 'none', label: 'None', description: 'Plain image, no filter.' },
+  { value: 'grayscale', label: msg('Black & white'), description: msg('Desaturated image (default).') },
+  { value: 'tint', label: msg('Accent tint'), description: msg('Desaturated image tinted with the accent color.') },
+  { value: 'none', label: msg('None'), description: msg('Plain image, no filter.') },
 ];
 
 /** Duotone design, Sticky mode only: height proportion of the left-column thumbnail. */
@@ -1191,9 +1193,9 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Short', description: 'A wider, shorter image.' },
-  { value: 'md', label: 'Balanced', description: 'Current proportions (default).' },
-  { value: 'lg', label: 'Tall', description: 'A taller, more square image.' },
+  { value: 'sm', label: msg('Short'), description: msg('A wider, shorter image.') },
+  { value: 'md', label: msg('Balanced'), description: msg('Current proportions (default).') },
+  { value: 'lg', label: msg('Tall'), description: msg('A taller, more square image.') },
 ];
 
 /** CSS aspect-ratio value for the Duotone sticky-mode thumbnail — kept as an inline style,
@@ -1241,13 +1243,13 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS: {
 }[] = [
   {
     value: 'footer',
-    label: 'Footer button',
-    description: 'Classic repository button under the stack.',
+    label: msg('Footer button'),
+    description: msg('Classic repository button under the stack.'),
   },
   {
     value: 'thumb-cursor',
-    label: 'Thumbnail cursor',
-    description: 'Rounded Consult pill that follows the pointer over the miniature.',
+    label: msg('Thumbnail cursor'),
+    description: msg('Rounded Consult pill that follows the pointer over the miniature.'),
   },
 ];
 
@@ -1259,10 +1261,10 @@ export const PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Small', description: 'Tighter title ↔ media and editorial rhythm.' },
-  { value: 'md', label: 'Medium', description: 'Balanced spacing — the default.' },
-  { value: 'lg', label: 'Large', description: 'More vertical air between elements.' },
-  { value: 'xl', label: 'Extra large', description: 'Maximum breathing room.' },
+  { value: 'sm', label: msg('Small'), description: msg('Tighter title ↔ media and editorial rhythm.') },
+  { value: 'md', label: msg('Medium'), description: msg('Balanced spacing — the default.') },
+  { value: 'lg', label: msg('Large'), description: msg('More vertical air between elements.') },
+  { value: 'xl', label: msg('Extra large'), description: msg('Maximum breathing room.') },
 ];
 
 /** Left-column title ↔ thumbnail gap in Duotone sticky / scroll modes. */
@@ -1482,14 +1484,14 @@ export const PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across every Experience design.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across every Experience design.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -1527,6 +1529,8 @@ export type PortfolioExperiencePresentationSettings = PortfolioSectionBackground
    * Renders in a zone above the design-owned header — Editorial first.
    */
   headerDesign: PortfolioExperienceHeaderDesign;
+  /** Header elements the owner hid, as `experience-<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   /** Accent years only — badge copy. Empty falls back to the years template. `{years}` interpolates. */
   accentYearsBadgeText: string;
   /** Accent years only — sentence after the badge. Empty falls back to the years template. */
@@ -2178,6 +2182,7 @@ export const DEFAULT_EXPERIENCE_PRESENTATION: PortfolioExperiencePresentationSet
   premiumFontSize: 'medium',
   headerAlignment: 'left',
   headerDesign: 'none',
+  headerHiddenElements: [],
   accentYearsBadgeText: '',
   accentYearsLeadText: '',
   accentYearsFontSize: 6,
@@ -2488,69 +2493,69 @@ export const PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'kinetic',
-    label: 'Kinetic Typo',
+    label: msg('Kinetic Typo'),
     description:
-      'Brutalist type layout — the role title owns the screen, metadata tucked into the leftover gaps. No image chrome.',
+      msg('Brutalist type layout — the role title owns the screen, metadata tucked into the leftover gaps. No image chrome.'),
   },
   {
     value: 'editorial',
-    label: 'Editorial',
+    label: msg('Editorial'),
     description:
-      'Period left, story right — expand a role for responsibilities, tools, and proof. Serif title + soft Ongoing badge.',
+      msg('Period left, story right — expand a role for responsibilities, tools, and proof. Serif title + soft Ongoing badge.'),
   },
   {
     value: 'milestone',
-    label: 'Milestone',
+    label: msg('Milestone'),
     description:
-      'Framer Continuum–style timeline — oversized years, connected rail, card blocks with numbered tasks.',
+      msg('Framer Continuum–style timeline — oversized years, connected rail, card blocks with numbered tasks.'),
   },
   {
     value: 'table',
-    label: 'Table',
+    label: msg('Table'),
     description:
-      'Ledger-style table — Period, Role, Organization, Status. Expand a row for details and stack.',
+      msg('Ledger-style table — Period, Role, Organization, Status. Expand a row for details and stack.'),
   },
   {
     value: 'cards',
-    label: 'Cards',
+    label: msg('Cards'),
     description:
-      'Card grid — 2 per row on large screens. Title, meta, period, status, description, tasks, and stack.',
+      msg('Card grid — 2 per row on large screens. Title, meta, period, status, description, tasks, and stack.'),
   },
   {
     value: 'reel',
-    label: 'Reel',
+    label: msg('Reel'),
     description:
-      'One role per screen — full-height sections with a Fraunces headline, period, stack, and story.',
+      msg('One role per screen — full-height sections with a Fraunces headline, period, stack, and story.'),
   },
   {
     value: 'duotone',
-    label: 'Duotone',
+    label: msg('Duotone'),
     description:
-      'One role per screen, split 50/50 — role details on the left, a framed story card on the right.',
+      msg('One role per screen, split 50/50 — role details on the left, a framed story card on the right.'),
   },
   {
     value: 'gallery',
-    label: 'Gallery',
+    label: msg('Gallery'),
     description:
-      'Airy thumbnail grid — Framer/Webflow-style cards with hover zoom. Click a card for the full story.',
+      msg('Airy thumbnail grid — Framer/Webflow-style cards with hover zoom. Click a card for the full story.'),
   },
   {
     value: 'loft',
-    label: 'Loft',
+    label: msg('Loft'),
     description:
-      'Calm, airy Webflow-style list — a plain static heading, thumbnail-left rows with generous space and hairline dividers.',
+      msg('Calm, airy Webflow-style list — a plain static heading, thumbnail-left rows with generous space and hairline dividers.'),
   },
   {
     value: 'press',
-    label: 'Press',
+    label: msg('Press'),
     description:
-      'Newsroom feed — a bold headline over a two-column layout, thumbnail rows with just a label, date, and title.',
+      msg('Newsroom feed — a bold headline over a two-column layout, thumbnail rows with just a label, date, and title.'),
   },
   {
     value: 'legacy',
-    label: 'Legacy',
+    label: msg('Legacy'),
     description:
-      'Premium showcase — a two-tone hero title, then alternating image/story feature blocks with a pill badge, icon accent, and CTA button.',
+      msg('Premium showcase — a two-tone hero title, then alternating image/story feature blocks with a pill badge, icon accent, and CTA button.'),
   },
 ];
 
@@ -2559,10 +2564,10 @@ export const PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Tight', description: 'Same small gap between cards, horizontally and vertically.' },
-  { value: 'md', label: 'Standard', description: 'Balanced gap on both axes.' },
-  { value: 'lg', label: 'Large', description: 'More air between cards on both axes.' },
-  { value: 'xl', label: 'Extra large', description: 'Wide gap between cards on both axes.' },
+  { value: 'sm', label: msg('Tight'), description: msg('Same small gap between cards, horizontally and vertically.') },
+  { value: 'md', label: msg('Standard'), description: msg('Balanced gap on both axes.') },
+  { value: 'lg', label: msg('Large'), description: msg('More air between cards on both axes.') },
+  { value: 'xl', label: msg('Extra large'), description: msg('Wide gap between cards on both axes.') },
 ];
 
 const EXPERIENCE_CARDS_GRID_GAP_PX_MIN = 0;
@@ -2590,23 +2595,23 @@ export const PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'plain',
-    label: 'Plain text',
-    description: 'Simple year label on the left (current).',
+    label: msg('Plain text'),
+    description: msg('Simple year label on the left (current).'),
   },
   {
     value: 'rail',
-    label: 'Timeline rail',
-    description: 'Vertical line with hollow nodes linking each entry.',
+    label: msg('Timeline rail'),
+    description: msg('Vertical line with hollow nodes linking each entry.'),
   },
   {
     value: 'badge',
-    label: 'Accent badge',
-    description: 'Small uppercase accent label for the period.',
+    label: msg('Accent badge'),
+    description: msg('Small uppercase accent label for the period.'),
   },
   {
     value: 'rule',
-    label: 'Hairline rule',
-    description: 'Period with a subtle horizontal rule beneath.',
+    label: msg('Hairline rule'),
+    description: msg('Period with a subtle horizontal rule beneath.'),
   },
 ];
 
@@ -2617,13 +2622,13 @@ export const PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS: {
 }[] = [
   {
     value: 'accordion',
-    label: 'Accordion',
-    description: 'One entry open at a time — click + to expand or collapse.',
+    label: msg('Accordion'),
+    description: msg('One entry open at a time — click + to expand or collapse.'),
   },
   {
     value: 'all-open',
-    label: 'All open',
-    description: 'Every entry expanded — no accordion button.',
+    label: msg('All open'),
+    description: msg('Every entry expanded — no accordion button.'),
   },
 ];
 
@@ -2634,28 +2639,28 @@ export const PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS: {
 }[] = [
   {
     value: 'engineering-grid',
-    label: 'Engineering Grid',
-    description: 'Compact monochrome micro-blocks in a tight grid — technical and ordered.',
+    label: msg('Engineering Grid'),
+    description: msg('Compact monochrome micro-blocks in a tight grid — technical and ordered.'),
   },
   {
     value: 'cinematic-timeline',
-    label: 'Cinematic Timeline',
-    description: 'Wire vertical rail with monospaced indexes — narrative and fluid.',
+    label: msg('Cinematic Timeline'),
+    description: msg('Wire vertical rail with monospaced indexes — narrative and fluid.'),
   },
   {
     value: 'editorial-dash',
-    label: 'Editorial Dash',
-    description: 'Airy typography with long em-dashes that stretch and shift on hover.',
+    label: msg('Editorial Dash'),
+    description: msg('Airy typography with long em-dashes that stretch and shift on hover.'),
   },
   {
     value: 'accordion-stack',
-    label: 'Lined Stack',
-    description: 'A single hairline thread runs behind the indexes — the active number turns pure white on hover.',
+    label: msg('Lined Stack'),
+    description: msg('A single hairline thread runs behind the indexes — the active number turns pure white on hover.'),
   },
   {
     value: 'architectural-index',
-    label: 'Architectural Index',
-    description: 'Structural 01 / indexes in monospace — studio index line, dark-ready.',
+    label: msg('Architectural Index'),
+    description: msg('Structural 01 / indexes in monospace — studio index line, dark-ready.'),
   },
 ];
 
@@ -2666,23 +2671,23 @@ export const PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'mineral-pills',
-    label: 'Mineral Pills',
-    description: 'Rounded capsules in a faint tone that barely lifts off the background — micro-zoom on hover.',
+    label: msg('Mineral Pills'),
+    description: msg('Rounded capsules in a faint tone that barely lifts off the background — micro-zoom on hover.'),
   },
   {
     value: 'editorial-list',
-    label: 'Editorial List',
-    description: 'A single line of literary type, dot-separated — hover isolates one tool, dims the rest.',
+    label: msg('Editorial List'),
+    description: msg('A single line of literary type, dot-separated — hover isolates one tool, dims the rest.'),
   },
   {
     value: 'kinetic-marquee',
-    label: 'Kinetic Marquee',
-    description: 'Monumental outline type drifting in an endless, silent loop — merges into the background.',
+    label: msg('Kinetic Marquee'),
+    description: msg('Monumental outline type drifting in an endless, silent loop — merges into the background.'),
   },
   {
     value: 'numbered-index',
-    label: 'Numbered Index',
-    description: 'Swiss-style catalogue rows — 01 / 02 / 03 prefixes, no boxes, no borders.',
+    label: msg('Numbered Index'),
+    description: msg('Swiss-style catalogue rows — 01 / 02 / 03 prefixes, no boxes, no borders.'),
   },
 ];
 
@@ -2693,18 +2698,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS: {
 }[] = [
   {
     value: 'none',
-    label: 'None',
-    description: 'Sharp corners — no border radius on the card (default).',
+    label: msg('None'),
+    description: msg('Sharp corners — no border radius on the card (default).'),
   },
   {
     value: 'md',
-    label: 'Medium',
-    description: 'Soft rounded corners.',
+    label: msg('Medium'),
+    description: msg('Soft rounded corners.'),
   },
   {
     value: 'xl',
-    label: 'Large',
-    description: 'More rounded card frame.',
+    label: msg('Large'),
+    description: msg('More rounded card frame.'),
   },
 ];
 
@@ -2729,18 +2734,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS: {
 }[] = [
   {
     value: 'full',
-    label: 'Full width',
-    description: 'The card fills the full available width.',
+    label: msg('Full width'),
+    description: msg('The card fills the full available width.'),
   },
   {
     value: 'medium',
-    label: 'Medium',
-    description: 'Comfortable width, centered in the section.',
+    label: msg('Medium'),
+    description: msg('Comfortable width, centered in the section.'),
   },
   {
     value: 'small',
-    label: 'Small',
-    description: 'Narrower card, still centered.',
+    label: msg('Small'),
+    description: msg('Narrower card, still centered.'),
   },
 ];
 
@@ -2751,23 +2756,23 @@ export const PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Compact',
-    description: 'A smaller title, more room for the description and tasks.',
+    label: msg('Compact'),
+    description: msg('A smaller title, more room for the description and tasks.'),
   },
   {
     value: 'md',
-    label: 'Standard',
-    description: 'Balanced display size — the default.',
+    label: msg('Standard'),
+    description: msg('Balanced display size — the default.'),
   },
   {
     value: 'lg',
-    label: 'Large',
-    description: 'A bolder, more editorial title.',
+    label: msg('Large'),
+    description: msg('A bolder, more editorial title.'),
   },
   {
     value: 'xl',
-    label: 'Display',
-    description: 'Maximum presence — the title dominates the card.',
+    label: msg('Display'),
+    description: msg('Maximum presence — the title dominates the card.'),
   },
 ];
 
@@ -2796,18 +2801,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Tight',
-    description: 'Little air between title, text, tasks and tools.',
+    label: msg('Tight'),
+    description: msg('Little air between title, text, tasks and tools.'),
   },
   {
     value: 'md',
-    label: 'Standard',
-    description: 'Balanced rhythm inside the card.',
+    label: msg('Standard'),
+    description: msg('Balanced rhythm inside the card.'),
   },
   {
     value: 'lg',
-    label: 'Large',
-    description: 'More space between each block of the card.',
+    label: msg('Large'),
+    description: msg('More space between each block of the card.'),
   },
 ];
 
@@ -2818,18 +2823,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Tight',
-    description: 'Little vertical space between cards.',
+    label: msg('Tight'),
+    description: msg('Little vertical space between cards.'),
   },
   {
     value: 'md',
-    label: 'Standard',
-    description: 'Balanced vertical gap between each frame.',
+    label: msg('Standard'),
+    description: msg('Balanced vertical gap between each frame.'),
   },
   {
     value: 'lg',
-    label: 'Large',
-    description: 'More vertical air between cards.',
+    label: msg('Large'),
+    description: msg('More vertical air between cards.'),
   },
 ];
 
@@ -2900,18 +2905,18 @@ export const PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Compact',
-    description: 'Serré — utile quand une carte a beaucoup de tâches.',
+    label: msg('Compact'),
+    description: msg('Serré — utile quand une carte a beaucoup de tâches.'),
   },
   {
     value: 'md',
-    label: 'Standard',
-    description: 'Espacement équilibré entre chaque tâche.',
+    label: msg('Standard'),
+    description: msg('Espacement équilibré entre chaque tâche.'),
   },
   {
     value: 'lg',
-    label: 'Aéré',
-    description: 'Espacement généreux — mieux avec peu de tâches.',
+    label: msg('Aéré'),
+    description: msg('Espacement généreux — mieux avec peu de tâches.'),
   },
 ];
 
@@ -2922,18 +2927,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Compact',
-    description: 'Shorter image, closer to landscape.',
+    label: msg('Compact'),
+    description: msg('Shorter image, closer to landscape.'),
   },
   {
     value: 'md',
-    label: 'Balanced',
-    description: 'Square-ish proportions.',
+    label: msg('Balanced'),
+    description: msg('Square-ish proportions.'),
   },
   {
     value: 'lg',
-    label: 'Tall',
-    description: 'Tallest image (default).',
+    label: msg('Tall'),
+    description: msg('Tallest image (default).'),
   },
 ];
 
@@ -2944,18 +2949,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Narrow',
-    description: 'Fills about 70% of the column.',
+    label: msg('Narrow'),
+    description: msg('Fills about 70% of the column.'),
   },
   {
     value: 'md',
-    label: 'Medium',
-    description: 'Fills about 85% of the column.',
+    label: msg('Medium'),
+    description: msg('Fills about 85% of the column.'),
   },
   {
     value: 'lg',
-    label: 'Full',
-    description: 'Fills the whole column (default).',
+    label: msg('Full'),
+    description: msg('Fills the whole column (default).'),
   },
 ];
 
@@ -2997,23 +3002,23 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Compact',
-    description: 'Tighter spacing between entries.',
+    label: msg('Compact'),
+    description: msg('Tighter spacing between entries.'),
   },
   {
     value: 'md',
-    label: 'Balanced',
-    description: 'Current spacing between entries (default).',
+    label: msg('Balanced'),
+    description: msg('Current spacing between entries (default).'),
   },
   {
     value: 'lg',
-    label: 'Spacious',
-    description: 'Twice the current spacing between entries.',
+    label: msg('Spacious'),
+    description: msg('Twice the current spacing between entries.'),
   },
   {
     value: 'xl',
-    label: 'Extra spacious',
-    description: 'The most room between entries.',
+    label: msg('Extra spacious'),
+    description: msg('The most room between entries.'),
   },
 ];
 
@@ -3040,13 +3045,13 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'left',
-    label: 'Left',
-    description: 'The image always stays on the left.',
+    label: msg('Left'),
+    description: msg('The image always stays on the left.'),
   },
   {
     value: 'right',
-    label: 'Right',
-    description: 'The image always stays on the right.',
+    label: msg('Right'),
+    description: msg('The image always stays on the right.'),
   },
 ];
 
@@ -3057,18 +3062,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'bloom',
-    label: 'Bloom',
-    description: 'Accent word scales up with color bloom effect.',
+    label: msg('Bloom'),
+    description: msg('Accent word scales up with color bloom effect.'),
   },
   {
     value: 'slide',
-    label: 'Slide',
-    description: 'Accent word slides in from below.',
+    label: msg('Slide'),
+    description: msg('Accent word slides in from below.'),
   },
   {
     value: 'none',
-    label: 'None',
-    description: 'No animation on the accent word.',
+    label: msg('None'),
+    description: msg('No animation on the accent word.'),
   },
 ];
 
@@ -3079,18 +3084,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS: {
 }[] = [
   {
     value: 'light',
-    label: 'Light',
-    description: 'Light weight prefix for maximum typographic contrast.',
+    label: msg('Light'),
+    description: msg('Light weight prefix for maximum typographic contrast.'),
   },
   {
     value: 'normal',
-    label: 'Normal',
-    description: 'Regular weight prefix.',
+    label: msg('Normal'),
+    description: msg('Regular weight prefix.'),
   },
   {
     value: 'bold',
-    label: 'Bold',
-    description: 'Bold prefix for stronger presence.',
+    label: msg('Bold'),
+    description: msg('Bold prefix for stronger presence.'),
   },
 ];
 
@@ -3101,18 +3106,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'italic-bold',
-    label: 'Italic Bold',
-    description: 'Italic and bold for maximum emphasis.',
+    label: msg('Italic Bold'),
+    description: msg('Italic and bold for maximum emphasis.'),
   },
   {
     value: 'bold',
-    label: 'Bold',
-    description: 'Bold only, no italic.',
+    label: msg('Bold'),
+    description: msg('Bold only, no italic.'),
   },
   {
     value: 'italic',
-    label: 'Italic',
-    description: 'Italic only, no bold.',
+    label: msg('Italic'),
+    description: msg('Italic only, no bold.'),
   },
 ];
 
@@ -3123,18 +3128,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS: {
 }[] = [
   {
     value: 'dramatic',
-    label: 'Dramatic',
-    description: 'Large size difference — accent is much bigger.',
+    label: msg('Dramatic'),
+    description: msg('Large size difference — accent is much bigger.'),
   },
   {
     value: 'subtle',
-    label: 'Subtle',
-    description: 'Moderate size difference.',
+    label: msg('Subtle'),
+    description: msg('Moderate size difference.'),
   },
   {
     value: 'same',
-    label: 'Same',
-    description: 'Same size as prefix text.',
+    label: msg('Same'),
+    description: msg('Same size as prefix text.'),
   },
 ];
 
@@ -3145,13 +3150,13 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'solid',
-    label: 'Solid',
-    description: 'Simple solid line in accent color.',
+    label: msg('Solid'),
+    description: msg('Simple solid line in accent color.'),
   },
   {
     value: 'gradient',
-    label: 'Gradient',
-    description: 'Faded gradient line from accent color.',
+    label: msg('Gradient'),
+    description: msg('Faded gradient line from accent color.'),
   },
 ];
 
@@ -3162,18 +3167,18 @@ export const PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'micro',
-    label: 'Micro',
-    description: 'Uppercase, letter-spaced, small text.',
+    label: msg('Micro'),
+    description: msg('Uppercase, letter-spaced, small text.'),
   },
   {
     value: 'serif',
-    label: 'Serif',
-    description: 'Elegant serif typography.',
+    label: msg('Serif'),
+    description: msg('Elegant serif typography.'),
   },
   {
     value: 'normal',
-    label: 'Normal',
-    description: 'Standard body text style.',
+    label: msg('Normal'),
+    description: msg('Standard body text style.'),
   },
 ];
 
@@ -3184,18 +3189,18 @@ export const PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'staggered',
-    label: 'Staggered',
-    description: 'Words reveal one after another.',
+    label: msg('Staggered'),
+    description: msg('Words reveal one after another.'),
   },
   {
     value: 'simultaneous',
-    label: 'Simultaneous',
-    description: 'The whole headline appears at once.',
+    label: msg('Simultaneous'),
+    description: msg('The whole headline appears at once.'),
   },
   {
     value: 'none',
-    label: 'None',
-    description: 'No entrance animation.',
+    label: msg('None'),
+    description: msg('No entrance animation.'),
   },
 ];
 
@@ -3206,13 +3211,13 @@ export const PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'alternating',
-    label: 'Alternating',
-    description: 'First word light, rest black — editorial contrast.',
+    label: msg('Alternating'),
+    description: msg('First word light, rest black — editorial contrast.'),
   },
   {
     value: 'uniform',
-    label: 'Uniform',
-    description: 'Every word the same bold weight.',
+    label: msg('Uniform'),
+    description: msg('Every word the same bold weight.'),
   },
 ];
 
@@ -3223,18 +3228,18 @@ export const PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'micro',
-    label: 'Micro',
-    description: 'Uppercase, letter-spaced, small.',
+    label: msg('Micro'),
+    description: msg('Uppercase, letter-spaced, small.'),
   },
   {
     value: 'normal',
-    label: 'Normal',
-    description: 'Regular sentence-case body text.',
+    label: msg('Normal'),
+    description: msg('Regular sentence-case body text.'),
   },
   {
     value: 'hidden',
-    label: 'Hidden',
-    description: 'Hide the intro line.',
+    label: msg('Hidden'),
+    description: msg('Hide the intro line.'),
   },
 ];
 
@@ -3245,13 +3250,13 @@ export const PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS: {
 }[] = [
   {
     value: 'left',
-    label: 'Left',
-    description: 'Flush left — the default editorial alignment.',
+    label: msg('Left'),
+    description: msg('Flush left — the default editorial alignment.'),
   },
   {
     value: 'center',
-    label: 'Center',
-    description: 'Centered masthead.',
+    label: msg('Center'),
+    description: msg('Centered masthead.'),
   },
 ];
 
@@ -3262,13 +3267,13 @@ export const PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS: {
 }[] = [
   {
     value: 'subtle',
-    label: 'Subtle',
-    description: 'Gentle line-by-line drift.',
+    label: msg('Subtle'),
+    description: msg('Gentle line-by-line drift.'),
   },
   {
     value: 'dramatic',
-    label: 'Dramatic',
-    description: 'Stronger cascade as you scroll.',
+    label: msg('Dramatic'),
+    description: msg('Stronger cascade as you scroll.'),
   },
 ];
 
@@ -4337,6 +4342,7 @@ export function mergeExperiencePresentation(
       typeof record.subtitleUppercase === 'boolean' ? record.subtitleUppercase : base.subtitleUppercase,
     premiumFontSize: pick(record.premiumFontSize, EXPERIENCE_PREMIUM_FONT_SIZES, base.premiumFontSize ?? 'medium'),
     headerAlignment: pick(record.headerAlignment, ['left', 'center', 'right'], base.headerAlignment),
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesign: pick(
       record.headerDesign,
       [

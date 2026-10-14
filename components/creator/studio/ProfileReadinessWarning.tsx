@@ -8,6 +8,7 @@ import {
   PROFILE_READINESS_LABELS,
   type ProfileReadinessField,
 } from '@/lib/creator-profile-readiness';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProfileReadinessWarningProps = {
   missingFields: ProfileReadinessField[];
@@ -20,6 +21,7 @@ export function ProfileReadinessWarning({
   title = 'Complete your profile first',
   description = 'Add the required profile details before you can publish.',
 }: ProfileReadinessWarningProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -53,7 +55,7 @@ export function ProfileReadinessWarning({
           title={title}
         >
           <FontAwesomeIcon icon={faTriangleExclamation} className="h-4 w-4 shrink-0" />
-          <span>Warning</span>
+          <span>{t('Warning')}</span>
         </button>
         {open ? (
           <div
@@ -79,7 +81,7 @@ export function ProfileReadinessWarning({
               className="mt-3 inline-flex rounded-lg bg-neutral-900 px-3 py-1.5 text-xs font-semibold text-white dark:bg-white dark:text-neutral-900"
               onClick={() => setOpen(false)}
             >
-              Open Information
+              {t('Open Information')}
             </Link>
           </div>
         ) : null}

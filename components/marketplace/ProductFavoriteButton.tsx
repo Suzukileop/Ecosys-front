@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from 'react';
 import { addFavorite, getReactionCounts, removeFavorite } from '@/lib/marketplace-api';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductFavoriteButtonProps = {
   productId: string;
@@ -10,6 +11,8 @@ type ProductFavoriteButtonProps = {
   onFavoritedChange?: (favorited: boolean) => void;
   variant?: 'heart' | 'bookmark';
   size?: 'default' | 'sm';
+  /** `onImage` (default): a solid chip over a picture; `plain`: a bare icon button on a card row. */
+  tone?: 'onImage' | 'plain';
 };
 
 export function ProductFavoriteButton({
@@ -18,7 +21,9 @@ export function ProductFavoriteButton({
   onFavoritedChange,
   variant = 'heart',
   size = 'default',
+  tone = 'onImage',
 }: ProductFavoriteButtonProps) {
+  const t = useT();
   const compact = size === 'sm';
   const { user, hasRole, isLoading } = useAuth();
   const [favorited, setFavorited] = useState(initialFavorited ?? false);
@@ -87,15 +92,17 @@ export function ProductFavoriteButton({
       type="button"
       onClick={(e) => void toggle(e)}
       disabled={busy}
-      className={`flex items-center justify-center rounded-full bg-white/95 shadow-sm transition hover:bg-white disabled:opacity-60 dark:bg-neutral-900/95 dark:hover:bg-neutral-900 ${
-        compact ? 'h-8 w-8' : 'h-10 w-10'
+      className={`flex items-center justify-center rounded-full transition disabled:opacity-60 ${
+        tone === 'plain'
+          ? 'h-9 w-9 hover:bg-[rgba(15,20,25,0.06)] dark:hover:bg-[rgba(231,233,234,0.1)]'
+          : `bg-[#fff]/95 hover:bg-[#fff] dark:bg-black/80 dark:hover:bg-black ${compact ? 'h-8 w-8' : 'h-10 w-10'}`
       }`}
-      aria-label={favorited ? 'Remove from favorites' : 'Add to favorites'}
+      aria-label={favorited ? t('Remove from favorites') : t('Add to favorites')}
       aria-pressed={favorited}
     >
       {variant === 'bookmark' ? (
         <svg
-          className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} ${favorited ? 'fill-gray-900 text-gray-900 dark:fill-white dark:text-white' : 'text-gray-800 dark:text-gray-200'}`}
+          className={`${compact ? 'h-4 w-4' : 'h-5 w-5'} ${favorited ? 'fill-[#0F1419] text-[#0F1419] dark:fill-[#E7E9EA] dark:text-[#E7E9EA]' : 'text-[#0F1419] dark:text-[#E7E9EA]'}`}
           fill={favorited ? 'currentColor' : 'none'}
           viewBox="0 0 24 24"
           stroke="currentColor"
@@ -105,7 +112,7 @@ export function ProductFavoriteButton({
         </svg>
       ) : (
         <svg
-          className={`h-5 w-5 ${favorited ? 'fill-red-500 text-red-500' : 'text-gray-700'}`}
+          className={`h-5 w-5 ${favorited ? 'fill-[#0F1419] text-[#0F1419] dark:fill-[#E7E9EA] dark:text-[#E7E9EA]' : 'text-[#0F1419] dark:text-[#E7E9EA]'}`}
           fill={favorited ? 'currentColor' : 'none'}
           viewBox="0 0 24 24"
           stroke="currentColor"

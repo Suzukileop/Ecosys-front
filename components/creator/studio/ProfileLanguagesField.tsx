@@ -19,6 +19,7 @@ import {
   spokenLanguageMatchKey,
   type SpokenLanguageEntry,
 } from '@/lib/spoken-languages';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const MAX_LANGUAGES = 20;
 
@@ -27,6 +28,8 @@ type ProfileLanguagesFieldProps = {
   setValue: UseFormSetValue<ProfileFormValues>;
   readOnly?: boolean;
   values?: SpokenLanguageEntry[];
+  /** `drawer`: My Profile's edit drawer — no heading of its own (the drawer group names it), News fields. */
+  variant?: 'default' | 'drawer';
 };
 
 export function ProfileLanguagesField({
@@ -34,7 +37,9 @@ export function ProfileLanguagesField({
   setValue,
   readOnly = false,
   values = [],
+  variant = 'default',
 }: ProfileLanguagesFieldProps) {
+  const t = useT();
   const watched = useWatch({ control, name: 'spokenLanguages' });
   const [customDraft, setCustomDraft] = useState('');
   const [levelOptions, setLevelOptions] = useState(DEFAULT_LANGUAGE_PROFICIENCY_LEVELS);
@@ -133,7 +138,7 @@ export function ProfileLanguagesField({
 
   if (readOnly) {
     if (selected.length === 0) {
-      return <p className={profileSectionEmptyClass}>No languages added.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No languages added.')}</p>;
     }
     return (
       <div className="flex flex-wrap gap-2">
@@ -157,13 +162,114 @@ export function ProfileLanguagesField({
     );
   }
 
+  /*
+   * Drawer: the languages you work in as rows (name, level, remove), then the ones you could add as
+   * "+ English" chips, then a field for any other language. The drawer group above it is the heading.
+   */
+  if (variant === 'drawer') {
+    const atCap = selected.length >= MAX_LANGUAGES;
+    const available = SPOKEN_LANGUAGE_PRESETS.filter((language) => !selectedKeys.has(spokenLanguageMatchKey(language)));
+    return (
+      <div className="space-y-5">
+        {selected.length > 0 ? (
+          <ul className="space-y-2">
+            {selected.map((language) => (
+              <li
+                key={spokenLanguageMatchKey(language.value)}
+                className="flex items-center gap-2 rounded-xl bg-[color:var(--gn-surface)] py-1.5 pl-4 pr-1.5"
+              >
+                <span className="min-w-0 flex-1 truncate text-[15px] font-semibold text-[color:var(--gn-ink)]">{language.value}</span>
+                <label className="sr-only" htmlFor={`language-level-${spokenLanguageMatchKey(language.value)}`}>
+                  {t('Level in {value}', { value: language.value })}
+                </label>
+                <select
+                  id={`language-level-${spokenLanguageMatchKey(language.value)}`}
+                  value={language.level ?? ''}
+                  onChange={(event) =>
+                    updateLevel(
+                      language.value,
+                      event.target.value ? (event.target.value as SpokenLanguageEntry['level']) : null
+                    )
+                  }
+                  className="x-inset h-10 w-[9.5rem] shrink-0 px-3 text-[14px]"
+                >
+                  <option value="">{t('Level')}</option>
+                  {levelOptions.map((option) => (
+                    <option key={option.code} value={option.code}>
+                      {t(option.label)}
+                    </option>
+                  ))}
+                </select>
+                <button
+                  type="button"
+                  onClick={() => removeLanguage(language.value)}
+                  aria-label={t('Remove {value}', { value: language.value })}
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                >
+                  <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </svg>
+                </button>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+
+        {!atCap && available.length > 0 ? (
+          <div className="flex flex-wrap gap-2">
+            {available.map((language) => (
+              <button
+                key={language}
+                type="button"
+                onClick={() => togglePreset(language)}
+                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-medium text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]"
+              >
+                <span aria-hidden className="text-[16px] leading-none text-[color:var(--gn-ink2)]">+</span>
+                {language}
+              </button>
+            ))}
+          </div>
+        ) : null}
+
+        {!atCap ? (
+          <div className="flex gap-2">
+            <input
+              type="text"
+              value={customDraft}
+              onChange={(event) => setCustomDraft(event.target.value)}
+              onKeyDown={(event) => {
+                if (event.key === 'Enter') {
+                  event.preventDefault();
+                  addCustom();
+                }
+              }}
+              aria-label={t('Other language')}
+              placeholder={t('Other language…')}
+              className="h-11 min-w-0 flex-1 px-4 text-[15px]"
+            />
+            <button
+              type="button"
+              onClick={addCustom}
+              disabled={!customDraft.trim() || selectedKeys.has(spokenLanguageMatchKey(customDraft))}
+              className="inline-flex h-11 shrink-0 items-center rounded-full px-5 text-[14px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] disabled:opacity-40 dark:shadow-[inset_0_0_0_1px_#536471]"
+            >
+              {t('Add')}
+            </button>
+          </div>
+        ) : (
+          <p className="text-[13px] text-[color:var(--gn-ink2)]">{t('You can list up to {MAXLANGUAGES} languages.', { MAXLANGUAGES: MAX_LANGUAGES })}</p>
+        )}
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-5">
       <div>
-        <p className={profileSectionSubheadingClass}>Working languages</p>
+        <p className={profileSectionSubheadingClass}>{t('Working languages')}</p>
         <p className={`mt-1.5 ${profileSectionMutedTextClass}`}>
-          Select the languages you work in and set your level.{' '}
-          {selected.length}/{MAX_LANGUAGES} added.
+          {t('Select the languages you work in and set your level.')}{' '}
+          {selected.length}/{MAX_LANGUAGES} {t('added.')}
         </p>
       </div>
 
@@ -183,7 +289,7 @@ export function ProfileLanguagesField({
                   onClick={() => removeLanguage(language.value)}
                   className="text-sm font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
                 >
-                  Remove
+                  {t('Remove')}
                 </button>
               </div>
               <select
@@ -196,10 +302,10 @@ export function ProfileLanguagesField({
                 }
                 className={`${profileFormInputClass} w-full sm:max-w-[220px]`}
               >
-                <option value="">Level (optional)</option>
+                <option value="">{t('Level (optional)')}</option>
                 {levelOptions.map((option) => (
                   <option key={option.code} value={option.code}>
-                    {option.label}
+                    {t(option.label)}
                   </option>
                 ))}
               </select>
@@ -218,7 +324,7 @@ export function ProfileLanguagesField({
               className="inline-flex items-center gap-1.5 rounded-full border border-orange-300 bg-orange-50 px-3 py-1.5 text-sm font-medium text-orange-800 dark:border-orange-500/40 dark:bg-orange-500/10 dark:text-orange-200"
             >
               {language.value}
-              <span aria-hidden>×</span>
+              <span aria-hidden>{t('×')}</span>
             </button>
           ))}
         </div>
@@ -256,7 +362,7 @@ export function ProfileLanguagesField({
               addCustom();
             }
           }}
-          placeholder="Other language…"
+          placeholder={t('Other language…')}
           className={`${profileFormInputClass} min-w-0 flex-1`}
         />
         <button
@@ -269,7 +375,7 @@ export function ProfileLanguagesField({
           }
           className="inline-flex shrink-0 items-center justify-center rounded-full border border-neutral-200 px-5 py-2.5 text-[15px] font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
         >
-          Add
+          {t('Add')}
         </button>
       </div>
     </div>

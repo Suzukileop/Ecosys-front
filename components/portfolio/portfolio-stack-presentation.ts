@@ -185,6 +185,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   headerDesign: PortfolioStackHeaderDesign;
   /** Master switch for Header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioStackHeaderDesignAlignment;
   /** Bottom spacing under every Header design — shared across all of them. */
   headerMarginBottom: PortfolioStackHeaderMarginBottom;

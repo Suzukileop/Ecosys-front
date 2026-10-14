@@ -18,6 +18,7 @@ import {
  */
 export function FooterMiniBarServicesReveal({
   creatorName,
+  showCopyright = true,
   colorMode,
   copyrightText,
   contentGutter = DEFAULT_CONTENT_GUTTER,
@@ -27,7 +28,7 @@ export function FooterMiniBarServicesReveal({
   const navRest = isLight ? 'rgba(10,10,10,0.55)' : 'rgba(250,250,247,0.55)';
   const hairline = isLight ? 'rgba(10,10,10,0.08)' : 'rgba(250,250,247,0.1)';
 
-  const text = copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName);
+  const text = showCopyright ? copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName) : '';
   if (!text) return null;
 
   return (

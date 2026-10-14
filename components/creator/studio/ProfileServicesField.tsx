@@ -1,5 +1,6 @@
 'use client';
 
+import { tr } from '@/lib/i18n/active';
 import {
   Controller,
   useFieldArray,
@@ -18,6 +19,7 @@ import {
   profileSectionEmptyClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export const MAX_SERVICES = 8;
 const MAX_TASKS_PER_SERVICE = 12;
@@ -40,7 +42,7 @@ function isFreePrice(cents: number | null | undefined): boolean {
 
 function formatPrice(cents: number | null | undefined): string {
   if (cents == null || Number.isNaN(cents)) return '';
-  if (cents === 0) return 'Free';
+  if (cents === 0) return tr('Free');
   return `${(cents / 100).toFixed(2)} €`;
 }
 
@@ -78,6 +80,7 @@ function ServiceOfferCard({
   move: (from: number, to: number) => void;
   remove: (index: number) => void;
 }) {
+  const t = useT();
   const {
     fields: taskFields,
     append: appendTask,
@@ -91,7 +94,7 @@ function ServiceOfferCard({
     <div className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2">
         <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-          Service {index + 1}
+          {t('Service')} {index + 1}
         </p>
         <div className="flex items-center gap-1">
           <button
@@ -99,7 +102,7 @@ function ServiceOfferCard({
             disabled={index === 0}
             onClick={() => move(index, index - 1)}
             className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-            aria-label="Move up"
+            aria-label={t('Move up')}
           >
             ↑
           </button>
@@ -108,7 +111,7 @@ function ServiceOfferCard({
             disabled={index === total - 1}
             onClick={() => move(index, index + 1)}
             className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-            aria-label="Move down"
+            aria-label={t('Move down')}
           >
             ↓
           </button>
@@ -117,14 +120,14 @@ function ServiceOfferCard({
             onClick={() => remove(index)}
             className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
           >
-            Remove
+            {t('Remove')}
           </button>
         </div>
       </div>
 
       <div>
         <label htmlFor={`service-title-${fieldId}`} className={profileFormLabelClass}>
-          Title
+          {t('Title')}
         </label>
         <input
           id={`service-title-${fieldId}`}
@@ -136,7 +139,7 @@ function ServiceOfferCard({
 
       <div>
         <label htmlFor={`service-desc-${fieldId}`} className={profileFormLabelClass}>
-          Description
+          {t('Description')}
         </label>
         <textarea
           id={`service-desc-${fieldId}`}
@@ -149,7 +152,7 @@ function ServiceOfferCard({
       <div className="grid gap-3 sm:grid-cols-2">
         <div>
           <label htmlFor={`service-price-${fieldId}`} className={profileFormLabelClass}>
-            Base price (€)
+            {t('Base price (€)')}
           </label>
           <Controller
             control={control}
@@ -171,7 +174,7 @@ function ServiceOfferCard({
                     onBlur={field.onBlur}
                     name={field.name}
                     ref={field.ref}
-                    placeholder={free ? 'Free' : 'e.g. 50'}
+                    placeholder={free ? t('Free') : t('e.g. 50')}
                     disabled={free}
                   />
                   <button
@@ -183,24 +186,24 @@ function ServiceOfferCard({
                         : 'border-neutral-200 bg-white text-neutral-600 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
                     }`}
                   >
-                    Free
+                    {t('Free')}
                   </button>
                 </div>
               );
             }}
           />
           <p className="mt-2 text-sm leading-relaxed text-neutral-500 dark:text-neutral-400">
-            Ex. 50 = 50,00 €, or mark as Free. Empty = price on request.
+            {t('Ex. 50 = 50,00 €, or mark as Free. Empty = price on request.')}
           </p>
         </div>
         <div>
           <label htmlFor={`service-deadline-${fieldId}`} className={profileFormLabelClass}>
-            Typical deadline
+            {t('Typical deadline')}
           </label>
           <input
             id={`service-deadline-${fieldId}`}
             type="text"
-            placeholder="e.g. 3–5 days"
+            placeholder={t('e.g. 3–5 days')}
             className={profileFormInputClass}
             {...register(`serviceOffers.${index}.deadline`)}
           />
@@ -209,19 +212,19 @@ function ServiceOfferCard({
 
       <div>
         <div className="mb-2 flex items-center justify-between gap-2">
-          <label className={profileFormLabelClass}>Tasks</label>
+          <label className={profileFormLabelClass}>{t('Tasks')}</label>
           <button
             type="button"
             disabled={taskFields.length >= MAX_TASKS_PER_SERVICE}
             onClick={() => appendTask({ value: '' })}
             className="text-[15px] font-semibold text-[#111111] underline-offset-4 hover:underline disabled:opacity-40 dark:text-white"
           >
-            + Add task
+            {t('+ Add task')}
           </button>
         </div>
         {taskFields.length === 0 ? (
           <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-            No tasks yet — e.g. Concept & moodboard, Full design system, Handoff to developers
+            {t('No tasks yet — e.g. Concept & moodboard, Full design system, Handoff to developers')}
           </p>
         ) : (
           <div className="space-y-2">
@@ -238,7 +241,7 @@ function ServiceOfferCard({
                   onClick={() => removeTask(taskIndex)}
                   className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
                 >
-                  Remove
+                  {t('Remove')}
                 </button>
               </div>
             ))}
@@ -259,10 +262,11 @@ export function ProfileServicesField({
   readOnly = false,
   values = [],
 }: ProfileServicesFieldProps) {
+  const t = useT();
   if (readOnly) {
     const filled = values.filter((item) => item.title.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>No services added yet.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No services added yet.')}</p>;
     }
     return (
       <div className="space-y-3">
@@ -290,11 +294,11 @@ export function ProfileServicesField({
                 {service.basePriceCents != null ? (
                   <span>
                     {isFreePrice(service.basePriceCents)
-                      ? 'Free'
-                      : `From ${formatPrice(service.basePriceCents)}`}
+                      ? tr('Free')
+                      : tr('From {price}', { price: formatPrice(service.basePriceCents) })}
                   </span>
                 ) : null}
-                {service.deadline?.trim() ? <span>Deadline: {service.deadline}</span> : null}
+                {service.deadline?.trim() ? <span>{t('Deadline: {deadline}', { deadline: service.deadline })}</span> : null}
               </div>
             </div>
           );
@@ -308,7 +312,7 @@ export function ProfileServicesField({
       <ProfileSectionItemCount count={fields.length} limit={MAX_SERVICES} unit="services" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No services added yet.</p>
+        <p className={profileSectionEmptyClass}>{t('No services added yet.')}</p>
       ) : (
         fields.map((field, index) => (
           <ServiceOfferCard
@@ -330,7 +334,7 @@ export function ProfileServicesField({
           onClick={() => append(createEmptyProfileService(fields.length))}
           className="rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
-          Add service
+          {t('Add service')}
         </button>
       ) : null}
     </div>

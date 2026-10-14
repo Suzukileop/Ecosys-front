@@ -18,6 +18,7 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type EditorialOverlapHeroProps = {
   image: string | null;
@@ -91,6 +92,7 @@ function EditorialOverlapHero({
   imageBw,
   suppressBackground = false,
 }: EditorialOverlapHeroProps) {
+  const t = useT();
   const mediaSurface = `color-mix(in srgb, ${neutre} 55%, ${fond})`;
   /** One radius scale for the whole collage: the scoop answers the media frame corner. */
   const frameRadius = 'clamp(1.35rem, 2.1vw, 2.15rem)';
@@ -264,7 +266,7 @@ function EditorialOverlapHero({
       data-pf-entry="armed"
       className="pf-overlap-hero relative isolate w-full overflow-clip"
       style={{ ...(suppressBackground ? null : { backgroundColor: fond }), color: ink }}
-      aria-label="Editorial hero"
+      aria-label={t('Editorial hero')}
     >
       {/* —— Desktop collage (vertically centered) —— */}
       <div

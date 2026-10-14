@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type CreatorStudioTab =
   | 'content'
   | 'products'
@@ -8,13 +9,13 @@ export type CreatorStudioTab =
   | 'services';
 
 export const CREATOR_STUDIO_TABS: { id: CreatorStudioTab; label: string }[] = [
-  { id: 'content', label: 'Content' },
-  { id: 'services', label: 'Services' },
-  { id: 'products', label: 'Products' },
-  { id: 'images', label: 'Profile' },
-  { id: 'visitors', label: 'Visitors' },
-  { id: 'subscribers', label: 'Subscribers' },
-  { id: 'profile', label: 'Information' },
+  { id: 'content', label: msg('Content') },
+  { id: 'services', label: msg('Services') },
+  { id: 'products', label: msg('Products') },
+  { id: 'images', label: msg('Photos') },
+  { id: 'visitors', label: msg('Visitors') },
+  { id: 'subscribers', label: msg('Subscribers') },
+  { id: 'profile', label: msg('Profile') },
 ];
 
 export function parseCreatorStudioTab(value: string | null): CreatorStudioTab {

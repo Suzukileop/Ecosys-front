@@ -1,112 +1,47 @@
 'use client';
 
-import { useId, useMemo, useState } from 'react';
+import { localeTag } from '@/lib/i18n/active';
+import { useMemo, useState } from 'react';
 import Link from 'next/link';
 import { useAuth } from '@/context/AuthContext';
-import { AbbreviatedLine } from '@/components/ui/AbbreviatedLine';
 import { CountryFlag } from '@/components/ui/CountryFlag';
 import { usePresence } from '@/hooks/usePresence';
 import { mediaImageSrc } from '@/lib/media-image-url';
-import {
-  PROVIDER_BODY_CLASS,
-  PROVIDER_FRAME_CLASS,
-  PROVIDER_INK_CLASS,
-  PROVIDER_LABEL_CLASS,
-  PROVIDER_MUTED_CLASS,
-  ProviderSlashList,
-  ProviderTextAction,
-} from '@/components/marketplace/ProviderDirectoryPrimitives';
 import { formatDistanceAwayKm, nationalityLabel, normalizeNationalityCode } from '@/lib/countries';
 import { formatPlaceLabel } from '@/lib/geolocation';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
+import { formatHourlyRateAmount } from '@/lib/profile-services';
+import type { ProfileServiceItem } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-/** Stable 0-359 seed from the provider id - only ever drives geometry, never a fill colour. */
-function seedFromId(id: string) {
-  const s = id ?? '';
-  let h = 0;
-  for (let i = 0; i < s.length; i++) h = (h + s.charCodeAt(i) * 17) % 360;
-  return h;
+const INK = 'text-[#0F1419] dark:text-[#E7E9EA]';
+/* Dark secondary #8B98A5, not #71767B: on the #16181C card #71767B falls under AA (News does the same). */
+const INK2 = 'text-[#536471] dark:text-[#8B98A5]';
+
+/** Skills typed all lower-case ("spring boot") read as raw input next to "DevOps": capitalise them. */
+function displaySkill(skill: string) {
+  return skill === skill.toLowerCase() ? skill.charAt(0).toUpperCase() + skill.slice(1) : skill;
 }
-
-function StarIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-      <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-    </svg>
-  );
-}
-
-function FolderIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 7.5A1.5 1.5 0 014.5 6h4l2 2.25h7A1.5 1.5 0 0119 9.75v7.5a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 013 17.25V7.5z"
-      />
-    </svg>
-  );
-}
-
-function PinIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M17.657 16.657L13.414 20.9a2 2 0 01-2.828 0l-4.243-4.243a8 8 0 1111.314 0z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
-    </svg>
-  );
-}
-
-function ArrowIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M5 12h14M13 6l6 6-6 6" />
-    </svg>
-  );
-}
-
-function ChevronIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-    </svg>
-  );
-}
-
-const DISCUSS_BUTTON_CLASS =
-  'inline-flex h-9 w-9 items-center justify-center gap-2 rounded-full text-[14px] font-medium text-[#0F0F0F] transition-colors duration-200 hover:bg-black/[0.04] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:text-white dark:hover:bg-white/[0.06] sm:w-auto sm:px-3';
 
 function ChatIcon({ className }: { className?: string }) {
   return (
-    <svg
-      className={className}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.6}
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      aria-hidden
-    >
+    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
-      <path d="M8.6 11.7h.01M12 11.7h.01M15.4 11.7h.01" />
     </svg>
   );
 }
 
+/** Ink disc with a check — "verified" without a brand colour. */
 function VerifiedMark() {
+  const t = useT();
   return (
     <span
-      className="inline-flex shrink-0 items-center text-[#FF5722]"
-      title="Verified provider"
-      aria-label="Verified provider"
+      className="inline-flex h-4 w-4 shrink-0 items-center justify-center rounded-full bg-[#0F1419] text-white dark:bg-[#E7E9EA] dark:text-[#0F1419]"
+      title={t('Verified provider')}
+      aria-label={t('Verified provider')}
     >
-      <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+      <svg className="h-2.5 w-2.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3.5} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
       </svg>
     </span>
@@ -114,137 +49,70 @@ function VerifiedMark() {
 }
 
 function NationalityFlag({ code }: { code: string }) {
+  const t = useT();
   const iso2 = normalizeNationalityCode(code);
   if (!iso2) return null;
   const label = nationalityLabel(iso2) || iso2;
   return (
-    <span className="inline-flex shrink-0 items-center" title={label} aria-label={`Nationality: ${label}`}>
+    <span className="inline-flex shrink-0 items-center" title={label} aria-label={t('Nationality: {label}', { label })}>
       <CountryFlag iso2={iso2} size="sm" />
     </span>
   );
 }
 
-/**
- * The mineral wash every avatar slot sits on — a barely-there grey with a soft top light and a few
- * wireframe rules. `seed` only nudges the geometry, so two slots side by side are never identical.
- *
- * `bust` draws the abstract figure used when there is no usable photo at all. With it off, the
- * rings act as a quiet backdrop behind a medallion.
- */
-function MineralGround({ seed, bust }: { seed: number; bust: boolean }) {
-  const ringOffset = (seed % 14) - 7;
-  const horizon = 104 + (seed % 9);
-
-  return (
-    <div className="absolute inset-0 bg-[#E3E2DF] dark:bg-neutral-800" aria-hidden>
-      <div className="absolute inset-0 bg-[radial-gradient(120%_90%_at_50%_0%,rgba(255,255,255,0.65),transparent_70%)] dark:bg-[radial-gradient(120%_90%_at_50%_0%,rgba(255,255,255,0.06),transparent_70%)]" />
-      <svg
-        viewBox="0 0 120 170"
-        preserveAspectRatio="xMidYMid slice"
-        className="absolute inset-0 h-full w-full text-black/[0.16] dark:text-white/20"
-        fill="none"
-        stroke="currentColor"
-        strokeWidth={1}
-      >
-        <line x1="0" y1={horizon} x2="120" y2={horizon} strokeOpacity="0.5" />
-        <circle cx={60 + ringOffset} cy="66" r="42" strokeOpacity="0.4" />
-        {bust ? (
-          <>
-            <circle cx="60" cy="62" r="21" />
-            <path d="M22 168c0-23.2 17-40 38-40s38 16.8 38 40" strokeLinecap="round" />
-            <path d="M60 83v45" strokeOpacity="0.45" strokeLinecap="round" />
-          </>
-        ) : null}
-      </svg>
-    </div>
-  );
+function initialsOf(name: string) {
+  const parts = name.trim().split(/\s+/).filter(Boolean);
+  if (parts.length === 0) return '?';
+  if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Below this, a source is too small to fill the slot without going soft — see `CreatorCardAvatar`. */
-const AVATAR_COVER_MIN_WIDTH = 200;
-
-/**
- * Avatar slot.
- *
- * Three presentations, picked from the source itself rather than from a URL pattern:
- *
- * - `cover` — a real photo, large enough to fill the slot.
- * - `medallion` — a source under {@link AVATAR_COVER_MIN_WIDTH}px. Provider accounts signed in
- *   through Google arrive with a 96px monogram tile; stretched across the slot that became a flat
- *   block of raw colour with a blurred letter in it — the single loudest thing on the page. Shown
- *   at its own size on the mineral ground, it reads as an identity mark instead, and any genuine
- *   low-res photo stops being upscaled into mush.
- * - `wireframe` — nothing usable: the abstract bust.
+/*
+ * No photo: a soft, desaturated gradient picked from the name (stable per provider), so a card without
+ * a photo reads as designed rather than empty. Tones stay near-neutral to keep the page black & white.
  */
-function CreatorCardAvatar({
-  avatarUrl,
-  seed,
-  compact = false,
-}: {
-  avatarUrl?: string | null;
-  seed: number;
-  /**
-   * The 72px pill in the mobile row. `medallion` exists to stop a 96px monogram being blown up
-   * across a 220–290px slot; at this size nothing is upscaled, so insetting the source would only
-   * leave it floating on the ground texture.
-   */
-  compact?: boolean;
-}) {
-  const resolved = resolveStorageMediaUrl(avatarUrl);
-  const [fit, setFit] = useState<'pending' | 'cover' | 'medallion' | 'none'>(resolved ? 'pending' : 'none');
+const FALLBACK_GRADIENTS = [
+  'bg-gradient-to-br from-[#EEF2F6] to-[#D6DFE8] dark:from-[#1F2731] dark:to-[#12171D]',
+  'bg-gradient-to-br from-[#F1EDF5] to-[#DDD5E8] dark:from-[#26212E] dark:to-[#16131C]',
+  'bg-gradient-to-br from-[#ECF3EF] to-[#D3E3DA] dark:from-[#1C2722] dark:to-[#111815]',
+  'bg-gradient-to-br from-[#F5F0EA] to-[#E6DCCF] dark:from-[#2A251F] dark:to-[#191612]',
+  'bg-gradient-to-br from-[#EDF2F8] to-[#D4E0EE] dark:from-[#1D2533] dark:to-[#121720]',
+  'bg-gradient-to-br from-[#F5EDEF] to-[#E6D5DA] dark:from-[#2B2024] dark:to-[#1A1416]',
+] as const;
 
-  const onLoad = (event: React.SyntheticEvent<HTMLImageElement>) => {
-    if (compact) {
-      setFit('cover');
-      return;
-    }
-    const { naturalWidth, naturalHeight } = event.currentTarget;
-    const smallest = Math.min(naturalWidth || 0, naturalHeight || 0);
-    setFit(smallest >= AVATAR_COVER_MIN_WIDTH ? 'cover' : 'medallion');
-  };
+function fallbackGradientOf(name: string) {
+  let hash = 0;
+  for (let i = 0; i < name.length; i += 1) hash = (hash * 31 + name.charCodeAt(i)) | 0;
+  return FALLBACK_GRADIENTS[Math.abs(hash) % FALLBACK_GRADIENTS.length];
+}
+
+const FALLBACK_INITIALS_CLASS = 'font-semibold tracking-[0.02em] text-[#0F1419]/75 dark:text-[#E7E9EA]/85';
+
+/** Round avatar (44px phones, 56px from sm): a 160px source covers both sizes on 2x screens. */
+function CreatorCardAvatar({ avatarUrl, fullName }: { avatarUrl?: string | null; fullName: string }) {
+  const resolved = resolveStorageMediaUrl(avatarUrl);
+  const [failed, setFailed] = useState(false);
+
+  if (!resolved || failed) {
+    return (
+      <span
+        className={`flex h-full w-full items-center justify-center rounded-full text-[15px] sm:text-[17px] ${fallbackGradientOf(fullName)} ${FALLBACK_INITIALS_CLASS}`}
+      >
+        {initialsOf(fullName)}
+      </span>
+    );
+  }
 
   return (
-    <div className="absolute inset-0 transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/card:scale-105">
-      <MineralGround seed={seed} bust={fit === 'none'} />
-
-      {resolved && fit !== 'none' ? (
-        fit === 'medallion' ? (
-          <div className="absolute inset-0 flex items-center justify-center">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
-              /* Stays above AVATAR_COVER_MIN_WIDTH: the optimizer never upscales, so `onLoad`
-                 still sees a small source as small and keeps this presentation. */
-              src={mediaImageSrc(resolved, 256)}
-              alt=""
-              loading="lazy"
-              decoding="async"
-              onLoad={onLoad}
-              onError={() => setFit('none')}
-              className="h-[104px] max-h-[70%] w-[104px] max-w-[70%] rounded-full object-cover ring-1 ring-black/[0.06] dark:ring-white/10"
-            />
-          </div>
-        ) : (
-          // eslint-disable-next-line @next/next/no-img-element
-          <img
-            /*
-             * One `src`, never a `srcSet`: for an image picked from `w` descriptors the HTML spec
-             * scales the intrinsic size by the selected density, so `naturalWidth` reports the
-             * CSS box, not the source. `onLoad` below needs the real source width — a 96px
-             * monogram has to still read as 96. The optimizer never upscales, so this stays true.
-             */
-            src={mediaImageSrc(resolved, compact ? 256 : 640)}
-            alt=""
-            loading="lazy"
-            decoding="async"
-            onLoad={onLoad}
-            onError={() => setFit('none')}
-            className={`absolute inset-0 h-full w-full object-cover object-[center_18%] transition-opacity duration-500 ${
-              fit === 'pending' ? 'opacity-0' : 'opacity-100'
-            }`}
-          />
-        )
-      ) : null}
-    </div>
+    // eslint-disable-next-line @next/next/no-img-element
+    <img
+      src={mediaImageSrc(resolved, 160)}
+      alt=""
+      loading="lazy"
+      decoding="async"
+      onError={() => setFailed(true)}
+      className="h-full w-full rounded-full object-cover object-[center_18%]"
+    />
   );
 }
 
@@ -269,12 +137,31 @@ type CreatorCardProps = {
   distanceKm?: number | null;
   locationCity?: string | null;
   locationCountry?: string | null;
-  /** Larger type for reading-first surfaces such as search results. */
+  /** Kept for callers (search); the card has one size now. */
   comfortable?: boolean;
-  /** Square card that runs edge to edge on phones. */
+  /** Kept for callers; phones get the same rounded card inside the page gutter. */
   flushOnMobile?: boolean;
+  /** Kept for callers; the card no longer derives a price from services (hourly rate only). */
+  services?: ProfileServiceItem[] | null;
+  /** Provider hourly rate in cents — the card's price ("25 € / hour"), else "Rate on request". */
+  hourlyRateCents?: number | null;
+  hourlyRateCurrency?: string | null;
 };
 
+const MAX_SKILLS = 3;
+
+/**
+ * Provider row — a News-feed card (square, the module tone #F7F9F9 / #16181C, no outline) read like
+ * Upwork / Malt results: one provider per line.
+ *  - Left: a round 56px avatar (48px on phones) with the live "online" dot.
+ *  - Top line: name · flag · verified on the left, the hourly rate on the right (the figure a client
+ *    compares first, so it lines up down the list), then "specialty · place · distance".
+ *  - One meta line ("4 stars · 19 yrs exp. · Available" — the word, not a lone ★, so a star count
+ *    never reads as a 1-out-of-5 rating), a two-line bio, then skill chips with the actions on the
+ *    same line: "Portfolio" as text, "Discuss" as an outlined pill — quiet, so a list of cards does
+ *    not stack a column of loud buttons.
+ * The whole card opens the profile (a stretched link on the name); the actions sit above it.
+ */
 export function CreatorCard({
   id,
   userId,
@@ -294,17 +181,12 @@ export function CreatorCard({
   distanceKm,
   locationCity,
   locationCountry,
-  comfortable = false,
-  flushOnMobile = false,
+  hourlyRateCents,
+  hourlyRateCurrency,
 }: CreatorCardProps) {
+  const t = useT();
   const { user } = useAuth();
-  const [detailsOpen, setDetailsOpen] = useState(false);
-  const detailsId = useId();
-  const labelClass = comfortable ? 'text-[15px] font-medium' : PROVIDER_LABEL_CLASS;
-  const nameSizeClass = comfortable ? 'text-[1.5rem]' : 'text-[1.25rem]';
-  const metaSizeClass = comfortable ? 'text-[15px]' : 'text-[14px]';
-  const bioSizeClass = comfortable ? 'text-base' : 'text-[15px]';
-  const tagSizeClass = 'text-[14px]';
+  const displayName = fullName?.trim() || 'Provider';
   const resolvedId = (id ?? userId ?? '').trim();
   /** Presence API keys off auth user id - prefer `userId` like Profiles search rows. */
   const presenceUserId = (userId ?? id ?? '').trim();
@@ -312,309 +194,198 @@ export function CreatorCard({
   const presenceIds = useMemo(() => (presenceUserId ? [presenceUserId] : []), [presenceUserId]);
   const { isOnline } = usePresence(presenceIds);
   const online = Boolean(presenceUserId) && isOnline(presenceUserId);
-  const statusLabel = online ? 'Online' : 'Offline';
-  const seed = seedFromId(resolvedId || 'unknown');
   const services = serviceCount ?? 0;
   const stars = Math.max(0, starCount ?? 0);
-  const hasStars = stars > 0;
-  const isNew = !hasStars && !isVerified && services === 0;
   const bioText = bio?.trim() || '';
-  const distanceLabel = formatDistanceAwayKm(distanceKm);
+  const hourlyRate = formatHourlyRateAmount(hourlyRateCents, hourlyRateCurrency);
   const placeLabel = formatPlaceLabel(locationCity, locationCountry, nationality);
-  const profileHref = isOwnCard ? '/profile?tab=profile' : resolvedId ? `/providers/${resolvedId}` : null;
-  const servicesHref = isOwnCard
-    ? '/profile?tab=services'
-    : resolvedId
-      ? `/providers/${resolvedId}?tab=services`
-      : null;
+  const distanceLabel = formatDistanceAwayKm(distanceKm);
+  const profileHref = isOwnCard ? '/profile' : resolvedId ? `/providers/${resolvedId}` : null;
   const discussHref =
     !isOwnCard && resolvedId
       ? user
         ? `/messages?user=${encodeURIComponent(resolvedId)}`
         : `/login?redirect=${encodeURIComponent(`/messages?user=${encodeURIComponent(resolvedId)}`)}`
       : null;
-  const discussLabel = fullName?.trim() ? `Discuss with ${fullName.trim()}` : 'Discuss';
-  const portfolioHref = isOwnCard
-    ? '/studio'
-    : resolvedId
-      ? buildCreatorPortfolioPath(resolvedId, username)
-      : null;
-  const servicesLabel = services === 1 ? '1 service' : `${services} services`;
+  const portfolioHref = isOwnCard ? '/studio' : resolvedId ? buildCreatorPortfolioPath(resolvedId, username) : null;
   const specialtyChips =
     specialties.filter((item) => item.trim()).length > 0
       ? specialties.filter((item) => item.trim())
       : specialite?.trim()
         ? [specialite.trim()]
         : [];
-  const tagChips = specialtyTags.filter((item) => item.trim());
-
-  /* One marker only, top-right, strongest signal first - experience beats novelty. Verification is
-     not in this slot: it sits inline with the name, where it qualifies the person rather than the
-     listing. */
-  const marker =
-    yearsOfExperience != null && yearsOfExperience >= 0
-      ? yearsOfExperience === 1
-        ? '1 year'
-        : `${yearsOfExperience} years`
-      : isNew
-        ? 'New'
-        : null;
-  const experienceLabel =
-    yearsOfExperience != null && yearsOfExperience >= 0
-      ? `${yearsOfExperience} ${yearsOfExperience === 1 ? 'yr' : 'yrs'} exp.`
-      : null;
   const primarySpecialty = specialtyChips[0] ?? '';
-  /* Below `sm` only the identity block stays visible; everything else waits behind "Details". */
-  const mobileDetailsClass = detailsOpen ? 'contents' : 'hidden sm:contents';
+  const skills = Array.from(
+    new Map(
+      [...specialtyChips.slice(1), ...specialtyTags.filter((item) => item.trim())].map((item) => [item.toLowerCase(), item])
+    ).values()
+  );
+  const shownSkills = skills.slice(0, MAX_SKILLS);
+  const hiddenSkillCount = skills.length - shownSkills.length;
+
+  const hasStars = stars > 0;
+  const hasExperience = yearsOfExperience != null && yearsOfExperience > 0;
+  const isNew = !hasStars && !hasExperience && services === 0 && !isVerified;
+  const subtitle = [primarySpecialty, placeLabel, distanceLabel].filter(Boolean).join(' · ');
+
+  /* The rate is the card's one price; providers without one read "Rate on request" so every row
+     carries the same slot and the column of prices stays aligned. */
+  const price = hourlyRate ? (
+    <p className="shrink-0 whitespace-nowrap text-right leading-6">
+      <span className={`text-[17px] font-bold tabular-nums tracking-[-0.01em] ${INK}`}>{hourlyRate}</span>
+      <span className={`text-[13px] ${INK2}`}> {t('/ hour')}</span>
+    </p>
+  ) : (
+    <p className={`shrink-0 whitespace-nowrap text-[13px] leading-6 ${INK2}`}>{t('Rate on request')}</p>
+  );
+
+  /* Trust, experience and availability in one quiet line. Colour stays on the availability dot. */
+  const metaItems = [
+    hasStars ? (
+      <span key="stars" className="whitespace-nowrap">
+        <span className={`font-semibold tabular-nums ${INK}`}>{stars.toLocaleString(localeTag())}</span>{' '}
+        {t.plural(stars, 'star', 'stars')}
+      </span>
+    ) : null,
+    hasExperience ? (
+      <span key="experience" className="whitespace-nowrap">
+        <span className={`font-semibold tabular-nums ${INK}`}>{yearsOfExperience}</span>{' '}
+        {t.plural(yearsOfExperience, 'yr', 'yrs')} {t('exp.')}
+      </span>
+    ) : null,
+    <span key="availability" className="inline-flex items-center gap-1.5 whitespace-nowrap">
+      <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${isAvailable ? 'bg-[#00BA7C]' : 'bg-[#8B98A5] dark:bg-[#536471]'}`} />
+      {isAvailable ? t('Available') : t('Busy')}
+    </span>,
+  ].filter(Boolean);
+
+  /* "Portfolio" as text, "Discuss" as an outlined pill (ink fill under the pointer); own card: "Your
+     profile". 40px tall on phones (touch), 36px from sm. Above the card's stretched link. */
+  const actions =
+    portfolioHref || discussHref || profileHref ? (
+      <div className="relative z-[1] flex shrink-0 items-center gap-1">
+        {portfolioHref ? (
+          <Link
+            href={portfolioHref}
+            aria-label={t('{displayName}\'s portfolio', { displayName })}
+            className={`inline-flex h-10 items-center rounded-full px-3 text-[14px] font-semibold underline-offset-4 transition-colors hover:text-[#0F1419] hover:underline dark:hover:text-[#E7E9EA] sm:h-9 ${INK2}`}
+          >
+            {t('Portfolio')}
+          </Link>
+        ) : null}
+        {discussHref ? (
+          <Link
+            href={discussHref}
+            aria-label={t('Discuss with {displayName}', { displayName })}
+            className={`inline-flex h-10 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[#0F1419] hover:text-white hover:shadow-none active:bg-[#0F1419] active:text-white dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[#EFF3F4] dark:hover:text-[#0F1419] dark:active:bg-[#EFF3F4] dark:active:text-[#0F1419] sm:h-9 ${INK}`}
+          >
+            <ChatIcon className="h-4 w-4" />
+            {t('Discuss')}
+          </Link>
+        ) : profileHref ? (
+          <Link
+            href={profileHref}
+            className={`inline-flex h-10 items-center rounded-full px-4 text-[14px] font-semibold shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] sm:h-9 ${INK}`}
+          >
+            {t('Your profile')}
+          </Link>
+        ) : null}
+      </div>
+    ) : null;
 
   return (
-    <div className="flex h-full flex-col gap-2.5">
-      <article
-        className={`group/card flex h-full flex-1 flex-col overflow-hidden ${PROVIDER_FRAME_CLASS} max-sm:border-0 ${flushOnMobile ? 'max-sm:rounded-none max-sm:!border-y max-sm:!border-[#E5E5E5] max-sm:!bg-[#FFFFFF] dark:max-sm:!border-white/[0.1] dark:max-sm:!bg-[#111111]' : ''} transition-colors duration-200 hover:border-black/[0.12] sm:min-h-[300px] md:min-h-[280px] md:flex-row md:items-stretch dark:hover:border-white/[0.16]`}
-      >
-        <div
-          className={`relative hidden w-full shrink-0 overflow-hidden sm:block md:h-auto md:self-stretch ${
-            comfortable ? 'h-[260px] md:w-[290px]' : 'h-[240px] md:w-[220px]'
-          }`}
-        >
-          <CreatorCardAvatar avatarUrl={avatarUrl} seed={seed} />
+    /* The News card: square, the module tone, no outline — tone is the only edge. Under the pointer it
+       steps one tone up, saying the whole card opens the profile. `!` on radius / fill: the theme's
+       `.news-theme article` rule would round and repaint it.
+
+       Phones (most of the audience) get a stacked, airy card on 20px gutters: avatar + identity on one
+       line, then the meta line, the bio at full width, and a footer with the rate on the left and the
+       actions on the right — no skill chips, no full-width filled button. From sm: the rate moves up to
+       the identity line and the body sits under the name (indented by the avatar). */
+    <article className="group/card relative flex flex-col !rounded-none !bg-[#F7F9F9] px-5 py-5 transition-colors duration-200 hover:!bg-[#EFF3F4] dark:!bg-[#16181C] dark:hover:!bg-[#1D1F23] sm:p-6">
+      <div className="flex min-w-0 items-center gap-3 sm:items-start sm:gap-4">
+        <div className="relative h-11 w-11 shrink-0 sm:h-14 sm:w-14">
+          <div className="h-full w-full overflow-hidden rounded-full bg-[#EFF3F4] dark:bg-[#202327]">
+            <CreatorCardAvatar avatarUrl={avatarUrl} fullName={displayName} />
+          </div>
+          {online ? (
+            <span
+              className="absolute -bottom-px -right-px h-3 w-3 rounded-full bg-[#00BA7C] ring-[3px] ring-[#F7F9F9] group-hover/card:ring-[#EFF3F4] dark:ring-[#16181C] dark:group-hover/card:ring-[#1D1F23] sm:h-3.5 sm:w-3.5"
+              title={t('Online')}
+              aria-label={t('Online')}
+              role="status"
+            />
+          ) : null}
         </div>
 
-        <div
-          className={`flex min-h-0 min-w-0 flex-1 flex-col ${
-            comfortable ? 'px-3 py-4 sm:p-8 md:p-9 lg:p-10' : 'px-3 py-4 sm:p-7 lg:p-8'
-          }`}
-        >
-          <div className="flex items-center gap-4 sm:hidden">
-            <div className="relative h-[72px] w-[72px] shrink-0">
-              <div className="absolute inset-0 overflow-hidden rounded-full">
-                <CreatorCardAvatar avatarUrl={avatarUrl} seed={seed} compact />
-              </div>
-              {online ? (
-                <span
-                  className="absolute bottom-[5px] right-[5px] h-2 w-2 rounded-full bg-emerald-500/90 ring-[1.5px] ring-white dark:ring-[#111111]"
-                  title={statusLabel}
-                  aria-label={statusLabel}
-                  role="status"
-                />
-              ) : null}
-            </div>
-            <div className="min-w-0 flex-1">
-              <AbbreviatedLine
-                as="h3"
-                text={fullName ?? 'Provider'}
-                href={profileHref}
-                textClassName={`text-[17px] font-semibold leading-snug tracking-[-0.01em] ${PROVIDER_INK_CLASS}`}
-                after={
-                  nationality || isVerified ? (
-                    <>
-                      {nationality ? <NationalityFlag code={nationality} /> : null}
-                      {isVerified ? <VerifiedMark /> : null}
-                    </>
-                  ) : null
-                }
-              />
-              {primarySpecialty ? (
-                <AbbreviatedLine
-                  as="p"
-                  text={primarySpecialty}
-                  className="mt-1"
-                  textClassName={`text-[14px] font-medium ${PROVIDER_BODY_CLASS}`}
-                />
-              ) : null}
-              {experienceLabel || hasStars || isNew ? (
-                <p className={`mt-1 flex items-center gap-3 text-[13px] tabular-nums ${PROVIDER_MUTED_CLASS}`}>
-                  {experienceLabel ? (
-                    <span>{experienceLabel}</span>
-                  ) : isNew ? (
-                    <span className="text-[#FF5722]">New</span>
-                  ) : null}
-                  {hasStars ? (
-                    <span
-                      className={`inline-flex items-center gap-1 font-semibold ${PROVIDER_INK_CLASS}`}
-                      aria-label={`${stars} trust ${stars === 1 ? 'star' : 'stars'}`}
-                    >
-                      <StarIcon className="h-3.5 w-3.5 text-[#FF5722]" />
-                      {stars.toLocaleString('en-US')}
-                    </span>
-                  ) : null}
-                </p>
-              ) : null}
-            </div>
-          </div>
-
-          <div className="hidden items-start justify-between gap-5 sm:flex">
-            <div className="flex min-w-0 flex-wrap items-center gap-2.5">
-              {profileHref ? (
-                <Link href={profileHref} className="min-w-0 focus-visible:outline-none">
-                  <h3
-                    className={`${nameSizeClass} font-semibold leading-tight tracking-[-0.02em] ${PROVIDER_INK_CLASS} transition-colors duration-200 hover:text-[#FF5722]`}
-                  >
-                    {fullName ?? 'Provider'}
-                  </h3>
-                </Link>
-              ) : (
-                <h3
-                  className={`min-w-0 ${nameSizeClass} font-semibold leading-tight tracking-[-0.02em] ${PROVIDER_INK_CLASS}`}
-                >
-                  {fullName ?? 'Provider'}
-                </h3>
-              )}
-              {nationality ? <NationalityFlag code={nationality} /> : null}
-              {isVerified ? <VerifiedMark /> : null}
-              {presenceUserId && !comfortable ? (
-                <span
-                  className={`h-2 w-2 shrink-0 rounded-full ${
-                    online ? 'bg-emerald-500' : 'bg-black/15 dark:bg-white/20'
-                  }`}
-                  title={statusLabel}
-                  aria-label={statusLabel}
-                  role="status"
-                />
-              ) : null}
-            </div>
-
-            {hasStars ? (
-              <span
-                className={`inline-flex shrink-0 items-center gap-1.5 text-[15px] font-semibold tabular-nums ${PROVIDER_INK_CLASS}`}
-                aria-label={`${stars} trust ${stars === 1 ? 'star' : 'stars'}`}
-              >
-                <StarIcon className="h-4 w-4 text-[#FF5722]" />
-                {stars.toLocaleString('en-US')}
-              </span>
-            ) : marker ? (
-              <span
-                className={`shrink-0 ${labelClass} tabular-nums ${
-                  marker === 'New' ? 'text-[#FF5722]' : PROVIDER_MUTED_CLASS
-                }`}
-              >
-                {marker}
-              </span>
-            ) : null}
-          </div>
-
-          <div id={detailsId} className={mobileDetailsClass}>
-            <div
-              className={`mt-3 flex flex-wrap items-center gap-x-5 gap-y-1.5 ${metaSizeClass} ${PROVIDER_MUTED_CLASS}`}
-            >
-              {servicesHref ? (
-                <Link
-                  href={servicesHref}
-                  className="inline-flex items-center gap-1.5 transition-colors duration-200 hover:text-[#FF5722]"
-                >
-                  <FolderIcon className="h-4 w-4" />
-                  <span>{servicesLabel}</span>
-                </Link>
-              ) : (
-                <span className="inline-flex items-center gap-1.5">
-                  <FolderIcon className="h-4 w-4" />
-                  <span>{servicesLabel}</span>
-                </span>
-              )}
-              {placeLabel ? (
-                <span className="inline-flex min-w-0 items-center gap-1.5">
-                  <PinIcon className="h-4 w-4 shrink-0" />
-                  <span className="truncate">{placeLabel}</span>
-                </span>
-              ) : null}
-              {isAvailable ? null : <span className="font-medium">Unavailable</span>}
-            </div>
-
-            {bioText ? (
-              <p className={`mt-4 max-w-[60ch] ${bioSizeClass} leading-[1.65] ${PROVIDER_BODY_CLASS}`}>
-                {bioText}
-              </p>
-            ) : null}
-
-            {specialtyChips.length > 0 || tagChips.length > 0 ? (
-              <div className="mt-auto space-y-1 pt-6">
-                {specialtyChips.length > 0 ? (
-                  <ProviderSlashList
-                    items={specialtyChips}
-                    className={`${labelClass} leading-relaxed ${PROVIDER_INK_CLASS}`}
-                  />
-                ) : null}
-                {tagChips.length > 0 ? (
-                  <ProviderSlashList
-                    items={tagChips}
-                    className={`${tagSizeClass} leading-relaxed ${PROVIDER_MUTED_CLASS}`}
-                  />
-                ) : null}
-              </div>
-            ) : (
-              <div className="mt-auto" />
-            )}
-          </div>
-
-          <div className="mt-4 flex flex-wrap items-center gap-x-6 gap-y-3 border-t border-black/[0.06] pt-4 dark:border-white/[0.06] sm:mt-6 sm:pt-5">
-            <ProviderTextAction
-              href={portfolioHref}
-              disabled={!portfolioHref}
-              icon={<ArrowIcon className="h-4 w-4 transition-transform duration-200 group-hover/act:translate-x-0.5" />}
-              className="max-sm:text-[14px]"
-            >
-              Portfolio
-            </ProviderTextAction>
-            <span className={detailsOpen ? 'inline-flex' : 'hidden sm:inline-flex'}>
-              <ProviderTextAction href={servicesHref} disabled={!servicesHref} className="max-sm:text-[14px]">
-                View service
-              </ProviderTextAction>
-            </span>
-            <button
-              type="button"
-              onClick={() => setDetailsOpen((open) => !open)}
-              aria-expanded={detailsOpen}
-              aria-controls={detailsId}
-              className={`inline-flex items-center gap-1.5 text-[14px] font-medium ${PROVIDER_MUTED_CLASS} transition-colors hover:text-[#0F0F0F] focus-visible:outline-none dark:hover:text-white sm:hidden`}
-            >
-              {detailsOpen ? 'Less' : 'Details'}
-              <ChevronIcon className={`h-4 w-4 transition-transform duration-300 ${detailsOpen ? 'rotate-180' : ''}`} />
-            </button>
-            {isOwnCard ? null : discussHref ? (
+        {/* Identity. The name is the card's link — its ::after covers the whole card. */}
+        <div className="min-w-0 flex-1">
+          <div className="flex min-w-0 items-center gap-1.5">
+            {profileHref ? (
               <Link
-                href={discussHref}
-                title={discussLabel}
-                aria-label={discussLabel}
-                className={`${DISCUSS_BUTTON_CLASS} ml-auto ${comfortable ? 'sm:ml-0' : ''}`}
+                href={profileHref}
+                className={`min-w-0 truncate text-[16px] font-semibold leading-6 tracking-[-0.01em] outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[#0F1419]/40 dark:focus-visible:after:ring-white/40 sm:text-[17px] ${INK}`}
               >
-                <ChatIcon className="h-[18px] w-[18px]" />
-                <span className="hidden sm:inline">Discuss</span>
+                {displayName}
               </Link>
             ) : (
-              <span
-                aria-disabled
-                aria-label="Discuss"
-                className={`${DISCUSS_BUTTON_CLASS} pointer-events-none ml-auto opacity-35 ${comfortable ? 'sm:ml-0' : ''}`}
-              >
-                <ChatIcon className="h-[18px] w-[18px]" />
-                <span className="hidden sm:inline">Discuss</span>
-              </span>
+              <span className={`min-w-0 truncate text-[16px] font-semibold leading-6 sm:text-[17px] ${INK}`}>{displayName}</span>
             )}
-            {presenceUserId && comfortable ? (
-              <span
-                role="status"
-                className={`ml-auto hidden items-center gap-2 sm:inline-flex ${labelClass} ${
-                  online ? 'text-emerald-700 dark:text-emerald-400' : PROVIDER_MUTED_CLASS
-                }`}
-              >
-                <span
-                  aria-hidden
-                  className={`h-2 w-2 rounded-full ${online ? 'bg-emerald-500' : 'bg-black/20 dark:bg-white/25'}`}
-                />
-                {statusLabel}
-              </span>
-            ) : null}
+            {nationality ? <NationalityFlag code={nationality} /> : null}
+            {isVerified ? <VerifiedMark /> : null}
+            {isOwnCard ? <span className={`shrink-0 text-[13px] font-medium ${INK2}`}>{t('· You')}</span> : null}
+            {isNew && !isOwnCard ? <span className={`shrink-0 text-[13px] font-medium ${INK2}`}>{t('· New')}</span> : null}
           </div>
+          {subtitle ? <p className={`mt-0.5 truncate text-[14px] leading-5 ${INK2}`}>{subtitle}</p> : null}
         </div>
-      </article>
 
-      {distanceLabel ? (
-        <p
-          className={`shrink-0 pl-1 ${detailsOpen ? '' : 'hidden sm:block'} ${labelClass} leading-none ${PROVIDER_MUTED_CLASS}`}
-        >
-          {distanceLabel}
+        <div className="hidden sm:block">{price}</div>
+      </div>
+
+      <div className="min-w-0 sm:pl-[72px]">
+        <p className={`mt-4 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-5 sm:mt-2 ${INK2}`}>
+          {metaItems.map((item, index) => (
+            <span key={index} className="inline-flex items-center gap-x-2">
+              {index > 0 ? <span aria-hidden>·</span> : null}
+              {item}
+            </span>
+          ))}
         </p>
-      ) : null}
-    </div>
+
+        {bioText ? (
+          <p className={`mt-2 line-clamp-2 text-[15px] leading-[22px] sm:mt-3 sm:text-[14px] sm:leading-[21px] ${INK}`}>{bioText}</p>
+        ) : null}
+
+        {/* From sm: skill chips on the left, the actions on the right. */}
+        {shownSkills.length > 0 || actions ? (
+          <div className="mt-4 hidden flex-wrap items-center justify-between gap-x-4 gap-y-3 sm:flex">
+            {shownSkills.length > 0 ? (
+              <ul className="flex min-w-0 flex-wrap gap-1.5" aria-label={t('Skills')} title={skills.map(displaySkill).join(', ')}>
+                {shownSkills.map((skill) => (
+                  <li
+                    key={skill}
+                    className={`max-w-[12rem] truncate rounded-full bg-[#FFFFFF] px-2.5 py-0.5 text-[12px] font-medium leading-5 dark:bg-[#202327] ${INK}`}
+                  >
+                    {displaySkill(skill)}
+                  </li>
+                ))}
+                {hiddenSkillCount > 0 ? (
+                  <li className={`px-1 text-[12px] font-medium leading-5 ${INK2}`}>+{hiddenSkillCount}</li>
+                ) : null}
+              </ul>
+            ) : (
+              <span />
+            )}
+            <div className="ml-auto">{actions}</div>
+          </div>
+        ) : null}
+
+        {/* Phones: the rate on the left, the actions on the right. */}
+        <div className="mt-4 flex items-center justify-between gap-3 sm:hidden">
+          <div className="min-w-0 [&>p]:text-left">{price}</div>
+          <div className="-mr-1">{actions}</div>
+        </div>
+      </div>
+    </article>
   );
 }

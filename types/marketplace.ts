@@ -1,3 +1,4 @@
+import type { ProductStatusLabel } from '@/lib/product-status-labels';
 import type {
   ContactEntry,
   FaqItem,
@@ -40,6 +41,16 @@ export interface MarketplaceCreatorSummary {
   locationCountry?: string | null;
   /** Creator app role — used for avatar role ring. */
   appRole?: string | null;
+  /** Active services (the list endpoint returns them) — the card's "From" price is derived from these. */
+  profileServices?: ProfileServiceItem[];
+  /** Provider hourly rate in cents (null = not set). */
+  hourlyRateCents?: number | null;
+  hourlyRateCurrency?: string | null;
+  /** The creator's storefront — shown instead of the person where a result stands for their shop. */
+  shopName?: string | null;
+  shopSellingFocus?: string | null;
+  shopDescription?: string | null;
+  shopCoverUrl?: string | null;
 }
 
 export type MarketplaceCreatorsPage = PagedResponse<MarketplaceCreatorSummary>;
@@ -79,6 +90,9 @@ export interface MarketplaceCreatorPublicProfile {
   isVerified: boolean;
   isAvailable?: boolean;
   availabilityLabel?: string | null;
+  /** Provider hourly rate in cents (null = not set). */
+  hourlyRateCents?: number | null;
+  hourlyRateCurrency?: string | null;
   portfolioCount: number;
   /** Total non-deleted content posts by this creator (includes archived). */
   contentCount?: number;
@@ -176,7 +190,6 @@ export interface MarketplaceContentDetail {
   moodEmoji?: string | null;
   taggedUsers?: { id: string; fullName: string; avatarUrl?: string | null }[];
   priceInfo: string | null;
-  toolsUsed: string[];
   tags?: string[];
   isPublic: boolean;
   views: number;
@@ -198,7 +211,6 @@ export interface PublicContentFeedItem {
   moodEmoji?: string | null;
   taggedUsers?: { id: string; fullName: string; avatarUrl?: string | null }[];
   priceInfo: string | null;
-  toolsUsed: string[];
   tags?: string[];
   isPublic: boolean;
   commentsEnabled?: boolean;
@@ -272,6 +284,8 @@ export interface CatalogueBestseller {
 export interface MarketplaceProductSummary {
   id: string;
   type: ProductType;
+  /** The creator's own name for an `OTHER` type (e.g. "Notion workspace"); null otherwise. */
+  typeLabel?: string | null;
   title: string;
   description: string | null;
   priceCents: number;
@@ -306,6 +320,8 @@ export interface MarketplaceProductSummary {
   galleryImageUrls?: string[];
   /** Units on hand — physical products only; null when untracked or digital. */
   stockQuantity?: number | null;
+  /** Merchandising badges chosen by the creator (On sale, Trending…), at most 3. */
+  statusLabels?: ProductStatusLabel[];
   createdAt: string;
   updatedAt?: string;
 }
@@ -329,6 +345,8 @@ export interface MarketplaceProductDetail extends MarketplaceProductSummary {
 
 export interface MarketplaceProductRequest {
   type: ProductType;
+  /** Free name for an `OTHER` type; ignored by the API for every other type. */
+  typeLabel?: string | null;
   title: string;
   description: string;
   priceCents: number;
@@ -355,6 +373,7 @@ export interface MarketplaceProductRequest {
   isPublished?: boolean;
   galleryImageUrls?: string[];
   stockQuantity?: number | null;
+  statusLabels?: ProductStatusLabel[];
 }
 
 export interface ProductReview {
@@ -428,6 +447,7 @@ export interface OwnedProductRaw {
   productId: string;
   productTitle: string;
   productType: ProductType;
+  productTypeLabel?: string | null;
   thumbnailUrl: string | null;
   purchasedAt: string;
   downloadCount: number;
@@ -453,6 +473,7 @@ export interface MarketplacePurchase {
   productId: string;
   productTitle: string;
   productType: ProductType;
+  productTypeLabel: string | null;
   thumbnailUrl: string | null;
   purchasedAt: string;
   creatorId: string;

@@ -19,6 +19,7 @@ import {
   mergeProjectsGridSettings,
   type PortfolioWorkProjectsGridRadius,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const GRID_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const GRID_DESKTOP_MQ = '(min-width: 768px)';
@@ -413,11 +414,12 @@ function GridMediaLink({
 
 /** Tools as one quiet uppercase line, dot-separated — scrolls sideways if it overflows on phones. */
 function GridTagsRow({ tools, color }: { tools: string[]; color: string }) {
+  const t = useT();
   if (tools.length === 0) return null;
   return (
     <ul
       className="m-0 mt-5 flex list-none items-center gap-x-2.5 overflow-x-auto whitespace-nowrap p-0 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-6 [&::-webkit-scrollbar]:hidden"
-      aria-label="Stack"
+      aria-label={t('Stack')}
     >
       {tools.map((tool, index) => (
         <li key={tool} className="flex shrink-0 items-center gap-x-2.5">
@@ -445,6 +447,7 @@ function GridConsultLink({
   href: string;
   color: string;
 }) {
+  const t = useT();
   const external = /^https?:\/\//i.test(href);
   const className =
     'group/grid-cta mt-6 inline-flex items-center gap-2.5 bg-transparent text-[11px] font-medium uppercase tracking-[0.2em] transition-opacity duration-300 hover:opacity-60 focus:outline-none focus-visible:opacity-60 sm:mt-7';
@@ -455,7 +458,7 @@ function GridConsultLink({
         style={{ borderColor: color }}
         data-pf-no-color-transition=""
       >
-        View project
+        {t('View project')}
       </span>
       <span
         aria-hidden
@@ -506,6 +509,7 @@ function ProjectsGridNavButtons({
   canNext: boolean;
   color: string;
 }) {
+  const t = useT();
   const ghostClass =
     'bg-transparent px-0 py-1 text-[11px] font-medium uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-60 focus:outline-none focus-visible:opacity-60 disabled:pointer-events-none disabled:opacity-28';
 
@@ -517,10 +521,10 @@ function ProjectsGridNavButtons({
         disabled={!canPrev}
         className={ghostClass}
         style={{ color, backgroundColor: 'transparent' }}
-        aria-label="Previous projects"
+        aria-label={t('Previous projects')}
         data-pf-no-color-transition=""
       >
-        ‹ Prev
+        {t('‹ Prev')}
       </button>
       <button
         type="button"
@@ -528,10 +532,10 @@ function ProjectsGridNavButtons({
         disabled={!canNext}
         className={ghostClass}
         style={{ color, backgroundColor: 'transparent' }}
-        aria-label="Next projects"
+        aria-label={t('Next projects')}
         data-pf-no-color-transition=""
       >
-        Next ›
+        {t('Next ›')}
       </button>
     </div>
   );
@@ -558,6 +562,7 @@ function GridCard({
   offsetEnabled: boolean;
   forceSingleColumn: boolean;
 }) {
+  const t = useT();
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const borderColor = presentation.cardBorderColor || muted;
@@ -582,7 +587,7 @@ function GridCard({
     <div data-grid-media-shift className="absolute -inset-[12%]">
       <Image
         src={mediaUrl}
-        alt={title || 'Project'}
+        alt={title || t('Project')}
         fill
         sizes={gridImageSizes(columns, forceSingleColumn)}
         className="object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/grid-card:scale-[1.045]"
@@ -594,7 +599,7 @@ function GridCard({
       className="absolute inset-0 flex items-center justify-center px-6 text-center text-sm font-light leading-[1.7]"
       style={{ color: muted }}
     >
-      Add a thumbnail in Information → Portfolio
+      {t('Add a thumbnail in Information → Portfolio')}
     </div>
   );
 
@@ -630,7 +635,7 @@ function GridCard({
             <GridMediaLink
               href={href}
               className="absolute inset-0 block focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
-              ariaLabel={title || 'Project'}
+              ariaLabel={title || t('Project')}
             >
               {mediaInner}
             </GridMediaLink>

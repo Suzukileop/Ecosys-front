@@ -20,6 +20,7 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -115,6 +116,8 @@ function MonumentalField({
   value,
   onChange,
   required = false,
+  ink,
+  muted,
 }: {
   id: string;
   label: string;
@@ -123,6 +126,9 @@ function MonumentalField({
   value: string;
   onChange: (value: string) => void;
   required?: boolean;
+  /** Active mode's text color (lifted label) and resting label color — see MONUMENTAL_INK. */
+  ink: string;
+  muted: string;
 }) {
   const [focused, setFocused] = useState(false);
   const labelRef = useRef<HTMLLabelElement>(null);
@@ -136,14 +142,14 @@ function MonumentalField({
     if (!labelEl || !lineEl) return;
     if (prefersReducedMotion()) {
       labelEl.style.transform = elevated ? 'translateY(-22px) scale(0.76)' : 'translateY(0) scale(1)';
-      labelEl.style.color = elevated ? '#ffffff' : '#737373';
+      labelEl.style.color = elevated ? ink : muted;
       lineEl.style.transform = `scaleX(${focused ? 1 : 0})`;
       return;
     }
     gsap.to(labelEl, {
       y: elevated ? -22 : 0,
       scale: elevated ? 0.76 : 1,
-      color: elevated ? '#ffffff' : '#737373',
+      color: elevated ? ink : muted,
       duration: 0.35,
       ease: 'power3.out',
       overwrite: 'auto',
@@ -154,10 +160,10 @@ function MonumentalField({
       ease: 'power3.out',
       overwrite: 'auto',
     });
-  }, [elevated, focused]);
+  }, [elevated, focused, ink, muted]);
 
   const sharedClassName =
-    'w-full origin-left border-0 border-b border-white/20 bg-transparent pb-2.5 pt-6 text-base text-white outline-none transition placeholder:text-transparent focus:outline-none focus:ring-0';
+    'w-full origin-left border-0 border-b border-[color:var(--pf-mon-hair)] bg-transparent pb-2.5 pt-6 text-base text-[color:var(--pf-mon-ink)] outline-none transition placeholder:text-transparent focus:outline-none focus:ring-0';
 
   return (
     <div className="relative">
@@ -196,7 +202,7 @@ function MonumentalField({
       <span
         ref={lineRef}
         aria-hidden
-        className="pointer-events-none absolute -bottom-px left-0 h-[2px] w-full origin-center scale-x-0 bg-white"
+        className="pointer-events-none absolute -bottom-px left-0 h-[2px] w-full origin-center scale-x-0 bg-[color:var(--pf-mon-ink)]"
       />
     </div>
   );
@@ -204,6 +210,7 @@ function MonumentalField({
 
 /** Bracketed text-link submit — magnetically pulled toward the cursor within a proximity radius. */
 function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: boolean; label: string }) {
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const arrowRef = useRef<HTMLSpanElement>(null);
@@ -264,11 +271,11 @@ function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: bo
         type="submit"
         disabled={pending}
         onPointerEnter={sweepArrow}
-        className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-white transition disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex items-center gap-2 text-sm font-semibold uppercase tracking-[0.16em] text-[color:var(--pf-mon-ink)] transition disabled:cursor-not-allowed disabled:opacity-50"
         data-pf-no-color-transition=""
       >
         <span className="text-neutral-600">[</span>
-        <span>{sent ? 'Message sent' : pending ? 'Sending…' : label}</span>
+        <span>{sent ? t('Message sent') : pending ? t('Sending…') : label}</span>
         <span ref={arrowRef} aria-hidden>
           →
         </span>
@@ -277,6 +284,29 @@ function MonumentalSubmit({ pending, sent, label }: { pending: boolean; sent: bo
     </div>
   );
 }
+
+/** Literal ink per active color mode — this design paints its own type rather than reading the
+ *  shared palette tokens, like the other premium full-bleed designs (see Split form). Its canvas is
+ *  transparent by default (the page shows through), so the ink must follow the page's mode or the
+ *  type disappears: white on a white page in light mode. */
+const MONUMENTAL_INK = {
+  dark: {
+    ink: '#ffffff',
+    muted: '#737373',
+    hair: 'rgba(255, 255, 255, 0.2)',
+    hairStrong: 'rgba(255, 255, 255, 0.4)',
+    hoverFill: 'rgba(255, 255, 255, 0.05)',
+    watermark: 'rgba(255, 255, 255, 0.05)',
+  },
+  light: {
+    ink: '#0a0a0a',
+    muted: '#6b6b6b',
+    hair: 'rgba(10, 10, 10, 0.16)',
+    hairStrong: 'rgba(10, 10, 10, 0.4)',
+    hoverFill: 'rgba(10, 10, 10, 0.04)',
+    watermark: 'rgba(10, 10, 10, 0.05)',
+  },
+} as const;
 
 /**
  * "Monumental" — the third Footer design: an asymmetric, monumental three-column
@@ -298,6 +328,7 @@ export function FooterDesignMonumental({
   contentGutter = DEFAULT_CONTENT_GUTTER,
   backgroundStyle,
   fontSizeScale = 1,
+  colorMode = 'dark',
 }: {
   creatorName: string;
   creatorId: string;
@@ -320,7 +351,11 @@ export function FooterDesignMonumental({
   /** Multiplies every standardized body/label text size via `--pf-footer-font-scale` —
    *  see the Footer section's General tab "Font size" control. */
   fontSizeScale?: number;
+  /** Resolved active color mode (Global → Theme, honoring the section's own override). */
+  colorMode?: 'light' | 'dark';
 }) {
+  const t = useT();
+  const colors = MONUMENTAL_INK[colorMode];
   const rootRef = useRef<HTMLElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
   const watermarkContainerRef = useRef<HTMLDivElement>(null);
@@ -358,17 +393,17 @@ export function FooterDesignMonumental({
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!creatorId.trim()) {
-      setError('Unable to send — creator is missing.');
+      setError(t('Unable to send — creator is missing.'));
       return;
     }
     const emailValue = values.email.trim();
     const messageValue = values.message.trim();
     if (!/^\S+@\S+\.\S+$/.test(emailValue)) {
-      setError('Enter a valid email address.');
+      setError(t('Enter a valid email address.'));
       return;
     }
     if (messageValue.length < 10) {
-      setError('Message must be at least 10 characters.');
+      setError(t('Message must be at least 10 characters.'));
       return;
     }
     setError(null);
@@ -384,20 +419,20 @@ export function FooterDesignMonumental({
       setValues({ email: '', subject: '', message: '' });
       pushFlashFeedback({
         variant: 'success',
-        title: 'Message sent',
-        description: 'Your message was delivered to the creator.',
+        title: t('Message sent'),
+        description: t('Your message was delivered to the creator.'),
       });
     } catch (err) {
-      const message = getApiErrorMessage(err, 'Unable to send your message. Please try again.');
+      const message = getApiErrorMessage(err, t('Unable to send your message. Please try again.'));
       setError(message);
-      pushFlashFeedback({ variant: 'error', title: 'Message not sent', description: message });
+      pushFlashFeedback({ variant: 'error', title: t('Message not sent'), description: message });
     } finally {
       setPending(false);
     }
   };
 
   const headlineLines = layout.text('headline')?.split('\n') ?? [];
-  const submitLabel = layout.text('submitLabel') ?? 'Send Message';
+  const submitLabel = layout.text('submitLabel') ?? t('Send Message');
   const copyrightLabel = presentation.showCopyright
     ? resolveFooterCopyrightLabel(presentation.copyrightLabel, creatorName)
     : null;
@@ -411,7 +446,18 @@ export function FooterDesignMonumental({
       id="footer"
       ref={rootRef}
       className="relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden"
-      style={{ ...backgroundStyle, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
+      style={
+        {
+          ...backgroundStyle,
+          '--pf-footer-font-scale': fontSizeScale,
+          '--pf-mon-ink': colors.ink,
+          '--pf-mon-muted': colors.muted,
+          '--pf-mon-hair': colors.hair,
+          '--pf-mon-hair-strong': colors.hairStrong,
+          '--pf-mon-hover-fill': colors.hoverFill,
+          '--pf-mon-watermark': colors.watermark,
+        } as CSSProperties
+      }
       data-pf-no-color-transition=""
     >
       {watermarkText ? (
@@ -423,7 +469,7 @@ export function FooterDesignMonumental({
           <div ref={watermarkContainerRef} className={`w-full overflow-hidden text-center ${portfolioEditorialGutterX(contentGutter)}`}>
             <div
               ref={watermarkRef}
-              className="inline-block select-none whitespace-nowrap font-serif font-bold uppercase tracking-tight text-white/[0.05]"
+              className="inline-block select-none whitespace-nowrap font-serif font-bold uppercase tracking-tight text-[color:var(--pf-mon-watermark)]"
               style={{ fontSize: 'clamp(4.5rem, 17vw, 15rem)', lineHeight: 1.1, paddingBottom: '0.08em' }}
             >
               {watermarkText}
@@ -436,7 +482,7 @@ export function FooterDesignMonumental({
         <div className="flex min-w-0 flex-col justify-between gap-14">
           <div>
             {headlineLines.length > 0 ? (
-              <p className="mb-12 font-serif text-[clamp(2.25rem,5.4vw,4.5rem)] font-medium leading-[0.98] tracking-[-0.02em] text-white">
+              <p className="mb-12 font-serif text-[clamp(2.25rem,5.4vw,4.5rem)] font-medium leading-[0.98] tracking-[-0.02em] text-[color:var(--pf-mon-ink)]">
                 {headlineLines.map((line, index) => (
                   <span key={index} className="block">
                     {line}
@@ -448,25 +494,31 @@ export function FooterDesignMonumental({
             <form onSubmit={onSubmit} className="flex max-w-md flex-col gap-8" noValidate>
               <MonumentalField
                 id="footer-monument-email"
-                label="Email"
+                label={t('Email')}
                 type="email"
                 value={values.email}
                 onChange={handleField('email')}
                 required
+                ink={colors.ink}
+                muted={colors.muted}
               />
               <MonumentalField
                 id="footer-monument-subject"
-                label="Subject"
+                label={t('Subject')}
                 value={values.subject}
                 onChange={handleField('subject')}
+                ink={colors.ink}
+                muted={colors.muted}
               />
               <MonumentalField
                 id="footer-monument-message"
-                label="Message"
+                label={t('Message')}
                 multiline
                 value={values.message}
                 onChange={handleField('message')}
                 required
+                ink={colors.ink}
+                muted={colors.muted}
               />
 
               {error ? (
@@ -512,7 +564,7 @@ export function FooterDesignMonumental({
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-white/15 text-white transition hover:border-white/40 hover:bg-white/5"
+                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full border border-[color:var(--pf-mon-hair)] text-[color:var(--pf-mon-ink)] transition hover:border-[color:var(--pf-mon-hair-strong)] hover:bg-[color:var(--pf-mon-hover-fill)]"
                     aria-label={link.label}
                   >
                     <FooterSocialLinkIcon link={link} bare iconClassName="h-4 w-4" />
@@ -521,12 +573,12 @@ export function FooterDesignMonumental({
               </div>
             ) : null}
 
-            <nav aria-label="Footer" className="flex flex-col gap-4 lg:items-end">
+            <nav aria-label={t('Footer')} className="flex flex-col gap-4 lg:items-end">
               {navLinks.map((link) => (
                 <a
                   key={link.id}
                   href={link.url}
-                  className="w-fit font-medium uppercase tracking-[0.14em] text-neutral-400 transition hover:text-white lg:text-right"
+                  className="w-fit font-medium uppercase tracking-[0.14em] text-[color:var(--pf-mon-muted)] transition hover:text-[color:var(--pf-mon-ink)] lg:text-right"
                   style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
                 >
                   {link.label}
@@ -538,7 +590,7 @@ export function FooterDesignMonumental({
           {phoneDisplay ? (
             <a
               href={`tel:${phone!.replace(/\s+/g, '')}`}
-              className="text-neutral-500 transition hover:text-white"
+              className="text-neutral-500 transition hover:text-[color:var(--pf-mon-ink)]"
               style={{ fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))' }}
             >
               {phoneDisplay}

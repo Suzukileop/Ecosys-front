@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
@@ -33,6 +34,7 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioInfoDesign =
   | 'about-me'
@@ -250,6 +252,8 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   headerDesign: PortfolioInfoHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioInfoHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioInfoHeaderMarginBottom;
@@ -489,6 +493,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   subtitleFont: 'serif',
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
@@ -588,18 +593,18 @@ const PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'editorial',
-    label: 'Editorial',
-    description: 'Title on the left, list on the right — one value per line with a bullet.',
+    label: msg('Editorial'),
+    description: msg('Title on the left, list on the right — one value per line with a bullet.'),
   },
   {
     value: 'numbered-grid',
-    label: 'Numbered grid',
-    description: 'Title top-left; values in a 2-column grid — 01, 02… + title + text.',
+    label: msg('Numbered grid'),
+    description: msg('Title top-left; values in a 2-column grid — 01, 02… + title + text.'),
   },
   {
     value: 'indexed-list',
-    label: 'Indexed list',
-    description: 'Title at top; rows 001 · title · description — thin dividers, testimonial style.',
+    label: msg('Indexed list'),
+    description: msg('Title at top; rows 001 · title · description — thin dividers, testimonial style.'),
   },
 ];
 
@@ -610,8 +615,8 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'value-steps',
-    label: 'Steps',
-    description: 'My Values sticky on the right; numbered skills (01…) — the design’s native layout.',
+    label: msg('Steps'),
+    description: msg('My Values sticky on the right; numbered skills (01…) — the design’s native layout.'),
   },
   ...PORTFOLIO_INFO_ABOUT_VALUE_VALUES_LAYOUT_OPTIONS,
 ];
@@ -662,28 +667,28 @@ export const PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS: {
 }[] = [
   {
     value: 'circle',
-    label: 'Circle',
-    description: 'Classic circle — photo cropped round.',
+    label: msg('Circle'),
+    description: msg('Classic circle — photo cropped round.'),
   },
   {
     value: 'square',
-    label: 'Square',
-    description: 'Clean square frame — sharp corners.',
+    label: msg('Square'),
+    description: msg('Clean square frame — sharp corners.'),
   },
   {
     value: 'rectangle',
-    label: 'Rectangle',
-    description: '4:5 portrait format — editorial style.',
+    label: msg('Rectangle'),
+    description: msg('4:5 portrait format — editorial style.'),
   },
   {
     value: 'instagram',
-    label: 'Instagram',
-    description: 'Single-color ring (accent color), offset from the portrait.',
+    label: msg('Instagram'),
+    description: msg('Single-color ring (accent color), offset from the portrait.'),
   },
   {
     value: 'monogram',
-    label: 'Monogram',
-    description: 'Typographic monogram — serif initials, no photo.',
+    label: msg('Monogram'),
+    description: msg('Typographic monogram — serif initials, no photo.'),
   },
 ];
 
@@ -714,13 +719,13 @@ export const PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'left',
-    label: 'Portrait on the left',
-    description: 'Sticky photo on the left, content on the right — default layout.',
+    label: msg('Portrait on the left'),
+    description: msg('Sticky photo on the left, content on the right — default layout.'),
   },
   {
     value: 'right',
-    label: 'Portrait on the right',
-    description: 'Content on the left, sticky photo on the right.',
+    label: msg('Portrait on the right'),
+    description: msg('Content on the left, sticky photo on the right.'),
   },
 ];
 
@@ -881,11 +886,11 @@ export const PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS: {
   description: string;
   preview: string;
 }[] = [
-  { value: 'dot', label: 'Dot', description: 'Solid round bullet — current style.', preview: '●' },
-  { value: 'dash', label: 'Dash', description: 'Short horizontal dash.', preview: '—' },
-  { value: 'arrow', label: 'Arrow', description: 'Arrow →.', preview: '→' },
-  { value: 'chevron', label: 'Chevron', description: 'Chevron ›.', preview: '›' },
-  { value: 'none', label: 'None', description: 'Hide bullets — text only.', preview: '∅' },
+  { value: 'dot', label: msg('Dot'), description: msg('Solid round bullet — current style.'), preview: '●' },
+  { value: 'dash', label: msg('Dash'), description: msg('Short horizontal dash.'), preview: '—' },
+  { value: 'arrow', label: msg('Arrow'), description: msg('Arrow →.'), preview: '→' },
+  { value: 'chevron', label: msg('Chevron'), description: msg('Chevron ›.'), preview: '›' },
+  { value: 'none', label: msg('None'), description: msg('Hide bullets — text only.'), preview: '∅' },
 ];
 
 function isPortfolioInfoAboutValueListMarkerStyle(
@@ -1017,23 +1022,23 @@ export const PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS: {
 }[] = [
   {
     value: 'timeline',
-    label: 'Timeline',
-    description: 'Vertical spine + dots — stacked years, 01/02 index (current style).',
+    label: msg('Timeline'),
+    description: msg('Vertical spine + dots — stacked years, 01/02 index (current style).'),
   },
   {
     value: 'editorial',
-    label: 'Editorial',
-    description: 'Magazine bands — watermark year, XXL title, institution as caption.',
+    label: msg('Editorial'),
+    description: msg('Magazine bands — watermark year, XXL title, institution as caption.'),
   },
   {
     value: 'panels',
-    label: 'Panels',
-    description: '2-column grid — soft cards, subtle year, accent line on hover.',
+    label: msg('Panels'),
+    description: msg('2-column grid — soft cards, subtle year, accent line on hover.'),
   },
   {
     value: 'cascade',
-    label: 'Cascade',
-    description: 'Asymmetric Awwwards-style stagger — giant index + year badge.',
+    label: msg('Cascade'),
+    description: msg('Asymmetric Awwwards-style stagger — giant index + year badge.'),
   },
 ];
 
@@ -1118,14 +1123,14 @@ export const PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across every Info design.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across every Info design.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -1678,63 +1683,63 @@ export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'about-me',
-    label: 'About me',
+    label: msg('About me'),
     description:
-      'Title + subtitle, bio, then Education and Skills / Strengths / Languages / Systems & tools grids.',
+      msg('Title + subtitle, bio, then Education and Skills / Strengths / Languages / Systems & tools grids.'),
   },
   {
     value: 'about-me-trait',
-    label: 'About me · trait',
+    label: msg('About me · trait'),
     description:
-      'ABOUT ME + trait; portrait / bio; Skills · Strengths · Languages; Education as an editorial timeline.',
+      msg('ABOUT ME + trait; portrait / bio; Skills · Strengths · Languages; Education as an editorial timeline.'),
   },
   {
     value: 'about-split',
-    label: 'About · split',
+    label: msg('About · split'),
     description:
-      'Framer-style asymmetric split — portrait on the left, expressive title, bio, skill chips, strengths, compact languages.',
+      msg('Framer-style asymmetric split — portrait on the left, expressive title, bio, skill chips, strengths, compact languages.'),
   },
   {
     value: 'about-banner',
-    label: 'About · banner',
+    label: msg('About · banner'),
     description:
-      'Centered XXL title — portrait bottom-left, discreet bio bottom-right. Editorial hero style.',
+      msg('Centered XXL title — portrait bottom-left, discreet bio bottom-right. Editorial hero style.'),
   },
   {
     value: 'about-platform',
-    label: 'About · platform',
+    label: msg('About · platform'),
     description:
-      'Jasper style — kicker + title on the left, bio on the right; skills grid in cards (4 per row).',
+      msg('Jasper style — kicker + title on the left, bio on the right; skills grid in cards (4 per row).'),
   },
   {
     value: 'about-portrait-skills',
-    label: 'About · portrait skills',
+    label: msg('About · portrait skills'),
     description:
-      'Fixed-portrait feature panel — XXL skills rail on the left, pinned photo on the right, ghost badges, and an Interests & languages block.',
+      msg('Fixed-portrait feature panel — XXL skills rail on the left, pinned photo on the right, ghost badges, and an Interests & languages block.'),
   },
   {
     value: 'about-manifesto',
-    label: 'About · manifesto',
+    label: msg('About · manifesto'),
     description:
-      'XXL statement + accent underline; Languages, Skills (Strengths) — Awwwards-style editorial.',
+      msg('XXL statement + accent underline; Languages, Skills (Strengths) — Awwwards-style editorial.'),
   },
   {
     value: 'about-terminal',
-    label: 'About · terminal',
+    label: msg('About · terminal'),
     description:
-      'Monospace terminal — header, bio, skills //, strengths, interests, languages (stars/text/bar), tools, education.log; Hero palette.',
+      msg('Monospace terminal — header, bio, skills //, strengths, interests, languages (stars/text/bar), tools, education.log; Hero palette.'),
   },
   {
     value: 'about-index',
-    label: 'About · index',
+    label: msg('About · index'),
     description:
-      'Brutalist-chic Swiss editorial — asymmetric 12-col grid, index-numbered sections, hover-focus keywords, no cards.',
+      msg('Brutalist-chic Swiss editorial — asymmetric 12-col grid, index-numbered sections, hover-focus keywords, no cards.'),
   },
   {
     value: 'about-value-steps',
-    label: 'About · value steps',
+    label: msg('About · value steps'),
     description:
-      'My Values — native steps, editorial, numbered grid, or indexed list; intro, strengths, portrait, and meta blocks.',
+      msg('My Values — native steps, editorial, numbered grid, or indexed list; intro, strengths, portrait, and meta blocks.'),
   },
 ];
 
@@ -2347,6 +2352,7 @@ export function mergeInfoPresentation(
     headerDesign: pick(record.headerDesign, INFO_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'],

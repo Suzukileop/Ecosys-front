@@ -41,6 +41,7 @@ import type {
   PortfolioNavMenuControlIcon,
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type NavItem = {
   id: string;
@@ -226,6 +227,7 @@ function ClosedBarTrigger({
   reduceMotion: boolean | null;
   onToggle: () => void;
 }) {
+  const t = useT();
   const useIcon = triggerStyle === 'icon';
 
   return (
@@ -233,7 +235,7 @@ function ClosedBarTrigger({
       type="button"
       aria-expanded={open}
       aria-controls="portfolio-duten-panel"
-      aria-label={useIcon ? (open ? 'Close navigation menu' : 'Open navigation menu') : undefined}
+      aria-label={useIcon ? (open ? t('Close navigation menu') : t('Open navigation menu')) : undefined}
       onClick={onToggle}
       className={`group relative inline-flex h-10 items-center justify-center self-center transition ${
         useIcon ? 'w-10 rounded-full' : 'min-w-0 px-1 text-xs font-medium tracking-[0.14em] sm:text-sm sm:tracking-[0.12em]'
@@ -253,7 +255,7 @@ function ClosedBarTrigger({
               transition={{ duration: 0.2 }}
               className="inline-block"
             >
-              {open ? 'Close' : 'Menu'}
+              {open ? t('Close') : t('Menu')}
             </motion.span>
           </AnimatePresence>
         </span>
@@ -300,6 +302,7 @@ function DutenPanelFooter({
   /** When stacked above the hero word, use tighter padding. */
   placement?: 'bottom' | 'aboveHero';
 }) {
+  const t = useT();
   const showContact = settings.dutenPanelShowContact ?? false;
   const showSocial = settings.dutenPanelShowSocial ?? false;
   const mailHref = resolveEditorialBarContactHref('mail', { email: contactEmail });
@@ -334,7 +337,7 @@ function DutenPanelFooter({
             className="text-sm font-medium tracking-[0.08em] opacity-55 sm:text-[15px]"
             style={{ color: mutedInk }}
           >
-            Contact Us
+            {t('Contact Us')}
           </p>
           <p
             className="flex flex-wrap items-center gap-x-4 gap-y-2 text-[clamp(1.05rem,2.2vw,1.65rem)] font-medium leading-snug tracking-[-0.01em]"
@@ -365,7 +368,7 @@ function DutenPanelFooter({
             className="text-sm font-medium tracking-[0.08em] opacity-55 sm:text-[15px]"
             style={{ color: mutedInk }}
           >
-            Stay Connected
+            {t('Stay Connected')}
           </p>
           <div className="flex flex-wrap items-center gap-5 sm:gap-6 md:gap-8">
             {socialLinks.map((link) => (
@@ -529,6 +532,7 @@ export function PortfolioDutenPanelNav({
   colorMode = 'dark',
   onColorModeToggle,
 }: PortfolioDutenPanelNavProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const [collapsedHeight, setCollapsedHeight] = useState(48);
@@ -798,7 +802,7 @@ export function PortfolioDutenPanelNav({
           <motion.button
             key="duten-scrim"
             type="button"
-            aria-label="Close navigation menu"
+            aria-label={t('Close navigation menu')}
             className="fixed inset-0 z-[225] backdrop-blur-[2px]"
             style={{ backgroundColor: `${scrim}88` }}
             initial={reduceMotion ? false : { opacity: 0 }}
@@ -815,7 +819,7 @@ export function PortfolioDutenPanelNav({
         id="portfolio-duten-panel"
         role={open ? 'dialog' : undefined}
         aria-modal={open ? true : undefined}
-        aria-label={open ? 'Navigation menu' : 'Portfolio navigation'}
+        aria-label={open ? t('Navigation menu') : t('Portfolio navigation')}
         className={`fixed flex flex-col overflow-hidden ${
           open ? 'z-[230]' : 'z-[120]'
         } ${
@@ -848,7 +852,7 @@ export function PortfolioDutenPanelNav({
         <nav
           ref={headerRef}
           data-portfolio-nav-clearance-box
-          aria-label="Portfolio navigation"
+          aria-label={t('Portfolio navigation')}
           className={HEADER_ROW_CLASS}
         >
           <div className={`${HEADER_CELL_CLASS} justify-start`}>{headerLeft}</div>

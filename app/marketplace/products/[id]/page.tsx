@@ -17,14 +17,16 @@ import { MediaImage } from '@/components/ui/MediaImage';
 import {
   formatPrice,
   getPublicProduct,
-  PRODUCT_TYPE_LABELS,
+  productTypeName,
 } from '@/lib/marketplace-api';
 
-const EYEBROW = 'text-sm font-medium text-neutral-500 dark:text-neutral-400';
+/** A group's label over its chips ("Compatible tools", "Hashtags"): 15px semibold ink, sentence case. */
+const EYEBROW = 'text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)]';
+/** Square chips as on News posts: tags a light tone, the type a solid ink label. */
 const CHIP =
-  'rounded-full border border-black/[0.08] px-3.5 py-1.5 text-[13px] font-medium text-neutral-700 dark:border-white/[0.12] dark:text-neutral-200';
+  'rounded-[2px] bg-[#EFF3F4] px-2 py-0.5 text-[13px] font-medium leading-[18px] text-[color:var(--gn-ink2)] dark:bg-[#202327]';
 const ACCENT_CHIP =
-  'rounded-full bg-[#FF5722]/10 px-3.5 py-1.5 text-[13px] font-medium text-[#FF5722] dark:bg-[#FF5722]/15';
+  'rounded-[2px] bg-[color:var(--gn-ink)] px-2 py-0.5 text-[13px] font-semibold leading-[18px] text-[color:var(--gn-surface)]';
 
 export async function generateMetadata({
   params,
@@ -56,7 +58,7 @@ export default async function MarketplaceProductDetailPage({
   const discountPercent = hasDiscount
     ? Math.round((1 - product.priceCents / product.compareAtPriceCents!) * 100)
     : null;
-  const typeLabel = PRODUCT_TYPE_LABELS[product.type] ?? product.type;
+  const typeLabel = productTypeName(product.type, product.typeLabel);
   const productUrl = `/marketplace/products/${product.id}`;
   const reviewCount = product.reviewCount ?? 0;
 
@@ -65,11 +67,16 @@ export default async function MarketplaceProductDetailPage({
   const hasDemo = Boolean(product.demoUrl && product.demoType !== 'NONE');
 
   return (
-    <main className="relative z-10 mx-auto max-w-7xl px-4 pb-20 pt-8 sm:px-6">
-      <MarketplaceBackLink className="group inline-flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white" />
+    // News / Products' frame: gutters outside a 1240px column; `news-mono` gives the rail box and type.
+    <main className="relative z-10 w-full pb-24 pt-2 sm:px-8 sm:pt-4 md:px-12 lg:px-16 lg:pt-3">
+      <div className="news-theme news-feed news-mono mx-auto w-full max-w-[1240px]">
+      <MarketplaceBackLink className="group mx-4 inline-flex h-10 items-center gap-1.5 text-[14px] font-medium text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)] sm:mx-0" />
 
-      <div className="mt-6 grid gap-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-10">
-        <div className="order-1 min-w-0 lg:col-span-8 lg:row-start-1">
+      {/* One column for the product — gallery, title, then every section — and the purchase panel
+          as the sticky rail (340px, 400px from xl), as on News and Products. */}
+      <div className="mt-2 sm:mt-4 grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-12">
+        <div className="flex min-w-0 flex-col gap-6">
+        <div className="min-w-0">
           {isPhysical ? (
             <CreatorPhysicalProductGallery
               title={product.title}
@@ -89,18 +96,18 @@ export default async function MarketplaceProductDetailPage({
           )}
         </div>
 
-        <div className="order-3 min-w-0 space-y-8 lg:col-span-8 lg:row-start-2">
-          <header className="space-y-5">
+        <div className="min-w-0 space-y-6 px-4 sm:px-0">
+          <header className="space-y-4">
             {!isPhysical && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 <span className={ACCENT_CHIP}>{typeLabel}</span>
                 {product.genre && <span className={`${CHIP} capitalize`}>{product.genre}</span>}
                 {product.specialite && <span className={`${CHIP} capitalize`}>{product.specialite}</span>}
               </div>
             )}
 
-            <div className="space-y-3">
-              <h1 className="break-words text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-[#111111] dark:text-white md:text-[40px]">
+            <div className="space-y-2">
+              <h1 className="break-words text-[26px] font-extrabold leading-8 tracking-[-0.02em] text-[color:var(--gn-ink)] sm:text-[32px] sm:leading-10">
                 {product.title}
               </h1>
               <div className="flex flex-wrap items-center justify-between gap-x-6 gap-y-2">
@@ -118,7 +125,7 @@ export default async function MarketplaceProductDetailPage({
             </div>
 
             {product.description && (
-              <p className="max-w-3xl whitespace-pre-wrap text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
+              <p className="max-w-3xl whitespace-pre-wrap text-[15px] leading-[22px] text-[color:var(--gn-ink)]">
                 {product.description}
               </p>
             )}
@@ -134,9 +141,9 @@ export default async function MarketplaceProductDetailPage({
           )}
 
           {!isPhysical && product.compatibleTools.length > 0 && (
-            <div className="border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
+            <div>
               <p className={EYEBROW}>Compatible tools</p>
-              <ul className="mt-3 flex flex-wrap gap-2">
+              <ul className="mt-2 flex flex-wrap gap-1.5">
                 {product.compatibleTools.map((tool) => (
                   <li key={tool} className={CHIP}>
                     {tool}
@@ -147,17 +154,41 @@ export default async function MarketplaceProductDetailPage({
           )}
 
           {product.tags.length > 0 && (
-            <div className="border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
+            <div>
               <p className={EYEBROW}>Hashtags</p>
-              <div className="mt-3">
+              <div className="mt-2">
                 <ProductHashtagList tags={product.tags} />
               </div>
             </div>
           )}
         </div>
 
-        <div className="order-2 min-w-0 lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1">
-          <div id={PRODUCT_PURCHASE_ANCHOR_ID} className="scroll-mt-28">
+        <div className="mt-6 px-4 sm:px-0 md:mt-10">
+          <ProductDetailBottom
+            product={product}
+            reviewCount={reviewCount}
+            loginRedirect={productUrl}
+            middle={
+              hasWhyBlocks || hasDemo ? (
+                <>
+                  {hasWhyBlocks && <ProductWhyHighlights blocks={product.whyProductBlocks!} />}
+                  {hasDemo && (
+                    <ProductDemoSection
+                      demoUrl={product.demoUrl!}
+                      demoType={product.demoType}
+                      demoSubtitles={product.demoSubtitles}
+                      demoDescription={product.demoDescription}
+                    />
+                  )}
+                </>
+              ) : null
+            }
+          />
+        </div>
+        </div>
+
+        <div className="order-first min-w-0 px-4 sm:px-0 lg:order-none lg:self-stretch">
+          <div id={PRODUCT_PURCHASE_ANCHOR_ID} className="scroll-mt-28 lg:sticky lg:top-20">
             <ProductDetailPurchasePanel
               productId={product.id}
               productType={product.type}
@@ -182,28 +213,6 @@ export default async function MarketplaceProductDetailPage({
         </div>
       </div>
 
-      <div className="mt-16 border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:mt-20 md:pt-20">
-        <ProductDetailBottom
-          product={product}
-          reviewCount={reviewCount}
-          loginRedirect={productUrl}
-          middle={
-            hasWhyBlocks || hasDemo ? (
-            <>
-              {hasWhyBlocks && <ProductWhyHighlights blocks={product.whyProductBlocks!} />}
-
-              {hasDemo && (
-                <ProductDemoSection
-                  demoUrl={product.demoUrl!}
-                  demoType={product.demoType}
-                  demoSubtitles={product.demoSubtitles}
-                  demoDescription={product.demoDescription}
-                />
-              )}
-            </>
-            ) : null
-          }
-        />
       </div>
     </main>
   );
@@ -224,33 +233,28 @@ function ProductDetailCreatorCard({
   return (
     <Link
       href={`/providers/${creatorId}`}
-      className="group flex items-center gap-4 rounded-lg border border-black/[0.06] bg-white px-5 py-4 transition hover:border-black/[0.14] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]"
+      className="group -mx-4 flex items-center gap-3 bg-[color:var(--gn-surface)] px-4 py-4 transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-surface))] sm:mx-0 sm:px-5"
     >
       <MediaImage
         src={creatorAvatarUrl}
         width={48}
         referrerPolicy="no-referrer"
         fallback={
-          <div className="flex h-12 w-12 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-sm font-semibold text-[#111111] dark:bg-white/[0.08] dark:text-white">
+          <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--gn-inset)] text-sm font-semibold text-[color:var(--gn-ink)]">
             {creatorName.slice(0, 2).toUpperCase()}
           </div>
         }
-        className="h-12 w-12 shrink-0 rounded-full bg-black/[0.05] object-cover dark:bg-white/[0.08]"
+        className="h-11 w-11 shrink-0 rounded-full bg-[color:var(--gn-inset)] object-cover"
       />
       <div className="min-w-0 flex-1">
-        <p className="text-[13px] text-neutral-500 dark:text-neutral-400">Sold by</p>
-        <p className="truncate text-[15px] font-semibold text-[#111111] dark:text-white">
-          {creatorName}
-          {specialty ? (
-            <span className="font-normal capitalize text-neutral-500 dark:text-neutral-400"> · {specialty}</span>
-          ) : null}
+        <p className="truncate text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)]">{creatorName}</p>
+        <p className="truncate text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
+          Seller
+          {specialty ? <span className="capitalize"> · {specialty}</span> : null}
         </p>
       </div>
-      <span className="shrink-0 text-sm font-medium text-[#111111] dark:text-white">
+      <span className="shrink-0 text-[14px] font-semibold text-[color:var(--gn-ink)] underline-offset-4 group-hover:underline">
         View profile
-        <span aria-hidden className="ml-1 inline-block transition-transform duration-300 group-hover:translate-x-0.5">
-          →
-        </span>
       </span>
     </Link>
   );

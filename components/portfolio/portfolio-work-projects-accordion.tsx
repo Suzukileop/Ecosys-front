@@ -19,6 +19,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsAccordionSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const EASE_OUT = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const ENTER_HIDDEN: CSSProperties = {
@@ -392,6 +393,7 @@ function AccordionPreview({
   previewFirst: boolean;
   shiftRef?: RefObject<HTMLDivElement | null>;
 }) {
+  const t = useT();
   const mediaUrl = item?.mediaUrl?.trim() || null;
   const title = item?.title?.trim() || '';
   const mediaRef = useRef<HTMLDivElement | null>(null);
@@ -471,7 +473,7 @@ function AccordionPreview({
         <div key={mediaUrl} ref={mediaRef} className="absolute inset-0 will-change-transform">
           <Image
             src={mediaUrl}
-            alt={title || 'Project preview'}
+            alt={title || t('Project preview')}
             fill
             sizes="(max-width: 1024px) 100vw, 55vw"
             className="scale-[1.08] object-cover object-center"
@@ -483,7 +485,7 @@ function AccordionPreview({
           className="flex h-full w-full items-center justify-center px-8 text-center text-sm font-light leading-[1.7]"
           style={{ color: muted, backgroundColor: surface }}
         >
-          {title || 'Add a thumbnail in Information → Portfolio'}
+          {title || t('Add a thumbnail in Information → Portfolio')}
         </div>
       )}
 
@@ -569,6 +571,7 @@ function AccordionItem({
    *  instead of a shared image ending up stranded after the whole list. */
   mobileThumbnailSurface: string;
 }) {
+  const t = useT();
   const description = item.description?.trim() || '';
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
@@ -676,7 +679,7 @@ function AccordionItem({
                 className={`portfolio-acc-tags group/tags flex flex-nowrap items-baseline gap-x-3 overflow-x-auto ${
                   showDescription && description ? 'mt-7' : 'mt-1'
                 }`}
-                aria-label="Role, category and tools"
+                aria-label={t('Role, category and tools')}
               >
                 {metaItems.map((meta, metaIndex) => (
                   <li
@@ -712,7 +715,7 @@ function AccordionItem({
               >
                 <Image
                   src={mobileMediaUrl}
-                  alt={item.title?.trim() || 'Project preview'}
+                  alt={item.title?.trim() || t('Project preview')}
                   fill
                   sizes="100vw"
                   className="object-cover object-center"
@@ -735,6 +738,7 @@ export function ProjectsAccordionGallery({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const board = mergeProjectsAccordionSettings(
     DEFAULT_PROJECTS_ACCORDION_SETTINGS,
     presentation.projectsAccordion
@@ -855,7 +859,7 @@ export function ProjectsAccordionGallery({
           accent={accent}
           ink={titleInk}
           href={board.showConsult ? active?.linkUrl?.trim() || null : null}
-          ctaLabel={board.consultLabel.trim() || 'View project'}
+          ctaLabel={board.consultLabel.trim() || t('View project')}
           previewFirst={previewFirst}
           shiftRef={previewShiftRef}
         />

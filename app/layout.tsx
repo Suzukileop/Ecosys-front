@@ -5,6 +5,9 @@ import { AuthProvider } from '@/context/AuthContext';
 import { ThemeProvider } from '@/components/landing/ThemeProvider';
 import { ChunkLoadRecovery } from '@/components/ChunkLoadRecovery';
 import { ThemeInitScript } from '@/components/ThemeInitScript';
+import { localeDir } from '@/lib/i18n/config';
+import { I18nProvider } from '@/lib/i18n/I18nProvider';
+import { getLocale, getMessages, getT } from '@/lib/i18n/server';
 
 const initThemeScript = `
   (function(){
@@ -22,23 +25,30 @@ const initThemeScript = `
   })();
 `;
 
-export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
-  title: 'Skraft — Plateforme SaaS',
-  description: 'Création de contenu assistée par IA',
-};
+export async function generateMetadata(): Promise<Metadata> {
+  const t = await getT();
+  return {
+    metadataBase: new URL(process.env.NEXT_PUBLIC_SITE_URL || 'http://localhost:3000'),
+    title: t('Skraft — Build, showcase and sell'),
+    description: t('Create your portfolio, sell physical and digital products, and talk to clients directly — all in one place, with no middleman.'),
+  };
+}
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale();
+  const messages = await getMessages(locale);
   return (
-    <html lang="fr" suppressHydrationWarning>
+    <html lang={locale} dir={localeDir(locale)} suppressHydrationWarning>
       <head>
         <ThemeInitScript code={initThemeScript} />
       </head>
       <body spellCheck={false} className="font-sans antialiased">
         <ChunkLoadRecovery />
-        <ThemeProvider>
-          <AuthProvider>{children}</AuthProvider>
-        </ThemeProvider>
+        <I18nProvider locale={locale} messages={messages}>
+          <ThemeProvider>
+            <AuthProvider>{children}</AuthProvider>
+          </ThemeProvider>
+        </I18nProvider>
       </body>
     </html>
   );

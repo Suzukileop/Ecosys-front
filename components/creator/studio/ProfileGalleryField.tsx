@@ -21,6 +21,7 @@ import {
 } from '@/components/creator/studio/profile-form-schema';
 import { profileFormLabelClass, profileSectionEmptyClass } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export const MAX_GALLERY = 8;
 
@@ -50,6 +51,7 @@ export function ProfileGalleryField({
   readOnly = false,
   values = [],
 }: ProfileGalleryFieldProps) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [uploadError, setUploadError] = useState<string | null>(null);
@@ -77,7 +79,7 @@ export function ProfileGalleryField({
         append(created);
       }
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Upload failed.'));
+      setUploadError(getApiErrorMessage(e, t('Upload failed.')));
     } finally {
       setUploading(false);
       event.target.value = '';
@@ -87,7 +89,7 @@ export function ProfileGalleryField({
   if (readOnly) {
     const filled = values.filter((item) => item.mediaUrl.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>No media in the gallery.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No media in the gallery.')}</p>;
     }
     return (
       <div className="grid gap-3 sm:grid-cols-2">
@@ -114,7 +116,7 @@ export function ProfileGalleryField({
       <ProfileSectionItemCount count={fields.length} limit={MAX_GALLERY} unit="gallery items" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No media in the gallery.</p>
+        <p className={profileSectionEmptyClass}>{t('No media in the gallery.')}</p>
       ) : (
         fields.map((field, index) => {
           const mediaUrl = watch(`galleryItems.${index}.mediaUrl`) ?? '';
@@ -125,7 +127,7 @@ export function ProfileGalleryField({
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-                  Media {index + 1}
+                  {t('Media')} {index + 1}
                 </p>
                 <div className="flex items-center gap-1">
                   <button
@@ -133,7 +135,7 @@ export function ProfileGalleryField({
                     disabled={index === 0}
                     onClick={() => move(index, index - 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move up"
+                    aria-label={t('Move up')}
                   >
                     ↑
                   </button>
@@ -142,7 +144,7 @@ export function ProfileGalleryField({
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, index + 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move down"
+                    aria-label={t('Move down')}
                   >
                     ↓
                   </button>
@@ -151,13 +153,13 @@ export function ProfileGalleryField({
                     onClick={() => remove(index)}
                     className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </div>
               </div>
 
               <div>
-                <p className={profileFormLabelClass}>Media</p>
+                <p className={profileFormLabelClass}>{t('Media')}</p>
                 {mediaUrl ? (
                   <div className="mt-2 space-y-2">
                     <ContentMediaPreview
@@ -175,12 +177,12 @@ export function ProfileGalleryField({
                       }}
                       className="text-[15px] font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
                     >
-                      Remove media
+                      {t('Remove media')}
                     </button>
                   </div>
                 ) : (
                   <p className="mt-2 text-sm text-amber-700 dark:text-amber-300">
-                    No file — use “Add media” below, or remove this item.
+                    {t('No file — use “Add media” below, or remove this item.')}
                   </p>
                 )}
               </div>
@@ -206,7 +208,7 @@ export function ProfileGalleryField({
             className="inline-flex items-center gap-2 rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            Add media
+            {t('Add media')}
           </button>
           {uploadError ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>

@@ -13,7 +13,7 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /**
  * Press/Masthead Header — Premium Editorial Typography
@@ -61,7 +61,7 @@ export function ExperiencePressHeader({
   const introText = presentation.pressIntroText?.trim() || '';
 
   // Premium customization options
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.pressHeaderAnimationEnabled !== false && !motionOff;
   const animationStyle = presentation.pressHeaderAnimationStyle ?? 'staggered';
   const headingWeightStyle = presentation.pressHeadingWeightStyle ?? 'alternating';

@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 /**
  * Header — one shared, GSAP-animated header mounted above the Footer section, copied
  * 1:1 (rename-only) from the same mechanism already used by Work/Stack/Tools/Contact/
@@ -86,27 +87,27 @@ export const FOOTER_HEADER_BILLBOARD_WORD_STYLES: PortfolioFooterHeaderBillboard
 export const PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS: {
   value: PortfolioFooterHeaderDesign; label: string; description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'No header — the footer section starts right away.' },
-  { value: 'editorial', label: 'Editorial', description: 'Monumental masked-reveal headline — premium GSAP entrance.' },
-  { value: 'index', label: 'Index', description: 'Ledger-style divider rule, a counting numeral, and the title split by a vertical rule.' },
-  { value: 'serif-lead', label: 'Serif lead', description: 'Small label above a large serif title.' },
-  { value: 'billboard', label: 'Billboard', description: 'Big faint background word behind the title, with a count line.' },
-  { value: 'masthead', label: 'Masthead', description: 'Monumental uppercase headline with an intro line underneath.' },
-  { value: 'hero', label: 'Hero', description: 'Centered monumental headline with a pill "Get in touch" button underneath.' },
-  { value: 'name', label: 'Name', description: 'Just your full name, fit-to-width and edge-to-edge — nothing else.' },
-  { value: 'timezone', label: 'Timezone', description: 'Kicker + two-line headline + description on the left, a live local clock and location on the right.' },
+  { value: 'none', label: msg('None'), description: msg('No header — the footer section starts right away.') },
+  { value: 'editorial', label: msg('Editorial'), description: msg('Monumental masked-reveal headline — premium GSAP entrance.') },
+  { value: 'index', label: msg('Index'), description: msg('Ledger-style divider rule, a counting numeral, and the title split by a vertical rule.') },
+  { value: 'serif-lead', label: msg('Serif lead'), description: msg('Small label above a large serif title.') },
+  { value: 'billboard', label: msg('Billboard'), description: msg('Big faint background word behind the title, with a count line.') },
+  { value: 'masthead', label: msg('Masthead'), description: msg('Monumental uppercase headline with an intro line underneath.') },
+  { value: 'hero', label: msg('Hero'), description: msg('Centered monumental headline with a pill "Get in touch" button underneath.') },
+  { value: 'name', label: msg('Name'), description: msg('Just your full name, fit-to-width and edge-to-edge — nothing else.') },
+  { value: 'timezone', label: msg('Timezone'), description: msg('Kicker + two-line headline + description on the left, a live local clock and location on the right.') },
 ];
 
 export const FOOTER_HEADER_PALETTE_TOKEN_OPTIONS: { value: PortfolioFooterHeaderPaletteToken; label: string; description: string }[] = [
-  { value: 'principal', label: 'Principal', description: 'Global principal token.' },
-  { value: 'secondaire', label: 'Secondary', description: 'Global secondary token.' },
-  { value: 'texteFort', label: 'Strong text', description: 'Strong ink token.' },
+  { value: 'principal', label: msg('Principal'), description: msg('Global principal token.') },
+  { value: 'secondaire', label: msg('Secondary'), description: msg('Global secondary token.') },
+  { value: 'texteFort', label: msg('Strong text'), description: msg('Strong ink token.') },
 ];
 
 export const FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS: { value: PortfolioFooterHeaderBillboardWordStyle; label: string; description: string }[] = [
-  { value: 'outline', label: 'Outline', description: 'Stroke only, with a soft glow.' },
-  { value: 'fill', label: 'Fill', description: 'Solid characters, with a soft glow.' },
-  { value: 'simple', label: 'Simple', description: 'Solid characters, no glow — plain.' },
+  { value: 'outline', label: msg('Outline'), description: msg('Stroke only, with a soft glow.') },
+  { value: 'fill', label: msg('Fill'), description: msg('Solid characters, with a soft glow.') },
+  { value: 'simple', label: msg('Simple'), description: msg('Solid characters, no glow — plain.') },
 ];
 
 /** Resolves a palette-token choice to a concrete color — no free-form hex,

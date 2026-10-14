@@ -15,7 +15,9 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Billboard/Gallery Experience Header — Premium Editorial Redesign
@@ -48,6 +50,7 @@ export function ExperienceGalleryHeader({
   roleCount?: number;
   presentation?: PortfolioExperiencePresentationSettings;
 }) {
+  const t = useT();
   void _years;
 
   // Refs for GSAP animations
@@ -83,8 +86,10 @@ export function ExperienceGalleryHeader({
   const showBigTitle = bigTitleEnabled && Boolean(bigTitleText.trim());
 
   // Animation settings
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.galleryHeaderAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'experience-gallery');
+  const showTitle = show('title');
   const animationStyle = presentation.galleryHeaderAnimationStyle ?? 'dramatic';
   const parallaxEnabled = presentation.galleryScrollParallaxEnabled !== false && !motionOff;
 
@@ -94,7 +99,7 @@ export function ExperienceGalleryHeader({
 
   // Role count settings
   const roleCountStyleOption = presentation.galleryRoleCountStyle ?? 'micro';
-  const roleCountTextTemplate = presentation.galleryRoleCountText?.trim() || '{count} roles — click any card for the full story';
+  const roleCountTextTemplate = presentation.galleryRoleCountText?.trim() || t('{count} roles — click any card for the full story');
 
   const count = roleCount;
 
@@ -226,7 +231,7 @@ export function ExperienceGalleryHeader({
     observer.observe(section);
 
     return () => observer.disconnect();
-  }, [animationEnabled, animationStyle]);
+  }, [animationEnabled, animationStyle, showTitle]);
 
   // ========== ANIMATION: Scroll — Asymmetric Parallax ==========
   useEffect(() => {
@@ -304,7 +309,7 @@ export function ExperienceGalleryHeader({
         if (el) el.style.willChange = '';
       });
     };
-  }, [parallaxEnabled]);
+  }, [parallaxEnabled, showTitle]);
 
   // Parse secondary title for editorial style
   // If text contains a space, split into first word (italic) + rest (bold)
@@ -368,13 +373,15 @@ export function ExperienceGalleryHeader({
         }`}
       >
         {/* Title with typographic contrast */}
-        <h2
-          className="text-[clamp(1.9rem,4vw,2.75rem)] leading-[1.08] tracking-[-0.02em]"
-          style={getInitialSecondaryStyle()}
-          data-gsap-secondary
-        >
-          {renderSecondaryTitle()}
-        </h2>
+        {showTitle ? (
+          <h2
+            className="text-[clamp(1.9rem,4vw,2.75rem)] leading-[1.08] tracking-[-0.02em]"
+            style={getInitialSecondaryStyle()}
+            data-gsap-secondary
+          >
+            {renderSecondaryTitle()}
+          </h2>
+        ) : null}
 
         {/* Role count — conditionally rendered */}
         {roleCountStyleOption !== 'hidden' ? (

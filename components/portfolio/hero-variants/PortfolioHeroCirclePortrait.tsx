@@ -18,6 +18,7 @@ import {
   portfolioHeroContentShellClass,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Circle portrait — Split Éclaté avec Typographie Monumentale en Bas
@@ -33,6 +34,7 @@ import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/port
  * - Scroll: Title stays pinned, photo parallax 1.3x faster, bio 0.85x slower, both fade out
  */
 export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
@@ -65,7 +67,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
     const cleaned = data.description?.replace(/\s+/g, ' ').trim();
     return (
       cleaned ||
-      'Du premier échange à la livraison, je construis des identités visuelles sensibles, cohérentes et durables pour les marques qui avancent.'
+      t('Du premier échange à la livraison, je construis des identités visuelles sensibles, cohérentes et durables pour les marques qui avancent.')
     );
   }, [data.description]);
 
@@ -412,7 +414,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
         </>
       ) : (
         <>
-          Hello, I&apos;m {displayName} — a {specialtyNode}.
+          {t.rich('Hello, I\'m {displayName} — a {specialtyNode}.', { displayName, specialtyNode })}
         </>
       )}
     </h1>
@@ -501,7 +503,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           style={{ backgroundColor: ink, color: fond }}
           data-gsap-bio="cta"
         >
-          View project
+          {t('View project')}
         </a>
       );
     }
@@ -524,7 +526,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           className="inline-flex h-12 shrink-0 items-center justify-center rounded-full px-7 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
           style={{ backgroundColor: ink, color: fond }}
         >
-          Let&apos;s talk
+          {t('Let\'s talk')}
         </a>
         <a
           href={secondaryHref}
@@ -532,7 +534,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
           className="shrink-0 font-sans text-[0.95rem] font-medium tracking-[-0.01em] underline underline-offset-[5px] transition hover:opacity-80"
           style={{ color: ink }}
         >
-          View project
+          {t('View project')}
         </a>
       </div>
     );
@@ -615,7 +617,7 @@ export function PortfolioHeroCirclePortrait({ data }: { data: PortfolioHeroData 
       {avatarUrl ? (
         <Image
           src={avatarUrl}
-          alt={`Portrait of ${displayName}`}
+          alt={t('Portrait of {displayName}', { displayName })}
           fill
           sizes={sizes}
           className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}

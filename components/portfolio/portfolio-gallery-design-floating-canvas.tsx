@@ -48,6 +48,7 @@ import {
   type PortfolioGalleryPresentationSettings,
 } from '@/components/portfolio/portfolio-gallery-settings';
 import type { ProfileGalleryItem } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -141,6 +142,7 @@ function FloatingCanvasCard({
   hairline: string;
   badgeDark: boolean;
 }) {
+  const t = useT();
   const step = CANVAS_RHYTHM[index % CANVAS_RHYTHM.length];
   const title = galleryItemDisplayTitle(item.title);
   const withTitle = showTitle && Boolean(title);
@@ -206,7 +208,7 @@ function FloatingCanvasCard({
           >
             <PortfolioDeferredMedia
               src={item.mediaUrl}
-              alt={title || 'Gallery media'}
+              alt={title || t('Gallery media')}
               sizes="(max-width: 767px) 92vw, (max-width: 1279px) 44vw, 30vw"
               eager={eager}
               highPriority={eager}

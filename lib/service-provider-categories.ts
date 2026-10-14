@@ -4,6 +4,7 @@
  */
 
 import { PROFILE_SPECIALTIES } from '@/lib/specialties';
+import { msg } from '@/lib/i18n/config';
 
 export const SERVICE_PROVIDER_POPULAR_TAGS = PROFILE_SPECIALTIES.filter(
   (tag) => tag !== 'Writing'
@@ -26,38 +27,38 @@ type ServiceProviderCategoryGroup = {
 export const SERVICE_PROVIDER_CATEGORY_GROUPS: ServiceProviderCategoryGroup[] = [
   {
     id: 'maintenance',
-    title: 'Maintenance & repairs',
+    title: msg('Maintenance & repairs'),
     icon: 'wrench',
     items: [
-      'Plumbing',
-      'Electrician',
-      'Appliance repair',
-      'Locksmith',
-      'General handyman',
+      msg('Plumbing'),
+      msg('Electrician'),
+      msg('Appliance repair'),
+      msg('Locksmith'),
+      msg('General handyman'),
     ],
   },
   {
     id: 'home',
-    title: 'Home & personal',
+    title: msg('Home & personal'),
     icon: 'house',
     items: [
-      'House cleaning',
-      'Gardening',
-      'Moving help',
-      'Pet sitting',
+      msg('House cleaning'),
+      msg('Gardening'),
+      msg('Moving help'),
+      msg('Pet sitting'),
     ],
   },
   {
     id: 'transport',
-    title: 'Transport & logistics',
+    title: msg('Transport & logistics'),
     icon: 'truck',
-    items: ['Courier / delivery', 'Private driver'],
+    items: [msg('Courier / delivery'), msg('Private driver')],
   },
   {
     id: 'education',
-    title: 'Education & wellness',
+    title: msg('Education & wellness'),
     icon: 'graduation',
-    items: ['Private tutoring', 'Fitness coach'],
+    items: [msg('Private tutoring'), msg('Fitness coach')],
   },
 ];
 

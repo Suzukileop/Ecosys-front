@@ -10,6 +10,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -39,6 +40,7 @@ function EditorialGridStyles() {
  *  cursor within a tight proximity radius, spring-back on leave. Same `gsap.quickTo` idiom as
  *  Monumental's submit button and Swiss Magnetic's circular CTA, just a smaller square target. */
 function EditorialGridMagnetButton({ href, ink, inkContrast }: { href: string; ink: string; inkContrast: string }) {
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLAnchorElement>(null);
 
@@ -89,7 +91,7 @@ function EditorialGridMagnetButton({ href, ink, inkContrast }: { href: string; i
       <a
         ref={btnRef}
         href={href}
-        aria-label="Get in touch"
+        aria-label={t('Get in touch')}
         data-pf-no-color-transition=""
         className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg text-base transition-transform duration-300 hover:scale-[1.06] sm:h-12 sm:w-12"
         style={{ backgroundColor: ink, color: inkContrast }}
@@ -154,6 +156,7 @@ export function FooterDesignEditorialGrid({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignEditorialGridProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const ink = isLight ? '#141210' : '#f7f5f0';
   const muted = isLight ? 'rgba(20,18,16,0.52)' : 'rgba(247,245,240,0.5)';
@@ -231,7 +234,7 @@ export function FooterDesignEditorialGrid({
           </div>
 
           <div className="grid grid-cols-1 gap-10 sm:grid-cols-2 sm:gap-8">
-            <nav aria-label="Footer" className="flex flex-col gap-5">
+            <nav aria-label={t('Footer')} className="flex flex-col gap-5">
               {navLinks.map((link) => (
                 <a
                   key={link.id}

@@ -14,7 +14,8 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 /**
  * Legacy/Accent Title Header — Premium Editorial Redesign
@@ -75,8 +76,12 @@ function ExperienceLegacyHeaderContent({
     'A selection of roles, teams, and problems solved along the way.';
 
   // ========== NEW OPTIONS ==========
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.legacyHeaderAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'experience-legacy');
+  const showHeading = show('heading');
+  const showAccent = show('accent');
+  const showSubtitle = show('subtitle');
   const animationStyle = presentation.legacyHeaderAnimationStyle ?? 'bloom';
   const scrollParallaxEnabled = presentation.legacyScrollParallaxEnabled !== false && !motionOff;
   const prefixWeight = presentation.legacyPrefixWeight ?? 'light';
@@ -255,7 +260,7 @@ function ExperienceLegacyHeaderContent({
     observer.observe(section);
 
     return () => observer.disconnect();
-  }, [animationEnabled, animationStyle, showUnderline]);
+  }, [animationEnabled, animationStyle, showUnderline, showHeading, showAccent, showSubtitle]);
 
   // ========== ANIMATION: Scroll — Asymmetric Parallax (optional) ==========
   useEffect(() => {
@@ -335,7 +340,7 @@ function ExperienceLegacyHeaderContent({
         if (el) el.style.willChange = '';
       });
     };
-  }, [scrollParallaxEnabled]);
+  }, [scrollParallaxEnabled, showHeading, showAccent, showSubtitle]);
 
   return (
     <div 
@@ -345,16 +350,18 @@ function ExperienceLegacyHeaderContent({
     >
       <h2 className="mx-auto max-w-4xl">
         {/* PREFIX: Configurable weight for typographic contrast */}
-        <span
-          className={`block text-[clamp(1.8rem,4.5vw,3rem)] ${prefixWeightClass} leading-[1.15] tracking-tight`}
-          style={getInitialPrefixStyle}
-          data-gsap-prefix
-        >
-          {headingText}
-        </span>
+        {showHeading ? (
+          <span
+            className={`block text-[clamp(1.8rem,4.5vw,3rem)] ${prefixWeightClass} leading-[1.15] tracking-tight`}
+            style={getInitialPrefixStyle}
+            data-gsap-prefix
+          >
+            {headingText}
+          </span>
+        ) : null}
 
         {/* ACCENT WORD: Hero element — configurable size, style, with optional decorative line */}
-        {headingAccentText ? (
+        {showAccent && headingAccentText ? (
           <span className="relative inline-block mt-2">
             <span
               className={`block ${accentSizeClass} ${accentStyleClass} leading-[0.95] tracking-[-0.03em]`}
@@ -377,7 +384,7 @@ function ExperienceLegacyHeaderContent({
       </h2>
 
       {/* SUBTITLE: Configurable typography style */}
-      {introText ? (
+      {showSubtitle && introText ? (
         <p 
           className={`mx-auto mt-8 max-w-xl ${subtitleClassName}`}
           style={getInitialSubtitleStyle}

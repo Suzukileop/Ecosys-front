@@ -17,6 +17,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Register GSAP plugins at module level
 if (typeof window !== 'undefined') {
@@ -52,6 +53,7 @@ function leftPortraitScrollParent(el: HTMLElement | null): HTMLElement | undefin
  * - Scroll: sticky photo column, right column scrolls with parallax dissociation
  */
 export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
@@ -73,7 +75,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
     const cleaned = data.description?.replace(/\s+/g, ' ').trim();
     return (
       cleaned ||
-      'Du premier échange à la livraison, je construis des identités visuelles sensibles, cohérentes et durables pour les marques qui avancent.'
+      t('Du premier échange à la livraison, je construis des identités visuelles sensibles, cohérentes et durables pour les marques qui avancent.')
     );
   }, [data.description]);
 
@@ -482,7 +484,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           className="pf-left-cta-entry inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
           style={{ backgroundColor: ink, color: fond }}
         >
-          View project
+          {t('View project')}
         </a>
       );
     }
@@ -495,7 +497,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           className="inline-flex h-12 shrink-0 items-center justify-center rounded-full px-7 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
           style={{ backgroundColor: ink, color: fond }}
         >
-          Let&apos;s talk
+          {t('Let\'s talk')}
         </a>
         <a
           href={secondaryHref}
@@ -503,7 +505,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           className="shrink-0 font-sans text-[0.95rem] font-medium tracking-[-0.01em] underline underline-offset-[5px] transition hover:opacity-80"
           style={{ color: ink }}
         >
-          View project
+          {t('View project')}
         </a>
       </div>
     );
@@ -543,7 +545,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         {avatarUrl ? (
           <Image
             src={avatarUrl}
-            alt={`Portrait of ${displayName}`}
+            alt={t('Portrait of {displayName}', { displayName })}
             fill
             sizes={sizes}
             className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}

@@ -9,13 +9,15 @@ import {
 import { getApiErrorMessage } from '@/lib/api-error';
 import { reportContent } from '@/lib/marketplace-api';
 import type { ReportReason } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const REASONS: { value: ReportReason; label: string; hint: string }[] = [
-  { value: 'SPAM', label: 'Spam or misleading', hint: 'Ads, scams, repeated or fake content' },
-  { value: 'HARASSMENT', label: 'Harassment or hate', hint: 'Bullying, threats or targeted abuse' },
-  { value: 'INAPPROPRIATE', label: 'Inappropriate content', hint: 'Violent, sexual or otherwise unsuitable' },
-  { value: 'COPYRIGHT', label: 'Copyright violation', hint: 'Work used without the owner’s permission' },
-  { value: 'OTHER', label: 'Something else', hint: 'Tell us what is wrong' },
+  { value: 'SPAM', label: msg('Spam or misleading'), hint: msg('Ads, scams, repeated or fake content') },
+  { value: 'HARASSMENT', label: msg('Harassment or hate'), hint: msg('Bullying, threats or targeted abuse') },
+  { value: 'INAPPROPRIATE', label: msg('Inappropriate content'), hint: msg('Violent, sexual or otherwise unsuitable') },
+  { value: 'COPYRIGHT', label: msg('Copyright violation'), hint: msg('Work used without the owner’s permission') },
+  { value: 'OTHER', label: msg('Something else'), hint: msg('Tell us what is wrong') },
 ];
 
 /** "Report post" — reason + optional details, sent to the moderation queue. */
@@ -31,6 +33,7 @@ export function ContentPostReportDialog({
   /** Called once the report is accepted (the dialog closes itself right after). */
   onReported?: () => void;
 }) {
+  const t = useT();
   const [reason, setReason] = useState<ReportReason | null>(null);
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -58,29 +61,29 @@ export function ContentPostReportDialog({
       setSent(true);
       onReported?.();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to send the report.'));
+      setError(getApiErrorMessage(e, t('Unable to send the report.')));
     } finally {
       setSubmitting(false);
     }
   };
 
   return (
-    <ContentPostDialogShell open={open} title={sent ? 'Report sent' : 'Report post'} onClose={onClose} busy={submitting}>
+    <ContentPostDialogShell open={open} title={sent ? t('Report sent') : t('Report post')} onClose={onClose} busy={submitting}>
       {sent ? (
         <div className="px-5 pb-5">
           <p className="text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
-            Thanks for letting us know. Our team will review this post and act if it breaks the rules.
+            {t('Thanks for letting us know. Our team will review this post and act if it breaks the rules.')}
           </p>
           <div className="mt-5 flex justify-end">
             <button type="button" onClick={onClose} className={DIALOG_PRIMARY_BUTTON}>
-              Done
+              {t('Done')}
             </button>
           </div>
         </div>
       ) : (
         <div className="px-5 pb-5">
-          <p className="mb-3 text-[14px] text-neutral-500 dark:text-neutral-400">Why are you reporting this post?</p>
-          <div role="radiogroup" aria-label="Reason" className="space-y-1.5">
+          <p className="mb-3 text-[14px] text-neutral-500 dark:text-neutral-400">{t('Why are you reporting this post?')}</p>
+          <div role="radiogroup" aria-label={t('Reason')} className="space-y-1.5">
             {REASONS.map((item) => {
               const selected = reason === item.value;
               return (
@@ -106,8 +109,8 @@ export function ContentPostReportDialog({
                     {selected ? <span className="h-2 w-2 rounded-full bg-[#111111] dark:bg-white" /> : null}
                   </span>
                   <span className="min-w-0">
-                    <span className="block text-[15px] font-semibold text-[#111111] dark:text-white">{item.label}</span>
-                    <span className="block text-[13px] text-neutral-500 dark:text-neutral-400">{item.hint}</span>
+                    <span className="block text-[15px] font-semibold text-[#111111] dark:text-white">{t(item.label)}</span>
+                    <span className="block text-[13px] text-neutral-500 dark:text-neutral-400">{t(item.hint)}</span>
                   </span>
                 </button>
               );
@@ -117,7 +120,7 @@ export function ContentPostReportDialog({
           {reason ? (
             <div className="mt-4">
               <label htmlFor="report-details" className="mb-1.5 block text-[14px] font-semibold text-[#111111] dark:text-neutral-200">
-                Details <span className="font-normal text-neutral-400">(optional)</span>
+                {t('Details')} <span className="font-normal text-neutral-400">{t('(optional)')}</span>
               </label>
               <textarea
                 id="report-details"
@@ -125,7 +128,7 @@ export function ContentPostReportDialog({
                 onChange={(e) => setDetails(e.target.value)}
                 maxLength={2000}
                 rows={3}
-                placeholder="Anything that helps us understand the problem"
+                placeholder={t('Anything that helps us understand the problem')}
                 className="block w-full resize-none rounded-xl border border-black/[0.14] bg-transparent px-3.5 py-2.5 text-[15px] text-[#111111] caret-[#FF5722] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:border-white/[0.16] dark:text-white dark:placeholder:text-neutral-600"
               />
             </div>
@@ -139,7 +142,7 @@ export function ContentPostReportDialog({
 
           <div className="mt-5 flex items-center justify-end gap-2">
             <button type="button" onClick={onClose} disabled={submitting} className={DIALOG_SECONDARY_BUTTON}>
-              Cancel
+              {t('Cancel')}
             </button>
             <button
               type="button"
@@ -150,7 +153,7 @@ export function ContentPostReportDialog({
               {submitting ? (
                 <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
               ) : null}
-              Send report
+              {t('Send report')}
             </button>
           </div>
         </div>

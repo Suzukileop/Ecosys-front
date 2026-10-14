@@ -24,6 +24,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Statement CTA — Awwwards-level asymmetric "Split éclaté" layout.
@@ -100,6 +101,7 @@ function splitBioParagraphs(raw: string): [string, string] {
 }
 
 export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
@@ -142,7 +144,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
   const [bioLead, bioTrail] = useMemo(() => {
     const source =
       data.description?.trim() ||
-      'I turn complex ideas into thoughtful, high-performing products through strategy, design, and development.\n\nI partner with founders and teams to ship clear interfaces, resilient systems, and work that feels inevitable.';
+      t('I turn complex ideas into thoughtful, high-performing products through strategy, design, and development.\n\nI partner with founders and teams to ship clear interfaces, resilient systems, and work that feels inevitable.');
     return splitBioParagraphs(source);
   }, [data.description]);
 
@@ -608,7 +610,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         }`}
         style={{ backgroundColor: ink, color: fond }}
       >
-        Start a project
+        {t('Start a project')}
       </a>
       <a
         href={secondaryHref}
@@ -618,7 +620,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         }`}
         style={{ color: ink }}
       >
-        View project
+        {t('View project')}
       </a>
     </div>
   );
@@ -657,7 +659,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         {avatarUrl ? (
           <Image
             src={avatarUrl}
-            alt={`Portrait of ${displayName}`}
+            alt={t('Portrait of {displayName}', { displayName })}
             fill
             sizes="(max-width: 768px) 56vw, 22vw"
             className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
@@ -692,7 +694,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           {avatarUrl ? (
             <Image
               src={avatarUrl}
-              alt={`Portrait of ${displayName}`}
+              alt={t('Portrait of {displayName}', { displayName })}
               fill
               sizes="(max-width: 768px) 56vw, 22vw"
               className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
@@ -764,7 +766,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           style={{ color: muted }}
           aria-hidden
         >
-          Cover
+          {t('Cover')}
         </div>
       )}
     </div>
@@ -906,7 +908,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                                 type="button"
                                 className="pf-statement-cursor-zone pf-statement-photo-click relative block cursor-pointer rounded-full border-0 bg-transparent p-0"
                                 onClick={onPhotoClick}
-                                aria-label="Voir le profil complet"
+                                aria-label={t('Voir le profil complet')}
                                 style={{ width: desktopPortraitSize, height: desktopPortraitSize }}
                               >
                                 {portraitDisk(desktopPortraitSize)}
@@ -920,7 +922,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                                     backdropFilter: 'blur(8px)',
                                   }}
                                 >
-                                  View • Profile
+                                  {t('View • Profile')}
                                 </span>
                               </button>
                             </div>
@@ -965,7 +967,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                 gap: 'clamp(2rem, 4vw, 3.5rem)',
               }}
               role="list"
-              aria-label="Tools"
+              aria-label={t('Tools')}
             >
               {statementTools.map((tool, index) => (
                 <span
@@ -1051,7 +1053,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                     style={{ color: muted }}
                     aria-hidden
                   >
-                    Cover
+                    {t('Cover')}
                   </div>
                 )}
               </div>
@@ -1067,7 +1069,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                 type="button"
                 className="pf-statement-photo-click relative block cursor-pointer rounded-full border-0 bg-transparent p-0"
                 onClick={onPhotoClick}
-                aria-label="Voir le profil complet"
+                aria-label={t('Voir le profil complet')}
                 style={{ width: mobilePortraitSize, height: mobilePortraitSize }}
               >
                 {portraitDisk(mobilePortraitSize)}
@@ -1104,7 +1106,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           <div
             className="pf-statement-tools-bar mt-6 flex flex-wrap items-baseline gap-x-6 gap-y-3"
             role="list"
-            aria-label="Tools"
+            aria-label={t('Tools')}
           >
             {statementTools.map((tool, index) => (
               <span

@@ -32,6 +32,7 @@ import {
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type LinkItem = {
   id?: string;
@@ -74,25 +75,26 @@ function linksSignature(_key: keyof LinksDraft, value: LinksDraft[keyof LinksDra
 }
 
 function CvSwitch({ shown, onChange, label }: { shown: boolean; onChange: (shown: boolean) => void; label: string }) {
+  const t = useT();
   return (
     <button
       type="button"
       role="switch"
       aria-checked={shown}
       aria-label={label}
-      title={shown ? 'Shown in CV' : 'Hidden from CV'}
+      title={shown ? t('Shown in CV') : t('Hidden from CV')}
       onClick={() => onChange(!shown)}
-      className="mr-2 inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40"
+      className="mr-2 inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
     >
       <span
         className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 ${
-          shown ? 'bg-[#FF5722]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
+          shown ? 'bg-[#0F1419] dark:bg-[#EFF3F4]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
         }`}
       >
         <span
           aria-hidden
           className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-            shown ? 'translate-x-3.5' : 'translate-x-0.5'
+            shown ? 'translate-x-3.5 dark:bg-[#0F1419]' : 'translate-x-0.5'
           }`}
         />
       </span>
@@ -101,7 +103,7 @@ function CvSwitch({ shown, onChange, label }: { shown: boolean; onChange: (shown
           shown ? 'text-[#111111] dark:text-neutral-100' : 'text-neutral-500 dark:text-neutral-400'
         }`}
       >
-        CV
+        {t('CV')}
       </span>
     </button>
   );
@@ -127,6 +129,7 @@ const LinkRowView = memo(function LinkRowView({
   onMove: (key: string, direction: -1 | 1) => void;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const { inputRef, uploading, uploadError, pickFile, onFileChange } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: (url) => onChange(row.key, { iconUrl: url.trim() || null }),
@@ -146,8 +149,8 @@ const LinkRowView = memo(function LinkRowView({
         type="button"
         onClick={pickFile}
         disabled={uploading || !url}
-        title={url ? (row.iconUrl ? 'Replace icon' : 'Upload your own icon') : undefined}
-        aria-label={row.iconUrl ? 'Replace icon' : 'Upload your own icon'}
+        title={url ? (row.iconUrl ? t('Replace icon') : t('Upload your own icon')) : undefined}
+        aria-label={row.iconUrl ? t('Replace icon') : t('Upload your own icon')}
         className="group/icon relative inline-flex h-12 w-12 items-center justify-center rounded-full disabled:cursor-default"
       >
         {uploading ? (
@@ -168,14 +171,14 @@ const LinkRowView = memo(function LinkRowView({
 
       <div className="min-w-0">
         <p className={`truncate text-base font-semibold ${hostname ? 'text-black dark:text-neutral-100' : 'text-neutral-400 dark:text-neutral-500'}`}>
-          {hostname || 'New link'}
+          {hostname || t('New link')}
         </p>
         <StudioUnderline quiet className="mt-0.5">
           <input
             type="text"
             inputMode="url"
             value={row.url}
-            placeholder="Paste a link, e.g. linkedin.com/in/you"
+            placeholder={t('Paste a link, e.g. linkedin.com/in/you')}
             aria-label={`Link ${index + 1}`}
             aria-invalid={error ? true : undefined}
             autoFocus={autoFocus}
@@ -201,8 +204,8 @@ const LinkRowView = memo(function LinkRowView({
           {row.iconUrl ? (
             <button
               type="button"
-              title="Use detected icon"
-              aria-label="Use detected icon"
+              title={t('Use detected icon')}
+              aria-label={t('Use detected icon')}
               onClick={() => onChange(row.key, { iconUrl: null })}
               className={ROW_ACTION_CLASS}
             >
@@ -214,8 +217,8 @@ const LinkRowView = memo(function LinkRowView({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              title="Open link"
-              aria-label={`Open ${hostname}`}
+              title={t('Open link')}
+              aria-label={t('Open {hostname}', { hostname })}
               className={ROW_ACTION_CLASS}
             >
               <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="h-3 w-3" />
@@ -223,7 +226,7 @@ const LinkRowView = memo(function LinkRowView({
           ) : null}
           <button
             type="button"
-            title="Move up"
+            title={t('Move up')}
             aria-label={`Move link ${index + 1} up`}
             disabled={index === 0}
             onClick={() => onMove(row.key, -1)}
@@ -233,7 +236,7 @@ const LinkRowView = memo(function LinkRowView({
           </button>
           <button
             type="button"
-            title="Move down"
+            title={t('Move down')}
             aria-label={`Move link ${index + 1} down`}
             disabled={index >= total - 1}
             onClick={() => onMove(row.key, 1)}
@@ -249,6 +252,7 @@ const LinkRowView = memo(function LinkRowView({
 });
 
 function LinksList({ getDraft, change }: { getDraft: () => LinksDraft; change: StudioChangeHandler<LinksDraft> }) {
+  const t = useT();
   const [rows, setRows] = useState(() => getDraft().items);
   const [freshKey, setFreshKey] = useState<string | null>(null);
 
@@ -297,17 +301,17 @@ function LinksList({ getDraft, change }: { getDraft: () => LinksDraft; change: S
   };
 
   return (
-    <section className="pb-10 pt-3" aria-label="Links">
-      <StudioSectionHeader label={`Links · ${String(rows.length).padStart(2, '0')}`}>
+    <section className="pb-10 pt-3" aria-label={t('Links')}>
+      <StudioSectionHeader label={t('Links · {padStart}', { padStart: String(rows.length).padStart(2, '0') })}>
         <span className={STUDIO_SECONDARY_CLASS}>
-          {rows.length} of {MAX_PROFILE_LINKS}
+          {t('{rowsLength} of {MAXPROFILELINKS}', { rowsLength: rows.length, MAXPROFILELINKS: MAX_PROFILE_LINKS })}
         </span>
-        <StudioIconAction icon="add" label="Add link" onClick={add} disabled={rows.length >= MAX_PROFILE_LINKS} />
+        <StudioIconAction icon="add" label={t('Add link')} onClick={add} disabled={rows.length >= MAX_PROFILE_LINKS} />
       </StudioSectionHeader>
 
       {rows.length === 0 ? (
-        <button type="button" onClick={add} className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}>
-          No link yet — add where people can find you.
+        <button type="button" onClick={add} className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA]`}>
+          {t('No link yet — add where people can find you.')}
         </button>
       ) : (
         <ul style={STUDIO_FLOAT_IN_STYLE}>

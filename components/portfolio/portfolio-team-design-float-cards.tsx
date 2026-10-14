@@ -60,6 +60,7 @@ import {
   type PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
 import type { ProfileTeamMember } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The one curve for this design — nothing here eases on anything else. */
 const FLOAT_EASE = 'cubic-bezier(0.25, 1, 0.5, 1)';
@@ -588,12 +589,13 @@ function TeamFloatChevron({
   borderColor: string;
   color: string;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={direction === -1 ? 'Previous member' : 'Next member'}
+      aria-label={direction === -1 ? t('Previous member') : t('Next member')}
       className={`group/nav flex h-12 w-12 shrink-0 items-center justify-center rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
         disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
       }`}
@@ -639,6 +641,7 @@ export function TeamFloatCardsGallery({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
+  const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef<{ pointerId: number; startX: number; startLeft: number; moved: boolean } | null>(null);
   const opensOn = presentation.floatCardsView ?? 'grid';
@@ -816,7 +819,7 @@ export function TeamFloatCardsGallery({
 
       {members.length > 1 ? (
         <div className={`mt-10 flex flex-wrap items-center gap-x-8 gap-y-5 ${toolbarAlign}`}>
-          <div role="tablist" aria-label="Team view" className="flex shrink-0 items-center gap-6">
+          <div role="tablist" aria-label={t('Team view')} className="flex shrink-0 items-center gap-6">
             {PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS.map((option) => {
               const active = option.value === view;
               return (

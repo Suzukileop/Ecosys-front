@@ -9,6 +9,7 @@ import {
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const LABEL_SIZE: Record<PortfolioFooterHeaderTitleSize, string> = {
   sm: '0.6875rem',
@@ -78,6 +79,7 @@ export function FooterHeaderSerifLeadHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FOOTER_PRESENTATION;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'footer-serif-lead');
   const align = presentation.headerDesignAlignment ?? 'left';
   const centered = align === 'center';
   const alignRight = align === 'right';
@@ -112,17 +114,19 @@ export function FooterHeaderSerifLeadHeader({
     >
       <div className={`flex flex-col gap-3 ${itemsAlignClass}`}>
         <div className="min-w-0">
-          <p
-            className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
-            style={{
-              color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
-              fontSize: labelFontSize,
-              fontWeight: labelFontWeight,
-            }}
-          >
-            {label}
-          </p>
-          {lines.length > 0 ? (
+          {show('label') ? (
+            <p
+              className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
+              style={{
+                color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
+                fontSize: labelFontSize,
+                fontWeight: labelFontWeight,
+              }}
+            >
+              {label}
+            </p>
+          ) : null}
+          {show('title') && lines.length > 0 ? (
             <h2
               className="mb-0 mt-[1.05rem] font-serif"
               style={{
@@ -145,7 +149,7 @@ export function FooterHeaderSerifLeadHeader({
               ))}
             </h2>
           ) : null}
-          {subtitle ? (
+          {show('subtitle') && subtitle ? (
             <p
               className="mb-0 mt-3 max-w-xl leading-relaxed"
               style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight }}

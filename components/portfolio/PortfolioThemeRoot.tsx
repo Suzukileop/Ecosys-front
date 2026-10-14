@@ -9,7 +9,10 @@ import {
 import type { PortfolioCustomTheme } from '@/components/portfolio/portfolio-custom-themes';
 import { customThemeToPickerTheme } from '@/components/portfolio/portfolio-custom-themes';
 import type { PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
-import { portfolioPaletteCssVars } from '@/components/portfolio/portfolio-color-mode';
+import {
+  portfolioPaletteAccentTintVars,
+  portfolioPaletteCssVars,
+} from '@/components/portfolio/portfolio-color-mode';
 
 export function PortfolioThemeRoot({
   themeId,
@@ -42,7 +45,13 @@ export function PortfolioThemeRoot({
 }) {
   const pickerThemes = customThemes.map(customThemeToPickerTheme);
   const mono = portfolioUsesMonochromeChrome(themeId, monochromeUi);
-  const paletteVars = activePalette ? portfolioPaletteCssVars(activePalette) : undefined;
+  // Monochrome chrome keeps its own grey tints; otherwise the accent tints follow the palette.
+  const paletteVars = activePalette
+    ? {
+        ...portfolioPaletteCssVars(activePalette),
+        ...(mono ? null : portfolioPaletteAccentTintVars(activePalette.principal)),
+      }
+    : undefined;
   /** Arm color transitions after first paint — avoids animating the initial load. */
   const [colorTransitionsReady, setColorTransitionsReady] = useState(false);
   useEffect(() => {

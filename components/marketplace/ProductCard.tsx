@@ -1,9 +1,10 @@
 'use client';
 
+import { ProductStatusBadges } from '@/components/marketplace/ProductStatusBadges';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faComment, faCrown, faThumbtack } from '@fortawesome/free-solid-svg-icons';
-import { collectProductLabels, formatPrice, formatVideoDuration, isFreeProduct } from '@/lib/marketplace-api';
+import { collectProductLabels, formatPrice, formatVideoDuration, isFreeProduct, productTypeName } from '@/lib/marketplace-api';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { useAuth } from '@/context/AuthContext';
 import { setPendingProductDraft } from '@/lib/chat-product-draft';
@@ -11,10 +12,19 @@ import { ProductCardEngagementStrip } from '@/components/marketplace/ProductCard
 import { ProductFavoriteButton } from '@/components/marketplace/ProductFavoriteButton';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Responsive product grid — max 3 columns so cards stay airy and titles readable. */
 export const marketplaceProductGridClassName =
-  'grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3';
+  'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-6 lg:grid-cols-3';
+
+/**
+ * The Products page's grid, in the column beside its rail: two columns from sm, three once that
+ * column passes ~820px (1400px viewports) so a card never drops under ~250px. Cards 8px apart on
+ * phones, 20px from sm — the News / Providers rhythm.
+ */
+export const marketplaceRailProductGridClassName =
+  'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-5 min-[1400px]:grid-cols-3';
 
 type ProductCardProps = {
   product: MarketplaceProductSummary;
@@ -40,19 +50,22 @@ export function ProductCard({
   onLikedChange,
   flushOnMobile = false,
 }: ProductCardProps) {
+  const t = useT();
   const { user } = useAuth();
   const targetHref = href ?? `/marketplace/products/${product.id}`;
   const isVideo = product.type === 'VIDEO';
   const hasVideoThumbnail = isVideoThumbnailUrl(product.thumbnailUrl);
-  const { genre, tags } = collectProductLabels(product);
-  const labels = [...(genre ? [genre] : []), ...tags];
+  /* One eyebrow over the title — the genre, else the digital format ("Course", "Preset") — in the
+     small-caps of My services' specialty line. Tags stay for search; on the card they were noise. */
+  const { genre } = collectProductLabels(product);
+  const eyebrow = genre || (product.type && product.type !== 'PHYSICAL' ? productTypeName(product.type, product.typeLabel) : null);
   const shopName = product.shopName?.trim() || null;
   const authorName = product.creatorName?.trim() || null;
 
   const isOwnProduct = Boolean(user?.id && user.id === product.creatorId);
   const discussionPath = `/messages?user=${encodeURIComponent(product.creatorId)}&product=${encodeURIComponent(product.id)}`;
   const messageHref = user ? discussionPath : `/login?redirect=${encodeURIComponent(discussionPath)}`;
-  const messageLabel = authorName ? `Message ${authorName}` : 'Message creator';
+  const messageLabel = authorName ? `Message ${authorName}` : t('Message creator');
 
   const hasDiscount =
     !isFreeProduct(product.priceCents) &&
@@ -66,13 +79,12 @@ export function ProductCard({
 
   return (
     <article
-      className={`group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16] ${
-        flushOnMobile ? 'max-sm:rounded-none max-sm:border-x-0 max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16]' : ''
-      }`}
+      data-flush={flushOnMobile ? '' : undefined}
+      className="group flex w-full flex-col overflow-hidden !rounded-none border-0 bg-[color:var(--gn-surface,#F7F9F9)] dark:bg-[color:var(--gn-surface,#16181C)]"
     >
       <Link
         href={targetHref}
-        className="relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-black/[0.04] dark:bg-white/[0.04]"
+        className="relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#EFF3F4] dark:bg-[#202327]"
       >
         {product.thumbnailUrl ? (
           <div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
@@ -85,29 +97,30 @@ export function ProductCard({
           </div>
         ) : (
           <div className="flex h-full items-center justify-center">
-            <span className="text-[14px] text-neutral-400 dark:text-neutral-500">Preview unavailable</span>
+            <span className="text-[13px] text-[#536471] dark:text-[#71767B]">{t('No preview')}</span>
           </div>
         )}
 
-        {product.videoResolution ? (
-          <div className="absolute left-3 top-3">
-            <span className={OVERLAY_CHIP}>{product.videoResolution}</span>
+        {product.videoResolution || (product.statusLabels?.length ?? 0) > 0 ? (
+          <div className="pointer-events-none absolute left-3 right-28 top-3 flex flex-wrap gap-1.5">
+            <ProductStatusBadges labels={product.statusLabels} />
+            {product.videoResolution ? <span className={OVERLAY_CHIP}>{product.videoResolution}</span> : null}
           </div>
         ) : null}
 
         <div className="absolute right-3 top-3 flex items-start gap-1.5" onClick={(e) => e.preventDefault()}>
           {product.isPinned ? (
             <span
-              title="Pinned"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#FF5722] shadow-sm dark:bg-[#111111]/95"
+              title={t('Pinned')}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#fff]/95 text-[#0F1419] dark:bg-black/80 dark:text-[#E7E9EA]"
             >
               <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
             </span>
           ) : null}
           {product.isBestseller ? (
             <span
-              title="Bestseller"
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-amber-500 shadow-sm dark:bg-[#111111]/95"
+              title={t('Bestseller')}
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-[#fff]/95 text-[#0F1419] dark:bg-black/80 dark:text-[#E7E9EA]"
             >
               <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
             </span>
@@ -133,21 +146,26 @@ export function ProductCard({
         ) : null}
       </Link>
 
-      <div className="flex flex-1 flex-col gap-3 p-5">
+      <div className="flex flex-1 flex-col gap-2 p-4 sm:p-5">
+        {eyebrow ? (
+          <p className="-mb-1.5 truncate text-[13px] leading-[18px] text-[color:var(--gn-ink2,#536471)]">
+            {eyebrow}
+          </p>
+        ) : null}
         <Link
           href={targetHref}
-          className="line-clamp-2 text-[17px] font-semibold leading-snug tracking-[-0.01em] text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white"
+          className="line-clamp-2 text-[16px] font-semibold leading-[22px] tracking-[-0.01em] text-[color:var(--gn-ink,#0F1419)] decoration-[1.5px] underline-offset-4 hover:underline"
           title={product.title}
         >
           {product.title}
         </Link>
 
         {showCreator && (authorName || shopName) ? (
-          <p className="flex min-w-0 items-center gap-1.5 text-[14px] text-neutral-500 dark:text-neutral-400">
+          <p className="-mt-1 flex min-w-0 items-center gap-1.5 text-[13px] leading-[18px] text-[color:var(--gn-ink2,#536471)]">
             {authorName ? (
               <Link
                 href={`/providers/${product.creatorId}`}
-                className="truncate font-medium text-neutral-700 transition-colors hover:text-[#FF5722] dark:text-neutral-200"
+                className="truncate font-medium text-[color:var(--gn-ink2,#536471)] underline-offset-2 transition-colors hover:text-[color:var(--gn-ink,#0F1419)] hover:underline"
                 onClick={(e) => e.stopPropagation()}
               >
                 {authorName}
@@ -162,30 +180,17 @@ export function ProductCard({
           </p>
         ) : null}
 
-        {labels.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {labels.map((label, index) => (
-              <span
-                key={`${label}-${index}`}
-                className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[13px] text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="mt-auto flex items-center justify-between gap-4 border-t border-black/[0.06] pt-4 dark:border-white/[0.06]">
-          <div className="min-w-0">
-            {hasDiscount && (
-              <p className="text-[14px] text-neutral-400 line-through dark:text-neutral-500">
-                {formatPrice(product.compareAtPriceCents!, product.currency)}
-              </p>
-            )}
-            <p className="text-base font-semibold text-[#111111] dark:text-white">
+        <div className="mt-auto flex items-center justify-between gap-4 pt-2">
+          <p className="flex min-w-0 items-baseline gap-2">
+            <span className="text-[17px] font-bold leading-[22px] text-[color:var(--gn-ink,#0F1419)]">
               {formatPrice(product.priceCents, product.currency)}
-            </p>
-          </div>
+            </span>
+            {hasDiscount && (
+              <span className="text-[13px] text-[color:var(--gn-ink3,#8B98A5)] line-through">
+                {formatPrice(product.compareAtPriceCents!, product.currency)}
+              </span>
+            )}
+          </p>
           <div className="flex shrink-0 items-center gap-3">
             <ProductCardEngagementStrip
               productId={product.id}
@@ -203,7 +208,7 @@ export function ProductCard({
                 }}
                 title={messageLabel}
                 aria-label={messageLabel}
-                className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-black/[0.12] text-[#111111] transition-colors hover:border-[#111111] hover:bg-[#111111] hover:text-white dark:border-white/[0.12] dark:text-white dark:hover:border-white dark:hover:bg-white dark:hover:text-[#111111]"
+                className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--gn-ink2,#536471)] transition-colors hover:bg-[color:var(--gn-hover,rgba(15,20,25,0.06))] hover:text-[color:var(--gn-ink,#0F1419)]"
               >
                 <FontAwesomeIcon icon={faComment} className="h-3.5 w-3.5" />
               </Link>

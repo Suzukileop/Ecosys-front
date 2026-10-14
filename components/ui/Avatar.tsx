@@ -68,8 +68,8 @@ function AvatarFallback({
 
   const fallbackClassName =
     tone === 'muted'
-      ? 'bg-gray-100 text-gray-900 dark:bg-neutral-800 dark:text-white'
-      : 'bg-[#F97316] text-white';
+      ? 'bg-[#EFF3F4] text-[#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA]'
+      : 'bg-[#CFD9DE] text-[#0F1419] dark:bg-[#333639] dark:text-[#E7E9EA]';
 
   return (
     <div
@@ -96,7 +96,7 @@ export function Avatar({ name, avatarUrl, size = 'md', tone = 'brand' }: AvatarP
         unoptimized={shouldBypassImageOptimizer(resolved)}
         onError={() => setFailed(true)}
         referrerPolicy="no-referrer"
-        className={`${sizeClasses[size]} shrink-0 rounded-full bg-neutral-200 object-cover dark:bg-neutral-800`}
+        className={`${sizeClasses[size]} shrink-0 rounded-full bg-[#EFF3F4] object-cover dark:bg-[#202327]`}
       />
     );
   }

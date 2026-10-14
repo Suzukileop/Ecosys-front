@@ -15,6 +15,37 @@ import { type SpokenLanguageEntry } from '@/lib/spoken-languages';
 import { resolveAvailabilityStatusLabel } from '@/lib/availability-status';
 import type { ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
+import { useT } from '@/lib/i18n/I18nProvider';
+
+/** The site's two buttons (News, Providers, search): a solid ink pill and an outlined pill. */
+export const PORTFOLIO_PRIMARY_PILL =
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary,#0F1419)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink,#FFFFFF)] transition-colors hover:bg-[color:var(--gn-primary-hover,#272C30)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+export const PORTFOLIO_SECONDARY_PILL =
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-ink,#0F1419)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
+
+/** One glyph per visibility level, so the setting reads at a glance: a globe, two people, a lock. */
+function VisibilityGlyph({ level, className = 'h-3.5 w-3.5' }: { level: ContactVisibilityLevel; className?: string }) {
+  return (
+    <svg viewBox="0 0 24 24" className={`shrink-0 ${className}`} fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      {level === 'HIDDEN' ? (
+        <>
+          <rect x="5" y="11" width="14" height="9" rx="2" />
+          <path d="M8 11V8a4 4 0 0 1 8 0v3" />
+        </>
+      ) : level === 'MEMBERS' ? (
+        <>
+          <circle cx="9" cy="8.5" r="3" />
+          <path d="M3.5 19a5.5 5.5 0 0 1 11 0M16 5.8a3 3 0 0 1 0 5.4M17.5 14a5.5 5.5 0 0 1 3 5" />
+        </>
+      ) : (
+        <>
+          <circle cx="12" cy="12" r="8.5" />
+          <path d="M3.5 12h17M12 3.5c2.3 2.4 3.5 5.2 3.5 8.5s-1.2 6.1-3.5 8.5c-2.3-2.4-3.5-5.2-3.5-8.5s1.2-6.1 3.5-8.5z" />
+        </>
+      )}
+    </svg>
+  );
+}
 
 function PortfolioFieldIconButton({
   label,
@@ -33,12 +64,12 @@ function PortfolioFieldIconButton({
 }) {
   const toneClass =
     tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
+      ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
       : tone === 'cancel'
-        ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
+        ? 'border-[#CFD9DE] bg-white text-[#536471] hover:border-[#0F1419] hover:text-[#0F1419] dark:border-[#536471] dark:bg-transparent dark:text-[#71767B] dark:hover:border-[#E7E9EA] dark:hover:text-[#E7E9EA]'
         : active
-          ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-          : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-200';
+          ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+          : 'border-[#CFD9DE] bg-white text-[#536471] hover:border-[#0F1419] hover:text-[#0F1419] dark:border-[#536471] dark:bg-transparent dark:text-[#71767B] dark:hover:border-[#E7E9EA] dark:hover:text-[#E7E9EA]';
 
   return (
     <button
@@ -59,12 +90,20 @@ export function PortfolioFieldVisibilityMenu({
   onChange,
   menuPlacement = 'up',
   size = 'sm',
+  variant = 'icon',
 }: {
   value: ContactVisibilityLevel;
   onChange: (value: ContactVisibilityLevel) => void;
   menuPlacement?: 'up' | 'down';
   size?: 'sm' | 'md';
+  /**
+   * `text` — the level in words beside a label ("Public ▾", "Only me ▾"), as LinkedIn's "Visible to":
+   * quiet secondary ink, the fill tone under the pointer, and it says what it does without a hover.
+   * `icon` — the round eye button.
+   */
+  variant?: 'icon' | 'text';
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -78,28 +117,55 @@ export function PortfolioFieldVisibilityMenu({
   }, [open]);
 
   const hidden = value === 'HIDDEN';
-  const label = CONTACT_VISIBILITY_OPTIONS.find((option) => option.value === value)?.label ?? 'Public';
+  /* In words, "Hidden" reads as "the field is hidden"; it means only the owner sees it. */
+  const optionLabel = (level: ContactVisibilityLevel, fallback: string) =>
+    variant === 'text' && level === 'HIDDEN' ? t('Only me') : fallback;
+  const label = optionLabel(
+    value,
+    CONTACT_VISIBILITY_OPTIONS.find((option) => option.value === value)?.label ?? 'Public'
+  );
   const buttonSizeClass = size === 'md' ? 'h-10 w-10' : 'h-8 w-8';
 
   return (
     <div ref={rootRef} className="relative inline-flex shrink-0 items-center">
+      {variant === 'text' ? (
+      /* A privacy setting, so it is drawn as one: a small pill in the fill tone with the level's glyph
+         and its name — not quiet secondary text that reads as decoration. */
       <button
         type="button"
-        title={`Visibility: ${label}`}
-        aria-label={`Visibility: ${label}`}
+        title={t('Who can see this: {label}', { label })}
+        aria-label={t('Who can see this: {label}', { label })}
+        aria-expanded={open}
+        onClick={() => setOpen((prev) => !prev)}
+        className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold leading-4 text-[color:var(--gn-ink,#0F1419)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+          open ? 'bg-[color:var(--gn-hover)]' : 'bg-[color:var(--gn-inset,#EFF3F4)] hover:bg-[color:var(--gn-hover)]'
+        }`}
+      >
+        <VisibilityGlyph level={value} />
+        {label}
+        <svg aria-hidden viewBox="0 0 16 16" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" className={`h-3 w-3 text-[color:var(--gn-ink2,#536471)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}>
+          <path d="m4 6 4 4 4-4" />
+        </svg>
+      </button>
+      ) : (
+      <button
+        type="button"
+        title={t('Visibility: {label}', { label })}
+        aria-label={t('Visibility: {label}', { label })}
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
         className={`inline-flex shrink-0 items-center justify-center rounded-full border transition ${buttonSizeClass} ${
           open || hidden
-            ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-            : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:hover:border-white dark:hover:bg-white dark:hover:text-black'
+            ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+            : 'border-[#CFD9DE] bg-white text-[#0F1419] hover:border-[#0F1419] hover:bg-[#0F1419] hover:text-white dark:border-[#536471] dark:bg-transparent dark:text-[#E7E9EA] dark:hover:border-[#EFF3F4] dark:hover:bg-[#EFF3F4] dark:hover:text-[#0F1419]'
         }`}
       >
         <FontAwesomeIcon icon={hidden ? faEyeSlash : faEye} className="h-3.5 w-3.5" fixedWidth />
       </button>
+      )}
       {open ? (
         <div
-          className={`absolute z-50 min-w-[9.5rem] overflow-hidden rounded-lg border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900 ${
+          className={`absolute z-50 min-w-[11rem] overflow-hidden p-1.5 rounded-2xl bg-[#FEFEFE] shadow-[0_0_0_1px_#E1E8ED,0_8px_20px_-14px_rgba(15,20,25,0.18)] dark:bg-[#000000] dark:shadow-[0_0_0_1px_#2F3336] ${
             menuPlacement === 'down' ? 'right-0 top-full mt-1.5' : 'right-0 bottom-full mb-1.5'
           }`}
         >
@@ -111,13 +177,19 @@ export function PortfolioFieldVisibilityMenu({
                 onChange(option.value);
                 setOpen(false);
               }}
-              className={`flex w-full items-center px-3 py-2 text-left text-xs font-medium transition ${
+              className={`flex w-full items-center gap-2.5 rounded-xl px-3 py-2 text-left text-[13px] transition-colors hover:bg-[color:var(--gn-hover)] ${
                 option.value === value
-                  ? 'bg-[#FFF7ED] text-[#EA580C] dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-                  : 'text-neutral-700 hover:bg-neutral-50 dark:text-neutral-200 dark:hover:bg-neutral-800'
+                  ? 'font-semibold text-[color:var(--gn-ink,#0F1419)]'
+                  : 'font-medium text-[color:var(--gn-ink2,#536471)]'
               }`}
             >
-              {option.label}
+              <VisibilityGlyph level={option.value} />
+              <span className="flex-1">{optionLabel(option.value, option.label)}</span>
+              {option.value === value ? (
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5 shrink-0" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="m5 12.5 4.5 4.5L19 7.5" />
+                </svg>
+              ) : null}
             </button>
           ))}
         </div>
@@ -188,9 +260,10 @@ export function PortfolioProfileHero({
   hideBottomBorder?: boolean;
   /** When false, only the action toolbar is shown (no avatar / name / plan). */
   showIdentity?: boolean;
-  /** Outline "Preview" action next to Upgrade in the identity header. */
+  /** "Preview" pill in the identity header — phones only: from md the rail's actions box has it. */
   onPreview?: () => void;
 }) {
+  const t = useT();
   const displayName = name.trim() || 'Your name';
   const showEditSessionActions = Boolean(
     aboutChromeOpen && onEditSessionCancel && onEditSessionDone && !hideHeroActions
@@ -213,7 +286,7 @@ export function PortfolioProfileHero({
   const actions = showAboutControls ? (
     <div className="relative z-30 flex shrink-0 flex-wrap items-center gap-2">
       {showEditModeToggle ? (
-        <div className="inline-flex rounded-lg border border-neutral-200 p-0.5 dark:border-neutral-700">
+        <div className="inline-flex rounded-full bg-[color:var(--gn-hover)] p-0.5">
           {(['individual', 'global'] as const).map((mode) => {
             const active = aboutEditMode === mode;
             return (
@@ -221,13 +294,13 @@ export function PortfolioProfileHero({
                 key={mode}
                 type="button"
                 onClick={() => onAboutEditModeChange?.(mode)}
-                className={`rounded-md px-2.5 py-1.5 text-xs font-semibold transition ${
+                className={`rounded-full px-3 py-1.5 text-[13px] font-semibold transition ${
                   active
-                    ? 'bg-neutral-900 text-white dark:bg-white dark:text-neutral-900'
-                    : 'text-neutral-600 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-neutral-100'
+                    ? 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+                    : 'text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]'
                 }`}
               >
-                {mode === 'individual' ? 'Individual' : 'Global'}
+                {mode === 'individual' ? t('Individual') : t('Global')}
               </button>
             );
           })}
@@ -236,7 +309,7 @@ export function PortfolioProfileHero({
 
       {showEditModeToggle && aboutEditMode === 'global' ? (
         <PortfolioFieldIconButton
-          label={aboutGlobalHasChanges ? 'Confirm all changes' : 'No changes to confirm'}
+          label={aboutGlobalHasChanges ? t('Confirm all changes') : t('No changes to confirm')}
           tone={aboutGlobalHasChanges ? 'confirm' : 'neutral'}
           disabled={!aboutGlobalHasChanges || saving}
           onClick={() => onAboutGlobalConfirm?.()}
@@ -263,13 +336,13 @@ export function PortfolioProfileHero({
           type="button"
           onClick={onDeleteEntry}
           disabled={saving || deleteEntryDisabled}
-          title={deleteEntryActive ? 'Cancel delete' : deleteEntryLabel}
-          aria-label={deleteEntryActive ? 'Cancel delete' : deleteEntryLabel}
+          title={deleteEntryActive ? t('Cancel delete') : deleteEntryLabel}
+          aria-label={deleteEntryActive ? t('Cancel delete') : deleteEntryLabel}
           aria-pressed={deleteEntryActive}
           className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition disabled:cursor-not-allowed disabled:opacity-50 ${
             deleteEntryActive
-              ? 'border-red-300/80 bg-red-50/80 text-red-500 dark:border-red-500/40 dark:bg-red-500/10 dark:text-red-400'
-              : 'border-neutral-200 bg-white text-neutral-400 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-500 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-500 dark:hover:border-neutral-600 dark:hover:bg-neutral-800 dark:hover:text-neutral-400'
+              ? 'border-[#F4212E] bg-[#F4212E] text-white'
+              : 'border-[#CFD9DE] bg-white text-[#536471] hover:border-[#0F1419] hover:text-[#0F1419] dark:border-[#536471] dark:bg-transparent dark:text-[#71767B] dark:hover:border-[#E7E9EA] dark:hover:text-[#E7E9EA]'
           }`}
         >
           <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" fixedWidth aria-hidden />
@@ -278,22 +351,12 @@ export function PortfolioProfileHero({
 
       {showEditSessionActions ? (
         <div className="inline-flex items-center gap-2">
-          <button
-            type="button"
-            onClick={onEditSessionCancel}
-            disabled={saving}
-            className="rounded-full border border-neutral-300 bg-white px-4 py-2.5 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:bg-neutral-800"
-          >
-            Cancel
+          <button type="button" onClick={onEditSessionCancel} disabled={saving} className={PORTFOLIO_SECONDARY_PILL}>
+            {t('Cancel')}
           </button>
-          <button
-            type="button"
-            onClick={onEditSessionDone}
-            disabled={saving}
-            className="inline-flex items-center gap-2 rounded-full bg-[#F97316] px-4 py-2.5 text-sm font-semibold text-white transition hover:bg-[#EA580C] disabled:opacity-50 dark:text-neutral-950"
-          >
+          <button type="button" onClick={onEditSessionDone} disabled={saving} className={PORTFOLIO_PRIMARY_PILL}>
             {saving ? <LoadingSpinner size="sm" /> : null}
-            Done
+            {t('Done')}
           </button>
         </div>
       ) : null}
@@ -302,13 +365,13 @@ export function PortfolioProfileHero({
         <button
           type="button"
           onClick={onAboutToggle}
-          title={aboutChromeOpen ? 'Done' : 'Edit'}
-          aria-label={aboutChromeOpen ? 'Done' : 'Edit'}
+          title={aboutChromeOpen ? t('Done') : t('Edit')}
+          aria-label={aboutChromeOpen ? t('Done') : t('Edit')}
           aria-pressed={Boolean(aboutChromeOpen)}
           className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition ${
             aboutChromeOpen
-              ? 'border-[#F97316]/50 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/40 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
-              : 'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-400 hover:bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900 dark:text-neutral-200 dark:hover:border-neutral-500 dark:hover:bg-neutral-800'
+              ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+              : 'border-[#CFD9DE] bg-white text-[#0F1419] hover:border-[#0F1419] hover:bg-[#0F1419] hover:text-white dark:border-[#536471] dark:bg-transparent dark:text-[#E7E9EA] dark:hover:border-[#EFF3F4] dark:hover:bg-[#EFF3F4] dark:hover:text-[#0F1419]'
           }`}
         >
           <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" fixedWidth aria-hidden />
@@ -325,8 +388,8 @@ export function PortfolioProfileHero({
           aria-pressed={hideHeroActions}
           className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition disabled:cursor-not-allowed disabled:opacity-50 ${
             hideHeroActions
-              ? 'bg-[#EA580C] text-white dark:text-neutral-950'
-              : 'bg-[#F97316] text-white hover:bg-[#EA580C] dark:text-neutral-950'
+              ? 'bg-[#272C30] text-white dark:bg-[#D7DBDC] dark:text-[#0F1419]'
+              : 'bg-[#0F1419] text-white hover:bg-[#272C30] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]'
           }`}
         >
           <FontAwesomeIcon icon={faPlus} className="h-4 w-4" fixedWidth aria-hidden />
@@ -343,86 +406,67 @@ export function PortfolioProfileHero({
     );
   }
 
-  const statusLabel = resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable';
+  const statusLabel = resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? t('Unavailable');
   const showHeaderCtas = !aboutChromeOpen && !hideHeroActions;
 
   return (
-    <div className="relative">
-      {/* No banner: the avatar floats half outside the card's top edge. */}
-      <div className="px-5 pb-5 sm:px-7 sm:pb-6">
-        <div className="-mt-12 flex flex-col items-center gap-5 text-center sm:-mt-14 sm:flex-row sm:items-end sm:justify-between sm:gap-6 sm:text-left">
-          <div className="flex min-w-0 max-w-full flex-col items-center gap-3 sm:flex-row sm:items-end sm:gap-4">
-            <div
-              className="relative shrink-0 rounded-full bg-white p-1 dark:bg-[#0F0F0F]"
-              title={statusLabel}
-            >
-              {avatarUrl?.trim() ? (
-                <div className="h-24 w-24 overflow-hidden rounded-full sm:h-28 sm:w-28 [&_img]:!h-full [&_img]:!w-full">
-                  <Avatar name={displayName} avatarUrl={avatarUrl} size="xl" tone="muted" />
-                </div>
-              ) : (
-                <div
-                  className="flex h-24 w-24 items-center justify-center rounded-full bg-[#0a0a0a] text-2xl font-bold tracking-wide text-[#F97316] sm:h-28 sm:w-28"
-                  aria-hidden
-                >
-                  {displayName
-                    .split(' ')
-                    .filter(Boolean)
-                    .map((n) => n[0])
-                    .join('')
-                    .toUpperCase()
-                    .slice(0, 2) || '?'}
-                </div>
-              )}
-            </div>
-
-            <div className="min-w-0 max-w-full sm:pb-1.5">
-              <h2 className="truncate text-xl font-bold tracking-tight text-neutral-900 dark:text-white sm:text-2xl">
-                {displayName}
-              </h2>
-              <p className="mt-2 flex items-center justify-center gap-2.5 text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-600 dark:text-neutral-400 sm:justify-start">
-                <span
-                  className="h-1.5 w-1.5 shrink-0 animate-pulse rounded-full bg-emerald-500 [animation-duration:3s]"
-                  aria-hidden
-                />
-                <span>Published</span>
-                <span className="text-neutral-400 dark:text-neutral-600" aria-hidden>
-                  /
-                </span>
-                <span>Free plan</span>
-              </p>
-            </div>
-          </div>
-
-          <div className="flex w-full flex-col items-center gap-3 sm:w-auto sm:shrink-0 sm:flex-row sm:flex-nowrap sm:gap-2 sm:pb-1.5">
-            {showHeaderCtas ? (
-              <div className={`grid w-full gap-2 sm:flex sm:w-auto ${onPreview ? 'grid-cols-2' : 'grid-cols-1'}`}>
-                {onPreview ? (
-                  <button
-                    type="button"
-                    onClick={onPreview}
-                    className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/15 px-3.5 text-[0.9rem] font-medium text-[#222222] transition-colors duration-200 hover:border-black/30 hover:text-[#0A0A0A] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:border-white/15 dark:text-neutral-200 dark:hover:border-white/35 dark:hover:text-white sm:h-9"
-                  >
-                    <svg className="h-4 w-4 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M2.25 12s3.75-7.5 9.75-7.5S21.75 12 21.75 12 18 19.5 12 19.5 2.25 12 2.25 12z" />
-                      <circle cx="12" cy="12" r="3" />
-                    </svg>
-                    Preview
-                  </button>
-                ) : null}
-                <Link
-                  href={PORTFOLIO_UPGRADE_PATH}
-                  className="inline-flex h-10 items-center justify-center gap-1.5 rounded-lg bg-neutral-950 px-3.5 text-[0.9rem] font-medium text-white shadow-sm transition hover:bg-neutral-800 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:bg-white dark:text-neutral-950 dark:hover:bg-neutral-200 sm:h-9"
-                >
-                  <svg className="h-3.5 w-3.5 shrink-0" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
-                    <path d="M5 16L3 5l5.5 5L12 4l3.5 6L21 5l-2 11H5zm14 3c0 .6-.4 1-1 1H6c-.6 0-1-.4-1-1v-1h14v1z" />
-                  </svg>
-                  Upgrade
-                </Link>
+    /* Its own flat block above the form block (the card tone, square under news-mono): the identity
+       on the left — name, then where the portfolio lives — and the header's actions on the right. */
+    <div className="relative bg-[color:var(--gn-surface)] p-5 sm:p-6">
+      <div className="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between sm:gap-6">
+        <div className="flex min-w-0 max-w-full items-center gap-4">
+          <div className="relative shrink-0 rounded-full" title={statusLabel}>
+            {avatarUrl?.trim() ? (
+              <div className="h-14 w-14 overflow-hidden rounded-full sm:h-16 sm:w-16 [&_img]:!h-full [&_img]:!w-full">
+                <Avatar name={displayName} avatarUrl={avatarUrl} size="xl" tone="muted" />
               </div>
-            ) : null}
-            {actions}
+            ) : (
+              <div
+                className="flex h-14 w-14 items-center justify-center rounded-full bg-[color:var(--gn-ink)] text-lg font-bold tracking-wide text-[color:var(--gn-surface)] sm:h-16 sm:w-16"
+                aria-hidden
+              >
+                {displayName
+                  .split(' ')
+                  .filter(Boolean)
+                  .map((n) => n[0])
+                  .join('')
+                  .toUpperCase()
+                  .slice(0, 2) || '?'}
+              </div>
+            )}
           </div>
+
+          <div className="min-w-0 flex-1">
+            <h2 className="truncate text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]">
+              {displayName}
+            </h2>
+            {/* What is true of every portfolio today: it is live (there is no draft state) and on the free
+                plan (there is no paid one yet). Its address is shared from the rail's "Copy live link". */}
+            <p className="mt-1 flex min-w-0 flex-wrap items-center gap-x-2 gap-y-0.5 text-[14px] leading-5 text-[color:var(--gn-ink2)]">
+              <span className="inline-flex shrink-0 items-center gap-1.5 font-semibold text-[color:var(--gn-ink)]">
+                <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[color:var(--gn-green)]" />
+                {t('Live')}
+              </span>
+              <span aria-hidden>·</span>
+              <span className="shrink-0">{t('Free plan')}</span>
+            </p>
+          </div>
+        </div>
+
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
+          {showHeaderCtas ? (
+            <>
+              {onPreview ? (
+                <button type="button" onClick={onPreview} className={`${PORTFOLIO_PRIMARY_PILL} md:hidden`}>
+                  {t('Preview')}
+                </button>
+              ) : null}
+              <Link href={PORTFOLIO_UPGRADE_PATH} className={PORTFOLIO_SECONDARY_PILL}>
+                {t('Upgrade')}
+              </Link>
+            </>
+          ) : null}
+          {actions}
         </div>
       </div>
     </div>
@@ -447,21 +491,37 @@ export function PortfolioFooterSelect({
   ariaLabel: string;
   emptyLabel?: string;
 }) {
+  const t = useT();
+  const selected = options.find((option) => option.value === value)?.label;
+  /* What shows is plain text in the footer's own case — the value, or "Not set — Set" with "Set" as
+     a link; the native select lies invisible over it, so a click anywhere on it opens the picker and
+     keyboard / screen readers still get a real select. */
   return (
-    <select
-      value={value}
-      onChange={(event) => onChange(event.target.value)}
-      disabled={disabled}
-      aria-label={ariaLabel}
-      className="cursor-pointer appearance-none bg-transparent p-0 text-[11.5px] font-medium uppercase tracking-[0.14em] text-inherit outline-none transition-colors duration-300 [field-sizing:content] hover:text-[#FF5722] focus-visible:text-[#FF5722] disabled:cursor-wait disabled:opacity-60 dark:[color-scheme:dark]"
-    >
-      <option value="">{emptyLabel}</option>
-      {options.map((option) => (
-        <option key={option.value} value={option.value}>
-          {option.label}
-        </option>
-      ))}
-    </select>
+    <span className="relative inline-flex items-center">
+      <span aria-hidden className={disabled ? 'opacity-60' : ''}>
+        {selected ?? (
+          <>
+            <span className="font-normal text-[#536471] dark:text-[#8B98A5]">{t(emptyLabel)}</span>
+            <span className="text-[#536471] dark:text-[#8B98A5]"> — </span>
+            <span className="font-semibold text-[#0F1419] underline underline-offset-2 dark:text-[#E7E9EA]">{t('Set')}</span>
+          </>
+        )}
+      </span>
+      <select
+        value={value}
+        onChange={(event) => onChange(event.target.value)}
+        disabled={disabled}
+        aria-label={ariaLabel}
+        className="absolute inset-0 h-full w-full cursor-pointer appearance-none opacity-0 disabled:cursor-wait dark:[color-scheme:dark]"
+      >
+        <option value="">{t(emptyLabel)}</option>
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {t(option.label)}
+          </option>
+        ))}
+      </select>
+    </span>
   );
 }
 
@@ -476,6 +536,7 @@ export function PortfolioEditorFooter({
   onEdit,
   hidePrimaryActions = false,
   hideTopBorder = false,
+  flush = false,
 }: {
   lastUpdatedLabel: string;
   /** Optional meta shown to the left of “Last updated …”, e.g. “5 questions”. */
@@ -489,38 +550,36 @@ export function PortfolioEditorFooter({
   onEdit: () => void;
   hidePrimaryActions?: boolean;
   hideTopBorder?: boolean;
+  /** No card around the form (My Profile): no side padding, so the line starts with the fields. */
+  flush?: boolean;
 }) {
+  const t = useT();
   return (
     <div
-      className={`flex flex-col gap-4 px-5 py-4 sm:flex-row sm:items-center sm:justify-between sm:px-7 ${
-        hideTopBorder ? '' : 'border-t border-black/[0.08] dark:border-white/[0.08]'
+      className={`flex flex-col gap-4 py-4 sm:flex-row sm:items-center sm:justify-between ${flush ? 'px-4 sm:px-0' : 'px-5 sm:px-7'} ${
+        hideTopBorder ? '' : ''
       }`}
     >
       {metaItems ? (
-        <dl className="flex flex-wrap items-center gap-x-10 gap-y-2 text-[11.5px] uppercase tracking-[0.14em]">
-          {[{ label: 'Last updated', value: lastUpdatedLabel }, ...metaItems].map((item) => (
-            <div key={item.label} className="flex items-center gap-2.5">
-              <dt className="text-neutral-500">{item.label}</dt>
-              <dd className="font-medium text-neutral-800 dark:text-neutral-200">{item.value}</dd>
+        /* One calm line: "Last updated today · Member since July 2026 · Response time Not set — Set". */
+        <dl className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px] text-[color:var(--gn-ink2,#536471)]">
+          {[{ label: t('Last updated'), value: lastUpdatedLabel }, ...metaItems].map((item, index) => (
+            <div key={item.label} className="flex items-center gap-2">
+              {index > 0 ? <span aria-hidden>·</span> : null}
+              <dt>{t(item.label)}</dt>
+              <dd className="text-[color:var(--gn-ink,#0F1419)]">{item.value}</dd>
             </div>
           ))}
         </dl>
       ) : (
-        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-neutral-500">
+        <div className="flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[13px] leading-[18px] text-[color:var(--gn-ink2,#536471)]">
           {leadingMetaLabel ? (
-            <span className="inline-flex items-center gap-1.5">
-              <span className="text-[#F97316]" aria-hidden>
-                ✦
-              </span>
-              {leadingMetaLabel}
-            </span>
+            <>
+              <span>{leadingMetaLabel}</span>
+              <span aria-hidden>·</span>
+            </>
           ) : null}
-          <span className="inline-flex items-center gap-1.5">
-            <span className="text-[#F97316]" aria-hidden>
-              ✦
-            </span>
-            Last updated {lastUpdatedLabel}
-          </span>
+          <span>{t('Last updated {lastUpdatedLabel}', { lastUpdatedLabel })}</span>
         </div>
       )}
 
@@ -528,31 +587,18 @@ export function PortfolioEditorFooter({
         <div className="flex justify-end gap-3">
           {isEditing ? (
             <>
-              <button
-                type="button"
-                onClick={onCancel}
-                disabled={saving}
-                className="rounded-lg border border-neutral-300 px-5 py-2.5 text-sm font-semibold text-neutral-700 hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-200 dark:hover:bg-neutral-800"
-              >
-                Cancel
+              <button type="button" onClick={onCancel} disabled={saving} className={PORTFOLIO_SECONDARY_PILL}>
+                {t('Cancel')}
               </button>
-              <button
-                type="submit"
-                disabled={saving || !hasUnsavedChanges}
-                className="inline-flex items-center gap-2 rounded-lg bg-[#F97316] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#EA580C] disabled:opacity-60 dark:text-neutral-950"
-              >
+              <button type="submit" disabled={saving || !hasUnsavedChanges} className={PORTFOLIO_PRIMARY_PILL}>
                 {saving ? <LoadingSpinner size="sm" /> : null}
-                Save changes
+                {t('Save changes')}
               </button>
             </>
           ) : (
-            <button
-              type="button"
-              onClick={onEdit}
-              className="inline-flex items-center gap-2 rounded-lg bg-[#F97316] px-5 py-2.5 text-sm font-semibold text-white hover:bg-[#EA580C] dark:text-neutral-950"
-            >
+            <button type="button" onClick={onEdit} className={PORTFOLIO_PRIMARY_PILL}>
               <FontAwesomeIcon icon={faPenToSquare} className="h-4 w-4" fixedWidth aria-hidden />
-              Edit Profile
+              {t('Edit Profile')}
             </button>
           )}
         </div>

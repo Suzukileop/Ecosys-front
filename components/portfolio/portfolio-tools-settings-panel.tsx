@@ -1,6 +1,11 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -55,9 +60,7 @@ import {
   resolveToolsLevelIndicatorFullWidth,
   resolveToolsLevelIndicatorShowCategoryFilter,
   resolveToolsShowLevel,
-  toolsLevelBentoCategoriesDesignDefaults,
-  toolsLevelStarCardsDesignDefaults,
-  toolsLevelSvgRingsDesignDefaults,
+  toolsDesignSettingsPatch,
   toolsLevelIndicatorDesignSupportsCardFrame,
 } from '@/components/portfolio/portfolio-tools-settings';
 import {
@@ -77,6 +80,7 @@ import {
   HEADER_SIZE_STEPS,
   HEADER_WEIGHT_STEPS,
   HeaderBlock,
+  HeaderElementToggles,
   HeaderMarqueeWords,
   HeaderOptionGrid,
   HeaderStyleTargetsEditor,
@@ -86,15 +90,18 @@ import {
   type HeaderPatch,
 } from '@/components/portfolio/portfolio-header-style-controls';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
 /** Same general / design / header mechanism as the Stack section settings panel, plus its own Background tab. */
 export type ToolsSubSection = 'general' | 'design' | 'header' | 'background';
 
 const SUBSECTIONS: { value: ToolsSubSection; label: string }[] = [
-  { value: 'general', label: 'General' },
-  { value: 'design', label: 'Design' },
-  { value: 'header', label: 'Header' },
-  { value: 'background', label: 'Background' },
+  { value: 'general', label: msg('General') },
+  { value: 'design', label: msg('Design') },
+  { value: 'header', label: msg('Header') },
+  { value: 'background', label: msg('Background') },
 ];
 
 export function normalizeToolsSubSection(value: string | undefined): ToolsSubSection {
@@ -104,18 +111,18 @@ export function normalizeToolsSubSection(value: string | undefined): ToolsSubSec
 
 /** Curated 3-option quick palette for Name / Description text colors — separate from the full 8-token dropdown. */
 const TOOLS_QUICK_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
-  { value: 'principal', label: 'Principal' },
-  { value: 'texteFort', label: 'Texte fort' },
-  { value: 'texteMuted', label: 'Texte muted' },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'texteFort', label: msg('Strong text') },
+  { value: 'texteMuted', label: msg('Muted text') },
 ];
 
 /** For section-background-style fields (fill, gradient stops, split zones) — "fond"/"neutre"
  *  fit that context better than "texte fort", which is why this isn't just TOOLS_QUICK_PALETTE_TOKENS. */
 const TOOLS_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
-  { value: 'fond', label: 'Fond' },
-  { value: 'neutre', label: 'Neutre' },
-  { value: 'principal', label: 'Principal' },
-  { value: 'texteMuted', label: 'Texte muted' },
+  { value: 'fond', label: msg('Background') },
+  { value: 'neutre', label: msg('Neutral') },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'texteMuted', label: msg('Muted text') },
 ];
 
 function ToolsQuickColorPicker({
@@ -135,9 +142,10 @@ function ToolsQuickColorPicker({
   onPickToken: (token: HeroPaletteTokenId) => void;
   tokens?: { value: HeroPaletteTokenId; label: string }[];
 }) {
+  const t = useT();
   return (
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <span className="pf-stack-block-label">{label}</span>
       <div className="mt-2 flex items-center gap-3">
         {tokens.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -148,8 +156,8 @@ function ToolsQuickColorPicker({
             <button
               key={token.value}
               type="button"
-              title={token.label}
-              aria-label={token.label}
+              title={t(token.label)}
+              aria-label={t(token.label)}
               aria-pressed={active}
               onClick={() => onPickToken(token.value)}
               className="flex flex-col items-center gap-1.5"
@@ -158,14 +166,14 @@ function ToolsQuickColorPicker({
                 className="h-8 w-8 rounded-full border-2 transition"
                 style={{
                   backgroundColor: hex,
-                  borderColor: active ? '#171717' : '#e5e5e5',
-                  boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
+                  borderColor: active ? 'var(--pf-palette-texte-fort)' : 'var(--pf-palette-bordure)',
+                  boxShadow: active ? '0 0 0 2px color-mix(in srgb, var(--pf-palette-texte-fort) 18%, transparent)' : 'none',
                 }}
               />
               <span
-                className={`text-[11px] font-medium ${active ? 'text-neutral-900' : 'text-neutral-500'}`}
+                className={`text-[11px] font-medium ${active ? 'text-[color:var(--pf-palette-texte-fort)]' : 'text-[color:var(--pf-palette-texte-muted)]'}`}
               >
-                {token.label}
+                {t(token.label)}
               </span>
             </button>
           );
@@ -320,6 +328,7 @@ function ToolsPickerCard({
 }
 
 function ToolsDesignWireframe({ design }: { design: PortfolioToolsDesign }) {
+  const t = useT();
   switch (design) {
     case 'workflow-rail':
       return (
@@ -545,15 +554,15 @@ function ToolsDesignWireframe({ design }: { design: PortfolioToolsDesign }) {
         <ToolsMiniSlide>
           <circle className="pf-stack-mini-ring" cx="24" cy="32" r="16" strokeWidth={3} />
           <ToolsMiniType x={24} y={34} size={6} anchor="middle">
-            CSS
+            {t('CSS')}
           </ToolsMiniType>
           <circle className="pf-stack-mini-ring" cx="60" cy="32" r="16" strokeWidth={3} />
           <ToolsMiniType x={60} y={34} size={6} anchor="middle">
-            JS
+            {t('JS')}
           </ToolsMiniType>
           <circle className="pf-stack-mini-ring" cx="96" cy="32" r="16" strokeWidth={3} />
           <ToolsMiniType x={96} y={34} size={6} anchor="middle">
-            GO
+            {t('GO')}
           </ToolsMiniType>
         </ToolsMiniSlide>
       );
@@ -627,7 +636,7 @@ function ToolsToggleRow({
     >
       <span className="flex items-center justify-between gap-4">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate text-sm font-semibold text-neutral-950">{label}</span>
+          <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{label}</span>
           {info ? <ToolsInfoTooltip text={info} /> : null}
         </span>
         <ToolsSwitchTrack checked={checked} />
@@ -651,6 +660,7 @@ function ToolsOptionGrid<T extends string | number>({
   columns?: number;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const count = options.length;
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
@@ -677,7 +687,7 @@ function ToolsOptionGrid<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
@@ -688,7 +698,7 @@ function ToolsOptionGrid<T extends string | number>({
               }
             >
               {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
-              <span>{option.label}</span>
+              <span>{t(option.label)}</span>
             </button>
           );
         })}
@@ -713,6 +723,7 @@ function ToolsSlider<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const index = Math.max(
     0,
@@ -726,7 +737,7 @@ function ToolsSlider<T extends string>({
     <div>
       {rows ? null : (<div className="pf-stack-slider-row">
         <span className="pf-stack-slider-label">{label}</span>
-        <span className="pf-stack-slider-value">{current?.label}</span>
+        <span className="pf-stack-slider-value">{t(current?.label)}</span>
       </div>)}
       <input
         type="range"
@@ -766,6 +777,7 @@ function ToolsPreviewCardGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
@@ -782,7 +794,7 @@ function ToolsPreviewCardGrid<T extends string>({
           <ToolsPickerCard
             key={option.value}
             active={option.value === value}
-            label={option.label}
+            label={t(option.label)}
             onClick={() => onChange(option.value)}
             compact
           >
@@ -1043,22 +1055,23 @@ function ToolsDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
             {children}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -1079,24 +1092,46 @@ function ToolsDesignChoiceGrid({
   value: PortfolioToolsDesign;
   onChange: (value: PortfolioToolsDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_TOOLS_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_TOOLS_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Design</p>
+          <p className="pf-stack-block-label !mb-0">{t('Design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_TOOLS_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-stack-design-card"
+                labelClassName="pf-stack-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'tools', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_TOOLS_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -1104,7 +1139,7 @@ function ToolsDesignChoiceGrid({
               <ToolsPickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -1115,12 +1150,13 @@ function ToolsDesignChoiceGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <ToolsDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <ToolsDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <ToolsDesignWireframe design={value} />
     </ToolsDesignSummaryRow>
   );
@@ -1130,6 +1166,7 @@ function ToolsDesignChoiceGrid({
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. */
 function ToolsInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -1140,13 +1177,13 @@ function ToolsInfoTooltip({ text }: { text: string }) {
         role="button"
         tabIndex={0}
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -1169,6 +1206,7 @@ function ToolsInfoTooltip({ text }: { text: string }) {
 
 /** Mini wireframes for the 8 Header design picker cards — same ToolsMiniSlide mechanism as Design. */
 function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
@@ -1190,7 +1228,7 @@ function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDe
             opacity={0.14}
             className="pf-stack-mini-ink"
           >
-            TOOLS
+            {t('TOOLS')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
         </ToolsMiniSlide>
@@ -1234,7 +1272,7 @@ function ToolsHeaderDesignWireframe({ design }: { design: PortfolioToolsHeaderDe
             opacity={0.1}
             className="pf-stack-mini-ink"
           >
-            TOOLS
+            {t('TOOLS')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
           <rect className="pf-stack-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
@@ -1275,6 +1313,7 @@ function ToolsHeaderDesignChoiceGrid({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS[0];
@@ -1283,13 +1322,13 @@ function ToolsHeaderDesignChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Header design</p>
+          <p className="pf-stack-block-label !mb-0">{t('Header design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -1299,7 +1338,7 @@ function ToolsHeaderDesignChoiceGrid({
               <PortfolioHeaderDesignOption key={option.value} design={option.value}>
                 <ToolsPickerCard
                   active={active}
-                  label={option.label}
+                  label={t(option.label)}
                   onClick={() => {
                     onChange(option.value);
                     setShowGrid(false);
@@ -1316,16 +1355,16 @@ function ToolsHeaderDesignChoiceGrid({
   }
 
   return (
-    <ToolsDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <ToolsDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <ToolsHeaderDesignWireframe design={value} />
     </ToolsDesignSummaryRow>
   );
 }
 
 const TOOLS_HEADER_MARGIN_BOTTOM_OPTIONS = [
-  { value: 'sm' as const, label: 'Small' },
-  { value: 'md' as const, label: 'Medium' },
-  { value: 'lg' as const, label: 'Large' },
+  { value: 'sm' as const, label: msg('Small') },
+  { value: 'md' as const, label: msg('Medium') },
+  { value: 'lg' as const, label: msg('Large') },
   { value: 'xl' as const, label: 'XL' },
 ];
 
@@ -1343,17 +1382,18 @@ function ToolsHeaderSharedAdvancedControls({
   hideAlignment?: boolean;
   hideTitleControls?: boolean;
 }) {
+  const t = useT();
   const titleSize = tools.headerTitleSize ?? 'md';
   const titleWeight = tools.headerTitleWeight ?? 'regular';
   return (
-    <div className="pf-exp-centered-config space-y-8 border-t border-neutral-200/70 pt-9">
+    <div className="pf-exp-centered-config space-y-8 border-t border-[color:var(--pf-palette-bordure)] pt-9">
       {hideAlignment ? null : (
         <HeaderOptionGrid
-          label="Header alignment"
+          label={t('Header alignment')}
           options={[
-            { value: 'left' as const, label: 'Left' },
-            { value: 'center' as const, label: 'Center' },
-            { value: 'right' as const, label: 'Right' },
+            { value: 'left' as const, label: t('Left') },
+            { value: 'center' as const, label: t('Center') },
+            { value: 'right' as const, label: t('Right') },
           ]}
           value={tools.headerDesignAlignment}
           onChange={(headerDesignAlignment: PortfolioToolsHeaderDesignAlignment) => onChange({ headerDesignAlignment })}
@@ -1361,7 +1401,7 @@ function ToolsHeaderSharedAdvancedControls({
         />
       )}
       <HeaderOptionGrid
-        label="Bottom spacing"
+        label={t('Bottom spacing')}
         options={TOOLS_HEADER_MARGIN_BOTTOM_OPTIONS}
         value={tools.headerMarginBottom ?? 'md'}
         onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
@@ -1370,14 +1410,14 @@ function ToolsHeaderSharedAdvancedControls({
       {hideTitleControls ? null : (
         <>
           <HeaderSteppedSlider
-            label="Title size"
+            label={t('Title size')}
             steps={HEADER_SIZE_STEPS}
             value={titleSize}
             currentName={HEADER_SIZE_STEPS.find((step) => step.value === titleSize)?.name ?? ''}
             onChange={(headerTitleSize) => onChange({ headerTitleSize })}
           />
           <HeaderSteppedSlider
-            label="Title weight"
+            label={t('Title weight')}
             steps={HEADER_WEIGHT_STEPS}
             value={titleWeight}
             currentName={HEADER_WEIGHT_STEPS.find((step) => step.value === titleWeight)?.tick ?? ''}
@@ -1428,6 +1468,7 @@ function ToolsHeaderDesignFields({
   tools: PortfolioToolsSectionSettings;
   onChange: (patch: Partial<PortfolioToolsSectionSettings>) => void;
 }) {
+  const t = useT();
   const design = tools.headerDesign ?? 'editorial';
   const onPatch = (patch: HeaderPatch) => onChange(patch as Partial<PortfolioToolsSectionSettings>);
   const colorProps = { colorOptions: TOOLS_HEADER_PALETTE_TOKEN_OPTIONS, resolveColor: toolsHeaderPaletteTokenColor };
@@ -1440,31 +1481,34 @@ function ToolsHeaderDesignFields({
       <>
         <div className="space-y-6">
           <HeaderTextField
-            label="Rule label"
+            label={t('Rule label')}
             value={tools.headerIndexLabelText}
-            placeholder="Index"
+            placeholder={t('Index')}
             onChange={(headerIndexLabelText) => onChange({ headerIndexLabelText })}
           />
           <HeaderTextField
-            label="Title"
+            label={t('Title')}
             value={tools.headerIndexTitleText}
-            placeholder="Daily workflow"
+            placeholder={t('Daily workflow')}
             onChange={(headerIndexTitleText) => onChange({ headerIndexTitleText })}
           />
           <HeaderTextField
-            label="Subtitle"
+            label={t('Subtitle')}
             value={tools.headerIndexSubtitleText}
-            placeholder="Apps and platforms I rely on daily."
+            placeholder={t('Apps and platforms I rely on daily.')}
             onChange={(headerIndexSubtitleText) => onChange({ headerIndexSubtitleText })}
             multiline
           />
           <HeaderTextField
-            label="Count label"
+            label={t('Count label')}
             value={tools.headerIndexCountLabelText}
-            placeholder="Tools"
+            placeholder={t('Tools')}
             onChange={(headerIndexCountLabelText) => onChange({ headerIndexCountLabelText })}
           />
         </div>
+        <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
         <HeaderBlock>
           <HeaderTextStyleEditor settings={tools} onPatch={onPatch} prefix="headerIndex" {...colorProps} />
         </HeaderBlock>
@@ -1472,9 +1516,9 @@ function ToolsHeaderDesignFields({
           <HeaderStyleTargetsEditor
             settings={tools}
             onPatch={onPatch}
-            title="Counter"
+            title={t('Counter')}
             targets={[
-              { id: 'numeral', label: 'Numeral', color: { key: 'headerIndexNumberColor', fallback: 'principal' } },
+              { id: 'numeral', label: t('Numeral'), color: { key: 'headerIndexNumberColor', fallback: 'principal' } },
             ]}
             {...colorProps}
           />
@@ -1494,13 +1538,16 @@ function ToolsHeaderDesignFields({
           placeholders={['Tools', 'Optional', 'Optional', 'Optional']}
         />
         <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
+        <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={tools}
             onPatch={onPatch}
             targets={[
               {
                 id: 'words',
-                label: 'Words',
+                label: t('Words'),
                 color: { key: 'headerMarqueeWordColor', fallback: 'principal' },
                 size: { key: 'headerMarqueeSize', fallback: 'md' },
               },
@@ -1519,29 +1566,32 @@ function ToolsHeaderDesignFields({
       <>
         <div className="space-y-6">
           <HeaderTextField
-            label="Badge text"
+            label={t('Badge text')}
             value={tools.headerAccentCountBadgeText}
-            placeholder="{count}+ tools"
+            placeholder={t('{count}+ tools')}
             onChange={(headerAccentCountBadgeText) => onChange({ headerAccentCountBadgeText })}
           />
           <HeaderTextField
-            label="Lead text"
+            label={t('Lead text')}
             value={tools.headerAccentCountLeadText}
-            placeholder="A curated set of apps that keep me productive."
+            placeholder={t('A curated set of apps that keep me productive.')}
             onChange={(headerAccentCountLeadText) => onChange({ headerAccentCountLeadText })}
             multiline
           />
         </div>
+        <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={tools}
             onPatch={onPatch}
             initialId="lead"
             targets={[
-              { id: 'badge', label: 'Badge', color: { key: 'headerAccentCountBadgeColor', fallback: 'principal' } },
+              { id: 'badge', label: t('Badge'), color: { key: 'headerAccentCountBadgeColor', fallback: 'principal' } },
               {
                 id: 'lead',
-                label: 'Lead',
+                label: t('Lead'),
                 color: { key: 'headerAccentCountLeadColor', fallback: 'secondaire' },
                 weight: { key: 'headerAccentCountWeight', fallback: 'regular' },
               },
@@ -1552,14 +1602,14 @@ function ToolsHeaderDesignFields({
         <HeaderBlock>
           <div className="pf-exp-centered-config space-y-8">
             <HeaderSteppedSlider
-              label="Size (badge and lead)"
+              label={t('Size (badge and lead)')}
               steps={HEADER_SIZE_STEPS}
               value={size}
               currentName={HEADER_SIZE_STEPS.find((step) => step.value === size)?.name ?? ''}
               onChange={(headerAccentCountSize) => onChange({ headerAccentCountSize })}
             />
             <HeaderOptionGrid
-              label="Alignment"
+              label={t('Alignment')}
               options={TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
               value={tools.headerAccentCountAlignment ?? 'left'}
               onChange={(headerAccentCountAlignment: PortfolioToolsHeaderAccentCountAlignment) =>
@@ -1579,26 +1629,29 @@ function ToolsHeaderDesignFields({
       <>
         <div className="space-y-6">
           <HeaderTextField
-            label="Label"
+            label={t('Label')}
             value={tools.headerSerifLeadLabelText}
-            placeholder="Tools"
+            placeholder={t('Tools')}
             onChange={(headerSerifLeadLabelText) => onChange({ headerSerifLeadLabelText })}
           />
           <HeaderTextField
-            label="Title"
+            label={t('Title')}
             value={tools.headerSerifLeadTitleText}
-            placeholder="A curated set of apps, platforms, and daily tools."
+            placeholder={t('A curated set of apps, platforms, and daily tools.')}
             onChange={(headerSerifLeadTitleText) => onChange({ headerSerifLeadTitleText })}
             multiline
           />
           <HeaderTextField
-            label="Subtitle"
+            label={t('Subtitle')}
             value={tools.headerSerifLeadSubtitleText}
-            placeholder="Apps and platforms I rely on daily."
+            placeholder={t('Apps and platforms I rely on daily.')}
             onChange={(headerSerifLeadSubtitleText) => onChange({ headerSerifLeadSubtitleText })}
             multiline
           />
         </div>
+        <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
         <HeaderBlock>
           <HeaderTextStyleEditor settings={tools} onPatch={onPatch} prefix="headerSerifLead" {...colorProps} />
         </HeaderBlock>
@@ -1612,40 +1665,43 @@ function ToolsHeaderDesignFields({
       <>
         <div className="space-y-6">
           <HeaderTextField
-            label="Big background word"
+            label={t('Big background word')}
             value={tools.headerBillboardBigWord}
             placeholder="TOOLS"
             onChange={(headerBillboardBigWord) => onChange({ headerBillboardBigWord })}
           />
           <HeaderTextField
-            label="Title"
+            label={t('Title')}
             value={tools.headerBillboardTitleText}
-            placeholder="Daily workflow"
+            placeholder={t('Daily workflow')}
             onChange={(headerBillboardTitleText) => onChange({ headerBillboardTitleText })}
           />
           <HeaderTextField
-            label="Count line"
+            label={t('Count line')}
             value={tools.headerBillboardCountText}
-            placeholder="{count} tools"
+            placeholder={t('{count} tools')}
             onChange={(headerBillboardCountText) => onChange({ headerBillboardCountText })}
           />
         </div>
+        <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={tools}
             onPatch={onPatch}
             initialId="title"
             targets={[
-              { id: 'word', label: 'Big word', color: { key: 'headerBillboardWordColor', fallback: 'principal' } },
-              { id: 'title', label: 'Title', color: { key: 'headerBillboardTitleColor', fallback: 'principal' } },
-              { id: 'count', label: 'Count line', color: { key: 'headerBillboardMetaColor', fallback: 'secondaire' } },
+              { id: 'word', label: t('Big word'), color: { key: 'headerBillboardWordColor', fallback: 'principal' } },
+              { id: 'title', label: t('Title'), color: { key: 'headerBillboardTitleColor', fallback: 'principal' } },
+              { id: 'count', label: t('Count line'), color: { key: 'headerBillboardMetaColor', fallback: 'secondaire' } },
             ]}
             {...colorProps}
           />
         </HeaderBlock>
         <HeaderBlock>
           <HeaderOptionGrid
-            label="Big word style"
+            label={t('Big word style')}
             options={TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
             value={tools.headerBillboardWordStyle ?? 'outline'}
             onChange={(headerBillboardWordStyle: PortfolioToolsHeaderBillboardWordStyle) =>
@@ -1664,33 +1720,36 @@ function ToolsHeaderDesignFields({
       <>
         <div className="space-y-6">
           <HeaderTextField
-            label="Line 1"
+            label={t('Line 1')}
             value={tools.headerMastheadLine1Text}
-            placeholder="Daily tools."
+            placeholder={t('Daily tools.')}
             onChange={(headerMastheadLine1Text) => onChange({ headerMastheadLine1Text })}
           />
           <HeaderTextField
-            label="Line 2"
+            label={t('Line 2')}
             value={tools.headerMastheadLine2Text}
-            placeholder="Chosen with intent."
+            placeholder={t('Chosen with intent.')}
             onChange={(headerMastheadLine2Text) => onChange({ headerMastheadLine2Text })}
           />
           <HeaderTextField
-            label="Line 3"
+            label={t('Line 3')}
             value={tools.headerMastheadLine3Text}
-            placeholder="Kept up to date."
+            placeholder={t('Kept up to date.')}
             onChange={(headerMastheadLine3Text) => onChange({ headerMastheadLine3Text })}
           />
         </div>
         <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
+        <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={tools}
             onPatch={onPatch}
-            title="Headline style"
+            title={t('Headline style')}
             targets={[
               {
                 id: 'headline',
-                label: 'Headline',
+                label: t('Headline'),
                 color: { key: 'headerMastheadHeadlineColor', fallback: 'principal' },
                 size: { key: 'headerMastheadHeadlineSize', fallback: 'md' },
                 weight: { key: 'headerMastheadHeadlineWeight', fallback: 'regular' },
@@ -1709,18 +1768,21 @@ function ToolsHeaderDesignFields({
       <>
         <div className="space-y-6">
           <HeaderTextField
-            label="Title"
+            label={t('Title')}
             value={tools.headerSplitHeadingTitleText}
-            placeholder="Daily workflow"
+            placeholder={t('Daily workflow')}
             onChange={(headerSplitHeadingTitleText) => onChange({ headerSplitHeadingTitleText })}
           />
           <HeaderTextField
-            label="Label"
+            label={t('Label')}
             value={tools.headerSplitHeadingLabelText}
-            placeholder="Tools"
+            placeholder={t('Tools')}
             onChange={(headerSplitHeadingLabelText) => onChange({ headerSplitHeadingLabelText })}
           />
         </div>
+        <HeaderBlock>
+          <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+        </HeaderBlock>
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={tools}
@@ -1729,14 +1791,14 @@ function ToolsHeaderDesignFields({
             targets={[
               {
                 id: 'title',
-                label: 'Title',
+                label: t('Title'),
                 color: { key: 'headerSplitHeadingTitleColor', fallback: 'principal' },
                 size: { key: 'headerSplitHeadingTitleSize', fallback: 'md' },
                 weight: { key: 'headerSplitHeadingTitleWeight', fallback: 'regular' },
               },
               {
                 id: 'label',
-                label: 'Label',
+                label: t('Label'),
                 color: { key: 'headerSplitHeadingLabelColor', fallback: 'secondaire' },
                 size: { key: 'headerSplitHeadingLabelSize', fallback: 'md' },
                 weight: { key: 'headerSplitHeadingLabelWeight', fallback: 'regular' },
@@ -1755,25 +1817,28 @@ function ToolsHeaderDesignFields({
     <>
       <div className="space-y-6">
         <HeaderTextField
-          label="Label"
+          label={t('Label')}
           value={tools.headerEditorialLabelText}
-          placeholder="Tools"
+          placeholder={t('Tools')}
           onChange={(headerEditorialLabelText) => onChange({ headerEditorialLabelText })}
         />
         <HeaderTextField
-          label="Title"
+          label={t('Title')}
           value={tools.headerEditorialTitleText}
-          placeholder="Daily workflow"
+          placeholder={t('Daily workflow')}
           onChange={(headerEditorialTitleText) => onChange({ headerEditorialTitleText })}
         />
         <HeaderTextField
-          label="Subtitle"
+          label={t('Subtitle')}
           value={tools.headerEditorialSubtitleText}
-          placeholder="Apps and platforms I rely on daily."
+          placeholder={t('Apps and platforms I rely on daily.')}
           onChange={(headerEditorialSubtitleText) => onChange({ headerEditorialSubtitleText })}
           multiline
         />
       </div>
+      <HeaderBlock>
+        <HeaderElementToggles design={design} settings={tools} onPatch={onPatch} />
+      </HeaderBlock>
       <HeaderBlock>
         <HeaderTextStyleEditor settings={tools} onPatch={onPatch} prefix="headerEditorial" {...colorProps} />
       </HeaderBlock>
@@ -1787,23 +1852,7 @@ function handleToolsDesignChange(
   design: PortfolioToolsDesign,
   onChange: (patch: Partial<PortfolioToolsSectionSettings>) => void
 ) {
-  if (design === 'brand-float' && tools.iconBackgroundOptIn !== false) {
-    onChange({ design, iconBackgroundEnabled: true });
-    return;
-  }
-  if (design === 'level-bento-categories') {
-    onChange({ ...toolsLevelBentoCategoriesDesignDefaults(), design });
-    return;
-  }
-  if (design === 'level-star-cards') {
-    onChange({ ...toolsLevelStarCardsDesignDefaults(), design });
-    return;
-  }
-  if (design === 'level-svg-rings') {
-    onChange({ ...toolsLevelSvgRingsDesignDefaults(), design });
-    return;
-  }
-  onChange({ design });
+  onChange(toolsDesignSettingsPatch(tools, design));
 }
 
 type ToolsSettingsPanelProps = {
@@ -1823,8 +1872,9 @@ export function ToolsSettingsPanel({
   onSubSectionChange,
   designOptions: designOptionsProp,
   designOptionsFilter,
-  sectionToggleLabel = 'Afficher la section Tools',
+  sectionToggleLabel,
 }: ToolsSettingsPanelProps) {
+  const t = useT();
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, tools.toolsPalette);
   const bindings = mergeToolsColorBindings(DEFAULT_TOOLS_COLOR_BINDINGS, tools.toolsColorBindings);
   const current = normalizeToolsSubSection(subSection);
@@ -1851,73 +1901,56 @@ export function ToolsSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
-        {SUBSECTIONS.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => onSubSectionChange?.(item.value)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              current === item.value
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs tabs={SUBSECTIONS.map((item) => ({ id: item.value, label: item.label }))} value={current} onChange={(value) => onSubSectionChange?.(value)} />
 
       {current === 'general' ? (
         <div className="space-y-4">
-          <ToolsToggleRow
-            label={sectionToggleLabel}
+          <SettingsSwitchRow
+            label={sectionToggleLabel ?? t('Show section')}
+            description={tools.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={tools.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          <SectionColorModeControl
-            value={tools.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-          <ToolsLayoutSettingsBand motionKey={`${tools.design}-visibility`} title="Content visibility">
+          {tools.enabled ? (
+          <SettingsGroup label={t('Content shown')}>
             <ToolsToggleRow
               label={
                 isLevelIndicatorDesign
-                  ? 'Afficher le nom'
+                  ? t('Show the name')
                   : isRichToolsDesign
-                    ? 'Afficher le nom'
-                    : 'Afficher le nom sous le logo'
+                    ? t('Show the name')
+                    : t('Show the name under the logo')
               }
               checked={tools.showLabels !== false}
               onChange={(showLabels) => onChange({ showLabels })}
             />
             <ToolsToggleRow
-              label="Afficher le fond de l'icône"
+              label={t('Show the icon background')}
               checked={resolveToolsIconBackgroundEnabled(tools)}
               onChange={(iconBackgroundEnabled) =>
                 onChange({ iconBackgroundEnabled, iconBackgroundOptIn: true })
               }
             />
             <ToolsToggleRow
-              label="Logos en noir & blanc"
+              label={t('Black & white logos')}
               checked={tools.logosGrayscale === true}
               onChange={(logosGrayscale) => onChange({ logosGrayscale })}
             />
             {isRichToolsDesign ? (
               <>
                 <ToolsToggleRow
-                  label="Afficher la description"
+                  label={t('Show the description')}
                   checked={tools.showDescription !== false}
                   onChange={(showDescription) => onChange({ showDescription })}
                 />
                 <ToolsToggleRow
-                  label="Afficher les use cases"
+                  label={t('Show use cases')}
                   checked={tools.showUseCases !== false}
                   onChange={(showUseCases) => onChange({ showUseCases })}
                 />
                 {tools.design !== 'brand-index' ? (
                   <ToolsToggleRow
-                    label="Afficher le niveau"
+                    label={t('Show the level')}
                     checked={resolveToolsShowLevel(tools)}
                     onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
                   />
@@ -1925,16 +1958,19 @@ export function ToolsSettingsPanel({
               </>
             ) : isLevelIndicatorDesign ? (
               <ToolsToggleRow
-                label="Afficher l'indicateur de niveau"
+                label={t('Show the level indicator')}
                 checked={resolveToolsShowLevel(tools)}
                 onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
               />
             ) : null}
-          </ToolsLayoutSettingsBand>
+          </SettingsGroup>
+          ) : null}
         </div>
       ) : null}
 
-      {current === 'design' ? (
+      {current !== 'general' && !tools.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {current === 'design' && tools.enabled ? (
         <div className="space-y-4">
           {designOptions.length > 1 ? (
             <ToolsDesignChoiceGrid
@@ -1942,10 +1978,17 @@ export function ToolsSettingsPanel({
               onChange={(design) => handleToolsDesignChange(tools, design, onChange)}
             />
           ) : null}
+          <SettingsGroup label={t('Style')}>
+            <SectionColorModeControl
+              label={t('Color mode')}
+              value={tools.colorModeOverride}
+              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+            />
+          </SettingsGroup>
           <ToolsLayoutSettingsBand motionKey={tools.design}>
-<SettingsRowsScope title="Layout options">
+<SettingsRowsScope title={t('Layout options')}>
             <ToolsSlider
-              label="Logo size"
+              label={t('Logo size')}
               value={tools.tileSize}
               options={PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS}
               onChange={(tileSize: PortfolioToolsTileSize) => onChange({ tileSize })}
@@ -1954,7 +1997,7 @@ export function ToolsSettingsPanel({
               <>
                 {tools.design !== 'level-star-cards' ? (
                   <ToolsSlider
-                    label="Vertical spacing"
+                    label={t('Vertical spacing')}
                     value={tools.levelProgressRowGap ?? 'large'}
                     options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS}
                     onChange={(levelProgressRowGap: PortfolioToolsLevelProgressRowGap) =>
@@ -1964,7 +2007,7 @@ export function ToolsSettingsPanel({
                 ) : null}
                 {tools.design !== 'level-progress-rows' && tools.design !== 'level-category-rows' ? (
                   <ToolsToggleRow
-                    label="Full width"
+                    label={t('Full width')}
                     checked={resolveToolsLevelIndicatorFullWidth(tools)}
                     onChange={(levelIndicatorFullWidth) =>
                       onChange({
@@ -1975,7 +2018,7 @@ export function ToolsSettingsPanel({
                   />
                 ) : null}
                 <ToolsOptionGrid
-                  label="Row order"
+                  label={t('Row order')}
                   value={tools.levelTableGroupBy ?? 'category'}
                   options={PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS}
                   onChange={(levelTableGroupBy: PortfolioToolsLevelTableGroupBy) =>
@@ -1983,7 +2026,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsToggleRow
-                  label="Category filter"
+                  label={t('Category filter')}
                   checked={resolveToolsLevelIndicatorShowCategoryFilter(tools)}
                   onChange={(levelIndicatorShowCategoryFilter) =>
                     onChange({
@@ -1996,7 +2039,7 @@ export function ToolsSettingsPanel({
                   // Both designs always render their own fixed ring regardless of this
                   // setting — they never read levelIndicatorDisplayStyle.
                   <ToolsPreviewCardGrid
-                    label="Level display"
+                    label={t('Level display')}
                     value={
                       tools.levelIndicatorDisplayStyle ??
                       (tools.design === 'level-bento-categories' ? 'progress-bar' : 'text')
@@ -2021,7 +2064,7 @@ export function ToolsSettingsPanel({
             ) : null}
             {toolsLevelIndicatorDesignSupportsCardFrame(tools.design) ? (
               <ToolsPreviewCardGrid
-                label="Card frame"
+                label={t('Card frame')}
                 value={tools.levelIndicatorCardStyle ?? 'framed'}
                 options={PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS.map((option) => ({
                   ...option,
@@ -2041,7 +2084,7 @@ export function ToolsSettingsPanel({
             tools.design === 'level-table-rows' ? (
               <>
                 <ToolsOptionGrid
-                  label="List alignment"
+                  label={t('List alignment')}
                   value={tools.levelProgressContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2051,7 +2094,7 @@ export function ToolsSettingsPanel({
                 />
                 {tools.design === 'level-table-rows' ? null : (
                   <ToolsPreviewCardGrid
-                    label="Columns (large screen)"
+                    label={t('Columns (large screen)')}
                     value={String(tools.levelProgressColumnsPerRow ?? 1) as '1' | '2'}
                     options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS.map((option) => ({
                       ...option,
@@ -2067,7 +2110,7 @@ export function ToolsSettingsPanel({
                 )}
                 {tools.design === 'level-progress-rows' || tools.design === 'level-category-rows' ? (
                   <ToolsToggleRow
-                    label="Full width"
+                    label={t('Full width')}
                     checked={resolveToolsLevelIndicatorFullWidth(tools)}
                     onChange={(levelIndicatorFullWidth) =>
                       onChange({
@@ -2081,13 +2124,13 @@ export function ToolsSettingsPanel({
             ) : tools.design === 'level-bento-categories' ? (
               <>
                 <ToolsSlider
-                  label="Card spacing"
+                  label={t('Card spacing')}
                   value={tools.cardGap ?? 'medium'}
                   options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
                   onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
                 />
                 <ToolsPreviewCardGrid
-                  label="Grid layout"
+                  label={t('Grid layout')}
                   value={tools.levelBentoGridMode ?? 'equal'}
                   options={PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS.map((option) => ({
                     ...option,
@@ -2102,7 +2145,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsOptionGrid
-                  label="Content alignment"
+                  label={t('Content alignment')}
                   value={tools.brandCardsContentAlignment ?? 'left'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2113,7 +2156,7 @@ export function ToolsSettingsPanel({
               </>
             ) : tools.design === 'level-stat-bars' ? (
               <ToolsSlider
-                label="Card spacing"
+                label={t('Card spacing')}
                 value={tools.cardGap ?? 'tight'}
                 options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
                 onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
@@ -2122,16 +2165,16 @@ export function ToolsSettingsPanel({
               <ToolsSlider
                 label={
                   tools.design === 'brand-index' || tools.design === 'brand-directory'
-                    ? 'Espacement entre les lignes'
+                    ? t('Spacing between rows')
                     : tools.design === 'brand-row'
                       ? (tools.brandRowCellStyle ?? 'dividers') === 'frames'
-                        ? 'Espacement entre les cadres'
+                        ? t('Spacing between frames')
                         : (tools.brandRowCellStyle ?? 'dividers') === 'none'
-                          ? 'Espacement entre les cellules'
-                          : 'Espacement des cellules'
+                          ? t('Spacing between cells')
+                          : t('Cell spacing')
                       : tools.design === 'brand-float'
-                        ? 'Espacement entre les tuiles'
-                        : 'Écart entre les cartes'
+                        ? t('Spacing between tiles')
+                        : t('Gap between cards')
                 }
                 value={tools.cardGap ?? 'tight'}
                 options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
@@ -2144,7 +2187,7 @@ export function ToolsSettingsPanel({
             (tools.design === 'brand-directory' &&
               (tools.brandDirectoryLevelStyle ?? 'tag') === 'stat') ? (
               <ToolsPreviewCardGrid
-                label="Bar style"
+                label={t('Bar style')}
                 value={tools.levelBarStyle ?? 'rectangle'}
                 options={PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS.map((option) => ({
                   ...option,
@@ -2171,8 +2214,8 @@ export function ToolsSettingsPanel({
               <ToolsSlider
                 label={
                   tools.design === 'level-circular-cards' || tools.design === 'level-svg-rings'
-                    ? 'Thickness & % size'
-                    : 'Bar & % size'
+                    ? t('Thickness & % size')
+                    : t('Bar & % size')
                 }
                 value={tools.levelBarSize ?? 'small'}
                 options={
@@ -2186,7 +2229,7 @@ export function ToolsSettingsPanel({
             {tools.design === 'brand-directory' ? (
               <>
                 <ToolsOptionGrid
-                  label="Affichage du niveau"
+                  label={t('Level display')}
                   value={tools.brandDirectoryLevelStyle ?? 'percentage'}
                   options={PORTFOLIO_TOOLS_BRAND_DIRECTORY_LEVEL_STYLE_OPTIONS}
                   onChange={(brandDirectoryLevelStyle: PortfolioToolsBrandDirectoryLevelStyle) =>
@@ -2194,7 +2237,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsPreviewCardGrid
-                  label="Colonnes (écran large)"
+                  label={t('Columns (wide screen)')}
                   value={String(tools.brandDirectoryColumnsPerRow ?? 1) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
                     (item) => item.value !== '4'
@@ -2209,7 +2252,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandDirectoryContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2218,7 +2261,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsToggleRow
-                  label="Pleine largeur"
+                  label={t('Full width')}
                   checked={tools.brandDirectoryFullWidth === true}
                   onChange={(brandDirectoryFullWidth) => onChange({ brandDirectoryFullWidth })}
                 />
@@ -2227,7 +2270,7 @@ export function ToolsSettingsPanel({
             {tools.design === 'brand-cards' ? (
               <>
                 <ToolsPreviewCardGrid
-                  label="Emplacement de l'icône"
+                  label={t('Icon placement')}
                   value={tools.brandCardsIconPlacement ?? 'top'}
                   options={PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS.map((option) => ({
                     ...option,
@@ -2242,7 +2285,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsPreviewCardGrid
-                  label="Colonnes (écran large)"
+                  label={t('Columns (wide screen)')}
                   value={String(tools.brandCardsColumnsPerRow ?? 1) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
                     (item) => item.value !== '4'
@@ -2257,7 +2300,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandCardsContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2266,7 +2309,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsToggleRow
-                  label="Pleine largeur"
+                  label={t('Full width')}
                   checked={tools.brandCardsFullWidth === true}
                   onChange={(brandCardsFullWidth) => onChange({ brandCardsFullWidth })}
                 />
@@ -2275,16 +2318,16 @@ export function ToolsSettingsPanel({
             {tools.design === 'level-star-cards' ? (
               <>
                 <ToolsSlider
-                  label="Card spacing"
+                  label={t('Card spacing')}
                   value={tools.cardGap ?? 'medium'}
                   options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
                   onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
                 />
-                <p className="text-sm text-neutral-500">
-                  4 cartes par ligne sur grand écran — pleine largeur.
+                <p className="text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('4 cards per row on large screens — full width.')}
                 </p>
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandCardsContentAlignment ?? 'left'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2296,7 +2339,7 @@ export function ToolsSettingsPanel({
             ) : tools.design === 'level-circular-cards' || tools.design === 'level-svg-rings' ? (
               <>
                 <ToolsPreviewCardGrid
-                  label="Colonnes (écran large)"
+                  label={t('Columns (wide screen)')}
                   value={String(tools.brandCardsColumnsPerRow ?? 3) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
                     (item) => item.value !== '4'
@@ -2311,7 +2354,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandCardsContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2324,7 +2367,7 @@ export function ToolsSettingsPanel({
             {tools.design === 'brand-index' ? (
               <>
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandIndexContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2333,12 +2376,12 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsToggleRow
-                  label="Pleine largeur (1 par ligne)"
+                  label={t('Full width (1 per row)')}
                   checked={tools.brandIndexFullWidth !== false}
                   onChange={(brandIndexFullWidth) => onChange({ brandIndexFullWidth })}
                 />
                 <ToolsToggleRow
-                  label="Filtre par catégorie"
+                  label={t('Category filter')}
                   checked={resolveToolsLevelIndicatorShowCategoryFilter(tools)}
                   onChange={(levelIndicatorShowCategoryFilter) =>
                     onChange({
@@ -2352,7 +2395,7 @@ export function ToolsSettingsPanel({
             {tools.design === 'brand-row' ? (
               <>
                 <ToolsPreviewCardGrid
-                  label="Style des cellules"
+                  label={t('Cell style')}
                   value={tools.brandRowCellStyle ?? 'dividers'}
                   options={PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS.map((option) => ({
                     ...option,
@@ -2368,7 +2411,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsPreviewCardGrid
-                  label="Colonnes (écran large)"
+                  label={t('Columns (wide screen)')}
                   value={String(tools.brandRowColumnsPerRow ?? 3) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
                     (item) => item.value !== '4'
@@ -2383,7 +2426,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandRowContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2396,7 +2439,7 @@ export function ToolsSettingsPanel({
             {tools.design === 'brand-float' ? (
               <>
                 <ToolsPreviewCardGrid
-                  label="Style de carte"
+                  label={t('Card style')}
                   value={tools.brandFloatCardStyle ?? 'framed'}
                   options={PORTFOLIO_TOOLS_BRAND_FLOAT_CARD_STYLE_OPTIONS.map((option) => ({
                     ...option,
@@ -2411,7 +2454,7 @@ export function ToolsSettingsPanel({
                   }
                 />
                 <ToolsOptionGrid
-                  label="Mode de grille"
+                  label={t('Grid mode')}
                   value={tools.brandFloatGridMode ?? 'fluid'}
                   options={PORTFOLIO_TOOLS_BRAND_FLOAT_GRID_MODE_OPTIONS}
                   onChange={(brandFloatGridMode: PortfolioToolsBrandFloatGridMode) =>
@@ -2420,7 +2463,7 @@ export function ToolsSettingsPanel({
                 />
                 {(tools.brandFloatGridMode ?? 'fluid') === 'fluid' ? (
                   <ToolsSlider
-                    label="Densité des tuiles"
+                    label={t('Tile density')}
                     value={tools.brandFloatTileDensity ?? 'comfortable'}
                     options={PORTFOLIO_TOOLS_BRAND_FLOAT_TILE_DENSITY_OPTIONS}
                     onChange={(brandFloatTileDensity: PortfolioToolsBrandFloatTileDensity) =>
@@ -2429,7 +2472,7 @@ export function ToolsSettingsPanel({
                   />
                 ) : (
                   <ToolsPreviewCardGrid
-                    label="Colonnes (écran large)"
+                    label={t('Columns (wide screen)')}
                     value={String(tools.brandFloatColumnsPerRow ?? 3) as '2' | '3' | '4'}
                     options={PORTFOLIO_TOOLS_BRAND_FLOAT_COLUMNS_OPTIONS.map((option) => ({
                       ...option,
@@ -2443,7 +2486,7 @@ export function ToolsSettingsPanel({
                   />
                 )}
                 <ToolsOptionGrid
-                  label="Alignement du contenu"
+                  label={t('Content alignment')}
                   value={tools.brandFloatContentAlignment ?? 'center'}
                   options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                   icons={TOOLS_ALIGNMENT_ICONS}
@@ -2455,7 +2498,7 @@ export function ToolsSettingsPanel({
             ) : null}
             {tools.design === 'workflow-rail' ? (
               <ToolsOptionGrid
-                label="Alignement du contenu"
+                label={t('Content alignment')}
                 value={tools.workflowRailContentAlignment ?? 'center'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={TOOLS_ALIGNMENT_ICONS}
@@ -2469,7 +2512,7 @@ export function ToolsSettingsPanel({
         </div>
       ) : null}
 
-      {current === 'header' ? (
+      {current === 'header' && tools.enabled ? (
         <div className="space-y-6">
           <ToolsHeaderDesignChoiceGrid
             value={tools.headerDesign ?? 'editorial'}
@@ -2480,14 +2523,14 @@ export function ToolsSettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'editorial'} title="Header settings" flush>
+            <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'editorial'} title={t('Header settings')} flush>
               <ToolsHeaderDesignFields tools={tools} onChange={onChange} />
             </ToolsLayoutSettingsBand>
           )}
         </div>
       ) : null}
 
-      {current === 'background' ? (
+      {current === 'background' && tools.enabled ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={tools}

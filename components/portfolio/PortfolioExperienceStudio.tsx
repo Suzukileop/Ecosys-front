@@ -43,6 +43,8 @@ import {
   useInlineStudio,
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 type ExperienceEntry = PortfolioExperienceBlockDraft & { key: string };
 
 type ExperienceDraft = {
@@ -103,14 +105,15 @@ function ExperiencePager({
   active: number;
   onSelect: (index: number) => void;
 }) {
+  const t = useT();
   const count = labels.length;
   const nameOf = (index: number) => labels[index] || `Experience ${index + 1}`;
 
   return (
-    <div role="group" aria-label="Experiences" className="flex items-center gap-2">
+    <div role="group" aria-label={t('Experiences')} className="flex items-center gap-2">
       <StudioIconAction
         icon="previous"
-        label={active > 0 ? `Previous: ${nameOf(active - 1)}` : 'Previous experience'}
+        label={active > 0 ? `Previous: ${nameOf(active - 1)}` : t('Previous experience')}
         onClick={() => onSelect(active - 1)}
         disabled={active === 0}
       />
@@ -123,7 +126,7 @@ function ExperiencePager({
       </span>
       <StudioIconAction
         icon="next"
-        label={active < count - 1 ? `Next: ${nameOf(active + 1)}` : 'Next experience'}
+        label={active < count - 1 ? `Next: ${nameOf(active + 1)}` : t('Next experience')}
         onClick={() => onSelect(active + 1)}
         disabled={active >= count - 1}
       />
@@ -143,6 +146,7 @@ function QuietChoice<T extends string>({
   onChange: (next: T | null) => void;
   label: string;
 }) {
+  const t = useT();
   return (
     <div role="radiogroup" aria-label={label} className="flex flex-wrap items-baseline gap-x-5 gap-y-2 pb-2">
       {options.map((option) => {
@@ -160,10 +164,10 @@ function QuietChoice<T extends string>({
                 : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'
             }`}
           >
-            {option.label}
+            {t(option.label)}
             <span
               aria-hidden
-              className={`absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#FF5722] ${selected ? '' : 'invisible'}`}
+              className={`absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#0F1419] dark:bg-[#E7E9EA] ${selected ? '' : 'invisible'}`}
             />
           </button>
         );
@@ -182,14 +186,15 @@ function EmploymentChoice({
   value: string | null;
   onChange: (next: string | null) => void;
 }) {
+  const t = useT();
   const [customOpen, setCustomOpen] = useState(() => value != null && !isKnownEmploymentType(value));
   const customValue = value != null && !isKnownEmploymentType(value) ? value : '';
 
   return (
     <div>
       <QuietChoice
-        label="Employment type"
-        options={[...EMPLOYMENT_OPTIONS, { value: CUSTOM_EMPLOYMENT, label: 'Custom' }]}
+        label={t('Employment type')}
+        options={[...EMPLOYMENT_OPTIONS, { value: CUSTOM_EMPLOYMENT, label: t('Custom') }]}
         value={customOpen ? CUSTOM_EMPLOYMENT : value}
         onChange={(next) => {
           if (next === CUSTOM_EMPLOYMENT) {
@@ -210,8 +215,8 @@ function EmploymentChoice({
               autoFocus
               autoComplete="off"
               maxLength={MAX_CUSTOM_EMPLOYMENT_LENGTH}
-              placeholder="e.g. Volunteer, Co-founder, Seasonal"
-              aria-label="Custom employment type"
+              placeholder={t('e.g. Volunteer, Co-founder, Seasonal')}
+              aria-label={t('Custom employment type')}
               onChange={(event) => onChange(event.currentTarget.value.trim() ? event.currentTarget.value : null)}
               className={`${STUDIO_BARE_INPUT_CLASS} ${VALUE_CLASS}`}
             />
@@ -223,8 +228,8 @@ function EmploymentChoice({
 }
 
 const STATUS_OPTIONS: Array<{ value: PortfolioExperienceStatus; label: string }> = [
-  { value: 'ONGOING', label: 'Ongoing' },
-  { value: 'FINISHED', label: 'Finished' },
+  { value: 'ONGOING', label: msg('Ongoing') },
+  { value: 'FINISHED', label: msg('Finished') },
 ];
 
 function InlineInput({
@@ -270,6 +275,7 @@ function TasksBlock({
   tasks: Array<{ value: string }>;
   onChange: (next: Array<{ value: string }>) => void;
 }) {
+  const t = useT();
   const [focusIndex, setFocusIndex] = useState<number | null>(null);
   const add = () => {
     if (tasks.length >= MAX_TASKS) return;
@@ -278,13 +284,13 @@ function TasksBlock({
   };
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Tasks">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Tasks')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Tasks">
-          <StudioIconAction icon="add" label="Add task" onClick={add} disabled={tasks.length >= MAX_TASKS} />
+        <StudioSectionHeader label={t('Tasks')}>
+          <StudioIconAction icon="add" label={t('Add task')} onClick={add} disabled={tasks.length >= MAX_TASKS} />
         </StudioSectionHeader>
         {tasks.length === 0 ? (
-          <p className={EMPTY_CLASS}>No task yet</p>
+          <p className={EMPTY_CLASS}>{t('No task yet')}</p>
         ) : (
           <ul>
             {tasks.map((task, index) => (
@@ -296,7 +302,7 @@ function TasksBlock({
                   <input
                     type="text"
                     value={task.value}
-                    placeholder="Describe a mission"
+                    placeholder={t('Describe a mission')}
                     aria-label={`Task ${index + 1}`}
                     autoFocus={index === focusIndex}
                     autoComplete="off"
@@ -333,12 +339,13 @@ function ToolsBlock({
   tools: PortfolioExperienceBlockDraft['tools'];
   onChange: (next: PortfolioExperienceBlockDraft['tools']) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useStudioFold();
   const filled = tools.filter((tool) => tool.value.trim());
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Tools">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Tools')}>
       <StudioUnderline>
-        <StudioSectionHeader label="Tools">
+        <StudioSectionHeader label={t('Tools')}>
           <StudioFoldToggle open={open} onClick={() => setOpen(!open)} />
         </StudioSectionHeader>
         {open ? null : filled.length > 0 ? (
@@ -350,7 +357,7 @@ function ToolsBlock({
             ))}
           />
         ) : (
-          <p className={`pb-3 ${EMPTY_CLASS}`}>No tool yet</p>
+          <p className={`pb-3 ${EMPTY_CLASS}`}>{t('No tool yet')}</p>
         )}
         {open ? (
           <div style={STUDIO_FLOAT_IN_STYLE} className="pb-5">
@@ -383,6 +390,7 @@ function LinksBlock({
   links: PortfolioExperienceBlockDraft['links'];
   onChange: (next: PortfolioExperienceBlockDraft['links']) => void;
 }) {
+  const t = useT();
   const [focusId, setFocusId] = useState<string | null>(null);
   const update = (id: string, patch: { label?: string; url?: string }) =>
     onChange(links.map((link) => (link.id === id ? { ...link, ...patch } : link)));
@@ -394,20 +402,20 @@ function LinksBlock({
   };
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Proof link">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Proof link')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Proof link">
+        <StudioSectionHeader label={t('Proof link')}>
           {links.length < MAX_LINKS ? (
-            <StudioIconAction icon="add" label="Add proof link" onClick={add} />
+            <StudioIconAction icon="add" label={t('Add proof link')} onClick={add} />
           ) : null}
         </StudioSectionHeader>
         {links.length === 0 ? (
-          <p className={EMPTY_CLASS}>No link yet</p>
+          <p className={EMPTY_CLASS}>{t('No link yet')}</p>
         ) : (
           <ul>
             {links.map((link) => {
               const url = link.url.trim();
-              const error = url ? getHttpUrlFieldError(url) : link.label.trim() ? 'URL is required.' : null;
+              const error = url ? getHttpUrlFieldError(url) : link.label.trim() ? t('URL is required.') : null;
               return (
                 <li key={link.id} className={`py-3 first:pt-0 ${STUDIO_ROW_RULE}`}>
                   <div className="group/row grid grid-cols-1 items-baseline gap-x-8 gap-y-1 sm:grid-cols-[minmax(0,1fr)_minmax(0,1.4fr)_auto]">
@@ -415,8 +423,8 @@ function LinksBlock({
                       <input
                         type="text"
                         value={link.label}
-                        placeholder="Label"
-                        aria-label="Link label"
+                        placeholder={t('Label')}
+                        aria-label={t('Link label')}
                         autoComplete="off"
                         autoFocus={link.id === focusId}
                         onChange={(event) => update(link.id, { label: event.currentTarget.value })}
@@ -430,14 +438,14 @@ function LinksBlock({
                         autoComplete="off"
                         value={link.url}
                         placeholder="https://"
-                        aria-label="Link URL"
+                        aria-label={t('Link URL')}
                         aria-invalid={error ? true : undefined}
                         onChange={(event) => update(link.id, { url: event.currentTarget.value })}
-                        className={`${STUDIO_BARE_INPUT_CLASS} ${SECONDARY_CLASS} ${url && !error ? '!text-[#FF5722]' : ''}`}
+                        className={`${STUDIO_BARE_INPUT_CLASS} ${SECONDARY_CLASS} ${url && !error ? '!text-[#0F1419] underline decoration-[#CFD9DE] underline-offset-4 dark:!text-[#E7E9EA] dark:decoration-[#536471]' : ''}`}
                       />
                     </StudioUnderline>
                     <StudioRemoveButton
-                      label="Remove link"
+                      label={t('Remove link')}
                       onClick={() => onChange(links.filter((item) => item.id !== link.id))}
                     />
                   </div>
@@ -459,6 +467,7 @@ function MediaBlock({
   mediaUrl: string;
   onChange: (next: { mediaUrl: string; mediaType: 'IMAGE' | 'VIDEO' | null }) => void;
 }) {
+  const t = useT();
   const url = mediaUrl.trim();
   const [dragging, setDragging] = useState(false);
   const { inputRef, uploading, uploadError, pickFile, onFileChange, uploadFile } = useContentMediaUpload({
@@ -487,16 +496,16 @@ function MediaBlock({
   };
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Media">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Media')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Media" />
+        <StudioSectionHeader label={t('Media')} />
         <input ref={inputRef} type="file" accept={EXPERIENCE_MEDIA_ACCEPT} className="hidden" onChange={onFileChange} />
 
         {url ? (
           <div
             {...dropHandlers}
             className={`group/media relative aspect-[16/10] w-full overflow-hidden rounded-lg border transition-colors ${
-              dragging ? 'border-[#FF5722]' : 'border-black/[0.04] dark:border-white/[0.04]'
+              dragging ? 'border-[#0F1419] dark:border-[#E7E9EA]' : 'border-black/[0.04] dark:border-white/[0.04]'
             }`}
           >
             <ContentMediaPreview locale="en" mediaUrl={url} mediaType="FILE" large fluid fit="cover" />
@@ -507,7 +516,7 @@ function MediaBlock({
                 disabled={uploading}
                 className="rounded-full bg-black/70 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur transition hover:bg-black disabled:opacity-50"
               >
-                Replace
+                {t('Replace')}
               </button>
               <button
                 type="button"
@@ -515,13 +524,13 @@ function MediaBlock({
                 disabled={uploading}
                 className="rounded-full bg-black/70 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur transition hover:bg-red-600 disabled:opacity-50"
               >
-                Remove
+                {t('Remove')}
               </button>
             </div>
             {uploading || dragging ? (
               <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-sm font-medium text-white">
                 {uploading ? <LoadingSpinner size="sm" /> : null}
-                {uploading ? 'Uploading…' : 'Drop to replace'}
+                {uploading ? t('Uploading…') : t('Drop to replace')}
               </div>
             ) : null}
           </div>
@@ -533,14 +542,14 @@ function MediaBlock({
             {...dropHandlers}
             className={`flex aspect-[16/7] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center transition-colors duration-200 disabled:cursor-wait ${
               dragging
-                ? 'border-[#FF5722] bg-[#FF5722]/[0.06]'
+                ? 'border-[#0F1419] bg-[#0F1419]/[0.04] dark:border-[#E7E9EA] dark:bg-white/[0.06]'
                 : 'border-neutral-300 hover:border-neutral-500 hover:bg-black/[0.02] dark:border-white/15 dark:hover:border-white/35 dark:hover:bg-white/[0.02]'
             }`}
           >
             {uploading ? (
               <>
                 <LoadingSpinner size="sm" />
-                <span className={SECONDARY_CLASS}>Uploading…</span>
+                <span className={SECONDARY_CLASS}>{t('Uploading…')}</span>
               </>
             ) : (
               <>
@@ -555,13 +564,13 @@ function MediaBlock({
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
                 </svg>
                 <span className={`text-[15px] ${VALUE_CLASS}`}>
-                  {dragging ? 'Drop to upload' : (
+                  {dragging ? t('Drop to upload') : (
                     <>
-                      Drop an image or video, or <span className="underline underline-offset-4">browse</span>
+                      {t('Drop an image or video, or')} <span className="underline underline-offset-4">{t('browse')}</span>
                     </>
                   )}
                 </span>
-                <span className={`text-[12px] ${SECONDARY_CLASS}`}>JPG, PNG, WEBP, GIF, MP4 or WEBM</span>
+                <span className={`text-[12px] ${SECONDARY_CLASS}`}>{t('JPG, PNG, WEBP, GIF, MP4 or WEBM')}</span>
               </>
             )}
           </button>
@@ -581,6 +590,7 @@ const EntryEditor = memo(function EntryEditor({
   autoFocusTitle: boolean;
   onChange: EntryChangeHandler;
 }) {
+  const t = useT();
   const [entry, setEntry] = useState(defaultValue);
   const patch = (partial: Partial<PortfolioExperienceBlockDraft>) => {
     const next = { ...entry, ...partial };
@@ -590,47 +600,47 @@ const EntryEditor = memo(function EntryEditor({
 
   return (
     <div style={STUDIO_FLOAT_IN_STYLE} role="tabpanel">
-      <section className={STUDIO_BLOCK_CLASS} aria-label="Role">
-        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-[minmax(0,1fr)_12rem]">
+      <section className={STUDIO_BLOCK_CLASS} aria-label={t('Role')}>
+        <div className="grid grid-cols-1 items-start gap-y-6">
           <InlineInput
-            label="Job title"
+            label={t('Job title')}
             value={entry.title}
-            placeholder="Video director & editor"
+            placeholder={t('Video director & editor')}
             autoFocus={autoFocusTitle}
             onChange={(title) => patch({ title })}
           />
-          <StudioField label="Status">
+          <StudioField label={t('Status')}>
             <QuietChoice
-              label="Status"
+              label={t('Status')}
               options={STATUS_OPTIONS}
               value={entry.status}
               onChange={(status) => patch({ status })}
             />
           </StudioField>
         </div>
-        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-3">
+        <div className="grid grid-cols-1 items-start gap-y-6">
           <InlineInput
-            label="Period"
+            label={t('Period')}
             value={entry.period}
-            placeholder="2021 — present"
+            placeholder={t('2021 — present')}
             inputClassName="tabular-nums"
             onChange={(period) => patch({ period })}
           />
           <InlineInput
-            label="Organization"
+            label={t('Organization')}
             value={entry.organization}
-            placeholder="Studio, agency…"
+            placeholder={t('Studio, agency…')}
             onChange={(organization) => patch({ organization })}
           />
           <InlineInput
-            label="Location"
+            label={t('Location')}
             value={entry.location}
-            placeholder="City, country or remote"
+            placeholder={t('City, country or remote')}
             onChange={(location) => patch({ location })}
           />
         </div>
-        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-[minmax(0,1fr)_12rem]">
-          <StudioField label="Employment">
+        <div className="grid grid-cols-1 items-start gap-y-6">
+          <StudioField label={t('Employment')}>
             <EmploymentChoice
               value={entry.employmentType}
               onChange={(employmentType) => patch({ employmentType })}
@@ -643,7 +653,7 @@ const EntryEditor = memo(function EntryEditor({
         </div>
       </section>
 
-      <section className={STUDIO_BLOCK_CLASS} aria-label="Description">
+      <section className={STUDIO_BLOCK_CLASS} aria-label={t('Description')}>
         <DescriptionField value={entry.text} onChange={(text) => patch({ text })} />
       </section>
 
@@ -656,9 +666,10 @@ const EntryEditor = memo(function EntryEditor({
 });
 
 function CvVisibilityField({ shown, onChange }: { shown: boolean; onChange: (shown: boolean) => void }) {
+  const t = useT();
   const id = useId();
   return (
-    <StudioField label="CV" htmlFor={id} hint="Choose whether this experience appears in your generated CV.">
+    <StudioField label="CV" htmlFor={id} hint={t('Choose whether this experience appears in your generated CV.')}>
       <div className="flex items-center gap-3 pb-3">
         <button
           id={id}
@@ -666,19 +677,19 @@ function CvVisibilityField({ shown, onChange }: { shown: boolean; onChange: (sho
           role="switch"
           aria-checked={shown}
           onClick={() => onChange(!shown)}
-          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
-            shown ? 'bg-[#FF5722]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
+          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40 ${
+            shown ? 'bg-[#0F1419] dark:bg-[#EFF3F4]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
           }`}
         >
           <span
             aria-hidden
             className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              shown ? 'translate-x-3.5' : 'translate-x-0.5'
+              shown ? 'translate-x-3.5 dark:bg-[#0F1419]' : 'translate-x-0.5'
             }`}
           />
         </button>
         <span className={`truncate text-base font-normal ${shown ? 'text-black dark:text-neutral-100' : EMPTY_CLASS}`}>
-          {shown ? 'Shown in CV' : 'Hidden from CV'}
+          {shown ? t('Shown in CV') : t('Hidden from CV')}
         </span>
       </div>
     </StudioField>
@@ -686,14 +697,15 @@ function CvVisibilityField({ shown, onChange }: { shown: boolean; onChange: (sho
 }
 
 function DescriptionField({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const t = useT();
   const id = useId();
   return (
-    <StudioField label="Description" htmlFor={id}>
+    <StudioField label={t('Description')} htmlFor={id}>
       <textarea
         id={id}
         value={value}
         rows={3}
-        placeholder="What you did, outcomes, scope of work…"
+        placeholder={t('What you did, outcomes, scope of work…')}
         onChange={(event) => onChange(event.currentTarget.value)}
         className={`${STUDIO_INLINE_TEXT_CLASS} resize-none leading-relaxed [field-sizing:content]`}
       />
@@ -708,6 +720,7 @@ function ExperienceBody({
   getDraft: () => ExperienceDraft;
   change: ChangeHandler;
 }) {
+  const t = useT();
   const [keys, setKeys] = useState(() => getDraft().blocks.map((block) => block.key));
   const [labels, setLabels] = useState<Record<string, string>>(() =>
     Object.fromEntries(getDraft().blocks.map((block) => [block.key, entryLabel(block)]))
@@ -753,7 +766,7 @@ function ExperienceBody({
 
   return (
     <>
-      <section className={STUDIO_BLOCK_CLASS} aria-label="Experiences">
+      <section className={STUDIO_BLOCK_CLASS} aria-label={t('Experiences')}>
         <div className="flex items-center justify-end gap-x-3">
           {keys.length > 1 ? (
             <>
@@ -766,11 +779,11 @@ function ExperienceBody({
             </>
           ) : null}
           {keys.length > 0 ? (
-            <StudioIconAction icon="remove" label="Remove experience" onClick={removeActive} />
+            <StudioIconAction icon="remove" label={t('Remove experience')} onClick={removeActive} />
           ) : null}
           <StudioIconAction
             icon="add"
-            label="Add experience"
+            label={t('Add experience')}
             onClick={add}
             disabled={keys.length >= MAX_EXPERIENCE_ENTRIES}
           />
@@ -785,7 +798,7 @@ function ExperienceBody({
           onChange={updateEntry}
         />
       ) : (
-        <p className={`py-10 text-center ${EMPTY_CLASS}`}>No experience yet — add your first one.</p>
+        <p className={`py-10 text-center ${EMPTY_CLASS}`}>{t('No experience yet — add your first one.')}</p>
       )}
     </>
   );

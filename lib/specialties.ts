@@ -1,18 +1,20 @@
+import { msg } from '@/lib/i18n/config';
+
 /** Popular discovery chips — shortcuts only, not a closed input vocabulary. */
 export const PROFILE_SPECIALTIES = [
-  'Developer',
-  'Design',
-  'Marketing',
-  'Video editor',
-  'UI / UX',
-  'Branding',
-  'Music',
-  'Writing',
-  'Illustration',
-  '3D',
-  'Photography',
-  'Data science',
-  'DevOps',
+  msg('Developer'),
+  msg('Design'),
+  msg('Marketing'),
+  msg('Video editor'),
+  msg('UI / UX'),
+  msg('Branding'),
+  msg('Music'),
+  msg('Writing'),
+  msg('Illustration'),
+  msg('3D'),
+  msg('Photography'),
+  msg('Data science'),
+  msg('DevOps'),
 ] as const;
 
 type ProfileSpecialty = (typeof PROFILE_SPECIALTIES)[number];

@@ -8,10 +8,12 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { useAuth } from '@/context/AuthContext';
 import { SIGNED_IN_HOME } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const OAUTH_DONE_KEY = 'oauth-exchange-done';
 
 function OAuthCallbackContent() {
+  const t = useT();
   const searchParams = useSearchParams();
   const { user, applyAuthResponse } = useAuth();
   const [error, setError] = useState<string | null>(null);
@@ -29,16 +31,16 @@ function OAuthCallbackContent() {
       console.error('[oauth callback]', oauthError);
       setError(
         oauthError === 'access_denied'
-          ? 'Sign-in was cancelled.'
+          ? t('Sign-in was cancelled.')
           : oauthError === 'temporarily_unavailable'
-            ? 'Social sign-in is temporarily unavailable. Please try again in a few minutes.'
-            : 'Unable to complete social sign-in. Please try again.',
+            ? t('Social sign-in is temporarily unavailable. Please try again in a few minutes.')
+            : t('Unable to complete social sign-in. Please try again.'),
       );
       return;
     }
 
     if (!code) {
-      setError('This sign-in link is invalid or has expired. Please try again.');
+      setError(t('This sign-in link is invalid or has expired. Please try again.'));
       return;
     }
 
@@ -53,7 +55,7 @@ function OAuthCallbackContent() {
         window.location.replace(SIGNED_IN_HOME);
       })
       .catch(() => {
-        setError('Unable to complete social sign-in. Please try again.');
+        setError(t('Unable to complete social sign-in. Please try again.'));
       });
   }, [searchParams, user, applyAuthResponse]);
 
@@ -64,10 +66,10 @@ function OAuthCallbackContent() {
           <ErrorAlert message={error} onDismiss={() => setError(null)} />
           <div className="flex gap-4 text-sm">
             <Link href="/login" className="font-medium text-[#F97316] hover:text-[#EA580C]">
-              Back to login
+              {t('Back to login')}
             </Link>
             <Link href="/register" className="font-medium text-neutral-600 hover:text-neutral-900 dark:text-neutral-400">
-              Register
+              {t('Register')}
             </Link>
           </div>
         </div>
@@ -79,7 +81,7 @@ function OAuthCallbackContent() {
     <div className="flex min-h-screen items-center justify-center bg-white dark:bg-neutral-950">
       <div className="flex flex-col items-center gap-3 text-sm text-neutral-600 dark:text-neutral-400">
         <LoadingSpinner />
-        Completing sign-in...
+        {t('Completing sign-in...')}
       </div>
     </div>
   );

@@ -4,6 +4,7 @@ import { useMemo, type ReactNode } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { groupBySpecialty } from '@/lib/specialties';
 import type { ProfileStrengthTool } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type PublicSkillsToolsGroupedProps = {
   /** Rich stack items (preferred). */
@@ -12,6 +13,8 @@ type PublicSkillsToolsGroupedProps = {
   skillTags?: string[];
   tools: ProfileStrengthTool[];
   allowedSpecialties?: string[];
+  /** Title each block ("Stack", "Tools"). Off where the surrounding section already names it. */
+  showRowLabels?: boolean;
 };
 
 function MetaChip({
@@ -25,7 +28,7 @@ function MetaChip({
 }) {
   return (
     <span
-      className={`inline-flex h-10 max-w-full items-center gap-2 rounded-lg border border-black/[0.08] text-[15px] text-[#111111] transition-colors hover:border-black/[0.18] dark:border-white/[0.1] dark:text-neutral-100 dark:hover:border-white/[0.22] ${
+      className={`inline-flex h-9 max-w-full items-center gap-2 rounded-full bg-[color:var(--gn-inset)] text-[14px] font-medium text-[#0F1419] dark:text-[#E7E9EA] ${
         showLogo ? 'pl-2 pr-3' : 'px-3'
       }`}
       title={label}
@@ -36,10 +39,10 @@ function MetaChip({
   );
 }
 
-function SkillRow({ label, children }: { label: string; children: ReactNode }) {
+function SkillRow({ label, showLabel = true, children }: { label: string; showLabel?: boolean; children: ReactNode }) {
   return (
-    <div className="rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-8">
-      <p className="mb-5 text-[15px] font-semibold text-[#111111] dark:text-white">{label}</p>
+    <div className="gn-card -mx-4 rounded-none bg-[#F7F9F9] dark:bg-[#16181C] px-4 py-5 sm:mx-0 sm:p-6">
+      {showLabel ? <p className="mb-4 text-[17px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{label}</p> : null}
       <div className="min-w-0">{children}</div>
     </div>
   );
@@ -58,7 +61,9 @@ export function PublicSkillsToolsGrouped({
   skillTags = [],
   tools,
   allowedSpecialties = [],
+  showRowLabels = true,
 }: PublicSkillsToolsGroupedProps) {
+  const t = useT();
   const normalizedStack = useMemo(
     () =>
       stack
@@ -97,9 +102,9 @@ export function PublicSkillsToolsGrouped({
   if (!hasStack && normalizedTools.length === 0) return null;
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-2 sm:space-y-6">
       {hasStack ? (
-        <SkillRow label="Stack">
+        <SkillRow label={t('Stack')} showLabel={showRowLabels}>
           <ChipList>
             {normalizedStack.length > 0
               ? normalizedStack.map((item) => (
@@ -111,12 +116,12 @@ export function PublicSkillsToolsGrouped({
       ) : null}
 
       {normalizedTools.length > 0 ? (
-        <SkillRow label="Tools">
-          <div className="space-y-6">
+        <SkillRow label={t('Tools')} showLabel={showRowLabels}>
+          <div className="space-y-5">
             {toolGroups.map(({ group, items }) => (
               <div key={group}>
                 {group ? (
-                  <p className="mb-3 text-[15px] capitalize text-neutral-700 dark:text-neutral-300">
+                  <p className="mb-2 text-[13px] capitalize text-[#536471] dark:text-[#71767B]">
                     {group.toLowerCase()}
                   </p>
                 ) : null}

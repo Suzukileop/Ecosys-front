@@ -10,7 +10,9 @@ import { CreatorProductCard } from '@/components/creator/CreatorProductCard';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioProductsPreviewSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { useAuth } from '@/context/AuthContext';
+import { STUDIO_PRIMARY_BUTTON, STUDIO_SECONDARY_BUTTON, StudioEmptyBlock, StudioSectionHeading } from './studio-list-ui';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type FormatSectionOrder = 'physical-first' | 'virtual-first';
 
@@ -38,6 +40,7 @@ function sortProfileProducts(products: MarketplaceProductSummary[]) {
 
 /** Read-only products grid inside My Profile (management lives in My Product). */
 export function CreatorStudioProductsReadonlyTab() {
+  const t = useT();
   const { user } = useAuth();
   const [items, setItems] = useState<MarketplaceProductSummary[]>([]);
   const [loading, setLoading] = useState(true);
@@ -51,12 +54,12 @@ export function CreatorStudioProductsReadonlyTab() {
       const page = await listCreatorProducts(0, 50);
       setItems(page.content);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load your products.'));
+      setError(getApiErrorMessage(e, t('Unable to load your products.')));
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -87,16 +90,16 @@ export function CreatorStudioProductsReadonlyTab() {
   const formatSections = useMemo(() => {
     const physical = {
       key: 'physical' as const,
-      label: 'Material',
+      label: t('Material'),
       products: physicalProducts,
     };
     const virtual = {
       key: 'virtual' as const,
-      label: 'Digital',
+      label: t('Digital'),
       products: virtualProducts,
     };
     return sectionOrder === 'virtual-first' ? [virtual, physical] : [physical, virtual];
-  }, [physicalProducts, sectionOrder, virtualProducts]);
+  }, [physicalProducts, sectionOrder, virtualProducts, t]);
 
   const swapFormatSections = useCallback(() => {
     setSectionOrder((current) => {
@@ -119,39 +122,32 @@ export function CreatorStudioProductsReadonlyTab() {
 
   return (
     <div className="space-y-6">
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
-        <div className="min-w-0">
-          <h2 className="text-[1.5rem] font-bold tracking-[-0.01em] text-neutral-900 dark:text-white">
-            Products
-          </h2>
-          <p className="mt-1.5 text-[16px] text-neutral-500 dark:text-neutral-400">Preview of your catalog.</p>
-        </div>
-        <Link
-          href="/my-products"
-          className="group inline-flex shrink-0 items-center gap-2 text-[16px] font-medium text-[#111111] transition-colors hover:text-neutral-600 dark:text-white dark:hover:text-neutral-300"
-        >
-          Manage products
-          <FontAwesomeIcon
-            icon={faChevronRight}
-            className="h-3 w-3 transition-transform duration-200 group-hover:translate-x-0.5"
-          />
-        </Link>
-      </div>
+      <StudioSectionHeading
+        title={t('Products')}
+        description={t('Preview of your catalog.')}
+        action={
+          <Link href="/my-products" className={STUDIO_SECONDARY_BUTTON}>
+            {t('Manage products')}
+            <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
+          </Link>
+        }
+      />
 
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {items.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-neutral-200 bg-white p-12 text-center dark:border-neutral-700 dark:bg-neutral-900">
-          <p className="text-[16px] text-neutral-600 dark:text-neutral-400">No products listed yet.</p>
-          <Link
-            href="/my-products?create=1"
-            className="mt-6 inline-flex items-center gap-2 rounded-lg bg-[#111111] px-6 py-3 text-sm font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
-          >
-            Create a product
-          </Link>
-        </div>
+        <StudioEmptyBlock
+          title={t('No products listed yet')}
+          action={
+            <Link href="/my-products?create=1" className={STUDIO_PRIMARY_BUTTON}>
+              {t('Create a product')}
+            </Link>
+          }
+        >
+          {t('Products you list in your shop show up here.')}
+        </StudioEmptyBlock>
       ) : (
-        <div className="space-y-10">
+        <div className="space-y-8">
           {formatSections.map((section, index) => {
             if (section.products.length === 0) return null;
             const previousVisible = formatSections
@@ -159,16 +155,13 @@ export function CreatorStudioProductsReadonlyTab() {
               .some((entry) => entry.products.length > 0);
 
             return (
-              <div key={section.key} className="space-y-10">
-                {previousVisible ? (
-                  <hr className="border-neutral-200 dark:border-neutral-700" />
-                ) : null}
-                <section className="space-y-4" aria-label={`${section.label} products`}>
+              <div key={section.key}>
+                <section className="space-y-3" aria-label={`${section.label} products`}>
                   <div className="flex items-center gap-3">
-                    <h3 className="text-[15px] font-bold uppercase tracking-wide text-neutral-900 dark:text-white">
-                      {section.label}
+                    <h3 className="text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-[color:var(--gn-ink2)]">
+                      {t(section.label)}
                     </h3>
-                    <span className="text-[14px] font-medium tabular-nums text-neutral-500 dark:text-neutral-400">
+                    <span className="text-[13px] font-medium tabular-nums text-[color:var(--gn-ink2)]">
                       {section.products.length}
                     </span>
                     {physicalProducts.length > 0 &&
@@ -177,9 +170,9 @@ export function CreatorStudioProductsReadonlyTab() {
                       <button
                         type="button"
                         onClick={swapFormatSections}
-                        aria-label="Swap Physical and Virtual sections"
-                        title="Swap Physical / Virtual order"
-                        className="ml-auto inline-flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 text-neutral-500 transition hover:border-neutral-400 hover:text-[#111111] dark:border-neutral-700 dark:text-neutral-400 dark:hover:border-neutral-500 dark:hover:text-white"
+                        aria-label={t('Swap Physical and Virtual sections')}
+                        title={t('Swap Physical / Virtual order')}
+                        className="ml-auto inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)]"
                       >
                         <svg
                           className="h-4 w-4"
@@ -198,7 +191,7 @@ export function CreatorStudioProductsReadonlyTab() {
                       </button>
                     ) : null}
                   </div>
-                  <div className="grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2">
+                  <div className="grid min-w-0 grid-cols-1 gap-4 sm:grid-cols-2 sm:gap-6">
                     {section.products.map((product) => (
                       <CreatorProductCard
                         key={product.id}

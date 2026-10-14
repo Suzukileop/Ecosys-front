@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { FaqItem } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Split Index — the seventh deliberately un-templated FAQ design (see also
@@ -37,6 +38,7 @@ export function FaqSplitIndexDesign({
    *  General tab's "Font size" control (`faqPremiumFontScale` in portfolio-faq-settings.ts). */
   fontSizeScale?: number;
 }) {
+  const t = useT();
   const listRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const iconRefs = useRef<(HTMLSpanElement | null)[]>([]);
@@ -159,7 +161,7 @@ export function FaqSplitIndexDesign({
       <div className="pf-faq-split-head">{header}</div>
       <div className="pf-faq-split-row">
         <div className="pf-faq-split-rail">
-          <span className="pf-faq-split-rail-label">Index</span>
+          <span className="pf-faq-split-rail-label">{t('Index')}</span>
         </div>
         <div className="pf-faq-split-list" ref={listRef}>
           {items.map((item, index) => (

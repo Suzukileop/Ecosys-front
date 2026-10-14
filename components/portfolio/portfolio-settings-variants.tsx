@@ -1,6 +1,8 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 /**
  * Two ways to read the same list of settings, switchable by the user:
@@ -75,6 +77,7 @@ export function SvChoiceTiles<T extends string>({
   /** Tiles per row (defaults to one row holding every option). */
   columns?: number;
 }) {
+  const t = useT();
   const compact = density === 'compact';
   return (
     <div
@@ -91,8 +94,8 @@ export function SvChoiceTiles<T extends string>({
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={option.label}
-            title={option.label}
+            aria-label={t(option.label)}
+            title={t(option.label)}
             onClick={() => onChange(option.value)}
             className={`flex w-full min-w-0 items-center justify-center rounded-lg transition-colors ${FOCUS_RING} ${
               compact ? 'h-8' : option.glyph ? 'h-12' : 'h-10'
@@ -111,7 +114,7 @@ export function SvChoiceTiles<T extends string>({
               )
             ) : (
               <span className={`truncate px-1 font-semibold ${compact ? 'text-[12px]' : 'text-[13px]'}`}>
-                {option.label}
+                {t(option.label)}
               </span>
             )}
           </button>
@@ -135,6 +138,7 @@ export function SvSwatches({
   onChange: (value: string) => void;
   density: SettingDensity;
 }) {
+  const t = useT();
   const compact = density === 'compact';
   return (
     <div
@@ -160,8 +164,8 @@ export function SvSwatches({
             type="button"
             role="radio"
             aria-checked={active}
-            aria-label={option.label}
-            title={option.label}
+            aria-label={t(option.label)}
+            title={t(option.label)}
             onClick={() => onChange(option.value)}
             className={
               compact
@@ -195,6 +199,7 @@ export function SvPickOne({
   onChange: (value: string) => void;
   density: SettingDensity;
 }) {
+  const t = useT();
   if (density === 'compact') {
     return (
       <SvSelect label={label} options={options} value={value} onChange={onChange} />
@@ -223,7 +228,7 @@ export function SvPickOne({
             >
               {on ? <span className="h-2 w-2 rounded-full bg-current" /> : null}
             </span>
-            <span className="truncate">{option.label}</span>
+            <span className="truncate">{t(option.label)}</span>
           </button>
         );
       })}
@@ -242,6 +247,7 @@ export function SvSelect({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const t = useT();
   return (
     <span className="relative block">
       <select
@@ -252,7 +258,7 @@ export function SvSelect({
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {t(option.label)}
           </option>
         ))}
       </select>
@@ -321,6 +327,50 @@ export function SvTextInput({
   );
 }
 
+/** A 0–100 style slider with its live value on the right — for opacities and strengths. */
+export function SvSlider({
+  label,
+  value,
+  min = 0,
+  max = 100,
+  step = 1,
+  unit = '%',
+  onChange,
+  density,
+}: {
+  label: string;
+  value: number;
+  min?: number;
+  max?: number;
+  step?: number;
+  unit?: string;
+  onChange: (value: number) => void;
+  density: SettingDensity;
+}) {
+  return (
+    <div className="flex items-center gap-3">
+      <input
+        type="range"
+        aria-label={label}
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className={`h-1.5 min-w-0 flex-1 cursor-pointer appearance-none rounded-full ${CHIP_IDLE} ${FOCUS_RING} accent-[color:var(--pf-palette-texte-fort,#171717)]`}
+      />
+      <span
+        className={`shrink-0 text-right font-semibold tabular-nums ${SV_TEXT_STRONG} ${
+          density === 'compact' ? 'w-9 text-[12px]' : 'w-11 text-[13px]'
+        }`}
+      >
+        {value}
+        {unit}
+      </span>
+    </div>
+  );
+}
+
 function SvSwitch({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
   return (
     <button
@@ -346,13 +396,14 @@ function SvSwitch({ checked, onChange, label }: { checked: boolean; onChange: (c
 }
 
 function SvInfo({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <span className="relative inline-flex shrink-0">
       <span
         role="button"
         tabIndex={0}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
@@ -439,8 +490,8 @@ function CompactIcon() {
 }
 
 const VIEW_OPTIONS: { value: SettingsVariant; label: string; hint: string; icon: ReactNode }[] = [
-  { value: 'flat', label: 'Expanded', hint: 'Every control visible', icon: <ExpandedIcon /> },
-  { value: 'focus', label: 'Compact', hint: 'One-line summaries, open one at a time', icon: <CompactIcon /> },
+  { value: 'flat', label: msg('Expanded'), hint: msg('Every control visible'), icon: <ExpandedIcon /> },
+  { value: 'focus', label: msg('Compact'), hint: msg('One-line summaries, open one at a time'), icon: <CompactIcon /> },
 ];
 
 /**
@@ -457,14 +508,15 @@ export function SettingsVariantSwitcher({
   /** Caption on the left (e.g. "Aurora options"). */
   title?: string;
 }) {
+  const t = useT();
   return (
     <div className="flex items-center justify-between gap-3">
       <span className={`min-w-0 truncate text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>
-        {title ?? 'Options'}
+        {title ?? t('Options')}
       </span>
       <div
         role="radiogroup"
-        aria-label="Settings view"
+        aria-label={t('Settings view')}
         className="flex shrink-0 items-center gap-0.5 rounded-full bg-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_6%,transparent)] p-0.5"
       >
         {VIEW_OPTIONS.map((option) => {
@@ -475,7 +527,7 @@ export function SettingsVariantSwitcher({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.hint}
+              title={t(option.hint)}
               onClick={() => onChange(option.value)}
               data-pf-no-color-transition
               className={`inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold transition-colors ${FOCUS_RING} ${
@@ -485,7 +537,7 @@ export function SettingsVariantSwitcher({
               }`}
             >
               {option.icon}
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -497,26 +549,27 @@ export function SettingsVariantSwitcher({
 /* ------------------------------------------------------------------ Expanded */
 
 function FlatView({ groups }: { groups: SettingGroup[] }) {
+  const t = useT();
   return (
     <div className="space-y-11">
       {groups.map((group) => (
-        <section key={group.id} aria-label={group.title}>
-          <h4 className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>{group.title}</h4>
+        <section key={group.id} aria-label={t(group.title)}>
+          <h4 className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>{t(group.title)}</h4>
           <div className={`divide-y ${DIVIDE}`}>
             {group.items.map((item) =>
               item.toggle ? (
                 <div key={item.id} className="flex items-center justify-between gap-4 py-5">
                   <span className="flex min-w-0 items-center gap-1.5">
-                    <span className={`truncate text-[14px] font-semibold ${SV_TEXT_STRONG}`}>{item.label}</span>
+                    <span className={`truncate text-[14px] font-semibold ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                     {item.info ? <SvInfo text={item.info} /> : null}
                   </span>
-                  <SvSwitch checked={item.toggle.checked} onChange={item.toggle.onChange} label={item.label} />
+                  <SvSwitch checked={item.toggle.checked} onChange={item.toggle.onChange} label={t(item.label)} />
                 </div>
               ) : (
                 <div key={item.id} className="py-6">
                   <div className="mb-3.5 flex items-baseline justify-between gap-3">
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className={`truncate text-[14px] font-semibold ${SV_TEXT_STRONG}`}>{item.label}</span>
+                      <span className={`truncate text-[14px] font-semibold ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                       {item.info ? <SvInfo text={item.info} /> : null}
                     </span>
                     {item.value ? (
@@ -537,22 +590,23 @@ function FlatView({ groups }: { groups: SettingGroup[] }) {
 /* ------------------------------------------------------------------ Compact */
 
 function FocusView({ groups }: { groups: SettingGroup[] }) {
+  const t = useT();
   const [openId, setOpenId] = useState<string | null>(null);
   return (
     <div className="space-y-9">
       {groups.map((group) => (
-        <section key={group.id} aria-label={group.title}>
-          <h4 className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>{group.title}</h4>
+        <section key={group.id} aria-label={t(group.title)}>
+          <h4 className={`mb-1 text-[11px] font-semibold uppercase tracking-[0.12em] ${SV_TEXT_FAINT}`}>{t(group.title)}</h4>
           <div className={`divide-y ${DIVIDE}`}>
             {group.items.map((item) => {
               if (item.toggle) {
                 return (
                   <div key={item.id} className="flex min-h-14 items-center justify-between gap-4">
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className={`truncate text-[14.5px] font-medium ${SV_TEXT_STRONG}`}>{item.label}</span>
+                      <span className={`truncate text-[14.5px] font-medium ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                       {item.info ? <SvInfo text={item.info} /> : null}
                     </span>
-                    <SvSwitch checked={item.toggle.checked} onChange={item.toggle.onChange} label={item.label} />
+                    <SvSwitch checked={item.toggle.checked} onChange={item.toggle.onChange} label={t(item.label)} />
                   </div>
                 );
               }
@@ -566,7 +620,7 @@ function FocusView({ groups }: { groups: SettingGroup[] }) {
                     className={`flex min-h-14 w-full items-center gap-3 rounded-md text-left ${FOCUS_RING}`}
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                      <span className={`truncate text-[14.5px] font-medium ${SV_TEXT_STRONG}`}>{item.label}</span>
+                      <span className={`truncate text-[14.5px] font-medium ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                       {item.info ? <SvInfo text={item.info} /> : null}
                     </span>
                     {item.preview ? <span className={`flex shrink-0 items-center ${SV_TEXT_MUTED}`}>{item.preview}</span> : null}

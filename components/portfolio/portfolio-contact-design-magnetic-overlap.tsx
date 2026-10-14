@@ -19,6 +19,7 @@ import {
   prefersReducedMotion,
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_TITLE = "Let's do something interesting";
 
@@ -66,6 +67,7 @@ export function ContactDesignMagneticOverlap({
   contentGutter?: PortfolioContentGutter;
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLAnchorElement>(null);
   const arrowGlyphRef = useRef<HTMLSpanElement>(null);
@@ -181,7 +183,7 @@ export function ContactDesignMagneticOverlap({
                 <a
                   ref={arrowRef}
                   href={`mailto:${trimmedEmail}`}
-                  aria-label="Send an email"
+                  aria-label={t('Send an email')}
                   className="inline-flex h-14 w-14 shrink-0 items-center justify-center rounded-full border will-change-transform"
                   style={{ borderColor: tokens.ink, color: tokens.ink }}
                   data-pf-no-color-transition=""
@@ -203,7 +205,7 @@ export function ContactDesignMagneticOverlap({
             {heroImageUrl ? (
               <Image
                 src={heroImageUrl}
-                alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
+                alt={displayName ? t('Portrait of {displayName}', { displayName }) : t('Portrait')}
                 fill
                 sizes="(max-width: 768px) 100vw, 45vw"
                 className="object-cover object-center"

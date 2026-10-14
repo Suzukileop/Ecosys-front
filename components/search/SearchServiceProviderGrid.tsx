@@ -3,14 +3,15 @@
 import { CreatorCard } from '@/components/CreatorCard';
 import type { MarketplaceCreatorSummary } from '@/types/marketplace';
 
-/** Same card as `/providers` — one provider per row in search. */
+/** Same provider cards as `/providers`: one per line, edge to edge 8px apart on phones, 20px from sm
+    (the News rhythm). The page root carries `providers-x`, so the card takes the Providers re-colouring. */
 export function SearchServiceProviderGrid({
   creators,
 }: {
   creators: MarketplaceCreatorSummary[];
 }) {
   return (
-    <div className="provider-spotlight-grid grid grid-cols-1 items-stretch gap-6">
+    <div className="provider-spotlight-grid flex flex-col gap-2 sm:gap-5">
       {creators.map((c) => (
         <CreatorCard
           key={c.id ?? c.userId ?? c.fullName}
@@ -32,7 +33,10 @@ export function SearchServiceProviderGrid({
           distanceKm={c.distanceKm}
           locationCity={c.locationCity}
           locationCountry={c.locationCountry}
-          comfortable
+          services={c.profileServices}
+          hourlyRateCents={c.hourlyRateCents}
+          hourlyRateCurrency={c.hourlyRateCurrency}
+          flushOnMobile
         />
       ))}
     </div>

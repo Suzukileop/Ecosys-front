@@ -15,6 +15,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsSplitSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SPLIT_ENTRANCE_MS = 920;
 const SPLIT_ENTRANCE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -332,6 +333,7 @@ function SplitRow({
   settings: PortfolioWorkProjectsSplitSettings;
   revealed: boolean;
 }) {
+  const t = useT();
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const borderColor = presentation.cardBorderColor || muted;
@@ -437,7 +439,7 @@ function SplitRow({
           className="flex h-full w-full items-center justify-center px-6 text-center text-sm leading-[1.8]"
           style={{ color: muted }}
         >
-          Add a thumbnail in Information → Portfolio
+          {t('Add a thumbnail in Information → Portfolio')}
         </div>
       )}
     </div>

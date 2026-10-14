@@ -22,6 +22,7 @@ import {
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type TaskRow = { key: string; value: string };
 type AboutUsDraft = {
@@ -91,6 +92,7 @@ function ImageChip({
 }
 
 function ImageSlot({ url, index, onChange }: { url: string; index: number; onChange: (url: string) => void }) {
+  const t = useT();
   const { inputRef, uploading, uploadError, pickFile, onFileChange, uploadFile } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: (next) => onChange(next.trim()),
@@ -121,7 +123,7 @@ function ImageSlot({ url, index, onChange }: { url: string; index: number; onCha
         {...dropHandlers}
         className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl border transition-colors ${
           dragging
-            ? 'border-[#FF5722] bg-[#FF5722]/[0.06]'
+            ? 'border-[#0F1419] bg-[#0F1419]/[0.04] dark:border-[#E7E9EA] dark:bg-white/[0.06]'
             : hasImage
               ? 'border-black/[0.04] bg-black/[0.03] dark:border-white/[0.04] dark:bg-white/[0.04]'
               : 'border-dashed border-neutral-300 dark:border-white/15'
@@ -149,16 +151,16 @@ function ImageSlot({ url, index, onChange }: { url: string; index: number; onCha
           >
             <FontAwesomeIcon icon={faPlus} className="h-4 w-4 text-neutral-400 dark:text-neutral-500" />
             <span className="text-[14px] text-black dark:text-neutral-100">
-              Drop an image, or <span className="underline underline-offset-4">browse</span>
+              {t('Drop an image, or')} <span className="underline underline-offset-4">{t('browse')}</span>
             </span>
-            <span className={`text-[12px] ${STUDIO_SECONDARY_CLASS}`}>JPG, PNG or WEBP</span>
+            <span className={`text-[12px] ${STUDIO_SECONDARY_CLASS}`}>{t('JPG, PNG or WEBP')}</span>
           </button>
         )}
 
         {uploading || (dragging && hasImage) ? (
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-sm font-medium text-white">
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            {uploading ? 'Uploading…' : 'Drop to replace'}
+            {uploading ? t('Uploading…') : t('Drop to replace')}
           </div>
         ) : null}
       </div>
@@ -168,6 +170,7 @@ function ImageSlot({ url, index, onChange }: { url: string; index: number; onCha
 }
 
 function FounderAvatar({ url, name, onChange }: { url: string; name: string; onChange: (url: string) => void }) {
+  const t = useT();
   const { inputRef, uploading, pickFile, onFileChange } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: (next) => onChange(next.trim()),
@@ -181,8 +184,8 @@ function FounderAvatar({ url, name, onChange }: { url: string; name: string; onC
         type="button"
         onClick={pickFile}
         disabled={uploading}
-        title={url ? 'Replace photo' : 'Add photo'}
-        aria-label={url ? 'Replace founder photo' : 'Add founder photo'}
+        title={url ? t('Replace photo') : t('Add photo')}
+        aria-label={url ? t('Replace founder photo') : t('Add founder photo')}
         className="group/avatar relative inline-flex h-14 w-14 shrink-0 items-center justify-center overflow-hidden rounded-full bg-black/[0.05] text-lg font-semibold text-neutral-500 dark:bg-white/[0.07] dark:text-neutral-400"
       >
         {uploading ? (
@@ -206,6 +209,7 @@ function FounderAvatar({ url, name, onChange }: { url: string; name: string; onC
 }
 
 function TasksBlock({ initial, onChange }: { initial: TaskRow[]; onChange: (next: TaskRow[]) => void }) {
+  const t = useT();
   const [rows, setRows] = useState(initial);
   const [freshKey, setFreshKey] = useState<string | null>(null);
 
@@ -232,33 +236,33 @@ function TasksBlock({ initial, onChange }: { initial: TaskRow[]; onChange: (next
   return (
     <div>
       <div className="mb-3 flex items-center justify-between gap-4">
-        <span className={STUDIO_LABEL_CLASS}>Tasks</span>
+        <span className={STUDIO_LABEL_CLASS}>{t('Tasks')}</span>
         <div className="flex items-center gap-3">
           <span className={STUDIO_SECONDARY_CLASS}>
-            {rows.length} of {MAX_TASKS}
+            {t('{rowsLength} of {MAXTASKS}', { rowsLength: rows.length, MAXTASKS: MAX_TASKS })}
           </span>
-          <StudioIconAction icon="add" label="Add task" onClick={() => add()} disabled={rows.length >= MAX_TASKS} />
+          <StudioIconAction icon="add" label={t('Add task')} onClick={() => add()} disabled={rows.length >= MAX_TASKS} />
         </div>
       </div>
       {rows.length === 0 ? (
         <button
           type="button"
           onClick={() => add()}
-          className="text-base text-neutral-400 transition-colors hover:text-[#FF5722] dark:text-neutral-600"
+          className="text-base text-neutral-400 transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA] dark:text-neutral-600"
         >
-          List what your team does — one task per line.
+          {t('List what your team does — one task per line.')}
         </button>
       ) : (
         <ul style={STUDIO_FLOAT_IN_STYLE} className="space-y-2">
           {rows.map((row, index) => (
             <li key={row.key} className="group/row flex items-center gap-3">
-              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF5722]" />
+              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#536471] dark:bg-[#71767B]" />
               <StudioUnderline quiet className="flex-1">
                 <input
                   type="text"
                   value={row.value}
                   maxLength={200}
-                  placeholder="A service or mission"
+                  placeholder={t('A service or mission')}
                   aria-label={`Task ${index + 1}`}
                   autoFocus={row.key === freshKey}
                   autoComplete="off"
@@ -283,6 +287,7 @@ function TasksBlock({ initial, onChange }: { initial: TaskRow[]; onChange: (next
 }
 
 function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; change: StudioChangeHandler<AboutUsDraft> }) {
+  const t = useT();
   const [draft, setDraft] = useState(getDraft);
 
   const patch = <K extends keyof AboutUsDraft>(key: K, value: AboutUsDraft[K]) => {
@@ -295,26 +300,26 @@ function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; chang
   return (
     <div className="pb-10">
       <div className={STUDIO_BLOCK_CLASS}>
-        <StudioField label="Title" htmlFor="about-us-title">
+        <StudioField label={t('Title')} htmlFor="about-us-title">
           <input
             id="about-us-title"
             type="text"
             value={draft.title}
             maxLength={150}
-            placeholder="What your team stands for"
+            placeholder={t('What your team stands for')}
             autoComplete="off"
             onChange={(event) => patch('title', event.currentTarget.value)}
             className={`${STUDIO_INLINE_TEXT_CLASS} !text-xl !font-semibold tracking-[-0.01em]`}
           />
         </StudioField>
 
-        <StudioField label="Description" htmlFor="about-us-description">
+        <StudioField label={t('Description')} htmlFor="about-us-description">
           <textarea
             id="about-us-description"
             value={draft.description}
             maxLength={4000}
             rows={2}
-            placeholder="Who you are, what you do and for whom."
+            placeholder={t('Who you are, what you do and for whom.')}
             onChange={(event) => patch('description', event.currentTarget.value)}
             className={`${STUDIO_INLINE_TEXT_CLASS} resize-none leading-relaxed [field-sizing:content]`}
           />
@@ -324,8 +329,8 @@ function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; chang
 
         <div>
           <div className="mb-3 flex items-center justify-between gap-4">
-            <span className={STUDIO_LABEL_CLASS}>Images</span>
-            <span className={STUDIO_SECONDARY_CLASS}>{imageCount} of 2</span>
+            <span className={STUDIO_LABEL_CLASS}>{t('Images')}</span>
+            <span className={STUDIO_SECONDARY_CLASS}>{t('{imageCount} of 2', { imageCount })}</span>
           </div>
           <div className="grid grid-cols-1 gap-6 sm:grid-cols-2">
             {([0, 1] as const).map((slot) => (
@@ -343,15 +348,15 @@ function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; chang
           </div>
         </div>
 
-        <StudioField label="Quote" htmlFor="about-us-quote">
+        <StudioField label={t('Quote')} htmlFor="about-us-quote">
           <div className="flex gap-4">
-            <span aria-hidden className="w-0.5 shrink-0 self-stretch rounded-full bg-[#FF5722]/70" />
+            <span aria-hidden className="w-0.5 shrink-0 self-stretch rounded-full bg-[#CFD9DE] dark:bg-[#536471]" />
             <textarea
               id="about-us-quote"
               value={draft.quote}
               maxLength={500}
               rows={1}
-              placeholder="A short line from the founder or the brand."
+              placeholder={t('A short line from the founder or the brand.')}
               onChange={(event) => patch('quote', event.currentTarget.value)}
               className={`${STUDIO_INLINE_TEXT_CLASS} resize-none italic leading-relaxed [field-sizing:content]`}
             />
@@ -359,7 +364,7 @@ function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; chang
         </StudioField>
 
         <div>
-          <span className={`${STUDIO_LABEL_CLASS} mb-4`}>Founder</span>
+          <span className={`${STUDIO_LABEL_CLASS} mb-4`}>{t('Founder')}</span>
           <div className="flex items-center gap-4">
             <FounderAvatar
               url={draft.founder.logoUrl}
@@ -372,8 +377,8 @@ function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; chang
                   type="text"
                   value={draft.founder.name}
                   maxLength={100}
-                  placeholder="Full name"
-                  aria-label="Founder name"
+                  placeholder={t('Full name')}
+                  aria-label={t('Founder name')}
                   autoComplete="off"
                   onChange={(event) => patch('founder', { ...draft.founder, name: event.currentTarget.value })}
                   className={`${STUDIO_BARE_INPUT_CLASS} text-base font-semibold text-black dark:text-neutral-100`}
@@ -384,8 +389,8 @@ function AboutUsBody({ getDraft, change }: { getDraft: () => AboutUsDraft; chang
                   type="text"
                   value={draft.founder.function}
                   maxLength={120}
-                  placeholder="Role, e.g. CEO"
-                  aria-label="Founder role"
+                  placeholder={t('Role, e.g. CEO')}
+                  aria-label={t('Founder role')}
                   autoComplete="off"
                   onChange={(event) => patch('founder', { ...draft.founder, function: event.currentTarget.value })}
                   className={`${STUDIO_BARE_INPUT_CLASS} text-[14px] text-neutral-500 dark:text-neutral-400`}

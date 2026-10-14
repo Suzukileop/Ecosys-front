@@ -4,31 +4,37 @@ import { useEffect, useRef, useState } from 'react';
 import { usePathname } from 'next/navigation';
 import { NotificationBell } from '@/components/NotificationBell';
 import { MessagesHeaderButton } from '@/components/messaging/MessagesHeaderButton';
-import { isServiceProvidersCatalogPath } from '@/lib/marketplace-nav';
-import { ROUTES, isPathWithin } from '@/lib/routes';
+import { isNewsGroundPath } from '@/lib/routes';
 import { APP_GROUND } from '@/components/landing/landingBrand';
 import Link from 'next/link';
 import { DashboardHeaderSearch } from '@/components/layout/DashboardHeaderSearch';
+import { NAVBAR_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { DashboardMobileNav } from '@/components/layout/DashboardMobileNav';
 import { DashboardNavbarLinks } from '@/components/layout/DashboardNavbarLinks';
-import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { ProfileDropdown } from '@/components/layout/ProfileDropdown';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** One curve for every micro-interaction in the bar. */
 const EASE = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
+
+/** The Skraft wordmark: the name alone, in bold display type — no logo tile before it. */
+function SkraftWordmark() {
+  return <span className="text-[1.125rem] font-bold leading-none tracking-[-0.03em]">Skraft</span>;
+}
 
 /**
  * Opens the menu below `lg`. Three rules that resolve to a cross when the menu is up, on the same
  * curve as everything else — the control changes state rather than swapping glyph.
  */
 function MobileNavTrigger({ open, onToggle }: { open: boolean; onToggle: () => void }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onToggle}
-      aria-label={open ? 'Close navigation' : 'Open navigation'}
+      aria-label={open ? t('Close navigation') : t('Open navigation')}
       aria-expanded={open}
       className={`group/burger inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 dark:text-neutral-300 lg:hidden`}
     >
@@ -58,6 +64,7 @@ function MobileNavTrigger({ open, onToggle }: { open: boolean; onToggle: () => v
  * way they once did.
  */
 function HeaderAccountMenu() {
+  const t = useT();
   const { user } = useAuth();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
@@ -84,7 +91,7 @@ function HeaderAccountMenu() {
         onClick={() => setOpen((v) => !v)}
         aria-expanded={open}
         aria-haspopup="menu"
-        aria-label="Account"
+        aria-label={t('Account')}
         title={user.fullName}
         className={`group/avatar relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400`}
       >
@@ -104,18 +111,8 @@ function HeaderAccountMenu() {
 }
 
 export function DashboardTopHeader() {
+  const t = useT();
   const pathname = usePathname();
-  const isDiscussionsPage = isPathWithin(pathname, ROUTES.messages);
-  const isPortfolioPage =
-    isPathWithin(pathname, ROUTES.studio) ||
-    isPathWithin(pathname, ROUTES.search) ||
-    isPathWithin(pathname, ROUTES.notifications) ||
-    pathname === ROUTES.marketplace ||
-    pathname === ROUTES.myProducts ||
-    isPathWithin(pathname, ROUTES.myServices) ||
-    isServiceProvidersCatalogPath(pathname) ||
-    isPathWithin(pathname, ROUTES.profile) ||
-    isDiscussionsPage;
   const [mobileNavOpen, setMobileNavOpen] = useState(false);
   const [navPath, setNavPath] = useState(pathname);
 
@@ -210,23 +207,18 @@ export function DashboardTopHeader() {
       {/*
        * The bar's surface. Separate from <header> so the bar is not a backdrop root — see above.
        *
-       * Light is flat and matches the page ground (`APP_GROUND`), so the chrome and the page read as one
-       * sheet. No translucency there on purpose: glass over a surface of its own colour is
-       * invisible work, and the blur would still cost a compositor layer on every scroll for
-       * nothing.
-       *
-       * Dark elsewhere keeps the real glass. On My Portfolio it must not: the glass tint
-       * (`black/85` + blur) paints a grey strip against the page's absolute black. That route
-       * uses the same opaque `#000` as the page ground, so the bar and the canvas are one sheet.
+       * One surface on every route, in both modes: flat and opaque, the colour of the page ground, so
+       * the chrome and the page read as one sheet. Routes on the News ground (News, My Profile,
+       * My Portfolio, Providers) use neutral-100 / zinc-950; the rest use the app ground / black.
+       * No translucency anywhere on purpose: glass over a surface of its own colour is invisible
+       * work, it paints a grey strip against an absolute-black page, and the blur costs a
+       * compositor layer on every scroll for nothing.
        */}
       <span
         aria-hidden
         className={`pointer-events-none absolute inset-0 -z-10 block transition-colors duration-[520ms] ${EASE} ${
-          APP_GROUND
-        } ${
-          isPortfolioPage
-            ? 'dark:bg-black'
-            : 'dark:bg-black/85 dark:supports-[backdrop-filter]:bg-black/30 dark:supports-[backdrop-filter]:backdrop-blur-xl'
+          /* The bar follows the page ground: X white / black on the News routes (see DashboardShell). */
+          isNewsGroundPath(pathname) ? 'bg-[#FFFFFF] dark:bg-[#000000]' : `${APP_GROUND} dark:bg-black`
         }`}
       />
       {/*
@@ -241,10 +233,12 @@ export function DashboardTopHeader() {
         * of 0. What it cannot do is centre the *glyphs*: a line box reserves descender space that
         * words like "logo" and "News" barely use, so the type lands about a pixel high inside its
         * own box. The `pt-px` on the text-bearing blocks below pays that back.
+        *
+        * A centred frame: 1240px of content inside 32 / 48 / 64px gutters. The News page lays its
+        * columns on this same frame (HomeNewsFeed), so its rail's right edge sits under the avatar —
+        * change one, change both.
         */}
-      <div
-        className={`flex items-center gap-3 py-3 sm:gap-5 ${PORTFOLIO_FRAME_CLASS}`}
-      >
+      <div className={`flex items-center gap-3 py-3 sm:gap-6 ${NAVBAR_FRAME_CLASS}`}>
         {/* LEFT — wordmark, then the links right beside it, as in the reference. */}
         {/*
           * `gap-4 lg:gap-16` is two different jobs on one class. Below `lg` this group is the
@@ -253,14 +247,14 @@ export function DashboardTopHeader() {
           * menu — 64px against the 40px that separates the links from each other, so the wordmark
           * reads as its own block rather than as a fifth entry.
           */}
-        <div className="flex shrink-0 items-center gap-4 pt-px lg:gap-16">
+        <div className="flex shrink-0 items-center gap-4 lg:gap-10">
           <MobileNavTrigger open={mobileNavOpen} onToggle={() => setMobileNavOpen((v) => !v)} />
           <Link
             href="/feed"
-            className={`shrink-0 text-[0.95rem] font-semibold tracking-[-0.01em] text-[#222222] transition-opacity duration-[420ms] ${EASE} hover:opacity-60 dark:text-white`}
+            aria-label={t('Skraft — News')}
+            className={`shrink-0 rounded-lg text-[#0A0A0A] transition-opacity duration-[420ms] ${EASE} hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:text-white dark:focus-visible:ring-white/50`}
           >
-            {/* Placeholder until the real mark ships as an image. */}
-            logo
+            <SkraftWordmark />
           </Link>
           <DashboardNavbarLinks />
         </div>
@@ -274,10 +268,13 @@ export function DashboardTopHeader() {
           * between the wordmark and the avatar. From `lg` it stops growing, is bounded, and is
           * pushed right by `ml-auto` so the links own the left of the bar.
           *
-          * `lg:grow-0 lg:basis-[30rem]` rather than `lg:w-[30rem]`: it keeps `shrink`, so a
+          * `lg:grow-0 lg:basis-[16rem]` rather than `lg:w-[16rem]`: it keeps `shrink`, so a
           * narrowing window takes width out of the field and never out of the navigation.
+          *
+          * 256px, 384px from xl: wide enough for "Search anything…" and a query. At 672px it was the
+          * widest thing in the bar and pulled the eye from the links for an action used now and then.
           */}
-        <div className="min-w-0 flex-1 lg:ml-auto lg:grow-0 lg:basis-[30rem] xl:basis-[42rem]">
+        <div className="min-w-0 flex-1 lg:ml-auto lg:grow-0 lg:basis-[16rem] xl:basis-[24rem]">
           <DashboardHeaderSearch fluid />
         </div>
 
@@ -289,7 +286,7 @@ export function DashboardTopHeader() {
           * very symmetry it was meant to organise. Grouping now comes from spacing alone — one
           * `gap-1` between the icons, a wider margin ahead of the avatar and of any route action.
           */}
-        <div className="flex shrink-0 items-center gap-1">
+        <div className="flex shrink-0 items-center gap-2">
           {/*
            * Chat and bell are `lg` and up only. They stay mounted rather than unmounted — each owns
            * a poll and a dismiss baseline, and tearing those down on every resize past the
@@ -316,8 +313,8 @@ export function DashboardTopHeader() {
       open={mobileNavOpen}
       onClose={() => setMobileNavOpen(false)}
       signals={[
-        { href: '/messages', label: 'Messages' },
-        { href: '/notifications', label: 'Notifications' },
+        { href: '/messages', label: t('Messages') },
+        { href: '/notifications', label: t('Notifications') },
       ]}
     />
     </>

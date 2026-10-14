@@ -8,7 +8,7 @@ import {
   formatPrice,
   getCreatorProduct,
   isFreeProduct,
-  PRODUCT_TYPE_LABELS,
+  productTypeName,
   publishProduct,
   recordProductSale,
   undoProductSale,
@@ -33,6 +33,7 @@ import { ProductWhyHighlights } from '@/components/marketplace/ProductWhyHighlig
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioProductViewSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import type { MarketplaceProductDetail } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorProductViewContentProps = {
   productId: string;
@@ -41,11 +42,11 @@ type CreatorProductViewContentProps = {
 const EASE_OUT = [0.22, 1, 0.36, 1] as const;
 const SALE_LOCK_MS = 5000;
 const SALE_UNDO_MS = 8000;
-const EYEBROW = 'text-sm font-medium text-neutral-500 dark:text-neutral-400';
+const EYEBROW = 'text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-[color:var(--gn-ink2)]';
 const CHIP =
-  'rounded-full border border-black/[0.08] px-3.5 py-1.5 text-[13px] font-medium text-neutral-700 dark:border-white/[0.12] dark:text-neutral-200';
+  'rounded-[2px] bg-[#EFF3F4] px-2 py-0.5 text-[13px] font-medium leading-[18px] text-[color:var(--gn-ink2)] dark:bg-[#202327]';
 const ACCENT_CHIP =
-  'rounded-full bg-[#FF5722]/10 px-3.5 py-1.5 text-[13px] font-medium text-[#FF5722] dark:bg-[#FF5722]/15';
+  'rounded-[2px] bg-[color:var(--gn-ink)] px-2 py-0.5 text-[13px] font-semibold leading-[18px] text-[color:var(--gn-surface)]';
 
 function fadeUp(delay = 0) {
   return {
@@ -56,6 +57,7 @@ function fadeUp(delay = 0) {
 }
 
 export function CreatorProductViewContent({ productId }: CreatorProductViewContentProps) {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const navFrom = parseCreatorProductNavFrom(searchParams.get('from'));
@@ -90,14 +92,14 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
       },
       (e) => {
         if (!cancelled) {
-          setLoaded({ id: productId, product: null, error: getApiErrorMessage(e, 'Unable to load this product.') });
+          setLoaded({ id: productId, product: null, error: getApiErrorMessage(e, t('Unable to load this product.')) });
         }
       }
     );
     return () => {
       cancelled = true;
     };
-  }, [productId]);
+  }, [productId, t]);
 
   const current = loaded?.id === productId ? loaded : null;
   const loading = current === null;
@@ -118,7 +120,7 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
       const fresh = await getCreatorProduct(product.id);
       setProduct(fresh);
     } catch (e) {
-      setActionError(getApiErrorMessage(e, 'Could not update publication status.'));
+      setActionError(getApiErrorMessage(e, t('Could not update publication status.')));
     } finally {
       setPublishing(false);
     }
@@ -149,16 +151,16 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
       showSaleToast(
         {
           tone: 'info',
-          title: 'Sale undone',
+          title: t('Sale undone'),
           detail:
             fresh.type === 'PHYSICAL'
-              ? `${quantity === 1 ? '1 unit is' : `${quantity} units are`} back in stock.`
-              : `${quantity === 1 ? '1 sale' : `${quantity} sales`} removed from your stats.`,
+              ? t.plural(quantity, '{count} unit is back in stock.', '{count} units are back in stock.')
+              : t.plural(quantity, '{count} sale removed from your stats.', '{count} sales removed from your stats.'),
         },
         4000
       );
     } catch (e) {
-      showSaleToast({ tone: 'error', title: 'Could not undo this sale', detail: getApiErrorMessage(e, 'Please try again.') }, 5000);
+      showSaleToast({ tone: 'error', title: t('Could not undo this sale'), detail: getApiErrorMessage(e, t('Please try again.')) }, 5000);
     } finally {
       saleBusyRef.current = false;
     }
@@ -172,9 +174,9 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
     try {
       await recordProductSale(productIdToRestore, 1);
       setProduct(await getCreatorProduct(productIdToRestore));
-      showSaleToast({ tone: 'info', title: 'Sale restored' }, 3000);
+      showSaleToast({ tone: 'info', title: t('Sale restored') }, 3000);
     } catch (e) {
-      showSaleToast({ tone: 'error', title: 'Could not restore this sale', detail: getApiErrorMessage(e, 'Please try again.') }, 5000);
+      showSaleToast({ tone: 'error', title: t('Could not restore this sale'), detail: getApiErrorMessage(e, t('Please try again.')) }, 5000);
     } finally {
       saleBusyRef.current = false;
     }
@@ -193,17 +195,17 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
       showSaleToast(
         {
           tone: 'info',
-          title: 'Sale removed',
+          title: t('Sale removed'),
           detail:
             fresh.type === 'PHYSICAL'
-              ? `1 unit is back in stock · ${(fresh.stockQuantity ?? 0).toLocaleString()} available`
-              : `${(fresh.salesCount ?? 0).toLocaleString()} ${fresh.salesCount === 1 ? 'sale' : 'sales'} in total`,
+              ? t('1 unit is back in stock · {count} available', { count: t.number(fresh.stockQuantity ?? 0) })
+              : t.plural(fresh.salesCount ?? 0, '{count} sale in total', '{count} sales in total', { count: t.number(fresh.salesCount ?? 0) }),
           onUndo: () => void restoreRemovedSale(fresh.id),
         },
         SALE_UNDO_MS
       );
     } catch (e) {
-      showSaleToast({ tone: 'error', title: 'Could not remove this sale', detail: getApiErrorMessage(e, 'Please try again.') }, 5000);
+      showSaleToast({ tone: 'error', title: t('Could not remove this sale'), detail: getApiErrorMessage(e, t('Please try again.')) }, 5000);
     } finally {
       setRecordingSale(false);
       saleBusyRef.current = false;
@@ -230,27 +232,27 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
       const left = physical ? (fresh.stockQuantity ?? 0) : null;
       const soldOut = left != null && left <= 0;
       const units = physical
-        ? quantity === 1 ? '1 unit' : `${quantity} units`
-        : quantity === 1 ? '1 copy' : `${quantity} copies`;
+        ? quantity === 1 ? t('1 unit') : `${quantity} units`
+        : quantity === 1 ? t('1 copy') : `${quantity} copies`;
       const totalSales = fresh.salesCount ?? 0;
       showSaleToast(
         {
           tone: 'success',
-          title: soldOut ? 'Sold out — great job!' : quantity > 1 ? 'Great sales!' : 'Nice sale!',
+          title: soldOut ? t('Sold out — great job!') : quantity > 1 ? t('Great sales!') : t('Nice sale!'),
           detail: [
-            earned ? `${units} sold · ${earned} earned` : `${units} sold`,
+            earned ? t('{units} sold · {earned} earned', { units, earned }) : t('{units} sold', { units }),
             left == null
-              ? `${totalSales.toLocaleString()} ${totalSales === 1 ? 'sale' : 'sales'} in total`
+              ? t.plural(totalSales, '{count} sale in total', '{count} sales in total', { count: t.number(totalSales) })
               : soldOut
-                ? 'Time to restock'
-                : `${left.toLocaleString()} left in stock`,
+                ? t('Time to restock')
+                : t('{count} left in stock', { count: t.number(left) }),
           ].join(' · '),
           onUndo: () => void undoSale(fresh.id, quantity),
         },
         SALE_UNDO_MS
       );
     } catch (e) {
-      showSaleToast({ tone: 'error', title: 'Could not record this sale', detail: getApiErrorMessage(e, 'Please try again.') }, 5000);
+      showSaleToast({ tone: 'error', title: t('Could not record this sale'), detail: getApiErrorMessage(e, t('Please try again.')) }, 5000);
     } finally {
       setRecordingSale(false);
       saleBusyRef.current = false;
@@ -262,11 +264,11 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
   }
 
   if (loadError || !product) {
-    return <ErrorAlert message={loadError ?? 'Product not found.'} />;
+    return <ErrorAlert message={loadError ?? t('Product not found.')} />;
   }
 
   const isPhysical = product.type === 'PHYSICAL';
-  const typeLabel = PRODUCT_TYPE_LABELS[product.type] ?? product.type;
+  const typeLabel = productTypeName(product.type, product.typeLabel);
   const reviewCount = product.reviewCount ?? 0;
   const consultUrl = creatorProductViewPath(product.id, navFrom);
   const hasWhy = !isPhysical && Boolean(product.whyProductBlocks && product.whyProductBlocks.length > 0);
@@ -279,7 +281,7 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
 
   const storySections =
     hasWhy || hasDemo ? (
-      <div className="space-y-16 border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:space-y-20 md:pt-20">
+      <div className="space-y-10 md:space-y-14">
         {hasWhy ? <ProductWhyHighlights blocks={product.whyProductBlocks!} /> : null}
         {hasDemo ? (
           <ProductDemoSection
@@ -293,11 +295,13 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
     ) : null;
 
   return (
-    <div className="mx-auto max-w-7xl space-y-10 pb-20">
-      <motion.div {...fadeUp()} className="flex flex-wrap items-center justify-between gap-3">
+    // `x-product-view` scopes the X-palette overrides (globals.css, PRODUCTS block) for the shared
+    // manage panel / details / delete zone rendered below.
+    <div className="x-product-view space-y-4 pb-24 sm:space-y-6">
+      <motion.div {...fadeUp()} className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1 px-4 sm:px-0">
         <Link
           href={backNav.href}
-          className="group inline-flex items-center gap-2 text-sm text-neutral-500 transition hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+          className="group inline-flex h-10 items-center gap-1.5 text-[14px] font-medium text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)]"
         >
           <span aria-hidden className="transition-transform duration-300 group-hover:-translate-x-0.5">
             ←
@@ -305,17 +309,20 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
           {backNav.label.replace(/^←\s*/, '')}
         </Link>
         {!product.isPublished && (
-          <span className="inline-flex items-center gap-2 rounded-full border border-black/[0.08] px-3.5 py-1.5 text-[13px] font-medium text-neutral-700 dark:border-white/[0.12] dark:text-neutral-200">
-            <span className="h-2 w-2 rounded-full bg-amber-500" aria-hidden />
-            Draft — not visible on the public marketplace
+          <span className="inline-flex items-center gap-2 bg-[color:var(--gn-surface)] px-3 py-1.5 text-[13px] font-medium text-[color:var(--gn-ink2)]">
+            <span className="font-semibold text-[color:var(--gn-ink)]">{t('Draft')}</span>
+            {t('Not visible on the marketplace')}
           </span>
         )}
       </motion.div>
 
       {actionError && <ErrorAlert message={actionError} onDismiss={() => setActionError(null)} />}
 
-      <div className="grid gap-8 lg:grid-cols-12 lg:gap-x-10 lg:gap-y-10">
-        <motion.div {...fadeUp(0.05)} className="order-1 min-w-0 lg:col-span-8 lg:row-start-1">
+      {/* The News / Products layout: the product in one column — gallery, title, then every
+          section — and the manage panel as the sticky 340px rail (400px from xl). */}
+      <div className="grid items-start gap-6 lg:grid-cols-[minmax(0,1fr)_340px] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_400px] xl:gap-12">
+        <div className="flex min-w-0 flex-col gap-6">
+        <motion.div {...fadeUp(0.05)} className="min-w-0">
           {isPhysical ? (
             <CreatorPhysicalProductGallery
               title={product.title}
@@ -334,18 +341,18 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
           )}
         </motion.div>
 
-        <motion.div {...fadeUp(0.1)} className="order-3 min-w-0 space-y-8 lg:col-span-8 lg:row-start-2">
-          <header className="space-y-5">
+        <motion.div {...fadeUp(0.1)} className="min-w-0 space-y-6 px-4 sm:px-0">
+          <header className="space-y-4">
             {!isPhysical && (
-              <div className="flex flex-wrap gap-2">
+              <div className="flex flex-wrap gap-1.5">
                 <span className={ACCENT_CHIP}>{typeLabel}</span>
                 {product.genre && <span className={`${CHIP} capitalize`}>{product.genre}</span>}
                 {product.specialite && <span className={`${CHIP} capitalize`}>{product.specialite}</span>}
               </div>
             )}
 
-            <div className="space-y-3">
-              <h1 className="break-words text-3xl font-semibold leading-[1.1] tracking-[-0.03em] text-[#111111] dark:text-white md:text-[40px]">
+            <div className="space-y-2">
+              <h1 className="break-words text-[26px] font-extrabold leading-8 tracking-[-0.02em] text-[color:var(--gn-ink)] sm:text-[32px] sm:leading-10">
                 {product.title}
               </h1>
               <ProductDetailRatingBadge
@@ -356,20 +363,20 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
             </div>
 
             {product.description ? (
-              <p className="max-w-3xl whitespace-pre-wrap text-base leading-relaxed text-neutral-600 dark:text-neutral-300">
+              <p className="max-w-3xl whitespace-pre-wrap text-[15px] leading-[22px] text-[color:var(--gn-ink)]">
                 {product.description}
               </p>
             ) : (
-              <p className="text-base text-neutral-500 dark:text-neutral-400">
-                No description yet — a short description helps buyers decide.
+              <p className="text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+                {t('No description yet — a short description helps buyers decide.')}
               </p>
             )}
           </header>
 
           {!isPhysical && product.compatibleTools.length > 0 && (
-            <div className="border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
-              <p className={EYEBROW}>Compatible tools</p>
-              <ul className="mt-3 flex flex-wrap gap-2">
+            <div>
+              <p className={EYEBROW}>{t('Compatible tools')}</p>
+              <ul className="mt-2 flex flex-wrap gap-1.5">
                 {product.compatibleTools.map((tool) => (
                   <li key={tool} className={CHIP}>
                     {tool}
@@ -380,20 +387,28 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
           )}
 
           {product.tags.length > 0 && (
-            <div className="border-t border-black/[0.06] pt-6 dark:border-white/[0.08]">
-              <p className={EYEBROW}>Hashtags</p>
-              <div className="mt-3">
+            <div>
+              <p className={EYEBROW}>{t('Hashtags')}</p>
+              <div className="mt-2">
                 <ProductHashtagList tags={product.tags} />
               </div>
             </div>
           )}
         </motion.div>
 
-        <motion.div
-          {...fadeUp(0.15)}
-          className="order-2 min-w-0 lg:col-span-4 lg:col-start-9 lg:row-span-2 lg:row-start-1"
-        >
-          <div>
+        <div className="mt-6 px-4 sm:px-0 md:mt-10">
+          <CreatorProductDetailBottom
+            product={product}
+            reviewCount={reviewCount}
+            loginRedirect={consultUrl}
+            onDeleted={handleDeleted}
+            middle={storySections}
+          />
+        </div>
+        </div>
+
+        <motion.div {...fadeUp(0.15)} className="order-first min-w-0 px-4 sm:px-0 lg:order-none lg:self-stretch">
+          <div className="lg:sticky lg:top-20">
             <CreatorProductManagePanel
               product={product}
               publishing={publishing}
@@ -406,16 +421,6 @@ export function CreatorProductViewContent({ productId }: CreatorProductViewConte
             />
           </div>
         </motion.div>
-      </div>
-
-      <div className="!mt-16 border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:!mt-20 md:pt-20">
-        <CreatorProductDetailBottom
-          product={product}
-          reviewCount={reviewCount}
-          loginRedirect={consultUrl}
-          onDeleted={handleDeleted}
-          middle={storySections}
-        />
       </div>
 
       <CreatorSaleToast toast={saleToast} onDismiss={dismissSaleToast} />

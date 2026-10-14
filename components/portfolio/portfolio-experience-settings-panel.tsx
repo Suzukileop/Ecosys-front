@@ -1,6 +1,12 @@
 'use client';
 
+import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS, PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS, PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS, PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS, DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY, DEFAULT_ACCENT_YEARS_BADGE_TEXT, DEFAULT_ACCENT_YEARS_LEAD_TEXT, DEFAULT_CENTERED_TITLE_TEXT, DEFAULT_CENTERED_LEAD_TEXT, DEFAULT_SERIF_LEAD_LABEL_TEXT, DEFAULT_SERIF_LEAD_TITLE_TEXT, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS, CENTERED_LEAD_WEIGHT, CENTERED_LEAD_OPACITY, SERIF_LEAD_WEIGHT, SERIF_LEAD_LABEL_OPACITY, MARQUEE_WEIGHT, MARQUEE_FILL_OPACITY, type PortfolioExperienceCardsBorderRadius, type PortfolioExperienceGalleryColumns, type PortfolioExperienceItemGap, type PortfolioExperienceLoftColumns, type PortfolioExperienceLoftHoverEffect, type PortfolioExperienceCenteredAlign, type PortfolioExperienceCenteredDivider, type PortfolioExperienceCenteredLineHeight, type PortfolioExperienceCenteredMaxWidth, type PortfolioExperienceSerifLeadInk, type PortfolioExperienceSerifLeadTracking, type PortfolioExperienceDesign, type PortfolioExperienceHeaderDesign, type PortfolioExperienceAccentYearsBadgeColor, type PortfolioExperienceLinkArrowStyle, type PortfolioExperienceRepoLinkStyle, type PortfolioExperienceSectionSettings, type PortfolioExperienceTasksDisplay, type PortfolioExperienceToolsBadgeStyle, PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS } from '@/components/portfolio/portfolio-experience-settings';
 import {
@@ -9,6 +15,9 @@ import {
   PortfolioLinkButton,
 } from '@/components/portfolio/portfolio-link-buttons';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
 export type ExperienceSubSection = 'general' | 'header' | 'design';
 
@@ -114,12 +123,13 @@ function ExperiencePickerCard({
 }
 
 function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
         <MiniSlide>
           <MiniType x={10} y={28}>
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="10" y="36" width="64" height="3.2" rx="1.4" />
           <rect className="pf-exp-mini-mute" x="10" y="44" width="42" height="2.8" rx="1.4" />
@@ -130,7 +140,7 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={60} y={30} size={9} anchor="middle">
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="28" y="42" width="64" height="3.2" rx="1.4" />
           <rect className="pf-exp-mini-mute" x="38" y="50" width="44" height="2.8" rx="1.3" />
@@ -140,7 +150,7 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={10} y={22} size={6.5}>
-            EXP
+            {t('EXP')}
           </MiniType>
           <rect className="pf-exp-mini-ink" x="10" y="28" width="82" height="12" rx="2" />
           <rect className="pf-exp-mini-mute" x="10" y="48" width="54" height="3" rx="1.4" />
@@ -150,7 +160,7 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={10} y={28}>
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="10" y="36" width="72" height="3.4" rx="1.5" />
           <rect className="pf-exp-mini-mute" x="10" y="44" width="48" height="2.8" rx="1.4" />
@@ -160,11 +170,11 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={10} y={30} size={15}>
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="10" y="40" width="100" height="0.9" rx="0.4" />
           <MiniType x={10} y={56} size={6}>
-            ROLES
+            {t('ROLES')}
           </MiniType>
           <MiniType x={110} y={56} size={6} anchor="end">
             03/
@@ -175,11 +185,11 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={10} y={34} size={9}>
-            TITLE
+            {t('TITLE')}
           </MiniType>
           <circle className="pf-exp-mini-accent" cx="54" cy="30.5" r="1.7" />
           <MiniType x={60} y={34} size={9}>
-            WORK
+            {t('WORK')}
           </MiniType>
         </MiniSlide>
       );
@@ -187,10 +197,10 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={10} y={32} size={11}>
-            ROLES
+            {t('ROLES')}
           </MiniType>
           <MiniType x={110} y={30} size={5.5} anchor="end">
-            (EXP)
+            {t('(EXP)')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="10" y="42" width="100" height="0.9" rx="0.4" />
         </MiniSlide>
@@ -199,10 +209,10 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={10} y={26} size={11}>
-            ROLES
+            {t('ROLES')}
           </MiniType>
           <MiniType x={10} y={40} size={11}>
-            TAKEN
+            {t('TAKEN')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="10" y="50" width="100" height="0.9" rx="0.4" />
         </MiniSlide>
@@ -211,7 +221,7 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
       return (
         <MiniSlide>
           <MiniType x={60} y={28} size={9} anchor="middle">
-            CRAFT
+            {t('CRAFT')}
           </MiniType>
           <rect className="pf-exp-mini-accent" x="48" y="34" width="24" height="2.2" rx="1" />
           <rect className="pf-exp-mini-mute" x="36" y="44" width="48" height="3" rx="1.4" />
@@ -226,15 +236,15 @@ function ExperienceHeaderWireframe({ design }: { design: ExperienceHeaderApplyDe
 }
 
 const EXPERIENCE_HEADER_APPLY_CARDS: { id: ExperienceHeaderApplyDesign; label: string }[] = [
-  { id: 'editorial', label: 'Accent years' },
-  { id: 'milestone', label: 'Centered' },
-  { id: 'table', label: 'Serif lead' },
-  { id: 'reel', label: 'Title stack' },
-  { id: 'gallery', label: 'Billboard' },
-  { id: 'spotlight', label: 'Marquee' },
-  { id: 'loft', label: 'Split heading' },
-  { id: 'press', label: 'Masthead' },
-  { id: 'legacy', label: 'Accent title' },
+  { id: 'editorial', label: msg('Accent years') },
+  { id: 'milestone', label: msg('Centered') },
+  { id: 'table', label: msg('Serif lead') },
+  { id: 'reel', label: msg('Title stack') },
+  { id: 'gallery', label: msg('Billboard') },
+  { id: 'spotlight', label: msg('Marquee') },
+  { id: 'loft', label: msg('Split heading') },
+  { id: 'press', label: msg('Masthead') },
+  { id: 'legacy', label: msg('Accent title') },
 ];
 
 const EXPERIENCE_LINK_BUTTON_PREVIEW_PALETTE = experienceLinkButtonPalette({
@@ -252,9 +262,10 @@ function ExperienceLinkButtonChoiceGrid({
   value: PortfolioExperienceRepoLinkStyle;
   onChange: (value: PortfolioExperienceRepoLinkStyle) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label">Link button</p>
+      <p className="pf-exp-block-label">{t('Link button')}</p>
       <div className="grid grid-cols-2 gap-2">
         {PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS.map((option) => {
           const active = value === option.value;
@@ -263,7 +274,7 @@ function ExperienceLinkButtonChoiceGrid({
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               showLabel={false}
               onClick={() => onChange(active ? 'auto' : option.value)}
             >
@@ -278,7 +289,7 @@ function ExperienceLinkButtonChoiceGrid({
                   <PortfolioLinkButton
                     variant={option.value}
                     href="#link-button"
-                    label="Link"
+                    label={t('Link')}
                     palette={EXPERIENCE_LINK_BUTTON_PREVIEW_PALETTE}
                     preview
                   />
@@ -299,12 +310,13 @@ function ExperienceLinkArrowChoiceGrid({
   value: PortfolioExperienceLinkArrowStyle;
   onChange: (value: PortfolioExperienceLinkArrowStyle) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Link arrow</p>
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Link arrow')}</p>
       <div
         role="radiogroup"
-        aria-label="Link arrow"
+        aria-label={t('Link arrow')}
         className="pf-exp-segment grid gap-[3px] p-[3px]"
         data-compact="true"
         style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}
@@ -317,8 +329,8 @@ function ExperienceLinkArrowChoiceGrid({
               type="button"
               role="radio"
               aria-checked={active}
-              aria-label={option.description}
-              title={option.description}
+              aria-label={t(option.description)}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-exp-segment-btn px-2.5 py-2 text-center text-[1.2rem] font-medium leading-none tracking-tight"
@@ -328,7 +340,7 @@ function ExperienceLinkArrowChoiceGrid({
                   : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
               }
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -338,11 +350,12 @@ function ExperienceLinkArrowChoiceGrid({
 }
 
 function ExperienceHeaderPreview({ value }: { value: PortfolioExperienceHeaderDesign }) {
+  const t = useT();
   if (value === 'none') {
     return (
       <MiniSlide>
         <MiniType x={10} y={30} size={9}>
-          DEFAULT
+          {t('DEFAULT')}
         </MiniType>
         <rect className="pf-exp-mini-mute" x="10" y="40" width="72" height="3" rx="1.4" />
       </MiniSlide>
@@ -358,20 +371,21 @@ function ExperienceHeaderChoiceGrid({
   value: PortfolioExperienceHeaderDesign;
   onChange: (value: PortfolioExperienceHeaderDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
-  const selectedLabel = EXPERIENCE_HEADER_APPLY_CARDS.find((card) => card.id === value)?.label ?? 'Default';
+  const selectedLabel = EXPERIENCE_HEADER_APPLY_CARDS.find((card) => card.id === value)?.label ?? t('Default');
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-exp-block-label !mb-0">Header designs</p>
+          <p className="pf-exp-block-label !mb-0">{t('Header designs')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -381,7 +395,7 @@ function ExperienceHeaderChoiceGrid({
               <ExperiencePickerCard
                 key={card.id}
                 active={active}
-                label={card.label}
+                label={t(card.label)}
                 onClick={() => {
                   onChange(active ? 'none' : card.id);
                   setShowGrid(false);
@@ -398,29 +412,29 @@ function ExperienceHeaderChoiceGrid({
 
   return (
     <div>
-      <p className="pf-exp-block-label">Header designs</p>
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+      <p className="pf-exp-block-label">{t('Header designs')}</p>
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-[color:var(--pf-palette-bordure)] p-3">
         <ExperienceHeaderPreview value={value} />
         <button
           type="button"
           onClick={() => setShowGrid(true)}
-          aria-label="Change header design"
+          aria-label={t('Change header design')}
           className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
-            Change header design
+          <span className="inline-flex items-center gap-2 rounded-full bg-transparent px-4 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)] shadow-lg">
+            {t('Change header design')}
           </span>
         </button>
         <button
           type="button"
           onClick={() => setShowGrid(true)}
-          aria-label="Change header design"
+          aria-label={t('Change header design')}
           className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
         >
-          Change
+          {t('Change')}
         </button>
       </div>
-      <p className="mt-2 text-sm font-semibold text-neutral-950">{selectedLabel}</p>
+      <p className="mt-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{selectedLabel}</p>
     </div>
   );
 }
@@ -432,6 +446,7 @@ function ExperienceAccentYearsAdvancedSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   const badgeColor = experience.accentYearsBadgeColor ?? 'accent';
   const swatchStyle = (id: PortfolioExperienceAccentYearsBadgeColor) => {
     if (id === 'principal') return { backgroundColor: 'var(--pf-palette-principal)' };
@@ -442,12 +457,12 @@ function ExperienceAccentYearsAdvancedSettings({
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="accent-years-advanced-title">
       <h3 id="accent-years-advanced-title" className="pf-exp-layout-settings-title">
-        Header advanced editing
+        {t('Header advanced editing')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <div>
           <label className="pf-exp-block-label block" htmlFor="accent-years-badge-text">
-            Badge text
+            {t('Badge text')}
           </label>
           <input
             id="accent-years-badge-text"
@@ -455,13 +470,13 @@ function ExperienceAccentYearsAdvancedSettings({
             value={experience.accentYearsBadgeText ?? ''}
             onChange={(event) => onChange({ accentYearsBadgeText: event.target.value })}
             placeholder={DEFAULT_ACCENT_YEARS_BADGE_TEXT}
-            className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
           />
-          <p className="mt-2 text-[11px] text-neutral-500">Use {'{years}'} to insert the profile years count.</p>
+          <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{years}'} {t('to insert the profile years count.')}</p>
         </div>
         <div>
           <label className="pf-exp-block-label block" htmlFor="accent-years-lead-text">
-            Lead text
+            {t('Lead text')}
           </label>
           <input
             id="accent-years-lead-text"
@@ -469,27 +484,27 @@ function ExperienceAccentYearsAdvancedSettings({
             value={experience.accentYearsLeadText ?? ''}
             onChange={(event) => onChange({ accentYearsLeadText: event.target.value })}
             placeholder={DEFAULT_ACCENT_YEARS_LEAD_TEXT}
-            className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
           />
         </div>
         <ExperienceOptionGrid
-          label="Font size"
+          label={t('Font size')}
           options={PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS}
           value={experience.accentYearsFontSize ?? 6}
           onChange={(accentYearsFontSize) => onChange({ accentYearsFontSize })}
           columns={4}
         />
         <ExperienceOptionGrid
-          label="Badge radius"
+          label={t('Badge radius')}
           options={PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS}
           value={experience.accentYearsBadgeRadius ?? 4}
           onChange={(accentYearsBadgeRadius) => onChange({ accentYearsBadgeRadius })}
         />
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Badge color</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Badge color')}</p>
           <div
             role="radiogroup"
-            aria-label="Badge color"
+            aria-label={t('Badge color')}
             className="pf-exp-segment grid gap-[3px] p-[3px]"
             data-compact="true"
             style={{ gridTemplateColumns: 'repeat(3, minmax(0, 1fr))' }}
@@ -516,7 +531,7 @@ function ExperienceAccentYearsAdvancedSettings({
                     style={swatchStyle(option.value)}
                     aria-hidden
                   />
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -602,6 +617,7 @@ function CenteredSteppedSlider<T extends string>({
   onChange: (value: T) => void;
   formatValue?: (option: { value: T; label: string }) => string;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const index = Math.max(
     0,
@@ -644,7 +660,7 @@ function CenteredSteppedSlider<T extends string>({
             data-active={option.value === value ? 'true' : 'false'}
             onClick={() => onChange(option.value)}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </div>
@@ -660,6 +676,7 @@ function ExperienceCenteredLayoutSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   const divider = experience.centeredDivider ?? 'none';
   const align = experience.centeredAlign ?? 'center';
   const weight = experience.centeredLeadWeight ?? 'light';
@@ -673,12 +690,12 @@ function ExperienceCenteredLayoutSettings({
       aria-labelledby="centered-layout-title"
     >
       <h3 id="centered-layout-title" className="pf-exp-layout-settings-title">
-        Centered layout configuration
+        {t('Centered layout configuration')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-7">
         <div>
           <label className="pf-exp-block-label block" htmlFor="centered-title-text">
-            Title
+            {t('Title')}
           </label>
           <input
             id="centered-title-text"
@@ -691,7 +708,7 @@ function ExperienceCenteredLayoutSettings({
         </div>
         <div>
           <label className="pf-exp-block-label block" htmlFor="centered-lead-text">
-            Sub-title
+            {t('Sub-title')}
           </label>
           <input
             id="centered-lead-text"
@@ -701,12 +718,12 @@ function ExperienceCenteredLayoutSettings({
             placeholder={DEFAULT_CENTERED_LEAD_TEXT}
             className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
           />
-          <p className="mt-2 text-[11px] text-neutral-500">Use {'{years}'} to insert the profile years count.</p>
+          <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{years}'} {t('to insert the profile years count.')}</p>
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Alignment</p>
-          <div role="radiogroup" aria-label="Alignment" className="pf-exp-centered-align">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Alignment')}</p>
+          <div role="radiogroup" aria-label={t('Alignment')} className="pf-exp-centered-align">
             {PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS.map((option) => {
               const active = option.value === align;
               return (
@@ -715,13 +732,13 @@ function ExperienceCenteredLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ centeredAlign: option.value })}
                   className="pf-exp-centered-align-btn"
                 >
                   <CenteredAlignGlyph align={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -729,8 +746,8 @@ function ExperienceCenteredLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Sub-title weight</p>
-          <div role="radiogroup" aria-label="Sub-title weight" className="pf-exp-centered-weight">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Sub-title weight')}</p>
+          <div role="radiogroup" aria-label={t('Sub-title weight')} className="pf-exp-centered-weight">
             {PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS.map((option) => {
               const active = option.value === weight;
               return (
@@ -744,7 +761,7 @@ function ExperienceCenteredLayoutSettings({
                   className="pf-exp-centered-weight-btn"
                   style={{ fontWeight: CENTERED_LEAD_WEIGHT[option.value] }}
                 >
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -752,7 +769,7 @@ function ExperienceCenteredLayoutSettings({
         </div>
 
         <CenteredSteppedSlider
-          label="Sub-title opacity"
+          label={t('Sub-title opacity')}
           options={PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS}
           value={experience.centeredLeadOpacity ?? 'balanced'}
           onChange={(centeredLeadOpacity) => onChange({ centeredLeadOpacity })}
@@ -762,15 +779,15 @@ function ExperienceCenteredLayoutSettings({
         />
 
         <CenteredSteppedSlider
-          label="Header scale"
+          label={t('Header scale')}
           options={PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS}
           value={experience.centeredScale ?? 'monumental'}
           onChange={(centeredScale) => onChange({ centeredScale })}
         />
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Max width</p>
-          <div role="radiogroup" aria-label="Max width" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Max width')}</p>
+          <div role="radiogroup" aria-label={t('Max width')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS.map((option) => {
               const active = option.value === maxWidth;
               return (
@@ -779,13 +796,13 @@ function ExperienceCenteredLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ centeredMaxWidth: option.value })}
                   className="pf-exp-centered-tile"
                 >
                   <CenteredWidthGlyph value={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -793,8 +810,8 @@ function ExperienceCenteredLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Line height</p>
-          <div role="radiogroup" aria-label="Line height" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Line height')}</p>
+          <div role="radiogroup" aria-label={t('Line height')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS.map((option) => {
               const active = option.value === lineHeight;
               return (
@@ -803,13 +820,13 @@ function ExperienceCenteredLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ centeredLineHeight: option.value })}
                   className="pf-exp-centered-tile"
                 >
                   <CenteredLineHeightGlyph value={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -817,10 +834,10 @@ function ExperienceCenteredLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Divider</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Divider')}</p>
           <div
             role="radiogroup"
-            aria-label="Divider"
+            aria-label={t('Divider')}
             className="pf-exp-centered-tiles pf-exp-centered-tiles-4"
           >
             {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS.map((option) => {
@@ -831,8 +848,8 @@ function ExperienceCenteredLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
-                  title={option.label}
+                  aria-label={t(option.label)}
+                  title={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ centeredDivider: option.value })}
                   className="pf-exp-centered-tile pf-exp-centered-tile-glyph"
@@ -840,12 +857,12 @@ function ExperienceCenteredLayoutSettings({
                   <CenteredDividerGlyph value={option.value} />
                   <span>
                     {option.value === 'dot'
-                      ? 'Dot'
+                      ? t('Dot')
                       : option.value === 'full'
-                        ? 'Full'
+                        ? t('Full')
                         : option.value === 'track'
-                          ? 'Track'
-                          : 'None'}
+                          ? t('Track')
+                          : t('None')}
                   </span>
                 </button>
               );
@@ -855,8 +872,8 @@ function ExperienceCenteredLayoutSettings({
 
         {divider !== 'none' ? (
           <div>
-            <p className="pf-exp-block-label pf-exp-option-label">Divider opacity</p>
-            <div role="radiogroup" aria-label="Divider opacity" className="pf-exp-centered-underline">
+            <p className="pf-exp-block-label pf-exp-option-label">{t('Divider opacity')}</p>
+            <div role="radiogroup" aria-label={t('Divider opacity')} className="pf-exp-centered-underline">
               {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS.map((option) => {
                 const active = option.value === dividerOpacity;
                 return (
@@ -870,7 +887,7 @@ function ExperienceCenteredLayoutSettings({
                     onClick={() => onChange({ centeredDividerOpacity: option.value })}
                     className="pf-exp-centered-underline-btn"
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -908,6 +925,7 @@ function ExperienceSerifLeadLayoutSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   const align = experience.serifLeadAlign ?? 'left';
   const weight = experience.serifLeadWeight ?? 'medium';
   const maxWidth = experience.serifLeadMaxWidth ?? 'narrow';
@@ -930,12 +948,12 @@ function ExperienceSerifLeadLayoutSettings({
       aria-labelledby="serif-lead-layout-title"
     >
       <h3 id="serif-lead-layout-title" className="pf-exp-layout-settings-title">
-        Serif lead configuration
+        {t('Serif lead configuration')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-7">
         <div>
           <label className="pf-exp-block-label block" htmlFor="serif-lead-label-text">
-            Label
+            {t('Label')}
           </label>
           <input
             id="serif-lead-label-text"
@@ -948,7 +966,7 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
         <div>
           <label className="pf-exp-block-label block" htmlFor="serif-lead-title-text">
-            Title
+            {t('Title')}
           </label>
           <input
             id="serif-lead-title-text"
@@ -958,12 +976,12 @@ function ExperienceSerifLeadLayoutSettings({
             placeholder={DEFAULT_SERIF_LEAD_TITLE_TEXT}
             className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
           />
-          <p className="mt-2 text-[11px] text-neutral-500">Use {'{years}'} to insert the profile years count.</p>
+          <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{years}'} {t('to insert the profile years count.')}</p>
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Alignment</p>
-          <div role="radiogroup" aria-label="Alignment" className="pf-exp-centered-align">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Alignment')}</p>
+          <div role="radiogroup" aria-label={t('Alignment')} className="pf-exp-centered-align">
             {PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS.map((option) => {
               const active = option.value === align;
               return (
@@ -972,13 +990,13 @@ function ExperienceSerifLeadLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ serifLeadAlign: option.value })}
                   className="pf-exp-centered-align-btn"
                 >
                   <CenteredAlignGlyph align={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -986,10 +1004,10 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Title color</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Title color')}</p>
           <div
             role="radiogroup"
-            aria-label="Title color"
+            aria-label={t('Title color')}
             className="pf-exp-segment grid gap-[3px] p-[3px]"
             data-compact="true"
             style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
@@ -1012,7 +1030,7 @@ function ExperienceSerifLeadLayoutSettings({
                     style={swatchStyle(option.value)}
                     aria-hidden
                   />
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -1020,8 +1038,8 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Title weight</p>
-          <div role="radiogroup" aria-label="Title weight" className="pf-exp-centered-weight">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Title weight')}</p>
+          <div role="radiogroup" aria-label={t('Title weight')} className="pf-exp-centered-weight">
             {PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS.map((option) => {
               const active = option.value === weight;
               return (
@@ -1035,7 +1053,7 @@ function ExperienceSerifLeadLayoutSettings({
                   className="pf-exp-centered-weight-btn"
                   style={{ fontWeight: SERIF_LEAD_WEIGHT[option.value] }}
                 >
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -1043,17 +1061,17 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Title style</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Title style')}</p>
           <div
             role="radiogroup"
-            aria-label="Title style"
+            aria-label={t('Title style')}
             className="pf-exp-centered-tiles"
             style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
           >
             {(
               [
-                { value: false, label: 'Roman' },
-                { value: true, label: 'Italic' },
+                { value: false, label: t('Roman') },
+                { value: true, label: t('Italic') },
               ] as const
             ).map((option) => {
               const active = (experience.serifLeadItalic === true) === option.value;
@@ -1068,7 +1086,7 @@ function ExperienceSerifLeadLayoutSettings({
                   className="pf-exp-centered-tile"
                   style={{ fontStyle: option.value ? 'italic' : 'normal' }}
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1076,17 +1094,17 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Motion</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Motion')}</p>
           <div
             role="radiogroup"
-            aria-label="Motion"
+            aria-label={t('Motion')}
             className="pf-exp-centered-tiles"
             style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
           >
             {(
               [
-                { value: true, label: 'On' },
-                { value: false, label: 'Off' },
+                { value: true, label: t('On') },
+                { value: false, label: t('Off') },
               ] as const
             ).map((option) => {
               const active = (experience.serifLeadMotion !== false) === option.value;
@@ -1100,7 +1118,7 @@ function ExperienceSerifLeadLayoutSettings({
                   onClick={() => onChange({ serifLeadMotion: option.value })}
                   className="pf-exp-centered-tile"
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1108,15 +1126,15 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <CenteredSteppedSlider
-          label="Title scale"
+          label={t('Title scale')}
           options={PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS}
           value={experience.serifLeadScale ?? 'default'}
           onChange={(serifLeadScale) => onChange({ serifLeadScale })}
         />
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Letter spacing</p>
-          <div role="radiogroup" aria-label="Letter spacing" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Letter spacing')}</p>
+          <div role="radiogroup" aria-label={t('Letter spacing')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS.map((option) => {
               const active = option.value === tracking;
               return (
@@ -1125,13 +1143,13 @@ function ExperienceSerifLeadLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ serifLeadTracking: option.value })}
                   className="pf-exp-centered-tile"
                 >
                   <SerifTrackingGlyph value={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1139,8 +1157,8 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Max width</p>
-          <div role="radiogroup" aria-label="Max width" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Max width')}</p>
+          <div role="radiogroup" aria-label={t('Max width')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS.map((option) => {
               const active = option.value === maxWidth;
               return (
@@ -1149,13 +1167,13 @@ function ExperienceSerifLeadLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ serifLeadMaxWidth: option.value })}
                   className="pf-exp-centered-tile"
                 >
                   <CenteredWidthGlyph value={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1163,8 +1181,8 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Line height</p>
-          <div role="radiogroup" aria-label="Line height" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Line height')}</p>
+          <div role="radiogroup" aria-label={t('Line height')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS.map((option) => {
               const active = option.value === lineHeight;
               return (
@@ -1173,13 +1191,13 @@ function ExperienceSerifLeadLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
+                  aria-label={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ serifLeadLineHeight: option.value })}
                   className="pf-exp-centered-tile"
                 >
                   <CenteredLineHeightGlyph value={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1187,7 +1205,7 @@ function ExperienceSerifLeadLayoutSettings({
         </div>
 
         <CenteredSteppedSlider
-          label="Label opacity"
+          label={t('Label opacity')}
           options={PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS}
           value={experience.serifLeadLabelOpacity ?? 'muted'}
           onChange={(serifLeadLabelOpacity) => onChange({ serifLeadLabelOpacity })}
@@ -1197,10 +1215,10 @@ function ExperienceSerifLeadLayoutSettings({
         />
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Divider</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Divider')}</p>
           <div
             role="radiogroup"
-            aria-label="Divider"
+            aria-label={t('Divider')}
             className="pf-exp-centered-tiles pf-exp-centered-tiles-4"
           >
             {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS.map((option) => {
@@ -1211,8 +1229,8 @@ function ExperienceSerifLeadLayoutSettings({
                   type="button"
                   role="radio"
                   aria-checked={active}
-                  aria-label={option.label}
-                  title={option.label}
+                  aria-label={t(option.label)}
+                  title={t(option.label)}
                   data-active={active ? 'true' : 'false'}
                   onClick={() => onChange({ serifLeadDivider: option.value })}
                   className="pf-exp-centered-tile pf-exp-centered-tile-glyph"
@@ -1220,12 +1238,12 @@ function ExperienceSerifLeadLayoutSettings({
                   <CenteredDividerGlyph value={option.value} />
                   <span>
                     {option.value === 'dot'
-                      ? 'Dot'
+                      ? t('Dot')
                       : option.value === 'full'
-                        ? 'Full'
+                        ? t('Full')
                         : option.value === 'track'
-                          ? 'Track'
-                          : 'None'}
+                          ? t('Track')
+                          : t('None')}
                   </span>
                 </button>
               );
@@ -1235,8 +1253,8 @@ function ExperienceSerifLeadLayoutSettings({
 
         {divider !== 'none' ? (
           <div>
-            <p className="pf-exp-block-label pf-exp-option-label">Divider opacity</p>
-            <div role="radiogroup" aria-label="Divider opacity" className="pf-exp-centered-underline">
+            <p className="pf-exp-block-label pf-exp-option-label">{t('Divider opacity')}</p>
+            <div role="radiogroup" aria-label={t('Divider opacity')} className="pf-exp-centered-underline">
               {PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS.map((option) => {
                 const active = option.value === dividerOpacity;
                 return (
@@ -1250,7 +1268,7 @@ function ExperienceSerifLeadLayoutSettings({
                     onClick={() => onChange({ serifLeadDividerOpacity: option.value })}
                     className="pf-exp-centered-underline-btn"
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -1269,6 +1287,7 @@ function ExperienceMarqueeLayoutSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   const ink = experience.marqueeInk ?? 'current';
   const style = experience.marqueeStyle ?? 'alternate';
   const weight = experience.marqueeWeight ?? 'semibold';
@@ -1294,24 +1313,24 @@ function ExperienceMarqueeLayoutSettings({
       aria-labelledby="marquee-layout-title"
     >
       <h3 id="marquee-layout-title" className="pf-exp-layout-settings-title">
-        Marquee configuration
+        {t('Marquee configuration')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-7">
         <div>
           <label className="pf-exp-block-label block" htmlFor="marquee-word-1">
-            Word
+            {t('Word')}
           </label>
           <input
             id="marquee-word-1"
             type="text"
             value={experience.spotlightBigTitleText ?? ''}
             onChange={(event) => onChange({ spotlightBigTitleText: event.target.value })}
-            placeholder="Experience"
+            placeholder={t('Experience')}
             className="pf-exp-centered-field mt-3 w-full rounded-xl border px-3.5 py-2.5 text-sm font-medium"
           />
         </div>
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Extra words</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Extra words')}</p>
           <div className="grid grid-cols-1 gap-2">
             {(
               [
@@ -1334,10 +1353,10 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Word color</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Word color')}</p>
           <div
             role="radiogroup"
-            aria-label="Word color"
+            aria-label={t('Word color')}
             className="pf-exp-segment grid gap-[3px] p-[3px]"
             data-compact="true"
             style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
@@ -1356,7 +1375,7 @@ function ExperienceMarqueeLayoutSettings({
                   style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
                 >
                   <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={swatchStyle(option.value)} aria-hidden />
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -1364,8 +1383,8 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Letter style</p>
-          <div role="radiogroup" aria-label="Letter style" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Letter style')}</p>
+          <div role="radiogroup" aria-label={t('Letter style')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS.map((option) => {
               const active = option.value === style;
               return (
@@ -1378,7 +1397,7 @@ function ExperienceMarqueeLayoutSettings({
                   onClick={() => onChange({ marqueeStyle: option.value })}
                   className="pf-exp-centered-tile"
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1386,8 +1405,8 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Weight</p>
-          <div role="radiogroup" aria-label="Weight" className="pf-exp-centered-weight">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Weight')}</p>
+          <div role="radiogroup" aria-label={t('Weight')} className="pf-exp-centered-weight">
             {PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS.map((option) => {
               const active = option.value === weight;
               return (
@@ -1401,7 +1420,7 @@ function ExperienceMarqueeLayoutSettings({
                   className="pf-exp-centered-weight-btn"
                   style={{ fontWeight: MARQUEE_WEIGHT[option.value] }}
                 >
-                  {option.label}
+                  {t(option.label)}
                 </button>
               );
             })}
@@ -1409,15 +1428,15 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <CenteredSteppedSlider
-          label="Scale"
+          label={t('Scale')}
           options={PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS}
           value={experience.marqueeScale ?? 'default'}
           onChange={(marqueeScale) => onChange({ marqueeScale })}
         />
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Letter spacing</p>
-          <div role="radiogroup" aria-label="Letter spacing" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Letter spacing')}</p>
+          <div role="radiogroup" aria-label={t('Letter spacing')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS.map((option) => {
               const active = option.value === tracking;
               return (
@@ -1431,7 +1450,7 @@ function ExperienceMarqueeLayoutSettings({
                   className="pf-exp-centered-tile"
                 >
                   <SerifTrackingGlyph value={option.value} />
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1439,7 +1458,7 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <CenteredSteppedSlider
-          label="Fill opacity"
+          label={t('Fill opacity')}
           options={PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS}
           value={experience.marqueeFillOpacity ?? 'muted'}
           onChange={(marqueeFillOpacity) => onChange({ marqueeFillOpacity })}
@@ -1449,10 +1468,10 @@ function ExperienceMarqueeLayoutSettings({
         />
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Separator</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Separator')}</p>
           <div
             role="radiogroup"
-            aria-label="Separator"
+            aria-label={t('Separator')}
             className="pf-exp-centered-tiles"
             style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
           >
@@ -1468,7 +1487,7 @@ function ExperienceMarqueeLayoutSettings({
                   onClick={() => onChange({ marqueeSeparator: option.value })}
                   className="pf-exp-centered-tile"
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1477,10 +1496,10 @@ function ExperienceMarqueeLayoutSettings({
 
         {separator !== 'none' ? (
           <div>
-            <p className="pf-exp-block-label pf-exp-option-label">Separator color</p>
+            <p className="pf-exp-block-label pf-exp-option-label">{t('Separator color')}</p>
             <div
               role="radiogroup"
-              aria-label="Separator color"
+              aria-label={t('Separator color')}
               className="pf-exp-segment grid gap-[3px] p-[3px]"
               data-compact="true"
               style={{ gridTemplateColumns: 'repeat(4, minmax(0, 1fr))' }}
@@ -1499,7 +1518,7 @@ function ExperienceMarqueeLayoutSettings({
                     style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
                   >
                     <span className="h-2.5 w-2.5 shrink-0 rounded-full" style={swatchStyle(option.value)} aria-hidden />
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -1508,10 +1527,10 @@ function ExperienceMarqueeLayoutSettings({
         ) : null}
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Direction</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Direction')}</p>
           <div
             role="radiogroup"
-            aria-label="Direction"
+            aria-label={t('Direction')}
             className="pf-exp-centered-tiles"
             style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
           >
@@ -1527,7 +1546,7 @@ function ExperienceMarqueeLayoutSettings({
                   onClick={() => onChange({ marqueeDirection: option.value })}
                   className="pf-exp-centered-tile"
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1535,15 +1554,15 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <CenteredSteppedSlider
-          label="Speed"
+          label={t('Speed')}
           options={PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS}
           value={speed}
           onChange={(marqueeSpeed) => onChange({ marqueeSpeed })}
         />
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Edge fade</p>
-          <div role="radiogroup" aria-label="Edge fade" className="pf-exp-centered-tiles">
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Edge fade')}</p>
+          <div role="radiogroup" aria-label={t('Edge fade')} className="pf-exp-centered-tiles">
             {PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS.map((option) => {
               const active = option.value === fade;
               return (
@@ -1556,7 +1575,7 @@ function ExperienceMarqueeLayoutSettings({
                   onClick={() => onChange({ marqueeEdgeFade: option.value })}
                   className="pf-exp-centered-tile"
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1564,17 +1583,17 @@ function ExperienceMarqueeLayoutSettings({
         </div>
 
         <div>
-          <p className="pf-exp-block-label pf-exp-option-label">Motion</p>
+          <p className="pf-exp-block-label pf-exp-option-label">{t('Motion')}</p>
           <div
             role="radiogroup"
-            aria-label="Motion"
+            aria-label={t('Motion')}
             className="pf-exp-centered-tiles"
             style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
           >
             {(
               [
-                { value: true, label: 'On' },
-                { value: false, label: 'Off' },
+                { value: true, label: t('On') },
+                { value: false, label: t('Off') },
               ] as const
             ).map((option) => {
               const active = motion === option.value;
@@ -1588,7 +1607,7 @@ function ExperienceMarqueeLayoutSettings({
                   onClick={() => onChange({ marqueeMotion: option.value })}
                   className="pf-exp-centered-tile"
                 >
-                  <span>{option.label}</span>
+                  <span>{t(option.label)}</span>
                 </button>
               );
             })}
@@ -1597,17 +1616,17 @@ function ExperienceMarqueeLayoutSettings({
 
         {motion ? (
           <div>
-            <p className="pf-exp-block-label pf-exp-option-label">Scroll velocity</p>
+            <p className="pf-exp-block-label pf-exp-option-label">{t('Scroll velocity')}</p>
             <div
               role="radiogroup"
-              aria-label="Scroll velocity"
+              aria-label={t('Scroll velocity')}
               className="pf-exp-centered-tiles"
               style={{ gridTemplateColumns: 'repeat(2, minmax(0, 1fr))' }}
             >
               {(
                 [
-                  { value: true, label: 'On' },
-                  { value: false, label: 'Off' },
+                  { value: true, label: t('On') },
+                  { value: false, label: t('Off') },
                 ] as const
               ).map((option) => {
                 const active = scrollLink === option.value;
@@ -1621,7 +1640,7 @@ function ExperienceMarqueeLayoutSettings({
                     onClick={() => onChange({ marqueeScrollLink: option.value })}
                     className="pf-exp-centered-tile"
                   >
-                    <span>{option.label}</span>
+                    <span>{t(option.label)}</span>
                   </button>
                 );
               })}
@@ -1640,33 +1659,34 @@ function ExperienceTitleStackHeaderSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="title-stack-header-title">
       <h3 id="title-stack-header-title" className="pf-exp-layout-settings-title">
-        Title stack
+        {t('Title stack')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <ExperienceToggleRow
-          label="Chronology kicker"
-          description="Micro-label above the monumental title."
+          label={t('Chronology kicker')}
+          description={t('Micro-label above the monumental title.')}
           checked={experience.reelKickerEnabled !== false}
           onChange={(reelKickerEnabled) => onChange({ reelKickerEnabled })}
         />
         {experience.reelKickerEnabled !== false ? (
           <div>
-            <label className="pf-exp-block-label block">Kicker text</label>
+            <label className="pf-exp-block-label block">{t('Kicker text')}</label>
             <input
               type="text"
               value={experience.reelKickerText ?? '02 / Chronology'}
               onChange={(event) => onChange({ reelKickerText: event.target.value })}
-              placeholder="02 / Chronology"
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+              placeholder={t('02 / Chronology')}
+              className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
             />
           </div>
         ) : null}
         <ExperienceToggleRow
-          label="Entrance animation"
-          description="Title rises from a mask, kicker fades, subtitle slides in."
+          label={t('Entrance animation')}
+          description={t('Title rises from a mask, kicker fades, subtitle slides in.')}
           checked={experience.reelHeaderAnimationEnabled !== false}
           onChange={(reelHeaderAnimationEnabled) => onChange({ reelHeaderAnimationEnabled })}
         />
@@ -1682,39 +1702,40 @@ function ExperienceBillboardHeaderSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="billboard-header-title">
       <h3 id="billboard-header-title" className="pf-exp-layout-settings-title">
-        Billboard
+        {t('Billboard')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <ExperienceToggleRow
-          label="Big title"
-          description="Full-width word above the section (e.g. EXPERIENCE)."
+          label={t('Big title')}
+          description={t('Full-width word above the section (e.g. EXPERIENCE).')}
           checked={experience.galleryBigTitleEnabled !== false}
           onChange={(galleryBigTitleEnabled) => onChange({ galleryBigTitleEnabled })}
         />
         {experience.galleryBigTitleEnabled !== false ? (
           <>
             <div>
-              <label className="pf-exp-block-label block">Big title word</label>
+              <label className="pf-exp-block-label block">{t('Big title word')}</label>
               <input
                 type="text"
                 value={experience.galleryBigTitleText ?? 'Experience'}
                 onChange={(event) => onChange({ galleryBigTitleText: event.target.value })}
-                placeholder="Experience"
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                placeholder={t('Experience')}
+                className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
               />
             </div>
             <ExperienceOptionGrid
-              label="Letter style"
+              label={t('Letter style')}
               options={PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS}
               value={experience.galleryBigTitleStyle ?? 'outline'}
               onChange={(galleryBigTitleStyle) => onChange({ galleryBigTitleStyle })}
               columns={2}
             />
             <ExperienceOptionGrid
-              label="Title color"
+              label={t('Title color')}
               options={PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS}
               value={experience.galleryBigTitleColor ?? 'current'}
               onChange={(galleryBigTitleColor) => onChange({ galleryBigTitleColor })}
@@ -1723,24 +1744,24 @@ function ExperienceBillboardHeaderSettings({
           </>
         ) : null}
         <div>
-          <label className="pf-exp-block-label block">Secondary title</label>
+          <label className="pf-exp-block-label block">{t('Secondary title')}</label>
           <input
             type="text"
             value={experience.gallerySecondaryTitleText ?? "Roles I've taken on"}
             onChange={(event) => onChange({ gallerySecondaryTitleText: event.target.value })}
-            placeholder="Roles I've taken on"
-            className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+            placeholder={t('Roles I\'ve taken on')}
+            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
           />
         </div>
         <ExperienceOptionGrid
-          label="Secondary style"
+          label={t('Secondary style')}
           options={PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS}
           value={experience.gallerySecondaryTitleStyle ?? 'editorial'}
           onChange={(gallerySecondaryTitleStyle) => onChange({ gallerySecondaryTitleStyle })}
           columns={2}
         />
         <ExperienceOptionGrid
-          label="Role count"
+          label={t('Role count')}
           options={PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS}
           value={experience.galleryRoleCountStyle ?? 'micro'}
           onChange={(galleryRoleCountStyle) => onChange({ galleryRoleCountStyle })}
@@ -1748,26 +1769,26 @@ function ExperienceBillboardHeaderSettings({
         />
         {(experience.galleryRoleCountStyle ?? 'micro') !== 'hidden' ? (
           <div>
-            <label className="pf-exp-block-label block">Role count text</label>
+            <label className="pf-exp-block-label block">{t('Role count text')}</label>
             <input
               type="text"
               value={experience.galleryRoleCountText ?? '{count} roles — click any card for the full story'}
               onChange={(event) => onChange({ galleryRoleCountText: event.target.value })}
-              placeholder="{count} roles — click any card for the full story"
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+              placeholder={t('{count} roles — click any card for the full story')}
+              className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
             />
-            <p className="mt-2 text-[11px] text-neutral-500">Use {'{count}'} for the number of roles.</p>
+            <p className="mt-2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">{t('Use')} {'{count}'} {t('for the number of roles.')}</p>
           </div>
         ) : null}
         <ExperienceToggleRow
-          label="Entrance animation"
-          description="Billboard reveal on the big title, then the line below."
+          label={t('Entrance animation')}
+          description={t('Billboard reveal on the big title, then the line below.')}
           checked={experience.galleryHeaderAnimationEnabled !== false}
           onChange={(galleryHeaderAnimationEnabled) => onChange({ galleryHeaderAnimationEnabled })}
         />
         {experience.galleryHeaderAnimationEnabled !== false ? (
           <ExperienceOptionGrid
-            label="Animation intensity"
+            label={t('Animation intensity')}
             options={PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS}
             value={experience.galleryHeaderAnimationStyle ?? 'dramatic'}
             onChange={(galleryHeaderAnimationStyle) => onChange({ galleryHeaderAnimationStyle })}
@@ -1775,8 +1796,8 @@ function ExperienceBillboardHeaderSettings({
           />
         ) : null}
         <ExperienceToggleRow
-          label="Scroll parallax"
-          description="The big title stays longer while the rest drifts away."
+          label={t('Scroll parallax')}
+          description={t('The big title stays longer while the rest drifts away.')}
           checked={experience.galleryScrollParallaxEnabled !== false}
           onChange={(galleryScrollParallaxEnabled) => onChange({ galleryScrollParallaxEnabled })}
         />
@@ -1792,15 +1813,16 @@ function ExperienceSplitHeadingHeaderSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="split-heading-header-title">
       <h3 id="split-heading-header-title" className="pf-exp-layout-settings-title">
-        Split heading
+        {t('Split heading')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <ExperienceToggleRow
-          label="Entrance animation"
-          description="Title rises from a mask, label fades in from the right."
+          label={t('Entrance animation')}
+          description={t('Title rises from a mask, label fades in from the right.')}
           checked={experience.loftHeaderAnimationEnabled !== false}
           onChange={(loftHeaderAnimationEnabled) => onChange({ loftHeaderAnimationEnabled })}
         />
@@ -1816,70 +1838,71 @@ function ExperienceMastheadHeaderSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="masthead-header-title">
       <h3 id="masthead-header-title" className="pf-exp-layout-settings-title">
-        Masthead
+        {t('Masthead')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <ExperienceToggleRow
-          label="Headline"
-          description="Monumental uppercase lines."
+          label={t('Headline')}
+          description={t('Monumental uppercase lines.')}
           checked={experience.pressHeadingEnabled !== false}
           onChange={(pressHeadingEnabled) => onChange({ pressHeadingEnabled })}
         />
         {experience.pressHeadingEnabled !== false ? (
           <div>
-            <label className="pf-exp-block-label block">Headline text</label>
+            <label className="pf-exp-block-label block">{t('Headline text')}</label>
             <input
               type="text"
               value={experience.pressHeadingText ?? 'Roles taken. Skills sharpened. Impact delivered.'}
               onChange={(event) => onChange({ pressHeadingText: event.target.value })}
-              placeholder="Roles taken. Skills sharpened. Impact delivered."
-              className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+              placeholder={t('Roles taken. Skills sharpened. Impact delivered.')}
+              className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
             />
           </div>
         ) : null}
         <div>
-          <label className="pf-exp-block-label block">Intro line</label>
+          <label className="pf-exp-block-label block">{t('Intro line')}</label>
           <input
             type="text"
             value={experience.pressIntroText ?? ''}
             onChange={(event) => onChange({ pressIntroText: event.target.value })}
-            placeholder="Selected roles, projects, and outcomes."
-            className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+            placeholder={t('Selected roles, projects, and outcomes.')}
+            className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
           />
         </div>
         <ExperienceOptionGrid
-          label="Weight"
+          label={t('Weight')}
           options={PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS}
           value={experience.pressHeadingWeightStyle ?? 'alternating'}
           onChange={(pressHeadingWeightStyle) => onChange({ pressHeadingWeightStyle })}
           columns={2}
         />
         <ExperienceOptionGrid
-          label="Alignment"
+          label={t('Alignment')}
           options={PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS}
           value={experience.pressHeadingAlignment ?? 'left'}
           onChange={(pressHeadingAlignment) => onChange({ pressHeadingAlignment })}
           columns={2}
         />
         <ExperienceOptionGrid
-          label="Intro style"
+          label={t('Intro style')}
           options={PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS}
           value={experience.pressSubtitleStyle ?? 'micro'}
           onChange={(pressSubtitleStyle) => onChange({ pressSubtitleStyle })}
           columns={3}
         />
         <ExperienceToggleRow
-          label="Entrance animation"
-          description="Words reveal from a mask, line by line."
+          label={t('Entrance animation')}
+          description={t('Words reveal from a mask, line by line.')}
           checked={experience.pressHeaderAnimationEnabled !== false}
           onChange={(pressHeaderAnimationEnabled) => onChange({ pressHeaderAnimationEnabled })}
         />
         {experience.pressHeaderAnimationEnabled !== false ? (
           <ExperienceOptionGrid
-            label="Reveal"
+            label={t('Reveal')}
             options={PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS}
             value={experience.pressHeaderAnimationStyle ?? 'staggered'}
             onChange={(pressHeaderAnimationStyle) => onChange({ pressHeaderAnimationStyle })}
@@ -1887,14 +1910,14 @@ function ExperienceMastheadHeaderSettings({
           />
         ) : null}
         <ExperienceToggleRow
-          label="Scroll parallax"
-          description="Each line leaves at a different speed."
+          label={t('Scroll parallax')}
+          description={t('Each line leaves at a different speed.')}
           checked={experience.pressScrollParallaxEnabled !== false}
           onChange={(pressScrollParallaxEnabled) => onChange({ pressScrollParallaxEnabled })}
         />
         {experience.pressScrollParallaxEnabled !== false ? (
           <ExperienceOptionGrid
-            label="Parallax intensity"
+            label={t('Parallax intensity')}
             options={PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS}
             value={experience.pressScrollParallaxIntensity ?? 'subtle'}
             onChange={(pressScrollParallaxIntensity) => onChange({ pressScrollParallaxIntensity })}
@@ -1913,15 +1936,16 @@ function ExperienceAccentTitleHeaderSettings({
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
 }) {
+  const t = useT();
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="accent-title-header-title">
       <h3 id="accent-title-header-title" className="pf-exp-layout-settings-title">
-        Accent title
+        {t('Accent title')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-6">
         <ExperienceToggleRow
-          label="Hero title"
-          description="Prefix plus a larger accent word."
+          label={t('Hero title')}
+          description={t('Prefix plus a larger accent word.')}
           checked={experience.legacyHeadingEnabled !== false}
           onChange={(legacyHeadingEnabled) => onChange({ legacyHeadingEnabled })}
         />
@@ -1929,73 +1953,73 @@ function ExperienceAccentTitleHeaderSettings({
           <>
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="pf-exp-block-label block">Prefix</label>
+                <label className="pf-exp-block-label block">{t('Prefix')}</label>
                 <input
                   type="text"
                   value={experience.legacyHeadingText ?? 'A Career Built on'}
                   onChange={(event) => onChange({ legacyHeadingText: event.target.value })}
-                  placeholder="A Career Built on"
-                  className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                  placeholder={t('A Career Built on')}
+                  className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
                 />
               </div>
               <div>
-                <label className="pf-exp-block-label block">Accent word</label>
+                <label className="pf-exp-block-label block">{t('Accent word')}</label>
                 <input
                   type="text"
                   value={experience.legacyHeadingAccentText ?? 'Craft'}
                   onChange={(event) => onChange({ legacyHeadingAccentText: event.target.value })}
-                  placeholder="Craft"
-                  className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                  placeholder={t('Craft')}
+                  className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
                 />
               </div>
             </div>
             <div>
-              <label className="pf-exp-block-label block">Intro sentence</label>
+              <label className="pf-exp-block-label block">{t('Intro sentence')}</label>
               <input
                 type="text"
                 value={experience.legacyIntroText ?? ''}
                 onChange={(event) => onChange({ legacyIntroText: event.target.value })}
-                placeholder="A selection of roles, teams, and problems solved along the way."
-                className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                placeholder={t('A selection of roles, teams, and problems solved along the way.')}
+                className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
               />
             </div>
             <ExperienceOptionGrid
-              label="Prefix weight"
+              label={t('Prefix weight')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS}
               value={experience.legacyPrefixWeight ?? 'light'}
               onChange={(legacyPrefixWeight) => onChange({ legacyPrefixWeight })}
               columns={3}
             />
             <ExperienceOptionGrid
-              label="Accent style"
+              label={t('Accent style')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS}
               value={experience.legacyAccentStyle ?? 'italic-bold'}
               onChange={(legacyAccentStyle) => onChange({ legacyAccentStyle })}
               columns={3}
             />
             <ExperienceOptionGrid
-              label="Accent size"
+              label={t('Accent size')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS}
               value={experience.legacyAccentSize ?? 'dramatic'}
               onChange={(legacyAccentSize) => onChange({ legacyAccentSize })}
               columns={3}
             />
             <ExperienceOptionGrid
-              label="Intro style"
+              label={t('Intro style')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS}
               value={experience.legacySubtitleStyle ?? 'micro'}
               onChange={(legacySubtitleStyle) => onChange({ legacySubtitleStyle })}
               columns={3}
             />
             <ExperienceToggleRow
-              label="Accent underline"
-              description="Hairline under the accent word."
+              label={t('Accent underline')}
+              description={t('Hairline under the accent word.')}
               checked={experience.legacyAccentUnderline !== false}
               onChange={(legacyAccentUnderline) => onChange({ legacyAccentUnderline })}
             />
             {experience.legacyAccentUnderline !== false ? (
               <ExperienceOptionGrid
-                label="Underline"
+                label={t('Underline')}
                 options={PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS}
                 value={experience.legacyAccentUnderlineStyle ?? 'solid'}
                 onChange={(legacyAccentUnderlineStyle) => onChange({ legacyAccentUnderlineStyle })}
@@ -2003,14 +2027,14 @@ function ExperienceAccentTitleHeaderSettings({
               />
             ) : null}
             <ExperienceToggleRow
-              label="Entrance animation"
-              description="Prefix fades, accent word blooms, underline draws in."
+              label={t('Entrance animation')}
+              description={t('Prefix fades, accent word blooms, underline draws in.')}
               checked={experience.legacyHeaderAnimationEnabled !== false}
               onChange={(legacyHeaderAnimationEnabled) => onChange({ legacyHeaderAnimationEnabled })}
             />
             {experience.legacyHeaderAnimationEnabled !== false ? (
               <ExperienceOptionGrid
-                label="Accent motion"
+                label={t('Accent motion')}
                 options={PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS}
                 value={experience.legacyHeaderAnimationStyle ?? 'bloom'}
                 onChange={(legacyHeaderAnimationStyle) => onChange({ legacyHeaderAnimationStyle })}
@@ -2018,8 +2042,8 @@ function ExperienceAccentTitleHeaderSettings({
               />
             ) : null}
             <ExperienceToggleRow
-              label="Scroll parallax"
-              description="The accent word stays while the prefix leaves."
+              label={t('Scroll parallax')}
+              description={t('The accent word stays while the prefix leaves.')}
               checked={experience.legacyScrollParallaxEnabled !== false}
               onChange={(legacyScrollParallaxEnabled) => onChange({ legacyScrollParallaxEnabled })}
             />
@@ -2033,18 +2057,18 @@ function ExperienceAccentTitleHeaderSettings({
 const EXPERIENCE_SUB_SECTIONS: { id: ExperienceSubSection; label: string; description: string }[] = [
   {
     id: 'general',
-    label: 'General',
-    description: 'Section visibility and how responsibilities are shown.',
-  },
-  {
-    id: 'header',
-    label: 'Header',
-    description: 'Pick a header design — it applies above every Experience layout.',
+    label: msg('General'),
+    description: msg('Section visibility and how responsibilities are shown.'),
   },
   {
     id: 'design',
-    label: 'Design',
-    description: 'Choose the Experience layout design.',
+    label: msg('Design'),
+    description: msg('Choose the Experience layout design.'),
+  },
+  {
+    id: 'header',
+    label: msg('Header'),
+    description: msg('Pick a header design — it applies above every Experience layout.'),
   },
 ];
 
@@ -2099,10 +2123,10 @@ function ExperienceToggleRow({
       className="flex w-full cursor-pointer flex-col gap-1 text-left"
     >
       <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0 text-sm font-semibold text-neutral-950">{label}</span>
+        <span className="min-w-0 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{label}</span>
         <ExperienceSwitchTrack checked={checked} />
       </span>
-      {description ? <span className="text-sm text-neutral-500">{description}</span> : null}
+      {description ? <span className="text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</span> : null}
     </button>
   );
 }
@@ -2139,7 +2163,7 @@ function ExperienceOptionalTextField({
             tabIndex={checked ? 0 : -1}
             onChange={(event) => onValueChange(event.target.value)}
             placeholder={placeholder}
-            className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+            className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
           />
         </div>
       </div>
@@ -2181,18 +2205,19 @@ function ExperienceVisibilityBadge({
 }
 
 function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
         <MiniSlide>
           <rect className="pf-exp-mini-ink" x="8" y="10" width="24" height="52" rx="3" />
           <MiniType x={12} y={24} size={6}>
-            15Y
+            {t('15Y')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="12" y="30" width="16" height="2.4" rx="1.2" />
           <rect className="pf-exp-mini-mute" x="12" y="36" width="12" height="2.2" rx="1.1" />
           <MiniType x={38} y={20} size={7}>
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="38" y="26" width="48" height="3" rx="1.4" />
           <rect className="pf-exp-mini-mute" x="38" y="33" width="36" height="2.6" rx="1.3" />
@@ -2249,7 +2274,7 @@ function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesi
       return (
         <MiniSlide>
           <MiniType x={10} y={24} size={7}>
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="10" y="30" width="42" height="3" rx="1.4" />
           <rect className="pf-exp-mini-mute" x="10" y="37" width="32" height="2.6" rx="1.3" />
@@ -2262,7 +2287,7 @@ function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesi
         <MiniSlide>
           <rect className="pf-exp-mini-ink" x="8" y="8" width="48" height="26" rx="3" />
           <MiniType x={14} y={24} size={6}>
-            EXP.
+            {t('EXP.')}
           </MiniType>
           <rect className="pf-exp-mini-mute" x="64" y="8" width="48" height="26" rx="3" />
           <rect className="pf-exp-mini-mute" x="8" y="38" width="48" height="26" rx="3" />
@@ -2302,7 +2327,7 @@ function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesi
       return (
         <MiniSlide>
           <MiniType x={10} y={20} size={7}>
-            CRAFT
+            {t('CRAFT')}
           </MiniType>
           <rect className="pf-exp-mini-ink" x="10" y="26" width="38" height="34" rx="3" />
           <rect className="pf-exp-mini-mute" x="56" y="30" width="54" height="3" rx="1.4" />
@@ -2334,10 +2359,11 @@ function ExperienceLayoutSettingsBand({
   children: ReactNode;
   motionKey: string;
 }) {
+  const t = useT();
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="experience-layout-settings-title">
       <h3 id="experience-layout-settings-title" className="pf-exp-layout-settings-title">
-        Layout settings
+        {t('Layout settings')}
       </h3>
       <div key={motionKey} className="pf-exp-layout-settings-body space-y-7">
         {children}
@@ -2353,24 +2379,46 @@ function ExperienceDesignChoiceGrid({
   value: PortfolioExperienceDesign;
   onChange: (value: PortfolioExperienceDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-exp-block-label !mb-0">Item design</p>
+          <p className="pf-exp-block-label !mb-0">{t('Item design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-exp-design-card"
+                labelClassName="pf-exp-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'experience', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -2378,7 +2426,7 @@ function ExperienceDesignChoiceGrid({
               <ExperiencePickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -2389,35 +2437,36 @@ function ExperienceDesignChoiceGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
     <div>
-      <p className="pf-exp-block-label">Item design</p>
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-neutral-200/80 p-3">
+      <p className="pf-exp-block-label">{t('Item design')}</p>
+      <div className="group relative w-full overflow-hidden rounded-2xl border border-[color:var(--pf-palette-bordure)] p-3">
         <ExperienceDesignWireframe design={value} />
         <button
           type="button"
           onClick={() => setShowGrid(true)}
-          aria-label="Change design"
+          aria-label={t('Change design')}
           className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
         >
-          <span className="inline-flex items-center gap-2 rounded-full bg-white px-4 py-2 text-sm font-semibold text-neutral-900 shadow-lg">
-            Change design
+          <span className="inline-flex items-center gap-2 rounded-full bg-transparent px-4 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)] shadow-lg">
+            {t('Change design')}
           </span>
         </button>
         <button
           type="button"
           onClick={() => setShowGrid(true)}
-          aria-label="Change design"
+          aria-label={t('Change design')}
           className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
         >
-          Change
+          {t('Change')}
         </button>
       </div>
-      <p className="mt-2 text-sm font-semibold text-neutral-950">{selected.label}</p>
+      <p className="mt-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(selected.label)}</p>
     </div>
   );
 }
@@ -2505,12 +2554,13 @@ function ExperienceTasksDisplayChoiceGrid({
   value: PortfolioExperienceTasksDisplay;
   onChange: (value: PortfolioExperienceTasksDisplay) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Tasks display</p>
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Tasks display')}</p>
       <div
         role="radiogroup"
-        aria-label="Tasks display"
+        aria-label={t('Tasks display')}
         className="grid grid-cols-2 gap-2"
       >
         {PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS.map((option) => {
@@ -2519,7 +2569,7 @@ function ExperienceTasksDisplayChoiceGrid({
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange(option.value)}
             >
               <ExperienceTasksDisplayWireframe display={option.value} />
@@ -2597,12 +2647,13 @@ function ExperienceToolsBadgeStyleChoiceGrid({
   value: PortfolioExperienceToolsBadgeStyle;
   onChange: (value: PortfolioExperienceToolsBadgeStyle) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Tools display</p>
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Tools display')}</p>
       <div
         role="radiogroup"
-        aria-label="Tools display"
+        aria-label={t('Tools display')}
         className="grid grid-cols-2 gap-2"
       >
         {PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS.map((option) => {
@@ -2611,7 +2662,7 @@ function ExperienceToolsBadgeStyleChoiceGrid({
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange(option.value)}
             >
               <ExperienceToolsBadgeStyleWireframe display={option.value} />
@@ -2642,6 +2693,7 @@ function ExperienceScalePill<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
@@ -2656,13 +2708,13 @@ function ExperienceScalePill<T extends string>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               data-active={active ? 'true' : 'false'}
               onClick={() => onChange(option.value)}
               className="pf-exp-scale-pill-btn"
               style={{ fontSize: `${sizes[index] ?? sizes[sizes.length - 1]}px` }}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -2685,6 +2737,7 @@ function ExperienceOptionGrid<T extends string | number>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const count = options.length;
   const cols = columns ?? (count <= 3 ? Math.max(count, 1) : 2);
@@ -2710,7 +2763,7 @@ function ExperienceOptionGrid<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-exp-segment-btn px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
@@ -2720,7 +2773,7 @@ function ExperienceOptionGrid<T extends string | number>({
                   : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
               }
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -2755,6 +2808,7 @@ function ExperienceThumbnailRadiusChoiceGrid({
   onChange: (value: PortfolioExperienceCardsBorderRadius) => void;
   label?: string;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(value ?? '')}>
@@ -2767,7 +2821,7 @@ function ExperienceThumbnailRadiusChoiceGrid({
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               compact
               onClick={() => onChange(option.value)}
             >
@@ -2808,17 +2862,18 @@ function ExperienceLoftColumnsChoiceGrid({
   value: PortfolioExperienceLoftColumns;
   onChange: (value: PortfolioExperienceLoftColumns) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Columns per row</p>
-      <div role="radiogroup" aria-label="Columns per row" className="grid grid-cols-3 gap-2">
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Columns per row')}</p>
+      <div role="radiogroup" aria-label={t('Columns per row')} className="grid grid-cols-3 gap-2">
         {PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               compact
               onClick={() => onChange(option.value)}
             >
@@ -2838,17 +2893,18 @@ function ExperienceGalleryColumnsChoiceGrid({
   value: PortfolioExperienceGalleryColumns;
   onChange: (value: PortfolioExperienceGalleryColumns) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Columns per row</p>
-      <div role="radiogroup" aria-label="Columns per row" className="grid grid-cols-2 gap-2">
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Columns per row')}</p>
+      <div role="radiogroup" aria-label={t('Columns per row')} className="grid grid-cols-2 gap-2">
         {PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               compact
               onClick={() => onChange(option.value)}
             >
@@ -2883,17 +2939,18 @@ function ExperienceItemGapChoiceGrid({
   value: PortfolioExperienceItemGap;
   onChange: (value: PortfolioExperienceItemGap) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Gap</p>
-      <div role="radiogroup" aria-label="Gap" className="grid grid-cols-4 gap-2">
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Gap')}</p>
+      <div role="radiogroup" aria-label={t('Gap')} className="grid grid-cols-4 gap-2">
         {PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
             <ExperiencePickerCard
               key={option.value}
               active={active}
-              label={option.label}
+              label={t(option.label)}
               compact
               onClick={() => onChange(option.value)}
             >
@@ -2910,6 +2967,7 @@ function ExperienceItemGapChoiceGrid({
  * A `span` trigger, not `button`: this sits inside ExperienceOptionGridWithInfo's own
  * <button role="radio">, and a <button> can never nest another <button>. */
 function ExperienceInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -2918,13 +2976,13 @@ function ExperienceInfoTooltip({ text }: { text: string }) {
         role="button"
         tabIndex={0}
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -2962,6 +3020,7 @@ function ExperienceOptionGridWithInfo<T extends string | number>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const count = options.length;
   const cols = columns ?? (count <= 3 ? Math.max(count, 1) : 2);
   const compact = cols === count && count >= 2 && count <= 4;
@@ -2990,8 +3049,8 @@ function ExperienceOptionGridWithInfo<T extends string | number>({
               className="pf-exp-segment-btn flex items-center justify-center gap-1.5 px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
               style={active ? undefined : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }}
             >
-              <span className="truncate">{option.label}</span>
-              {option.description ? <ExperienceInfoTooltip text={option.description} /> : null}
+              <span className="truncate">{t(option.label)}</span>
+              {option.description ? <ExperienceInfoTooltip text={t(option.description)} /> : null}
             </button>
           );
         })}
@@ -3035,13 +3094,14 @@ function ExperienceHoverMomentChoiceGrid({
   value: PortfolioExperienceLoftHoverEffect;
   onChange: (value: PortfolioExperienceLoftHoverEffect) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <p className="pf-exp-block-label pf-exp-option-label">Hover moment</p>
-      <p className="-mt-2 mb-3 hidden text-[10px] italic text-neutral-500 sm:block">
-        Hover to preview
+      <p className="pf-exp-block-label pf-exp-option-label">{t('Hover moment')}</p>
+      <p className="-mt-2 mb-3 hidden text-[10px] italic text-[color:var(--pf-palette-texte-muted)] sm:block">
+        {t('Hover to preview')}
       </p>
-      <div role="radiogroup" aria-label="Hover moment" className="grid grid-cols-3 gap-2">
+      <div role="radiogroup" aria-label={t('Hover moment')} className="grid grid-cols-3 gap-2">
         {PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
@@ -3050,13 +3110,13 @@ function ExperienceHoverMomentChoiceGrid({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-exp-hover-card rounded-xl text-left"
             >
               <ExperienceHoverMomentPreview effect={option.value} />
-              <span className="pf-exp-hover-card-label mt-1.5 block truncate">{option.label}</span>
+              <span className="pf-exp-hover-card-label mt-1.5 block truncate">{t(option.label)}</span>
             </button>
           );
         })}
@@ -3076,6 +3136,7 @@ export function ExperienceSettingsPanel({
   subSection?: ExperienceSubSection;
   onSubSectionChange?: (value: ExperienceSubSection) => void;
 }) {
+  const t = useT();
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ExperienceSubSection>('design');
   const subSection = normalizeExperienceSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: ExperienceSubSection) => {
@@ -3098,121 +3159,83 @@ export function ExperienceSettingsPanel({
   return (
     <PortfolioLinkArrowProvider value={experience.linkArrowStyle ?? 'northeast'}>
     <div className="space-y-6">
-      <div
-        role="tablist"
-        aria-label="Experience settings"
-        className="pf-exp-segment inline-flex w-fit max-w-full items-center gap-[3px] p-[3px]"
-        data-compact="true"
-      >
-        {EXPERIENCE_SUB_SECTIONS.map((section) => {
-          const active = subSection === section.id;
-          return (
-            <button
-              key={section.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              data-active={active ? 'true' : 'false'}
-              className="pf-exp-segment-btn whitespace-nowrap px-3 py-1.5 text-center text-[12px] font-semibold tracking-tight"
-              onClick={() => setSubSection(section.id)}
-            >
-              {section.label}
-            </button>
-          );
-        })}
-      </div>
+      <SettingsTabs tabs={EXPERIENCE_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
       {subSection === 'general' ? (
-        <div className="space-y-8">
-          <ExperienceToggleRow
-            label="Show section"
+        <div>
+          <SettingsSwitchRow
+            label={t('Show section')}
+            description={experience.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={experience.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          <SectionColorModeControl
-            value={experience.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-          <ExperienceOptionGrid
-            label="Font size"
-            options={PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS}
-            value={experience.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
-          <div>
-            <p className="pf-exp-block-label">Content visibility</p>
+          {experience.enabled ? (
+          <SettingsGroup label={t('Content shown')}>
             <div className="flex flex-wrap gap-3">
               <ExperienceVisibilityBadge
-                label="Title"
+                label={t('Title')}
                 checked={experience.showTitle !== false}
                 onChange={(showTitle) => onChange({ showTitle })}
               />
               <ExperienceVisibilityBadge
-                label="Period"
+                label={t('Period')}
                 checked={experience.showPeriod !== false}
                 onChange={(showPeriod) => onChange({ showPeriod })}
               />
               <ExperienceVisibilityBadge
-                label="Organization"
+                label={t('Organization')}
                 checked={experience.showOrganization !== false}
                 onChange={(showOrganization) => onChange({ showOrganization })}
               />
               <ExperienceVisibilityBadge
-                label="Status & meta"
+                label={t('Status & meta')}
                 checked={experience.showMeta !== false}
                 onChange={(showMeta) => onChange({ showMeta })}
               />
               <ExperienceVisibilityBadge
-                label="Description"
+                label={t('Description')}
                 checked={experience.showDescription !== false}
                 onChange={(showDescription) => onChange({ showDescription })}
               />
               <ExperienceVisibilityBadge
-                label="Tasks"
+                label={t('Tasks')}
                 checked={experience.showTasks !== false}
                 onChange={(showTasks) => onChange({ showTasks })}
               />
               <ExperienceVisibilityBadge
-                label="Tools"
+                label={t('Tools')}
                 checked={experience.showTools !== false}
                 onChange={(showTools) => onChange({ showTools })}
               />
               <ExperienceVisibilityBadge
-                label="Proof / links"
+                label={t('Proof / links')}
                 checked={experience.showProof !== false}
                 onChange={(showProof) => onChange({ showProof })}
               />
               <ExperienceVisibilityBadge
-                label="Media / image"
+                label={t('Media / image')}
                 checked={experience.showEntryMedia !== false}
                 onChange={(showEntryMedia) => onChange({ showEntryMedia })}
               />
             </div>
-          </div>
-          <ExperienceTasksDisplayChoiceGrid
-            value={experience.tasksDisplay ?? 'editorial-dash'}
-            onChange={(tasksDisplay) => onChange({ tasksDisplay })}
-          />
-          <ExperienceToolsBadgeStyleChoiceGrid
-            value={experience.toolsBadgeStyle ?? 'mineral-pills'}
-            onChange={(toolsBadgeStyle) => onChange({ toolsBadgeStyle })}
-          />
-          <ExperienceLinkButtonChoiceGrid
-            value={experience.repoLinkButtonStyle ?? 'auto'}
-            onChange={(repoLinkButtonStyle) => onChange({ repoLinkButtonStyle })}
-          />
-          <ExperienceLinkArrowChoiceGrid
-            value={experience.linkArrowStyle ?? 'northeast'}
-            onChange={(linkArrowStyle) => onChange({ linkArrowStyle })}
-          />
+          </SettingsGroup>
+          ) : null}
         </div>
+      ) : !experience.enabled ? (
+        <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} />
       ) : subSection === 'header' ? (
         <div>
           <ExperienceHeaderChoiceGrid
             value={experience.headerDesign ?? 'none'}
             onChange={(headerDesign) => onChange({ headerDesign })}
           />
+          <div className="mt-6">
+            <HeaderElementToggles
+              design={`experience-${experience.headerDesign ?? 'none'}`}
+              settings={experience}
+              onPatch={(patch) => onChange(patch as Partial<PortfolioExperienceSectionSettings>)}
+            />
+          </div>
           {(experience.headerDesign ?? 'none') === 'editorial' ? (
             <ExperienceAccentYearsAdvancedSettings experience={experience} onChange={onChange} />
           ) : null}
@@ -3248,11 +3271,11 @@ export function ExperienceSettingsPanel({
             onChange={(experienceDesign) => onChange({ experienceDesign })}
           />
           <ExperienceLayoutSettingsBand motionKey={design}>
-<SettingsRowsScope title="Layout options">
+<SettingsRowsScope title={t('Layout options')}>
           {isTable ? (
             <ExperienceToggleRow
-              label="Striped rows"
-              description="Alternate subtle row backgrounds for easier scanning."
+              label={t('Striped rows')}
+              description={t('Alternate subtle row backgrounds for easier scanning.')}
               checked={experience.tableStripedRows === true}
               onChange={(tableStripedRows) => onChange({ tableStripedRows })}
             />
@@ -3260,14 +3283,14 @@ export function ExperienceSettingsPanel({
           {isReel ? (
             <>
               <ExperienceOptionGrid
-                label="Status presentation"
+                label={t('Status presentation')}
                 options={PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS}
                 value={experience.reelStatusStyle ?? 'badge'}
                 onChange={(reelStatusStyle) => onChange({ reelStatusStyle })}
                 columns={2}
               />
               <ExperienceOptionGrid
-                label="Scroll motion"
+                label={t('Scroll motion')}
                 options={PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS}
                 value={experience.reelScrollMotion ?? 'fade-reveal'}
                 onChange={(reelScrollMotion) => onChange({ reelScrollMotion })}
@@ -3278,56 +3301,56 @@ export function ExperienceSettingsPanel({
           {isCards ? (
             <>
               <ExperienceScalePill
-                label="Card width"
+                label={t('Card width')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS}
                 sizes={[17, 14, 11]}
                 value={experience.cardsCardWidth ?? 'medium'}
                 onChange={(cardsCardWidth) => onChange({ cardsCardWidth })}
               />
               <ExperienceScalePill
-                label="Title size"
+                label={t('Title size')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS}
                 sizes={[12, 14, 16, 18]}
                 value={experience.cardsTitleSize ?? 'md'}
                 onChange={(cardsTitleSize) => onChange({ cardsTitleSize })}
               />
               <ExperienceScalePill
-                label="Element spacing"
+                label={t('Element spacing')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS}
                 sizes={[11, 14, 17]}
                 value={experience.cardsElementSpacing ?? 'md'}
                 onChange={(cardsElementSpacing) => onChange({ cardsElementSpacing })}
               />
               <ExperienceScalePill
-                label="Vertical gap"
+                label={t('Vertical gap')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS}
                 sizes={[11, 14, 17]}
                 value={experience.cardsVerticalGap ?? 'md'}
                 onChange={(cardsVerticalGap) => onChange({ cardsVerticalGap })}
               />
               <ExperienceThumbnailRadiusChoiceGrid
-                label="Card border radius"
+                label={t('Card border radius')}
                 value={experience.cardsBorderRadius ?? 'none'}
                 onChange={(cardsBorderRadius) => onChange({ cardsBorderRadius })}
               />
               <ExperienceScalePill
-                label="Tasks gap"
+                label={t('Tasks gap')}
                 options={PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS}
                 sizes={[11, 14, 17]}
                 value={experience.cardsTasksGap ?? 'md'}
                 onChange={(cardsTasksGap) => onChange({ cardsTasksGap })}
               />
               <ExperienceToggleRow
-                label="Scroll cascade effect"
-                description="Desktop only: each card locks in place and the next rises to fully cover it, scaling down and fading as it recedes. Turn off for a plain static stack on every screen size."
+                label={t('Scroll cascade effect')}
+                description={t('Desktop only: each card locks in place and the next rises to fully cover it, scaling down and fading as it recedes. Turn off for a plain static stack on every screen size.')}
                 checked={(experience.cardsStackEffect ?? 'cascade') === 'cascade'}
                 onChange={(checked) =>
                   onChange({ cardsStackEffect: checked ? 'cascade' : 'static' })
                 }
               />
               <ExperienceToggleRow
-                label="Equal card height"
-                description="Every card matches the height of the tallest one, so a shorter card never leaves the one behind it peeking out during the cascade."
+                label={t('Equal card height')}
+                description={t('Every card matches the height of the tallest one, so a shorter card never leaves the one behind it peeking out during the cascade.')}
                 checked={experience.cardsEqualHeight === true}
                 onChange={(cardsEqualHeight) => onChange({ cardsEqualHeight })}
               />
@@ -3336,21 +3359,21 @@ export function ExperienceSettingsPanel({
           {isEditorial ? (
             <>
               <ExperienceOptionGrid
-                label="Entry expand"
+                label={t('Entry expand')}
                 options={PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS}
                 value={experience.entryExpandMode ?? 'accordion'}
                 onChange={(entryExpandMode) => onChange({ entryExpandMode })}
                 columns={2}
               />
               <ExperienceOptionGrid
-                label="Detail layout"
+                label={t('Detail layout')}
                 options={PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS}
                 value={experience.editorialDetailLayout ?? 'split-actions'}
                 onChange={(editorialDetailLayout) => onChange({ editorialDetailLayout })}
                 columns={2}
               />
               <ExperienceOptionGrid
-                label="Period / timeline"
+                label={t('Period / timeline')}
                 options={PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS}
                 value={experience.periodDesign ?? 'plain'}
                 onChange={(periodDesign) => onChange({ periodDesign })}
@@ -3360,7 +3383,7 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isDuotone ? (
             <ExperienceOptionGrid
-              label="Scroll mode"
+              label={t('Scroll mode')}
               options={PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS}
               value={experience.duotoneScrollMode ?? 'sticky'}
               onChange={(duotoneScrollMode) => onChange({ duotoneScrollMode })}
@@ -3370,15 +3393,15 @@ export function ExperienceSettingsPanel({
           {isDuotone && (experience.duotoneScrollMode ?? 'sticky') === 'slide' ? (
             <>
               <ExperienceOptionGrid
-                label="Slide navigation"
+                label={t('Slide navigation')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS}
                 value={experience.duotoneSlideNavStyle ?? 'chevron'}
                 onChange={(duotoneSlideNavStyle) => onChange({ duotoneSlideNavStyle })}
                 columns={3}
               />
               <ExperienceToggleRow
-                label="Auto-advance"
-                description="Move to the next role every 5s — pauses while the frame is hovered."
+                label={t('Auto-advance')}
+                description={t('Move to the next role every 5s — pauses while the frame is hovered.')}
                 checked={experience.duotoneAutoAdvance === true}
                 onChange={(duotoneAutoAdvance) => onChange({ duotoneAutoAdvance })}
               />
@@ -3387,14 +3410,14 @@ export function ExperienceSettingsPanel({
           {isDuotone && experience.duotoneScrollMode === 'slide' ? (
             <>
               <ExperienceOptionGrid
-                label="Screen frame color"
+                label={t('Screen frame color')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS}
                 value={experience.duotoneFrameColor ?? 'none'}
                 onChange={(duotoneFrameColor) => onChange({ duotoneFrameColor })}
                 columns={3}
               />
               <ExperienceOptionGrid
-                label="Screen frame radius"
+                label={t('Screen frame radius')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS}
                 value={experience.duotoneFrameRadius ?? 'sm'}
                 onChange={(duotoneFrameRadius) => onChange({ duotoneFrameRadius })}
@@ -3406,21 +3429,21 @@ export function ExperienceSettingsPanel({
           (experience.duotoneScrollMode === 'scroll' || (experience.duotoneScrollMode ?? 'sticky') === 'sticky') ? (
             <>
               <ExperienceOptionGrid
-                label="Thumbnail effect"
+                label={t('Thumbnail effect')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS}
                 value={experience.duotoneThumbnailEffect ?? 'grayscale'}
                 onChange={(duotoneThumbnailEffect) => onChange({ duotoneThumbnailEffect })}
                 columns={3}
               />
               <ExperienceOptionGrid
-                label="Thumbnail height"
+                label={t('Thumbnail height')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS}
                 value={experience.duotoneThumbnailHeight ?? 'md'}
                 onChange={(duotoneThumbnailHeight) => onChange({ duotoneThumbnailHeight })}
                 columns={3}
               />
               <ExperienceOptionGrid
-                label="Repository CTA"
+                label={t('Repository CTA')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS}
                 value={experience.duotoneRepoCtaMode ?? 'footer'}
                 onChange={(duotoneRepoCtaMode) => onChange({ duotoneRepoCtaMode })}
@@ -3433,31 +3456,31 @@ export function ExperienceSettingsPanel({
             (experience.duotoneScrollMode ?? 'sticky') === 'sticky') ? (
             <>
               <ExperienceOptionGrid
-                label="Vertical spacing"
+                label={t('Vertical spacing')}
                 options={PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS}
                 value={experience.duotoneStickyVerticalGap ?? 'md'}
                 onChange={(duotoneStickyVerticalGap) => onChange({ duotoneStickyVerticalGap })}
                 columns={2}
               />
               <ExperienceToggleRow
-                label="Swap columns"
-                description="Title & thumbnail on the right, info card on the left."
+                label={t('Swap columns')}
+                description={t('Title & thumbnail on the right, info card on the left.')}
                 checked={experience.duotoneStickySwapSides === true}
                 onChange={(duotoneStickySwapSides) => onChange({ duotoneStickySwapSides })}
               />
               {experience.duotoneScrollMode === 'scroll' ? (
                 <>
                   <ExperienceToggleRow
-                    label="Full-width title"
-                    description="Role title spans the full width above both columns."
+                    label={t('Full-width title')}
+                    description={t('Role title spans the full width above both columns.')}
                     checked={experience.duotoneScrollFullWidthTitle === true}
                     onChange={(duotoneScrollFullWidthTitle) =>
                       onChange({ duotoneScrollFullWidthTitle })
                     }
                   />
                   <ExperienceToggleRow
-                    label="Alternate sides"
-                    description="Flip title/info columns on every other role."
+                    label={t('Alternate sides')}
+                    description={t('Flip title/info columns on every other role.')}
                     checked={experience.duotoneAlternateSides === true}
                     onChange={(duotoneAlternateSides) => onChange({ duotoneAlternateSides })}
                   />
@@ -3467,7 +3490,7 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isGallery ? (
             <ExperienceOptionGridWithInfo
-              label="Thumbnail"
+              label={t('Thumbnail')}
               options={PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS}
               value={experience.galleryThumbnailFit ?? 'cover'}
               onChange={(galleryThumbnailFit) => onChange({ galleryThumbnailFit })}
@@ -3500,7 +3523,7 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLoft ? (
             <ExperienceOptionGridWithInfo
-              label="Thumbnail"
+              label={t('Thumbnail')}
               options={PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS}
               value={experience.loftThumbnailFit ?? 'cover'}
               onChange={(loftThumbnailFit) => onChange({ loftThumbnailFit })}
@@ -3540,8 +3563,8 @@ export function ExperienceSettingsPanel({
 
           {isLegacy ? (
             <ExperienceToggleRow
-              label="Hero title"
-              description="The two-tone headline above the feature blocks."
+              label={t('Hero title')}
+              description={t('The two-tone headline above the feature blocks.')}
               checked={experience.legacyHeadingEnabled !== false}
               onChange={(legacyHeadingEnabled) => onChange({ legacyHeadingEnabled })}
             />
@@ -3551,46 +3574,46 @@ export function ExperienceSettingsPanel({
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="pf-exp-block-label block">
-                    Title
+                    {t('Title')}
                   </label>
                   <input
                     type="text"
                     value={experience.legacyHeadingText ?? 'A Career Built on'}
                     onChange={(event) => onChange({ legacyHeadingText: event.target.value })}
-                    placeholder="A Career Built on"
-                    className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                    placeholder={t('A Career Built on')}
+                    className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
                   />
                 </div>
                 <div>
                   <label className="pf-exp-block-label block">
-                    Title (accent)
+                    {t('Title (accent)')}
                   </label>
                   <input
                     type="text"
                     value={experience.legacyHeadingAccentText ?? 'Craft'}
                     onChange={(event) => onChange({ legacyHeadingAccentText: event.target.value })}
-                    placeholder="Craft"
-                    className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                    placeholder={t('Craft')}
+                    className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
                   />
                 </div>
               </div>
               <div>
                 <label className="pf-exp-block-label block">
-                  Intro sentence
+                  {t('Intro sentence')}
                 </label>
                 <input
                   type="text"
                   value={experience.legacyIntroText ?? ''}
                   onChange={(event) => onChange({ legacyIntroText: event.target.value })}
-                  placeholder="A selection of roles, teams, and problems solved along the way."
-                  className="mt-3 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm font-medium text-neutral-900 placeholder:text-neutral-400"
+                  placeholder={t('A selection of roles, teams, and problems solved along the way.')}
+                  className="mt-3 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm font-medium text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]"
                 />
               </div>
             </>
           ) : null}
           {isLegacy ? (
             <ExperienceOptionGrid
-              label="Image corners"
+              label={t('Image corners')}
               options={PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS}
               value={experience.legacyThumbnailRadius ?? 'xl'}
               onChange={(legacyThumbnailRadius) => onChange({ legacyThumbnailRadius })}
@@ -3599,7 +3622,7 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy ? (
             <ExperienceOptionGrid
-              label="Image height"
+              label={t('Image height')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS}
               value={experience.legacyThumbnailHeight ?? 'lg'}
               onChange={(legacyThumbnailHeight) => onChange({ legacyThumbnailHeight })}
@@ -3608,7 +3631,7 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy ? (
             <ExperienceOptionGrid
-              label="Image width"
+              label={t('Image width')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS}
               value={experience.legacyThumbnailWidth ?? 'lg'}
               onChange={(legacyThumbnailWidth) => onChange({ legacyThumbnailWidth })}
@@ -3617,7 +3640,7 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy ? (
             <ExperienceOptionGrid
-              label="Spacing between entries"
+              label={t('Spacing between entries')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS}
               value={experience.legacyItemGap ?? 'md'}
               onChange={(legacyItemGap) => onChange({ legacyItemGap })}
@@ -3626,15 +3649,15 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy ? (
             <ExperienceToggleRow
-              label="Alternate image side"
-              description="Switch the image left/right on every other entry. Off keeps it on the same side."
+              label={t('Alternate image side')}
+              description={t('Switch the image left/right on every other entry. Off keeps it on the same side.')}
               checked={experience.legacyAlternateSides !== false}
               onChange={(legacyAlternateSides) => onChange({ legacyAlternateSides })}
             />
           ) : null}
           {isLegacy && experience.legacyAlternateSides === false ? (
             <ExperienceOptionGrid
-              label="Image side"
+              label={t('Image side')}
               options={PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS}
               value={experience.legacyFixedSide ?? 'left'}
               onChange={(legacyFixedSide) => onChange({ legacyFixedSide })}
@@ -3643,8 +3666,8 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy ? (
             <ExperienceToggleRow
-              label="Show tasks"
-              description="Off by default for this design — the task list stays hidden unless turned on."
+              label={t('Show tasks')}
+              description={t('Off by default for this design — the task list stays hidden unless turned on.')}
               checked={experience.legacyShowTasks === true}
               onChange={(legacyShowTasks) => onChange({ legacyShowTasks })}
             />
@@ -3652,18 +3675,18 @@ export function ExperienceSettingsPanel({
           {/* ========== LEGACY HEADER PREMIUM OPTIONS ========== */}
           {isLegacy && experience.legacyHeadingEnabled !== false ? (
             <>
-              <div className="mt-6 pt-4 border-t border-neutral-200">
-                <p className="pf-exp-block-label block mb-3">Header Animation</p>
+              <div className="mt-6 pt-4 border-t border-[color:var(--pf-palette-bordure)]">
+                <p className="pf-exp-block-label block mb-3">{t('Header Animation')}</p>
               </div>
               <ExperienceToggleRow
-                label="Entry animation"
-                description="GSAP-powered reveal animations when the header enters the viewport."
+                label={t('Entry animation')}
+                description={t('GSAP-powered reveal animations when the header enters the viewport.')}
                 checked={experience.legacyHeaderAnimationEnabled !== false}
                 onChange={(legacyHeaderAnimationEnabled) => onChange({ legacyHeaderAnimationEnabled })}
               />
               {experience.legacyHeaderAnimationEnabled !== false ? (
                 <ExperienceOptionGrid
-                  label="Animation style"
+                  label={t('Animation style')}
                   options={PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS}
                   value={experience.legacyHeaderAnimationStyle ?? 'bloom'}
                   onChange={(legacyHeaderAnimationStyle) => onChange({ legacyHeaderAnimationStyle })}
@@ -3671,8 +3694,8 @@ export function ExperienceSettingsPanel({
                 />
               ) : null}
               <ExperienceToggleRow
-                label="Scroll parallax"
-                description="Asymmetric parallax effect on scroll — accent word stays longer."
+                label={t('Scroll parallax')}
+                description={t('Asymmetric parallax effect on scroll — accent word stays longer.')}
                 checked={experience.legacyScrollParallaxEnabled !== false}
                 onChange={(legacyScrollParallaxEnabled) => onChange({ legacyScrollParallaxEnabled })}
               />
@@ -3680,32 +3703,32 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy && experience.legacyHeadingEnabled !== false ? (
             <>
-              <div className="mt-6 pt-4 border-t border-neutral-200">
-                <p className="pf-exp-block-label block mb-3">Typography</p>
+              <div className="mt-6 pt-4 border-t border-[color:var(--pf-palette-bordure)]">
+                <p className="pf-exp-block-label block mb-3">{t('Typography')}</p>
               </div>
               <ExperienceOptionGrid
-                label="Prefix weight"
+                label={t('Prefix weight')}
                 options={PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS}
                 value={experience.legacyPrefixWeight ?? 'light'}
                 onChange={(legacyPrefixWeight) => onChange({ legacyPrefixWeight })}
                 columns={3}
               />
               <ExperienceOptionGrid
-                label="Accent style"
+                label={t('Accent style')}
                 options={PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS}
                 value={experience.legacyAccentStyle ?? 'italic-bold'}
                 onChange={(legacyAccentStyle) => onChange({ legacyAccentStyle })}
                 columns={3}
               />
               <ExperienceOptionGrid
-                label="Accent size"
+                label={t('Accent size')}
                 options={PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS}
                 value={experience.legacyAccentSize ?? 'dramatic'}
                 onChange={(legacyAccentSize) => onChange({ legacyAccentSize })}
                 columns={3}
               />
               <ExperienceOptionGrid
-                label="Subtitle style"
+                label={t('Subtitle style')}
                 options={PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS}
                 value={experience.legacySubtitleStyle ?? 'micro'}
                 onChange={(legacySubtitleStyle) => onChange({ legacySubtitleStyle })}
@@ -3715,18 +3738,18 @@ export function ExperienceSettingsPanel({
           ) : null}
           {isLegacy && experience.legacyHeadingEnabled !== false ? (
             <>
-              <div className="mt-6 pt-4 border-t border-neutral-200">
-                <p className="pf-exp-block-label block mb-3">Decorative Elements</p>
+              <div className="mt-6 pt-4 border-t border-[color:var(--pf-palette-bordure)]">
+                <p className="pf-exp-block-label block mb-3">{t('Decorative Elements')}</p>
               </div>
               <ExperienceToggleRow
-                label="Accent underline"
-                description="Show a decorative line under the accent word."
+                label={t('Accent underline')}
+                description={t('Show a decorative line under the accent word.')}
                 checked={experience.legacyAccentUnderline !== false}
                 onChange={(legacyAccentUnderline) => onChange({ legacyAccentUnderline })}
               />
               {experience.legacyAccentUnderline !== false ? (
                 <ExperienceOptionGrid
-                  label="Underline style"
+                  label={t('Underline style')}
                   options={PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS}
                   value={experience.legacyAccentUnderlineStyle ?? 'solid'}
                   onChange={(legacyAccentUnderlineStyle) => onChange({ legacyAccentUnderlineStyle })}
@@ -3738,9 +3761,9 @@ export function ExperienceSettingsPanel({
           {showStackLabel ? (
             <>
               <ExperienceOptionalTextField
-                label="Stack label"
+                label={t('Stack label')}
                 value={experience.toolsLabel}
-                placeholder="Stack"
+                placeholder={t('Stack')}
                 checked={experience.blockLabelVisibility?.tools !== false && experience.showBlockLabels !== false}
                 onCheckedChange={(visible) =>
                   onChange({
@@ -3755,9 +3778,9 @@ export function ExperienceSettingsPanel({
                 onValueChange={(toolsLabel) => onChange({ toolsLabel })}
               />
               <ExperienceOptionalTextField
-                label="Responsibilities label"
+                label={t('Responsibilities label')}
                 value={experience.tasksLabel}
-                placeholder="Responsibilities"
+                placeholder={t('Responsibilities')}
                 checked={experience.blockLabelVisibility?.tasks !== false && experience.showBlockLabels !== false}
                 onCheckedChange={(visible) =>
                   onChange({
@@ -3775,6 +3798,38 @@ export function ExperienceSettingsPanel({
           ) : null}
           </SettingsRowsScope>
 </ExperienceLayoutSettingsBand>
+          <SettingsGroup label={t('Style')}>
+          <SectionColorModeControl
+            label={t('Color mode')}
+            value={experience.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+          <ExperienceOptionGrid
+            label={t('Text size')}
+            options={PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS}
+            value={experience.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
+          />
+          </SettingsGroup>
+          <SettingsGroup label={t('Details')}>
+          <ExperienceTasksDisplayChoiceGrid
+            value={experience.tasksDisplay ?? 'editorial-dash'}
+            onChange={(tasksDisplay) => onChange({ tasksDisplay })}
+          />
+          <ExperienceToolsBadgeStyleChoiceGrid
+            value={experience.toolsBadgeStyle ?? 'mineral-pills'}
+            onChange={(toolsBadgeStyle) => onChange({ toolsBadgeStyle })}
+          />
+          <ExperienceLinkButtonChoiceGrid
+            value={experience.repoLinkButtonStyle ?? 'auto'}
+            onChange={(repoLinkButtonStyle) => onChange({ repoLinkButtonStyle })}
+          />
+          <ExperienceLinkArrowChoiceGrid
+            value={experience.linkArrowStyle ?? 'northeast'}
+            onChange={(linkArrowStyle) => onChange({ linkArrowStyle })}
+          />
+          </SettingsGroup>
         </div>
       )}
     </div>

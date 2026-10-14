@@ -1,9 +1,13 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import {
   DEFAULT_SERVICES_PRICING_STYLE_SETTINGS,
   mergeServicesPricingStyleSettings,
+  PORTFOLIO_SERVICES_FEATURED_COLOR_OPTIONS,
+  type PortfolioServicesFeaturedColor,
   type PortfolioServicesPricingStyleSettings,
 } from '@/components/portfolio/portfolio-services-pricing-style';
 import type { CSSProperties } from 'react';
+import { isServiceIconChoice, type ServiceIconChoice } from '@/components/portfolio/portfolio-services-icon-cards-icons';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
   mergeSectionColorMode,
@@ -56,6 +60,7 @@ import {
   type PortfolioServicesHeaderTitleSize,
   type PortfolioServicesHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-services-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioServicesTitlePreset =
   | 'services-skills'
@@ -89,27 +94,36 @@ export type PortfolioServicesBlockScope = 'skills' | 'services';
  * default below.
  */
 export type PortfolioServicesSectionDesign =
-  | 'showcase-hero'
-  | 'services-pricing-grid'
-  | 'services-pricing-bento'
-  | 'services-pricing-monolith'
+  | 'services-pricing'
   | 'services-pricing-aurora'
   | 'services-pricing-toggle'
   | 'services-index-list'
-  | 'services-media-columns';
+  | 'services-media-columns'
+  | 'services-icon-cards'
+  | 'services-band-index'
+  | 'services-cascade'
+  | 'services-capabilities';
 
-const DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN: PortfolioServicesSectionDesign = 'showcase-hero';
+const DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN: PortfolioServicesSectionDesign = 'services-index-list';
 
 const PORTFOLIO_SERVICES_SECTION_DESIGNS: readonly PortfolioServicesSectionDesign[] = [
-  'showcase-hero',
-  'services-pricing-grid',
-  'services-pricing-bento',
-  'services-pricing-monolith',
+  'services-pricing',
   'services-pricing-aurora',
   'services-pricing-toggle',
   'services-index-list',
   'services-media-columns',
+  'services-icon-cards',
+  'services-band-index',
+  'services-cascade',
+  'services-capabilities',
 ];
+
+/** Stored values from before Grid / Bento / Monolith were merged into one "Pricing Cards" design. */
+export const LEGACY_PRICING_DESIGN_LAYOUTS: Record<string, 'grid' | 'bento' | 'monolith'> = {
+  'services-pricing-grid': 'grid',
+  'services-pricing-bento': 'bento',
+  'services-pricing-monolith': 'monolith',
+};
 
 export const PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS: {
   value: PortfolioServicesSectionDesign;
@@ -117,52 +131,58 @@ export const PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS: {
   description: string;
 }[] = [
   {
-    value: 'showcase-hero',
-    label: 'Showcase Hero',
+    value: 'services-pricing',
+    label: msg('Pricing Cards'),
     description:
-      'Full-bleed cinematic hero — a tilted thumbnail with an overlapping display title, magnetic edge arrows, mouse parallax, and split-text reveals on every transition.',
-  },
-  {
-    value: 'services-pricing-grid',
-    label: 'Pricing Grid',
-    description:
-      'Three-tier editorial pricing cards — a centered popular plan with a radical color inversion, borderless opacity-0.6 feature lists, a magnetic "Get started" CTA to Contact, and a GSAP 3D-tilt/focus-blur hover.',
-  },
-  {
-    value: 'services-pricing-bento',
-    label: 'Pricing Bento',
-    description:
-      'Two-tier bento composition — one card carries a textured, asymmetric graphic header in the palette accent; bullet-less features float at 0.5 opacity with generous line-height.',
-  },
-  {
-    value: 'services-pricing-monolith',
-    label: 'Pricing Monolith',
-    description:
-      'Borderless glassmorphic cards with monumental, ultra-tight display pricing, capital micro-labels, a theatrical 3D-tilt/motion-blur hover, and a magnetic "[ Get Started → ]" link.',
+      msg('One pricing design, three card layouts — Grid (centered popular plan), Monolith (glass slabs, monumental prices) or Bento (graphic header on the featured card). Switch layout in one click.'),
   },
   {
     value: 'services-pricing-aurora',
-    label: 'Pricing Aurora',
+    label: msg('Pricing Aurora'),
     description:
-      'Glassmorphic three-tier grid with a gradient-border focus on the popular plan, massive tight-leading prices, and a magnetic bracket CTA.',
+      msg('Glassmorphic three-tier grid with a gradient-border focus on the popular plan, massive tight-leading prices, and a magnetic bracket CTA.'),
   },
   {
     value: 'services-pricing-toggle',
-    label: 'Pricing Toggle',
+    label: msg('Pricing Toggle'),
     description:
-      'Horizontal three-row layout with a spring-physics Monthly/Yearly switch, an animated price transition, and a full-color-inversion popular row.',
+      msg('Horizontal pricing rows — title and price, task list, button — with a full-color-inversion featured row you can move first, middle or last.'),
   },
   {
     value: 'services-index-list',
-    label: 'Index List',
+    label: msg('Index List'),
     description:
-      'Numbered editorial rows — index, large title, description and task tags on the left, the service media on the right, with a drawn rule and a clip-path media reveal on scroll.',
+      msg('Numbered editorial rows — index, large title, description and task tags on the left, the service media on the right, with a drawn rule and a clip-path media reveal on scroll.'),
   },
   {
     value: 'services-media-columns',
-    label: 'Media Columns',
+    label: msg('Media Columns'),
     description:
-      'A clean grid of service cards — large cover media on top, title and description underneath. Columns, corner radius, gap, media ratio and alignment are all configurable.',
+      msg('A clean grid of service cards — large cover media on top, title and description underneath. Columns, corner radius, gap, media ratio and alignment are all configurable.'),
+  },
+  {
+    value: 'services-icon-cards',
+    label: msg('Icon Cards'),
+    description:
+      msg('Soft white cards with a coloured icon badge, a bold title and a short centered description. Pick an icon per service, the card style, colours and columns.'),
+  },
+  {
+    value: 'services-band-index',
+    label: msg('Band Index'),
+    description:
+      msg('One service per full-width band — index, large title, delivery and price. Hovering inverts the band and floats the media under the cursor; clicking opens the details.'),
+  },
+  {
+    value: 'services-cascade',
+    label: msg('Cascade'),
+    description:
+      msg('Large stacked cards, text on one side and the service media on the other. On scroll each card sticks and recedes as the next one slides over it.'),
+  },
+  {
+    value: 'services-capabilities',
+    label: msg('Capabilities'),
+    description:
+      msg('A quiet Swiss grid, agency style — each service is a column under a hairline: number, title, a short line and its capabilities listed underneath. Text only.'),
   },
 ];
 
@@ -178,6 +198,19 @@ export type PortfolioServicesIndexListTasksStyle =
 
 export type PortfolioServicesIndexListMediaRatio = 'wide' | 'standard' | 'square';
 
+/** What a row does on hover: zoom its media, slide its title, wash its background, or nothing. */
+export type PortfolioServicesIndexListHover = 'zoom' | 'slide' | 'tint' | 'none';
+
+export const PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS: {
+  value: PortfolioServicesIndexListHover;
+  label: string;
+}[] = [
+  { value: 'zoom', label: msg('Zoom') },
+  { value: 'slide', label: msg('Slide') },
+  { value: 'tint', label: msg('Tint') },
+  { value: 'none', label: msg('None') },
+];
+
 /** Options that apply only when `sectionDesign === 'services-index-list'`. */
 export type PortfolioServicesIndexListSettings = {
   layout: PortfolioServicesIndexListLayout;
@@ -185,32 +218,49 @@ export type PortfolioServicesIndexListSettings = {
   mediaRatio: PortfolioServicesIndexListMediaRatio;
   /** Shows the small "01/" index above each title. */
   showIndex: boolean;
+  hoverEffect: PortfolioServicesIndexListHover;
+  /** Vertical space between two service rows. */
+  rowGap: PortfolioServicesIndexListRowGap;
 };
+
+export type PortfolioServicesIndexListRowGap = 'tight' | 'normal' | 'airy' | 'spacious';
+
+export const PORTFOLIO_SERVICES_INDEX_LIST_ROW_GAP_OPTIONS: {
+  value: PortfolioServicesIndexListRowGap;
+  label: string;
+}[] = [
+  { value: 'tight', label: msg('Tight') },
+  { value: 'normal', label: msg('Normal') },
+  { value: 'airy', label: msg('Airy') },
+  { value: 'spacious', label: msg('Spacious') },
+];
 
 export const DEFAULT_SERVICES_INDEX_LIST_SETTINGS: PortfolioServicesIndexListSettings = {
   layout: 'media-right',
   tasksStyle: 'pills',
   mediaRatio: 'wide',
   showIndex: true,
+  hoverEffect: 'zoom',
+  rowGap: 'normal',
 };
 
 export const PORTFOLIO_SERVICES_INDEX_LIST_LAYOUT_OPTIONS: {
   value: PortfolioServicesIndexListLayout;
   label: string;
 }[] = [
-  { value: 'media-right', label: 'Media right' },
-  { value: 'media-left', label: 'Media left' },
-  { value: 'zigzag', label: 'Zigzag' },
+  { value: 'media-right', label: msg('Media right') },
+  { value: 'media-left', label: msg('Media left') },
+  { value: 'zigzag', label: msg('Zigzag') },
 ];
 
 export const PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS: {
   value: PortfolioServicesIndexListTasksStyle;
   label: string;
 }[] = [
-  { value: 'pills', label: 'Pills' },
-  { value: 'ledger', label: 'Ledger' },
-  { value: 'numbered', label: 'Numbered' },
-  { value: 'inline', label: 'Inline' },
+  { value: 'pills', label: msg('Pills') },
+  { value: 'ledger', label: msg('Ledger') },
+  { value: 'numbered', label: msg('Numbered') },
+  { value: 'inline', label: msg('Inline') },
 ];
 
 export const PORTFOLIO_SERVICES_INDEX_LIST_MEDIA_RATIO_OPTIONS: {
@@ -241,6 +291,8 @@ function mergeServicesIndexListSettings(
     tasksStyle: pickOption(record.tasksStyle, PORTFOLIO_SERVICES_INDEX_LIST_TASKS_STYLE_OPTIONS, base.tasksStyle),
     mediaRatio: pickOption(record.mediaRatio, PORTFOLIO_SERVICES_INDEX_LIST_MEDIA_RATIO_OPTIONS, base.mediaRatio),
     showIndex: typeof record.showIndex === 'boolean' ? record.showIndex : base.showIndex,
+    hoverEffect: pickOption(record.hoverEffect, PORTFOLIO_SERVICES_INDEX_LIST_HOVER_OPTIONS, base.hoverEffect),
+    rowGap: pickOption(record.rowGap, PORTFOLIO_SERVICES_INDEX_LIST_ROW_GAP_OPTIONS, base.rowGap),
   };
 }
 
@@ -251,7 +303,7 @@ export type PortfolioServicesMediaColumnsRatio = 'portrait' | 'square' | 'landsc
 export type PortfolioServicesMediaColumnsRadius = 'none' | 'small' | 'medium' | 'large' | 'round';
 export type PortfolioServicesMediaColumnsGap = 'tight' | 'normal' | 'wide' | 'roomy';
 export type PortfolioServicesMediaColumnsTextAlign = 'left' | 'center';
-export type PortfolioServicesMediaColumnsHover = 'zoom' | 'lift' | 'none';
+export type PortfolioServicesMediaColumnsHover = 'zoom' | 'lift' | 'glow' | 'none';
 
 export type PortfolioServicesMediaColumnsSettings = {
   /** Cards per row on desktop (tablet always shows 2). */
@@ -266,6 +318,13 @@ export type PortfolioServicesMediaColumnsSettings = {
   centerLastRow: boolean;
   showDescription: boolean;
   hoverEffect: PortfolioServicesMediaColumnsHover;
+  /** Order / contact button under each card. Off by default for this design; General → Order /
+   *  contact button turns it back on. */
+  showCta: boolean;
+  /** Delivery time under each card. Off by default for this design; General turns it back on. */
+  showDelivery: boolean;
+  /** Task list under each card. Off by default for this design; General turns it back on. */
+  showTasks: boolean;
 };
 
 export const DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS: PortfolioServicesMediaColumnsSettings = {
@@ -278,71 +337,75 @@ export const DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS: PortfolioServicesMediaColu
   centerLastRow: false,
   showDescription: true,
   hoverEffect: 'zoom',
+  showCta: false,
+  showDelivery: false,
+  showTasks: false,
 };
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS: {
   value: PortfolioServicesMediaColumnsCount;
   label: string;
 }[] = [
-  { value: 2, label: '2 per row' },
-  { value: 3, label: '3 per row' },
-  { value: 4, label: '4 per row' },
+  { value: 2, label: msg('2 per row') },
+  { value: 3, label: msg('3 per row') },
+  { value: 4, label: msg('4 per row') },
 ];
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_MOBILE_OPTIONS: {
   value: PortfolioServicesMediaColumnsMobileCount;
   label: string;
 }[] = [
-  { value: 1, label: '1 column' },
-  { value: 2, label: '2 columns' },
+  { value: 1, label: msg('1 column') },
+  { value: 2, label: msg('2 columns') },
 ];
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_RATIO_OPTIONS: {
   value: PortfolioServicesMediaColumnsRatio;
   label: string;
 }[] = [
-  { value: 'portrait', label: 'Portrait' },
-  { value: 'square', label: 'Square' },
-  { value: 'landscape', label: 'Landscape' },
-  { value: 'wide', label: 'Wide' },
+  { value: 'portrait', label: msg('Portrait') },
+  { value: 'square', label: msg('Square') },
+  { value: 'landscape', label: msg('Landscape') },
+  { value: 'wide', label: msg('Wide') },
 ];
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS: {
   value: PortfolioServicesMediaColumnsRadius;
   label: string;
 }[] = [
-  { value: 'none', label: 'Square' },
-  { value: 'small', label: 'Small' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-  { value: 'round', label: 'Round' },
+  { value: 'none', label: msg('Square') },
+  { value: 'small', label: msg('Small') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Large') },
+  { value: 'round', label: msg('Round') },
 ];
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_GAP_OPTIONS: {
   value: PortfolioServicesMediaColumnsGap;
   label: string;
 }[] = [
-  { value: 'tight', label: 'Tight' },
-  { value: 'normal', label: 'Normal' },
-  { value: 'wide', label: 'Wide' },
-  { value: 'roomy', label: 'Roomy' },
+  { value: 'tight', label: msg('Tight') },
+  { value: 'normal', label: msg('Normal') },
+  { value: 'wide', label: msg('Wide') },
+  { value: 'roomy', label: msg('Roomy') },
 ];
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_TEXT_ALIGN_OPTIONS: {
   value: PortfolioServicesMediaColumnsTextAlign;
   label: string;
 }[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
+  { value: 'left', label: msg('Left') },
+  { value: 'center', label: msg('Center') },
 ];
 
 export const PORTFOLIO_SERVICES_MEDIA_COLUMNS_HOVER_OPTIONS: {
   value: PortfolioServicesMediaColumnsHover;
   label: string;
 }[] = [
-  { value: 'zoom', label: 'Zoom' },
-  { value: 'lift', label: 'Lift' },
-  { value: 'none', label: 'None' },
+  { value: 'zoom', label: msg('Zoom') },
+  { value: 'lift', label: msg('Lift') },
+  { value: 'glow', label: msg('Glow') },
+  { value: 'none', label: msg('None') },
 ];
 
 function mergeServicesMediaColumnsSettings(
@@ -367,63 +430,419 @@ function mergeServicesMediaColumnsSettings(
       base.textAlign
     ),
     centerLastRow: typeof record.centerLastRow === 'boolean' ? record.centerLastRow : base.centerLastRow,
+    showCta: typeof record.showCta === 'boolean' ? record.showCta : base.showCta,
+    showDelivery: typeof record.showDelivery === 'boolean' ? record.showDelivery : base.showDelivery,
+    showTasks: typeof record.showTasks === 'boolean' ? record.showTasks : base.showTasks,
     showDescription:
       typeof record.showDescription === 'boolean' ? record.showDescription : base.showDescription,
     hoverEffect: pickOption(record.hoverEffect, PORTFOLIO_SERVICES_MEDIA_COLUMNS_HOVER_OPTIONS, base.hoverEffect),
   };
 }
 
-/** One of 4 fixed palette tokens the creator can pick for the popular card's fill — always a
- *  real color from the active theme palette, never a free hex picker. */
-export type PortfolioServicesPricingGridPopularColorToken = 'principal' | 'secondaire' | 'texteFort' | 'neutre';
+/** Options that apply only when `sectionDesign === 'services-icon-cards'`. */
+export type PortfolioServicesIconCardsStyle = 'elevated' | 'outlined' | 'tinted' | 'plain';
+export type PortfolioServicesIconCardsIconShape = 'circle' | 'rounded' | 'bare';
+export type PortfolioServicesIconCardsIconSize = 'small' | 'medium' | 'large';
+export type PortfolioServicesIconCardsIconColor = 'multicolor' | 'accent' | 'mono';
+export type PortfolioServicesIconCardsHover = 'lift' | 'glow' | 'icon' | 'none';
 
-/** Options that apply only when `sectionDesign === 'services-pricing-grid'`. */
-export type PortfolioServicesPricingGridSettings = {
-  /** 0-based index of the service that renders as the centered, elevated "popular" tier. */
-  popularIndex: number;
-  /** Micro-label on the popular card's badge ("Popular", "Top"…). Empty hides it. */
-  popularBadgeLabel: string;
-  /** Small suffix after the price ("/ month"…). Hidden on Free / price-on-request cards. */
-  periodLabel: string;
-  /** CTA button label — the real data model has no per-item CTA text field. */
-  ctaLabel: string;
-  /** Which palette token fills the popular card's background (dark mode). */
-  popularColorToken: PortfolioServicesPricingGridPopularColorToken;
+export type PortfolioServicesIconCardsSettings = {
+  /** Cards per row on desktop (tablet always shows 2). */
+  columns: PortfolioServicesMediaColumnsCount;
+  /** Cards per row on phones. */
+  mobileColumns: PortfolioServicesMediaColumnsMobileCount;
+  gap: PortfolioServicesMediaColumnsGap;
+  cardRadius: PortfolioServicesMediaColumnsRadius;
+  cardStyle: PortfolioServicesIconCardsStyle;
+  iconShape: PortfolioServicesIconCardsIconShape;
+  iconSize: PortfolioServicesIconCardsIconSize;
+  /** Multicolor gives every card its own colour, Accent uses the section accent, Mono the text colour. */
+  iconColor: PortfolioServicesIconCardsIconColor;
+  textAlign: PortfolioServicesMediaColumnsTextAlign;
+  centerLastRow: boolean;
+  showDescription: boolean;
+  /** Task list under each card. Off by default for this design; General turns it back on. */
+  showTasks: boolean;
+  /** Delivery time. Off by default for this design; General turns it back on. */
+  showDelivery: boolean;
+  /** Order / contact button. Off by default for this design; General turns it back on. */
+  showCta: boolean;
+  /** How the task list is laid out on a card. */
+  tasksStyle: PortfolioServicesIconCardsTasksStyle;
+  /** Card fill from the site palette; 'auto' keeps the card style's own surface. */
+  cardColor: PortfolioServicesFeaturedColor;
+  /** How strongly `cardColor` fills the card, 0–100. */
+  cardColorOpacity: number;
+  hoverEffect: PortfolioServicesIconCardsHover;
+  /** Icon chosen per service id; a missing id (or 'auto') guesses one from the title. */
+  icons: Record<string, ServiceIconChoice>;
 };
 
-export const DEFAULT_SERVICES_PRICING_GRID_SETTINGS: PortfolioServicesPricingGridSettings = {
-  popularIndex: 1,
-  popularBadgeLabel: 'Popular',
-  periodLabel: '/ month',
-  ctaLabel: 'Get started',
-  popularColorToken: 'principal',
+export const DEFAULT_SERVICES_ICON_CARDS_SETTINGS: PortfolioServicesIconCardsSettings = {
+  columns: 2,
+  mobileColumns: 1,
+  gap: 'normal',
+  cardRadius: 'large',
+  cardStyle: 'elevated',
+  iconShape: 'circle',
+  iconSize: 'medium',
+  iconColor: 'multicolor',
+  textAlign: 'center',
+  centerLastRow: true,
+  showDescription: true,
+  showTasks: false,
+  showDelivery: false,
+  showCta: false,
+  tasksStyle: 'checklist',
+  cardColor: 'auto',
+  cardColorOpacity: 100,
+  hoverEffect: 'lift',
+  icons: {},
 };
 
-function mergeServicesPricingGridSettings(
-  base: PortfolioServicesPricingGridSettings,
+export type PortfolioServicesIconCardsTasksStyle = 'checklist' | 'tags' | 'list' | 'inline';
+
+export const PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS: {
+  value: PortfolioServicesIconCardsTasksStyle;
+  label: string;
+}[] = [
+  { value: 'checklist', label: msg('Checklist') },
+  { value: 'tags', label: msg('Tags') },
+  { value: 'list', label: msg('Ruled list') },
+  { value: 'inline', label: msg('Inline') },
+];
+
+export const PORTFOLIO_SERVICES_ICON_CARDS_STYLE_OPTIONS: {
+  value: PortfolioServicesIconCardsStyle;
+  label: string;
+}[] = [
+  { value: 'elevated', label: msg('Shadow') },
+  { value: 'outlined', label: msg('Outline') },
+  { value: 'tinted', label: msg('Tinted') },
+  { value: 'plain', label: msg('Plain') },
+];
+
+export const PORTFOLIO_SERVICES_ICON_CARDS_ICON_SHAPE_OPTIONS: {
+  value: PortfolioServicesIconCardsIconShape;
+  label: string;
+}[] = [
+  { value: 'circle', label: msg('Circle') },
+  { value: 'rounded', label: msg('Rounded') },
+  { value: 'bare', label: msg('No badge') },
+];
+
+export const PORTFOLIO_SERVICES_ICON_CARDS_ICON_SIZE_OPTIONS: {
+  value: PortfolioServicesIconCardsIconSize;
+  label: string;
+}[] = [
+  { value: 'small', label: msg('Small') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Large') },
+];
+
+export const PORTFOLIO_SERVICES_ICON_CARDS_ICON_COLOR_OPTIONS: {
+  value: PortfolioServicesIconCardsIconColor;
+  label: string;
+}[] = [
+  { value: 'multicolor', label: msg('Multicolor') },
+  { value: 'accent', label: msg('Accent') },
+  { value: 'mono', label: msg('Mono') },
+];
+
+export const PORTFOLIO_SERVICES_ICON_CARDS_HOVER_OPTIONS: {
+  value: PortfolioServicesIconCardsHover;
+  label: string;
+}[] = [
+  { value: 'lift', label: msg('Lift') },
+  { value: 'glow', label: msg('Glow') },
+  { value: 'icon', label: msg('Icon pop') },
+  { value: 'none', label: msg('None') },
+];
+
+function mergeServicesIconCardsSettings(
+  base: PortfolioServicesIconCardsSettings,
   patch: unknown
-): PortfolioServicesPricingGridSettings {
+): PortfolioServicesIconCardsSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  const icons: Record<string, ServiceIconChoice> = { ...base.icons };
+  if (record.icons && typeof record.icons === 'object') {
+    for (const [id, choice] of Object.entries(record.icons as Record<string, unknown>)) {
+      if (isServiceIconChoice(choice)) icons[id] = choice;
+    }
+  }
+  const bool = (key: string, fallback: boolean) =>
+    typeof record[key] === 'boolean' ? (record[key] as boolean) : fallback;
+  return {
+    columns: pickOption(record.columns, PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS, base.columns),
+    mobileColumns: pickOption(record.mobileColumns, PORTFOLIO_SERVICES_MEDIA_COLUMNS_MOBILE_OPTIONS, base.mobileColumns),
+    gap: pickOption(record.gap, PORTFOLIO_SERVICES_MEDIA_COLUMNS_GAP_OPTIONS, base.gap),
+    cardRadius: pickOption(record.cardRadius, PORTFOLIO_SERVICES_MEDIA_COLUMNS_RADIUS_OPTIONS, base.cardRadius),
+    cardStyle: pickOption(record.cardStyle, PORTFOLIO_SERVICES_ICON_CARDS_STYLE_OPTIONS, base.cardStyle),
+    iconShape: pickOption(record.iconShape, PORTFOLIO_SERVICES_ICON_CARDS_ICON_SHAPE_OPTIONS, base.iconShape),
+    iconSize: pickOption(record.iconSize, PORTFOLIO_SERVICES_ICON_CARDS_ICON_SIZE_OPTIONS, base.iconSize),
+    iconColor: pickOption(record.iconColor, PORTFOLIO_SERVICES_ICON_CARDS_ICON_COLOR_OPTIONS, base.iconColor),
+    textAlign: pickOption(record.textAlign, PORTFOLIO_SERVICES_MEDIA_COLUMNS_TEXT_ALIGN_OPTIONS, base.textAlign),
+    centerLastRow: bool('centerLastRow', base.centerLastRow),
+    showDescription: bool('showDescription', base.showDescription),
+    showTasks: bool('showTasks', base.showTasks),
+    showDelivery: typeof record.showDelivery === 'boolean' ? record.showDelivery : base.showDelivery,
+    showCta: typeof record.showCta === 'boolean' ? record.showCta : base.showCta,
+    tasksStyle: pickOption(record.tasksStyle, PORTFOLIO_SERVICES_ICON_CARDS_TASKS_STYLE_OPTIONS, base.tasksStyle),
+    cardColor: pickOption(record.cardColor, PORTFOLIO_SERVICES_FEATURED_COLOR_OPTIONS, base.cardColor),
+    cardColorOpacity:
+      typeof record.cardColorOpacity === 'number' && Number.isFinite(record.cardColorOpacity)
+        ? Math.min(100, Math.max(0, Math.round(record.cardColorOpacity)))
+        : base.cardColorOpacity,
+    hoverEffect: pickOption(record.hoverEffect, PORTFOLIO_SERVICES_ICON_CARDS_HOVER_OPTIONS, base.hoverEffect),
+    icons,
+  };
+}
+
+function pickBool(record: Record<string, unknown>, key: string, fallback: boolean): boolean {
+  return typeof record[key] === 'boolean' ? (record[key] as boolean) : fallback;
+}
+
+/** Options that apply only when `sectionDesign === 'services-band-index'`. */
+export type PortfolioServicesBandIndexTitleSize = 'medium' | 'large' | 'huge';
+/** Follow = a media card trails the cursor; Inline = the media slides open inside the band. */
+export type PortfolioServicesBandIndexPreview = 'follow' | 'inline' | 'none';
+export type PortfolioServicesBandIndexHoverFill = 'invert' | 'accent' | 'none';
+/** How the tasks read inside an opened band. */
+export type PortfolioServicesBandIndexTasksStyle = 'rows' | 'checklist' | 'pills' | 'columns' | 'inline';
+
+export type PortfolioServicesBandIndexSettings = {
+  titleSize: PortfolioServicesBandIndexTitleSize;
+  preview: PortfolioServicesBandIndexPreview;
+  hoverFill: PortfolioServicesBandIndexHoverFill;
+  showIndex: boolean;
+  /** Delivery time + price on the right end of each band. */
+  showMeta: boolean;
+  /** Clicking a band opens its description and tasks underneath. */
+  expandable: boolean;
+  uppercase: boolean;
+  tasksStyle: PortfolioServicesBandIndexTasksStyle;
+};
+
+export const DEFAULT_SERVICES_BAND_INDEX_SETTINGS: PortfolioServicesBandIndexSettings = {
+  titleSize: 'large',
+  preview: 'follow',
+  hoverFill: 'invert',
+  showIndex: true,
+  showMeta: true,
+  expandable: true,
+  uppercase: false,
+  tasksStyle: 'rows',
+};
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS: {
+  value: PortfolioServicesBandIndexTasksStyle;
+  label: string;
+}[] = [
+  { value: 'rows', label: msg('Numbered rows') },
+  { value: 'checklist', label: msg('Checklist') },
+  { value: 'pills', label: msg('Pills') },
+  { value: 'columns', label: msg('Two columns') },
+  { value: 'inline', label: msg('Inline') },
+];
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_TITLE_SIZE_OPTIONS: {
+  value: PortfolioServicesBandIndexTitleSize;
+  label: string;
+}[] = [
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Large') },
+  { value: 'huge', label: msg('Huge') },
+];
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_PREVIEW_OPTIONS: {
+  value: PortfolioServicesBandIndexPreview;
+  label: string;
+}[] = [
+  { value: 'follow', label: msg('Follow cursor') },
+  { value: 'inline', label: msg('Inline') },
+  { value: 'none', label: msg('None') },
+];
+
+export const PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS: {
+  value: PortfolioServicesBandIndexHoverFill;
+  label: string;
+}[] = [
+  { value: 'invert', label: msg('Invert') },
+  { value: 'accent', label: msg('Accent') },
+  { value: 'none', label: msg('None') },
+];
+
+function mergeServicesBandIndexSettings(
+  base: PortfolioServicesBandIndexSettings,
+  patch: unknown
+): PortfolioServicesBandIndexSettings {
   if (!patch || typeof patch !== 'object') return base;
   const record = patch as Record<string, unknown>;
   return {
-    popularIndex:
-      typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
-        ? Math.max(0, Math.round(record.popularIndex))
-        : base.popularIndex,
-    popularBadgeLabel:
-      typeof record.popularBadgeLabel === 'string' ? record.popularBadgeLabel : base.popularBadgeLabel,
-    periodLabel: typeof record.periodLabel === 'string' ? record.periodLabel : base.periodLabel,
-    ctaLabel:
-      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
-        ? record.ctaLabel.trim()
-        : base.ctaLabel,
-    popularColorToken:
-      record.popularColorToken === 'principal' ||
-      record.popularColorToken === 'secondaire' ||
-      record.popularColorToken === 'texteFort' ||
-      record.popularColorToken === 'neutre'
-        ? record.popularColorToken
-        : base.popularColorToken,
+    titleSize: pickOption(record.titleSize, PORTFOLIO_SERVICES_BAND_INDEX_TITLE_SIZE_OPTIONS, base.titleSize),
+    preview: pickOption(record.preview, PORTFOLIO_SERVICES_BAND_INDEX_PREVIEW_OPTIONS, base.preview),
+    hoverFill: pickOption(record.hoverFill, PORTFOLIO_SERVICES_BAND_INDEX_HOVER_FILL_OPTIONS, base.hoverFill),
+    showIndex: pickBool(record, 'showIndex', base.showIndex),
+    showMeta: pickBool(record, 'showMeta', base.showMeta),
+    expandable: pickBool(record, 'expandable', base.expandable),
+    uppercase: pickBool(record, 'uppercase', base.uppercase),
+    tasksStyle: pickOption(record.tasksStyle, PORTFOLIO_SERVICES_BAND_INDEX_TASKS_STYLE_OPTIONS, base.tasksStyle),
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'services-cascade'`. */
+export type PortfolioServicesCascadeStackEffect = 'stack' | 'static';
+export type PortfolioServicesCascadeCardWidth = 'small' | 'medium' | 'large';
+export type PortfolioServicesCascadeCardHeight = 'compact' | 'standard' | 'tall';
+/** `zigzag` alternates: media right on the 1st card, left on the 2nd, and so on. */
+export type PortfolioServicesCascadeMediaSide = 'right' | 'left' | 'zigzag';
+
+export type PortfolioServicesCascadeSettings = {
+  /** Stack = sticky cards that recede as the next one covers them (desktop); Static = plain list. */
+  stackEffect: PortfolioServicesCascadeStackEffect;
+  cardWidth: PortfolioServicesCascadeCardWidth;
+  cardHeight: PortfolioServicesCascadeCardHeight;
+  mediaSide: PortfolioServicesCascadeMediaSide;
+  /** The "01 / 05" counter above each title. */
+  showNumbering: boolean;
+  /** Every card takes the tallest card's height, so none peeks out from under the next. */
+  equalHeight: boolean;
+};
+
+export const DEFAULT_SERVICES_CASCADE_SETTINGS: PortfolioServicesCascadeSettings = {
+  stackEffect: 'stack',
+  cardWidth: 'large',
+  cardHeight: 'standard',
+  mediaSide: 'right',
+  showNumbering: true,
+  equalHeight: true,
+};
+
+export const PORTFOLIO_SERVICES_CASCADE_STACK_OPTIONS: {
+  value: PortfolioServicesCascadeStackEffect;
+  label: string;
+}[] = [
+  { value: 'stack', label: msg('Stack') },
+  { value: 'static', label: msg('Static') },
+];
+
+export const PORTFOLIO_SERVICES_CASCADE_WIDTH_OPTIONS: {
+  value: PortfolioServicesCascadeCardWidth;
+  label: string;
+}[] = [
+  { value: 'small', label: msg('Narrow') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Wide') },
+];
+
+export const PORTFOLIO_SERVICES_CASCADE_HEIGHT_OPTIONS: {
+  value: PortfolioServicesCascadeCardHeight;
+  label: string;
+}[] = [
+  { value: 'compact', label: msg('Compact') },
+  { value: 'standard', label: msg('Standard') },
+  { value: 'tall', label: msg('Tall') },
+];
+
+export const PORTFOLIO_SERVICES_CASCADE_MEDIA_SIDE_OPTIONS: {
+  value: PortfolioServicesCascadeMediaSide;
+  label: string;
+}[] = [
+  { value: 'left', label: msg('Media left') },
+  { value: 'right', label: msg('Media right') },
+  { value: 'zigzag', label: msg('Zig-zag') },
+];
+
+function mergeServicesCascadeSettings(
+  base: PortfolioServicesCascadeSettings,
+  patch: unknown
+): PortfolioServicesCascadeSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    stackEffect: pickOption(record.stackEffect, PORTFOLIO_SERVICES_CASCADE_STACK_OPTIONS, base.stackEffect),
+    cardWidth: pickOption(record.cardWidth, PORTFOLIO_SERVICES_CASCADE_WIDTH_OPTIONS, base.cardWidth),
+    cardHeight: pickOption(record.cardHeight, PORTFOLIO_SERVICES_CASCADE_HEIGHT_OPTIONS, base.cardHeight),
+    mediaSide: pickOption(record.mediaSide, PORTFOLIO_SERVICES_CASCADE_MEDIA_SIDE_OPTIONS, base.mediaSide),
+    showNumbering: pickBool(record, 'showNumbering', base.showNumbering),
+    equalHeight: pickBool(record, 'equalHeight', base.equalHeight),
+  };
+}
+
+/** Options that apply only when `sectionDesign === 'services-capabilities'`. */
+export type PortfolioServicesCapabilitiesNumberStyle = 'small' | 'large' | 'none';
+/** None = bare column under its rule; Outline = a hairline box; Filled = a soft tinted card. */
+export type PortfolioServicesCapabilitiesItemFrame = 'none' | 'outline' | 'filled';
+
+export type PortfolioServicesCapabilitiesSettings = {
+  /** Columns on desktop (tablet always shows 2, phones 1). */
+  columns: PortfolioServicesMediaColumnsCount;
+  /** Small "(01)" above the title, a large outlined numeral, or none. */
+  numberStyle: PortfolioServicesCapabilitiesNumberStyle;
+  /** Opt-in switches written by General → Card elements (see SERVICES_OPT_IN_DEFAULTS): this
+   *  design shows title, description and tasks until General turns the rest on. */
+  showTasks: boolean;
+  showDelivery: boolean;
+  showCta: boolean;
+  showPrice: boolean;
+  /** Hairline rule above each column (bare columns only). */
+  showRule: boolean;
+  /** Centers an incomplete last row instead of leaving it flush left. */
+  centerLastRow: boolean;
+  itemFrame: PortfolioServicesCapabilitiesItemFrame;
+  /** Highlights the featured service (shared Featured settings). Off by default on this quiet grid. */
+  showFeatured: boolean;
+};
+
+export const DEFAULT_SERVICES_CAPABILITIES_SETTINGS: PortfolioServicesCapabilitiesSettings = {
+  columns: 3,
+  numberStyle: 'small',
+  showTasks: true,
+  showDelivery: false,
+  showCta: false,
+  showPrice: false,
+  showRule: true,
+  centerLastRow: false,
+  itemFrame: 'none',
+  showFeatured: false,
+};
+
+export const PORTFOLIO_SERVICES_CAPABILITIES_FRAME_OPTIONS: {
+  value: PortfolioServicesCapabilitiesItemFrame;
+  label: string;
+}[] = [
+  { value: 'none', label: msg('None') },
+  { value: 'outline', label: msg('Outline') },
+  { value: 'filled', label: msg('Filled') },
+];
+
+export const PORTFOLIO_SERVICES_CAPABILITIES_NUMBER_OPTIONS: {
+  value: PortfolioServicesCapabilitiesNumberStyle;
+  label: string;
+}[] = [
+  { value: 'small', label: msg('Small') },
+  { value: 'large', label: msg('Large') },
+  { value: 'none', label: msg('None') },
+];
+
+function mergeServicesCapabilitiesSettings(
+  base: PortfolioServicesCapabilitiesSettings,
+  patch: unknown
+): PortfolioServicesCapabilitiesSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    columns: pickOption(record.columns, PORTFOLIO_SERVICES_MEDIA_COLUMNS_COUNT_OPTIONS, base.columns),
+    numberStyle: pickOption(record.numberStyle, PORTFOLIO_SERVICES_CAPABILITIES_NUMBER_OPTIONS, base.numberStyle),
+    showTasks: pickBool(record, 'showTasks', base.showTasks),
+    showDelivery: pickBool(record, 'showDelivery', base.showDelivery),
+    showCta: pickBool(record, 'showCta', base.showCta),
+    showPrice: pickBool(record, 'showPrice', base.showPrice),
+    showRule: pickBool(record, 'showRule', base.showRule),
+    centerLastRow: pickBool(record, 'centerLastRow', base.centerLastRow),
+    itemFrame: pickOption(record.itemFrame, PORTFOLIO_SERVICES_CAPABILITIES_FRAME_OPTIONS, base.itemFrame),
+    showFeatured: pickBool(record, 'showFeatured', base.showFeatured),
   };
 }
 
@@ -433,125 +852,121 @@ export const PORTFOLIO_SERVICES_PRICING_BENTO_MOTIF_OPTIONS: {
   value: PortfolioServicesPricingBentoMotif;
   label: string;
 }[] = [
-  { value: 'shapes', label: 'Shapes' },
-  { value: 'lines', label: 'Lines' },
-  { value: 'dots', label: 'Dots' },
-  { value: 'grid', label: 'Grid' },
-  { value: 'waves', label: 'Waves' },
-  { value: 'none', label: 'None' },
+  { value: 'shapes', label: msg('Shapes') },
+  { value: 'lines', label: msg('Lines') },
+  { value: 'dots', label: msg('Dots') },
+  { value: 'grid', label: msg('Grid') },
+  { value: 'waves', label: msg('Waves') },
+  { value: 'none', label: msg('None') },
 ];
 
-/** Options that apply only when `sectionDesign === 'services-pricing-bento'`. */
-export type PortfolioServicesPricingBentoSettings = {
-  /** Index (within the rendered service list) of the card that gets the textured,
-   *  asymmetric graphic header. Clamped to the available items at render time. */
-  graphicHeaderIndex: number;
-  /** Small suffix shown after a non-free price (e.g. "/ project", "/ mo"). Empty hides it. */
-  periodLabel: string;
-  /** Label on every card's CTA button (routes to the Contact section). */
-  ctaLabel: string;
-  /** Pattern drawn in the featured card's graphic header; `none` removes the header. */
+/** The three card layouts of the "Pricing Cards" design. */
+export type PortfolioServicesPricingCardsLayout = 'grid' | 'monolith' | 'bento';
+export type PortfolioServicesPricingCardsColumns = 1 | 2 | 3 | 4;
+
+export const PORTFOLIO_SERVICES_PRICING_CARDS_LAYOUT_OPTIONS: {
+  value: PortfolioServicesPricingCardsLayout;
+  label: string;
+}[] = [
+  { value: 'grid', label: msg('Grid') },
+  { value: 'monolith', label: msg('Monolith') },
+  { value: 'bento', label: msg('Bento') },
+];
+
+/** Options that apply only when `sectionDesign === 'services-pricing'`. The featured card, price
+ *  period, hover effect and card style live in the shared `pricingStyle`. */
+export type PortfolioServicesPricingCardsSettings = {
+  layout: PortfolioServicesPricingCardsLayout;
+  /** Cards per row on desktop (Grid and Monolith; Bento is always a two-column composition). */
+  cardsPerRow: PortfolioServicesPricingCardsColumns;
+  /** Pattern in the featured card's header (Bento); `none` removes the header. */
   graphicMotif: PortfolioServicesPricingBentoMotif;
+  /** Heading above the checklist of the wide featured Bento card; empty hides it. */
+  includedLabel: string;
+  /** Grid layout: centers an incomplete last row instead of leaving it flush left. */
+  centerLastRow: boolean;
 };
 
-export const DEFAULT_SERVICES_PRICING_BENTO_SETTINGS: PortfolioServicesPricingBentoSettings = {
-  graphicHeaderIndex: 0,
-  periodLabel: '/ project',
-  ctaLabel: 'Get Started',
-  graphicMotif: 'shapes',
-};
-
-export function mergeServicesPricingBentoSettings(
-  base: PortfolioServicesPricingBentoSettings,
-  patch: unknown
-): PortfolioServicesPricingBentoSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  return {
-    graphicHeaderIndex:
-      typeof record.graphicHeaderIndex === 'number' && Number.isFinite(record.graphicHeaderIndex)
-        ? Math.max(0, Math.round(record.graphicHeaderIndex))
-        : base.graphicHeaderIndex,
-    periodLabel: typeof record.periodLabel === 'string' ? record.periodLabel : base.periodLabel,
-    ctaLabel:
-      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
-        ? record.ctaLabel.trim()
-        : base.ctaLabel,
-    graphicMotif:
-      record.graphicMotif === 'shapes' ||
-      record.graphicMotif === 'lines' ||
-      record.graphicMotif === 'dots' ||
-      record.graphicMotif === 'grid' ||
-      record.graphicMotif === 'waves' ||
-      record.graphicMotif === 'none'
-        ? record.graphicMotif
-        : base.graphicMotif,
-  };
-}
-
-/** Options that apply only when `sectionDesign === 'services-pricing-monolith'`. */
-export type PortfolioServicesPricingMonolithColumns = 1 | 2 | 3 | 4;
-
-export type PortfolioServicesPricingMonolithSettings = {
-  /** 0-based item index rendered as the "Popular" focal tier. */
-  popularIndex: number;
-  /** Suffix after the price on paid tiers, e.g. "/ month", "/ life". */
-  periodLabel: string;
-  /** Whether the period suffix renders at all. */
-  showPeriod: boolean;
-  /** The magnetic CTA link label ("[ Get Started → ]"). */
-  ctaLabel: string;
-  /** Cards per row on tablet/desktop. Always capped to the number of services and
-   *  centered (via flexbox, not CSS grid) when the last row doesn't fill every column —
-   *  mobile always stays a single stacked column regardless of this value. */
-  cardsPerRow: PortfolioServicesPricingMonolithColumns;
-};
-
-export const DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS: PortfolioServicesPricingMonolithSettings = {
-  popularIndex: 1,
-  periodLabel: '/ month',
-  showPeriod: true,
-  ctaLabel: 'Get Started',
+export const DEFAULT_SERVICES_PRICING_CARDS_SETTINGS: PortfolioServicesPricingCardsSettings = {
+  layout: 'grid',
   cardsPerRow: 3,
+  graphicMotif: 'shapes',
+  includedLabel: "What's included",
+  centerLastRow: false,
 };
 
-function mergeServicesPricingMonolithSettings(
-  base: PortfolioServicesPricingMonolithSettings,
-  patch: unknown
-): PortfolioServicesPricingMonolithSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  return {
-    popularIndex:
-      typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
-        ? Math.trunc(record.popularIndex)
-        : base.popularIndex,
-    periodLabel:
-      typeof record.periodLabel === 'string' && record.periodLabel.trim()
-        ? record.periodLabel
-        : base.periodLabel,
-    showPeriod: typeof record.showPeriod === 'boolean' ? record.showPeriod : base.showPeriod,
-    ctaLabel:
-      typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
-        ? record.ctaLabel.trim()
-        : base.ctaLabel,
-    cardsPerRow:
-      record.cardsPerRow === 1 || record.cardsPerRow === 2 || record.cardsPerRow === 3 || record.cardsPerRow === 4
-        ? record.cardsPerRow
-        : base.cardsPerRow,
-  };
-}
-
-export const PORTFOLIO_SERVICES_PRICING_MONOLITH_COLUMNS_OPTIONS: {
-  value: PortfolioServicesPricingMonolithColumns;
+export const PORTFOLIO_SERVICES_PRICING_CARDS_COLUMNS_OPTIONS: {
+  value: PortfolioServicesPricingCardsColumns;
   label: string;
   description: string;
 }[] = [
-  { value: 1, label: '1 per row', description: 'Full-width cards, stacked — a large editorial spotlight per plan.' },
-  { value: 2, label: '2 per row', description: 'Wide side-by-side pairing.' },
-  { value: 3, label: '3 per row', description: 'Classic three-tier grid (default).' },
-  { value: 4, label: '4 per row', description: 'Compact grid for larger service catalogs.' },
+  { value: 1, label: msg('1 per row'), description: msg('Full-width cards, stacked — a large editorial spotlight per plan.') },
+  { value: 2, label: msg('2 per row'), description: msg('Wide side-by-side pairing.') },
+  { value: 3, label: msg('3 per row'), description: msg('Classic three-tier grid (default).') },
+  { value: 4, label: msg('4 per row'), description: msg('Compact grid for larger service catalogs.') },
 ];
+
+export function mergeServicesPricingCardsSettings(
+  base: PortfolioServicesPricingCardsSettings,
+  patch: unknown
+): PortfolioServicesPricingCardsSettings {
+  if (!patch || typeof patch !== 'object') return base;
+  const record = patch as Record<string, unknown>;
+  return {
+    layout: pickOption(record.layout, PORTFOLIO_SERVICES_PRICING_CARDS_LAYOUT_OPTIONS, base.layout),
+    cardsPerRow: pickOption(record.cardsPerRow, PORTFOLIO_SERVICES_PRICING_CARDS_COLUMNS_OPTIONS, base.cardsPerRow),
+    graphicMotif: pickOption(record.graphicMotif, PORTFOLIO_SERVICES_PRICING_BENTO_MOTIF_OPTIONS, base.graphicMotif),
+    includedLabel:
+      typeof record.includedLabel === 'string' ? record.includedLabel.trim().slice(0, 40) : base.includedLabel,
+    centerLastRow: pickBool(record, 'centerLastRow', base.centerLastRow),
+  };
+}
+
+function asRecordOrEmpty(value: unknown): Record<string, unknown> {
+  return value && typeof value === 'object' ? (value as Record<string, unknown>) : {};
+}
+
+/** What the old Grid / Bento / Monolith settings said, re-expressed as Pricing Cards settings. Only
+ *  read while the stored `sectionDesign` is still one of the legacy ids. */
+export function legacyPricingCardsSettings(record: Record<string, unknown>): Record<string, unknown> | undefined {
+  const layout = LEGACY_PRICING_DESIGN_LAYOUTS[String(record.sectionDesign)];
+  if (!layout) return undefined;
+  const bento = asRecordOrEmpty(record.pricingBento);
+  const monolith = asRecordOrEmpty(record.servicesPricingMonolith);
+  return {
+    layout,
+    cardsPerRow: monolith.cardsPerRow,
+    graphicMotif: bento.graphicMotif,
+  };
+}
+
+/** The old per-design "featured" fields (index / badge / color) as the shared `pricingStyle` fields. */
+export function legacyFeaturedStyle(record: Record<string, unknown>): Record<string, unknown> {
+  const design = String(record.sectionDesign);
+  const source: Record<string, unknown> =
+    design === 'services-pricing-grid'
+      ? asRecordOrEmpty(record.pricingGrid)
+      : design === 'services-pricing-bento'
+        ? { popularIndex: asRecordOrEmpty(record.pricingBento).graphicHeaderIndex }
+        : design === 'services-pricing-monolith'
+          ? asRecordOrEmpty(record.servicesPricingMonolith)
+          : design === 'services-pricing-aurora'
+            ? asRecordOrEmpty(record.servicesPricingAurora)
+            : design === 'services-pricing-toggle'
+              ? asRecordOrEmpty(record.pricingToggle)
+              : {};
+  const out: Record<string, unknown> = {};
+  if (typeof source.popularIndex === 'number') {
+    if (source.popularIndex < 0) out.featuredSource = 'none';
+    else out.featuredIndex = source.popularIndex;
+  }
+  if (typeof source.popularBadgeLabel === 'string') {
+    out.featuredLabel = source.popularBadgeLabel;
+    out.featuredShowLabel = source.popularBadgeLabel.trim().length > 0;
+  }
+  if (typeof source.popularColorToken === 'string') out.featuredColor = source.popularColorToken;
+  return out;
+}
 
 export type PortfolioServicesPricingAuroraColumns = 1 | 2 | 3 | 4;
 /** One of 4 fixed palette tokens the creator can pick for the featured card's accent —
@@ -571,7 +986,25 @@ export type PortfolioServicesPricingAuroraSettings = {
   cardsPerRow: PortfolioServicesPricingAuroraColumns;
   /** Which palette token drives the featured card's gradient-border/glass-tint accent. */
   popularColorToken: PortfolioServicesPricingAuroraPopularColorToken;
+  /** Where the featured card sits in the row: its own place in the list, first, centre or last. */
+  featuredPosition: PortfolioServicesPricingAuroraFeaturedPosition;
+  /** Text shown instead of a figure when a service's price is "on request". */
+  customPriceLabel: string;
+  /** Text shown instead of a figure when a service is free. */
+  freePriceLabel: string;
 };
+
+export type PortfolioServicesPricingAuroraFeaturedPosition = 'keep' | 'first' | 'center' | 'last';
+
+export const PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS: {
+  value: PortfolioServicesPricingAuroraFeaturedPosition;
+  label: string;
+}[] = [
+  { value: 'keep', label: msg('Its place') },
+  { value: 'first', label: msg('First') },
+  { value: 'center', label: msg('Center') },
+  { value: 'last', label: msg('Last') },
+];
 
 export const DEFAULT_SERVICES_PRICING_AURORA_SETTINGS: PortfolioServicesPricingAuroraSettings = {
   popularIndex: 1,
@@ -579,6 +1012,9 @@ export const DEFAULT_SERVICES_PRICING_AURORA_SETTINGS: PortfolioServicesPricingA
   ctaLabel: 'Try for free',
   cardsPerRow: 3,
   popularColorToken: 'principal',
+  featuredPosition: 'keep',
+  customPriceLabel: 'Custom',
+  freePriceLabel: 'Free',
 };
 
 function mergeServicesPricingAuroraSettings(
@@ -608,6 +1044,19 @@ function mergeServicesPricingAuroraSettings(
       record.popularColorToken === 'neutre'
         ? record.popularColorToken
         : base.popularColorToken,
+    featuredPosition:
+      record.featuredPosition === 'keep' ||
+      record.featuredPosition === 'first' ||
+      record.featuredPosition === 'center' ||
+      record.featuredPosition === 'last'
+        ? record.featuredPosition
+        : base.featuredPosition,
+    customPriceLabel:
+      typeof record.customPriceLabel === 'string'
+        ? record.customPriceLabel.trim().slice(0, 24)
+        : base.customPriceLabel,
+    freePriceLabel:
+      typeof record.freePriceLabel === 'string' ? record.freePriceLabel.trim().slice(0, 24) : base.freePriceLabel,
   };
 }
 
@@ -616,10 +1065,10 @@ export const PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 1, label: '1 per row', description: 'Full-width cards, stacked — a large editorial spotlight per plan.' },
-  { value: 2, label: '2 per row', description: 'Wide side-by-side pairing.' },
-  { value: 3, label: '3 per row', description: 'Classic three-tier grid (default).' },
-  { value: 4, label: '4 per row', description: 'Compact grid for larger service catalogs.' },
+  { value: 1, label: msg('1 per row'), description: msg('Full-width cards, stacked — a large editorial spotlight per plan.') },
+  { value: 2, label: msg('2 per row'), description: msg('Wide side-by-side pairing.') },
+  { value: 3, label: msg('3 per row'), description: msg('Classic three-tier grid (default).') },
+  { value: 4, label: msg('4 per row'), description: msg('Compact grid for larger service catalogs.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'services-pricing-toggle'`. */
@@ -641,6 +1090,12 @@ export type PortfolioServicesPricingToggleSettings = {
   ctaLabel: string;
   /** Toggle position on first paint. */
   defaultBilling: PortfolioServicesPricingToggleBillingCycle;
+  /** Where the featured row sits in the list: its own place, first, middle or last. */
+  featuredPosition: PortfolioServicesPricingAuroraFeaturedPosition;
+  /** Small heading above each row's task list. */
+  showIncludedLabel: boolean;
+  /** Text of that heading; empty falls back to "What's included". */
+  includedLabel: string;
 };
 
 export const DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS: PortfolioServicesPricingToggleSettings = {
@@ -651,6 +1106,9 @@ export const DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS: PortfolioServicesPricingT
   yearlyDiscountPercent: 15,
   ctaLabel: 'Get Started',
   defaultBilling: 'monthly',
+  featuredPosition: 'keep',
+  showIncludedLabel: false,
+  includedLabel: "What's included",
 };
 
 function mergeServicesPricingToggleSettings(
@@ -688,6 +1146,17 @@ function mergeServicesPricingToggleSettings(
       record.defaultBilling === 'monthly' || record.defaultBilling === 'yearly'
         ? record.defaultBilling
         : base.defaultBilling,
+    featuredPosition:
+      record.featuredPosition === 'keep' ||
+      record.featuredPosition === 'first' ||
+      record.featuredPosition === 'center' ||
+      record.featuredPosition === 'last'
+        ? record.featuredPosition
+        : base.featuredPosition,
+    showIncludedLabel:
+      typeof record.showIncludedLabel === 'boolean' ? record.showIncludedLabel : base.showIncludedLabel,
+    includedLabel:
+      typeof record.includedLabel === 'string' ? record.includedLabel.trim().slice(0, 40) : base.includedLabel,
   };
 }
 
@@ -1060,7 +1529,7 @@ const DEFAULT_SERVICES_ELEMENT_CHROMES: PortfolioServicesElementChromes = {
 export type PortfolioServicesCardTextContrast = 'auto' | 'pair-ab';
 
 /**
- * Global type-size control for every Services design (pricing cards + showcase hero) — same
+ * Global type-size control for every Services design (pricing cards and the rest) — same
  * standardized-shared-value architecture as Experience/Footer/FAQ's "Font size" control: ONE
  * unified scale every design reads via its own `--pf-services-font-scale` CSS custom property
  * (set on the section's shared `<section id="services">` root), multiplying standardized
@@ -1082,14 +1551,14 @@ export const PORTFOLIO_SERVICES_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across every Services design.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across every Services design.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -1128,6 +1597,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   headerDesign: PortfolioServicesHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioServicesHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioServicesHeaderMarginBottom;
@@ -1249,12 +1720,16 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   indexList: PortfolioServicesIndexListSettings;
   /** Media Columns design–only options. */
   mediaColumns: PortfolioServicesMediaColumnsSettings;
-  /** Pricing Grid design–only options. */
-  pricingGrid: PortfolioServicesPricingGridSettings;
-  /** Pricing Bento design–only options. */
-  pricingBento: PortfolioServicesPricingBentoSettings;
-  /** Pricing Monolith design–only options. */
-  servicesPricingMonolith: PortfolioServicesPricingMonolithSettings;
+  /** Icon Cards design–only options. */
+  iconCards: PortfolioServicesIconCardsSettings;
+  /** Band Index design–only options. */
+  bandIndex: PortfolioServicesBandIndexSettings;
+  /** Cascade design–only options. */
+  servicesCascade: PortfolioServicesCascadeSettings;
+  /** Capabilities design–only options. */
+  capabilities: PortfolioServicesCapabilitiesSettings;
+  /** Pricing Cards (Grid / Monolith / Bento layouts) design–only options. */
+  pricingCards: PortfolioServicesPricingCardsSettings;
   /** Pricing Aurora design–only options. */
   servicesPricingAurora: PortfolioServicesPricingAuroraSettings;
   /** Pricing Toggle design–only options. */
@@ -1435,6 +1910,8 @@ export type PortfolioServicesPresentationSettings = PortfolioSectionBackgroundSe
   showServiceDescription: boolean;
   showServicePrice: boolean;
   showServiceDelivery: boolean;
+  /** Wording of the delivery time on every design; `{time}` is replaced by "3 days". */
+  serviceDeliveryTemplate: string;
   /** Checklist of deliverables / tasks on service cards. */
   showServiceTasks: boolean;
   /** Global vs section override for task list bullets. */
@@ -1884,6 +2361,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   headerAlignment: 'left' as const,
   headerDesign: 'editorial' as const,
   headerAnimationEnabled: true as const,
+  headerHiddenElements: [] as string[],
   headerDesignAlignment: 'left' as const,
   headerMarginBottom: 'md' as const,
   headerTitleSize: 'md' as const,
@@ -1962,12 +2440,14 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   headerMarqueeSize: 'md' as const,
   sectionOrganization: 'distinct' as const,
   layoutMode: 'separated' as const,
-  sectionDesign: 'showcase-hero' as const,
+  sectionDesign: 'services-index-list' as const,
   indexList: { ...DEFAULT_SERVICES_INDEX_LIST_SETTINGS },
   mediaColumns: { ...DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS },
-  pricingGrid: { ...DEFAULT_SERVICES_PRICING_GRID_SETTINGS },
-  pricingBento: { ...DEFAULT_SERVICES_PRICING_BENTO_SETTINGS },
-  servicesPricingMonolith: { ...DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS },
+  iconCards: { ...DEFAULT_SERVICES_ICON_CARDS_SETTINGS, icons: {} },
+  bandIndex: { ...DEFAULT_SERVICES_BAND_INDEX_SETTINGS },
+  servicesCascade: { ...DEFAULT_SERVICES_CASCADE_SETTINGS },
+  capabilities: { ...DEFAULT_SERVICES_CAPABILITIES_SETTINGS },
+  pricingCards: { ...DEFAULT_SERVICES_PRICING_CARDS_SETTINGS },
   servicesPricingAurora: { ...DEFAULT_SERVICES_PRICING_AURORA_SETTINGS },
   pricingToggle: { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS },
   pricingStyle: { ...DEFAULT_SERVICES_PRICING_STYLE_SETTINGS },
@@ -2069,6 +2549,7 @@ const DEFAULT_SERVICES_PRESENTATION_BASE = {
   showServiceDescription: true,
   showServicePrice: true,
   showServiceDelivery: true,
+  serviceDeliveryTemplate: '{time} delivery',
   showServiceTasks: true,
   servicesTaskBulletSource: 'section' as const,
   servicesTaskBulletStyle: 'check' as const,
@@ -2134,10 +2615,10 @@ export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_TITLE_PRESET_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'services-skills', label: 'Services', description: 'Displayed title: SERVICES' },
-  { value: 'what-i-offer', label: 'What I offer', description: 'Displayed title: WHAT I OFFER' },
-  { value: 'expertise', label: 'Expertise', description: 'Displayed title: EXPERTISE' },
-  { value: 'custom', label: 'Custom', description: 'Write the main title yourself.' },
+  { value: 'services-skills', label: msg('Services'), description: msg('Displayed title: SERVICES') },
+  { value: 'what-i-offer', label: msg('What I offer'), description: msg('Displayed title: WHAT I OFFER') },
+  { value: 'expertise', label: msg('Expertise'), description: msg('Displayed title: EXPERTISE') },
+  { value: 'custom', label: msg('Custom'), description: msg('Write the main title yourself.') },
 ];
 
 export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS: {
@@ -2145,10 +2626,10 @@ export const PORTFOLIO_SERVICES_DISTINCT_SERVICES_SUBTITLE_PRESET_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'collaboration', label: 'Collaboration', description: 'A client-focused subtitle.' },
-  { value: 'short', label: 'Short', description: 'One short line under the title.' },
-  { value: 'minimal', label: 'None', description: 'Hide the section subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Write the subtitle yourself.' },
+  { value: 'collaboration', label: msg('Collaboration'), description: msg('A client-focused subtitle.') },
+  { value: 'short', label: msg('Short'), description: msg('One short line under the title.') },
+  { value: 'minimal', label: msg('None'), description: msg('Hide the section subtitle.') },
+  { value: 'custom', label: msg('Custom'), description: msg('Write the subtitle yourself.') },
 ];
 
 const SKILLS_INSPECTOR_ICON_GAP_PX_MIN = 0;
@@ -2909,6 +3390,7 @@ export function mergeServicesPresentation(
     headerDesign: pick(record.headerDesign, SERVICES_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -3255,11 +3737,14 @@ export function mergeServicesPresentation(
     headerMarqueeSize: pick(record.headerMarqueeSize, SERVICES_HEADER_TITLE_SIZES, base.headerMarqueeSize ?? 'md'),
     sectionOrganization: 'distinct' as const,
     layoutMode,
-    sectionDesign: pick(
-      record.sectionDesign,
-      PORTFOLIO_SERVICES_SECTION_DESIGNS,
-      base.sectionDesign ?? DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN
-    ),
+    sectionDesign:
+      typeof record.sectionDesign === 'string' && record.sectionDesign in LEGACY_PRICING_DESIGN_LAYOUTS
+        ? 'services-pricing'
+        : pick(
+            record.sectionDesign,
+            PORTFOLIO_SERVICES_SECTION_DESIGNS,
+            base.sectionDesign ?? DEFAULT_PORTFOLIO_SERVICES_SECTION_DESIGN
+          ),
     indexList: mergeServicesIndexListSettings(
       mergeServicesIndexListSettings(DEFAULT_SERVICES_INDEX_LIST_SETTINGS, base.indexList),
       record.indexList
@@ -3268,17 +3753,28 @@ export function mergeServicesPresentation(
       mergeServicesMediaColumnsSettings(DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS, base.mediaColumns),
       record.mediaColumns
     ),
-    pricingGrid: mergeServicesPricingGridSettings(
-      mergeServicesPricingGridSettings(DEFAULT_SERVICES_PRICING_GRID_SETTINGS, base.pricingGrid),
-      record.pricingGrid
+    iconCards: mergeServicesIconCardsSettings(
+      mergeServicesIconCardsSettings(DEFAULT_SERVICES_ICON_CARDS_SETTINGS, base.iconCards),
+      record.iconCards
     ),
-    pricingBento: mergeServicesPricingBentoSettings(
-      mergeServicesPricingBentoSettings(DEFAULT_SERVICES_PRICING_BENTO_SETTINGS, base.pricingBento),
-      record.pricingBento
+    bandIndex: mergeServicesBandIndexSettings(
+      mergeServicesBandIndexSettings(DEFAULT_SERVICES_BAND_INDEX_SETTINGS, base.bandIndex),
+      record.bandIndex
     ),
-    servicesPricingMonolith: mergeServicesPricingMonolithSettings(
-      mergeServicesPricingMonolithSettings(DEFAULT_SERVICES_PRICING_MONOLITH_SETTINGS, base.servicesPricingMonolith),
-      record.servicesPricingMonolith
+    servicesCascade: mergeServicesCascadeSettings(
+      mergeServicesCascadeSettings(DEFAULT_SERVICES_CASCADE_SETTINGS, base.servicesCascade),
+      record.servicesCascade
+    ),
+    capabilities: mergeServicesCapabilitiesSettings(
+      mergeServicesCapabilitiesSettings(DEFAULT_SERVICES_CAPABILITIES_SETTINGS, base.capabilities),
+      record.capabilities
+    ),
+    pricingCards: mergeServicesPricingCardsSettings(
+      mergeServicesPricingCardsSettings(
+        mergeServicesPricingCardsSettings(DEFAULT_SERVICES_PRICING_CARDS_SETTINGS, base.pricingCards),
+        legacyPricingCardsSettings(record)
+      ),
+      record.pricingCards
     ),
     servicesPricingAurora: mergeServicesPricingAuroraSettings(
       mergeServicesPricingAuroraSettings(DEFAULT_SERVICES_PRICING_AURORA_SETTINGS, base.servicesPricingAurora),
@@ -3289,7 +3785,10 @@ export function mergeServicesPresentation(
       record.pricingToggle
     ),
     pricingStyle: mergeServicesPricingStyleSettings(
-      mergeServicesPricingStyleSettings(DEFAULT_SERVICES_PRICING_STYLE_SETTINGS, base.pricingStyle),
+      mergeServicesPricingStyleSettings(
+        mergeServicesPricingStyleSettings(DEFAULT_SERVICES_PRICING_STYLE_SETTINGS, base.pricingStyle),
+        legacyFeaturedStyle(record)
+      ),
       record.pricingStyle
     ),
     displayMode: pick(record.displayMode, ['marquee', 'grid', 'stack', 'coverflow', 'deck'], base.displayMode),
@@ -3616,6 +4115,10 @@ export function mergeServicesPresentation(
     showServicePrice: typeof record.showServicePrice === 'boolean' ? record.showServicePrice : base.showServicePrice,
     showServiceDelivery:
       typeof record.showServiceDelivery === 'boolean' ? record.showServiceDelivery : base.showServiceDelivery,
+    serviceDeliveryTemplate:
+      typeof record.serviceDeliveryTemplate === 'string'
+        ? record.serviceDeliveryTemplate.slice(0, 60)
+        : (base.serviceDeliveryTemplate ?? '{time} delivery'),
     showServiceTasks:
       typeof record.showServiceTasks === 'boolean' ? record.showServiceTasks : base.showServiceTasks,
     servicesTaskBulletSource: isPortfolioListMarkerSource(record.servicesTaskBulletSource)

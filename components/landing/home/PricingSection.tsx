@@ -3,6 +3,8 @@
 import Link from 'next/link';
 import { useState } from 'react';
 import { CONTAINER } from '@/components/landing/home/shared';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type Plan = {
   name: string;
@@ -17,56 +19,57 @@ type Plan = {
 
 const PLANS: Plan[] = [
   {
-    name: 'Free',
-    description: 'For trying things out',
+    name: msg('Free'),
+    description: msg('For trying things out'),
     monthly: 0,
     annual: 0,
-    intro: 'Includes:',
-    features: ['2 templates of your choice', 'Up to 3 items per section', 'Custom color palette', 'Skraft badge shown'],
-    cta: 'Start for free',
+    intro: msg('Includes:'),
+    features: [msg('2 templates of your choice'), msg('Up to 3 items per section'), msg('Custom color palette'), msg('Skraft badge shown')],
+    cta: msg('Start for free'),
   },
   {
     name: 'Pro',
-    description: 'For independent creators and developers',
+    description: msg('For independent creators and developers'),
     monthly: 3.99,
     annual: 3.19,
-    intro: 'Everything in Free, plus:',
+    intro: msg('Everything in Free, plus:'),
     features: [
-      'No mandatory limits',
-      'Developer mode',
-      'Every existing template',
-      'Create new templates',
-      'Remove the brand badge',
+      msg('No mandatory limits'),
+      msg('Developer mode'),
+      msg('Every existing template'),
+      msg('Create new templates'),
+      msg('Remove the brand badge'),
     ],
-    cta: 'Get Pro',
+    cta: msg('Get Pro'),
     featured: true,
   },
   {
     name: 'Enterprise',
-    description: 'For agencies and teams that self-host',
+    description: msg('For agencies and teams that self-host'),
     monthly: 39.99,
     annual: 31.99,
-    intro: 'Everything in Pro, plus:',
-    features: ['Custom domain name', 'Self-hosting and managed DNS'],
-    cta: 'Get Enterprise',
+    intro: msg('Everything in Pro, plus:'),
+    features: [msg('Custom domain name'), msg('Self-hosting and managed DNS')],
+    cta: msg('Get Enterprise'),
   },
   {
     name: 'Premium',
-    description: 'For full ownership of your work',
+    description: msg('For full ownership of your work'),
     monthly: 99.99,
     annual: 79.99,
-    intro: 'Everything in Enterprise, plus:',
-    features: ['Source code export', 'Code generation in your stack'],
-    cta: 'Get Premium',
+    intro: msg('Everything in Enterprise, plus:'),
+    features: [msg('Source code export'), msg('Code generation in your stack')],
+    cta: msg('Get Premium'),
   },
 ];
 
 function BillingToggle({ annual, onChange }: { annual: boolean; onChange: (annual: boolean) => void }) {
+  const t = useT();
   return (
-    <div role="radiogroup" aria-label="Billing period" className="inline-flex rounded-full bg-[#EDEDED] p-1">
+    <div role="radiogroup" aria-label={t('Billing period')} className="inline-flex rounded-full bg-[#EDEDED] p-1">
       {[
-        { value: false, label: 'Monthly' },
-        { value: true, label: 'Annual' },
+        { value: false, label: t('Monthly') },
+        { value: true, label: t('Annual') },
       ].map((option) => {
         const active = option.value === annual;
         return (
@@ -82,7 +85,7 @@ function BillingToggle({ annual, onChange }: { annual: boolean; onChange: (annua
                 : 'text-neutral-500 hover:text-[#111111]'
             }`}
           >
-            {option.label}
+            {t(option.label)}
             {option.value ? <span className="text-[#FF5722]">−20%</span> : null}
           </button>
         );
@@ -92,14 +95,15 @@ function BillingToggle({ annual, onChange }: { annual: boolean; onChange: (annua
 }
 
 export function PricingSection() {
+  const t = useT();
   const [annual, setAnnual] = useState(false);
 
   return (
     <section id="pricing" className="scroll-mt-20 bg-white py-20 text-[#111111] sm:py-28 lg:py-36">
       <div className={CONTAINER}>
         <div className="flex flex-col items-start gap-6 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
-          <h2 className="max-w-[15ch] text-[clamp(2.25rem,4.5vw,3.75rem)] font-semibold leading-[0.98] tracking-[-0.05em]">
-            Simple pricing that grows with you
+          <h2 className="max-w-[15ch] text-[clamp(2rem,3.2vw,2.875rem)] font-medium leading-[1.1] tracking-[-0.03em]">
+            {t('Simple pricing that grows with you')}
             <span className="text-neutral-300">.</span>
           </h2>
           <BillingToggle annual={annual} onChange={setAnnual} />
@@ -110,17 +114,17 @@ export function PricingSection() {
             const price = annual ? plan.annual : plan.monthly;
             return (
               <div key={plan.name} className="flex flex-col md:min-h-[540px] rounded-2xl bg-[#F4F4F4] p-7 sm:p-8">
-                <h3 className="text-[22px] font-medium tracking-[-0.02em]">{plan.name}</h3>
-                <p className="mt-1.5 text-[15px] text-neutral-500">{plan.description}</p>
+                <h3 className="text-[24px] font-medium tracking-[-0.02em]">{t(plan.name)}</h3>
+                <p className="mt-1.5 text-[16px] text-neutral-500">{t(plan.description)}</p>
 
                 <p className="mt-8 flex items-baseline gap-1.5">
-                  <span className="text-[44px] font-semibold leading-none tracking-[-0.04em] tabular-nums">
-                    {price === 0 ? '€0' : `€${price.toFixed(2)}`}
+                  <span className="text-[44px] font-medium leading-none tracking-[-0.035em] tabular-nums">
+                    {t.number(price, { style: 'currency', currency: 'EUR', minimumFractionDigits: price % 1 ? 2 : 0 })}
                   </span>
-                  <span className="text-[15px] text-neutral-500">/mo.</span>
+                  <span className="text-[15px] text-neutral-500">{t('/mo.')}</span>
                 </p>
 
-                <p className="mt-10 text-[14px] text-neutral-500">{plan.intro}</p>
+                <p className="mt-10 text-[15px] text-neutral-500">{t(plan.intro)}</p>
                 <ul className="mt-4 flex-1 space-y-3.5">
                   {plan.features.map((feature) => (
                     <li key={feature} className="flex items-start gap-3 text-[16px] leading-snug">
@@ -134,7 +138,7 @@ export function PricingSection() {
                       >
                         <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
                       </svg>
-                      {feature}
+                      {t(feature)}
                     </li>
                   ))}
                 </ul>
@@ -147,7 +151,7 @@ export function PricingSection() {
                       : 'bg-white text-[#111111] hover:bg-neutral-50'
                   }`}
                 >
-                  {plan.cta}
+                  {t(plan.cta)}
                 </Link>
               </div>
             );

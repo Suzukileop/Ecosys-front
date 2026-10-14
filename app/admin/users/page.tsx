@@ -11,6 +11,7 @@ import api from '@/lib/api';
 import { PageResponse, Role, UpdateRoleData, User } from '@/types/auth';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { SIGNED_IN_HOME } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const ALL_ROLES: Role[] = ['ROLE_CREATOR', 'ROLE_ADMIN'];
 
@@ -25,6 +26,7 @@ interface UserRow extends User {
 }
 
 export default function AdminUsersPage() {
+  const t = useT();
   const router = useRouter();
   const { user: currentUser, hasRole, isLoading: authLoading } = useAuth();
 
@@ -56,11 +58,11 @@ export default function AdminUsersPage() {
       setTotalPages(response.data.totalPages);
       setTotalElements(response.data.totalElements);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Unable to load users. Please try again.'));
+      setError(getApiErrorMessage(err, t('Unable to load users. Please try again.')));
     } finally {
       setIsLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     if (!authLoading) {
@@ -93,7 +95,7 @@ export default function AdminUsersPage() {
   const handleSaveRoles = async () => {
     if (!editingUser) return;
     if (selectedRoles.length === 0) {
-      setRoleError('Select at least one role.');
+      setRoleError(t('Select at least one role.'));
       return;
     }
     setIsSavingRoles(true);
@@ -106,7 +108,7 @@ export default function AdminUsersPage() {
       );
       closeEditModal();
     } catch (err) {
-      setRoleError(getApiErrorMessage(err, 'Unable to update roles. Please try again.'));
+      setRoleError(getApiErrorMessage(err, t('Unable to update roles. Please try again.')));
     } finally {
       setIsSavingRoles(false);
     }
@@ -128,7 +130,7 @@ export default function AdminUsersPage() {
       );
       setConfirmToggle(null);
     } catch (err) {
-      setError(getApiErrorMessage(err, 'Unable to change this account’s status. Please try again.'));
+      setError(getApiErrorMessage(err, t('Unable to change this account’s status. Please try again.')));
       setConfirmToggle(null);
     } finally {
       setIsToggling(false);
@@ -149,25 +151,25 @@ export default function AdminUsersPage() {
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
-              NP
+              {t('NP')}
             </div>
             <nav className="flex items-center gap-2 text-sm text-gray-500">
-              <a href="/feed" className="hover:text-gray-900 transition">Dashboard</a>
+              <a href="/feed" className="hover:text-gray-900 transition">{t('Dashboard')}</a>
               <span>/</span>
-              <span className="text-gray-900 font-medium">Utilisateurs</span>
+              <span className="text-gray-900 font-medium">{t('Utilisateurs')}</span>
             </nav>
           </div>
           <span className="text-xs font-medium bg-red-100 text-red-700 px-2.5 py-1 rounded-full">
-            Administration
+            {t('Administration')}
           </span>
         </div>
       </header>
 
       <main className="max-w-6xl mx-auto px-4 py-8">
         <div className="mb-6">
-          <h1 className="text-2xl font-bold text-gray-900">Gestion des utilisateurs</h1>
+          <h1 className="text-2xl font-bold text-gray-900">{t('Gestion des utilisateurs')}</h1>
           <p className="text-gray-500 text-sm mt-1">
-            {totalElements} utilisateur{totalElements !== 1 ? 's' : ''} au total
+            {totalElements} {t('utilisateur')}{totalElements !== 1 ? 's' : ''} {t('au total')}
           </p>
         </div>
 
@@ -184,7 +186,7 @@ export default function AdminUsersPage() {
             </div>
           ) : users.length === 0 ? (
             <div className="py-20 text-center text-gray-400">
-              <p>Aucun utilisateur trouvé.</p>
+              <p>{t('Aucun utilisateur trouvé.')}</p>
             </div>
           ) : (
             <div className="overflow-x-auto">
@@ -192,19 +194,19 @@ export default function AdminUsersPage() {
                 <thead>
                   <tr className="border-b border-gray-100 bg-gray-50">
                     <th className="text-left px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider">
-                      Utilisateur
+                      {t('Utilisateur')}
                     </th>
                     <th className="text-left px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider">
-                      Email
+                      {t('Email')}
                     </th>
                     <th className="text-left px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider">
-                      Rôles
+                      {t('Rôles')}
                     </th>
                     <th className="text-left px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider">
-                      Statut
+                      {t('Statut')}
                     </th>
                     <th className="text-right px-6 py-3.5 font-semibold text-gray-500 text-xs uppercase tracking-wider">
-                      Actions
+                      {t('Actions')}
                     </th>
                   </tr>
                 </thead>
@@ -217,7 +219,7 @@ export default function AdminUsersPage() {
                           <div>
                             <p className="font-medium text-gray-900">{userRow.fullName}</p>
                             {userRow.emailVerified && (
-                              <span className="text-xs text-green-600">Email vérifié</span>
+                              <span className="text-xs text-green-600">{t('Email vérifié')}</span>
                             )}
                           </div>
                         </div>
@@ -243,7 +245,7 @@ export default function AdminUsersPage() {
                               userRow.enabled ? 'bg-green-500' : 'bg-gray-400'
                             }`}
                           />
-                          {userRow.enabled ? 'Actif' : 'Désactivé'}
+                          {userRow.enabled ? t('Actif') : t('Désactivé')}
                         </span>
                       </td>
                       <td className="px-6 py-4">
@@ -252,7 +254,7 @@ export default function AdminUsersPage() {
                             onClick={() => openEditModal(userRow)}
                             className="text-xs px-3 py-1.5 rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 transition font-medium"
                           >
-                            Modifier rôles
+                            {t('Modifier rôles')}
                           </button>
                           <button
                             onClick={() => setConfirmToggle(userRow)}
@@ -262,7 +264,7 @@ export default function AdminUsersPage() {
                                 : 'border-green-200 text-green-600 hover:bg-green-50'
                             }`}
                           >
-                            {userRow.enabled ? 'Désactiver' : 'Réactiver'}
+                            {userRow.enabled ? t('Désactiver') : t('Réactiver')}
                           </button>
                         </div>
                       </td>
@@ -276,7 +278,7 @@ export default function AdminUsersPage() {
           {!isLoading && totalPages > 1 && (
             <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
               <p className="text-sm text-gray-500">
-                Page {currentPage + 1} sur {totalPages}
+                {t('Page')} {currentPage + 1} {t('sur')} {totalPages}
               </p>
               <div className="flex gap-2">
                 <button
@@ -284,14 +286,14 @@ export default function AdminUsersPage() {
                   disabled={currentPage === 0}
                   className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  Précédent
+                  {t('Précédent')}
                 </button>
                 <button
                   onClick={() => setCurrentPage((p) => Math.min(totalPages - 1, p + 1))}
                   disabled={currentPage === totalPages - 1}
                   className="px-4 py-2 text-sm font-medium rounded-lg border border-gray-200 text-gray-700 hover:bg-gray-50 disabled:opacity-40 disabled:cursor-not-allowed transition"
                 >
-                  Suivant
+                  {t('Suivant')}
                 </button>
               </div>
             </div>
@@ -309,7 +311,7 @@ export default function AdminUsersPage() {
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md p-6">
             <h2 id="modal-title" className="text-lg font-bold text-gray-900 mb-1">
-              Modifier les rôles
+              {t('Modifier les rôles')}
             </h2>
             <p className="text-sm text-gray-500 mb-5">
               {editingUser.fullName} — {editingUser.email}
@@ -345,7 +347,7 @@ export default function AdminUsersPage() {
                 disabled={isSavingRoles}
                 className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
               >
-                Annuler
+                {t('Annuler')}
               </button>
               <button
                 onClick={handleSaveRoles}
@@ -355,10 +357,10 @@ export default function AdminUsersPage() {
                 {isSavingRoles ? (
                   <>
                     <LoadingSpinner size="sm" />
-                    Enregistrement...
+                    {t('Enregistrement...')}
                   </>
                 ) : (
-                  'Enregistrer'
+                  t('Enregistrer')
                 )}
               </button>
             </div>
@@ -376,7 +378,7 @@ export default function AdminUsersPage() {
         >
           <div className="bg-white rounded-2xl shadow-2xl w-full max-w-sm p-6">
             <h2 id="confirm-title" className="text-lg font-bold text-gray-900 mb-2">
-              {confirmToggle.enabled ? 'Désactiver le compte' : 'Réactiver le compte'}
+              {confirmToggle.enabled ? t('Désactiver le compte') : t('Réactiver le compte')}
             </h2>
             <p className="text-sm text-gray-500 mb-6">
               {confirmToggle.enabled
@@ -389,7 +391,7 @@ export default function AdminUsersPage() {
                 disabled={isToggling}
                 className="flex-1 py-2.5 rounded-xl border border-gray-200 text-gray-700 text-sm font-medium hover:bg-gray-50 transition disabled:opacity-50"
               >
-                Annuler
+                {t('Annuler')}
               </button>
               <button
                 onClick={handleToggleEnabled}
@@ -403,12 +405,12 @@ export default function AdminUsersPage() {
                 {isToggling ? (
                   <>
                     <LoadingSpinner size="sm" />
-                    En cours...
+                    {t('En cours...')}
                   </>
                 ) : confirmToggle.enabled ? (
-                  'Désactiver'
+                  t('Désactiver')
                 ) : (
-                  'Réactiver'
+                  t('Réactiver')
                 )}
               </button>
             </div>

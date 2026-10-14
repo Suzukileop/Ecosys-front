@@ -8,6 +8,7 @@ import {
   footerMiniBarCopyrightBase,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * "Hero columns" — extracted verbatim from the "Hero columns" Footer design's own
@@ -18,6 +19,7 @@ import {
  */
 export function FooterMiniBarHeroColumns({
   creatorName,
+  showCopyright = true,
   colorMode,
   copyrightText,
   isAvailable,
@@ -25,12 +27,13 @@ export function FooterMiniBarHeroColumns({
   contentGutter = DEFAULT_CONTENT_GUTTER,
   backgroundStyle,
 }: FooterMiniBarVariantProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const muted = isLight ? '#8f8f8f' : '#7d7d7d';
   const hairline = isLight ? 'rgba(10,10,10,0.08)' : 'rgba(255,255,255,0.1)';
 
-  const text = copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName);
-  const statusLabel = typeof isAvailable === 'boolean' ? (isAvailable ? 'WE ARE OPEN' : 'WE ARE CLOSED') : null;
+  const text = showCopyright ? copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName) : '';
+  const statusLabel = typeof isAvailable === 'boolean' ? (isAvailable ? t('WE ARE OPEN') : t('WE ARE CLOSED')) : null;
   const trimmedHours = hoursLabel?.trim() || null;
   const rightLabel = [statusLabel, trimmedHours].filter(Boolean).join(' · ') || null;
 

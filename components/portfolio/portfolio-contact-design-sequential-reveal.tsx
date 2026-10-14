@@ -21,6 +21,7 @@ import {
   contactLightDarkTokens,
   type ContactLightDarkTokens,
 } from '@/components/portfolio/portfolio-contact-design-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -212,6 +213,7 @@ export function ContactDesignSequentialReveal({
    *  every other genuinely light/dark-aware premium Contact design. */
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const imageMaskRef = useRef<HTMLDivElement>(null);
   const imageInnerRef = useRef<HTMLDivElement>(null);
@@ -225,7 +227,7 @@ export function ContactDesignSequentialReveal({
   const tagline = layout.text('tagline');
   const showPortrait = layout.isVisible('portrait');
   const showCopyrightMark = layout.isVisible('copyrightMark');
-  const submitLabel = layout.text('submitLabel') ?? 'Send';
+  const submitLabel = layout.text('submitLabel') ?? t('Send');
   const directEmailLine = layout.text('directEmail');
   const trimmedEmail = email?.trim() || '';
   const showForm = layout.isVisible('form');
@@ -277,7 +279,7 @@ export function ContactDesignSequentialReveal({
 
   const onSubmit = async (values: SequentialFormValues) => {
     if (!creatorId?.trim()) {
-      setSubmitError('Unable to send — creator is missing.');
+      setSubmitError(t('Unable to send — creator is missing.'));
       return;
     }
     setSubmitError(null);
@@ -290,14 +292,14 @@ export function ContactDesignSequentialReveal({
       setSubmitted(true);
       pushFlashFeedback({
         variant: 'success',
-        title: 'Message sent',
-        description: 'Your message was delivered to the creator.',
+        title: t('Message sent'),
+        description: t('Your message was delivered to the creator.'),
       });
       reset(EMPTY_FORM);
     } catch (submitErr) {
-      const message = getApiErrorMessage(submitErr, 'Unable to send your message. Please try again.');
+      const message = getApiErrorMessage(submitErr, t('Unable to send your message. Please try again.'));
       setSubmitError(message);
-      pushFlashFeedback({ variant: 'error', title: 'Message not sent', description: message });
+      pushFlashFeedback({ variant: 'error', title: t('Message not sent'), description: message });
     }
   };
 
@@ -552,7 +554,7 @@ export function ContactDesignSequentialReveal({
             {heroImageUrl ? (
               <Image
                 src={heroImageUrl}
-                alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
+                alt={displayName ? t('Portrait of {displayName}', { displayName }) : t('Portrait')}
                 fill
                 sizes="100vw"
                 className="object-cover object-center"
@@ -594,7 +596,7 @@ export function ContactDesignSequentialReveal({
         ) : null}
         {submitted ? (
           <p className="mb-8 text-sm font-medium" style={{ color: tokens.muted }} data-pf-no-color-transition="" role="status">
-            Thanks — your message was sent.
+            {t('Thanks — your message was sent.')}
           </p>
         ) : null}
 
@@ -603,7 +605,7 @@ export function ContactDesignSequentialReveal({
             <div data-reveal-field>
               <FloatingField
                 id="pf-sequential-first-name"
-                label={layout.text('firstNameLabel') ?? 'First name'}
+                label={layout.text('firstNameLabel') ?? t('First name')}
                 autoComplete="given-name"
                 registration={register('firstName')}
                 error={errors.firstName?.message}
@@ -615,7 +617,7 @@ export function ContactDesignSequentialReveal({
             <div data-reveal-field>
               <FloatingField
                 id="pf-sequential-last-name"
-                label={layout.text('lastNameLabel') ?? 'Last name'}
+                label={layout.text('lastNameLabel') ?? t('Last name')}
                 autoComplete="family-name"
                 registration={register('lastName')}
                 error={errors.lastName?.message}
@@ -629,7 +631,7 @@ export function ContactDesignSequentialReveal({
           <div data-reveal-field>
             <FloatingField
               id="pf-sequential-email"
-              label={layout.text('emailFieldLabel') ?? 'Email'}
+              label={layout.text('emailFieldLabel') ?? t('Email')}
               type="email"
               autoComplete="email"
               registration={register('email')}
@@ -643,7 +645,7 @@ export function ContactDesignSequentialReveal({
           <div data-reveal-field>
             <FloatingField
               id="pf-sequential-message"
-              label={layout.text('messageLabel') ?? 'Message'}
+              label={layout.text('messageLabel') ?? t('Message')}
               multiline
               registration={register('message')}
               error={errors.message?.message}
@@ -673,7 +675,7 @@ export function ContactDesignSequentialReveal({
                 className="inline-flex items-center gap-1.5"
                 data-pf-no-color-transition=""
               >
-                {isSubmitting ? 'Sending' : submitLabel}
+                {isSubmitting ? t('Sending') : submitLabel}
                 <svg
                   viewBox="0 0 16 16"
                   className="h-3.5 w-3.5"

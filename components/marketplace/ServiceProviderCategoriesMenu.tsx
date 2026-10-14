@@ -23,6 +23,7 @@ import {
   SERVICE_PROVIDER_CATEGORY_GROUPS,
   type ServiceProviderCategoryIcon,
 } from '@/lib/service-provider-categories';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const ICON_MAP: Record<ServiceProviderCategoryIcon, IconDefinition> = {
   wrench: faWrench,
@@ -86,6 +87,7 @@ export function ServiceProviderCategoriesButton({
   hasActiveCategory,
   menuId,
 }: CategoriesButtonProps) {
+  const t = useT();
   const subcategoryCount = countServiceProviderSubcategories();
 
   return (
@@ -94,11 +96,11 @@ export function ServiceProviderCategoriesButton({
       aria-expanded={open}
       aria-controls={menuId}
       aria-haspopup="true"
-      title={`${subcategoryCount} more categories`}
+      title={t('{subcategoryCount} more categories', { subcategoryCount })}
       onClick={() => onOpenChange(!open)}
       className={providerChipClass(hasActiveCategory)}
     >
-      More
+      {t('More')}
       <FontAwesomeIcon
         icon={faChevronDown}
         className={`h-3 w-3 transition-transform duration-300 ease-out ${open ? 'rotate-180' : ''}`}
@@ -123,6 +125,7 @@ export function ServiceProviderCategoriesPanel({
   onSelect,
   onClose,
 }: CategoriesPanelProps) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const durationMs = reduceMotion ? 120 : 360;
 
@@ -145,19 +148,19 @@ export function ServiceProviderCategoriesPanel({
           } ${open ? 'pointer-events-auto' : 'pointer-events-none'}`}
           style={{ transitionDuration: `${durationMs}ms` }}
         >
-          <div className={`${PROVIDER_FRAME_CLASS} p-6 sm:p-8`}>
-            <div className="grid gap-x-10 gap-y-10 sm:grid-cols-2 lg:grid-cols-4">
+          <div className={`${PROVIDER_FRAME_CLASS} p-5 sm:p-6`}>
+            <div className="grid gap-x-10 gap-y-8 sm:grid-cols-2 lg:grid-cols-4">
               {SERVICE_PROVIDER_CATEGORY_GROUPS.map((group) => (
                 <div key={group.id} className="min-w-0">
-                  <div className="flex items-center gap-2.5 border-b border-black/[0.06] pb-3 dark:border-white/[0.06]">
+                  <div className="flex items-center gap-2.5">
                     <FontAwesomeIcon
                       icon={ICON_MAP[group.icon]}
                       className={`h-3.5 w-3.5 shrink-0 ${PROVIDER_MUTED_CLASS}`}
                       aria-hidden
                     />
-                    <h3 className={`text-[15px] font-semibold ${PROVIDER_INK_CLASS}`}>{group.title}</h3>
+                    <h3 className={`text-[15px] font-bold ${PROVIDER_INK_CLASS}`}>{t(group.title)}</h3>
                   </div>
-                  <ul className="mt-4 space-y-3">
+                  <ul className="mt-3 space-y-1">
                     {group.items.map((item) => {
                       const active = selectedLabel === item;
                       return (
@@ -170,15 +173,17 @@ export function ServiceProviderCategoriesPanel({
                               onSelect(item);
                               onClose();
                             }}
-                            className={`inline-flex items-center gap-2 text-left text-[15px] transition-colors duration-200 hover:text-[#FF5722] focus-visible:text-[#FF5722] focus-visible:outline-none ${
+                            className={`inline-flex min-h-8 items-center gap-2 text-left text-[15px] underline-offset-4 transition-colors duration-200 hover:text-[#0F1419] hover:underline focus-visible:underline focus-visible:outline-none dark:hover:text-[#E7E9EA] ${
                               active
-                                ? `font-medium ${PROVIDER_INK_CLASS}`
+                                ? `font-bold ${PROVIDER_INK_CLASS}`
                                 : PROVIDER_BODY_CLASS
                             }`}
                           >
                             {item}
                             {active ? (
-                              <span aria-hidden className="h-1.5 w-1.5 shrink-0 rounded-full bg-[#FF5722]" />
+                              <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25} aria-hidden>
+                                <path strokeLinecap="round" strokeLinejoin="round" d="m5 12.5 4.5 4.5L19 7.5" />
+                              </svg>
                             ) : null}
                           </button>
                         </li>

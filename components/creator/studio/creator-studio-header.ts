@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type CreatorStudioHeaderLayout = 'BANNER' | 'SPLIT' | 'VIP_GOLD' | 'VIP_AURORA' | 'STAGE';
 
 const CREATOR_STUDIO_HEADER_LAYOUTS: {
@@ -8,30 +9,30 @@ const CREATOR_STUDIO_HEADER_LAYOUTS: {
 }[] = [
   {
     id: 'BANNER',
-    label: 'Banner',
-    description: 'Wide cover image with a circular avatar overlapping the banner.',
+    label: msg('Banner'),
+    description: msg('Wide cover image with a circular avatar overlapping the banner.'),
   },
   {
     id: 'SPLIT',
-    label: 'Split card',
-    description: 'Profile details on the left and your cover image on the right.',
+    label: msg('Split card'),
+    description: msg('Profile details on the left and your cover image on the right.'),
   },
   {
     id: 'VIP_GOLD',
-    label: 'VIP Gold',
-    description: 'Luxury black & gold layout with shimmer border and cinematic cover.',
+    label: msg('VIP Gold'),
+    description: msg('Luxury black & gold layout with shimmer border and cinematic cover.'),
     premium: true,
   },
   {
     id: 'VIP_AURORA',
-    label: 'VIP Aurora',
-    description: 'Glassmorphism with animated aurora orbs and holographic accents.',
+    label: msg('VIP Aurora'),
+    description: msg('Glassmorphism with animated aurora orbs and holographic accents.'),
     premium: true,
   },
   {
     id: 'STAGE',
-    label: 'Stage',
-    description: 'Full-bleed cinematic poster — avatar and name centred over the cover like a concert stage.',
+    label: msg('Stage'),
+    description: msg('Full-bleed cinematic poster — avatar and name centred over the cover like a concert stage.'),
     premium: true,
   },
 ];

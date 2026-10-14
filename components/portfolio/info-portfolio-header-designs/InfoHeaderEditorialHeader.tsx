@@ -14,7 +14,8 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -101,12 +102,16 @@ export function InfoHeaderEditorialHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_INFO_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   /* Each text is the design's own setting; empty falls back to the section-level value. */
   const labelText = presentation.headerEditorialLabelText?.trim() || 'Info';
   const titleText = presentation.headerEditorialTitleText?.trim() || title.trim();
   const subtitleText = presentation.headerEditorialSubtitleText?.trim() || subtitle?.trim() || '';
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
+  const showLabel = show('label');
+  const showTitle = show('title');
+  const showSubtitle = show('subtitle');
   const labelInk = infoHeaderPaletteTokenColor(presentation.headerEditorialLabelColor ?? 'texteFort');
   const titleInk = infoHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
   const subtitleInk = infoHeaderPaletteTokenColor(presentation.headerEditorialSubtitleColor ?? 'texteFort');
@@ -212,7 +217,7 @@ export function InfoHeaderEditorialHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, labelText, titleText, subtitleText]);
+  }, [animationEnabled, labelText, titleText, subtitleText, showLabel, showTitle, showSubtitle]);
 
   return (
     <header
@@ -222,25 +227,29 @@ export function InfoHeaderEditorialHeader({
     >
       <div className={`pf-info-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
         <div className="min-w-0 max-w-3xl">
-          <p
-            className="pf-info-header-editorial-kicker mb-0 uppercase tracking-[0.24em]"
-            style={{
-              color: kickerInk,
-              fontSize: LABEL_SIZE[presentation.headerEditorialLabelSize ?? 'md'],
-              fontWeight: LABEL_WEIGHT[presentation.headerEditorialLabelWeight ?? 'regular'],
-            }}
-          >
-            {labelText}
-          </p>
-          <h2
-            className={`mb-0 mt-3 ${infoHeaderDesignFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerEditorialTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerEditorialTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={{ color: titleInk }}
-          >
-            <span className="pf-info-header-editorial-title-mask block overflow-hidden">
-              <span className="pf-info-header-editorial-title-line block">{titleText}</span>
-            </span>
-          </h2>
-          {subtitleText ? (
+          {showLabel ? (
+            <p
+              className="pf-info-header-editorial-kicker mb-0 uppercase tracking-[0.24em]"
+              style={{
+                color: kickerInk,
+                fontSize: LABEL_SIZE[presentation.headerEditorialLabelSize ?? 'md'],
+                fontWeight: LABEL_WEIGHT[presentation.headerEditorialLabelWeight ?? 'regular'],
+              }}
+            >
+              {labelText}
+            </p>
+          ) : null}
+          {showTitle ? (
+            <h2
+              className={`mb-0 mt-3 ${infoHeaderDesignFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerEditorialTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerEditorialTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
+              style={{ color: titleInk }}
+            >
+              <span className="pf-info-header-editorial-title-mask block overflow-hidden">
+                <span className="pf-info-header-editorial-title-line block">{titleText}</span>
+              </span>
+            </h2>
+          ) : null}
+          {showSubtitle && subtitleText ? (
             <p
               className={`pf-info-header-editorial-sub mb-0 mt-6 max-w-xl ${infoHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
               style={{

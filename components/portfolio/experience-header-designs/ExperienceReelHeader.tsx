@@ -16,7 +16,8 @@ import {
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_REEL_KICKER = '02 / Chronology';
 const EXP_LEAD_MOTION_DONE = 'pf-exp-lead-motion-done';
@@ -95,8 +96,11 @@ export function ExperienceReelHeader({
   const titleLines = useMemo(() => [title], [title]);
   const kickerEnabled = presentation.reelKickerEnabled !== false;
   const kickerText = presentation.reelKickerText?.trim() || DEFAULT_REEL_KICKER;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.reelHeaderAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'experience-reel');
+  const showTitle = show('title');
+  const showSubtitle = show('subtitle');
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -219,7 +223,7 @@ export function ExperienceReelHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, title, subtitle, titleInk]);
+  }, [animationEnabled, title, subtitle, titleInk, showTitle, showSubtitle]);
 
   return (
     <header ref={headerRef} className="pf-exp-reel-header relative w-full text-left">
@@ -237,20 +241,22 @@ export function ExperienceReelHeader({
           </p>
         ) : null}
 
-        <h2
-          className="pf-exp-reel-title mb-0 ml-0 mr-0 mt-3 font-sans text-5xl font-light tracking-[-0.035em] sm:text-6xl lg:text-7xl lg:leading-[0.95]"
-          style={{ color: titleInk, fontWeight: 300 }}
-        >
-          {titleLines.map((line) => (
-            <span key={line} className="pf-exp-reel-title-mask block overflow-hidden">
-              <span className="pf-exp-reel-title-line block" data-pf-no-color-transition="">
-                {line}
+        {showTitle ? (
+          <h2
+            className="pf-exp-reel-title mb-0 ml-0 mr-0 mt-3 font-sans text-5xl font-light tracking-[-0.035em] sm:text-6xl lg:text-7xl lg:leading-[0.95]"
+            style={{ color: titleInk, fontWeight: 300 }}
+          >
+            {titleLines.map((line) => (
+              <span key={line} className="pf-exp-reel-title-mask block overflow-hidden">
+                <span className="pf-exp-reel-title-line block" data-pf-no-color-transition="">
+                  {line}
+                </span>
               </span>
-            </span>
-          ))}
-        </h2>
+            ))}
+          </h2>
+        ) : null}
 
-        {subtitle ? (
+        {showSubtitle && subtitle ? (
           <p
             className="pf-exp-reel-sub mb-0 ml-0 mr-0 mt-8 max-w-2xl font-sans text-base leading-relaxed tracking-[-0.01em] sm:mt-9 sm:text-lg"
             style={{ color: mutedColor }}

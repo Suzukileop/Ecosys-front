@@ -1,6 +1,7 @@
 'use client';
 
 import { useId, useRef, useState, type ClipboardEvent, type KeyboardEvent } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 const PRODUCT_HASHTAGS_MAX = 15;
 const PRODUCT_HASHTAG_MAX_LENGTH = 40;
 
@@ -22,6 +23,7 @@ type ProductHashtagsFieldProps = {
 };
 
 export function ProductHashtagsField({ value, onChange, boxClassName }: ProductHashtagsFieldProps) {
+  const t = useT();
   const inputId = useId();
   const inputRef = useRef<HTMLInputElement>(null);
   const [draft, setDraft] = useState('');
@@ -74,7 +76,7 @@ export function ProductHashtagsField({ value, onChange, boxClassName }: ProductH
   return (
     <div>
       <label htmlFor={inputId} className="sr-only">
-        Hashtags
+        {t('Hashtags')}
       </label>
       <div
         className={`flex min-h-[2.875rem] cursor-text flex-wrap items-center gap-1.5 px-2 py-1.5 ${boxClassName}`}
@@ -83,7 +85,7 @@ export function ProductHashtagsField({ value, onChange, boxClassName }: ProductH
         {value.map((tag, index) => (
           <span
             key={tag.toLowerCase()}
-            className="inline-flex h-8 items-center gap-1 rounded-md bg-black/[0.05] pl-2.5 pr-1 text-[14px] font-medium text-[#111111] dark:bg-white/[0.08] dark:text-white"
+            className="inline-flex h-8 items-center gap-1 rounded-[2px] bg-[#EFF3F4] pl-2.5 pr-1 text-[14px] font-medium text-[#0F1419] dark:bg-[#2F3336] dark:text-[#E7E9EA]"
           >
             <span className="text-neutral-400 dark:text-neutral-500">#</span>
             {tag}
@@ -94,7 +96,7 @@ export function ProductHashtagsField({ value, onChange, boxClassName }: ProductH
                 remove(index);
               }}
               className="ml-0.5 inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 transition-colors hover:bg-black/[0.06] hover:text-[#111111] dark:hover:bg-white/[0.1] dark:hover:text-white"
-              aria-label={`Remove #${tag}`}
+              aria-label={t('Remove #{tag}', { tag })}
             >
               <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
                 <path d="M6 6l12 12M18 6L6 18" />
@@ -116,7 +118,7 @@ export function ProductHashtagsField({ value, onChange, boxClassName }: ProductH
             onKeyDown={handleKeyDown}
             onPaste={handlePaste}
             onBlur={commitDraft}
-            placeholder={full ? 'Limit reached' : value.length === 0 ? 'Add a hashtag and press Enter' : 'Add another'}
+            placeholder={full ? t('Limit reached') : value.length === 0 ? t('Add a hashtag and press Enter') : t('Add another')}
             className="h-8 min-w-0 flex-1 bg-transparent px-0.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed dark:text-white dark:placeholder:text-neutral-500"
           />
           {value.length > 0 ? (

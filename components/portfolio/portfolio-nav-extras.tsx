@@ -75,6 +75,7 @@ import type {
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
 import { clampPortfolioNavCustomExtraFontSizePx, clampPortfolioNavCustomExtraGapPx, clampPortfolioNavCustomExtraLogoSizePx, clampPortfolioNavCustomExtraPaddingX, clampPortfolioNavCustomExtraPaddingY, normalizePortfolioNavContactButtonIconPosition, normalizePortfolioNavCustomExtraDisplay, normalizePortfolioNavCustomExtraPlacement, normalizePortfolioNavExtrasPlacement, mergeEditorialBarContactChannelSettings, seedEditorialBarPhoneContactFromLegacy, DEFAULT_EDITORIAL_BAR_PHONE_CONTACT, DEFAULT_EDITORIAL_BAR_MAIL_CONTACT, portfolioNavContactButtonShapeClass, portfolioNavContactButtonShellPresentation, portfolioNavCustomExtraFontFamily, portfolioNavCustomExtraFontWeightValue, resolvePortfolioNavExtraAdjacentPosition, sanitizePortfolioNavCustomHref } from '@/components/portfolio/portfolio-settings-types';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type PortfolioNavChromeLink = {
   id: string;
@@ -431,6 +432,7 @@ export function PortfolioNavColorModeToggleButton({
   overlayInteraction?: boolean;
   inkColor?: string;
 }) {
+  const t = useT();
   const ctx = usePortfolioNavColorModeToggleContext();
   if (!ctx?.show) return null;
 
@@ -444,7 +446,7 @@ export function PortfolioNavColorModeToggleButton({
         ? 'transition hover:opacity-80'
         : 'transition hover:opacity-90';
   const isLight = ctx.colorMode === 'light';
-  const label = isLight ? 'Activer le mode sombre' : 'Activer le mode clair';
+  const label = isLight ? t('Activer le mode sombre') : t('Activer le mode clair');
   const iconInk = inkColor ?? colors.icon;
 
   if (editorialInteraction || floatingPillInteraction || overlayInteraction) {
@@ -881,6 +883,7 @@ function InBarBrandLogo({
 }
 
 function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings; compact?: boolean }) {
+  const t = useT();
   if (portfolioNavUsesInBarBrandLayout(settings)) {
     return <InBarBrandLogo settings={settings} compact={compact} />;
   }
@@ -909,7 +912,7 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
   const borderEnabled = settings.customExtraBorderEnabled ?? false;
   const href = sanitizePortfolioNavCustomHref(settings.customExtraHref);
   const openNewTab = settings.customExtraOpenNewTab ?? true;
-  const label = text || 'Extra';
+  const label = text || t('Extra');
   const floatingPill = portfolioNavUsesFloatingPillLayout(settings);
   const editorialBar = portfolioNavUsesEditorialBarLayout(settings);
   const centerLogoSplit = portfolioNavUsesCenterLogoSplitLayout(settings);
@@ -948,7 +951,7 @@ function CustomExtraChip({ settings, compact }: { settings: PortfolioNavSettings
         // eslint-disable-next-line @next/next/no-img-element
         <img
           src={logoUrl}
-          alt={text || 'Logo'}
+          alt={text || t('Logo')}
           width={logoSize}
           height={logoSize}
           className="shrink-0 object-contain"
@@ -1075,6 +1078,7 @@ function usePortfolioNavExtrasModel(
   settings: PortfolioNavSettings,
   links: PortfolioNavChromeLink[]
 ): PortfolioNavExtrasModel {
+  const t = useT();
   const isMdUp = useMinWidth(768);
   const isLgUp = useMinWidth(1024);
   const isXlUp = useMinWidth(1280);
@@ -1163,7 +1167,7 @@ function usePortfolioNavExtrasModel(
   return {
     showContact: hasContact,
     iconLinks: hasIcons ? links : [],
-    contactLabel: (settings.contactButtonLabel ?? 'Contact').trim() || 'Contact',
+    contactLabel: (settings.contactButtonLabel ?? 'Contact').trim() || t('Contact'),
     iconsSide,
     contactSide,
     customSide,
@@ -1306,6 +1310,7 @@ export function PortfolioNavFreeSpaceLinks({
   onFocusCapture?: () => void;
   onBlurCapture?: (event: FocusEvent<HTMLElement>) => void;
 }) {
+  const t = useT();
   const isLgUp = useMinWidth(1024);
   const isXlUp = useMinWidth(1280);
   const mobileChrome = resolvePortfolioNavMobileChrome(settings, isLgUp, isXlUp);
@@ -1351,7 +1356,7 @@ export function PortfolioNavFreeSpaceLinks({
   return (
     <div
       className="pointer-events-none fixed inset-0 z-[95]"
-      aria-label="Portfolio quick links"
+      aria-label={t('Portfolio quick links')}
       style={{ opacity }}
     >
       {sides.map((side) => (
@@ -1549,9 +1554,10 @@ function PortfolioNavContactCta({
   compact?: boolean;
   className?: string;
 }) {
+  const t = useT();
   if (!(settings.contactButtonEnabled ?? false)) return null;
 
-  const contactLabel = (settings.contactButtonLabel ?? 'Contact').trim() || 'Contact';
+  const contactLabel = (settings.contactButtonLabel ?? 'Contact').trim() || t('Contact');
   const contactDisplay = (settings.contactButtonDisplay ?? 'button') as PortfolioNavContactButtonDisplay;
   const contactIcon = resolvePortfolioNavContactCtaIcon(settings.contactButtonIcon, {
     iconOnly: contactDisplay !== 'button',

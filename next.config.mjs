@@ -60,6 +60,8 @@ const extraDevOrigins = (process.env.NEXT_DEV_ALLOWED_ORIGINS ?? '')
 const nextConfig = {
   // Lets a production build run beside `next dev` without overwriting its .next folder.
   distDir: process.env.NEXT_DIST_DIR || '.next',
+  // Hide the floating "N" dev badge (bottom-left) — it covered the feed; build/runtime errors still open the overlay.
+  devIndicators: false,
   // LAN preview (phone / autre PC) : HMR is blocked unless the Origin is listed.
   // Whole home subnet — DHCP hands the phone / other PC a different address from time to time.
   allowedDevOrigins: ['192.168.1.*', '*.trycloudflare.com', ...extraDevOrigins],
@@ -85,6 +87,9 @@ const nextConfig = {
     // optimizer resizes a ~60 KB derivative instead of a multi-megabyte original. The first entry
     // keeps the default hardening everywhere else; omitting `search` allows any on the second.
     localPatterns: [{ pathname: '/**', search: '' }, { pathname: '/api/storage/**' }],
+    // Next 16 only allows q=75 unless listed here (an unlisted q is rejected). 90 is the "crisp"
+    // tier for media that is the point of its section (lib/media-image-url.ts → CRISP_QUALITY).
+    qualities: [75, 90],
   },
   // Legacy URLs (bookmarks, shared links, sent e-mails) → current routes. See lib/routes.ts.
   async redirects() {
@@ -101,13 +106,16 @@ const nextConfig = {
       { source: '/dashboard/creator/products/:path*', destination: '/my-products/:path*', permanent: true },
       { source: '/dashboard/products', destination: '/my-products', permanent: true },
       { source: '/dashboard/services', destination: '/my-services', permanent: true },
-      { source: '/dashboard/purchases/:path*', destination: '/purchases', permanent: true },
+      { source: '/dashboard/purchases/:path*', destination: '/marketplace', permanent: true },
       { source: '/dashboard/favorites', destination: '/marketplace?tab=favorites', permanent: true },
       { source: '/dashboard/discussions/:path*', destination: '/messages/:path*', permanent: true },
       { source: '/dashboard/:section(notifications|search|settings)', destination: '/:section', permanent: true },
       { source: '/marketplace/my-products', destination: '/my-products', permanent: true },
       { source: '/marketplace/my-services', destination: '/my-services', permanent: true },
-      { source: '/marketplace/purchases/:path*', destination: '/purchases', permanent: true },
+      { source: '/marketplace/purchases/:path*', destination: '/marketplace', permanent: true },
+      // The purchases library is gone (owned products download from their own page). Not permanent:
+      // a cached 308 would outlive a library that comes back.
+      { source: '/purchases/:path*', destination: '/marketplace', permanent: false },
       { source: '/marketplace/favorites', destination: '/marketplace?tab=favorites', permanent: true },
       { source: '/marketplace/portfolio', destination: '/providers', permanent: true },
       { source: '/marketplace/creators', destination: '/providers', permanent: true },

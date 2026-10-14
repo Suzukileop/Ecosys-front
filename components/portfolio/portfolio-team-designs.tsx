@@ -66,6 +66,7 @@ import {
   TeamMemberImage,
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The section renders one Team design, so each design is its own chunk. */
 const TeamProfileCardsGallery = dynamic(() =>
@@ -454,6 +455,7 @@ function TeamPolaroidWall({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
+  const t = useT();
   const [gridView, setGridView] = useState(false);
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef<{ pointerId: number; startX: number; startLeft: number; moved: boolean } | null>(null);
@@ -545,7 +547,7 @@ function TeamPolaroidWall({
               </>
             )}
           </svg>
-          {gridView ? 'Scroll view' : 'View all'}
+          {gridView ? t('Scroll view') : t('View all')}
         </button>
       </div>
 
@@ -591,7 +593,7 @@ function TeamPolaroidWall({
                     type="button"
                     onClick={() => stepWall(direction)}
                     disabled={disabled}
-                    aria-label={direction === -1 ? 'Previous member' : 'Next member'}
+                    aria-label={direction === -1 ? t('Previous member') : t('Next member')}
                     className={`group/nav flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${POLAROID_EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
                       disabled ? 'cursor-default opacity-30' : 'hover:-translate-y-0.5'
                     }`}
@@ -728,6 +730,7 @@ function TeamPortraitRail({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
+  const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const trackRef = useRef<HTMLDivElement | null>(null);
   const dragState = useRef<{ pointerId: number; startX: number; startLeft: number; moved: boolean } | null>(null);
@@ -930,7 +933,7 @@ function TeamPortraitRail({
               ref={trackRef}
               role={arrows ? undefined : 'slider'}
               tabIndex={arrows ? undefined : 0}
-              aria-label={arrows ? undefined : 'Scroll through the team'}
+              aria-label={arrows ? undefined : t('Scroll through the team')}
               aria-valuemin={arrows ? undefined : 1}
               aria-valuemax={arrows ? undefined : members.length}
               aria-valuenow={arrows ? undefined : active + 1}
@@ -1015,7 +1018,7 @@ function TeamPortraitRail({
                       type="button"
                       onClick={() => stepRail(direction)}
                       disabled={disabled}
-                      aria-label={direction === -1 ? 'Previous member' : 'Next member'}
+                      aria-label={direction === -1 ? t('Previous member') : t('Next member')}
                       className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
                         disabled ? 'cursor-default opacity-30' : 'hover:-translate-y-0.5'
                       }`}
@@ -1064,6 +1067,7 @@ function TeamSpotlight({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
+  const t = useT();
   const [activeId, setActiveId] = useState(members[0]?.id ?? '');
   const active = members.find((member) => member.id === activeId) ?? members[0];
   const portraitRef = useRef<HTMLDivElement | null>(null);
@@ -1176,7 +1180,7 @@ function TeamSpotlight({
         key={direction}
         type="button"
         onClick={() => step(direction)}
-        aria-label={direction === -1 ? 'Previous member' : 'Next member'}
+        aria-label={direction === -1 ? t('Previous member') : t('Next member')}
         className={`group/nav flex items-center justify-center rounded-full border transition-transform duration-[520ms] ${EASE_CLS} hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
           size === 'lg' ? 'h-12 w-12 sm:h-14 sm:w-14' : 'h-10 w-10 sm:h-11 sm:w-11'
         }`}
@@ -1349,7 +1353,7 @@ function TeamSpotlight({
                 : ''
             }`}
             role="tablist"
-            aria-label="Choose a team member"
+            aria-label={t('Choose a team member')}
           >
             {members.map((member, index) => {
               const isActive = member.id === active.id;

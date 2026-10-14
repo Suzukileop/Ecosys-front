@@ -10,6 +10,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -59,6 +60,7 @@ export function ContactDesignStudioOverlap({
   colorMode: 'light' | 'dark';
   layout: ContactDesignLayoutResolver;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const imageRef = useRef<HTMLDivElement>(null);
   const arrowRef = useRef<HTMLDivElement>(null);
@@ -190,7 +192,7 @@ export function ContactDesignStudioOverlap({
             {heroImageUrl ? (
               <Image
                 src={heroImageUrl}
-                alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
+                alt={displayName ? t('Portrait of {displayName}', { displayName }) : t('Portrait')}
                 fill
                 sizes="(max-width: 768px) 100vw, 50vw"
                 className="object-cover object-center"

@@ -26,9 +26,12 @@ export interface FooterMiniBarVariantProps {
    * availability/credit text their source design used. Harmless to pass to every variant;
    * Minimal/Kinetic/Split caps ignore them.
    */
-  /** Pre-resolved copyright label (`resolveFooterCopyrightLabel(copyrightLabel, creatorName)`) —
-   *  null/empty hides the copyright line entirely. */
+  /** Pre-resolved copyright label (`resolveFooterCopyrightLabel(copyrightLabel, creatorName)`);
+   *  empty falls back to the "© year name" base. */
   copyrightText?: string | null;
+  /** General → Copyright. Off hides every variant's copyright line (a variant that is nothing
+   *  but that line then renders nothing). */
+  showCopyright?: boolean;
   /** Only the Hero columns variant's "WE ARE OPEN"/"WE ARE CLOSED" status reads this. */
   isAvailable?: boolean | null;
   /** Only the Hero columns variant's status line reads this. */

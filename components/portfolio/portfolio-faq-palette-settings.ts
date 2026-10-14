@@ -5,6 +5,7 @@
 
 import { DEFAULT_HERO_PALETTE, HERO_PALETTE_TOKEN_IDS, mergeHeroPalette, resolveHeroPaletteColor, type HeroPaletteTokenId, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
+import { msg } from '@/lib/i18n/config';
 
 /** Local mirrors — avoid importing portfolio-faq-settings (circular TDZ). */
 type FaqElementStyleTarget = 'question' | 'answer' | 'number';

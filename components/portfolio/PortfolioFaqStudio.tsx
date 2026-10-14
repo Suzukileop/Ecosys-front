@@ -19,6 +19,7 @@ import {
   useInlineStudio,
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type FaqItem = { question: string; answer: string };
 type FaqRow = FaqItem & { key: string };
@@ -61,11 +62,12 @@ const FaqRowView = memo(function FaqRowView({
   onMove: (key: string, direction: -1 | 1) => void;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const missingAnswer = Boolean(row.question.trim()) && !row.answer.trim();
 
   return (
     <li className={`group/row grid grid-cols-[2.25rem_minmax(0,1fr)_auto] gap-x-3 py-8 first:pt-2 ${STUDIO_ROW_RULE}`}>
-      <span aria-hidden className="pt-0.5 text-[15px] font-semibold tabular-nums text-[#FF5722]">
+      <span aria-hidden className="pt-0.5 text-[15px] font-semibold tabular-nums text-[#536471] dark:text-[#71767B]">
         {String(index + 1).padStart(2, '0')}
       </span>
 
@@ -75,7 +77,7 @@ const FaqRowView = memo(function FaqRowView({
             type="text"
             value={row.question}
             maxLength={MAX_QUESTION}
-            placeholder="Ask a question buyers often have"
+            placeholder={t('Ask a question buyers often have')}
             aria-label={`Question ${index + 1}`}
             autoFocus={autoFocus}
             autoComplete="off"
@@ -88,14 +90,14 @@ const FaqRowView = memo(function FaqRowView({
             value={row.answer}
             maxLength={MAX_ANSWER}
             rows={1}
-            placeholder="Answer in one or two sentences"
+            placeholder={t('Answer in one or two sentences')}
             aria-label={`Answer ${index + 1}`}
             onChange={(event) => onChange(row.key, { answer: event.currentTarget.value })}
             className={`${STUDIO_BARE_INPUT_CLASS} resize-none text-[15px] leading-relaxed text-neutral-600 [field-sizing:content] dark:text-neutral-300`}
           />
         </StudioUnderline>
         {missingAnswer ? (
-          <p className="mt-1 text-[13px] text-neutral-400 dark:text-neutral-500">An answer is required.</p>
+          <p className="mt-1 text-[13px] text-neutral-400 dark:text-neutral-500">{t('An answer is required.')}</p>
         ) : null}
       </div>
 
@@ -104,7 +106,7 @@ const FaqRowView = memo(function FaqRowView({
           <button
             type="button"
             aria-label={`Move question ${index + 1} up`}
-            title="Move up"
+            title={t('Move up')}
             disabled={index === 0}
             onClick={() => onMove(row.key, -1)}
             className={MOVE_BUTTON_CLASS}
@@ -114,7 +116,7 @@ const FaqRowView = memo(function FaqRowView({
           <button
             type="button"
             aria-label={`Move question ${index + 1} down`}
-            title="Move down"
+            title={t('Move down')}
             disabled={index >= total - 1}
             onClick={() => onMove(row.key, 1)}
             className={MOVE_BUTTON_CLASS}
@@ -129,6 +131,7 @@ const FaqRowView = memo(function FaqRowView({
 });
 
 function FaqList({ getDraft, change }: { getDraft: () => FaqDraft; change: StudioChangeHandler<FaqDraft> }) {
+  const t = useT();
   const [rows, setRows] = useState(() => getDraft().items);
   const [freshKey, setFreshKey] = useState<string | null>(null);
 
@@ -171,16 +174,16 @@ function FaqList({ getDraft, change }: { getDraft: () => FaqDraft; change: Studi
 
   return (
     <section className="pb-10 pt-3" aria-label="FAQ">
-      <StudioSectionHeader label={`Questions · ${String(rows.length).padStart(2, '0')}`}>
+      <StudioSectionHeader label={t('Questions · {padStart}', { padStart: String(rows.length).padStart(2, '0') })}>
         <span className={STUDIO_SECONDARY_CLASS}>
-          {rows.length} of {MAX_FAQ}
+          {t('{rowsLength} of {MAXFAQ}', { rowsLength: rows.length, MAXFAQ: MAX_FAQ })}
         </span>
-        <StudioIconAction icon="add" label="Add question" onClick={add} disabled={rows.length >= MAX_FAQ} />
+        <StudioIconAction icon="add" label={t('Add question')} onClick={add} disabled={rows.length >= MAX_FAQ} />
       </StudioSectionHeader>
 
       {rows.length === 0 ? (
-        <button type="button" onClick={add} className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}>
-          No question yet — add the first one buyers usually ask.
+        <button type="button" onClick={add} className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA]`}>
+          {t('No question yet — add the first one buyers usually ask.')}
         </button>
       ) : (
         <ul style={STUDIO_FLOAT_IN_STYLE}>

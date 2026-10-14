@@ -21,16 +21,18 @@ import { uploadContentMedia } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { MediaImage } from '@/components/ui/MediaImage';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const MAX_STRENGTHS = 12;
 const MAX_DESCRIPTION = 280;
 const MAX_USE_CASES = 8;
 
 const LEVEL_OPTIONS: { value: StrengthToolLevel; label: string }[] = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'expert', label: 'Expert' },
+  { value: 'beginner', label: msg('Beginner') },
+  { value: 'intermediate', label: msg('Intermediate') },
+  { value: 'advanced', label: msg('Advanced') },
+  { value: 'expert', label: msg('Expert') },
 ];
 
 type ProfileStrengthsFieldProps = {
@@ -79,6 +81,7 @@ export function ProfileStrengthsField({
   allowedSpecialties: _allowedSpecialties = [],
   mode = 'all',
 }: ProfileStrengthsFieldProps) {
+  const t = useT();
   const watchedStrengths = useWatch({ control, name: 'strengthsTools' });
   const watchedStackItems = useWatch({ control, name: 'stackItems' });
   const [customDraft, setCustomDraft] = useState('');
@@ -173,7 +176,7 @@ export function ProfileStrengthsField({
       const uploaded = await uploadContentMedia(file);
       setCustomIconUrl(uploaded);
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Unable to upload logo.'));
+      setUploadError(getApiErrorMessage(e, t('Unable to upload logo.')));
     } finally {
       setUploadingIcon(false);
     }
@@ -203,7 +206,7 @@ export function ProfileStrengthsField({
   const renderReadOnlyList = (heading: string) => {
     const listBlock =
       selectedValues.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No items added yet.</p>
+        <p className={profileSectionEmptyClass}>{t('No items added yet.')}</p>
       ) : (
         <div className="space-y-3">
           {selectedValues.map((item) => {
@@ -249,11 +252,11 @@ export function ProfileStrengthsField({
       {selectedValues.length > 0 && (
         <div className="space-y-3">
           <div>
-            <p className={`mb-1.5 ${profileSectionSubheadingClass}`}>Selection</p>
+            <p className={`mb-1.5 ${profileSectionSubheadingClass}`}>{t('Selection')}</p>
             <p className={profileSectionMutedTextClass}>
               {showUseCases
-                ? 'Refine each tool: level, use cases and description. Without an uploaded logo, the first letter is shown.'
-                : 'Refine each item: level and description. Without an uploaded logo, the first letter is shown.'}
+                ? t('Refine each tool: level, use cases and description. Without an uploaded logo, the first letter is shown.')
+                : t('Refine each item: level and description. Without an uploaded logo, the first letter is shown.')}
             </p>
           </div>
           {selectedValues.map((label) => {
@@ -281,7 +284,7 @@ export function ProfileStrengthsField({
                     }
                     className="shrink-0 rounded-full px-2 text-sm font-semibold text-red-600 hover:text-red-700 dark:text-red-400"
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </div>
 
@@ -289,7 +292,7 @@ export function ProfileStrengthsField({
                   {isStackMode ? (
                     <label className="block sm:col-span-2">
                       <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-                        Category
+                        {t('Category')}
                       </span>
                       <input
                         type="text"
@@ -298,14 +301,14 @@ export function ProfileStrengthsField({
                         onChange={(event) =>
                           updateItem(label, { category: event.target.value.slice(0, 80) })
                         }
-                        placeholder="e.g. Frontend, Backend, DevOps"
+                        placeholder={t('e.g. Frontend, Backend, DevOps')}
                         className={`mt-2 ${profileFormInputClass}`}
                       />
                     </label>
                   ) : null}
                   <label className="block sm:col-span-2">
                     <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-                      Level
+                      {t('Level')}
                     </span>
                     <select
                       value={item.level ?? ''}
@@ -316,10 +319,10 @@ export function ProfileStrengthsField({
                       }
                       className={`mt-2 ${profileFormInputClass}`}
                     >
-                      <option value="">Not set</option>
+                      <option value="">{t('Not set')}</option>
                       {LEVEL_OPTIONS.map((option) => (
                         <option key={option.value} value={option.value}>
-                          {option.label}
+                          {t(option.label)}
                         </option>
                       ))}
                     </select>
@@ -328,7 +331,7 @@ export function ProfileStrengthsField({
 
                 <label className="mt-3 block">
                   <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-                    Description
+                    {t('Description')}
                   </span>
                   <textarea
                     rows={2}
@@ -348,7 +351,7 @@ export function ProfileStrengthsField({
                 {showUseCases ? (
                   <div className="mt-3">
                     <span className="text-[13px] font-semibold uppercase tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-                      Use cases
+                      {t('Use cases')}
                     </span>
                     <div className="mt-2.5 flex flex-wrap gap-2">
                       {useCases.map((useCase) => (
@@ -361,9 +364,9 @@ export function ProfileStrengthsField({
                             type="button"
                             onClick={() => removeUseCase(label, useCase)}
                             className="text-neutral-400 hover:text-red-500"
-                            aria-label={`Remove ${useCase}`}
+                            aria-label={t('Remove {useCase}', { useCase })}
                           >
-                            ×
+                            {t('×')}
                           </button>
                         </span>
                       ))}
@@ -388,8 +391,8 @@ export function ProfileStrengthsField({
                         }}
                         placeholder={
                           useCases.length >= MAX_USE_CASES
-                            ? 'Maximum 8 use cases'
-                            : 'Add a use case'
+                            ? t('Maximum 8 use cases')
+                            : t('Add a use case')
                         }
                         className={profileFormInputClass}
                       />
@@ -399,7 +402,7 @@ export function ProfileStrengthsField({
                         disabled={!useCaseDraft.trim() || useCases.length >= MAX_USE_CASES}
                         className="rounded-xl bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
                       >
-                        Add
+                        {t('Add')}
                       </button>
                     </div>
                   </div>
@@ -413,8 +416,7 @@ export function ProfileStrengthsField({
       <div className="rounded-2xl border border-dashed border-neutral-200 p-5 dark:border-neutral-700">
         <p className="text-base font-semibold text-neutral-900 dark:text-neutral-100">{addLabel}</p>
         <p className={`mt-1.5 ${profileSectionMutedTextClass}`}>
-          Name + optional logo ({selectedValues.length}/{MAX_STRENGTHS}). Logo is detected automatically
-          if the name is recognized; otherwise the first letter is shown. Uploads take priority.
+          {t('Name + optional logo ({selectedValuesLength}/{MAXSTRENGTHS}). Logo is detected automatically if the name is recognized; otherwise the first letter is shown. Uploads take priority.', { selectedValuesLength: selectedValues.length, MAXSTRENGTHS: MAX_STRENGTHS })}
         </p>
         <div className="mt-4 flex flex-col gap-2.5 sm:flex-row sm:items-center">
           <input
@@ -428,8 +430,8 @@ export function ProfileStrengthsField({
             type="button"
             disabled={uploadingIcon || selectedValues.length >= MAX_STRENGTHS}
             onClick={() => iconInputRef.current?.click()}
-            title="Upload logo"
-            aria-label="Upload logo"
+            title={t('Upload logo')}
+            aria-label={t('Upload logo')}
             className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100 transition hover:bg-neutral-200 disabled:opacity-40 dark:bg-white/[0.06] dark:hover:bg-white/[0.1]"
           >
             {uploadingIcon ? (
@@ -450,7 +452,7 @@ export function ProfileStrengthsField({
                 addCustomTool();
               }
             }}
-            placeholder={isStackMode ? 'Item name' : 'Tool name'}
+            placeholder={isStackMode ? t('Item name') : t('Tool name')}
             className={profileFormInputClass}
           />
           <button
@@ -459,7 +461,7 @@ export function ProfileStrengthsField({
             disabled={!customDraft.trim() || selectedValues.length >= MAX_STRENGTHS}
             className="rounded-xl bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white transition hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
           >
-            Add
+            {t('Add')}
           </button>
         </div>
         {customIconUrl ? (
@@ -468,12 +470,11 @@ export function ProfileStrengthsField({
             onClick={() => setCustomIconUrl(null)}
             className="mt-2.5 text-sm font-medium text-neutral-500 hover:text-neutral-800 dark:text-neutral-400 dark:hover:text-neutral-200"
           >
-            Remove logo
+            {t('Remove logo')}
           </button>
         ) : draftAutoIcon ? (
           <p className="mt-2.5 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-            Logo detected automatically: {draftAutoIcon.matchedName}. You can upload a custom logo to
-            replace it.
+            {t('Logo detected automatically: {matchedName}. You can upload a custom logo to replace it.', { matchedName: draftAutoIcon.matchedName })}
           </p>
         ) : null}
         {uploadError ? <p className="mt-2.5 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}

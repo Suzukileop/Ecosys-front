@@ -8,7 +8,8 @@ import {
   type PortfolioFaqHeaderTitleSize,
   type PortfolioFaqHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_LABEL_TEXT = 'FAQ';
 const DEFAULT_TITLE_TEXT = 'Common questions';
@@ -77,15 +78,16 @@ export function FaqHeaderIndexHeader({
   trailing?: ReactNode;
   itemCount?: number;
 }) {
+  const t = useT();
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerIndexTitleText || DEFAULT_TITLE_TEXT).trim();
   const subtitle = (presentation.headerIndexSubtitleText || DEFAULT_SUBTITLE_TEXT).trim();
   const label = (presentation.headerIndexLabelText || DEFAULT_LABEL_TEXT).trim();
   const count = Math.max(0, itemCount ?? 0);
   const countLabelCustom = presentation.headerIndexCountLabelText?.trim();
-  const countLabel = countLabelCustom || (count === 1 ? 'Question' : 'Questions');
+  const countLabel = countLabelCustom || (count === 1 ? t('Question') : t('Questions'));
 
   const labelTone = faqHeaderPaletteTokenColor(presentation.headerIndexLabelColor ?? 'texteFort');
   const numberTone = faqHeaderPaletteTokenColor(presentation.headerIndexNumberColor ?? 'principal');

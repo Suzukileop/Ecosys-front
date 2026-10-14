@@ -16,6 +16,7 @@ import {
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FALLBACK_BIO =
   'Ingénieur informatique passionné par les solutions innovantes et les expériences numériques claires.';
@@ -41,6 +42,7 @@ const UNAVAILABLE_PILL_FG = '#6B6B6B';
  * - Scroll: Asymmetric parallax - left (0.75x slow), right (1.3x fast + fade out)
  */
 export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -526,7 +528,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
                 }}
                 data-gsap-cta="primary"
               >
-                View my work
+                {t('View my work')}
               </a>
               {/* Secondary CTA - Ghost style with subtle ink border */}
               <a
@@ -551,7 +553,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
                 }}
                 data-gsap-cta="secondary"
               >
-                Contact me
+                {t('Contact me')}
               </a>
             </div>
           </div>
@@ -578,7 +580,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
               letterSpacing: '0.18em', // Wide spacing for premium feel
             }}
           >
-            Scroll to explore
+            {t('Scroll to explore')}
           </span>
           <span
             ref={scrollLineRef}

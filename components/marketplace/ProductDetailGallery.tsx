@@ -4,6 +4,7 @@ import { useMemo, useState } from 'react';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { ProductImageLightbox } from '@/components/marketplace/ProductImageLightbox';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductDetailGalleryProps = {
   title: string;
@@ -40,6 +41,7 @@ export function ProductDetailGallery({
   galleryImageUrls,
   enableLightbox = false,
 }: ProductDetailGalleryProps) {
+  const t = useT();
   const [lightboxOpen, setLightboxOpen] = useState(false);
   const [lightboxIndex, setLightboxIndex] = useState(0);
 
@@ -50,8 +52,8 @@ export function ProductDetailGallery({
 
   if (!thumbnailUrl) {
     return (
-      <div className="flex aspect-video w-full items-center justify-center rounded-2xl bg-gray-100 text-sm text-gray-400 dark:bg-[#0F0F0F] dark:text-gray-500">
-        No preview available
+      <div className="flex aspect-video w-full items-center justify-center bg-[#F7F9F9] text-[15px] text-[#536471] dark:bg-[#16181C] dark:text-[#71767B]">
+        {t('No preview available')}
       </div>
     );
   }
@@ -67,7 +69,7 @@ export function ProductDetailGallery({
 
   return (
     <>
-      <div className="relative w-full overflow-hidden rounded-2xl bg-gray-100 dark:bg-[#0F0F0F]">
+      <div className="relative w-full overflow-hidden bg-[#F7F9F9] dark:bg-[#16181C]">
         <button
           type="button"
           disabled={!canOpenLightbox}
@@ -75,7 +77,7 @@ export function ProductDetailGallery({
           className={`relative aspect-video w-full text-left ${
             canOpenLightbox ? 'cursor-pointer' : 'cursor-default'
           }`}
-          aria-label={canOpenLightbox ? `Open ${title} media` : undefined}
+          aria-label={canOpenLightbox ? t('Open {title} media', { title }) : undefined}
         >
           <ProductThumbnailMedia
             url={thumbnailUrl}
@@ -85,14 +87,14 @@ export function ProductDetailGallery({
             className="absolute inset-0 h-full w-full"
           />
           {isVideo && videoDurationSeconds != null && videoDurationSeconds > 0 && (
-            <span className="absolute left-4 top-4 flex items-center gap-1 rounded-md bg-gray-900/80 px-2.5 py-1 text-xs font-medium text-white">
+            <span className="absolute left-4 top-4 flex items-center gap-1 rounded-[4px] bg-black/70 px-2 py-0.5 text-[13px] font-semibold text-white">
               {videoResolution && `${videoResolution} · `}
               {formatDuration(videoDurationSeconds)}
             </span>
           )}
           {isBestseller && (
-            <span className="absolute bottom-4 left-4 rounded-md bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white">
-              Bestseller
+            <span className="absolute bottom-4 left-4 rounded-[4px] bg-[#0F1419] px-2 py-0.5 text-[13px] font-semibold text-white">
+              {t('Bestseller')}
             </span>
           )}
         </button>

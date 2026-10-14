@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useId, useRef, useState, type KeyboardEvent } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type FormSelectOption = { value: string; label: string };
 
@@ -29,6 +30,7 @@ export function FormSelect({
   className = '',
   'aria-label': ariaLabel,
 }: FormSelectProps) {
+  const t = useT();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const listRef = useRef<HTMLUListElement>(null);
@@ -156,7 +158,7 @@ export function FormSelect({
                     : 'text-neutral-600 dark:text-neutral-300'
                 }`}
               >
-                <span className="truncate">{option.label}</span>
+                <span className="truncate">{t(option.label)}</span>
                 {isSelected ? (
                   <svg className="h-3.5 w-3.5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />

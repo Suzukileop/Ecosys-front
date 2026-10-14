@@ -1,11 +1,13 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import { useCallback, useEffect, useState } from 'react';
 import { getReactionCounts, removeReaction, setReaction } from '@/lib/marketplace-api';
 import { emitProductLikesUpdated } from '@/lib/productLikesBus';
 import { useAuth } from '@/context/AuthContext';
 import { LikeBurst } from '@/components/ui/LikeBurst';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductLikeButtonProps = {
   productId: string;
@@ -17,7 +19,7 @@ type ProductLikeButtonProps = {
 };
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
+  return new Intl.NumberFormat(localeTag()).format(value);
 }
 
 export function ProductLikeButton({
@@ -28,6 +30,7 @@ export function ProductLikeButton({
   variant = 'default',
   tone = 'default',
 }: ProductLikeButtonProps) {
+  const t = useT();
   const compact = variant === 'compact';
   const light = tone === 'light';
   const { user, isLoading } = useAuth();
@@ -107,16 +110,17 @@ export function ProductLikeButton({
         setLikes(likes);
         pushFlashFeedback({
           variant: 'error',
-          title: wasLiked ? 'Unable to remove your like' : 'Unable to like this product',
+          title: wasLiked ? t('Unable to remove your like') : t('Unable to like this product'),
         });
       } finally {
         setBusy(false);
       }
     },
-    [busy, canLike, liked, likes, productId, setLikedState]
+    [busy, canLike, liked, likes, productId, setLikedState, t]
   );
 
-  const countLabel = formatCount(likes);
+  // Zero counts stay hidden on the compact (card) variant, like the News action bar.
+  const countLabel = compact && likes <= 0 ? '' : formatCount(likes);
   const suffix = compact ? '' : ` ${likes <= 1 ? 'like' : 'likes'}`;
   const animate = liked && burstKey > 0;
 
@@ -129,12 +133,10 @@ export function ProductLikeButton({
           animate ? 'motion-safe:animate-like-pop' : ''
         } ${
           liked
-            ? light
-              ? 'text-white'
-              : 'text-[#FF5722]'
+            ? 'text-[#F91880]'
             : light
-              ? 'text-white/70'
-              : 'text-gray-400 group-hover/like:text-[#FF5722] dark:text-gray-500'
+              ? 'text-white/70 group-hover/like:text-[#F91880]'
+              : 'text-[#536471] group-hover/like:text-[#F91880] dark:text-[#71767B]'
         }`}
         fill={liked ? 'currentColor' : 'none'}
         viewBox="0 0 24 24"
@@ -161,11 +163,11 @@ export function ProductLikeButton({
   );
 
   const contentClass = compact
-    ? `inline-flex items-center gap-1.5 text-sm font-medium ${
-        light ? 'text-white/90' : 'text-gray-500 dark:text-gray-400'
+    ? `inline-flex items-center gap-1.5 text-[13px] font-medium ${
+        light ? 'text-white/90' : 'text-[#536471] dark:text-[#71767B]'
       }`
     : `inline-flex items-center gap-1.5 text-sm ${
-        light ? 'text-white/90' : 'text-gray-600 dark:text-gray-300'
+        light ? 'text-white/90' : 'text-[#536471] dark:text-[#71767B]'
       }`;
 
   if (!canLike) {
@@ -182,9 +184,9 @@ export function ProductLikeButton({
       type="button"
       onClick={(e) => void toggle(e)}
       className={`group/like ${contentClass} transition-colors ${
-        liked && !light ? 'text-[#FF5722] dark:text-[#FF5722]' : ''
-      } ${liked || light ? '' : 'hover:text-[#FF5722] dark:hover:text-[#FF5722]'}`}
-      aria-label={liked ? 'Unlike' : 'Like this product'}
+        liked ? '!text-[#F91880]' : ''
+      } ${liked || light ? '' : 'hover:text-[#F91880]'}`}
+      aria-label={liked ? t('Unlike') : t('Like this product')}
       aria-pressed={liked}
     >
       {heartIcon}

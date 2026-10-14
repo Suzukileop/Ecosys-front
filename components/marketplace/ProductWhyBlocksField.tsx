@@ -16,6 +16,7 @@ import {
   type ProductWhyBlockForm,
 } from '@/components/marketplace/product-why-block-schema';
 import type { ProductFormValues } from '@/components/marketplace/product-editor-schema';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const MEDIA_ACCEPT =
   'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov';
@@ -72,6 +73,7 @@ function MediaWhyBlock({
   control: Control<ProductFormValues>;
   onRemove: () => void;
 }) {
+  const t = useT();
   const mediaUrl = watch(`whyProductBlocks.${index}.mediaUrl`) ?? '';
   const [localPreview, setLocalPreview] = useState<UploadPreview | null>(null);
   const { inputRef, uploading, uploadError, pickFile, uploadFile } = useContentMediaUpload({
@@ -134,7 +136,7 @@ function MediaWhyBlock({
                 />
               </svg>
             </span>
-            <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">Drop photo or video</span>
+            <span className="mt-3 text-sm font-bold text-neutral-900 dark:text-white">{t('Drop photo or video')}</span>
           </span>
         )}
         {uploading ? <UploadingOverlay preview={localPreview} /> : null}
@@ -143,8 +145,8 @@ function MediaWhyBlock({
         <button
           type="button"
           onClick={onRemove}
-          aria-label="Remove highlight"
-          title="Remove highlight"
+          aria-label={t('Remove highlight')}
+          title={t('Remove highlight')}
           className="absolute right-3 top-3 z-10 inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-md transition-[opacity,background-color] hover:bg-black/75 focus-visible:opacity-100 sm:opacity-0 sm:group-hover/block:opacity-100"
         >
           <FontAwesomeIcon icon={faTrashCan} className="text-[12px]" />
@@ -152,7 +154,7 @@ function MediaWhyBlock({
       ) : null}
       </div>
       <input ref={inputRef} type="file" accept={MEDIA_ACCEPT} className="sr-only" onChange={(e) => void onFileChange(e)} />
-      {uploadError ? <p className="mt-2 text-xs text-red-600">{uploadError}</p> : null}
+      {uploadError ? <p className="mt-2 text-[13px] text-[#F4212E]">{uploadError}</p> : null}
 
       <div className="mt-6">
         <CaptionLines index={index} register={register} control={control} />
@@ -172,13 +174,14 @@ function TextWhyBlock({
   control: Control<ProductFormValues>;
   onRemove: () => void;
 }) {
+  const t = useT();
   return (
     <section className="w-full">
       <CaptionLines
         index={index}
         register={register}
         control={control}
-        label="Selling points"
+        label={t('Selling points')}
         placeholderPrefix="Point"
         onRemoveSection={onRemove}
       />
@@ -195,6 +198,7 @@ export function ProductWhyBlocksField({
   setValue,
   control,
 }: ProductWhyBlocksFieldProps) {
+  const t = useT();
   const canAdd = fields.length < 10;
 
   return (
@@ -204,17 +208,17 @@ export function ProductWhyBlocksField({
           type="button"
           disabled={!canAdd}
           onClick={() => append(createEmptyProductWhyBlock(fields.length, 'media'))}
-          className="inline-flex h-10 items-center rounded-lg border border-black/[0.1] px-4 text-[14px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:opacity-40 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30"
+          className="inline-flex h-10 items-center border border-[#CFD9DE] px-4 text-[14px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:opacity-40 dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]"
         >
-          + Photo highlight
+          {t('+ Photo highlight')}
         </button>
         <button
           type="button"
           disabled={!canAdd}
           onClick={() => append(createEmptyProductWhyBlock(fields.length, 'text'))}
-          className="inline-flex h-10 items-center rounded-lg border border-black/[0.1] px-4 text-[14px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:opacity-40 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30"
+          className="inline-flex h-10 items-center border border-[#CFD9DE] px-4 text-[14px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:opacity-40 dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]"
         >
-          + Text highlight
+          {t('+ Text highlight')}
         </button>
       </div>
 

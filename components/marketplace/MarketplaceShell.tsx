@@ -11,6 +11,7 @@ import { DashboardShell } from '@/components/layout/DashboardShell';
 import { MarketplacePublicNav } from '@/components/marketplace/MarketplacePublicNav';
 import { MarketplacePatternBackground } from '@/components/marketplace/ProductDetailHalftoneBackground';
 import { APP_GROUND } from '@/components/landing/landingBrand';
+import { isNewsGroundPath } from '@/lib/routes';
 
 type MarketplaceShellProps = {
   children: React.ReactNode;
@@ -26,6 +27,8 @@ function isMarketplaceHubPath(pathname: string): boolean {
 }
 
 function getPatternVariant(pathname: string): 'hub' | 'product' | null {
+  // Pages on the News ground draw plain surfaces: no decorative motif behind them.
+  if (isNewsGroundPath(pathname)) return null;
   if (
     isProductDetailPath(pathname) ||
     isMarketplaceCreatorProfilePath(pathname) ||
@@ -53,11 +56,13 @@ export function MarketplaceShell({ children, authenticated }: MarketplaceShellPr
         className={
           hasPattern
             ? 'relative min-h-screen'
-            : `min-h-screen ${APP_GROUND} dark:bg-black`
+            : isNewsGroundPath(pathname)
+              ? 'min-h-screen bg-white dark:bg-black'
+              : `min-h-screen ${APP_GROUND} dark:bg-black`
         }
       >
         {patternVariant && <MarketplacePatternBackground variant={patternVariant} />}
-        <div className="news-theme relative z-10">
+        <div className={`news-theme ${isNewsGroundPath(pathname) ? 'news-feed ' : ''}relative z-10`}>
           <MarketplacePublicNav transparent={patternVariant === 'hub'} />
           {children}
         </div>
@@ -70,7 +75,7 @@ export function MarketplaceShell({ children, authenticated }: MarketplaceShellPr
       {patternVariant && <MarketplacePatternBackground variant={patternVariant} />}
       <DashboardShell transparentContent={hasPattern} transparentHeader={patternVariant === 'hub'}>
         {/* `contents`: scopes the News palette without adding a box to the shell's layout. */}
-        <div className="news-theme contents">{children}</div>
+        <div className={`news-theme ${isNewsGroundPath(pathname) ? 'news-feed ' : ''}contents`}>{children}</div>
       </DashboardShell>
     </>
   );

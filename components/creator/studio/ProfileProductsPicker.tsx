@@ -21,6 +21,7 @@ import {
   profileSectionMutedTextClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export const MAX_PORTFOLIO_PRODUCTS = 3;
 
@@ -54,6 +55,7 @@ function SelectedProductCard({
   busy?: boolean;
   readOnly?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="group/selected relative">
       {!readOnly ? (
@@ -61,7 +63,7 @@ function SelectedProductCard({
           type="button"
           onClick={onRemove}
           disabled={busy}
-          aria-label="Remove product"
+          aria-label={t('Remove product')}
           className="absolute right-14 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-red-600 opacity-0 shadow-sm transition hover:bg-red-50 group-hover/selected:opacity-100 focus-visible:opacity-100 disabled:opacity-40 dark:bg-neutral-900/95 dark:text-red-400 dark:hover:bg-red-500/10"
         >
           <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" fixedWidth aria-hidden />
@@ -76,7 +78,7 @@ function SelectedProductCard({
             type="button"
             onClick={onMoveUp}
             disabled={!canMoveUp || busy}
-            aria-label="Move up"
+            aria-label={t('Move up')}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm text-neutral-700 shadow-sm disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
           >
             ↑
@@ -85,7 +87,7 @@ function SelectedProductCard({
             type="button"
             onClick={onMoveDown}
             disabled={!canMoveDown || busy}
-            aria-label="Move down"
+            aria-label={t('Move down')}
             className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm text-neutral-700 shadow-sm disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
           >
             ↓
@@ -105,7 +107,8 @@ function ProductPickRow({
   onPick: () => void;
   disabled?: boolean;
 }) {
-  const title = product.title?.trim() || 'Untitled product';
+  const t = useT();
+  const title = product.title?.trim() || t('Untitled product');
 
   return (
     <button
@@ -133,7 +136,7 @@ function ProductPickRow({
         </p>
       </div>
       <span className="shrink-0 self-center text-[15px] font-semibold text-[#111111] dark:text-white">
-        Select
+        {t('Select')}
       </span>
     </button>
   );
@@ -145,6 +148,7 @@ export function ProfileProductsPicker({
   onPickerOpenChange,
   onSelectionCountChange,
 }: ProfileProductsPickerProps) {
+  const t = useT();
   const [products, setProducts] = useState<MarketplaceProductSummary[]>([]);
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
   const [savedIds, setSavedIds] = useState<string[]>([]);
@@ -173,11 +177,11 @@ export function ProfileProductsPicker({
       setSelectedIds(ids);
       setSavedIds(ids);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load products.'));
+      setError(getApiErrorMessage(e, t('Unable to load products.')));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -221,11 +225,11 @@ export function ProfileProductsPicker({
           description: feedback.description,
         });
       } catch (e) {
-        const message = getApiErrorMessage(e, 'Unable to update product selection.');
+        const message = getApiErrorMessage(e, t('Unable to update product selection.'));
         setError(message);
         pushFlashFeedback({
           variant: 'error',
-          title: 'Product update failed',
+          title: t('Product update failed'),
           description: message,
         });
         setSelectedIds([...savedIds]);
@@ -234,7 +238,7 @@ export function ProfileProductsPicker({
         setSaving(false);
       }
     },
-    [savedIds]
+    [savedIds, t]
   );
 
   const addProduct = async (id: string) => {
@@ -249,7 +253,7 @@ export function ProfileProductsPicker({
     const next = [...selectedIds, id].slice(0, MAX_PORTFOLIO_PRODUCTS);
     setPickerOpen(false);
     try {
-      await persistSelection(next, { title: 'Product added to portfolio' });
+      await persistSelection(next, { title: t('Product added to portfolio') });
     } catch {
       // already surfaced
     }
@@ -259,7 +263,7 @@ export function ProfileProductsPicker({
     try {
       await persistSelection(
         selectedIds.filter((item) => item !== id),
-        { title: 'Product removed from portfolio' }
+        { title: t('Product removed from portfolio') }
       );
     } catch {
       // already surfaced
@@ -272,7 +276,7 @@ export function ProfileProductsPicker({
     const next = [...selectedIds];
     [next[index], next[target]] = [next[target], next[index]];
     try {
-      await persistSelection(next, { title: 'Product order updated' });
+      await persistSelection(next, { title: t('Product order updated') });
     } catch {
       // already surfaced
     }
@@ -288,7 +292,7 @@ export function ProfileProductsPicker({
 
   if (readOnly) {
     if (selectedProducts.length === 0) {
-      return <p className={profileSectionEmptyClass}>No products selected for the portfolio.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No products selected for the portfolio.')}</p>;
     }
     return (
       <div className={portfolioProductsGridClassName}>
@@ -311,10 +315,10 @@ export function ProfileProductsPicker({
 
       {pickerOpen && canAddMore ? (
         <div className="space-y-4">
-          <p className="text-base font-semibold text-neutral-900 dark:text-white">Your products</p>
+          <p className="text-base font-semibold text-neutral-900 dark:text-white">{t('Your products')}</p>
           {availableToPick.length === 0 ? (
             <p className={profileSectionMutedTextClass}>
-              All products are already selected, or you have no products yet.
+              {t('All products are already selected, or you have no products yet.')}
             </p>
           ) : (
             <div className="max-h-80 space-y-2 overflow-y-auto pr-1">
@@ -335,7 +339,7 @@ export function ProfileProductsPicker({
         {selectedProducts.length === 0 ? (
           <div className="rounded-2xl border border-dashed border-neutral-300 bg-neutral-50/80 px-5 py-10 text-center dark:border-neutral-700 dark:bg-neutral-900/40">
             <p className="text-base text-neutral-600 dark:text-neutral-400">
-              No products selected yet.
+              {t('No products selected yet.')}
             </p>
             {products.length > 0 ? (
               <button
@@ -343,14 +347,14 @@ export function ProfileProductsPicker({
                 onClick={() => setPickerOpen(true)}
                 className="mt-5 rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
-                Choose from my products
+                {t('Choose from my products')}
               </button>
             ) : (
               <Link
                 href="/my-products"
                 className="mt-5 inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
-                Create a product
+                {t('Create a product')}
               </Link>
             )}
           </div>

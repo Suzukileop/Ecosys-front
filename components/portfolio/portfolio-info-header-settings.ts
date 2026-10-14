@@ -1,4 +1,5 @@
 import type { PortfolioInfoHeaderFont } from '@/components/portfolio/portfolio-info-settings';
+import { msg } from '@/lib/i18n/config';
 
 /**
  * Header — one shared, GSAP-animated header mounted above the Info section, copied
@@ -92,53 +93,53 @@ export const PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'editorial',
-    label: 'Editorial',
-    description: 'Kicker + masked line-reveal title + subtitle — premium GSAP entrance.',
+    label: msg('Editorial'),
+    description: msg('Kicker + masked line-reveal title + subtitle — premium GSAP entrance.'),
   },
   {
     value: 'marquee',
-    label: 'Marquee',
-    description: 'Bold title over a scrolling decorative word band.',
+    label: msg('Marquee'),
+    description: msg('Bold title over a scrolling decorative word band.'),
   },
   {
     value: 'index',
-    label: 'Index',
-    description: 'Ledger-style divider rule, a counting numeral, and the title split by a vertical rule.',
+    label: msg('Index'),
+    description: msg('Ledger-style divider rule, a counting numeral, and the title split by a vertical rule.'),
   },
   {
     value: 'accent-count',
-    label: 'Accent count',
-    description: 'Small accent badge with a live count, lead line, and title.',
+    label: msg('Accent count'),
+    description: msg('Small accent badge with a live count, lead line, and title.'),
   },
   {
     value: 'serif-lead',
-    label: 'Serif lead',
-    description: 'Small label above a large serif title.',
+    label: msg('Serif lead'),
+    description: msg('Small label above a large serif title.'),
   },
   {
     value: 'billboard',
-    label: 'Billboard',
-    description: 'Big faint background word behind the title, with a count line.',
+    label: msg('Billboard'),
+    description: msg('Big faint background word behind the title, with a count line.'),
   },
   {
     value: 'masthead',
-    label: 'Masthead',
-    description: 'Monumental uppercase headline with an intro line underneath.',
+    label: msg('Masthead'),
+    description: msg('Monumental uppercase headline with an intro line underneath.'),
   },
   {
     value: 'split-heading',
-    label: 'Split heading',
-    description: 'Title left with an editorial italic word, small label top-right.',
+    label: msg('Split heading'),
+    description: msg('Title left with an editorial italic word, small label top-right.'),
   },
   {
     value: 'chapter',
-    label: 'Chapter',
-    description: 'Italic serif chapter number inline with the title, underlined by an accent rule.',
+    label: msg('Chapter'),
+    description: msg('Italic serif chapter number inline with the title, underlined by an accent rule.'),
   },
   {
     value: 'cover',
-    label: 'Cover',
-    description: 'Magazine-cover masthead — up to 3 centered italic serif lines, each masked and revealed on scroll.',
+    label: msg('Cover'),
+    description: msg('Magazine-cover masthead — up to 3 centered italic serif lines, each masked and revealed on scroll.'),
   },
 ];
 
@@ -147,9 +148,9 @@ export const INFO_HEADER_PALETTE_TOKEN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'principal', label: 'Principal', description: 'Global principal token.' },
-  { value: 'secondaire', label: 'Secondary', description: 'Global secondary token.' },
-  { value: 'texteFort', label: 'Strong text', description: 'Strong ink token.' },
+  { value: 'principal', label: msg('Principal'), description: msg('Global principal token.') },
+  { value: 'secondaire', label: msg('Secondary'), description: msg('Global secondary token.') },
+  { value: 'texteFort', label: msg('Strong text'), description: msg('Strong ink token.') },
 ];
 
 export const INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS: {
@@ -157,9 +158,9 @@ export const INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Left', description: 'Default editorial alignment.' },
-  { value: 'center', label: 'Center', description: 'Centered line.' },
-  { value: 'right', label: 'Right', description: 'Right-aligned line.' },
+  { value: 'left', label: msg('Left'), description: msg('Default editorial alignment.') },
+  { value: 'center', label: msg('Center'), description: msg('Centered line.') },
+  { value: 'right', label: msg('Right'), description: msg('Right-aligned line.') },
 ];
 
 export const INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS: {
@@ -167,9 +168,9 @@ export const INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'outline', label: 'Outline', description: 'Stroke only, with a soft glow.' },
-  { value: 'fill', label: 'Fill', description: 'Solid characters, with a soft glow.' },
-  { value: 'simple', label: 'Simple', description: 'Solid characters, no glow — plain.' },
+  { value: 'outline', label: msg('Outline'), description: msg('Stroke only, with a soft glow.') },
+  { value: 'fill', label: msg('Fill'), description: msg('Solid characters, with a soft glow.') },
+  { value: 'simple', label: msg('Simple'), description: msg('Solid characters, no glow — plain.') },
 ];
 
 /** Resolves a palette-token choice to a concrete color — no free-form hex,

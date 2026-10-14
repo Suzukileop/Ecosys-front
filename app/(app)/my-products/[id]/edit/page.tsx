@@ -16,12 +16,14 @@ import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { CreatorStudioProductEditSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { useAuth } from '@/context/AuthContext';
 import type { MarketplaceProductDetail, MarketplaceProductRequest } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function EditCreatorProductPage({
   params,
 }: {
   params: Promise<{ id: string }>;
 }) {
+  const t = useT();
   const { id } = use(params);
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -41,12 +43,12 @@ export default function EditCreatorProductPage({
       const data = await getCreatorProduct(id);
       setProduct(data);
     } catch (e) {
-      setLoadError(getApiErrorMessage(e, 'Unable to load this product.'));
+      setLoadError(getApiErrorMessage(e, t('Unable to load this product.')));
       setProduct(null);
     } finally {
       setLoading(false);
     }
-  }, [id]);
+  }, [id, t]);
 
   useLayoutEffect(() => {
     setLoading(true);
@@ -60,9 +62,9 @@ export default function EditCreatorProductPage({
 
   if (!hasRole('ROLE_CREATOR')) {
     return (
-      <DashboardHomeShell newsTheme>
-        <div className="rounded-2xl border border-amber-100 bg-amber-50 p-6 text-sm text-amber-900">
-          This section is reserved for creator accounts.
+      <DashboardHomeShell newsTheme newsGround>
+        <div className="bg-[color:var(--gn-surface)] px-6 py-10 text-center text-[15px] text-[color:var(--gn-ink2)]">
+          {t('This section is reserved for creator accounts.')}
         </div>
       </DashboardHomeShell>
     );
@@ -76,27 +78,29 @@ export default function EditCreatorProductPage({
       router.replace(consultHref);
       router.refresh();
     } catch (e) {
-      setSubmitError(getApiErrorMessage(e, 'Update failed.'));
+      setSubmitError(getApiErrorMessage(e, t('Update failed.')));
     }
   };
 
   return (
-    <DashboardHomeShell fullWidth newsTheme>
-      <div className="mx-auto w-full max-w-[1400px] space-y-8 px-4 py-8 sm:px-8 sm:py-10 md:px-12 lg:px-16">
-        <div className="space-y-5">
+    <DashboardHomeShell fullWidth newsTheme newsGround>
+      <div className="mx-auto w-full max-w-[1400px] space-y-4 px-0 pb-24 pt-2 sm:space-y-6 sm:px-6 sm:pt-6 lg:px-8">
+        <div className="space-y-2 px-4 sm:px-0">
           <Link
             href={consultHref}
-            className="inline-flex items-center gap-1.5 text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+            className="inline-flex h-10 items-center gap-1.5 text-[14px] font-medium text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)]"
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="m15 18-6-6 6-6" />
             </svg>
-            Back to product
+            {t('Back to product')}
           </Link>
           <div>
-            <h1 className="text-3xl font-bold tracking-tight text-[#111111] dark:text-white sm:text-4xl">Edit product</h1>
-            <p className="mt-2 text-base text-neutral-500 dark:text-neutral-400">
-              Update your listing, then save — the preview on the right shows how it will look.
+            <h1 className="text-[26px] font-extrabold leading-8 tracking-[-0.02em] text-[color:var(--gn-ink)] sm:text-[32px] sm:leading-10">
+              {t('Edit product')}
+            </h1>
+            <p className="mt-1 text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+              {t('Update your listing, then save — the preview on the right shows how it will look.')}
             </p>
           </div>
         </div>
@@ -111,7 +115,7 @@ export default function EditCreatorProductPage({
             <ProductEditorForm
               initial={product}
               showFormatToggle={false}
-              submitLabel="Save changes"
+              submitLabel={t('Save changes')}
               cancelHref={consultHref}
               onSubmit={onSubmit}
             />

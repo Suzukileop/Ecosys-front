@@ -1,5 +1,6 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import { useCallback, useEffect, useId, useRef, useState, type ReactNode } from 'react';
 import Link from 'next/link';
 import { LikeBurst } from '@/components/ui/LikeBurst';
@@ -18,6 +19,7 @@ import {
 import { getApiErrorMessage } from '@/lib/api-error';
 import { useAuth } from '@/context/AuthContext';
 import type { PublicContentFeedItem, ReactionType } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentPostSocialBarProps = {
   postId: string;
@@ -34,8 +36,9 @@ type ContentPostSocialBarProps = {
   commentsOpen?: boolean;
   commentCount?: number;
   hideCommentsButton?: boolean;
-  /** Timeline: bare icon actions (like, comment) without the date chip. Rail: vertical round buttons. */
-  variant?: 'default' | 'timeline' | 'rail';
+  /** Timeline: bare icon actions (like, comment) without the date chip. Rail: round buttons (studio).
+   *  Feed: the News card's equal-width action bar, coloured from the `.news-theme` tokens. */
+  variant?: 'default' | 'timeline' | 'rail' | 'feed';
   commentsDisabled?: boolean;
   trailing?: ReactNode;
   /** Timeline: direct-message link to the author. */
@@ -53,18 +56,24 @@ type ContentPostSocialBarProps = {
   /** Rail: show the save (bookmark) button. */
   saveable?: boolean;
   initialViewerSaved?: boolean | null;
+  /** Offered as the "Add to collection" action of the toast shown after saving. */
+  onAddToCollection?: () => void;
   onReposted?: (repost: PublicContentFeedItem) => void;
   onRepostUndone?: () => void;
 };
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
+  return new Intl.NumberFormat(localeTag()).format(value);
 }
 
 /**
  * Broadcast whenever the viewer reposts / un-reposts a post, so every card showing that post (the
  * original, the viewer's own repost of it) follows instead of keeping a stale button.
  */
+/** Broadcast when a post becomes saved / unsaved outside its bookmark button (collections dialog). */
+export const SAVED_POST_CHANGE_EVENT = 'news-saved-post-change';
+export type SavedPostChangeDetail = { postId: string; saved: boolean };
+
 export const REPOST_CHANGE_EVENT = 'news-repost-change';
 export type RepostChangeDetail = { originalId: string; reposted: boolean; source: string };
 
@@ -89,6 +98,7 @@ export function ContentPostCommentsButton({
   onToggle?: (open: boolean) => void;
   className?: string;
 }) {
+  const t = useT();
   const active = commentsOpen;
 
   return (
@@ -109,7 +119,7 @@ export function ContentPostCommentsButton({
           d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
         />
       </svg>
-      {active ? 'Hide comments' : 'View comments'}
+      {active ? t('Hide comments') : t('View comments')}
       <span className="tabular-nums">({formatCount(commentCount ?? 0)})</span>
     </button>
   );
@@ -136,9 +146,11 @@ export function ContentPostSocialBar({
   initialViewerReposted,
   saveable = false,
   initialViewerSaved,
+  onAddToCollection,
   onReposted,
   onRepostUndone,
 }: ContentPostSocialBarProps) {
+  const t = useT();
   const { user, isLoading, hasRole } = useAuth();
   const socialStateSupplied = initialCommentCount !== undefined;
   const [likes, setLikes] = useState(initialLikes);
@@ -221,11 +233,21 @@ export function ContentPostSocialBar({
     } catch {
       setUserReaction(wasLiked ? 'LIKE' : null);
       setLikes((c) => (wasLiked ? c + 1 : Math.max(0, c - 1)));
-      pushFlashFeedback({ variant: 'error', title: wasLiked ? 'Unable to remove your like' : 'Unable to like this post' });
+      pushFlashFeedback({ variant: 'error', title: wasLiked ? t('Unable to remove your like') : t('Unable to like this post') });
     } finally {
       setBusy(false);
     }
-  }, [busy, canInteract, postId, userReaction]);
+  }, [busy, canInteract, postId, userReaction, t]);
+
+  /* Filing a post in a collection saves it — light the bookmark of every card showing that post. */
+  useEffect(() => {
+    const onFiled = (event: Event) => {
+      const detail = (event as CustomEvent<SavedPostChangeDetail>).detail;
+      if (detail?.postId === postId) setSaved(detail.saved);
+    };
+    window.addEventListener(SAVED_POST_CHANGE_EVENT, onFiled);
+    return () => window.removeEventListener(SAVED_POST_CHANGE_EVENT, onFiled);
+  }, [postId]);
 
   const toggleSaved = useCallback(async () => {
     if (!canInteract || savedBusy) return;
@@ -237,29 +259,31 @@ export function ContentPostSocialBar({
       else await addFavorite('POST', postId);
       pushFlashFeedback({
         variant: 'success',
-        title: wasSaved ? 'Removed from saved' : 'Saved',
-        description: wasSaved ? undefined : 'Find it any time under News > Saved.',
+        title: wasSaved ? t('Removed from saved') : t('Post saved'),
+        ...(!wasSaved && onAddToCollection
+          ? { actionLabel: t('Add to collection'), onAction: onAddToCollection }
+          : {}),
       });
     } catch {
       setSaved(wasSaved);
-      pushFlashFeedback({ variant: 'error', title: wasSaved ? 'Unable to unsave this post' : 'Unable to save this post' });
+      pushFlashFeedback({ variant: 'error', title: wasSaved ? t('Unable to unsave this post') : t('Unable to save this post') });
     } finally {
       setSavedBusy(false);
     }
-  }, [canInteract, postId, saved, savedBusy]);
+  }, [canInteract, onAddToCollection, postId, saved, savedBusy, t]);
 
   const isCreator = hasRole('ROLE_CREATOR');
   const onRepostClick = useCallback(async () => {
     if (!repostTarget || repostBusy) return;
     if (!canInteract) {
-      pushFlashFeedback({ variant: 'info', title: 'Sign in to repost' });
+      pushFlashFeedback({ variant: 'info', title: t('Sign in to repost') });
       return;
     }
     if (!isCreator) {
       pushFlashFeedback({
         variant: 'info',
-        title: 'Only creators can repost',
-        description: 'Become a creator to share other people\u2019s work on your profile.',
+        title: t('Only creators can repost'),
+        description: t('Become a creator to share other people’s work on your profile.'),
       });
       return;
     }
@@ -280,13 +304,13 @@ export function ContentPostSocialBar({
       if (!alreadyGone) setRepostCount((count) => Math.max(0, count - 1));
       announceRepostChange({ originalId: repostTarget.id, reposted: false, source: instanceId });
       onRepostUndone?.();
-      pushFlashFeedback({ variant: 'success', title: 'Repost removed' });
+      pushFlashFeedback({ variant: 'success', title: t('Repost removed') });
     } catch (e) {
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to remove your repost') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to remove your repost')) });
     } finally {
       setRepostBusy(false);
     }
-  }, [canInteract, instanceId, isCreator, onRepostUndone, repostBusy, repostTarget, reposted]);
+  }, [canInteract, instanceId, isCreator, onRepostUndone, repostBusy, repostTarget, reposted, t]);
 
   /* Another card for the same post changed the repost: follow it. */
   const repostTargetId = repostTarget?.id;
@@ -305,6 +329,216 @@ export function ContentPostSocialBar({
   }, [instanceId, repostTargetId]);
 
   const displayCommentCount = commentCountProp ?? commentCount;
+
+  if (variant === 'feed') {
+    /*
+     * News feed action bar, editorial layout: the conversation actions (like, comment, repost,
+     * share) read as one cluster from the left edge, and Save stands alone on the right — a
+     * bookmark is about the reader, not the conversation. Thin outline icons in secondary ink; an
+     * active state fills the icon solid. Counts only appear above zero. Colours come from the
+     * `.news-theme` tokens (the X black / white palette).
+     */
+    const liked = userReaction === 'LIKE';
+    // The button fills its cell (a generous hit area) but draws nothing itself; the visible hover /
+    // active shape is a 36px circle around the icon only. Painting the button instead turned the
+    // feedback into a 146px-wide pill.
+    const cell =
+      'group/act relative flex h-10 min-w-0 items-center gap-0.5 pr-3 text-[13px] font-medium leading-4 tabular-nums transition-colors duration-150 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40';
+    const disc =
+      'relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors duration-150 group-focus-visible/act:ring-2 group-focus-visible/act:ring-[color:var(--gn-ring)]';
+    // The fill tone (#EFF3F4 / #2A2D32), the page's one "interactive" grey — the plain hover wash
+    // read too faint to say "this is a button".
+    const discIdle = 'group-hover/act:bg-[color:var(--gn-hover-strong,var(--gn-hover))]';
+    const idle = 'text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-ink)]';
+    const on = 'text-[color:var(--gn-ink)]';
+    const icon = 'h-5 w-5 shrink-0';
+
+    return (
+      <>
+      <div
+        className="flex w-full items-center gap-2 sm:gap-4"
+        role="group"
+        aria-label={t('Post actions')}
+        onClick={(e) => e.stopPropagation()}
+      >
+        <button
+          type="button"
+          disabled={!canInteract}
+          onClick={() => void toggleLike()}
+          aria-pressed={liked}
+          aria-label={liked ? t('Unlike ({formatCount} likes)', { formatCount: formatCount(likes) }) : t('Like ({formatCount} likes)', { formatCount: formatCount(likes) })}
+          className={`${cell} ${
+            liked
+              ? 'text-[color:var(--gn-like-ink)]'
+              : 'text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-like-ink)]'
+          }`}
+        >
+          <span
+            className={`${disc} ${
+              liked ? 'bg-[color:var(--gn-like-tint)]' : 'group-hover/act:bg-[color:var(--gn-like-tint)]'
+            }`}
+          >
+            {liked && burstKey > 0 ? <LikeBurst key={burstKey} burstKey={burstKey} /> : null}
+            <svg
+              key={liked ? `on-${burstKey}` : 'off'}
+              className={`relative ${icon} ${liked ? 'text-[color:var(--gn-like)]' : ''} ${
+                liked && burstKey > 0 ? 'motion-safe:animate-like-pop' : ''
+              }`}
+              fill={liked ? 'currentColor' : 'none'}
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={1.7}
+              aria-hidden
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+              />
+            </svg>
+          </span>
+          {likes > 0 ? (
+            <span key={`count-${likes}`} className={burstKey > 0 ? 'motion-safe:animate-like-count' : ''}>
+              {formatCount(likes)}
+            </span>
+          ) : null}
+        </button>
+
+        {!hideCommentsButton ? (
+          <button
+            type="button"
+            disabled={commentsDisabled}
+            onClick={() => onCommentsToggle?.(!commentsOpen)}
+            aria-expanded={commentsOpen}
+            aria-label={commentsDisabled ? t('Comments disabled') : commentsOpen ? t('Hide comments') : t('Show comments')}
+            title={commentsDisabled ? t('Comments are disabled') : undefined}
+            className={`${cell} ${commentsOpen ? on : idle}`}
+          >
+            <span className={`${disc} ${commentsOpen ? 'bg-[color:var(--gn-hover)]' : discIdle}`}>
+            <svg
+              className={icon}
+              viewBox="0 0 24 24"
+              fill={commentsOpen ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth={1.7}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
+            </svg>
+            </span>
+            {displayCommentCount > 0 ? <span>{formatCount(displayCommentCount)}</span> : null}
+          </button>
+        ) : null}
+
+        {repostTarget ? (
+          <button
+            type="button"
+            disabled={repostBusy}
+            onClick={() => void onRepostClick()}
+            aria-pressed={reposted}
+            aria-label={reposted ? t('Undo repost') : t('Repost')}
+            aria-haspopup={reposted ? undefined : 'dialog'}
+            title={reposted ? t('You reposted this — click to undo') : t('Repost')}
+            className={`${cell} ${reposted ? on : idle}`}
+          >
+            <span className={`${disc} ${reposted ? 'bg-[color:var(--gn-hover)]' : discIdle}`}>
+            <svg
+              className={icon}
+              viewBox="0 0 24 24"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth={reposted ? 2.3 : 1.7}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="m17 2 4 4-4 4" />
+              <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+              <path d="m7 22-4-4 4-4" />
+              <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+            </svg>
+            </span>
+            {repostCount > 0 ? <span className={reposted ? 'font-semibold' : ''}>{formatCount(repostCount)}</span> : null}
+          </button>
+        ) : null}
+
+        {shareUrl ? (
+          <button
+            type="button"
+            onClick={() => setShareOpen(true)}
+            aria-label={t('Share')}
+            aria-haspopup="dialog"
+            className={`${cell} ${idle}`}
+          >
+            <span className={`${disc} ${discIdle}`}>
+            <svg className={icon} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} aria-hidden>
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M6 12L3.27 3.13a59.77 59.77 0 0118.22 8.87 59.77 59.77 0 01-18.22 8.88L6 12zm0 0h7.5"
+              />
+            </svg>
+            </span>
+          </button>
+        ) : null}
+        {saveable ? (
+          <button
+            type="button"
+            disabled={!canInteract || savedBusy}
+            onClick={() => void toggleSaved()}
+            aria-pressed={saved}
+            aria-label={saved ? t('Remove from saved') : t('Save')}
+            title={saved ? t('Saved') : t('Save')}
+            className={`${cell} ml-auto !pr-0 ${saved ? on : idle}`}
+          >
+            <span className={`${disc} ${discIdle}`}>
+            <svg
+              className={icon}
+              viewBox="0 0 24 24"
+              fill={saved ? 'currentColor' : 'none'}
+              stroke="currentColor"
+              strokeWidth={1.7}
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              aria-hidden
+            >
+              <path d="M6.5 3.5h11a1 1 0 0 1 1 1V20l-6.5-4.2L5.5 20V4.5a1 1 0 0 1 1-1Z" />
+            </svg>
+            </span>
+          </button>
+        ) : null}
+
+      </div>
+
+        {shareUrl ? (
+          <ContentPostShareDialog
+            open={shareOpen}
+            onClose={() => setShareOpen(false)}
+            postId={postId}
+            shareUrl={shareUrl}
+            shareTitle={shareTitle}
+          />
+        ) : null}
+
+        {repostTarget ? (
+          <ContentPostRepostDialog
+            open={repostOpen}
+            original={repostTarget}
+            onClose={() => setRepostOpen(false)}
+            onReposted={(repost) => {
+              setRepostOpen(false);
+              setReposted(true);
+              setRepostCount((count) => count + 1);
+              onReposted?.(repost);
+              pushFlashFeedback({ variant: 'success', title: t('Reposted to your profile') });
+            }}
+          />
+        ) : null}
+      </>
+    );
+  }
 
   if (variant === 'rail') {
     const liked = userReaction === 'LIKE';
@@ -326,7 +560,7 @@ export function ContentPostSocialBar({
           disabled={!canInteract}
           onClick={() => void toggleLike()}
           aria-pressed={liked}
-          aria-label={liked ? 'Unlike' : 'Like'}
+          aria-label={liked ? t('Unlike') : t('Like')}
           className={itemClass}
         >
           <span
@@ -367,8 +601,8 @@ export function ContentPostSocialBar({
             disabled={commentsDisabled}
             onClick={() => onCommentsToggle?.(!commentsOpen)}
             aria-expanded={commentsOpen}
-            aria-label={commentsDisabled ? 'Comments disabled' : commentsOpen ? 'Hide comments' : 'Show comments'}
-            title={commentsDisabled ? 'Comments are disabled' : undefined}
+            aria-label={commentsDisabled ? t('Comments disabled') : commentsOpen ? t('Hide comments') : t('Show comments')}
+            title={commentsDisabled ? t('Comments are disabled') : undefined}
             className={itemClass}
           >
             <span
@@ -401,9 +635,9 @@ export function ContentPostSocialBar({
             disabled={repostBusy}
             onClick={() => void onRepostClick()}
             aria-pressed={reposted}
-            aria-label={reposted ? 'Undo repost' : 'Repost'}
+            aria-label={reposted ? t('Undo repost') : t('Repost')}
             aria-haspopup={reposted ? undefined : 'dialog'}
-            title={reposted ? 'You reposted this - click to undo' : 'Repost'}
+            title={reposted ? t('You reposted this - click to undo') : t('Repost')}
             className={itemClass}
           >
             <span
@@ -441,8 +675,8 @@ export function ContentPostSocialBar({
                 disabled={!canInteract || savedBusy}
                 onClick={() => void toggleSaved()}
                 aria-pressed={saved}
-                aria-label={saved ? 'Remove from saved' : 'Save'}
-                title={saved ? 'Saved' : 'Save'}
+                aria-label={saved ? t('Remove from saved') : t('Save')}
+                title={saved ? t('Saved') : t('Save')}
                 className={itemClass}
               >
                 <span
@@ -472,7 +706,7 @@ export function ContentPostSocialBar({
               <button
                 type="button"
                 onClick={() => setShareOpen(true)}
-                aria-label="Share"
+                aria-label={t('Share')}
                 aria-haspopup="dialog"
                 className={itemClass}
               >
@@ -481,7 +715,7 @@ export function ContentPostSocialBar({
                     <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.27 3.13a59.77 59.77 0 0118.22 8.87 59.77 59.77 0 01-18.22 8.88L6 12zm0 0h7.5" />
                   </svg>
                 </span>
-                <span className={`${labelClass} hidden sm:inline`}>Share</span>
+                <span className={`${labelClass} hidden sm:inline`}>{t('Share')}</span>
               </button>
             ) : null}
           </div>
@@ -508,7 +742,7 @@ export function ContentPostSocialBar({
               setRepostCount((count) => count + 1);
               announceRepostChange({ originalId: repostTarget.id, reposted: true, source: instanceId });
               onReposted?.(repost);
-              pushFlashFeedback({ variant: 'success', title: 'Reposted to your profile' });
+              pushFlashFeedback({ variant: 'success', title: t('Reposted to your profile') });
             }}
           />
         ) : null}
@@ -530,7 +764,7 @@ export function ContentPostSocialBar({
           disabled={!canInteract}
           onClick={() => void toggleLike()}
           aria-pressed={liked}
-          aria-label={liked ? 'Unlike' : 'Like'}
+          aria-label={liked ? t('Unlike') : t('Like')}
           className={`${actionClass} ${
             liked ? 'text-[#FF5722]' : 'text-neutral-500 hover:text-[#FF5722] dark:text-neutral-400'
           }`}
@@ -564,7 +798,7 @@ export function ContentPostSocialBar({
                 {formatCount(likes)}&nbsp;
               </span>
             ) : null}
-            {likes === 1 ? 'Like' : 'Likes'}
+            {likes === 1 ? t('Like') : t('Likes')}
           </span>
         </button>
         {!hideCommentsButton ? (
@@ -573,8 +807,8 @@ export function ContentPostSocialBar({
             disabled={commentsDisabled}
             onClick={() => onCommentsToggle?.(!commentsOpen)}
             aria-expanded={commentsOpen}
-            aria-label={commentsDisabled ? 'Comments disabled' : commentsOpen ? 'Hide comments' : 'Show comments'}
-            title={commentsDisabled ? 'Comments are disabled' : undefined}
+            aria-label={commentsDisabled ? t('Comments disabled') : commentsOpen ? t('Hide comments') : t('Show comments')}
+            title={commentsDisabled ? t('Comments are disabled') : undefined}
             className={`${actionClass} ${
               commentsOpen
                 ? 'text-[#111111] dark:text-white'
@@ -595,14 +829,14 @@ export function ContentPostSocialBar({
             </svg>
             <span>
               {displayCommentCount > 0 ? `${formatCount(displayCommentCount)} ` : ''}
-              {displayCommentCount === 1 ? 'Comment' : 'Comments'}
+              {displayCommentCount === 1 ? t('Comment') : t('Comments')}
             </span>
           </button>
         ) : null}
         {messageHref ? (
           <Link
             href={messageHref}
-            aria-label="Send a message"
+            aria-label={t('Send a message')}
             className={`${actionClass} text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white`}
           >
             <svg
@@ -618,21 +852,21 @@ export function ContentPostSocialBar({
               <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
               <path d="M8.6 11.7h.01M12 11.7h.01M15.4 11.7h.01" />
             </svg>
-            <span className="hidden sm:inline">Message</span>
+            <span className="hidden sm:inline">{t('Message')}</span>
           </Link>
         ) : null}
         {shareUrl ? (
           <button
             type="button"
             onClick={() => setShareOpen(true)}
-            aria-label="Share"
+            aria-label={t('Share')}
             aria-haspopup="dialog"
             className={`${actionClass} text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white`}
           >
             <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.6} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 12L3.27 3.13a59.77 59.77 0 0118.22 8.87 59.77 59.77 0 01-18.22 8.88L6 12zm0 0h7.5" />
             </svg>
-            <span className="hidden sm:inline">Share</span>
+            <span className="hidden sm:inline">{t('Share')}</span>
           </button>
         ) : null}
         {trailing ? <div className="ml-auto flex items-center">{trailing}</div> : null}
@@ -669,7 +903,7 @@ export function ContentPostSocialBar({
             onClick={() => void toggleLike()}
             className={pillClass(userReaction === 'LIKE')}
             aria-pressed={userReaction === 'LIKE'}
-            aria-label="Like"
+            aria-label={t('Like')}
           >
             <svg
               className="h-4 w-4"

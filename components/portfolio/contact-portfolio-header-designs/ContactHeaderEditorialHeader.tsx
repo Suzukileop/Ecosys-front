@@ -15,7 +15,9 @@ import {
   type PortfolioContactHeaderTitleSize,
   type PortfolioContactHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-contact-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -73,10 +75,15 @@ export function ContactHeaderEditorialHeader({
   presentation?: PortfolioContactPresentationSettings;
   trailing?: ReactNode;
 }) {
+  const t = useT();
   const presentation = presentationProp ?? DEFAULT_CONTACT_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
+  const showLabel = show('label');
+  const showTitle = show('title');
+  const showSubtitle = show('subtitle');
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
   const titleInk = contactTitleColorStyle(presentation.titleColor).color as string;
@@ -182,7 +189,7 @@ export function ContactHeaderEditorialHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, titleText, subtitleText]);
+  }, [animationEnabled, titleText, subtitleText, showLabel, showTitle, showSubtitle]);
 
   return (
     <header
@@ -192,21 +199,25 @@ export function ContactHeaderEditorialHeader({
     >
       <div className={`pf-contact-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
         <div className="min-w-0 max-w-3xl">
-          <p
-            className="pf-contact-header-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
-            style={{ color: kickerInk }}
-          >
-            Contact
-          </p>
-          <h2
-            className={`mb-0 mt-3 ${contactHeaderDesignFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={contactTitleColorStyle(presentation.titleColor)}
-          >
-            <span className="pf-contact-header-editorial-title-mask block overflow-hidden">
-              <span className="pf-contact-header-editorial-title-line block">{titleText}</span>
-            </span>
-          </h2>
-          {subtitleText ? (
+          {showLabel ? (
+            <p
+              className="pf-contact-header-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
+              style={{ color: kickerInk }}
+            >
+              {t('Contact')}
+            </p>
+          ) : null}
+          {showTitle ? (
+            <h2
+              className={`mb-0 mt-3 ${contactHeaderDesignFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
+              style={contactTitleColorStyle(presentation.titleColor)}
+            >
+              <span className="pf-contact-header-editorial-title-mask block overflow-hidden">
+                <span className="pf-contact-header-editorial-title-line block">{titleText}</span>
+              </span>
+            </h2>
+          ) : null}
+          {showSubtitle && subtitleText ? (
             <p
               className={`pf-contact-header-editorial-sub mb-0 mt-6 max-w-xl ${contactHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
               style={contactSubtitleColorStyle(presentation.subtitleColor)}

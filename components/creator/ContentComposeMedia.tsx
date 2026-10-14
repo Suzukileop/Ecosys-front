@@ -6,6 +6,7 @@ import {
   isCollageImage,
 } from '@/components/creator/creator-content-media';
 import { mediaImageResponsive } from '@/lib/media-image-url';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentComposeMediaProps = {
   urls: string[];
@@ -35,9 +36,10 @@ export function ContentComposeMedia({
   onAddMore,
   onClear,
 }: ContentComposeMediaProps) {
+  const t = useT();
   if (urls.length === 0) {
     return uploading ? (
-      <div className="h-40 animate-pulse rounded-xl bg-black/[0.06] dark:bg-white/[0.08]" aria-label="Uploading" />
+      <div className="h-40 animate-pulse rounded-xl bg-black/[0.06] dark:bg-white/[0.08]" aria-label={t('Uploading')} />
     ) : null;
   }
 
@@ -61,7 +63,7 @@ export function ContentComposeMedia({
             className="inline-flex h-9 items-center gap-2 rounded-full border border-black/[0.14] px-4 text-[14px] font-medium text-[#111111] transition-colors hover:bg-black/[0.04] dark:border-white/[0.18] dark:text-white dark:hover:bg-white/[0.06]"
           >
             <PlusIcon className="h-4 w-4" />
-            Add more photos
+            {t('Add more photos')}
           </button>
         ) : null}
       </div>
@@ -87,7 +89,7 @@ export function ContentComposeMedia({
             />
             {index === 0 ? (
               <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
-                Cover
+                {t('Cover')}
               </span>
             ) : (
               <button
@@ -95,7 +97,7 @@ export function ContentComposeMedia({
                 onClick={() => onMakeCover(index)}
                 className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover/tile:opacity-100 max-sm:opacity-100"
               >
-                Make cover
+                {t('Make cover')}
               </button>
             )}
             <button
@@ -114,7 +116,7 @@ export function ContentComposeMedia({
         {uploading ? (
           <div
             className="aspect-square animate-pulse rounded-xl bg-black/[0.06] dark:bg-white/[0.08]"
-            aria-label="Uploading"
+            aria-label={t('Uploading')}
           />
         ) : null}
 
@@ -122,16 +124,16 @@ export function ContentComposeMedia({
           <button
             type="button"
             onClick={onAddMore}
-            aria-label="Add more photos"
+            aria-label={t('Add more photos')}
             className="flex aspect-square flex-col items-center justify-center gap-1 rounded-xl border border-dashed border-black/[0.2] text-neutral-500 transition-colors hover:border-black/40 hover:text-[#111111] dark:border-white/[0.22] dark:hover:border-white/50 dark:hover:text-white"
           >
             <PlusIcon className="h-5 w-5" />
-            <span className="text-[12px] font-medium">Add</span>
+            <span className="text-[12px] font-medium">{t('Add')}</span>
           </button>
         ) : null}
       </div>
       <p className="mt-2 text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
-        {urls.length} / {MAX_POST_IMAGES} photos
+        {t('{urlsLength} / {MAXPOSTIMAGES} photos', { urlsLength: urls.length, MAXPOSTIMAGES: MAX_POST_IMAGES })}
       </p>
     </div>
   );

@@ -8,6 +8,7 @@ import {
 } from '@/components/portfolio/portfolio-section-primitives';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -174,6 +175,7 @@ export function ContactDesignSplitGrid({
    *  every other genuinely light/dark-aware premium Contact design. */
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const emailRef = useMagnetic(0.25, 26);
   const hoverRef = useRef<HTMLDivElement>(null);
   const [marqueeActive, setMarqueeActive] = useState(false);
@@ -250,7 +252,7 @@ export function ContactDesignSplitGrid({
           {hasLinks ? (
             <nav
               className="flex flex-wrap items-center justify-center gap-6 lg:justify-end"
-              aria-label="Social"
+              aria-label={t('Social')}
             >
               {links.map((link, index) => (
                 <a

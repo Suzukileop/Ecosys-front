@@ -1,15 +1,15 @@
 import { Role } from '@/types/auth';
 
 const roleColors: Record<Role, string> = {
-  ROLE_ADMIN: 'bg-red-100 text-red-800 border border-red-200',
-  ROLE_CLIENT: 'bg-blue-100 text-blue-800 border border-blue-200',
-  ROLE_CREATOR: 'bg-green-100 text-green-800 border border-green-200',
+  ROLE_ADMIN: 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]',
+  ROLE_CLIENT: 'bg-[#EFF3F4] text-[#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA]',
+  ROLE_CREATOR: 'bg-[#EFF3F4] text-[#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA]',
 };
 
 const roleLabels: Record<Role, string> = {
   ROLE_ADMIN: 'Admin',
   ROLE_CLIENT: 'Client',
-  ROLE_CREATOR: 'Créateur',
+  ROLE_CREATOR: 'Creator',
 };
 
 interface BadgeProps {

@@ -32,28 +32,28 @@ export function CreatorEmptyGuide({
     >
       <div className="grid w-full items-center gap-10 lg:grid-cols-[minmax(0,1fr)_minmax(0,1fr)] lg:gap-14">
         <div className="order-2 min-w-0 lg:order-1">
-          <h2 className="text-[32px] font-semibold leading-[1.1] tracking-[-0.03em] text-[#111111] dark:text-white sm:text-[40px]">
+          <h2 className="text-[24px] font-extrabold leading-[1.15] tracking-[-0.02em] text-[#0F1419] dark:text-[#E7E9EA] sm:text-[32px]">
             {headline}
           </h2>
-          <p className="mt-4 max-w-sm text-base text-neutral-400 dark:text-neutral-500">{description}</p>
+          <p className="mt-3 max-w-sm text-[15px] leading-[22px] text-[#536471] dark:text-[#71767B]">{description}</p>
 
-          <div className="mt-10 flex flex-wrap items-center gap-x-5 gap-y-3">
+          <div className="mt-6 flex flex-wrap items-center gap-x-5 gap-y-3">
             <button
               type="button"
               onClick={onCreate}
               disabled={createDisabled}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[#111111] px-6 text-[15px] font-medium text-white transition-[opacity,transform] hover:opacity-85 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-30 dark:bg-white dark:text-[#111111]"
+              className="inline-flex h-10 items-center justify-center bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:cursor-not-allowed disabled:opacity-30 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]"
             >
               {ctaLabel}
             </button>
             {createDisabled ? (
-              <p className="text-sm text-neutral-400 dark:text-neutral-500">{disabledHint}</p>
+              <p className="text-[14px] text-[#536471] dark:text-[#71767B]">{disabledHint}</p>
             ) : null}
           </div>
         </div>
 
         <div className="order-1 min-w-0 lg:order-2" aria-hidden>
-          <div className="relative ml-auto aspect-[4/3] w-full max-w-[540px] overflow-hidden rounded-[24px] bg-neutral-100 dark:bg-neutral-900">
+          <div className="relative ml-auto aspect-[4/3] w-full max-w-[540px] overflow-hidden bg-[#F7F9F9] dark:bg-[#16181C]">
             <Image
               src={imageSrc}
               alt=""

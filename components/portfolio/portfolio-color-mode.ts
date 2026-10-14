@@ -81,6 +81,22 @@ export function portfolioPaletteCssVars(palette: PortfolioHeroPalette): CSSPrope
   } as CSSProperties;
 }
 
+/**
+ * The accent tints the theme layer derives from its own (orange) accent — muted text, soft and
+ * subtle fills, borders, focus glow. Re-derived from the palette's principal so they follow the
+ * site palette like `--pf-accent` does, instead of staying orange on a blue or green site.
+ */
+export function portfolioPaletteAccentTintVars(principal: string): CSSProperties {
+  return {
+    '--pf-accent-border': principal,
+    '--pf-accent-muted': `color-mix(in srgb, ${principal} 75%, transparent)`,
+    '--pf-accent-soft': `color-mix(in srgb, ${principal} 12%, transparent)`,
+    '--pf-accent-soft-hover': `color-mix(in srgb, ${principal} 18%, transparent)`,
+    '--pf-accent-subtle': `color-mix(in srgb, ${principal} 8%, transparent)`,
+    '--pf-accent-glow': `color-mix(in srgb, ${principal} 15%, transparent)`,
+  } as CSSProperties;
+}
+
 export function resolveActivePortfolioPalette(
   global: Pick<PortfolioGlobalSettings, 'colorMode' | 'paletteDark' | 'paletteLight'>
 ): PortfolioHeroPalette {

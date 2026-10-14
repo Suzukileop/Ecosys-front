@@ -6,7 +6,8 @@ const LIKE_PARTICLES = [0, 60, 120, 180, 240, 300].map((deg, i) => {
   return {
     dx: `${(Math.cos(rad) * distance).toFixed(1)}px`,
     dy: `${(Math.sin(rad) * distance).toFixed(1)}px`,
-    color: i % 2 ? '#FFB199' : '#FF5722',
+    /* Ink: the burst takes the heart's own colour (currentColor), softer on every other particle. */
+    opacity: i % 2 ? 0.45 : 1,
   };
 });
 
@@ -17,12 +18,12 @@ const LIKE_PARTICLES = [0, 60, 120, 180, 240, 300].map((deg, i) => {
 export function LikeBurst({ burstKey }: { burstKey: number }) {
   return (
     <span key={burstKey} className="pointer-events-none absolute inset-0 motion-reduce:hidden" aria-hidden>
-      <span className="absolute -inset-[5px] animate-like-ring rounded-full border-solid border-[#FF5722]" />
+      <span className="absolute -inset-[5px] animate-like-ring rounded-full border-solid border-current" />
       {LIKE_PARTICLES.map((p, i) => (
         <span
           key={i}
           className="absolute left-1/2 top-1/2 h-[4px] w-[4px] animate-like-particle rounded-full"
-          style={{ '--like-dx': p.dx, '--like-dy': p.dy, backgroundColor: p.color } as CSSProperties}
+          style={{ '--like-dx': p.dx, '--like-dy': p.dy, backgroundColor: 'currentColor', opacity: p.opacity } as CSSProperties}
         />
       ))}
     </span>

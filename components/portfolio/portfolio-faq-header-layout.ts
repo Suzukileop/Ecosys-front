@@ -4,6 +4,7 @@ import {
   type PortfolioFaqHeaderDesignSelectable,
 } from '@/components/portfolio/portfolio-faq-header-settings';
 import type { DesignLayoutElementOverride } from '@/components/portfolio/portfolio-design-layout-core';
+import { msg } from '@/lib/i18n/config';
 
 type Presentation = PortfolioFaqPresentationSettings;
 
@@ -83,7 +84,7 @@ const ALL_HEADERS: FaqHeaderLayoutElementSpec[] = [
   {
     kind: 'fieldOption',
     key: 'titleSize',
-    label: 'Title size',
+    label: msg('Title size'),
     group: 'all',
     field: 'headerTitleSize',
     options: [
@@ -96,51 +97,53 @@ const ALL_HEADERS: FaqHeaderLayoutElementSpec[] = [
   {
     kind: 'fieldOption',
     key: 'spacing',
-    label: 'Space below',
+    label: msg('Space below'),
     group: 'all',
     field: 'headerMarginBottom',
     options: [
-      { value: 'sm', label: 'Small' },
-      { value: 'md', label: 'Medium' },
-      { value: 'lg', label: 'Large' },
+      { value: 'sm', label: msg('Small') },
+      { value: 'md', label: msg('Medium') },
+      { value: 'lg', label: msg('Large') },
       { value: 'xl', label: 'XL' },
     ],
   },
 ];
 
 const FAQ_HEADER_INK_OPTIONS = [
-  { value: 'principal', label: 'Principal', swatch: faqHeaderPaletteTokenColor('principal') },
-  { value: 'secondaire', label: 'Secondary', swatch: faqHeaderPaletteTokenColor('secondaire') },
-  { value: 'texteFort', label: 'Strong text', swatch: faqHeaderPaletteTokenColor('texteFort') },
+  { value: 'principal', label: msg('Principal'), swatch: faqHeaderPaletteTokenColor('principal') },
+  { value: 'secondaire', label: msg('Secondary'), swatch: faqHeaderPaletteTokenColor('secondaire') },
+  { value: 'texteFort', label: msg('Strong text'), swatch: faqHeaderPaletteTokenColor('texteFort') },
 ];
 
 export const FAQ_HEADER_LAYOUT_SPECS: Record<PortfolioFaqHeaderDesignSelectable, FaqHeaderLayoutElementSpec[]> = {
   editorial: [
     text('kicker', 'Kicker', 'FAQ'),
+    toggle('title', 'Title'),
+    toggle('subtitle', 'Subtitle'),
     {
       kind: 'fieldOption',
       key: 'alignment',
-      label: 'Alignment',
+      label: msg('Alignment'),
       group: 'this',
       field: 'headerDesignAlignment',
       options: [
-        { value: 'left', label: 'Left' },
-        { value: 'center', label: 'Center' },
+        { value: 'left', label: msg('Left') },
+        { value: 'center', label: msg('Center') },
       ],
     },
     {
       kind: 'fieldOption',
       key: 'titleWeight',
-      label: 'Title weight',
+      label: msg('Title weight'),
       group: 'this',
       field: 'headerTitleWeight',
       // Each label is drawn in the weight it stands for (the weight counterpart of rule 1e).
       options: [
-        { value: 'light', label: 'Thin', fontWeight: 100 },
-        { value: 'regular', label: 'Light', fontWeight: 300 },
-        { value: 'semibold', label: 'Medium', fontWeight: 500 },
-        { value: 'bold', label: 'Semibold', fontWeight: 600 },
-        { value: 'extrabold', label: 'Bold', fontWeight: 700 },
+        { value: 'light', label: msg('Thin'), fontWeight: 100 },
+        { value: 'regular', label: msg('Light'), fontWeight: 300 },
+        { value: 'semibold', label: msg('Medium'), fontWeight: 500 },
+        { value: 'bold', label: msg('Semibold'), fontWeight: 600 },
+        { value: 'extrabold', label: msg('Bold'), fontWeight: 700 },
       ],
     },
     ...ALL_HEADERS,
@@ -157,22 +160,25 @@ export const FAQ_HEADER_LAYOUT_SPECS: Record<PortfolioFaqHeaderDesignSelectable,
     {
       kind: 'option',
       key: 'dotColor',
-      label: 'Dot color',
+      label: msg('Dot color'),
       group: 'this',
       options: FAQ_HEADER_INK_OPTIONS,
       defaultValue: 'principal',
       showWhen: visibleWhen('signal', 'pill'),
     },
+    toggle('title', 'Title'),
+    toggle('subtitle', 'Subtitle'),
     {
       kind: 'option',
       key: 'subtitlePlacement',
-      label: 'Subtitle position',
+      label: msg('Subtitle position'),
       group: 'this',
       options: [
-        { value: 'side', label: 'Side' },
-        { value: 'below', label: 'Below' },
+        { value: 'side', label: msg('Side') },
+        { value: 'below', label: msg('Below') },
       ],
       defaultValue: 'side',
+      showWhen: visibleWhen('signal', 'subtitle'),
     },
     ...ALL_HEADERS,
   ],
@@ -182,17 +188,19 @@ export const FAQ_HEADER_LAYOUT_SPECS: Record<PortfolioFaqHeaderDesignSelectable,
     {
       kind: 'option',
       key: 'glyphIntensity',
-      label: 'Glyph intensity',
+      label: msg('Glyph intensity'),
       group: 'this',
       options: [
-        { value: 'subtle', label: 'Subtle' },
-        { value: 'medium', label: 'Medium' },
-        { value: 'bold', label: 'Bold' },
+        { value: 'subtle', label: msg('Subtle') },
+        { value: 'medium', label: msg('Medium') },
+        { value: 'bold', label: msg('Bold') },
       ],
       defaultValue: 'medium',
       showWhen: visibleWhen('query', 'glyph'),
     },
     text('kicker', 'Side label', 'FAQ'),
+    toggle('title', 'Title'),
+    toggle('subtitle', 'Subtitle'),
     ...ALL_HEADERS,
   ],
   dialogue: [
@@ -205,6 +213,8 @@ export const FAQ_HEADER_LAYOUT_SPECS: Record<PortfolioFaqHeaderDesignSelectable,
       showWhen: visibleWhen('dialogue', 'badge'),
     }),
     toggle('rule', 'Divider line'),
+    toggle('title', 'Title'),
+    toggle('subtitle', 'Subtitle'),
     ...ALL_HEADERS,
   ],
 };

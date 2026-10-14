@@ -6,6 +6,8 @@ import {
   type AvailabilitySchedule,
   type DayPreset,
 } from '@/lib/availabilityHours';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type AvailabilityHoursInputProps = {
   value: AvailabilitySchedule;
@@ -17,10 +19,10 @@ type AvailabilityHoursInputProps = {
 };
 
 const PRESET_OPTIONS: { id: DayPreset; label: string }[] = [
-  { id: 'weekdays', label: 'Mon–Fri' },
-  { id: 'mon_sat', label: 'Mon–Sat' },
-  { id: 'everyday', label: 'Every day' },
-  { id: 'custom', label: 'Custom' },
+  { id: 'weekdays', label: msg('Mon–Fri') },
+  { id: 'mon_sat', label: msg('Mon–Sat') },
+  { id: 'everyday', label: msg('Every day') },
+  { id: 'custom', label: msg('Custom') },
 ];
 
 export function AvailabilityHoursInput({
@@ -30,6 +32,7 @@ export function AvailabilityHoursInput({
   timezoneId,
   variant = 'default',
 }: AvailabilityHoursInputProps) {
+  const t = useT();
   const setPreset = (preset: DayPreset) => {
     onChange({
       ...value,
@@ -60,7 +63,7 @@ export function AvailabilityHoursInput({
   return (
     <div className="space-y-4">
       <div>
-        <p className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">Days</p>
+        <p className="mb-2 text-sm font-medium text-neutral-700 dark:text-neutral-300">{t('Days')}</p>
         <div className="flex flex-wrap gap-2">
           {PRESET_OPTIONS.map((opt) => (
             <button
@@ -70,11 +73,11 @@ export function AvailabilityHoursInput({
               onClick={() => setPreset(opt.id)}
               className={`rounded-full px-3.5 py-1.5 text-sm font-medium transition ${
                 value.preset === opt.id
-                  ? 'bg-orange-500 text-white'
-                  : 'border border-neutral-200 bg-white text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-300'
+                  ? 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+                  : 'border border-[#CFD9DE] bg-transparent text-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]'
               }`}
             >
-              {opt.label}
+              {t(opt.label)}
             </button>
           ))}
         </div>
@@ -103,7 +106,7 @@ export function AvailabilityHoursInput({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor="availability-start" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            Start time
+            {t('Start time')}
           </label>
           <input
             id="availability-start"
@@ -116,7 +119,7 @@ export function AvailabilityHoursInput({
         </div>
         <div>
           <label htmlFor="availability-end" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-            End time
+            {t('End time')}
           </label>
           <input
             id="availability-end"
@@ -130,7 +133,7 @@ export function AvailabilityHoursInput({
       </div>
 
       {timezoneId && (
-        <p className="text-xs text-neutral-500">Times use your profile timezone: {timezoneId}</p>
+        <p className="text-xs text-neutral-500">{t('Times use your profile timezone: {timezoneId}', { timezoneId })}</p>
       )}
     </div>
   );
@@ -138,7 +141,7 @@ export function AvailabilityHoursInput({
 
 const STUDIO_SUBLABEL = 'text-[13px] font-semibold text-neutral-500 dark:text-neutral-400';
 const STUDIO_TIME_INPUT =
-  'block w-full border-b border-black/[0.08] bg-transparent pb-2 text-base tabular-nums text-black outline-none focus:border-[#FF5722] disabled:opacity-60 dark:border-white/[0.08] dark:text-white dark:[color-scheme:dark] dark:focus:border-[#FF5722]';
+  'block w-full border-b border-black/[0.08] bg-transparent pb-2 text-base tabular-nums text-black outline-none focus:border-[#0F1419] disabled:opacity-60 dark:border-white/[0.08] dark:text-white dark:[color-scheme:dark] dark:focus:border-[#E7E9EA]';
 
 function StudioAvailability({
   value,
@@ -155,11 +158,12 @@ function StudioAvailability({
   setPreset: (preset: DayPreset) => void;
   toggleDay: (index: number) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-7">
       <div className="space-y-3">
-        <p className={STUDIO_SUBLABEL}>Days</p>
-        <div role="radiogroup" aria-label="Days" className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
+        <p className={STUDIO_SUBLABEL}>{t('Days')}</p>
+        <div role="radiogroup" aria-label={t('Days')} className="flex flex-wrap items-baseline gap-x-5 gap-y-2">
           {PRESET_OPTIONS.map((opt) => {
             const active = value.preset === opt.id;
             return (
@@ -176,10 +180,10 @@ function StudioAvailability({
                     : 'text-neutral-500 hover:text-black dark:text-neutral-400 dark:hover:text-white'
                 }`}
               >
-                {opt.label}
+                {t(opt.label)}
                 <span
                   aria-hidden
-                  className={`absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#FF5722] ${active ? '' : 'invisible'}`}
+                  className={`absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[#0F1419] dark:bg-[#E7E9EA] ${active ? '' : 'invisible'}`}
                 />
               </button>
             );
@@ -213,7 +217,7 @@ function StudioAvailability({
 
       <div className="grid gap-8 sm:grid-cols-2">
         <label className="block space-y-2">
-          <span className={`block ${STUDIO_SUBLABEL}`}>From</span>
+          <span className={`block ${STUDIO_SUBLABEL}`}>{t('From')}</span>
           <input
             type="time"
             disabled={disabled}
@@ -224,7 +228,7 @@ function StudioAvailability({
           />
         </label>
         <label className="block space-y-2">
-          <span className={`block ${STUDIO_SUBLABEL}`}>To</span>
+          <span className={`block ${STUDIO_SUBLABEL}`}>{t('To')}</span>
           <input
             type="time"
             disabled={disabled}
@@ -238,7 +242,7 @@ function StudioAvailability({
 
       {timezoneId ? (
         <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
-          Local time · <span className="text-black dark:text-white">{timezoneId}</span>
+          {t('Local time ·')} <span className="text-black dark:text-white">{timezoneId}</span>
         </p>
       ) : null}
     </div>

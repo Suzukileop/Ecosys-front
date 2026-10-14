@@ -1,6 +1,11 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
 import {
@@ -42,6 +47,16 @@ import {
   HeaderTextField,
 } from '@/components/portfolio/portfolio-header-style-controls';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import {
+  FieldLabel,
+  PF_TEXT_INPUT,
+  SectionHiddenNotice,
+  SettingsGroup,
+  SettingsSwitchRow,
+  SettingsTabs,
+} from '@/components/portfolio/portfolio-settings-ui';
 
 /** Same general / design / header / background pill-switcher mechanism as the Stack section settings panel.
  *  Header is one shared, GSAP-animated header (copied from the Portfolio/Work section's Header mechanism)
@@ -49,10 +64,10 @@ import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/por
 export type InfoSubSection = 'general' | 'design' | 'header' | 'background';
 
 const INFO_SUB_SECTIONS: { id: InfoSubSection; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'design', label: 'Design' },
-  { id: 'header', label: 'Header' },
-  { id: 'background', label: 'Background' },
+  { id: 'general', label: msg('General') },
+  { id: 'design', label: msg('Design') },
+  { id: 'header', label: msg('Header') },
+  { id: 'background', label: msg('Background') },
 ];
 
 function normalizeInfoSubSection(value: string | undefined): InfoSubSection {
@@ -62,8 +77,8 @@ function normalizeInfoSubSection(value: string | undefined): InfoSubSection {
 }
 
 const INFO_LABELS_MODE_OPTIONS: { value: 'standard' | 'custom'; label: string }[] = [
-  { value: 'standard', label: 'Standard' },
-  { value: 'custom', label: 'Custom' },
+  { value: 'standard', label: msg('Standard') },
+  { value: 'custom', label: msg('Custom') },
 ];
 
 function InfoTextField({
@@ -81,13 +96,13 @@ function InfoTextField({
   return (
     <SettingRow label={label} value={String(value ?? '')}>
     <label className="block">
-      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
+      {rows ? null : <FieldLabel>{label}</FieldLabel>}
       <input
         type="text"
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+        className={`mt-2 ${PF_TEXT_INPUT}`}
       />
     </label>
     </SettingRow>
@@ -98,10 +113,10 @@ function InfoTextField({
  *  (STACK_BACKGROUND_PALETTE_TOKENS) — no free-form hex anywhere in Info: every color comes
  *  from the portfolio's own Hero palette, picked as a swatch. */
 const INFO_PALETTE_SWATCH_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
-  { value: 'fond', label: 'Fond' },
-  { value: 'neutre', label: 'Neutre' },
-  { value: 'principal', label: 'Principal' },
-  { value: 'texteMuted', label: 'Texte muted' },
+  { value: 'fond', label: msg('Background') },
+  { value: 'neutre', label: msg('Neutral') },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'texteMuted', label: msg('Muted text') },
 ];
 
 function InfoPaletteSwatchPicker({
@@ -117,12 +132,13 @@ function InfoPaletteSwatchPicker({
   tokens?: { value: HeroPaletteTokenId; label: string }[];
   onChange: (hex: string) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const activeHex = value.trim().toLowerCase();
   return (
     <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
+      {rows ? null : <FieldLabel>{label}</FieldLabel>}
       <div className="mt-2 flex flex-wrap gap-3">
         {tokens.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -133,17 +149,17 @@ function InfoPaletteSwatchPicker({
               type="button"
               onClick={() => onChange(hex)}
               aria-pressed={active}
-              aria-label={token.label}
-              title={token.label}
+              aria-label={t(token.label)}
+              title={t(token.label)}
               className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                active ? 'ring-2 ring-neutral-900 ring-offset-2' : 'hover:bg-neutral-100'
+                active ? 'ring-2 ring-[color:var(--pf-palette-texte-fort)] ring-offset-2 ring-offset-[color:var(--pf-palette-fond)]' : 'hover:bg-[color:var(--pf-surface)]'
               }`}
             >
               <span
-                className="h-9 w-9 rounded-full border border-neutral-200/80 shadow-inner"
+                className="h-9 w-9 rounded-full border border-[color:var(--pf-palette-bordure)] shadow-inner"
                 style={{ backgroundColor: hex }}
               />
-              <span className="text-[11px] font-medium text-neutral-500">{token.label}</span>
+              <span className="text-[11px] font-medium text-[color:var(--pf-palette-texte-muted)]">{t(token.label)}</span>
             </button>
           );
         })}
@@ -273,6 +289,7 @@ function InfoSwitchTrack({ checked }: { checked: boolean }) {
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. Same mechanism as Stack/Contact. */
 function InfoInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -283,13 +300,13 @@ function InfoInfoTooltip({ text }: { text: string }) {
         role="button"
         tabIndex={0}
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -338,10 +355,10 @@ function InfoToggleRow({
       <span className="flex items-center justify-between gap-4">
         <span className="min-w-0">
           <span className="flex min-w-0 items-center gap-1.5">
-            <span className="block truncate text-sm font-medium text-neutral-950">{label}</span>
+            <span className="block truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
             {info ? <InfoInfoTooltip text={info} /> : null}
           </span>
-          {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
+          {description ? <span className="mt-1 block text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</span> : null}
         </span>
         <InfoSwitchTrack checked={checked} />
       </span>
@@ -367,6 +384,7 @@ function InfoOptionGrid<T extends string>({
   columns?: number;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const count = options.length;
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
@@ -391,13 +409,13 @@ function InfoOptionGrid<T extends string>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
             >
               {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
-              <span>{option.label}</span>
+              <span>{t(option.label)}</span>
             </button>
           );
         })}
@@ -410,6 +428,7 @@ function InfoOptionGrid<T extends string>({
 /** One mini-wireframe per PortfolioInfoDesign — same StackDesignWireframe mechanism, tuned to each
  *  About layout's actual anatomy so the picker card reads as a preview, not a generic placeholder. */
 function InfoDesignWireframe({ design }: { design: PortfolioInfoDesign }) {
+  const t = useT();
   switch (design) {
     case 'about-me':
       return (
@@ -521,18 +540,18 @@ function InfoDesignWireframe({ design }: { design: PortfolioInfoDesign }) {
           <circle className="pf-stack-mini-accent" cx="26" cy="10" r="2" />
           <rect className="pf-stack-mini-mute" x="8" y="18" width="1.6" height="2.4" rx="0.5" />
           <InfoMiniType x={13} y={20.5} size={5}>
-            about --bio
+            {t('about --bio')}
           </InfoMiniType>
           <rect className="pf-stack-mini-mute" x="8" y="26" width="70" height="2" rx="1" />
           <rect className="pf-stack-mini-accent" x="8" y="32" width="1.6" height="2.4" rx="0.5" />
           <InfoMiniType x={13} y={34.5} size={5}>
-            skills //
+            {t('skills //')}
           </InfoMiniType>
           <rect className="pf-stack-mini-mute" x="8" y="40" width="56" height="2" rx="1" />
           <rect className="pf-stack-mini-mute" x="8" y="46" width="44" height="2" rx="1" />
           <rect className="pf-stack-mini-accent" x="8" y="52" width="1.6" height="2.4" rx="0.5" />
           <InfoMiniType x={13} y={54.5} size={5}>
-            education.log
+            {t('education.log')}
           </InfoMiniType>
           <rect className="pf-stack-mini-mute" x="8" y="60" width="30" height="2" rx="1" />
         </InfoMiniSlide>
@@ -551,13 +570,13 @@ function InfoDesignWireframe({ design }: { design: PortfolioInfoDesign }) {
           <rect className="pf-stack-mini-accent" x="52" y="42" width="20" height="2" rx="1" />
           <rect className="pf-stack-mini-mute" x="74" y="42" width="20" height="2" rx="1" />
           <InfoMiniType x={30} y={62} size={13}>
-            EN
+            {t('EN')}
           </InfoMiniType>
           <InfoMiniType x={62} y={62} size={13}>
-            FR
+            {t('FR')}
           </InfoMiniType>
           <InfoMiniType x={94} y={62} size={13}>
-            ES
+            {t('ES')}
           </InfoMiniType>
         </InfoMiniSlide>
       );
@@ -604,22 +623,23 @@ function InfoDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
             {children}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -640,23 +660,45 @@ function InfoDesignChoiceGrid({
   value: PortfolioInfoDesign;
   onChange: (value: PortfolioInfoDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_INFO_DESIGN_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_INFO_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Design Info</p>
+          <p className="pf-stack-block-label !mb-0">{t('Design Info')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_INFO_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-stack-design-card"
+                labelClassName="pf-stack-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'info', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_INFO_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -664,7 +706,7 @@ function InfoDesignChoiceGrid({
               <InfoPickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -675,12 +717,13 @@ function InfoDesignChoiceGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <InfoDesignSummaryRow label="Design Info" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <InfoDesignSummaryRow label={t('Design Info')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <InfoDesignWireframe design={value} />
     </InfoDesignSummaryRow>
   );
@@ -689,6 +732,7 @@ function InfoDesignChoiceGrid({
 /** Mini wireframes for the 8 Header design picker cards — same InfoMiniSlide mechanism
  *  as the generic shapes Stack/Tools/Contact use for their own Header design picker. */
 function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
@@ -710,7 +754,7 @@ function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesi
             opacity={0.14}
             className="pf-stack-mini-ink"
           >
-            INFO
+            {t('INFO')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
         </InfoMiniSlide>
@@ -754,7 +798,7 @@ function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesi
             opacity={0.1}
             className="pf-stack-mini-ink"
           >
-            INFO
+            {t('INFO')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
           <rect className="pf-stack-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
@@ -782,7 +826,7 @@ function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesi
             02 /
           </text>
           <text x="10" y="52" fontSize={13} fontStyle="italic" fontWeight={600} className="pf-stack-mini-ink">
-            Expertise
+            {t('Expertise')}
           </text>
           <rect className="pf-stack-mini-accent" x="10" y="60" width="22" height="2.5" rx="1.25" />
         </InfoMiniSlide>
@@ -791,13 +835,13 @@ function InfoHeaderDesignWireframe({ design }: { design: PortfolioInfoHeaderDesi
       return (
         <InfoMiniSlide>
           <text x="60" y="30" fontSize={13} fontStyle="italic" fontWeight={700} textAnchor="middle" className="pf-stack-mini-ink">
-            Built To Ship
+            {t('Built To Ship')}
           </text>
           <text x="60" y="46" fontSize={13} fontStyle="italic" fontWeight={700} textAnchor="middle" className="pf-stack-mini-ink">
-            Designed To
+            {t('Designed To')}
           </text>
           <text x="60" y="62" fontSize={13} fontStyle="italic" fontWeight={700} textAnchor="middle" className="pf-stack-mini-ink">
-            Scale
+            {t('Scale')}
           </text>
         </InfoMiniSlide>
       );
@@ -822,6 +866,7 @@ function InfoHeaderDesignChoiceGrid({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS[0];
@@ -830,13 +875,13 @@ function InfoHeaderDesignChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Header design</p>
+          <p className="pf-stack-block-label !mb-0">{t('Header design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -846,7 +891,7 @@ function InfoHeaderDesignChoiceGrid({
               <PortfolioHeaderDesignOption key={option.value} design={option.value}>
                 <InfoPickerCard
                   active={active}
-                  label={option.label}
+                  label={t(option.label)}
                   onClick={() => {
                     onChange(option.value);
                     setShowGrid(false);
@@ -863,7 +908,7 @@ function InfoHeaderDesignChoiceGrid({
   }
 
   return (
-    <InfoDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <InfoDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <InfoHeaderDesignWireframe design={value} />
     </InfoDesignSummaryRow>
   );
@@ -899,7 +944,8 @@ function infoExtraHeaderDesign(
   design: string,
   info: PortfolioInfoSectionSettings,
   onPatch: (patch: HeaderPatch) => void,
-  shared: (opts?: { hideAlignment?: boolean; hideTitleControls?: boolean }) => ReactNode
+  shared: (opts?: { hideAlignment?: boolean; hideTitleControls?: boolean }) => ReactNode,
+  toggles: ReactNode
 ): ReactNode {
   const colorProps = { colorOptions: INFO_HEADER_PALETTE_TOKEN_OPTIONS, resolveColor: infoHeaderPaletteTokenColor };
   if (design === 'chapter') {
@@ -919,6 +965,7 @@ function infoExtraHeaderDesign(
             onChange={(headerChapterTitleText) => onPatch({ headerChapterTitleText })}
           />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={info}
@@ -964,6 +1011,7 @@ function infoExtraHeaderDesign(
             onChange={(headerCoverLine3Text) => onPatch({ headerCoverLine3Text })}
           />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={info}
@@ -989,14 +1037,14 @@ function infoExtraHeaderDesign(
 }
 
 const INFO_HEADER_COPY: HeaderCopy = {
-  editorial: { label: 'Info', title: 'About me', subtitle: 'Background, education, and how I work.' },
-  index: { rule: 'Index', title: 'About me', subtitle: 'Background, education, and how I work.', count: 'Highlights' },
+  editorial: { label: msg('Info'), title: msg('About me'), subtitle: msg('Background, education, and how I work.') },
+  index: { rule: 'Index', title: msg('About me'), subtitle: msg('Background, education, and how I work.'), count: 'Highlights' },
   marquee: ['About', 'Optional', 'Optional', 'Optional'],
   accent: { badge: '{count}+ highlights', lead: 'A few things worth knowing about me.' },
-  serif: { label: 'Info', title: 'A closer look at who I am and how I work.', subtitle: 'Background, education, and how I work.' },
-  billboard: { word: 'INFO', title: 'About me', count: '{count} things worth knowing' },
+  serif: { label: msg('Info'), title: msg('A closer look at who I am and how I work.'), subtitle: msg('Background, education, and how I work.') },
+  billboard: { word: 'INFO', title: msg('About me'), count: '{count} things worth knowing' },
   masthead: ['Get to know me.', 'A bit of my story.', 'Background, skills, and how I work.'],
-  split: { title: 'About me', label: 'Info' },
+  split: { title: msg('About me'), label: msg('Info') },
 };
 
 /** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
@@ -1017,7 +1065,7 @@ function InfoHeaderDesignFields({
       resolveColor={infoHeaderPaletteTokenColor}
       accentAlignmentOptions={INFO_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS}
       billboardStyleOptions={INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS}
-      extra={(design, shared) => infoExtraHeaderDesign(design, info, onPatch, shared)}
+      extra={(design, shared, toggles) => infoExtraHeaderDesign(design, info, onPatch, shared, toggles)}
     />
   );
 }
@@ -1035,6 +1083,7 @@ export function InfoSettingsPanel({
   onSubSectionChange?: (value: InfoSubSection) => void;
   heroPalette?: PortfolioHeroPalette;
 }) {
+  const t = useT();
   const [uncontrolled, setUncontrolled] = useState<InfoSubSection>('general');
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const subSection = normalizeInfoSubSection(controlledSubSection ?? uncontrolled);
@@ -1046,56 +1095,22 @@ export function InfoSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
-        {INFO_SUB_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => setSubSection(section.id)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              subSection === section.id
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs tabs={INFO_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
       {subSection === 'general' ? (
-        <div className="space-y-4">
-          <InfoToggleRow
-            label="Show Info section"
+        <div>
+          <SettingsSwitchRow
+            label={t('Show Info section')}
+            description={info.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={info.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-
-          <SectionColorModeControl
-            value={info.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <InfoOptionGrid
-            label="Font size"
-            value={info.premiumFontSize ?? 'medium'}
-            options={PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
-
-          <div className="space-y-5">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Content visibility
-            </p>
-
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
-                Background
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+          {info.enabled ? (
+            <>
+              <SettingsGroup label={t('Education & interests')}>
+                <div className="space-y-3">
                 <InfoToggleRow
-                  label="Education"
+                  label={t('Education')}
                   checked={
                     (info.design ?? 'about-me') === 'about-value-steps' ||
                     (info.design ?? 'about-me') === 'about-manifesto'
@@ -1106,7 +1121,7 @@ export function InfoSettingsPanel({
                 />
                 {(info.design ?? 'about-me') === 'about-portrait-skills' ? (
                   <InfoToggleRow
-                    label="Interests + languages"
+                    label={t('Interests + languages')}
                     checked={info.aboutPortraitSkillsMetaEnabled !== false}
                     onChange={(aboutPortraitSkillsMetaEnabled) =>
                       onChange({ aboutPortraitSkillsMetaEnabled })
@@ -1114,33 +1129,29 @@ export function InfoSettingsPanel({
                   />
                 ) : (
                   <InfoToggleRow
-                    label="Interests"
+                    label={t('Interests')}
                     checked={info.showInterests !== false}
                     onChange={(showInterests) => onChange({ showInterests })}
                   />
                 )}
               </div>
-            </div>
-
-            <div className="space-y-2">
-              <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
-                Capabilities
-              </p>
-              <div className="grid grid-cols-2 gap-x-4 gap-y-3">
+              </SettingsGroup>
+              <SettingsGroup label={t('Skills & tools')}>
+                <div className="space-y-3">
                 <InfoToggleRow
-                  label="Skills"
+                  label={t('Skills')}
                   checked={info.showSkills !== false}
                   onChange={(showSkills) => onChange({ showSkills })}
                 />
                 <InfoToggleRow
-                  label="Strengths"
+                  label={t('Strengths')}
                   checked={info.showStrengths !== false}
                   onChange={(showStrengths) => onChange({ showStrengths })}
                 />
                 {(info.design ?? 'about-me') !== 'about-portrait-skills' ? (
                   <>
                     <InfoToggleRow
-                      label="Languages"
+                      label={t('Languages')}
                       checked={
                         (info.design ?? 'about-me') === 'about-value-steps'
                           ? info.showLanguages === true
@@ -1149,7 +1160,7 @@ export function InfoSettingsPanel({
                       onChange={(showLanguages) => onChange({ showLanguages })}
                     />
                     <InfoToggleRow
-                      label="Systems & tools"
+                      label={t('Systems & tools')}
                       checked={
                         (info.design ?? 'about-me') === 'about-value-steps'
                           ? info.showSystemsTools === true
@@ -1160,23 +1171,41 @@ export function InfoSettingsPanel({
                   </>
                 ) : null}
               </div>
-            </div>
-          </div>
+              </SettingsGroup>
+            </>
+          ) : null}
         </div>
       ) : null}
 
-      {subSection === 'design' ? (
+      {subSection !== 'general' && !info.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {subSection === 'design' && info.enabled ? (
         <div className="space-y-6">
           <InfoDesignChoiceGrid
             value={info.design ?? 'about-me'}
             onChange={(design) => onChange(infoDesignSettingsPatch(design))}
           />
 
+          <SettingsGroup label={t('Style')}>
+            <SectionColorModeControl
+              label={t('Color mode')}
+              value={info.colorModeOverride}
+              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+            />
+            <InfoOptionGrid
+              label={t('Text size')}
+              value={info.premiumFontSize ?? 'medium'}
+              options={PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS}
+              onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+              columns={3}
+            />
+          </SettingsGroup>
+
           <InfoLayoutSettingsBand motionKey={info.design ?? 'about-me'}>
-<SettingsRowsScope title="Layout options">
+<SettingsRowsScope title={t('Layout options')}>
           {(info.design ?? 'about-me') !== 'about-manifesto' ? (
             <InfoToggleRow
-              label="Language flags"
+              label={t('Language flags')}
               checked={info.showLanguageFlags !== false}
               onChange={(showLanguageFlags) => onChange({ showLanguageFlags })}
             />
@@ -1184,7 +1213,7 @@ export function InfoSettingsPanel({
 
           {portfolioInfoDesignHasPortrait(info.design) ? (
             <InfoToggleRow
-              label="Black & white portrait"
+              label={t('Black & white portrait')}
               checked={resolveInfoPortraitGrayscale(info)}
               onChange={(infoPortraitGrayscale) =>
                 onChange({
@@ -1197,7 +1226,7 @@ export function InfoSettingsPanel({
 
           {(info.design ?? 'about-me') === 'about-value-steps' ? (
             <InfoOptionGrid
-              label="Values display"
+              label={t('Values display')}
               value={resolveInfoAboutValueValuesLayout(info)}
               options={PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS}
               onChange={(aboutValueValuesLayout) => onChange({ aboutValueValuesLayout })}
@@ -1207,7 +1236,7 @@ export function InfoSettingsPanel({
           {(info.design ?? 'about-me') === 'about-value-steps' &&
           resolveInfoAboutValueValuesLayout(info) === 'editorial' ? (
             <InfoOptionGrid
-              label="List bullets"
+              label={t('List bullets')}
               value={info.aboutValueListMarkerStyle ?? 'dot'}
               options={PORTFOLIO_INFO_ABOUT_VALUE_LIST_MARKER_STYLE_OPTIONS}
               icons={Object.fromEntries(
@@ -1222,7 +1251,7 @@ export function InfoSettingsPanel({
 
           {(info.design ?? 'about-me') === 'about-split' ? (
             <InfoOptionGrid
-              label="Portrait position"
+              label={t('Portrait position')}
               value={info.aboutSplitPortraitSide ?? 'left'}
               options={PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS}
               onChange={(aboutSplitPortraitSide) => onChange({ aboutSplitPortraitSide })}
@@ -1232,7 +1261,7 @@ export function InfoSettingsPanel({
           {(info.design ?? 'about-me') === 'about-split' ? (
             <div>
               <InfoOptionGrid
-                label="Block titles"
+                label={t('Block titles')}
                 value={info.aboutSplitLabelsMode ?? 'standard'}
                 options={INFO_LABELS_MODE_OPTIONS}
                 onChange={(aboutSplitLabelsMode) => onChange({ aboutSplitLabelsMode })}
@@ -1240,25 +1269,25 @@ export function InfoSettingsPanel({
               {info.aboutSplitLabelsMode === 'custom' ? (
                 <div className="mt-3 grid gap-2 sm:grid-cols-3">
                   <InfoTextField
-                    label="Skills"
+                    label={t('Skills')}
                     value={info.aboutSplitCustomSkillsLabel ?? ''}
-                    placeholder="Skills"
+                    placeholder={t('Skills')}
                     onChange={(aboutSplitCustomSkillsLabel) =>
                       onChange({ aboutSplitCustomSkillsLabel })
                     }
                   />
                   <InfoTextField
-                    label="Strengths"
+                    label={t('Strengths')}
                     value={info.aboutSplitCustomStrengthsLabel ?? ''}
-                    placeholder="Strengths"
+                    placeholder={t('Strengths')}
                     onChange={(aboutSplitCustomStrengthsLabel) =>
                       onChange({ aboutSplitCustomStrengthsLabel })
                     }
                   />
                   <InfoTextField
-                    label="Languages"
+                    label={t('Languages')}
                     value={info.aboutSplitCustomLanguagesLabel ?? ''}
-                    placeholder="Languages"
+                    placeholder={t('Languages')}
                     onChange={(aboutSplitCustomLanguagesLabel) =>
                       onChange({ aboutSplitCustomLanguagesLabel })
                     }
@@ -1271,8 +1300,8 @@ export function InfoSettingsPanel({
           {(info.design ?? 'about-me') === 'about-platform' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Main title (left)
+                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Main title (left)')}
                 </p>
                 <textarea
                   value={info.aboutPlatformHeadlineCustomText ?? ''}
@@ -1281,7 +1310,7 @@ export function InfoSettingsPanel({
                     onChange({ aboutPlatformHeadlineCustomText: event.target.value })
                   }
                   rows={3}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  className={`mt-2 ${PF_TEXT_INPUT}`}
                 />
               </div>
             </div>
@@ -1290,20 +1319,18 @@ export function InfoSettingsPanel({
           {(info.design ?? 'about-me') === 'about-manifesto' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Statement text
-                </p>
+                <FieldLabel>{t('Statement text')}</FieldLabel>
                 <textarea
                   value={info.subtitle}
                   placeholder={DEFAULT_INFO_SUBTITLE}
                   onChange={(event) => onChange({ subtitle: event.target.value })}
                   rows={3}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                  className={`mt-2 ${PF_TEXT_INPUT}`}
                 />
               </div>
 
               <InfoToggleRow
-                label="Customize statement typography"
+                label={t('Customize statement typography')}
                 info="Override the color, size, weight and italics of the statement text above."
                 checked={info.aboutManifestoStatementStyleEnabled === true}
                 onChange={(aboutManifestoStatementStyleEnabled) =>
@@ -1329,7 +1356,7 @@ export function InfoSettingsPanel({
               ) : null}
 
               <InfoToggleRow
-                label="Scroll focus"
+                label={t('Scroll focus')}
                 checked={info.aboutManifestoBlocksScrollFocus === true}
                 onChange={(aboutManifestoBlocksScrollFocus) =>
                   onChange({ aboutManifestoBlocksScrollFocus })
@@ -1337,7 +1364,7 @@ export function InfoSettingsPanel({
               />
 
               <InfoOptionGrid
-                label="Portrait frame"
+                label={t('Portrait frame')}
                 value={info.aboutManifestoPortraitFrame ?? 'square'}
                 options={PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS}
                 onChange={(aboutManifestoPortraitFrame) => onChange({ aboutManifestoPortraitFrame })}
@@ -1347,7 +1374,7 @@ export function InfoSettingsPanel({
 
           {(info.design ?? 'about-me') === 'about-terminal' ? (
             <InfoToggleRow
-              label="Always dark"
+              label={t('Always dark')}
               info="Keeps the terminal window dark even when the global theme switches to light."
               checked={info.aboutTerminalAlwaysDark === true}
               onChange={(aboutTerminalAlwaysDark) => onChange({ aboutTerminalAlwaysDark })}
@@ -1357,21 +1384,19 @@ export function InfoSettingsPanel({
           {(info.design ?? 'about-me') === 'about-value-steps' ? (
             <div className="space-y-4">
               <InfoToggleRow
-                label="Show intro"
+                label={t('Show intro')}
                 checked={info.aboutValueStepsIntroEnabled !== false}
                 onChange={(aboutValueStepsIntroEnabled) =>
                   onChange({ aboutValueStepsIntroEnabled })
                 }
               />
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Intro text
-                </p>
+                <FieldLabel>{t('Intro text')}</FieldLabel>
                 <textarea
                   value={[info.aboutValueStepsIntroParagraph1, info.aboutValueStepsIntroParagraph2]
                     .filter(Boolean)
                     .join('\n\n')}
-                  placeholder={'Intro text — paragraph 1.\n\nIntro text — paragraph 2.'}
+                  placeholder={t('Intro text — paragraph 1.\n\nIntro text — paragraph 2.')}
                   onChange={(event) => {
                     const raw = event.target.value;
                     const separator = raw.match(/\n{2,}/);
@@ -1383,7 +1408,7 @@ export function InfoSettingsPanel({
                     });
                   }}
                   rows={6}
-                  className="mt-2 w-full resize-y rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-neutral-900"
+                  className={`mt-2 resize-y leading-relaxed ${PF_TEXT_INPUT}`}
                 />
               </div>
             </div>
@@ -1392,7 +1417,7 @@ export function InfoSettingsPanel({
             {(info.design ?? 'about-me') === 'about-me-trait' ? (
               <div className="space-y-3">
                 <InfoToggleRow
-                  label="Show large headline"
+                  label={t('Show large headline')}
                   checked={info.aboutMeTraitHeadlineEnabled !== false}
                   onChange={(aboutMeTraitHeadlineEnabled) =>
                     onChange({ aboutMeTraitHeadlineEnabled })
@@ -1400,12 +1425,12 @@ export function InfoSettingsPanel({
                 />
                 <textarea
                   value={info.aboutMeTraitHeadlineCustomText ?? ''}
-                  placeholder={'Turning Hard\nProblems Into\nSimple Software'}
+                  placeholder={t('Turning Hard\nProblems Into\nSimple Software')}
                   onChange={(event) =>
                     onChange({ aboutMeTraitHeadlineCustomText: event.target.value })
                   }
                   rows={4}
-                  className="w-full resize-y rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm leading-relaxed text-neutral-900"
+                  className={`resize-y leading-relaxed ${PF_TEXT_INPUT}`}
                 />
               </div>
             ) : null}
@@ -1413,14 +1438,14 @@ export function InfoSettingsPanel({
             {(info.design ?? 'about-me') === 'about-me-trait' && info.showEducation !== false ? (
               <div className="space-y-4">
                 <InfoOptionGrid
-                  label="Education design"
+                  label={t('Education design')}
                   value={info.educationDisplayStyle ?? 'editorial'}
                   options={PORTFOLIO_INFO_EDUCATION_DISPLAY_OPTIONS}
                   onChange={(educationDisplayStyle) => onChange({ educationDisplayStyle })}
                 />
                 {(info.educationDisplayStyle ?? 'editorial') === 'cascade' ? (
                   <InfoToggleRow
-                    label="Cascade scroll animation"
+                    label={t('Cascade scroll animation')}
                     checked={info.educationCascadeScrollShift === true}
                     onChange={(educationCascadeScrollShift) =>
                       onChange({ educationCascadeScrollShift })
@@ -1434,7 +1459,7 @@ export function InfoSettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'header' ? (
+      {subSection === 'header' && info.enabled ? (
         <div className="space-y-6">
           <InfoHeaderDesignChoiceGrid
             value={info.headerDesign ?? 'editorial'}
@@ -1445,19 +1470,19 @@ export function InfoSettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <InfoLayoutSettingsBand motionKey={info.headerDesign ?? 'editorial'} title="Header settings" flush>
+            <InfoLayoutSettingsBand motionKey={info.headerDesign ?? 'editorial'} title={t('Header settings')} flush>
               <InfoHeaderDesignFields info={info} onChange={onChange} />
             </InfoLayoutSettingsBand>
           )}
         </div>
       ) : null}
 
-      {subSection === 'background' ? (
+      {subSection === 'background' && info.enabled ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={info}
             onChange={(patch) => onChange(patch)}
-            title="Info section background"
+            title={t('Info section background')}
             renderColorField={({ label, value, onChange: onColorChange }) => (
               <InfoPaletteSwatchPicker
                 label={label}

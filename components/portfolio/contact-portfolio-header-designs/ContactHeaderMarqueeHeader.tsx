@@ -9,7 +9,8 @@ import {
   contactHeaderPaletteTokenColor,
   type PortfolioContactHeaderTitleSize,
 } from '@/components/portfolio/portfolio-contact-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 /** Nearest scrollable ancestor — ScrollTrigger needs this explicitly inside an
  *  embedded/iframe dashboard preview, where `window` isn't the real scroller. */
@@ -100,8 +101,10 @@ export function ContactHeaderMarqueeHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_CONTACT_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'marquee');
+  const showWords = show('words');
   const rawWords = [
     presentation.headerMarqueeWord1Text,
     presentation.headerMarqueeWord2Text,
@@ -194,7 +197,7 @@ export function ContactHeaderMarqueeHeader({
       loop?.kill();
       ctx.revert();
     };
-  }, [animationEnabled, wordsKey, fontSize]);
+  }, [animationEnabled, wordsKey, fontSize, showWords]);
 
   return (
     <div
@@ -202,20 +205,22 @@ export function ContactHeaderMarqueeHeader({
       style={{ marginBottom: `${CONTACT_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
       data-contact-header="marquee"
     >
-      <div
-        ref={rootRef}
-        className="w-full overflow-hidden"
-        style={{
-          padding: '1.35rem 0 1.5rem',
-          WebkitMaskImage: 'linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%)',
-          maskImage: 'linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%)',
-        }}
-      >
-        <div ref={rowRef} className="flex w-max whitespace-nowrap will-change-transform">
-          <ContactHeaderMarqueeTrack words={displayWords} ink={ink} fontSize={fontSize} />
-          <ContactHeaderMarqueeTrack words={displayWords} ink={ink} fontSize={fontSize} hidden />
+      {showWords ? (
+        <div
+          ref={rootRef}
+          className="w-full overflow-hidden"
+          style={{
+            padding: '1.35rem 0 1.5rem',
+            WebkitMaskImage: 'linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%)',
+            maskImage: 'linear-gradient(to right, transparent 0%, #000 10%, #000 90%, transparent 100%)',
+          }}
+        >
+          <div ref={rowRef} className="flex w-max whitespace-nowrap will-change-transform">
+            <ContactHeaderMarqueeTrack words={displayWords} ink={ink} fontSize={fontSize} />
+            <ContactHeaderMarqueeTrack words={displayWords} ink={ink} fontSize={fontSize} hidden />
+          </div>
         </div>
-      </div>
+      ) : null}
       {trailing ? <div className="mt-4">{trailing}</div> : null}
     </div>
   );

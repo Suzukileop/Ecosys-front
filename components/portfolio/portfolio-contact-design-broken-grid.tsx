@@ -19,6 +19,7 @@ import {
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_TITLE = 'Contact';
 
@@ -60,6 +61,7 @@ export function ContactDesignBrokenGrid({
   colorMode: 'light' | 'dark';
   layout: ContactDesignLayoutResolver;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const circleRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
@@ -138,7 +140,7 @@ export function ContactDesignBrokenGrid({
           </h2>
 
           {links.length > 0 ? (
-            <nav className="hidden flex-col items-end gap-3 md:flex" aria-label="Social">
+            <nav className="hidden flex-col items-end gap-3 md:flex" aria-label={t('Social')}>
               {links.map((link) => (
                 <a
                   key={link.id}
@@ -165,7 +167,7 @@ export function ContactDesignBrokenGrid({
           {heroImageUrl ? (
             <Image
               src={heroImageUrl}
-              alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
+              alt={displayName ? t('Portrait of {displayName}', { displayName }) : t('Portrait')}
               fill
               sizes="(max-width: 768px) 16rem, 20rem"
               className="object-cover object-center"
@@ -184,7 +186,7 @@ export function ContactDesignBrokenGrid({
         ) : null}
 
         {links.length > 0 ? (
-          <nav className="order-3 flex flex-wrap justify-center gap-x-6 gap-y-3 md:hidden" aria-label="Social">
+          <nav className="order-3 flex flex-wrap justify-center gap-x-6 gap-y-3 md:hidden" aria-label={t('Social')}>
             {links.map((link) => (
               <a
                 key={link.id}

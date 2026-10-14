@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type ContactVisibilityLevel = 'PUBLIC' | 'MEMBERS' | 'HIDDEN';
 
 export type ContactVisibilitySettings = {
@@ -61,9 +62,9 @@ export const DEFAULT_CONTACT_VISIBILITY: ContactVisibilitySettings = {
 };
 
 export const CONTACT_VISIBILITY_OPTIONS: { value: ContactVisibilityLevel; label: string }[] = [
-  { value: 'PUBLIC', label: 'Public' },
-  { value: 'MEMBERS', label: 'Members only' },
-  { value: 'HIDDEN', label: 'Hidden' },
+  { value: 'PUBLIC', label: msg('Public') },
+  { value: 'MEMBERS', label: msg('Members only') },
+  { value: 'HIDDEN', label: msg('Hidden') },
 ];
 
 export function parseContactVisibility(raw: unknown): ContactVisibilitySettings {

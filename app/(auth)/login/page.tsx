@@ -18,6 +18,7 @@ import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { AxiosError } from 'axios';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { SIGNED_IN_HOME } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -35,6 +36,7 @@ function resolvePostAuthDest(searchParams: URLSearchParams): string {
 }
 
 function LoginForm() {
+  const t = useT();
   const searchParams = useSearchParams();
   const { login, user, isLoading } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -74,13 +76,13 @@ function LoginForm() {
       const axiosError = error as AxiosError<{ message: string }>;
       const status = axiosError.response?.status;
       if (status === 401) {
-        setApiError('Incorrect email or password.');
+        setApiError(t('Incorrect email or password.'));
       } else if (status === 403) {
-        setApiError('Your account has been disabled. Contact support.');
+        setApiError(t('Your account has been disabled. Contact support.'));
       } else if (status === 429) {
-        setApiError('Too many login attempts. Please try again in a minute.');
+        setApiError(t('Too many login attempts. Please try again in a minute.'));
       } else {
-        setApiError(getApiErrorMessage(error, 'We couldn’t sign you in. Please try again.'));
+        setApiError(getApiErrorMessage(error, t('We couldn’t sign you in. Please try again.')));
       }
     }
   };
@@ -101,7 +103,7 @@ function LoginForm() {
       <form onSubmit={handleSubmit(onSubmit)} method="post" className="space-y-5" noValidate>
         <AuthTextField
           id="email"
-          label="Email"
+          label={t('Email')}
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -113,15 +115,15 @@ function LoginForm() {
 
         <AuthPasswordField
           id="password"
-          label="Password"
+          label={t('Password')}
           autoComplete="current-password"
           registration={register('password')}
           error={errors.password?.message}
         />
 
         <div className="pt-2">
-          <AuthSubmitButton busy={busy} busyLabel={isRedirecting ? 'Redirecting...' : 'Signing in...'}>
-            Log in
+          <AuthSubmitButton busy={busy} busyLabel={isRedirecting ? t('Redirecting...') : t('Signing in...')}>
+            {t('Log in')}
           </AuthSubmitButton>
         </div>
       </form>
@@ -130,14 +132,14 @@ function LoginForm() {
 }
 
 export default function LoginPage() {
+  const t = useT();
   return (
     <AuthShell
-      title="Welcome back"
-      subtitle="Sign in to continue to Skraft."
-      switchPrompt="Don't have an account?"
-      switchLabel="Register"
+      title={t('Welcome back')}
+      subtitle={t('Sign in to continue to Skraft.')}
+      switchPrompt={t('Don\'t have an account?')}
+      switchLabel={t('Register')}
       switchHref="/register"
-      image={{ src: '/auth/login.jpg', alt: 'A quiet, sunlit creator workspace' }}
     >
       <Suspense
         fallback={

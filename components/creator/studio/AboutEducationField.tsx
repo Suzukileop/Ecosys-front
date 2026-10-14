@@ -18,6 +18,7 @@ import {
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import type { ProfileEducationEntry } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const MAX_ABOUT_EDUCATION = 8;
 
@@ -41,13 +42,14 @@ export function AboutEducationField({
   readOnly = false,
   values = [],
 }: AboutEducationFieldProps) {
+  const t = useT();
   if (readOnly) {
     const filled = values.filter(
       (item) =>
         item.schoolYear.trim() || item.title.trim() || item.institution.trim()
     );
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>Not set</p>;
+      return <p className={profileSectionEmptyClass}>{t('Not set')}</p>;
     }
     return (
       <div className="grid gap-4 sm:grid-cols-2">
@@ -63,7 +65,7 @@ export function AboutEducationField({
             ) : null}
             {item.title.trim() ? (
               <p className="mt-1.5 text-base font-bold text-neutral-900 dark:text-white">
-                {item.title}
+                {t(item.title)}
               </p>
             ) : null}
             {item.institution.trim() ? (
@@ -80,16 +82,16 @@ export function AboutEducationField({
   return (
     <div className="space-y-4">
       <div>
-        <p className={profileSectionSubheadingClass}>Education</p>
+        <p className={profileSectionSubheadingClass}>{t('Education')}</p>
         <p className={`mt-1 ${profileSectionMutedTextClass}`}>
-          Add schools, degrees, or training programs with year, title, and institution.
+          {t('Add schools, degrees, or training programs with year, title, and institution.')}
         </p>
       </div>
 
       <ProfileSectionItemCount count={fields.length} limit={MAX_ABOUT_EDUCATION} unit="entries" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No education entries added yet.</p>
+        <p className={profileSectionEmptyClass}>{t('No education entries added yet.')}</p>
       ) : (
         <div className="space-y-4">
           {fields.map((field, index) => (
@@ -99,7 +101,7 @@ export function AboutEducationField({
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-                  Entry {index + 1}
+                  {t('Entry')} {index + 1}
                 </p>
                 <div className="flex items-center gap-1">
                   <button
@@ -107,7 +109,7 @@ export function AboutEducationField({
                     disabled={index === 0}
                     onClick={() => move(index, index - 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move up"
+                    aria-label={t('Move up')}
                   >
                     ↑
                   </button>
@@ -116,7 +118,7 @@ export function AboutEducationField({
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, index + 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move down"
+                    aria-label={t('Move down')}
                   >
                     ↓
                   </button>
@@ -125,19 +127,19 @@ export function AboutEducationField({
                     onClick={() => remove(index)}
                     className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </div>
               </div>
 
               <div>
                 <label htmlFor={`about-edu-year-${field.id}`} className={profileFormLabelClass}>
-                  School year
+                  {t('School year')}
                 </label>
                 <input
                   id={`about-edu-year-${field.id}`}
                   type="text"
-                  placeholder="e.g. 2020 — 2024"
+                  placeholder={t('e.g. 2020 — 2024')}
                   className={profileFormInputClass}
                   {...register(`aboutEducation.${index}.schoolYear`)}
                 />
@@ -145,12 +147,12 @@ export function AboutEducationField({
 
               <div>
                 <label htmlFor={`about-edu-title-${field.id}`} className={profileFormLabelClass}>
-                  Degree / title
+                  {t('Degree / title')}
                 </label>
                 <input
                   id={`about-edu-title-${field.id}`}
                   type="text"
-                  placeholder="e.g. B.Sc. Computer Science"
+                  placeholder={t('e.g. B.Sc. Computer Science')}
                   className={profileFormInputClass}
                   {...register(`aboutEducation.${index}.title`)}
                 />
@@ -158,12 +160,12 @@ export function AboutEducationField({
 
               <div>
                 <label htmlFor={`about-edu-institution-${field.id}`} className={profileFormLabelClass}>
-                  Institution
+                  {t('Institution')}
                 </label>
                 <input
                   id={`about-edu-institution-${field.id}`}
                   type="text"
-                  placeholder="e.g. University of Example"
+                  placeholder={t('e.g. University of Example')}
                   className={profileFormInputClass}
                   {...register(`aboutEducation.${index}.institution`)}
                 />
@@ -179,7 +181,7 @@ export function AboutEducationField({
         onClick={() => append(createEmptyAboutEducationEntry(fields.length))}
         className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
       >
-        Add education entry
+        {t('Add education entry')}
       </button>
     </div>
   );

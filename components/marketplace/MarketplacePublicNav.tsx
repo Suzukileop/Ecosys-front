@@ -3,46 +3,43 @@
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { ROUTES, isPathWithin } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-const NAV_LINK = 'rounded-lg px-3 py-2 text-sm font-medium';
-const NAV_LINK_IDLE = `${NAV_LINK} text-gray-700 hover:bg-gray-50 dark:text-gray-300 dark:hover:bg-neutral-900`;
-const NAV_LINK_ACTIVE = `${NAV_LINK} text-orange-600`;
+/* Signed-out marketplace bar, in the app header's X palette: secondary-ink links, the active one in
+   ink with a 2px ink rule, one ink primary button (Sign up). No accent hue, no hairline. */
+const NAV_LINK = 'relative inline-flex h-10 items-center rounded-full px-3 text-[15px]';
+const NAV_LINK_IDLE = `${NAV_LINK} font-medium text-[#536471] hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]`;
+const NAV_LINK_ACTIVE = `${NAV_LINK} font-bold text-[#0F1419] after:absolute after:inset-x-3 after:bottom-0 after:h-[2px] after:bg-[#0F1419] dark:text-[#E7E9EA] dark:after:bg-[#E7E9EA]`;
 
 export function MarketplacePublicNav({ transparent = false }: { transparent?: boolean }) {
+  const t = useT();
   const pathname = usePathname();
   const onProviders = isPathWithin(pathname, ROUTES.providers);
   const signInTarget = onProviders ? ROUTES.providers : ROUTES.marketplace;
 
   return (
     <header
-      className={`border-b ${
-        transparent
-          ? 'border-gray-200/70 bg-transparent dark:border-neutral-800/70'
-          : 'border-gray-200 bg-[#FFFFFF] dark:border-neutral-800 dark:bg-neutral-950'
-      }`}
+      className={transparent ? 'bg-transparent' : 'bg-white dark:bg-black'}
     >
       <div className="mx-auto flex max-w-6xl items-center justify-between gap-4 px-4 py-3">
         <div className="flex items-center gap-6">
           <Link href="/" className="flex items-center gap-2">
-            <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-sm font-bold text-white">
-              NP
-            </div>
-            <span className="hidden font-semibold text-gray-900 dark:text-white sm:inline">Skraft</span>
+            <span className="text-[19px] font-extrabold tracking-[-0.02em] text-[#0F1419] dark:text-[#E7E9EA]">Skraft</span>
           </Link>
-          <nav className="flex items-center gap-1" aria-label="Marketplace">
+          <nav className="hidden items-center gap-1 sm:flex" aria-label={t('Marketplace')}>
             <Link
               href={ROUTES.providers}
               aria-current={onProviders ? 'page' : undefined}
               className={onProviders ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}
             >
-              Providers
+              {t('Providers')}
             </Link>
             <Link
               href={ROUTES.marketplace}
               aria-current={!onProviders ? 'page' : undefined}
               className={!onProviders ? NAV_LINK_ACTIVE : NAV_LINK_IDLE}
             >
-              Marketplace
+              {t('Marketplace')}
             </Link>
           </nav>
         </div>
@@ -51,13 +48,13 @@ export function MarketplacePublicNav({ transparent = false }: { transparent?: bo
             href={`${ROUTES.login}?redirect=${encodeURIComponent(signInTarget)}`}
             className={NAV_LINK_IDLE}
           >
-            Sign in
+            {t('Sign in')}
           </Link>
           <Link
             href={ROUTES.register}
-            className="rounded-lg bg-orange-500 px-4 py-2 text-sm font-semibold text-white hover:bg-orange-600"
+            className="inline-flex h-10 items-center rounded-none bg-[#0F1419] px-4 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]"
           >
-            Sign up
+            {t('Sign up')}
           </Link>
         </div>
       </div>

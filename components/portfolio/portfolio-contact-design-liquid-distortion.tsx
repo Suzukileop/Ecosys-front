@@ -13,6 +13,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -56,6 +57,7 @@ export function ContactDesignLiquidDistortion({
    *  every other genuinely light/dark-aware premium Contact design. */
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const watermarkRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
@@ -242,7 +244,7 @@ export function ContactDesignLiquidDistortion({
                   {socialHeading}
                 </p>
               ) : null}
-              <nav className="mt-3 flex flex-wrap items-center justify-center gap-5 lg:justify-end" aria-label="Social">
+              <nav className="mt-3 flex flex-wrap items-center justify-center gap-5 lg:justify-end" aria-label={t('Social')}>
                 {links.map((link) => (
                   <a
                     key={link.id}

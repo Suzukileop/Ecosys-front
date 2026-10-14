@@ -1,14 +1,15 @@
 'use client';
 import type { StrengthToolLevel } from '@/components/creator/studio/profile-form-schema';
+import { msg } from '@/lib/i18n/config';
 
 export const MAX_DESCRIPTION = 280;
 const MAX_USE_CASES = 8;
 
 export const LEVEL_OPTIONS: { value: StrengthToolLevel; label: string }[] = [
-  { value: 'beginner', label: 'Beginner' },
-  { value: 'intermediate', label: 'Intermediate' },
-  { value: 'advanced', label: 'Advanced' },
-  { value: 'expert', label: 'Expert' },
+  { value: 'beginner', label: msg('Beginner') },
+  { value: 'intermediate', label: msg('Intermediate') },
+  { value: 'advanced', label: msg('Advanced') },
+  { value: 'expert', label: msg('Expert') },
 ];
 
 export type PortfolioStrengthDraft = {

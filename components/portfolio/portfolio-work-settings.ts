@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -26,6 +27,7 @@ import {
   type PortfolioWorkCtaIcon,
   type PortfolioWorkCtaIconPosition,
 } from '@/components/portfolio/portfolio-work-cta-icons';
+import { msg } from '@/lib/i18n/config';
 
 export type {
   PortfolioWorkCtaIcon,
@@ -254,17 +256,17 @@ export const PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 1, label: '1 per row', description: 'Full-width cards, stacked — large editorial spotlight.' },
-  { value: 2, label: '2 per row', description: 'Asymmetric diagonal pairs (default).' },
+  { value: 1, label: msg('1 per row'), description: msg('Full-width cards, stacked — large editorial spotlight.') },
+  { value: 2, label: msg('2 per row'), description: msg('Asymmetric diagonal pairs (default).') },
   {
     value: 3,
-    label: '3 per row',
-    description: 'Even 3-column grid on desktop — 2 on tablet, 1 on mobile.',
+    label: msg('3 per row'),
+    description: msg('Even 3-column grid on desktop — 2 on tablet, 1 on mobile.'),
   },
   {
     value: 4,
-    label: '4 per row',
-    description: 'Dense even grid — 4 on large desktop, 3 on laptop, 2 on tablet, 1 on mobile.',
+    label: msg('4 per row'),
+    description: msg('Dense even grid — 4 on large desktop, 3 on laptop, 2 on tablet, 1 on mobile.'),
   },
 ];
 
@@ -272,9 +274,9 @@ export const PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS: {
   value: PortfolioWorkProjectsBoardThumbnailSize;
   label: string;
 }[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'standard', label: 'Standard' },
-  { value: 'large', label: 'Large' },
+  { value: 'compact', label: msg('Compact') },
+  { value: 'standard', label: msg('Standard') },
+  { value: 'large', label: msg('Large') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-accordion'`. */
@@ -451,14 +453,14 @@ export const PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'md', label: 'Medium', description: 'Compact thumbnail beside the info.' },
-  { value: 'lg', label: 'Large', description: 'Wider thumbnail, balanced with text.' },
-  { value: 'xl', label: 'Extra large', description: 'Current large default size.' },
-  { value: 'xxl', label: 'Huge', description: 'Very large — bigger than the previous max.' },
+  { value: 'md', label: msg('Medium'), description: msg('Compact thumbnail beside the info.') },
+  { value: 'lg', label: msg('Large'), description: msg('Wider thumbnail, balanced with text.') },
+  { value: 'xl', label: msg('Extra large'), description: msg('Current large default size.') },
+  { value: 'xxl', label: msg('Huge'), description: msg('Very large — bigger than the previous max.') },
   {
     value: 'half',
-    label: 'Two columns',
-    description: 'Image and info split evenly — 50 / 50.',
+    label: msg('Two columns'),
+    description: msg('Image and info split evenly — 50 / 50.'),
   },
 ];
 
@@ -467,8 +469,8 @@ export const PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Image left', description: 'Thumbnail on the left, info on the right.' },
-  { value: 'right', label: 'Image right', description: 'Thumbnail on the right, info on the left.' },
+  { value: 'left', label: msg('Image left'), description: msg('Thumbnail on the left, info on the right.') },
+  { value: 'right', label: msg('Image right'), description: msg('Thumbnail on the right, info on the left.') },
 ];
 
 export const PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS: {
@@ -476,9 +478,9 @@ export const PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Sharp corners on the card and thumbnail.' },
-  { value: 'md', label: 'Medium', description: 'Soft rounded corners.' },
-  { value: 'xl', label: 'Large', description: 'Very rounded card and thumbnail (default).' },
+  { value: 'none', label: msg('None'), description: msg('Sharp corners on the card and thumbnail.') },
+  { value: 'md', label: msg('Medium'), description: msg('Soft rounded corners.') },
+  { value: 'xl', label: msg('Large'), description: msg('Very rounded card and thumbnail (default).') },
 ];
 
 export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
@@ -486,9 +488,9 @@ export const PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Current compact spacing between cards.' },
-  { value: 'md', label: 'Moyen', description: 'More vertical breathing room.' },
-  { value: 'xl', label: 'Très grand', description: 'Wide vertical gap between each card.' },
+  { value: 'tight', label: msg('Serré'), description: msg('Current compact spacing between cards.') },
+  { value: 'md', label: msg('Moyen'), description: msg('More vertical breathing room.') },
+  { value: 'xl', label: msg('Très grand'), description: msg('Wide vertical gap between each card.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-index'`. */
@@ -539,8 +541,8 @@ export const PORTFOLIO_WORK_INDEX_MARKER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'number', label: 'Numérotation', description: '001, 002… in the left column.' },
-  { value: 'bullet', label: 'Puce', description: 'Simple list bullet instead of numbers.' },
+  { value: 'number', label: msg('Numérotation'), description: msg('001, 002… in the left column.') },
+  { value: 'bullet', label: msg('Puce'), description: msg('Simple list bullet instead of numbers.') },
 ];
 
 export const PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS: {
@@ -548,9 +550,9 @@ export const PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Compact padding above / below each separator.' },
-  { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
-  { value: 'xl', label: 'Très grand', description: 'Airy space between numbered rows.' },
+  { value: 'tight', label: msg('Serré'), description: msg('Compact padding above / below each separator.') },
+  { value: 'md', label: msg('Moyen'), description: msg('Balanced spacing (default).') },
+  { value: 'xl', label: msg('Très grand'), description: msg('Airy space between numbered rows.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-grid'`. */
@@ -621,8 +623,8 @@ export const PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 2, label: '2 columns', description: 'Two cards per row on large screens (default).' },
-  { value: 3, label: '3 columns', description: 'Three cards per row on large screens.' },
+  { value: 2, label: msg('2 columns'), description: msg('Two cards per row on large screens (default).') },
+  { value: 3, label: msg('3 columns'), description: msg('Three cards per row on large screens.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-split'`. */
@@ -724,9 +726,9 @@ export const PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'lg', label: 'Large', description: 'Big thumbnail, more room for the title beside it.' },
-  { value: 'xl', label: 'Very large', description: 'Dominant thumbnail (default).' },
-  { value: 'half', label: 'Half width', description: 'Thumbnail and title each take 50%.' },
+  { value: 'lg', label: msg('Large'), description: msg('Big thumbnail, more room for the title beside it.') },
+  { value: 'xl', label: msg('Very large'), description: msg('Dominant thumbnail (default).') },
+  { value: 'half', label: msg('Half width'), description: msg('Thumbnail and title each take 50%.') },
 ];
 
 export const PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS: {
@@ -734,9 +736,9 @@ export const PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Sharp corners (default).' },
-  { value: 'md', label: 'Medium', description: 'Soft rounded corners.' },
-  { value: 'xl', label: 'Large', description: 'Very rounded thumbnail.' },
+  { value: 'none', label: msg('None'), description: msg('Sharp corners (default).') },
+  { value: 'md', label: msg('Medium'), description: msg('Soft rounded corners.') },
+  { value: 'xl', label: msg('Large'), description: msg('Very rounded thumbnail.') },
 ];
 
 export const PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS: {
@@ -744,9 +746,9 @@ export const PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Compact spacing between rows.' },
-  { value: 'md', label: 'Moyen', description: 'Balanced spacing (default).' },
-  { value: 'xl', label: 'Très grand', description: 'Airy vertical rhythm.' },
+  { value: 'tight', label: msg('Serré'), description: msg('Compact spacing between rows.') },
+  { value: 'md', label: msg('Moyen'), description: msg('Balanced spacing (default).') },
+  { value: 'xl', label: msg('Très grand'), description: msg('Airy vertical rhythm.') },
 ];
 
 export const PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS: {
@@ -754,13 +756,13 @@ export const PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Image left', description: 'Thumbnail on the left, title on the right.' },
+  { value: 'left', label: msg('Image left'), description: msg('Thumbnail on the left, title on the right.') },
   {
     value: 'center',
-    label: 'Image center',
-    description: 'Thumbnail centered in the row; title stays left or right.',
+    label: msg('Image center'),
+    description: msg('Thumbnail centered in the row; title stays left or right.'),
   },
-  { value: 'right', label: 'Image right', description: 'Thumbnail on the right, title on the left.' },
+  { value: 'right', label: msg('Image right'), description: msg('Thumbnail on the right, title on the left.') },
 ];
 
 export const PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS: {
@@ -770,13 +772,13 @@ export const PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'left',
-    label: 'Title left',
-    description: 'Title + description on the left of the centered image (default).',
+    label: msg('Title left'),
+    description: msg('Title + description on the left of the centered image (default).'),
   },
   {
     value: 'right',
-    label: 'Title right',
-    description: 'Title + description on the right of the centered image.',
+    label: msg('Title right'),
+    description: msg('Title + description on the right of the centered image.'),
   },
 ];
 
@@ -787,13 +789,13 @@ export const PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS: {
 }[] = [
   {
     value: 'top',
-    label: 'En haut',
-    description: 'Aligné en haut avec le bord supérieur de l’image.',
+    label: msg('En haut'),
+    description: msg('Aligné en haut avec le bord supérieur de l’image.'),
   },
   {
     value: 'bottom',
-    label: 'En bas',
-    description: 'Aligné en bas — titre au bas du côté.',
+    label: msg('En bas'),
+    description: msg('Aligné en bas — titre au bas du côté.'),
   },
 ];
 
@@ -804,13 +806,13 @@ export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS: {
 }[] = [
   {
     value: 'with-title',
-    label: 'Sous le titre',
-    description: 'La description reste avec le titre.',
+    label: msg('Sous le titre'),
+    description: msg('La description reste avec le titre.'),
   },
   {
     value: 'opposite',
-    label: 'Autre côté',
-    description: 'La description passe de l’autre côté de l’image (titre inchangé).',
+    label: msg('Autre côté'),
+    description: msg('La description passe de l’autre côté de l’image (titre inchangé).'),
   },
 ];
 
@@ -821,13 +823,13 @@ export const PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS: {
 }[] = [
   {
     value: 'top',
-    label: 'En haut',
-    description: 'Description en haut, de l’autre côté de l’image.',
+    label: msg('En haut'),
+    description: msg('Description en haut, de l’autre côté de l’image.'),
   },
   {
     value: 'bottom',
-    label: 'En bas',
-    description: 'Description en bas, de l’autre côté de l’image.',
+    label: msg('En bas'),
+    description: msg('Description en bas, de l’autre côté de l’image.'),
   },
 ];
 
@@ -906,10 +908,10 @@ export const PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Images compactes — plusieurs visibles à la fois.' },
-  { value: 'md', label: 'Moyenne', description: 'Taille équilibrée.' },
-  { value: 'lg', label: 'Grande', description: 'Image dominante (défaut).' },
-  { value: 'xl', label: 'Très grande', description: 'Presque plein écran, léger aperçu suivant.' },
+  { value: 'sm', label: msg('Petite'), description: msg('Images compactes — plusieurs visibles à la fois.') },
+  { value: 'md', label: msg('Moyenne'), description: msg('Taille équilibrée.') },
+  { value: 'lg', label: msg('Grande'), description: msg('Image dominante (défaut).') },
+  { value: 'xl', label: msg('Très grande'), description: msg('Presque plein écran, léger aperçu suivant.') },
 ];
 
 export const PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS: {
@@ -917,9 +919,9 @@ export const PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Coins droits (défaut).' },
-  { value: 'md', label: 'Medium', description: 'Coins légèrement arrondis.' },
-  { value: 'xl', label: 'Large', description: 'Coins très arrondis.' },
+  { value: 'none', label: msg('None'), description: msg('Coins droits (défaut).') },
+  { value: 'md', label: msg('Medium'), description: msg('Coins légèrement arrondis.') },
+  { value: 'xl', label: msg('Large'), description: msg('Coins très arrondis.') },
 ];
 
 export const PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS: {
@@ -927,9 +929,9 @@ export const PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'square', label: 'Carré', description: 'Format 1:1 (défaut).' },
-  { value: 'landscape', label: 'Paysage', description: 'Format 4:3 horizontal.' },
-  { value: 'portrait', label: 'Portrait', description: 'Format 3:4 vertical.' },
+  { value: 'square', label: msg('Carré'), description: msg('Format 1:1 (défaut).') },
+  { value: 'landscape', label: msg('Paysage'), description: msg('Format 4:3 horizontal.') },
+  { value: 'portrait', label: msg('Portrait'), description: msg('Format 3:4 vertical.') },
 ];
 
 export const PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS: {
@@ -937,9 +939,9 @@ export const PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Peu d’espace entre les images.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement lisible entre les slides.' },
-  { value: 'xl', label: 'Large', description: 'Grand air entre chaque image.' },
+  { value: 'tight', label: msg('Serré'), description: msg('Peu d’espace entre les images.') },
+  { value: 'md', label: msg('Moyen'), description: msg('Espacement lisible entre les slides.') },
+  { value: 'xl', label: msg('Large'), description: msg('Grand air entre chaque image.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-showcase'`. */
@@ -995,13 +997,13 @@ export const PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'left',
-    label: 'Media left',
-    description: 'Large image left, details + thumbs right (default).',
+    label: msg('Media left'),
+    description: msg('Large image left, details + thumbs right (default).'),
   },
   {
     value: 'right',
-    label: 'Media right',
-    description: 'Details left, large image right.',
+    label: msg('Media right'),
+    description: msg('Details left, large image right.'),
   },
 ];
 
@@ -1010,9 +1012,9 @@ export const PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Sharp corners.' },
-  { value: 'md', label: 'Medium', description: 'Soft rounded corners.' },
-  { value: 'xl', label: 'Large', description: 'Editorial rounded media (default).' },
+  { value: 'none', label: msg('None'), description: msg('Sharp corners.') },
+  { value: 'md', label: msg('Medium'), description: msg('Soft rounded corners.') },
+  { value: 'xl', label: msg('Large'), description: msg('Editorial rounded media (default).') },
 ];
 
 
@@ -1322,9 +1324,9 @@ export const PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Small', description: 'Quieter — a discreet side label.' },
-  { value: 'md', label: 'Medium', description: 'Default size.' },
-  { value: 'lg', label: 'Large', description: 'Bolder — reads more like a heading.' },
+  { value: 'sm', label: msg('Small'), description: msg('Quieter — a discreet side label.') },
+  { value: 'md', label: msg('Medium'), description: msg('Default size.') },
+  { value: 'lg', label: msg('Large'), description: msg('Bolder — reads more like a heading.') },
 ];
 
 /** Options that apply only when `sectionDesign === 'projects-press'`. */
@@ -1572,9 +1574,9 @@ export const PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Narrow', description: 'Tighter column.' },
-  { value: 'medium', label: 'Medium', description: 'Intermediate width.' },
-  { value: 'full', label: 'Full', description: 'Full width — default.' },
+  { value: 'small', label: msg('Narrow'), description: msg('Tighter column.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Intermediate width.') },
+  { value: 'full', label: msg('Full'), description: msg('Full width — default.') },
 ];
 
 export const PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS: {
@@ -1582,9 +1584,9 @@ export const PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Tight', description: 'More compact rhythm.' },
-  { value: 'md', label: 'Medium', description: 'Balanced spacing — default.' },
-  { value: 'lg', label: 'Large', description: 'More air between cards.' },
+  { value: 'sm', label: msg('Tight'), description: msg('More compact rhythm.') },
+  { value: 'md', label: msg('Medium'), description: msg('Balanced spacing — default.') },
+  { value: 'lg', label: msg('Large'), description: msg('More air between cards.') },
 ];
 
 export const PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS: {
@@ -1592,9 +1594,9 @@ export const PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Sharp corners.' },
-  { value: 'md', label: 'Medium', description: 'Slightly rounded corners — default.' },
-  { value: 'xl', label: 'Large', description: 'Well-rounded corners.' },
+  { value: 'none', label: msg('None'), description: msg('Sharp corners.') },
+  { value: 'md', label: msg('Medium'), description: msg('Slightly rounded corners — default.') },
+  { value: 'xl', label: msg('Large'), description: msg('Well-rounded corners.') },
 ];
 
 export const PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS: {
@@ -1602,10 +1604,10 @@ export const PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Compact', description: 'Shorter card, smaller thumbnail.' },
-  { value: 'standard', label: 'Standard', description: 'Balanced height.' },
-  { value: 'tall', label: 'Tall', description: 'Larger thumbnail — default.' },
-  { value: 'xl', label: 'Extra tall', description: 'Maximum card height, imposing thumbnail.' },
+  { value: 'compact', label: msg('Compact'), description: msg('Shorter card, smaller thumbnail.') },
+  { value: 'standard', label: msg('Standard'), description: msg('Balanced height.') },
+  { value: 'tall', label: msg('Tall'), description: msg('Larger thumbnail — default.') },
+  { value: 'xl', label: msg('Extra tall'), description: msg('Maximum card height, imposing thumbnail.') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS: {
@@ -1613,9 +1615,9 @@ export const PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sticky', label: 'Sticky', description: 'Story panel pinned, crossfades as you scroll the list.' },
-  { value: 'scroll', label: 'Scroll', description: 'Plain stack — no pinning, everything scrolls together.' },
-  { value: 'slide', label: 'Slide', description: 'One project at a time, chevron-navigated.' },
+  { value: 'sticky', label: msg('Sticky'), description: msg('Story panel pinned, crossfades as you scroll the list.') },
+  { value: 'scroll', label: msg('Scroll'), description: msg('Plain stack — no pinning, everything scrolls together.') },
+  { value: 'slide', label: msg('Slide'), description: msg('One project at a time, chevron-navigated.') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS: {
@@ -1623,9 +1625,9 @@ export const PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'grayscale', label: 'Grayscale', description: 'Desaturated thumbnail — the classic duotone look.' },
-  { value: 'tint', label: 'Tint', description: 'Grayscale with an accent-color wash on top.' },
-  { value: 'none', label: 'None', description: 'Full-color thumbnail, no filter.' },
+  { value: 'grayscale', label: msg('Grayscale'), description: msg('Desaturated thumbnail — the classic duotone look.') },
+  { value: 'tint', label: msg('Tint'), description: msg('Grayscale with an accent-color wash on top.') },
+  { value: 'none', label: msg('None'), description: msg('Full-color thumbnail, no filter.') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS: {
@@ -1633,9 +1635,9 @@ export const PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Ratio 16:9, plus compacte.' },
-  { value: 'md', label: 'Moyenne', description: 'Ratio 4:3 — défaut.' },
-  { value: 'lg', label: 'Grande', description: 'Ratio carré 1:1.' },
+  { value: 'sm', label: msg('Petite'), description: msg('Ratio 16:9, plus compacte.') },
+  { value: 'md', label: msg('Moyenne'), description: msg('Ratio 4:3 — défaut.') },
+  { value: 'lg', label: msg('Grande'), description: msg('Ratio carré 1:1.') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS: {
@@ -1643,9 +1645,9 @@ export const PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucun', description: 'Pas de cadre — Scroll et Slide uniquement.' },
-  { value: 'neutral', label: 'Neutre', description: 'Cadre discret basé sur la bordure.' },
-  { value: 'muted', label: 'Atténué', description: 'Cadre basé sur la couleur muted.' },
+  { value: 'none', label: msg('Aucun'), description: msg('Pas de cadre — Scroll et Slide uniquement.') },
+  { value: 'neutral', label: msg('Neutre'), description: msg('Cadre discret basé sur la bordure.') },
+  { value: 'muted', label: msg('Atténué'), description: msg('Cadre basé sur la couleur muted.') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS: {
@@ -1653,9 +1655,9 @@ export const PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Carré', description: 'Coins droits.' },
-  { value: 'sm', label: 'Léger', description: 'Arrondi discret — défaut.' },
-  { value: 'lg', label: 'Large', description: 'Arrondi prononcé.' },
+  { value: 'none', label: msg('Carré'), description: msg('Coins droits.') },
+  { value: 'sm', label: msg('Léger'), description: msg('Arrondi discret — défaut.') },
+  { value: 'lg', label: msg('Large'), description: msg('Arrondi prononcé.') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS: {
@@ -1663,8 +1665,8 @@ export const PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'chevron', label: 'Flèches', description: 'Boutons ronds précédent / suivant.' },
-  { value: 'text', label: 'Texte', description: 'Liens texte "Previous" / "Next".' },
+  { value: 'chevron', label: msg('Flèches'), description: msg('Boutons ronds précédent / suivant.') },
+  { value: 'text', label: msg('Texte'), description: msg('Liens texte "Previous" / "Next".') },
 ];
 
 export const PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS: {
@@ -1672,10 +1674,10 @@ export const PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Serré', description: 'Rythme plus compact.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement équilibré — défaut.' },
-  { value: 'lg', label: 'Grand', description: 'Plus d’air entre les éléments.' },
-  { value: 'xl', label: 'Très grand', description: 'Respiration maximale.' },
+  { value: 'sm', label: msg('Serré'), description: msg('Rythme plus compact.') },
+  { value: 'md', label: msg('Moyen'), description: msg('Espacement équilibré — défaut.') },
+  { value: 'lg', label: msg('Grand'), description: msg('Plus d’air entre les éléments.') },
+  { value: 'xl', label: msg('Très grand'), description: msg('Respiration maximale.') },
 ];
 
 export const PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS: {
@@ -1683,10 +1685,10 @@ export const PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Petite', description: 'Hauteur réduite.' },
-  { value: 'md', label: 'Moyenne', description: 'Hauteur moyenne.' },
-  { value: 'lg', label: 'Grande', description: 'Miniature plus haute.' },
-  { value: 'xl', label: 'Très grande', description: 'Hauteur maximale (défaut).' },
+  { value: 'sm', label: msg('Petite'), description: msg('Hauteur réduite.') },
+  { value: 'md', label: msg('Moyenne'), description: msg('Hauteur moyenne.') },
+  { value: 'lg', label: msg('Grande'), description: msg('Miniature plus haute.') },
+  { value: 'xl', label: msg('Très grande'), description: msg('Hauteur maximale (défaut).') },
 ];
 
 export const PORTFOLIO_WORK_SPEC_FRAME_OPTIONS: {
@@ -1696,23 +1698,23 @@ export const PORTFOLIO_WORK_SPEC_FRAME_OPTIONS: {
 }[] = [
   {
     value: 'none',
-    label: 'Aucun',
-    description: 'Pas de cadre (défaut).',
+    label: msg('Aucun'),
+    description: msg('Pas de cadre (défaut).'),
   },
   {
     value: 'thin',
-    label: 'Fin',
-    description: 'Trait fin (token bordure carte).',
+    label: msg('Fin'),
+    description: msg('Trait fin (token bordure carte).'),
   },
   {
     value: 'solid',
-    label: 'Solid',
-    description: 'Cadre plus marqué autour de la fiche.',
+    label: msg('Solid'),
+    description: msg('Cadre plus marqué autour de la fiche.'),
   },
   {
     value: 'accent',
-    label: 'Accent',
-    description: 'Cadre couleur CTA / accent.',
+    label: msg('Accent'),
+    description: msg('Cadre couleur CTA / accent.'),
   },
 ];
 
@@ -1723,13 +1725,13 @@ export const PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS: {
 }[] = [
   {
     value: '1',
-    label: '1 par ligne',
-    description: 'Fiche pleine largeur (défaut).',
+    label: msg('1 par ligne'),
+    description: msg('Fiche pleine largeur (défaut).'),
   },
   {
     value: '2',
-    label: '2 par ligne',
-    description: '2 colonnes en grand écran + titre réduit + gap horizontal.',
+    label: msg('2 par ligne'),
+    description: msg('2 colonnes en grand écran + titre réduit + gap horizontal.'),
   },
 ];
 
@@ -1738,10 +1740,10 @@ export const PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'tight', label: 'Serré', description: 'Compact, un peu plus d’air qu’avant.' },
-  { value: 'md', label: 'Moyen', description: 'Espacement généreux entre fiches.' },
-  { value: 'xl', label: 'Large', description: 'Très aéré (défaut).' },
-  { value: '2xl', label: 'Très large', description: 'Espacement maximal, lecture lente.' },
+  { value: 'tight', label: msg('Serré'), description: msg('Compact, un peu plus d’air qu’avant.') },
+  { value: 'md', label: msg('Moyen'), description: msg('Espacement généreux entre fiches.') },
+  { value: 'xl', label: msg('Large'), description: msg('Très aéré (défaut).') },
+  { value: '2xl', label: msg('Très large'), description: msg('Espacement maximal, lecture lente.') },
 ];
 
 export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
@@ -1751,43 +1753,43 @@ export const PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'bracket',
-    label: 'Bracket',
-    description: 'Mono [ Consult → ] — style Framer (défaut).',
+    label: msg('Bracket'),
+    description: msg('Mono [ Consult → ] — style Framer (défaut).'),
   },
   {
     value: 'link',
-    label: 'Link',
-    description: 'Lien texte + flèche ↗ dans la grille.',
+    label: msg('Link'),
+    description: msg('Lien texte + flèche ↗ dans la grille.'),
   },
   {
     value: 'underline',
-    label: 'Underline',
-    description: 'Texte souligné animé, sans flèche.',
+    label: msg('Underline'),
+    description: msg('Texte souligné animé, sans flèche.'),
   },
   {
     value: 'footer',
-    label: 'Footer',
-    description: 'CTA sous la fiche, hors grille label/valeur.',
+    label: msg('Footer'),
+    description: msg('CTA sous la fiche, hors grille label/valeur.'),
   },
   {
     value: 'pill',
-    label: 'Pill',
-    description: 'Bouton pastille rempli (accent).',
+    label: msg('Pill'),
+    description: msg('Bouton pastille rempli (accent).'),
   },
   {
     value: 'outline',
-    label: 'Outline',
-    description: 'Bouton bordure seule.',
+    label: msg('Outline'),
+    description: msg('Bouton bordure seule.'),
   },
   {
     value: 'ghost',
-    label: 'Ghost',
-    description: 'Fond soft teinté, sans bordure forte.',
+    label: msg('Ghost'),
+    description: msg('Fond soft teinté, sans bordure forte.'),
   },
   {
     value: 'solid',
-    label: 'Solid',
-    description: 'Bouton plein token titre / tools (pas CTA).',
+    label: msg('Solid'),
+    description: msg('Bouton plein token titre / tools (pas CTA).'),
   },
 ];
 
@@ -1798,18 +1800,18 @@ export const PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS: {
 }[] = [
   {
     value: 'hover',
-    label: 'Hover',
-    description: 'Détails au survol (desktop) — Framer index style.',
+    label: msg('Hover'),
+    description: msg('Détails au survol (desktop) — Framer index style.'),
   },
   {
     value: 'click',
-    label: 'Click',
-    description: 'Ouvre / ferme au clic — idéal mobile.',
+    label: msg('Click'),
+    description: msg('Ouvre / ferme au clic — idéal mobile.'),
   },
   {
     value: 'always',
-    label: 'Always open',
-    description: 'Description et stack toujours visibles sous chaque titre.',
+    label: msg('Always open'),
+    description: msg('Description et stack toujours visibles sous chaque titre.'),
   },
 ];
 
@@ -1820,79 +1822,79 @@ export const PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'projects-board',
-    label: 'Projects board',
-    description: 'Asymmetric two-up cards — thumbnail, big title, description, tags and a case-study link at the bottom.',
+    label: msg('Projects board'),
+    description: msg('Asymmetric two-up cards — thumbnail, big title, description, tags and a case-study link at the bottom.'),
   },
   {
     value: 'projects-accordion',
-    label: 'Accordion',
-    description: 'Accordion + large preview — swap columns, role/category, Consult text link.',
+    label: msg('Accordion'),
+    description: msg('Accordion + large preview — swap columns, role/category, Consult text link.'),
   },
   {
     value: 'projects-frames',
-    label: 'Frames',
-    description: 'Horizontal frames — image left, info right, stack as plain text (not tags).',
+    label: msg('Frames'),
+    description: msg('Horizontal frames — image left, info right, stack as plain text (not tags).'),
   },
   {
     value: 'projects-index',
-    label: 'Index',
+    label: msg('Index'),
     description:
-      'Cinematic full-bleed scenes — one project fills the screen, scroll-scrubbed curtain wipe, reactive backdrop, magnetic cursor.',
+      msg('Cinematic full-bleed scenes — one project fills the screen, scroll-scrubbed curtain wipe, reactive backdrop, magnetic cursor.'),
   },
   {
     value: 'projects-grid',
-    label: 'Grid',
-    description: 'Thumbnail cards — title + description, 2 or 3 per row on large screens.',
+    label: msg('Grid'),
+    description: msg('Thumbnail cards — title + description, 2 or 3 per row on large screens.'),
   },
   {
     value: 'projects-split',
-    label: 'Split',
-    description: 'Large thumbnail beside a top-aligned title — sides and zigzag configurable.',
+    label: msg('Split'),
+    description: msg('Large thumbnail beside a top-aligned title — sides and zigzag configurable.'),
   },
   {
     value: 'projects-carousel',
-    label: 'Carousel',
+    label: msg('Carousel'),
     description:
-      'Horizontal drag carousel — hover a slide for a frosted dark veil with a staggered text reveal.',
+      msg('Horizontal drag carousel — hover a slide for a frosted dark veil with a staggered text reveal.'),
   },
   {
     value: 'projects-showcase',
-    label: 'Showcase',
+    label: msg('Showcase'),
     description:
-      'Large media + details — chevrons and three thumbnails to switch the active project.',
+      msg('Large media + details — chevrons and three thumbnails to switch the active project.'),
   },
   {
     value: 'projects-ledger',
-    label: 'Ledger',
+    label: msg('Ledger'),
     description:
-      'Index typographique Framer — lignes, titres, rôle, détails au survol. Données seulement, sans miniature.',
+      msg('Index typographique Framer — lignes, titres, rôle, détails au survol. Données seulement, sans miniature.'),
   },
   {
     value: 'projects-spec',
-    label: 'Spec',
+    label: msg('Spec'),
     description:
-      'Editorial datasheet — clean and textual at rest; hovering a title reveals a floating cursor-tracking image.',
+      msg('Editorial datasheet — clean and textual at rest; hovering a title reveals a floating cursor-tracking image.'),
   },
   {
     value: 'projects-case',
-    label: 'Case',
-    description: 'Grande miniature 50/50 à gauche + fiche Spec à droite.',
+    label: msg('Case'),
+    description: msg('Grande miniature 50/50 à gauche + fiche Spec à droite.'),
   },
   {
     value: 'projects-press',
-    label: 'Press',
-    description: 'Newsroom feed — thumbnail rows with just a role, category, and title.',
+    label: msg('Press'),
+    description: msg('Newsroom feed — thumbnail rows with just a role, category, and title.'),
   },
   {
     value: 'projects-duotone',
-    label: 'Duotone',
-    description: 'One project per screen, split 50/50 — details on one side, a framed thumbnail on the other. Sticky, Scroll, or Slide.',
+    label: msg('Duotone'),
+    description: msg('One project per screen, split 50/50 — details on one side, a framed thumbnail on the other. Sticky, Scroll, or Slide.'),
   },
   {
     value: 'projects-cascade',
-    label: 'Cascade',
+    label: msg('Cascade'),
     description:
-      "Same stacking-cards scroll effect as Experience — full-cover sticky cards receding behind each other — with each project's thumbnail beside the text.",
+      msg("Same stacking-cards scroll effect as Experience — full-cover sticky cards receding behind each other — with each project's thumbnail beside the text."),
   },
 ];
 
@@ -1904,43 +1906,43 @@ export const PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'editorial',
-    label: 'Editorial',
-    description: 'Kicker + masked line-reveal title + subtitle — premium GSAP entrance.',
+    label: msg('Editorial'),
+    description: msg('Kicker + masked line-reveal title + subtitle — premium GSAP entrance.'),
   },
   {
     value: 'marquee',
-    label: 'Marquee',
-    description: 'Bold title over a scrolling decorative word band.',
+    label: msg('Marquee'),
+    description: msg('Bold title over a scrolling decorative word band.'),
   },
   {
     value: 'index',
-    label: 'Index',
-    description: 'Ledger-style divider rule, a counting project-count numeral, and the title split by a vertical rule.',
+    label: msg('Index'),
+    description: msg('Ledger-style divider rule, a counting project-count numeral, and the title split by a vertical rule.'),
   },
   {
     value: 'accent-count',
-    label: 'Accent count',
-    description: 'Small accent badge with the project count, lead line, and title.',
+    label: msg('Accent count'),
+    description: msg('Small accent badge with the project count, lead line, and title.'),
   },
   {
     value: 'serif-lead',
-    label: 'Serif lead',
-    description: 'Small label above a large serif title.',
+    label: msg('Serif lead'),
+    description: msg('Small label above a large serif title.'),
   },
   {
     value: 'billboard',
-    label: 'Billboard',
-    description: 'Big faint background word behind the title, with a project-count line.',
+    label: msg('Billboard'),
+    description: msg('Big faint background word behind the title, with a project-count line.'),
   },
   {
     value: 'masthead',
-    label: 'Masthead',
-    description: 'Monumental uppercase headline with an intro line underneath.',
+    label: msg('Masthead'),
+    description: msg('Monumental uppercase headline with an intro line underneath.'),
   },
   {
     value: 'split-heading',
-    label: 'Split heading',
-    description: 'Title left with an editorial italic word, small label top-right.',
+    label: msg('Split heading'),
+    description: msg('Title left with an editorial italic word, small label top-right.'),
   },
 ];
 
@@ -1949,9 +1951,9 @@ export const PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Left', description: 'Title and subtitle align left.' },
-  { value: 'center', label: 'Center', description: 'Title and subtitle centered (default).' },
-  { value: 'right', label: 'Right', description: 'Title and subtitle align right.' },
+  { value: 'left', label: msg('Left'), description: msg('Title and subtitle align left.') },
+  { value: 'center', label: msg('Center'), description: msg('Title and subtitle centered (default).') },
+  { value: 'right', label: msg('Right'), description: msg('Title and subtitle align right.') },
 ];
 
 export const PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS: {
@@ -1961,13 +1963,13 @@ export const PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS: {
 }[] = [
   {
     value: 'right',
-    label: 'Preview right',
-    description: 'Accordion list on the left, large image on the right.',
+    label: msg('Preview right'),
+    description: msg('Accordion list on the left, large image on the right.'),
   },
   {
     value: 'left',
-    label: 'Preview left',
-    description: 'Large image on the left, accordion list on the right.',
+    label: msg('Preview left'),
+    description: msg('Large image on the left, accordion list on the right.'),
   },
 ];
 
@@ -2496,15 +2498,15 @@ const PORTFOLIO_WORK_OVERLAY_CELL_OPTIONS: {
   row: 'top' | 'center' | 'bottom';
   col: 'left' | 'center' | 'right';
 }[] = [
-  { value: 'top-left', label: 'Haut gauche', row: 'top', col: 'left' },
-  { value: 'top-center', label: 'Haut centre', row: 'top', col: 'center' },
-  { value: 'top-right', label: 'Haut droite', row: 'top', col: 'right' },
-  { value: 'center-left', label: 'Milieu gauche', row: 'center', col: 'left' },
-  { value: 'center', label: 'Centre', row: 'center', col: 'center' },
-  { value: 'center-right', label: 'Milieu droite', row: 'center', col: 'right' },
-  { value: 'bottom-left', label: 'Bas gauche', row: 'bottom', col: 'left' },
-  { value: 'bottom-center', label: 'Bas centre', row: 'bottom', col: 'center' },
-  { value: 'bottom-right', label: 'Bas droite', row: 'bottom', col: 'right' },
+  { value: 'top-left', label: msg('Haut gauche'), row: 'top', col: 'left' },
+  { value: 'top-center', label: msg('Haut centre'), row: 'top', col: 'center' },
+  { value: 'top-right', label: msg('Haut droite'), row: 'top', col: 'right' },
+  { value: 'center-left', label: msg('Milieu gauche'), row: 'center', col: 'left' },
+  { value: 'center', label: msg('Centre'), row: 'center', col: 'center' },
+  { value: 'center-right', label: msg('Milieu droite'), row: 'center', col: 'right' },
+  { value: 'bottom-left', label: msg('Bas gauche'), row: 'bottom', col: 'left' },
+  { value: 'bottom-center', label: msg('Bas centre'), row: 'bottom', col: 'center' },
+  { value: 'bottom-right', label: msg('Bas droite'), row: 'bottom', col: 'right' },
 ];
 
 export const DEFAULT_WORK_OVERLAY_ELEMENT_PLACEMENTS: PortfolioWorkOverlayElementPlacements = {
@@ -2933,6 +2935,8 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   headerDesign: PortfolioWorkHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerAlignment: PortfolioWorkHeaderAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioWorkHeaderMarginBottom;
@@ -3227,6 +3231,7 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   subtitleColor: DEFAULT_WORK_SUBTITLE_COLOR,
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
@@ -3435,11 +3440,11 @@ export const PORTFOLIO_WORK_CARD_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Carré', description: 'Coins droits.' },
-  { value: 'sm', label: 'Léger', description: 'Arrondi subtil.' },
-  { value: 'md', label: 'Moyen', description: 'Arrondi équilibré.' },
-  { value: 'lg', label: 'Large', description: 'Coins bien arrondis (défaut).' },
-  { value: 'xl', label: 'Très large', description: 'Arrondi prononcé.' },
+  { value: 'none', label: msg('Carré'), description: msg('Coins droits.') },
+  { value: 'sm', label: msg('Léger'), description: msg('Arrondi subtil.') },
+  { value: 'md', label: msg('Moyen'), description: msg('Arrondi équilibré.') },
+  { value: 'lg', label: msg('Large'), description: msg('Coins bien arrondis (défaut).') },
+  { value: 'xl', label: msg('Très large'), description: msg('Arrondi prononcé.') },
 ];
 
 /** Effective placement: when media is hidden, always stack content full-width. */
@@ -3503,10 +3508,10 @@ export const PORTFOLIO_WORK_CARD_BORDER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'Aucune', description: 'Pas de bordure — les coins restent réglables ci-dessous.' },
-  { value: 'soft', label: 'Fine', description: 'Contour léger autour du média ou de la carte.' },
-  { value: 'solid', label: 'Pleine', description: 'Bordure marquée autour du média ou de la carte.' },
-  { value: 'accent', label: 'Accent', description: 'Bordure teintée avec la couleur d’accent.' },
+  { value: 'none', label: msg('Aucune'), description: msg('Pas de bordure — les coins restent réglables ci-dessous.') },
+  { value: 'soft', label: msg('Fine'), description: msg('Contour léger autour du média ou de la carte.') },
+  { value: 'solid', label: msg('Pleine'), description: msg('Bordure marquée autour du média ou de la carte.') },
+  { value: 'accent', label: msg('Accent'), description: msg('Bordure teintée avec la couleur d’accent.') },
 ];
 
 /** Default intensity when picking a shadow preset (slider can still fine-tune). */
@@ -3681,9 +3686,9 @@ export const WORK_PALETTE_TOKEN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'principal', label: 'Principal', description: 'Global principal token.' },
-  { value: 'secondaire', label: 'Secondary', description: 'Global secondary token.' },
-  { value: 'texteFort', label: 'Strong text', description: 'Strong ink token.' },
+  { value: 'principal', label: msg('Principal'), description: msg('Global principal token.') },
+  { value: 'secondaire', label: msg('Secondary'), description: msg('Global secondary token.') },
+  { value: 'texteFort', label: msg('Strong text'), description: msg('Strong ink token.') },
 ];
 
 const WORK_ACCENT_COUNT_ALIGNMENTS = ['left', 'center', 'right'] as const;
@@ -3693,9 +3698,9 @@ export const WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Left', description: 'Default editorial alignment.' },
-  { value: 'center', label: 'Center', description: 'Centered line.' },
-  { value: 'right', label: 'Right', description: 'Right-aligned line.' },
+  { value: 'left', label: msg('Left'), description: msg('Default editorial alignment.') },
+  { value: 'center', label: msg('Center'), description: msg('Centered line.') },
+  { value: 'right', label: msg('Right'), description: msg('Right-aligned line.') },
 ];
 
 const WORK_BILLBOARD_WORD_STYLES = ['outline', 'fill', 'simple'] as const;
@@ -3705,9 +3710,9 @@ export const WORK_BILLBOARD_WORD_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'outline', label: 'Outline', description: 'Stroke only, with a soft glow.' },
-  { value: 'fill', label: 'Fill', description: 'Solid characters, with a soft glow.' },
-  { value: 'simple', label: 'Simple', description: 'Solid characters, no glow — plain.' },
+  { value: 'outline', label: msg('Outline'), description: msg('Stroke only, with a soft glow.') },
+  { value: 'fill', label: msg('Fill'), description: msg('Solid characters, with a soft glow.') },
+  { value: 'simple', label: msg('Simple'), description: msg('Solid characters, no glow — plain.') },
 ];
 
 export function workCardIsStacked(
@@ -4671,6 +4676,7 @@ export function mergeWorkPresentation(
     ),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerAlignment:
       headerAlignment === 'left' || headerAlignment === 'center' || headerAlignment === 'right'
         ? headerAlignment

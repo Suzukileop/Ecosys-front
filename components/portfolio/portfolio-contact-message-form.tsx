@@ -14,6 +14,7 @@ import {
   type PortfolioContactFormDesign,
   type PortfolioContactPresentationSettings,
 } from '@/components/portfolio/portfolio-contact-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const contactMessageSchema = z.object({
   name: z.string().trim().min(1, 'Name is required').max(120, 'Name is too long'),
@@ -105,6 +106,7 @@ function ContactFormChannelsFooter({
   channelsMeta?: ContactFormChannelsMeta;
   showAvailability?: boolean;
 }) {
+  const t = useT();
   if (!channelsMeta) return null;
 
   const email = channelsMeta.email?.trim() || '';
@@ -115,7 +117,7 @@ function ContactFormChannelsFooter({
 
   const availability =
     showAvailability
-      ? channelsMeta.availabilityLabel?.trim() || 'Available for work'
+      ? channelsMeta.availabilityLabel?.trim() || t('Available for work')
       : null;
 
   const items = [
@@ -174,6 +176,7 @@ function SuccessBanner({
   submitted: boolean;
   tone?: 'default' | 'on-accent';
 }) {
+  const t = useT();
   if (!submitted) return null;
   if (tone === 'on-accent') {
     return (
@@ -181,7 +184,7 @@ function SuccessBanner({
         className="mb-5 rounded-xl border border-white/25 bg-black/15 px-3.5 py-3 text-sm font-medium text-white"
         role="status"
       >
-        Thanks — your message was sent.
+        {t('Thanks — your message was sent.')}
       </p>
     );
   }
@@ -190,7 +193,7 @@ function SuccessBanner({
       className="mb-4 rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-accent-soft,rgba(234,88,12,0.12))] px-3.5 py-3 text-sm text-[color:var(--contact-ink,#0a0a0a)]"
       role="status"
     >
-      Thanks — your message was sent.
+      {t('Thanks — your message was sent.')}
     </p>
   );
 }
@@ -210,6 +213,7 @@ export function ContactMessageForm({
   formDesign?: PortfolioContactFormDesign;
   channelsMeta?: ContactFormChannelsMeta;
 }) {
+  const t = useT();
   const [submitError, setSubmitError] = useState<string | null>(null);
   const [submitted, setSubmitted] = useState(false);
   const [stepIndex, setStepIndex] = useState(0);
@@ -223,22 +227,22 @@ export function ContactMessageForm({
 
   const titleFallback =
     design === 'project-brief'
-      ? 'Start a project'
+      ? t('Start a project')
       : design === 'workspace-chat'
-        ? "Let's connect"
-        : 'Send a message';
+        ? t('Let\'s connect')
+        : t('Send a message');
   const title = presentation.contactFormTitle.trim() || titleFallback;
   const submitLabel =
     presentation.contactFormSubmitLabel.trim() ||
     (design === 'inquiry'
-      ? 'Submit'
+      ? t('Submit')
       : design === 'inquiry-panel'
-        ? 'Envoyer le message'
+        ? t('Envoyer le message')
       : design === 'workspace-chat'
         ? workspaceMode === 'quote'
-          ? 'Request Quote'
-          : 'Send Message'
-        : 'Send message');
+          ? t('Request Quote')
+          : t('Send Message')
+        : t('Send message'));
   const contentPad = contactFormContentPaddingClass(
     presentation.cardPadding,
     presentation.cardDesign,
@@ -281,7 +285,7 @@ export function ContactMessageForm({
 
   const onSubmit = async (values: ContactMessageFormValues) => {
     if (!creatorId.trim()) {
-      setSubmitError('Unable to send — creator is missing.');
+      setSubmitError(t('Unable to send — creator is missing.'));
       return;
     }
     setSubmitError(null);
@@ -310,16 +314,16 @@ export function ContactMessageForm({
       setWorkspaceMode('message');
       pushFlashFeedback({
         variant: 'success',
-        title: 'Message sent',
-        description: 'Your message was delivered to the creator.',
+        title: t('Message sent'),
+        description: t('Your message was delivered to the creator.'),
       });
       reset(EMPTY_FORM);
     } catch (error) {
-      const message = getApiErrorMessage(error, 'Unable to send your message. Please try again.');
+      const message = getApiErrorMessage(error, t('Unable to send your message. Please try again.'));
       setSubmitError(message);
       pushFlashFeedback({
         variant: 'error',
-        title: 'Message not sent',
+        title: t('Message not sent'),
         description: message,
       });
     }
@@ -351,13 +355,13 @@ export function ContactMessageForm({
         <form onSubmit={handleSubmit(onSubmit)} className="flex h-full w-full flex-1 flex-col space-y-5" noValidate>
           <div>
             <label htmlFor="portfolio-contact-name" className={formInquiryLabelClassName}>
-              How can we call you?
+              {t('How can we call you?')}
             </label>
             <input
               id="portfolio-contact-name"
               type="text"
               autoComplete="name"
-              placeholder="Enter your name"
+              placeholder={t('Enter your name')}
               className={inquiryFieldClassName}
               aria-invalid={Boolean(errors.name)}
               {...register('name')}
@@ -367,13 +371,13 @@ export function ContactMessageForm({
 
           <div>
             <label htmlFor="portfolio-contact-email" className={formInquiryLabelClassName}>
-              How can we contact you?
+              {t('How can we contact you?')}
             </label>
             <input
               id="portfolio-contact-email"
               type="email"
               autoComplete="email"
-              placeholder="Enter your email"
+              placeholder={t('Enter your email')}
               className={inquiryFieldClassName}
               aria-invalid={Boolean(errors.email)}
               {...register('email')}
@@ -383,15 +387,15 @@ export function ContactMessageForm({
 
           <div>
             <label htmlFor="portfolio-contact-subject" className={formInquiryLabelClassName}>
-              Subject{' '}
+              {t('Subject')}{' '}
               <span className="font-normal text-[color:var(--contact-muted,#737373)]">
-                (optional)
+                {t('(optional)')}
               </span>
             </label>
             <input
               id="portfolio-contact-subject"
               type="text"
-              placeholder="What is this about?"
+              placeholder={t('What is this about?')}
               className={inquiryFieldClassName}
               aria-invalid={Boolean(errors.subject)}
               {...register('subject')}
@@ -401,12 +405,12 @@ export function ContactMessageForm({
 
           <div>
             <label htmlFor="portfolio-contact-message" className={formInquiryLabelClassName}>
-              How can we help you?
+              {t('How can we help you?')}
             </label>
             <textarea
               id="portfolio-contact-message"
               rows={5}
-              placeholder="Enter your message"
+              placeholder={t('Enter your message')}
               className={`${inquiryFieldClassName} min-h-[8.5rem] resize-y`}
               aria-invalid={Boolean(errors.message)}
               {...register('message')}
@@ -430,7 +434,7 @@ export function ContactMessageForm({
             data-pf-no-color-transition=""
             style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
           >
-            {isSubmitting ? 'Sending…' : submitLabel}
+            {isSubmitting ? t('Sending…') : submitLabel}
           </button>
         </form>
       </div>
@@ -446,13 +450,13 @@ export function ContactMessageForm({
           <div className="grid gap-4 sm:grid-cols-2">
             <div>
               <label htmlFor="portfolio-contact-name" className={formInquiryLabelClassName}>
-                Nom complet
+                {t('Nom complet')}
               </label>
               <input
                 id="portfolio-contact-name"
                 type="text"
                 autoComplete="name"
-                placeholder="Votre nom complet"
+                placeholder={t('Votre nom complet')}
                 className={inquiryFieldClassName}
                 aria-invalid={Boolean(errors.name)}
                 {...register('name')}
@@ -461,7 +465,7 @@ export function ContactMessageForm({
             </div>
             <div>
               <label htmlFor="portfolio-contact-email" className={formInquiryLabelClassName}>
-                Adresse e-mail
+                {t('Adresse e-mail')}
               </label>
               <input
                 id="portfolio-contact-email"
@@ -478,12 +482,12 @@ export function ContactMessageForm({
 
           <div className="flex min-h-0 flex-1 flex-col">
             <label htmlFor="portfolio-contact-message" className={formInquiryLabelClassName}>
-              Votre message
+              {t('Votre message')}
             </label>
             <textarea
               id="portfolio-contact-message"
               rows={10}
-              placeholder="Parlez-moi de votre projet…"
+              placeholder={t('Parlez-moi de votre projet…')}
               className={`${inquiryFieldClassName} min-h-[14rem] flex-1 resize-y sm:min-h-[16rem]`}
               aria-invalid={Boolean(errors.message)}
               {...register('message')}
@@ -508,7 +512,7 @@ export function ContactMessageForm({
             data-pf-no-color-transition=""
             style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
           >
-            {isSubmitting ? 'Envoi…' : submitLabel.trim() || 'Envoyer le message'}
+            {isSubmitting ? t('Envoi…') : submitLabel.trim() || t('Envoyer le message')}
           </button>
         </form>
       </div>
@@ -528,7 +532,7 @@ export function ContactMessageForm({
         <form onSubmit={handleSubmit(onSubmit)} className="flex w-full flex-col gap-5" noValidate>
           <div className="w-full">
             <label htmlFor="portfolio-contact-name" className={swissLabel}>
-              Full name
+              {t('Full name')}
             </label>
             <input
               id="portfolio-contact-name"
@@ -543,7 +547,7 @@ export function ContactMessageForm({
 
           <div className="w-full">
             <label htmlFor="portfolio-contact-email" className={swissLabel}>
-              Email address
+              {t('Email address')}
             </label>
             <input
               id="portfolio-contact-email"
@@ -558,7 +562,7 @@ export function ContactMessageForm({
 
           <div className="w-full">
             <label htmlFor="portfolio-contact-message" className={swissLabel}>
-              Your message
+              {t('Your message')}
             </label>
             <textarea
               id="portfolio-contact-message"
@@ -587,7 +591,7 @@ export function ContactMessageForm({
             data-pf-no-color-transition=""
             style={{ backgroundColor: 'var(--contact-accent, #1E4FD6)' }}
           >
-            {isSubmitting ? 'Sending…' : submitLabel.trim() || 'Send message'}
+            {isSubmitting ? t('Sending…') : submitLabel.trim() || t('Send message')}
           </button>
         </form>
       </div>
@@ -604,13 +608,13 @@ export function ContactMessageForm({
             <div className="flex min-w-0 flex-col gap-4">
               <div>
                 <label htmlFor="portfolio-contact-name" className={deskLabelClassName}>
-                  Name
+                  {t('Name')}
                 </label>
                 <input
                   id="portfolio-contact-name"
                   type="text"
                   autoComplete="name"
-                  placeholder="Votre nom"
+                  placeholder={t('Votre nom')}
                   className={deskFieldClassName}
                   aria-invalid={Boolean(errors.name)}
                   {...register('name')}
@@ -619,7 +623,7 @@ export function ContactMessageForm({
               </div>
               <div>
                 <label htmlFor="portfolio-contact-phone" className={deskLabelClassName}>
-                  Phone
+                  {t('Phone')}
                 </label>
                 <input
                   id="portfolio-contact-phone"
@@ -634,7 +638,7 @@ export function ContactMessageForm({
               </div>
               <div>
                 <label htmlFor="portfolio-contact-email" className={deskLabelClassName}>
-                  Mail
+                  {t('Mail')}
                 </label>
                 <input
                   id="portfolio-contact-email"
@@ -651,12 +655,12 @@ export function ContactMessageForm({
 
             <div className="flex min-w-0 flex-col">
               <label htmlFor="portfolio-contact-message" className={deskLabelClassName}>
-                Message
+                {t('Message')}
               </label>
               <textarea
                 id="portfolio-contact-message"
                 rows={8}
-                placeholder="Votre message ici..."
+                placeholder={t('Votre message ici...')}
                 className={`${deskFieldClassName} min-h-[12rem] flex-1 resize-y lg:min-h-0`}
                 aria-invalid={Boolean(errors.message)}
                 {...register('message')}
@@ -682,7 +686,7 @@ export function ContactMessageForm({
               data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
-              {isSubmitting ? 'Sending…' : submitLabel}
+              {isSubmitting ? t('Sending…') : submitLabel}
               <span
                 className="inline-flex h-5 w-5 items-center justify-center rounded-md bg-white/15"
                 aria-hidden
@@ -720,8 +724,8 @@ export function ContactMessageForm({
               id="portfolio-contact-name"
               type="text"
               autoComplete="name"
-              placeholder="Name *"
-              aria-label="Name"
+              placeholder={t('Name *')}
+              aria-label={t('Name')}
               className={infoPanelFieldClassName}
               aria-invalid={Boolean(errors.name)}
               {...register('name')}
@@ -734,8 +738,8 @@ export function ContactMessageForm({
               id="portfolio-contact-email"
               type="email"
               autoComplete="email"
-              placeholder="Email *"
-              aria-label="Email"
+              placeholder={t('Email *')}
+              aria-label={t('Email')}
               className={infoPanelFieldClassName}
               aria-invalid={Boolean(errors.email)}
               {...register('email')}
@@ -747,8 +751,8 @@ export function ContactMessageForm({
             <input
               id="portfolio-contact-subject"
               type="text"
-              placeholder="Subject *"
-              aria-label="Subject"
+              placeholder={t('Subject *')}
+              aria-label={t('Subject')}
               className={infoPanelFieldClassName}
               aria-invalid={Boolean(errors.subject)}
               {...register('subject')}
@@ -760,8 +764,8 @@ export function ContactMessageForm({
             <textarea
               id="portfolio-contact-message"
               rows={5}
-              placeholder="Message *"
-              aria-label="Message"
+              placeholder={t('Message *')}
+              aria-label={t('Message')}
               className={`${infoPanelFieldClassName} min-h-[9.5rem] flex-1 resize-y`}
               aria-invalid={Boolean(errors.message)}
               {...register('message')}
@@ -791,7 +795,7 @@ export function ContactMessageForm({
                   : 'bg-neutral-950 text-white hover:bg-neutral-800'
               }`}
             >
-              {isSubmitting ? 'Sending…' : submitLabel}
+              {isSubmitting ? t('Sending…') : submitLabel}
             </button>
           </div>
         </form>
@@ -815,7 +819,7 @@ export function ContactMessageForm({
             <div className="grid gap-4 sm:grid-cols-2">
               <div>
                 <label htmlFor="portfolio-contact-name" className={formDefaultLabelClassName}>
-                  Name
+                  {t('Name')}
                 </label>
                 <input
                   id="portfolio-contact-name"
@@ -829,7 +833,7 @@ export function ContactMessageForm({
               </div>
               <div>
                 <label htmlFor="portfolio-contact-email" className={formDefaultLabelClassName}>
-                  Email
+                  {t('Email')}
                 </label>
                 <input
                   id="portfolio-contact-email"
@@ -845,8 +849,8 @@ export function ContactMessageForm({
 
             <div>
               <label htmlFor="portfolio-contact-subject" className={formDefaultLabelClassName}>
-                Subject{' '}
-                <span className="font-medium normal-case tracking-normal">(optional)</span>
+                {t('Subject')}{' '}
+                <span className="font-medium normal-case tracking-normal">{t('(optional)')}</span>
               </label>
               <input
                 id="portfolio-contact-subject"
@@ -860,7 +864,7 @@ export function ContactMessageForm({
 
             <div>
               <label htmlFor="portfolio-contact-message" className={formDefaultLabelClassName}>
-                Message
+                {t('Message')}
               </label>
               <textarea
                 id="portfolio-contact-message"
@@ -888,7 +892,7 @@ export function ContactMessageForm({
               data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
-              {isSubmitting ? 'Sending…' : submitLabel}
+              {isSubmitting ? t('Sending…') : submitLabel}
             </button>
           </form>
 
@@ -906,7 +910,7 @@ export function ContactMessageForm({
       <div className={`relative z-[1] flex h-full min-h-0 w-full flex-col ${contentPad}`.trim()}>
         <SuccessBanner submitted={submitted} />
 
-        <div className="mb-4 flex w-full items-center gap-2" role="list" aria-label="Form steps">
+        <div className="mb-4 flex w-full items-center gap-2" role="list" aria-label={t('Form steps')}>
           {STEPPED_STEP_LABELS.map((label, index) => {
             const active = index === stepIndex;
             const done = index < stepIndex;
@@ -979,13 +983,13 @@ export function ContactMessageForm({
           {activeField === 'name' ? (
             <div className="w-full">
               <label htmlFor="portfolio-contact-name" className={formInquiryLabelClassName}>
-                Your name
+                {t('Your name')}
               </label>
               <input
                 id="portfolio-contact-name"
                 type="text"
                 autoComplete="name"
-                placeholder="Enter your name"
+                placeholder={t('Enter your name')}
                 className={inquiryFieldClassName}
                 aria-invalid={Boolean(errors.name)}
                 {...register('name')}
@@ -997,13 +1001,13 @@ export function ContactMessageForm({
           {activeField === 'email' ? (
             <div className="w-full">
               <label htmlFor="portfolio-contact-email" className={formInquiryLabelClassName}>
-                Your email
+                {t('Your email')}
               </label>
               <input
                 id="portfolio-contact-email"
                 type="email"
                 autoComplete="email"
-                placeholder="Enter your email"
+                placeholder={t('Enter your email')}
                 className={inquiryFieldClassName}
                 aria-invalid={Boolean(errors.email)}
                 {...register('email')}
@@ -1015,15 +1019,15 @@ export function ContactMessageForm({
           {activeField === 'subject' ? (
             <div className="w-full">
               <label htmlFor="portfolio-contact-subject" className={formInquiryLabelClassName}>
-                Subject{' '}
+                {t('Subject')}{' '}
                 <span className="font-normal text-[color:var(--contact-muted,#737373)]">
-                  (optional)
+                  {t('(optional)')}
                 </span>
               </label>
               <input
                 id="portfolio-contact-subject"
                 type="text"
-                placeholder="What is this about?"
+                placeholder={t('What is this about?')}
                 className={inquiryFieldClassName}
                 aria-invalid={Boolean(errors.subject)}
                 {...register('subject')}
@@ -1035,12 +1039,12 @@ export function ContactMessageForm({
           {activeField === 'message' ? (
             <div className="flex min-h-0 w-full flex-1 flex-col">
               <label htmlFor="portfolio-contact-message" className={formInquiryLabelClassName}>
-                Your message
+                {t('Your message')}
               </label>
               <textarea
                 id="portfolio-contact-message"
                 rows={5}
-                placeholder="Enter your message"
+                placeholder={t('Enter your message')}
                 className={`${inquiryFieldClassName} min-h-[8.5rem] flex-1 resize-y`}
                 aria-invalid={Boolean(errors.message)}
                 {...register('message')}
@@ -1065,7 +1069,7 @@ export function ContactMessageForm({
               onClick={() => goToStep(stepIndex - 1)}
               className="inline-flex flex-1 items-center justify-center rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] px-5 py-3 text-sm font-semibold text-[color:var(--contact-ink,#0a0a0a)] transition hover:border-[color:var(--contact-accent,#ea580c)] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              Back
+              {t('Back')}
             </button>
             {isLast ? (
               <button
@@ -1075,7 +1079,7 @@ export function ContactMessageForm({
                 data-pf-no-color-transition=""
                 style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
               >
-                {isSubmitting ? 'Sending…' : submitLabel}
+                {isSubmitting ? t('Sending…') : submitLabel}
               </button>
             ) : (
               <button
@@ -1086,7 +1090,7 @@ export function ContactMessageForm({
                 data-pf-no-color-transition=""
                 style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
               >
-                Next
+                {t('Next')}
               </button>
             )}
           </div>
@@ -1098,8 +1102,8 @@ export function ContactMessageForm({
   if (design === 'workspace-chat') {
     const isQuote = workspaceMode === 'quote';
     const workspaceCta = isQuote
-      ? 'Request Quote'
-      : presentation.contactFormSubmitLabel.trim() || 'Send Message';
+      ? t('Request Quote')
+      : presentation.contactFormSubmitLabel.trim() || t('Send Message');
 
     return (
       <div className={`relative z-[1] ${contentPad}`.trim()}>
@@ -1110,7 +1114,7 @@ export function ContactMessageForm({
           <div
             className="inline-flex rounded-full border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] p-1"
             role="group"
-            aria-label="Contact mode"
+            aria-label={t('Contact mode')}
           >
             <button
               type="button"
@@ -1122,7 +1126,7 @@ export function ContactMessageForm({
               }`}
               aria-pressed={!isQuote}
             >
-              Message
+              {t('Message')}
             </button>
             <button
               type="button"
@@ -1134,7 +1138,7 @@ export function ContactMessageForm({
               }`}
               aria-pressed={isQuote}
             >
-              Quote Request
+              {t('Quote Request')}
             </button>
           </div>
         </div>
@@ -1145,20 +1149,20 @@ export function ContactMessageForm({
           <div className="grid gap-3 sm:grid-cols-3">
             {(
               [
-                { name: 'name' as const, label: 'Name', type: 'text', autoComplete: 'name', placeholder: 'Your name' },
+                { name: 'name' as const, label: t('Name'), type: 'text', autoComplete: 'name', placeholder: t('Your name') },
                 {
                   name: 'email' as const,
-                  label: 'Email',
+                  label: t('Email'),
                   type: 'email',
                   autoComplete: 'email',
                   placeholder: 'you@example.com',
                 },
                 {
                   name: 'subject' as const,
-                  label: isQuote ? 'Project' : 'Subject',
+                  label: isQuote ? t('Project') : t('Subject'),
                   type: 'text',
                   autoComplete: 'off',
-                  placeholder: isQuote ? 'Project title' : 'Subject',
+                  placeholder: isQuote ? t('Project title') : t('Subject'),
                 },
               ] as const
             ).map((field, index) => (
@@ -1196,15 +1200,15 @@ export function ContactMessageForm({
 
           <div className="rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-surface,#ffffff)] p-4">
             <label htmlFor="portfolio-contact-message" className={formDefaultLabelClassName}>
-              {isQuote ? 'Project brief' : 'Message'}
+              {isQuote ? t('Project brief') : t('Message')}
             </label>
             <textarea
               id="portfolio-contact-message"
               rows={6}
               placeholder={
                 isQuote
-                  ? 'Describe the project scope, timeline, and goals…'
-                  : 'Write your message…'
+                  ? t('Describe the project scope, timeline, and goals…')
+                  : t('Write your message…')
               }
               className="mt-1 min-h-[10rem] w-full resize-y border-0 bg-transparent p-0 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:ring-0"
               aria-invalid={Boolean(errors.message)}
@@ -1230,7 +1234,7 @@ export function ContactMessageForm({
               data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
-              {isSubmitting ? 'Sending…' : workspaceCta}
+              {isSubmitting ? t('Sending…') : workspaceCta}
             </button>
           </div>
         </form>
@@ -1252,7 +1256,7 @@ export function ContactMessageForm({
                 htmlFor="portfolio-contact-name"
                 className={`${underlineLabelClassName} text-[color:var(--contact-accent,#ea580c)]`}
               >
-                Name
+                {t('Name')}
               </label>
               <input
                 id="portfolio-contact-name"
@@ -1266,7 +1270,7 @@ export function ContactMessageForm({
             </div>
             <div>
               <label htmlFor="portfolio-contact-email" className={underlineLabelClassName}>
-                Email
+                {t('Email')}
               </label>
               <input
                 id="portfolio-contact-email"
@@ -1282,7 +1286,7 @@ export function ContactMessageForm({
 
           <div>
             <label htmlFor="portfolio-contact-subject" className={underlineLabelClassName}>
-              Subject
+              {t('Subject')}
             </label>
             <input
               id="portfolio-contact-subject"
@@ -1296,7 +1300,7 @@ export function ContactMessageForm({
 
           <div>
             <label htmlFor="portfolio-contact-message" className={underlineLabelClassName}>
-              Message
+              {t('Message')}
             </label>
             <textarea
               id="portfolio-contact-message"
@@ -1325,7 +1329,7 @@ export function ContactMessageForm({
               data-pf-no-color-transition=""
               style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
             >
-              {isSubmitting ? 'Sending…' : submitLabel}
+              {isSubmitting ? t('Sending…') : submitLabel}
             </button>
           </div>
         </form>
@@ -1343,7 +1347,7 @@ export function ContactMessageForm({
           {title}
         </h3>
         <p className="mt-1 text-base text-[color:var(--contact-muted,#737373)]">
-          Share a short brief — I will get back to you.
+          {t('Share a short brief — I will get back to you.')}
         </p>
       </div>
 
@@ -1353,7 +1357,7 @@ export function ContactMessageForm({
         <div className="grid gap-4 sm:grid-cols-2">
           <div>
             <label htmlFor="portfolio-contact-name" className={formDefaultLabelClassName}>
-              Name
+              {t('Name')}
             </label>
             <input
               id="portfolio-contact-name"
@@ -1367,7 +1371,7 @@ export function ContactMessageForm({
           </div>
           <div>
             <label htmlFor="portfolio-contact-email" className={formDefaultLabelClassName}>
-              Email
+              {t('Email')}
             </label>
             <input
               id="portfolio-contact-email"
@@ -1383,7 +1387,7 @@ export function ContactMessageForm({
 
         <div>
           <label htmlFor="portfolio-contact-subject" className={formDefaultLabelClassName}>
-            Subject <span className="font-medium normal-case tracking-normal">(optional)</span>
+            {t('Subject')} <span className="font-medium normal-case tracking-normal">{t('(optional)')}</span>
           </label>
           <input
             id="portfolio-contact-subject"
@@ -1397,7 +1401,7 @@ export function ContactMessageForm({
 
         <div>
           <label htmlFor="portfolio-contact-message" className={formDefaultLabelClassName}>
-            Message
+            {t('Message')}
           </label>
           <textarea
             id="portfolio-contact-message"
@@ -1425,7 +1429,7 @@ export function ContactMessageForm({
           data-pf-no-color-transition=""
           style={{ backgroundColor: 'var(--contact-accent, #ea580c)' }}
         >
-          {isSubmitting ? 'Sending…' : submitLabel}
+          {isSubmitting ? t('Sending…') : submitLabel}
         </button>
       </form>
     </div>

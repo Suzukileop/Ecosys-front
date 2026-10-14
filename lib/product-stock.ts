@@ -1,3 +1,4 @@
+import { localeTag, tr } from '@/lib/i18n/active';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
 
 export const LOW_STOCK_THRESHOLD = 5;
@@ -33,8 +34,8 @@ export function getStockStatus(product: Pick<MarketplaceProductSummary, 'type' |
     return {
       tone: 'neutral',
       value: '∞',
-      label: 'Unlimited',
-      hint: 'Digital product — there is no inventory to manage.',
+      label: tr('Unlimited'),
+      hint: tr('Digital product — there is no inventory to manage.'),
       quantity: null,
       visible: false,
     };
@@ -43,8 +44,8 @@ export function getStockStatus(product: Pick<MarketplaceProductSummary, 'type' |
     return {
       tone: 'out',
       value: '0',
-      label: 'Out of stock',
-      hint: 'Buyers can’t order this product until you restock it.',
+      label: tr('Out of stock'),
+      hint: tr('Buyers can’t order this product until you restock it.'),
       quantity: 0,
       visible: true,
     };
@@ -52,18 +53,18 @@ export function getStockStatus(product: Pick<MarketplaceProductSummary, 'type' |
   if (quantity <= LOW_STOCK_THRESHOLD) {
     return {
       tone: 'low',
-      value: quantity.toLocaleString(),
-      label: 'Low stock',
-      hint: `Only ${quantity} units left — consider restocking soon.`,
+      value: quantity.toLocaleString(localeTag()),
+      label: tr('Low stock'),
+      hint: tr('Only {count} units left — consider restocking soon.', { count: quantity }),
       quantity,
       visible: quantity !== DEFAULT_PHYSICAL_STOCK,
     };
   }
   return {
     tone: 'ok',
-    value: quantity.toLocaleString(),
-    label: 'In stock',
-    hint: `${quantity.toLocaleString()} units available to buyers.`,
+    value: quantity.toLocaleString(localeTag()),
+    label: tr('In stock'),
+    hint: tr('{count} units available to buyers.', { count: quantity.toLocaleString(localeTag()) }),
     quantity,
     visible: true,
   };

@@ -1,6 +1,8 @@
 import { AxiosError } from 'axios';
 import { ZodError } from 'zod';
 import { ApiError } from '@/types/auth';
+import { msg } from '@/lib/i18n/config';
+import { tr } from '@/lib/i18n/I18nProvider';
 
 /**
  * An error whose message was written for end users and can be shown as-is.
@@ -45,23 +47,23 @@ function isDisplayableMessage(message: unknown): message is string {
   return !TECHNICAL_PATTERNS.some((pattern) => pattern.test(trimmed));
 }
 
-const SESSION_EXPIRED = 'Your session has expired. Please sign in again.';
-const NO_PERMISSION = 'You don’t have permission to do this.';
+const SESSION_EXPIRED = msg('Your session has expired. Please sign in again.');
+const NO_PERMISSION = msg('You don’t have permission to do this.');
 
 const CODE_MESSAGES: Record<string, string> = {
-  USER_NOT_FOUND: 'This account could not be found.',
-  EMAIL_ALREADY_EXISTS: 'An account with this email already exists.',
-  USERNAME_ALREADY_EXISTS: 'This username is already taken.',
-  INVALID_USERNAME: 'This username isn’t valid. Use letters, numbers, dots or underscores.',
-  INVALID_CURRENT_PASSWORD: 'Your current password is incorrect.',
-  PASSWORD_UNCHANGED: 'Your new password must be different from the current one.',
-  FILE_TOO_LARGE: 'This file is too large. Please choose a smaller one.',
-  INVALID_FILE_TYPE: 'This file type isn’t supported.',
-  FILE_REQUIRED: 'Please choose a file first.',
-  UPLOAD_FAILED: 'The upload failed. Please try again.',
-  ALREADY_PURCHASED: 'You already own this product.',
-  PRODUCT_GROUP_NAME_TAKEN: 'A group with this name already exists.',
-  RATE_LIMIT_EXCEEDED: 'Too many requests. Please try again in a minute.',
+  USER_NOT_FOUND: msg('This account could not be found.'),
+  EMAIL_ALREADY_EXISTS: msg('An account with this email already exists.'),
+  USERNAME_ALREADY_EXISTS: msg('This username is already taken.'),
+  INVALID_USERNAME: msg('This username isn’t valid. Use letters, numbers, dots or underscores.'),
+  INVALID_CURRENT_PASSWORD: msg('Your current password is incorrect.'),
+  PASSWORD_UNCHANGED: msg('Your new password must be different from the current one.'),
+  FILE_TOO_LARGE: msg('This file is too large. Please choose a smaller one.'),
+  INVALID_FILE_TYPE: msg('This file type isn’t supported.'),
+  FILE_REQUIRED: msg('Please choose a file first.'),
+  UPLOAD_FAILED: msg('The upload failed. Please try again.'),
+  ALREADY_PURCHASED: msg('You already own this product.'),
+  PRODUCT_GROUP_NAME_TAKEN: msg('A group with this name already exists.'),
+  RATE_LIMIT_EXCEEDED: msg('Too many requests. Please try again in a minute.'),
   FORBIDDEN: NO_PERMISSION,
   COMMENT_FORBIDDEN: NO_PERMISSION,
   EXPIRED_REFRESH_TOKEN: SESSION_EXPIRED,
@@ -73,14 +75,14 @@ function messageForCode(code: unknown): string | null {
   if (typeof code !== 'string' || code.length === 0) return null;
   const upper = code.toUpperCase();
   if (CODE_MESSAGES[upper]) return CODE_MESSAGES[upper];
-  if (upper.startsWith('OAUTH_')) return 'Sign-in with this provider failed. Please try again.';
-  if (upper.startsWith('VPI_')) return 'The payment couldn’t be completed. Please try again.';
-  if (upper.endsWith('_NOT_FOUND')) return 'We couldn’t find what you were looking for. It may have been removed.';
+  if (upper.startsWith('OAUTH_')) return msg('Sign-in with this provider failed. Please try again.');
+  if (upper.startsWith('VPI_')) return msg('The payment couldn’t be completed. Please try again.');
+  if (upper.endsWith('_NOT_FOUND')) return msg('We couldn’t find what you were looking for. It may have been removed.');
   if (upper.endsWith('_ACCESS_DENIED') || upper.endsWith('_FORBIDDEN')) return NO_PERMISSION;
-  if (upper.endsWith('_NOT_ALLOWED')) return 'This action isn’t allowed.';
-  if (upper.endsWith('_TOO_LONG')) return 'Some text is too long. Please shorten it.';
-  if (upper.startsWith('TOO_MANY_')) return 'You’ve reached the limit for this action.';
-  if (upper.endsWith('_ALREADY_EXISTS') || upper.endsWith('_TAKEN')) return 'This already exists.';
+  if (upper.endsWith('_NOT_ALLOWED')) return msg('This action isn’t allowed.');
+  if (upper.endsWith('_TOO_LONG')) return msg('Some text is too long. Please shorten it.');
+  if (upper.startsWith('TOO_MANY_')) return msg('You’ve reached the limit for this action.');
+  if (upper.endsWith('_ALREADY_EXISTS') || upper.endsWith('_TAKEN')) return msg('This already exists.');
   return null;
 }
 
@@ -91,11 +93,11 @@ function messageForStatus(status: number, fallback: string): string {
     case 403:
       return NO_PERMISSION;
     case 404:
-      return 'We couldn’t find what you were looking for. It may have been removed.';
+      return msg('We couldn’t find what you were looking for. It may have been removed.');
     case 409:
-      return 'This conflicts with existing data. Refresh the page and try again.';
+      return msg('This conflicts with existing data. Refresh the page and try again.');
     case 413:
-      return 'This file is too large. Please choose a smaller one.';
+      return msg('This file is too large. Please choose a smaller one.');
     default:
       return fallback;
   }
@@ -115,9 +117,9 @@ function humanizeField(field: string): string {
 function messageForFieldErrors(fieldErrors: Record<string, string>): string | null {
   const entries = Object.entries(fieldErrors);
   if (entries.length === 0) return null;
-  const [field, msg] = entries.find(([, m]) => isDisplayableMessage(m)) ?? [];
-  if (field && msg) return `${humanizeField(field)}: ${msg}`;
-  return 'Some fields are invalid. Please check your input.';
+  const [field, message] = entries.find(([, m]) => isDisplayableMessage(m)) ?? [];
+  if (field && message) return `${humanizeField(field)}: ${message}`;
+  return msg('Some fields are invalid. Please check your input.');
 }
 
 function isAxiosLike(error: unknown): error is AxiosError<ApiErrorBody> {
@@ -128,12 +130,17 @@ function isAxiosLike(error: unknown): error is AxiosError<ApiErrorBody> {
  * Converts any thrown value into a message that is safe to show to users.
  * Technical details (stack traces, raw server messages, JS errors) are logged, never returned.
  */
-export function getApiErrorMessage(error: unknown, fallback = 'Something went wrong. Please try again.'): string {
+export function getApiErrorMessage(error: unknown, fallback: string = msg('Something went wrong. Please try again.')): string {
+  /* Messages below are English sources; the caller's fallback usually comes translated already. */
+  return tr(resolveApiErrorMessage(error, fallback));
+}
+
+function resolveApiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof UserFacingError) return error.message;
 
   if (error instanceof ZodError) {
     const first = error.issues[0];
-    return isDisplayableMessage(first?.message) ? first.message : 'Some fields are invalid. Please check your input.';
+    return isDisplayableMessage(first?.message) ? first.message : msg('Some fields are invalid. Please check your input.');
   }
 
   if (isAxiosLike(error)) {
@@ -141,20 +148,28 @@ export function getApiErrorMessage(error: unknown, fallback = 'Something went wr
     if (!response) {
       if (error.code === 'ERR_CANCELED') return fallback;
       return error.code === 'ECONNABORTED' || error.code === 'ETIMEDOUT'
-        ? 'The server took too long to respond. Please try again.'
-        : 'We can’t reach the server right now. Check your connection and try again.';
+        ? msg('The server took too long to respond. Please try again.')
+        : msg('We can’t reach the server right now. Check your connection and try again.');
     }
 
     const { status } = response;
     if (status === 429) {
       const retryAfter = Number(response.headers?.['retry-after']);
       return Number.isFinite(retryAfter) && retryAfter > 0
-        ? `Too many requests. Please try again in ${retryAfter} seconds.`
-        : 'Too many requests. Please try again in a minute.';
+        ? tr('Too many requests. Please try again in {seconds} seconds.', { seconds: retryAfter })
+        : msg('Too many requests. Please try again in a minute.');
     }
 
     if (status >= 500) {
-      console.error('[api error]', status, response.data);
+      /* A gateway / tunnel page (502-504, Cloudflare 52x, an HTML body) is infrastructure, not an app
+         bug: one short warning instead of dumping the whole page through console.error (which opens
+         the dev error overlay). Real backend 500s (JSON) stay errors. */
+      const htmlBody = typeof response.data === 'string' && /^\s*<(!doctype|html)/i.test(response.data);
+      if (htmlBody || status === 502 || status === 503 || status === 504 || (status >= 520 && status <= 530)) {
+        console.warn(`[api error] ${status} — the server or its tunnel is unreachable right now`);
+      } else {
+        console.error('[api error]', status, response.data);
+      }
       return fallback;
     }
 

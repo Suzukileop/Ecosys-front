@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
 import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentMediaKind = 'image' | 'video' | 'pdf' | 'gif' | 'audio' | null;
 
@@ -38,6 +39,7 @@ export function useContentMediaUpload({
   onUrlChange,
   upload = uploadContentMedia,
 }: UseContentMediaUploadOptions) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -53,7 +55,7 @@ export function useContentMediaUpload({
       onUrlChange(url);
       setFileName(file.name);
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed. Please try again.'));
+      setUploadError(getApiErrorMessage(e, locale === 'fr' ? t('Échec du téléversement.') : t('Upload failed. Please try again.')));
       onUrlChange('');
       setFileName(null);
     } finally {
@@ -96,6 +98,7 @@ export function useContentGalleryUpload({
   urls: string[];
   onChange: (urls: string[]) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [fileName, setFileName] = useState<string | null>(null);
@@ -140,7 +143,7 @@ export function useContentGalleryUpload({
         notes.push(
           getApiErrorMessage(
             firstError?.reason,
-            locale === 'fr' ? 'Échec du téléversement.' : 'Upload failed. Please try again.'
+            locale === 'fr' ? t('Échec du téléversement.') : t('Upload failed. Please try again.')
           )
         );
       }
@@ -221,6 +224,7 @@ function formatClock(seconds: number): string {
 
 /** Minimal in-composer player: tap to play, thin draggable scrubber, time and mute only. */
 function ComposeVideoPlayer({ src, locale = 'en' }: { src: string; locale?: 'fr' | 'en' }) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   usePauseOffscreenVideo(videoRef);
   const [playing, setPlaying] = useState(false);
@@ -250,8 +254,8 @@ function ComposeVideoPlayer({ src, locale = 'en' }: { src: string; locale?: 'fr'
   };
 
   const progress = duration > 0 ? (current / duration) * 100 : 0;
-  const playLabel = playing ? 'Pause' : locale === 'fr' ? 'Lire' : 'Play';
-  const muteLabel = muted ? (locale === 'fr' ? 'Activer le son' : 'Unmute') : locale === 'fr' ? 'Couper le son' : 'Mute';
+  const playLabel = playing ? t('Pause') : locale === 'fr' ? t('Lire') : t('Play');
+  const muteLabel = muted ? (locale === 'fr' ? t('Activer le son') : t('Unmute')) : locale === 'fr' ? t('Couper le son') : t('Mute');
 
   return (
     <div className="group/player absolute inset-0 bg-black">
@@ -294,7 +298,7 @@ function ComposeVideoPlayer({ src, locale = 'en' }: { src: string; locale?: 'fr'
           step={0.1}
           value={current}
           onChange={(e) => seek(Number(e.target.value))}
-          aria-label={locale === 'fr' ? 'Position de lecture' : 'Seek'}
+          aria-label={locale === 'fr' ? t('Position de lecture') : t('Seek')}
           className="block h-1 w-full cursor-pointer appearance-none rounded-full bg-white/25 [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
           style={{
             background: `linear-gradient(to right, #FF5722 ${progress}%, rgba(255,255,255,0.25) ${progress}%)`,
@@ -362,12 +366,13 @@ export function ContentComposeMediaPreview({
   mediaType,
   onRemove,
 }: ContentComposeMediaPreviewProps) {
+  const t = useT();
   const [zoomOpen, setZoomOpen] = useState(false);
   const kind = contentMediaKind(mediaUrl, fileName, mediaType);
   const canZoom = kind === 'image' || kind === 'gif';
-  const openPdfLabel = locale === 'fr' ? 'Ouvrir le PDF' : 'Open PDF';
-  const removeLabel = locale === 'fr' ? 'Retirer le média' : 'Remove media';
-  const zoomLabel = locale === 'fr' ? 'Agrandir' : 'Zoom';
+  const openPdfLabel = locale === 'fr' ? t('Ouvrir le PDF') : t('Open PDF');
+  const removeLabel = locale === 'fr' ? t('Retirer le média') : t('Remove media');
+  const zoomLabel = locale === 'fr' ? t('Agrandir') : t('Zoom');
 
   useEffect(() => {
     if (!zoomOpen) return;
@@ -406,7 +411,7 @@ export function ContentComposeMediaPreview({
                 📄
               </span>
               <p className="max-w-full truncate text-xs font-medium text-neutral-600 dark:text-neutral-300">
-                {fileName ?? (locale === 'fr' ? 'Document PDF' : 'PDF document')}
+                {fileName ?? (locale === 'fr' ? t('Document PDF') : t('PDF document'))}
               </p>
               <a
                 href={mediaUrl}
@@ -470,7 +475,7 @@ export function ContentComposeMediaPreview({
             <button
               type="button"
               className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
-              aria-label={locale === 'fr' ? 'Fermer' : 'Close'}
+              aria-label={locale === 'fr' ? t('Fermer') : t('Close')}
               onClick={() => setZoomOpen(false)}
             />
             <div className="relative z-[301] max-h-[min(90dvh,900px)] max-w-[min(96vw,960px)]">
@@ -485,7 +490,7 @@ export function ContentComposeMediaPreview({
                 type="button"
                 onClick={() => setZoomOpen(false)}
                 className="absolute -right-2 -top-2 flex h-9 w-9 items-center justify-center rounded-full bg-white text-neutral-800 shadow-md transition hover:bg-neutral-100 dark:bg-neutral-800 dark:text-white dark:hover:bg-neutral-700"
-                aria-label={locale === 'fr' ? 'Fermer' : 'Close'}
+                aria-label={locale === 'fr' ? t('Fermer') : t('Close')}
               >
                 <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -511,6 +516,7 @@ export function ContentMediaPreview({
   fit = 'contain',
   unframed = false,
 }: ContentMediaPreviewProps) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   usePauseOffscreenVideo(videoRef);
 
@@ -520,13 +526,13 @@ export function ContentMediaPreview({
   const emptyCopy =
     locale === 'fr'
       ? {
-          title: 'Aperçu du média',
-          hint: 'Téléversez un fichier pour le prévisualiser ici.',
+          title: t('Aperçu du média'),
+          hint: t('Téléversez un fichier pour le prévisualiser ici.'),
           formats: 'Image · Video · Audio · PDF',
         }
       : {
-          title: 'Media preview',
-          hint: 'Upload a file to preview it here.',
+          title: t('Media preview'),
+          hint: t('Upload a file to preview it here.'),
           formats: 'Image · Video · Audio · PDF',
         };
 
@@ -561,8 +567,8 @@ export function ContentMediaPreview({
             />
           </svg>
         </div>
-        <p className="mt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">{emptyCopy.title}</p>
-        <p className="mt-1 max-w-xs text-xs text-neutral-500">{emptyCopy.hint}</p>
+        <p className="mt-4 text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t(emptyCopy.title)}</p>
+        <p className="mt-1 max-w-xs text-xs text-neutral-500">{t(emptyCopy.hint)}</p>
         <p className="mt-3 text-[11px] font-medium uppercase tracking-wide text-neutral-400">{emptyCopy.formats}</p>
       </div>
     );
@@ -610,7 +616,7 @@ export function ContentMediaPreview({
             📄
           </span>
           <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-100">
-            {fileName ?? (locale === 'fr' ? 'Document PDF' : 'PDF document')}
+            {fileName ?? (locale === 'fr' ? t('Document PDF') : t('PDF document'))}
           </p>
           <a
             href={mediaUrl}
@@ -618,7 +624,7 @@ export function ContentMediaPreview({
             rel="noreferrer"
             className="text-sm font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
           >
-            {locale === 'fr' ? 'Ouvrir le PDF' : 'Open PDF'}
+            {locale === 'fr' ? t('Ouvrir le PDF') : t('Open PDF')}
           </a>
         </div>
       ) : (

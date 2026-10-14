@@ -4,10 +4,10 @@ export const metadata: Metadata = {
   robots: { index: false, follow: false },
 };
 
-/** Standalone upgrade / pricing — follows global html.dark via lp-brand-zone tokens. */
+/** Standalone upgrade / pricing — X palette ground (#FFF / #000), follows global html.dark. */
 export default function UpgradeLayout({ children }: { children: React.ReactNode }) {
   return (
-    <div className="lp-brand-zone min-h-screen transition-colors duration-300">
+    <div className="min-h-screen bg-white dark:bg-black">
       {children}
     </div>
   );

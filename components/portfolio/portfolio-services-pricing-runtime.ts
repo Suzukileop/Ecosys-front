@@ -10,6 +10,8 @@ import {
   pricingBorderColor,
   pricingBorderWidthPx,
   pricingCardRadiusPx,
+  pricingFeaturedColor,
+  pricingListBulletColor,
   pricingCtaRadius,
   readServicesPricingStyle,
   type PortfolioServicesPricingStyleSettings,
@@ -31,6 +33,10 @@ export type ServicesPricingStyle = {
   borderWidthPx: number | null;
   /** Card border color; `null` keeps the design's own color. */
   borderColor: string | null;
+  /** Featured card color (palette token resolved to hex); `null` keeps the design's own. */
+  featuredColor: string | null;
+  /** General → List bullet color (palette token resolved to hex); `null` keeps the design's own. */
+  bulletColor: string | null;
   /** Order-button border-radius; `null` keeps the design's own shape. */
   ctaRadius: string | null;
   /** Spread onto every order-button `<a>`: href, click handling and new-tab behaviour. */
@@ -75,6 +81,8 @@ export function useServicesPricingStyle(
       cardRadiusPx: pricingCardRadiusPx(style),
       borderWidthPx: pricingBorderWidthPx(style),
       borderColor: pricingBorderColor(style, palette),
+      featuredColor: pricingFeaturedColor(style, palette),
+      bulletColor: pricingListBulletColor(style, palette),
       ctaRadius: pricingCtaRadius(style),
       anchorProps: {
         href,

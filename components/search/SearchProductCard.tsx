@@ -5,34 +5,24 @@ import { collectProductLabels, formatPrice, isFreeProduct } from '@/lib/marketpl
 import { ProductFavoriteButton } from '@/components/marketplace/ProductFavoriteButton';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type SearchProductCardProps = {
   product: MarketplaceProductSummary;
 };
 
-function CartIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z"
-      />
-    </svg>
-  );
-}
-
 export function SearchProductCard({ product }: SearchProductCardProps) {
+  const t = useT();
   const href = `/marketplace/products/${product.id}`;
   const { genre, tags } = collectProductLabels(product);
   const displayTags = tags.slice(0, 2);
   const isFree = isFreeProduct(product.priceCents);
-  const priceLabel = isFree ? 'FREE' : formatPrice(product.priceCents, product.currency);
-  const ctaLabel = isFree ? 'Get product' : 'Buy product';
+  const priceLabel = isFree ? t('Free') : formatPrice(product.priceCents, product.currency);
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white dark:border-neutral-700 dark:bg-neutral-900">
-      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-neutral-100 dark:bg-neutral-800">
+    /* A News block: square, tone only; the price is the one solid ink label, tags are plain meta. */
+    <article className="gn-card group flex w-full flex-col overflow-hidden">
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#EFF3F4] dark:bg-[#202327]">
         <Link href={href} className="block h-full w-full">
           {product.thumbnailUrl ? (
             <ProductThumbnailMedia
@@ -42,8 +32,8 @@ export function SearchProductCard({ product }: SearchProductCardProps) {
               className="h-full w-full"
             />
           ) : (
-            <div className="flex h-full items-center justify-center bg-neutral-100 text-base text-neutral-500 dark:bg-neutral-800 dark:text-neutral-400">
-              Preview unavailable
+            <div className="flex h-full items-center justify-center text-[14px] text-[#536471] dark:text-[#8B98A5]">
+              {t('Preview unavailable')}
             </div>
           )}
         </Link>
@@ -52,54 +42,35 @@ export function SearchProductCard({ product }: SearchProductCardProps) {
           <ProductFavoriteButton productId={product.id} variant="bookmark" size="sm" />
         </div>
 
-        <span
-          className={`absolute bottom-3 left-3 rounded-lg px-3 py-1.5 text-sm font-bold text-white ${
-            isFree ? 'bg-emerald-600' : 'bg-neutral-900'
-          }`}
-        >
+        <span className="pointer-events-none absolute bottom-3 left-3 bg-[#0F1419] px-2.5 py-1 text-[13px] font-bold leading-[18px] text-white">
           {priceLabel}
         </span>
-
-        <Link
-          href={href}
-          aria-label={ctaLabel}
-          className="absolute bottom-3 right-3 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500 text-white transition hover:bg-orange-600"
-        >
-          <CartIcon className="h-4 w-4" />
-        </Link>
       </div>
 
-      <div className="flex flex-1 flex-col gap-2.5 p-5">
-        <div className="min-h-14">
-          <Link
-            href={href}
-            className="line-clamp-2 text-lg font-bold leading-snug text-neutral-900 dark:text-white"
-            title={product.title}
-          >
-            {product.title}
-          </Link>
-        </div>
+      <div className="flex flex-1 flex-col gap-1 px-5 pb-5 pt-4">
+        <Link
+          href={href}
+          className="line-clamp-2 text-[16px] font-bold leading-[22px] text-[color:var(--gn-ink)] underline-offset-2 hover:underline"
+          title={product.title}
+        >
+          {product.title}
+        </Link>
 
         {product.creatorName ? (
           <Link
             href={product.creatorId ? `/providers/${product.creatorId}` : href}
-            className="truncate text-sm font-medium text-neutral-600 dark:text-neutral-300"
+            className="truncate text-[14px] leading-5 text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-ink)]"
           >
             {product.creatorName}
           </Link>
         ) : null}
 
         {(genre || displayTags.length > 0) && (
-          <div className="mt-0.5 flex flex-wrap gap-2">
-            {genre ? (
-              <span className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-orange-600 dark:bg-neutral-800 dark:text-orange-400">
-                {genre}
-              </span>
-            ) : null}
-            {displayTags.map((tag) => (
+          <div className="mt-2 flex flex-wrap gap-1.5">
+            {[genre, ...displayTags].filter(Boolean).map((tag, i) => (
               <span
-                key={tag}
-                className="rounded-full bg-neutral-100 px-3 py-1 text-xs font-semibold uppercase tracking-wide text-neutral-600 dark:bg-neutral-800 dark:text-neutral-300"
+                key={`${tag}-${i}`}
+                className="bg-[color:var(--gn-inset)] px-2 py-0.5 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]"
               >
                 {tag}
               </span>
@@ -111,6 +82,7 @@ export function SearchProductCard({ product }: SearchProductCardProps) {
   );
 }
 
-/** Max 3 columns on large screens for readability. */
+/** One column on phones (edge to edge, 8px apart), two from sm, three from xl — beside the 340 / 400px
+    rail the main column is too narrow for three before xl. */
 export const searchProductGridClassName =
-  'grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3';
+  'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-5 xl:grid-cols-3';

@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { formatPrice } from '@/lib/marketplace-api';
 import type { MarketplaceProductGroup, MarketplaceProductSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const subscribeNoop = () => () => {};
 
@@ -31,6 +32,7 @@ export function CreatorCatalogueAddProductsModal({
   onAdd,
   onCreateProduct,
 }: CreatorCatalogueAddProductsModalProps) {
+  const t = useT();
   const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const [wasOpen, setWasOpen] = useState(open);
   const [query, setQuery] = useState('');
@@ -104,7 +106,7 @@ export function CreatorCatalogueAddProductsModal({
     <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-start sm:px-5 sm:pt-[8vh]">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('Close')}
         className="fixed inset-0 h-[100dvh] w-full cursor-default bg-black/40 dark:bg-black/60"
         onClick={() => !saving && onClose()}
       />
@@ -118,17 +120,17 @@ export function CreatorCatalogueAddProductsModal({
         <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-4 pt-5">
           <div className="min-w-0">
             <h2 id="catalogue-add-title" className="text-[18px] font-bold text-[#111111] dark:text-white">
-              Add products
+              {t('Add products')}
             </h2>
             <p className="mt-0.5 truncate text-[14px] text-neutral-500 dark:text-neutral-400">
-              to <span className="font-medium text-[#111111] dark:text-white">{group.name}</span>
+              {t('to')} <span className="font-medium text-[#111111] dark:text-white">{group.name}</span>
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-black/[0.06] hover:text-[#111111] disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -148,15 +150,15 @@ export function CreatorCatalogueAddProductsModal({
                 type="search"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Search your products"
-                aria-label="Search your products"
+                placeholder={t('Search your products')}
+                aria-label={t('Search your products')}
                 autoFocus
                 className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
               />
             </label>
             <div className="flex items-center justify-between gap-3">
               {draftCount > 0 && draftCount < available.length ? (
-                <div className="flex gap-1.5" role="radiogroup" aria-label="Status">
+                <div className="flex gap-1.5" role="radiogroup" aria-label={t('Status')}>
                   {(['all', 'published', 'draft'] as const).map((value) => (
                     <button
                       key={value}
@@ -176,7 +178,7 @@ export function CreatorCatalogueAddProductsModal({
                 </div>
               ) : (
                 <span className="text-[13px] text-neutral-500 dark:text-neutral-400">
-                  {available.length} product{available.length !== 1 ? 's' : ''} not in this catalogue
+                  {available.length} {t('product')}{available.length !== 1 ? 's' : ''} {t('not in this catalogue')}
                 </span>
               )}
               {visible.length > 1 ? (
@@ -185,7 +187,7 @@ export function CreatorCatalogueAddProductsModal({
                   onClick={toggleAllVisible}
                   className="shrink-0 text-[13px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
                 >
-                  {allVisibleSelected ? 'Clear selection' : 'Select all'}
+                  {allVisibleSelected ? t('Clear selection') : t('Select all')}
                 </button>
               ) : null}
             </div>
@@ -196,10 +198,10 @@ export function CreatorCatalogueAddProductsModal({
           {available.length === 0 ? (
             <div className="px-6 py-14 text-center">
               <p className="text-[15px] font-medium text-[#111111] dark:text-white">
-                {products.length === 0 ? 'You have no products yet.' : 'Every product is already in this catalogue.'}
+                {products.length === 0 ? t('You have no products yet.') : t('Every product is already in this catalogue.')}
               </p>
               <p className="mt-1 text-[14px] text-neutral-500 dark:text-neutral-400">
-                Create a new product first, then add it to “{group.name}”.
+                {t('Create a new product first, then add it to “{name}”.', { name: group.name })}
               </p>
               {onCreateProduct ? (
                 <button
@@ -207,13 +209,13 @@ export function CreatorCatalogueAddProductsModal({
                   onClick={onCreateProduct}
                   className="mt-5 inline-flex items-center gap-2 rounded-lg bg-[#111111] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
                 >
-                  New product
+                  {t('New product')}
                 </button>
               ) : null}
             </div>
           ) : visible.length === 0 ? (
             <p className="px-6 py-14 text-center text-[14px] text-neutral-500 dark:text-neutral-400">
-              No products match your search.
+              {t('No products match your search.')}
             </p>
           ) : (
             <ul className="divide-y divide-black/[0.06] dark:divide-white/[0.06]">
@@ -250,12 +252,12 @@ export function CreatorCatalogueAddProductsModal({
                               aria-hidden
                               className={`h-1.5 w-1.5 rounded-full ${product.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`}
                             />
-                            {product.isPublished ? 'Published' : 'Draft'}
+                            {product.isPublished ? t('Published') : t('Draft')}
                           </span>
                           <span aria-hidden>·</span>
                           <span className="tabular-nums">{formatPrice(product.priceCents, product.currency)}</span>
                           <span aria-hidden>·</span>
-                          <span>{product.type === 'PHYSICAL' ? 'Material' : 'Digital'}</span>
+                          <span>{product.type === 'PHYSICAL' ? t('Material') : t('Digital')}</span>
                         </span>
                       </span>
                       <span
@@ -288,7 +290,7 @@ export function CreatorCatalogueAddProductsModal({
               ) : selected.size ? (
                 `${selected.size} selected`
               ) : (
-                'Select the products to add'
+                t('Select the products to add')
               )}
             </p>
             <div className="flex shrink-0 items-center gap-2">
@@ -298,7 +300,7 @@ export function CreatorCatalogueAddProductsModal({
                 disabled={saving}
                 className="rounded-lg px-4 py-2.5 text-[15px] font-medium text-neutral-500 transition-colors hover:bg-black/[0.04] hover:text-[#111111] disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
               >
-                Cancel
+                {t('Cancel')}
               </button>
               <button
                 type="button"
@@ -309,7 +311,7 @@ export function CreatorCatalogueAddProductsModal({
                 {saving ? (
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
                 ) : null}
-                {selected.size > 1 ? `Add ${selected.size} products` : 'Add product'}
+                {selected.size > 1 ? `Add ${selected.size} products` : t('Add product')}
               </button>
             </div>
           </div>

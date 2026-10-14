@@ -12,7 +12,7 @@ import {
 } from '@/components/portfolio/portfolio-faq-settings';
 import { FAQ_HEADER_MARGIN_BOTTOM_REM } from '@/components/portfolio/portfolio-faq-header-settings';
 import { FAQ_HEADER_TITLE_SIZE_CLASS, createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 /** Layout settings → "Glyph intensity" (Medium is the original 10%). */
 const GLYPH_INK_PERCENT: Record<string, number> = { subtle: 6, medium: 10, bold: 18 };
@@ -60,7 +60,7 @@ export function FaqHeaderQueryHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
@@ -71,6 +71,8 @@ export function FaqHeaderQueryHeader({
   const glyphChar = (layout.text('glyphChar') ?? '?').slice(0, 3);
   const glyphInk = `color-mix(in srgb, ${titleInk} ${GLYPH_INK_PERCENT[layout.option('glyphIntensity')] ?? 10}%, transparent)`;
   const kickerText = layout.text('kicker');
+  const showTitle = layout.isVisible('title');
+  const showSubtitle = layout.isVisible('subtitle');
   const titleSizeClass = FAQ_HEADER_TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md'] ?? FAQ_HEADER_TITLE_SIZE_CLASS.md;
 
   const headerRef = useRef<HTMLElement>(null);
@@ -147,7 +149,7 @@ export function FaqHeaderQueryHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, titleText, subtitleText, showGlyph, kickerText]);
+  }, [animationEnabled, titleText, subtitleText, showGlyph, kickerText, showTitle, showSubtitle]);
 
   return (
     <header
@@ -187,13 +189,15 @@ export function FaqHeaderQueryHeader({
           </span>
         ) : null}
         <div className="min-w-0 max-w-2xl">
-          <h2
-            className={`pf-faq-header-query-title mb-0 ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={faqTitleColorStyle(presentation.titleColor)}
-          >
-            {titleText}
-          </h2>
-          {subtitleText ? (
+          {showTitle ? (
+            <h2
+              className={`pf-faq-header-query-title mb-0 ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
+              style={faqTitleColorStyle(presentation.titleColor)}
+            >
+              {titleText}
+            </h2>
+          ) : null}
+          {showSubtitle && subtitleText ? (
             <p
               className={`pf-faq-header-query-sub mb-0 mt-6 max-w-md ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
               style={faqSubtitleColorStyle(presentation.subtitleColor)}

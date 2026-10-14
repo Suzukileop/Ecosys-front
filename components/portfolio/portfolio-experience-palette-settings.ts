@@ -4,6 +4,7 @@
  */
 
 import { DEFAULT_HERO_PALETTE, HERO_PALETTE_TOKEN_IDS, mergeHeroPalette, resolveHeroPaletteColor, type HeroPaletteTokenId, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { msg } from '@/lib/i18n/config';
 
 /** Local mirrors — avoid importing portfolio-experience-settings (circular TDZ). */
 type ExperienceElementStyleTarget =

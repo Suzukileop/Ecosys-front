@@ -12,6 +12,7 @@ import {
   DEFAULT_PROJECTS_BOARD_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const BOARD_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const ENTER_CARD: CSSProperties = { opacity: 0, transform: 'translateY(28px)' };
@@ -187,6 +188,7 @@ function ProjectsBoardCard({
   entered: boolean;
   instant: boolean;
 }) {
+  const t = useT();
   const board = presentation.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS;
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
@@ -218,7 +220,7 @@ function ProjectsBoardCard({
   const tagInk = presentation.elementStyles?.toolsList?.color || presentation.subtitleColor;
   const tagSurface = presentation.cardBorderColor;
 
-  const caseStudyLabel = board.consultLabel?.trim() || 'View project';
+  const caseStudyLabel = board.consultLabel?.trim() || t('View project');
   const enterDelay = 90 + Math.min(index, 8) * 95;
   // Asymmetric rhythm (2 per row, default): wide/high card on the left, narrower
   // card nudged down on the right — breaks the old perfectly-aligned 2-up row
@@ -299,7 +301,7 @@ function ProjectsBoardCard({
             {showMetaLine ? (
               <ul
                 className="group/tags flex flex-wrap items-baseline gap-x-2 gap-y-1.5"
-                aria-label="Role and tools"
+                aria-label={t('Role and tools')}
               >
                 {metaItems.map((meta, metaIndex) => (
                   <li

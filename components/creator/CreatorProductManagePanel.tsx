@@ -12,6 +12,7 @@ import { getStockStatus } from '@/lib/product-stock';
 import { InfoHint } from '@/components/ui/InfoHint';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { MarketplaceProductDetail } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorProductManagePanelProps = {
   product: MarketplaceProductDetail;
@@ -26,11 +27,16 @@ type CreatorProductManagePanelProps = {
   from?: CreatorProductNavFrom;
 };
 
-const LABEL = 'text-[13px] font-medium text-neutral-500 dark:text-neutral-400';
-const DIVIDER = 'border-t border-black/[0.06] dark:border-white/[0.08]';
+const LABEL = 'text-[13px] leading-[18px] text-[color:var(--gn-ink2)]';
+const DIVIDER = 'shadow-[inset_0_1px_0_var(--gn-line)]';
 const DIGITAL_MAX_SALE_BATCH = 99;
 const STEPPER_BUTTON =
-  'h-full w-10 text-lg text-[#111111] transition hover:bg-black/[0.04] disabled:opacity-30 dark:text-white dark:hover:bg-white/[0.06]';
+  'h-full w-10 text-lg text-[color:var(--gn-ink)] transition hover:bg-[color:var(--gn-hover)] disabled:opacity-30';
+/* The page's pills: ink fill for the primary, a 1px ring for the secondary. */
+const PRIMARY_PILL =
+  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-60';
+const OUTLINE_PILL =
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full px-5 text-[15px] font-bold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-60 dark:shadow-[inset_0_0_0_1px_#536471]';
 
 export function CreatorProductManagePanel({
   product,
@@ -42,6 +48,7 @@ export function CreatorProductManagePanel({
   onRemoveSale,
   from = 'products',
 }: CreatorProductManagePanelProps) {
+  const t = useT();
   const [saleQuantity, setSaleQuantity] = useState(1);
   const isPhysical = product.type === 'PHYSICAL';
   const free = isFreeProduct(product.priceCents);
@@ -64,21 +71,22 @@ export function CreatorProductManagePanel({
   };
 
   return (
-    <div className="overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
+    // The page's rail: an outlined box (News's `.gn-rail-box`), as on the public product page.
+    <div className="gn-rail-box overflow-hidden">
       <div className="flex items-center justify-between gap-2 px-6 pt-6">
-        <span className="inline-flex items-center gap-2 text-sm font-medium text-neutral-700 dark:text-neutral-200">
+        <span className="inline-flex items-center gap-2 text-[14px] font-semibold text-[color:var(--gn-ink)]">
           <span
-            className={`h-2 w-2 rounded-full ${product.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`}
+            className={`h-2 w-2 rounded-full ${product.isPublished ? 'bg-[#00BA7C]' : 'bg-[#FFAD1F]'}`}
             aria-hidden
           />
-          {product.isPublished ? 'Live on marketplace' : 'Draft'}
+          {product.isPublished ? t('Live on marketplace') : t('Draft')}
         </span>
         {product.isPublished && (
           <Link
             href={`/marketplace/products/${product.id}`}
-            className="group inline-flex items-center gap-1 text-sm font-medium text-[#111111] underline-offset-4 hover:underline dark:text-white"
+            className="group inline-flex items-center gap-1 text-[14px] font-semibold text-[color:var(--gn-ink)] underline-offset-4 hover:underline"
           >
-            View
+            {t('View')}
             <span aria-hidden className="transition-transform duration-300 group-hover:-translate-y-px group-hover:translate-x-px">
               ↗
             </span>
@@ -87,28 +95,28 @@ export function CreatorProductManagePanel({
       </div>
 
       <div className="px-6 pb-6 pt-5">
-        <p className={LABEL}>{isPhysical ? 'Selling price' : 'Price'}</p>
+        <p className={LABEL}>{isPhysical ? t('Selling price') : t('Price')}</p>
         <div className="mt-2 flex flex-wrap items-baseline gap-x-2.5 gap-y-1">
-          <p className="text-[34px] font-semibold leading-none tracking-[-0.03em] text-[#111111] tabular-nums dark:text-white">
+          <p className="text-[32px] font-extrabold leading-9 tracking-[-0.02em] text-[color:var(--gn-ink)] tabular-nums">
             {formatPrice(product.priceCents, product.currency)}
           </p>
           {hasDiscount && (
-            <p className="text-[15px] text-neutral-400 line-through tabular-nums dark:text-neutral-500">
+            <p className="text-[15px] text-[color:var(--gn-ink3)] line-through tabular-nums">
               {formatPrice(product.compareAtPriceCents!, product.currency)}
             </p>
           )}
         </div>
         {discountPercent != null && (
-          <p className="mt-2 text-sm font-medium text-emerald-700 dark:text-emerald-400">
-            {discountPercent}% off the original price
+          <p className="mt-1 text-[13px] font-semibold leading-[18px] text-[color:var(--gn-ink)]">
+            {t('{discountPercent}% off', { discountPercent })}
           </p>
         )}
       </div>
 
       {!isPhysical && (
         <div className={`${DIVIDER} flex items-center justify-between gap-3 px-6 py-4`}>
-          <p className={LABEL}>Availability</p>
-          <span className="text-[15px] font-medium text-[#111111] dark:text-white">Unlimited · Instant delivery</span>
+          <p className={LABEL}>{t('Availability')}</p>
+          <span className="text-[15px] font-semibold text-[color:var(--gn-ink)]">{t('Unlimited · Instant delivery')}</span>
         </div>
       )}
 
@@ -117,22 +125,22 @@ export function CreatorProductManagePanel({
           {canRecordSale && (
             <div className="flex items-center gap-2.5">
               {maxSale > 1 && (
-                <div className="inline-flex h-12 shrink-0 items-center rounded-lg border border-black/[0.1] dark:border-white/[0.14]">
+                <div className="inline-flex h-12 shrink-0 items-center overflow-hidden rounded-full shadow-[inset_0_0_0_1px_#CFD9DE] dark:shadow-[inset_0_0_0_1px_#536471]">
                   <button
                     type="button"
-                    aria-label="Decrease quantity"
+                    aria-label={t('Decrease quantity')}
                     disabled={saleDisabled || quantityToRecord <= 1}
                     onClick={() => setSaleQuantity(quantityToRecord - 1)}
                     className={STEPPER_BUTTON}
                   >
                     −
                   </button>
-                  <span className="w-8 text-center text-[15px] font-semibold text-[#111111] tabular-nums dark:text-white">
+                  <span className="w-8 text-center text-[15px] font-semibold text-[color:var(--gn-ink)] tabular-nums">
                     {quantityToRecord}
                   </span>
                   <button
                     type="button"
-                    aria-label="Increase quantity"
+                    aria-label={t('Increase quantity')}
                     disabled={saleDisabled || quantityToRecord >= maxSale}
                     onClick={() => setSaleQuantity(quantityToRecord + 1)}
                     className={STEPPER_BUTTON}
@@ -145,19 +153,19 @@ export function CreatorProductManagePanel({
                 type="button"
                 disabled={saleDisabled}
                 onClick={submitSale}
-                className={`relative inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-lg px-4 text-[15px] font-medium transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722] focus-visible:ring-offset-2 dark:focus-visible:ring-offset-[#111111] ${
+                className={`relative inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-full px-4 text-[15px] font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                   saleLocked && !recordingSale
-                    ? 'cursor-default bg-[#111111] text-white dark:bg-white dark:text-[#111111]'
-                    : 'bg-[#FF5722] text-white hover:bg-[#F4511E] disabled:opacity-60'
+                    ? 'cursor-default bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] dark:shadow-[inset_0_0_0_1px_#536471]'
+                    : 'bg-[color:var(--gn-primary)] text-[color:var(--gn-primary-ink)] hover:bg-[color:var(--gn-primary-hover)] disabled:opacity-60'
                 }`}
               >
                 {recordingSale && <LoadingSpinner size="sm" />}
                 {recordingSale
-                  ? 'Saving…'
+                  ? t('Saving…')
                   : saleLocked
-                    ? '✓ Sale recorded'
+                    ? t('✓ Sale recorded')
                     : maxSale === 1
-                      ? 'Mark as sold'
+                      ? t('Mark as sold')
                       : `Record ${quantityToRecord === 1 ? 'sale' : `${quantityToRecord} sales`}`}
                 {saleLocked && !recordingSale && (
                   <motion.span
@@ -165,15 +173,15 @@ export function CreatorProductManagePanel({
                     initial={{ scaleX: 1 }}
                     animate={{ scaleX: 0 }}
                     transition={{ duration: 5, ease: 'linear' }}
-                    className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[#FF5722]"
+                    className="absolute inset-x-0 bottom-0 h-0.5 origin-left bg-[color:var(--gn-ink)]"
                   />
                 )}
               </button>
               <InfoHint align="end">
                 {isPhysical
-                  ? 'Closed a deal in Discussions? Log it — stock and sales update instantly.'
-                  : 'Sold a copy outside the marketplace? Log it — sales and revenue update instantly.'}{' '}
-                Made a mistake? Use “Remove a sale” below.
+                  ? t('Closed a deal in Discussions? Log it — stock and sales update instantly.')
+                  : t('Sold a copy outside the marketplace? Log it — sales and revenue update instantly.')}{' '}
+                {t('Made a mistake? Use “Remove a sale” below.')}
               </InfoHint>
             </div>
           )}
@@ -182,9 +190,9 @@ export function CreatorProductManagePanel({
               type="button"
               disabled={recordingSale}
               onClick={onRemoveSale}
-              className="text-sm font-medium text-neutral-500 underline-offset-4 transition hover:text-[#111111] hover:underline disabled:opacity-50 dark:text-neutral-400 dark:hover:text-white"
+              className="text-[14px] font-semibold text-[color:var(--gn-ink2)] underline-offset-4 transition hover:text-[color:var(--gn-ink)] hover:underline disabled:opacity-50"
             >
-              Remove a sale
+              {t('Remove a sale')}
             </button>
           )}
         </div>
@@ -193,30 +201,30 @@ export function CreatorProductManagePanel({
       <div className={`${DIVIDER} grid gap-2.5 p-6`}>
         <Link
           href={creatorProductEditPath(product.id, from)}
-          className="inline-flex h-12 w-full items-center justify-center rounded-lg bg-[#111111] px-4 text-[15px] font-medium text-white transition hover:bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722] focus-visible:ring-offset-2 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200 dark:focus-visible:ring-offset-[#111111]"
+          className={PRIMARY_PILL}
         >
-          {isPhysical && stock.tone === 'out' ? 'Restock product' : 'Edit product'}
+          {isPhysical && stock.tone === 'out' ? t('Restock product') : t('Edit product')}
         </Link>
         <button
           type="button"
           disabled={publishing}
           onClick={onTogglePublish}
-          className="inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg border border-black/[0.1] px-4 text-[15px] font-medium text-[#111111] transition hover:border-black/[0.25] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722] disabled:opacity-60 dark:border-white/[0.14] dark:text-white dark:hover:border-white/[0.3]"
+          className={OUTLINE_PILL}
         >
           {publishing && <LoadingSpinner size="sm" />}
-          {publishing ? 'Updating…' : product.isPublished ? 'Unpublish' : 'Publish'}
+          {publishing ? t('Updating…') : product.isPublished ? t('Unpublish') : t('Publish')}
         </button>
       </div>
 
-      <dl className={`${DIVIDER} grid grid-cols-3 divide-x divide-black/[0.06] dark:divide-white/[0.08]`}>
+      <dl className={`${DIVIDER} grid grid-cols-3`}>
         {[
-          { label: 'Views', value: product.views ?? 0 },
-          { label: 'Likes', value: product.likes ?? 0 },
-          { label: 'Sales', value: sales },
+          { label: t('Views'), value: product.views ?? 0 },
+          { label: t('Likes'), value: product.likes ?? 0 },
+          { label: t('Sales'), value: sales },
         ].map((item) => (
           <div key={item.label} className="px-4 py-4 text-center">
-            <dt className="text-[13px] text-neutral-500 dark:text-neutral-400">{item.label}</dt>
-            <dd className="mt-0.5 text-lg font-semibold text-[#111111] tabular-nums dark:text-white">
+            <dt className="gn-kicker">{t(item.label)}</dt>
+            <dd className="mt-1 text-[20px] font-extrabold leading-6 text-[color:var(--gn-ink)] tabular-nums">
               {item.value.toLocaleString()}
             </dd>
           </div>

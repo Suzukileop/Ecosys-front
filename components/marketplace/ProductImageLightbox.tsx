@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { MediaImage } from '@/components/ui/MediaImage';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductImageLightboxProps = {
   images: string[];
@@ -22,6 +23,7 @@ export function ProductImageLightbox({
   onClose,
   onIndexChange,
 }: ProductImageLightboxProps) {
+  const t = useT();
   const [mounted, setMounted] = useState(false);
   const safeIndex = images.length > 0 ? ((index % images.length) + images.length) % images.length : 0;
   const current = images[safeIndex] ?? null;
@@ -57,7 +59,7 @@ export function ProductImageLightbox({
     <div className="fixed inset-0 z-[220] flex items-center justify-center p-4 sm:p-8">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('Close')}
         className="absolute inset-0 bg-black/75 backdrop-blur-sm"
         onClick={onClose}
       />
@@ -70,7 +72,7 @@ export function ProductImageLightbox({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close lightbox"
+            aria-label={t('Close lightbox')}
             className="inline-flex h-9 w-9 items-center justify-center rounded-full bg-white/10 text-white transition hover:bg-white/20"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -104,7 +106,7 @@ export function ProductImageLightbox({
             <>
               <button
                 type="button"
-                aria-label="Previous image"
+                aria-label={t('Previous image')}
                 onClick={() => onIndexChange((safeIndex - 1 + images.length) % images.length)}
                 className="absolute left-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
               >
@@ -114,7 +116,7 @@ export function ProductImageLightbox({
               </button>
               <button
                 type="button"
-                aria-label="Next image"
+                aria-label={t('Next image')}
                 onClick={() => onIndexChange((safeIndex + 1) % images.length)}
                 className="absolute right-3 top-1/2 inline-flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white transition hover:bg-black/70"
               >

@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type PortfolioHeroEditorialOverlapWidth = 'medium' | 'large' | 'full';
 export type PortfolioHeroEditorialOverlapAlign = 'left' | 'center' | 'right';
 export type PortfolioHeroSelectedWorksIdentityLayout = 'split' | 'centered';
@@ -10,9 +11,9 @@ export const PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Coins droits, sans arrondi.' },
-  { value: 'medium', label: 'Moyenne', description: 'Coins légèrement arrondis.' },
-  { value: 'full', label: 'Plein', description: 'Cercle / pill complet.' },
+  { value: 'none', label: msg('None'), description: msg('Coins droits, sans arrondi.') },
+  { value: 'medium', label: msg('Moyenne'), description: msg('Coins légèrement arrondis.') },
+  { value: 'full', label: msg('Plein'), description: msg('Cercle / pill complet.') },
 ];
 
 export const PORTFOLIO_HERO_BOWL_INTRO_MOTIF_OPTIONS: {
@@ -22,23 +23,23 @@ export const PORTFOLIO_HERO_BOWL_INTRO_MOTIF_OPTIONS: {
 }[] = [
   {
     value: 'bowl',
-    label: 'Bol',
-    description: 'Demi-cercle large sous le portrait.',
+    label: msg('Bol'),
+    description: msg('Demi-cercle large sous le portrait.'),
   },
   {
     value: 'hug',
-    label: 'Bordure',
-    description: 'Cadre serré collé à l’image, bas arrondi sous le nom.',
+    label: msg('Bordure'),
+    description: msg('Cadre serré collé à l’image, bas arrondi sous le nom.'),
   },
   {
     value: 'orbs-top',
-    label: 'Ronds haut',
-    description: 'Deux cercles décoratifs en haut du portrait.',
+    label: msg('Ronds haut'),
+    description: msg('Deux cercles décoratifs en haut du portrait.'),
   },
   {
     value: 'orbs-bottom',
-    label: 'Double cadre',
-    description: 'Second cadre d’image décalé à gauche et en bas.',
+    label: msg('Double cadre'),
+    description: msg('Second cadre d’image décalé à gauche et en bas.'),
   },
 ];
 
@@ -58,9 +59,9 @@ export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'medium', label: 'Medium', description: 'Largeur intermédiaire.' },
-  { value: 'large', label: 'Large', description: 'Cadre généreux.' },
-  { value: 'full', label: 'Full', description: 'Pleine largeur du hero.' },
+  { value: 'medium', label: msg('Medium'), description: msg('Largeur intermédiaire.') },
+  { value: 'large', label: msg('Large'), description: msg('Cadre généreux.') },
+  { value: 'full', label: msg('Full'), description: msg('Pleine largeur du hero.') },
 ];
 
 export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS: {
@@ -68,9 +69,9 @@ export const PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Left', description: 'Collé à gauche.' },
-  { value: 'center', label: 'Center', description: 'Centré horizontalement.' },
-  { value: 'right', label: 'Right', description: 'Collé à droite.' },
+  { value: 'left', label: msg('Left'), description: msg('Collé à gauche.') },
+  { value: 'center', label: msg('Center'), description: msg('Centré horizontalement.') },
+  { value: 'right', label: msg('Right'), description: msg('Collé à droite.') },
 ];
 
 export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
@@ -80,13 +81,13 @@ export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'split',
-    label: 'Split',
-    description: 'Nom / spécialité à gauche, bio à droite.',
+    label: msg('Split'),
+    description: msg('Nom / spécialité à gauche, bio à droite.'),
   },
   {
     value: 'centered',
-    label: 'Centré',
-    description: 'Nom / spécialité centrés, trait fin, sans bio.',
+    label: msg('Centré'),
+    description: msg('Nom / spécialité centrés, trait fin, sans bio.'),
   },
 ];
 
@@ -123,93 +124,93 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'cinematic-reveal',
-    label: 'Cinematic reveal',
+    label: msg('Cinematic reveal'),
     description:
-      'Scène plein écran premium : halo qui suit le curseur, nom en révélation kinétique lettre par lettre, portrait avec tilt 3D et anneau animé, bandeau défilant en bas.',
+      msg('Scène plein écran premium : halo qui suit le curseur, nom en révélation kinétique lettre par lettre, portrait avec tilt 3D et anneau animé, bandeau défilant en bas.'),
   },
   {
     value: 'swiss-editorial',
-    label: 'Swiss editorial',
+    label: msg('Swiss editorial'),
     description:
-      'Éditorial équilibré : statement à gauche, portrait dans le tiers droit, signature pleine largeur en calque.',
+      msg('Éditorial équilibré : statement à gauche, portrait dans le tiers droit, signature pleine largeur en calque.'),
   },
   {
     value: 'portrait-identity',
-    label: 'Portrait identity',
+    label: msg('Portrait identity'),
     description:
-      'Bio + disponibilité en haut ; portrait à gauche, nom (2 mots) + spécialité + Contact à droite.',
+      msg('Bio + disponibilité en haut ; portrait à gauche, nom (2 mots) + spécialité + Contact à droite.'),
   },
   {
     value: 'editorial-rail',
-    label: 'Editorial rail',
+    label: msg('Editorial rail'),
     description:
-      'Disponibilité + headline (nom/spécialité) + bio à gauche, portrait à droite, rail de 4 outils en bas.',
+      msg('Disponibilité + headline (nom/spécialité) + bio à gauche, portrait à droite, rail de 4 outils en bas.'),
   },
   {
     value: 'statement-cta',
-    label: 'Statement CTA',
+    label: msg('Statement CTA'),
     description:
-      'Salutation + nom/spécialité à gauche, disponibilité à droite, CTAs + bio, trait, tools en bandeau.',
+      msg('Salutation + nom/spécialité à gauche, disponibilité à droite, CTAs + bio, trait, tools en bandeau.'),
   },
   {
     value: 'portrait-balance',
-    label: 'Portrait balance',
+    label: msg('Portrait balance'),
     description:
-      'Spécialité (principal) au-dessus du portrait ; titre centré sur l’image ; bio en bas à gauche.',
+      msg('Spécialité (principal) au-dessus du portrait ; titre centré sur l’image ; bio en bas à gauche.'),
   },
   {
     value: 'left-portrait',
-    label: 'Left portrait',
+    label: msg('Left portrait'),
     description:
-      'Portrait à gauche ; disponibilité + Hello I’m nom + spécialité en haut ; bio + CTAs centrés en bas.',
+      msg('Portrait à gauche ; disponibilité + Hello I’m nom + spécialité en haut ; bio + CTAs centrés en bas.'),
   },
   {
     value: 'circle-portrait',
-    label: 'Circle portrait',
+    label: msg('Circle portrait'),
     description:
-      'Portrait circulaire à gauche, centré verticalement ; infos à droite, centrées verticalement.',
+      msg('Portrait circulaire à gauche, centré verticalement ; infos à droite, centrées verticalement.'),
   },
   {
     value: 'experience-split',
-    label: 'Experience split',
+    label: msg('Experience split'),
     description:
-      'Deux colonnes : titre + CTAs à gauche ; portrait + years/bio à droite (trait Principal).',
+      msg('Deux colonnes : titre + CTAs à gauche ; portrait + years/bio à droite (trait Principal).'),
   },
   {
     value: 'editorial-overlap',
-    label: 'Editorial overlap',
+    label: msg('Editorial overlap'),
     description:
-      'Collage éditorial : grande photo paysage + panneau texte qui chevauche le bas-gauche (coin scoopé).',
+      msg('Collage éditorial : grande photo paysage + panneau texte qui chevauche le bas-gauche (coin scoopé).'),
   },
   {
     value: 'selected-works',
-    label: 'Selected works',
+    label: msg('Selected works'),
     description:
-      'Nom / spécialité + bio à gauche ; miniatures Selected work + See all en bas.',
+      msg('Nom / spécialité + bio à gauche ; miniatures Selected work + See all en bas.'),
   },
   {
     value: 'identity-index',
-    label: 'Identity index',
+    label: msg('Identity index'),
     description:
-      'Nom centré ; rail Specialty / Availability / Years au milieu ; bio en bas.',
+      msg('Nom centré ; rail Specialty / Availability / Years au milieu ; bio en bas.'),
   },
   {
     value: 'studio-split',
-    label: 'Studio split',
+    label: msg('Studio split'),
     description:
-      'Eyebrow + Hi I’m nom / spécialité à gauche ; bio, CTAs et disponibilité à droite ; cadre média arrondi en bas.',
+      msg('Eyebrow + Hi I’m nom / spécialité à gauche ; bio, CTAs et disponibilité à droite ; cadre média arrondi en bas.'),
   },
   {
     value: 'work-duo',
-    label: 'Work duo',
+    label: msg('Work duo'),
     description:
-      'Disponibilité + Hi I’m nom — spécialité + bio + CTAs + years à gauche ; See all + 2 Selected works à droite.',
+      msg('Disponibilité + Hi I’m nom — spécialité + bio + CTAs + years à gauche ; See all + 2 Selected works à droite.'),
   },
   {
     value: 'bowl-intro',
-    label: 'Bowl intro',
+    label: msg('Bowl intro'),
     description:
-      'Badge dispo + portrait + nom à gauche ; spécialité rouge + bio + View my work / Contact me à droite.',
+      msg('Badge dispo + portrait + nom à gauche ; spécialité rouge + bio + View my work / Contact me à droite.'),
   },
 ];
 

@@ -14,6 +14,7 @@ import {
   portfolioHeroContentShellClass,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Portrait balance — Brutalist Asymmetric Edition
@@ -31,6 +32,7 @@ import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/port
  * - data-gsap-blur="portrait" on image for progressive blur transition
  */
 export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
@@ -72,7 +74,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     const cleaned = data.description?.replace(/\s+/g, ' ').trim();
     return (
       cleaned ||
-      'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.'
+      t('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.')
     );
   }, [data.description]);
 
@@ -85,7 +87,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
   );
 
   const toolsLabel =
-    data.presentation.toolsLabelText?.trim() || 'Core stack';
+    data.presentation.toolsLabelText?.trim() || t('Core stack');
 
   const chipSurface = `color-mix(in srgb, ${neutre} 88%, ${bordure})`;
   const chipBorder = `color-mix(in srgb, ${bordure} 85%, transparent)`;
@@ -295,7 +297,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       {avatarUrl ? (
         <Image
           src={avatarUrl}
-          alt={`Portrait of ${displayName}`}
+          alt={t('Portrait of {displayName}', { displayName })}
           fill
           sizes={sizes}
           className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
@@ -433,7 +435,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
         }}
         data-gsap-reveal="headline"
       >
-        Hi, I&apos;m {displayName}.
+        {t('Hi, I\'m {displayName}.', { displayName })}
       </h1>
     </div>
   );

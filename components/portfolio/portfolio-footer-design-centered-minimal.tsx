@@ -15,6 +15,7 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 interface FooterDesignCenteredMinimalProps {
   creatorName: string;
@@ -70,6 +71,7 @@ export function FooterDesignCenteredMinimal({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignCenteredMinimalProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const ink = isLight ? '#000000' : '#ffffff';
   const identityBorder = isLight ? 'rgba(0,0,0,0.14)' : 'rgba(255,255,255,0.16)';
@@ -133,7 +135,7 @@ export function FooterDesignCenteredMinimal({
           }
           const rawLabel = link.label?.trim() ?? '';
           const label =
-            link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? 'Website' : rawLabel || hostname || url;
+            link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? t('Website') : rawLabel || hostname || url;
           return { ...link, label };
         })
       : [];
@@ -175,14 +177,14 @@ export function FooterDesignCenteredMinimal({
           {navLinks.length > 0 ? (
             <nav
               className="flex max-w-3xl flex-wrap items-center justify-center gap-x-8 gap-y-5 sm:gap-x-10"
-              aria-label="Portfolio sections"
+              aria-label={t('Portfolio sections')}
             >
               {navLinks.map((item) => {
                 return (
                   <Link
                     key={item.id}
                     href={item.url}
-                    aria-label={`Go to ${item.label}`}
+                    aria-label={t('Go to {label}', { label: item.label })}
                     data-pf-no-color-transition=""
                     className="inline-block font-semibold uppercase transition-opacity duration-300 hover:opacity-70"
                     style={{
@@ -201,7 +203,7 @@ export function FooterDesignCenteredMinimal({
           {visibleLinks.length > 0 || contactItems.length > 0 ? (
             <nav
               className="flex flex-wrap items-center justify-center gap-x-8 gap-y-6 sm:gap-x-9"
-              aria-label="Social and contact links"
+              aria-label={t('Social and contact links')}
             >
               {visibleLinks.map((link) => (
                 <a

@@ -1,5 +1,6 @@
 'use client';
 
+import { tr } from '@/lib/i18n/active';
 import Link from 'next/link';
 import {
   creatorAppRoleRingClass,
@@ -22,11 +23,11 @@ function userInitials(name: string) {
 function buildMoodSubtitle(moodLabel?: string | null, taggedUsers?: TaggedUserRef[]) {
   const parts: string[] = [];
   if (moodLabel?.trim()) {
-    parts.push(`Feeling ${moodLabel.trim()}`);
+    parts.push(tr('Feeling {mood}', { mood: tr(moodLabel.trim()) }));
   }
   const tagged = taggedUsers?.map((u) => u.fullName).filter(Boolean) ?? [];
   if (tagged.length > 0) {
-    parts.push(`w/ ${tagged.join(', ')}`);
+    parts.push(tr('with {names}', { names: tagged.join(', ') }));
   }
   return parts.join(' · ').toUpperCase();
 }
@@ -61,7 +62,7 @@ export function ContentPostStudioHeader({
     specialite?.trim() ||
     specialties?.map((s) => s.trim()).find(Boolean) ||
     null;
-  const subtitle = moodSubtitle || (specialtyLine ? specialtyLine.toUpperCase() : null);
+  const subtitle = moodSubtitle || (specialtyLine ? tr(specialtyLine).toUpperCase() : null);
   const role = appRole != null ? normalizeCreatorAppRole(appRole) : null;
   const ringClass = creatorAppRoleRingClass(role);
 

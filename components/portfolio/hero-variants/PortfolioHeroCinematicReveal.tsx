@@ -18,6 +18,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -69,6 +70,7 @@ function resolveMonumentalWord(fullName: string, fallback: string): string {
 }
 
 export function PortfolioHeroCinematicReveal({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
@@ -102,7 +104,7 @@ export function PortfolioHeroCinematicReveal({ data }: { data: PortfolioHeroData
 
   const bio =
     data.description?.trim() ||
-    'I turn complex ideas into thoughtful, high-performing products through strategy, design, and development — work that feels inevitable once it ships.';
+    t('I turn complex ideas into thoughtful, high-performing products through strategy, design, and development — work that feels inevitable once it ships.');
 
   const tickerTools = useMemo(
     () => resolveHeroBannerTools(data.tools, data.presentation.heroEditorialRailSelectedTools, 8),
@@ -376,7 +378,7 @@ export function PortfolioHeroCinematicReveal({ data }: { data: PortfolioHeroData
       {avatarUrl ? (
         <Image
           src={avatarUrl}
-          alt={`Portrait of ${displayName}`}
+          alt={t('Portrait of {displayName}', { displayName })}
           fill
           sizes="(max-width: 768px) 60vw, 28vw"
           className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}

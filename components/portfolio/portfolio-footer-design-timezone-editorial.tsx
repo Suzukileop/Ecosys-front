@@ -10,6 +10,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -185,6 +186,7 @@ export function FooterDesignTimezoneEditorial({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignTimezoneEditorialProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
   const watermarkAnchorRef = useRef<HTMLDivElement>(null);
   const watermarkContainerRef = useRef<HTMLDivElement>(null);
@@ -341,7 +343,7 @@ export function FooterDesignTimezoneEditorial({
                     // (see FooterDesignMonumental / FooterDesignHeroColumns).
                     <img
                       src={avatarUrl!}
-                      alt={creatorName ? `Portrait of ${creatorName}` : 'Portrait'}
+                      alt={creatorName ? t('Portrait of {creatorName}', { creatorName }) : t('Portrait')}
                       className="h-full w-full object-cover object-center"
                     />
                   ) : (

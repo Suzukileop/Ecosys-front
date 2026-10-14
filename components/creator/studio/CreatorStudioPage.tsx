@@ -1,11 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import api from '@/lib/api';
 import { getCreatorFollowStats, listCreatorProducts } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { listMyContent } from '@/lib/creator-content-api';
+import { computeProfileCompleteness } from '@/lib/profile-completeness';
 import { formatLocationLabel } from '@/lib/geolocation';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
@@ -34,9 +36,12 @@ import {
   creatorCanAccessProfileServices,
   normalizeCreatorAppRole,
 } from '@/lib/creator-app-role';
+import { NewsPublishButton } from '@/components/home/NewsDiscoverRail';
 import { SIGNED_IN_HOME } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function CreatorStudioPageInner() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading, hasRole, updateUser } = useAuth();
@@ -49,6 +54,13 @@ function CreatorStudioPageInner() {
   const [uploadingAvatar, setUploadingAvatar] = useState(false);
   const [imageError, setImageError] = useState<string | null>(null);
   const [publishOpen, setPublishOpen] = useState(false);
+  /* Bumped after an "Edit intro" save: remounts the Profile tab so it re-reads the profile instead of
+     keeping its pre-edit copy (a later full-form save there would otherwise send the old bio back). */
+  const [profileTabRevision, setProfileTabRevision] = useState(0);
+  /* Inputs of the "Profile strength" meter: the full profile DTO the header is built from, plus the
+     active post count (null when that lookup failed — the meter then leaves posts out). */
+  const [profileDto, setProfileDto] = useState<CreatorProfileDto | null>(null);
+  const [postCount, setPostCount] = useState<number | null>(null);
   // Create flow lives in My Product — redirect legacy ?create=1 from profile.
   useEffect(() => {
     if (searchParams.get('tab') !== 'products' || searchParams.get('create') !== '1') return;
@@ -79,13 +91,17 @@ function CreatorStudioPageInner() {
       if (!options?.silent) {
         setHeaderLoading(true);
       }
-      const [profileRes, followStatsRes, productsRes] = await Promise.all([
+      const [profileRes, followStatsRes, productsRes, postsRes] = await Promise.all([
         api.get<CreatorProfileDto>('/api/creator/profile'),
         getCreatorFollowStats(user.id).catch(() => ({ followerCount: 0, isFollowing: false })),
         listCreatorProducts(0, 1).catch(() => ({ content: [], totalElements: 0 })),
+        // One-item page: only totalElements is used (the strength meter's "first post" step).
+        listMyContent('active', 0, 1).catch(() => null),
       ]);
 
       const profile = profileRes.data;
+      setProfileDto(profile);
+      setPostCount(postsRes ? postsRes.totalElements : null);
       const nextAvatar = profile.avatarUrl ?? user.avatarUrl ?? null;
 
       setHeader({
@@ -120,6 +136,7 @@ function CreatorStudioPageInner() {
         updateUser({ avatarUrl: nextAvatar });
       }
     } catch {
+      setProfileDto(null);
       setHeader({
         fullName: user.fullName,
         email: user.email,
@@ -158,6 +175,19 @@ function CreatorStudioPageInner() {
     }
   }, [isLoading, user, hasRole, router]);
 
+  const profileCompleteness = useMemo(
+    () =>
+      profileDto && header
+        ? computeProfileCompleteness({
+            profile: profileDto,
+            avatarUrl: header.avatarUrl,
+            productCount: header.productCount,
+            postCount,
+          })
+        : null,
+    [profileDto, header, postCount]
+  );
+
   const setTab = (next: CreatorStudioTab) => {
     if (next === tab) return;
     startTabTransition(next);
@@ -172,7 +202,7 @@ function CreatorStudioPageInner() {
       updateUser({ avatarUrl: updated.avatarUrl, fullName: updated.fullName });
       await loadHeader();
     } catch (e) {
-      setImageError(getApiErrorMessage(e, 'Unable to upload profile photo.'));
+      setImageError(getApiErrorMessage(e, t('Unable to upload profile photo.')));
     } finally {
       setUploadingAvatar(false);
     }
@@ -188,6 +218,15 @@ function CreatorStudioPageInner() {
     return <CreatorStudioHubSkeleton tab={tab} />;
   }
 
+  /* The tab on screen (the pending one while a switch loads) decides the page's primary action:
+     "Publish a post" (rail) and "Publish" (phone row) belong to the Content tab only — on Services,
+     Visitors, Profile… publishing a post is not what the page is for. */
+  const shownTab = isTabTransitioning ? previewTab : tab;
+  const openComposer = () => {
+    if (tab !== 'content') setTab('content');
+    setPublishOpen(true);
+  };
+
   return (
     <>
       {imageError && (
@@ -196,11 +235,20 @@ function CreatorStudioPageInner() {
         </div>
       )}
       <CreatorStudioShell
-        tab={isTabTransitioning ? previewTab : tab}
+        tab={shownTab}
         onTabChange={setTab}
         header={header}
         uploadingAvatar={uploadingAvatar}
         onAvatarSelect={onAvatarSelect}
+        publicProfileHref={`/providers/${user.id}`}
+        onIntroSaved={async () => {
+          await loadHeader({ silent: true });
+          setProfileTabRevision((n) => n + 1);
+        }}
+        onPublish={shownTab === 'content' ? openComposer : undefined}
+        railFooter={shownTab === 'content' ? <NewsPublishButton canPublish onCompose={openComposer} /> : undefined}
+        profileCompleteness={profileCompleteness}
+        onStartPost={openComposer}
       >
       {isTabTransitioning ? (
         <CreatorStudioTabPanelSkeleton tab={previewTab} />
@@ -212,7 +260,15 @@ function CreatorStudioPageInner() {
               specialties={header.specialties}
               appRole={header.appRole}
               publishOpen={publishOpen}
-              onPublishOpenChange={setPublishOpen}
+              onPublishOpenChange={(open) => {
+                setPublishOpen(open);
+                // The composer closed: if the meter still asks for a first post, re-count (1-item page).
+                if (!open && postCount === 0) {
+                  void listMyContent('active', 0, 1)
+                    .then((page) => setPostCount(page.totalElements))
+                    .catch(() => {});
+                }
+              }}
             />
           )}
           {tab === 'services' && (
@@ -226,6 +282,7 @@ function CreatorStudioPageInner() {
           {tab === 'subscribers' && <CreatorStudioSubscribersTab />}
           {tab === 'profile' && (
             <CreatorStudioProfileTab
+              key={profileTabRevision}
               variant="portfolio"
               portfolioNavSide="left"
               allowedSections={STORE_INFORMATION_SECTION_IDS}

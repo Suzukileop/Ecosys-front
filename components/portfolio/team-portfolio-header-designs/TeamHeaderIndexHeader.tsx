@@ -8,7 +8,9 @@ import {
   type PortfolioTeamHeaderTitleSize,
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_LABEL_TEXT = 'Index';
 const DEFAULT_TITLE_TEXT = 'Meet the team';
@@ -77,15 +79,17 @@ export function TeamHeaderIndexHeader({
   trailing?: ReactNode;
   itemCount?: number;
 }) {
+  const t = useT();
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'index');
   const title = (presentation.headerIndexTitleText || DEFAULT_TITLE_TEXT).trim();
   const subtitle = (presentation.headerIndexSubtitleText || DEFAULT_SUBTITLE_TEXT).trim();
   const label = (presentation.headerIndexLabelText || DEFAULT_LABEL_TEXT).trim();
   const count = Math.max(0, itemCount ?? 0);
   const countLabelCustom = presentation.headerIndexCountLabelText?.trim();
-  const countLabel = countLabelCustom || (count === 1 ? 'Member' : 'Members');
+  const countLabel = countLabelCustom || (count === 1 ? t('Member') : t('Members'));
 
   const labelTone = teamHeaderPaletteTokenColor(presentation.headerIndexLabelColor ?? 'texteFort');
   const numberTone = teamHeaderPaletteTokenColor(presentation.headerIndexNumberColor ?? 'principal');
@@ -190,12 +194,14 @@ export function TeamHeaderIndexHeader({
       style={{ marginBottom: `${TEAM_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
       <div className="mb-6 flex items-center gap-4 sm:mb-8">
-        <span
-          className="shrink-0 uppercase leading-none tracking-[0.28em]"
-          style={{ color: labelMuted, fontSize: labelFontSize, fontWeight: labelFontWeight, ...leftStyle(0) }}
-        >
-          {label}
-        </span>
+        {show('label') ? (
+          <span
+            className="shrink-0 uppercase leading-none tracking-[0.28em]"
+            style={{ color: labelMuted, fontSize: labelFontSize, fontWeight: labelFontWeight, ...leftStyle(0) }}
+          >
+            {label}
+          </span>
+        ) : null}
         <span
           className="h-px flex-1 origin-left"
           style={{ backgroundColor: ruleTone, ...scaleStyle('X', 40) }}
@@ -204,31 +210,41 @@ export function TeamHeaderIndexHeader({
       </div>
 
       <div className="flex items-stretch gap-6 sm:gap-10">
-        <div className="flex shrink-0 flex-col items-start">
-          <span
-            className="text-6xl font-light leading-none tracking-[-0.03em] sm:text-7xl lg:text-8xl"
-            style={{ color: numberTone }}
-          >
-            {String(displayCount).padStart(2, '0')}
-          </span>
-          <span
-            className="mt-2 text-[0.68rem] font-medium uppercase tracking-[0.16em]"
-            style={{ color: labelMuted, ...leftStyle(150) }}
-          >
-            {countLabel}
-          </span>
-        </div>
+        {(show('number') || show('countLabel')) ? (
+          <div className="flex shrink-0 flex-col items-start">
+            {show('number') ? (
+              <span
+                className="text-6xl font-light leading-none tracking-[-0.03em] sm:text-7xl lg:text-8xl"
+                style={{ color: numberTone }}
+              >
+                {String(displayCount).padStart(2, '0')}
+              </span>
+            ) : null}
+            {show('countLabel') ? (
+              <span
+                className="mt-2 text-[0.68rem] font-medium uppercase tracking-[0.16em]"
+                style={{ color: labelMuted, ...leftStyle(150) }}
+              >
+                {countLabel}
+              </span>
+            ) : null}
+          </div>
+        ) : null}
 
-        <span className="w-px origin-top self-stretch" style={{ backgroundColor: ruleToneSoft, ...scaleStyle('Y', 100) }} aria-hidden />
+        {(show('number') || show('countLabel')) && (show('title') || show('subtitle')) ? (
+          <span className="w-px origin-top self-stretch" style={{ backgroundColor: ruleToneSoft, ...scaleStyle('Y', 100) }} aria-hidden />
+        ) : null}
 
         <div className="min-w-0 flex-1 pt-1">
-          <h2
-            className="mb-0 leading-[1.05]"
-            style={{ color: titleTone, fontSize: titleFontSize, fontWeight: titleFontWeight, ...revealStyle(0) }}
-          >
-            {title}
-          </h2>
-          {subtitle ? (
+          {show('title') ? (
+            <h2
+              className="mb-0 leading-[1.05]"
+              style={{ color: titleTone, fontSize: titleFontSize, fontWeight: titleFontWeight, ...revealStyle(0) }}
+            >
+              {title}
+            </h2>
+          ) : null}
+          {show('subtitle') && subtitle ? (
             <p
               className="mb-0 mt-3 max-w-md leading-relaxed"
               style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight, ...revealStyle(120) }}

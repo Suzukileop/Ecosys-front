@@ -4,12 +4,13 @@ import { CONTAINER, Eyebrow } from '@/components/landing/home/shared';
 import { Wordmark } from '@/components/landing/home/SiteNav';
 import { SiteFooter } from '@/components/landing/home/SiteFooter';
 import { LEGAL, formatLegalDate } from '@/lib/legal';
+import { msg } from '@/lib/i18n/config';
 
 export type LegalSection = { id: string; title: string; content: ReactNode };
 
 const DOCUMENTS = [
-  { href: '/terms', label: 'Terms of service', short: 'Terms' },
-  { href: '/privacy', label: 'Privacy policy', short: 'Privacy' },
+  { href: '/terms', label: msg('Terms of service'), short: 'Terms' },
+  { href: '/privacy', label: msg('Privacy policy'), short: 'Privacy' },
 ] as const;
 
 const PROSE =

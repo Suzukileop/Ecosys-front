@@ -27,6 +27,7 @@ import {
   profileSectionEmptyClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export const MAX_TEAM = 8;
 const MAX_SOCIAL_LINKS = 6;
@@ -67,6 +68,7 @@ function TeamMemberCard({
   move: (from: number, to: number) => void;
   remove: (index: number) => void;
 }) {
+  const t = useT();
   const imageUrl = watch(`teamMembers.${index}.imageUrl`) ?? '';
   const { errors } = useFormState({ control, name: `teamMembers.${index}` as const });
   const memberErrors = errors.teamMembers?.[index];
@@ -91,7 +93,7 @@ function TeamMemberCard({
     <div className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800">
       <div className="flex items-center justify-between gap-2">
         <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-          Member {index + 1}
+          {t('Member')} {index + 1}
         </p>
         <div className="flex items-center gap-1">
           <button
@@ -99,7 +101,7 @@ function TeamMemberCard({
             disabled={index === 0}
             onClick={() => move(index, index - 1)}
             className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-            aria-label="Move up"
+            aria-label={t('Move up')}
           >
             ↑
           </button>
@@ -108,7 +110,7 @@ function TeamMemberCard({
             disabled={index === total - 1}
             onClick={() => move(index, index + 1)}
             className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-            aria-label="Move down"
+            aria-label={t('Move down')}
           >
             ↓
           </button>
@@ -117,7 +119,7 @@ function TeamMemberCard({
             onClick={() => remove(index)}
             className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
           >
-            Remove
+            {t('Remove')}
           </button>
         </div>
       </div>
@@ -125,7 +127,7 @@ function TeamMemberCard({
       <div className="grid gap-4 sm:grid-cols-2">
         <div>
           <label htmlFor={`team-name-${fieldId}`} className={profileFormLabelClass}>
-            Name
+            {t('Name')}
           </label>
           <input
             id={`team-name-${fieldId}`}
@@ -136,12 +138,12 @@ function TeamMemberCard({
         </div>
         <div>
           <label htmlFor={`team-role-${fieldId}`} className={profileFormLabelClass}>
-            Responsibility
+            {t('Responsibility')}
           </label>
           <input
             id={`team-role-${fieldId}`}
             type="text"
-            placeholder="e.g. Art director"
+            placeholder={t('e.g. Art director')}
             className={profileFormInputClass}
             {...register(`teamMembers.${index}.responsibility`)}
           />
@@ -149,7 +151,7 @@ function TeamMemberCard({
       </div>
 
       <div>
-        <p className={profileFormLabelClass}>Photo</p>
+        <p className={profileFormLabelClass}>{t('Photo')}</p>
         {imageUrl ? (
           <div className="mt-2 space-y-2">
             <ContentMediaPreview locale="fr" mediaUrl={imageUrl} mediaType="FILE" large fluid />
@@ -158,7 +160,7 @@ function TeamMemberCard({
               onClick={() => setValue(`teamMembers.${index}.imageUrl`, '', { shouldDirty: true })}
               className="text-[15px] font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
             >
-              Remove photo
+              {t('Remove photo')}
             </button>
           </div>
         ) : null}
@@ -177,17 +179,17 @@ function TeamMemberCard({
             className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-5 py-2.5 text-[15px] font-semibold text-neutral-800 hover:bg-white dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-900"
           >
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            {imageUrl ? 'Replace photo' : 'Add photo'}
+            {imageUrl ? t('Replace photo') : t('Add photo')}
           </button>
           {uploadError ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>
       </div>
 
       <div>
-        <label className={`${profileFormLabelClass} mb-2 block`}>Social / contact</label>
+        <label className={`${profileFormLabelClass} mb-2 block`}>{t('Social / contact')}</label>
         {socialFields.length === 0 ? (
           <p className="mb-3 rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-            No links added yet — LinkedIn, email, website…
+            {t('No links added yet — LinkedIn, email, website…')}
           </p>
         ) : (
           <div className="mb-3 space-y-3">
@@ -201,7 +203,7 @@ function TeamMemberCard({
                     htmlFor={`team-url-${socialField.id}`}
                     className="mb-1.5 block text-sm font-medium text-neutral-500 dark:text-neutral-400"
                   >
-                    URL / email
+                    {t('URL / email')}
                   </label>
                   <input
                     id={`team-url-${socialField.id}`}
@@ -234,7 +236,7 @@ function TeamMemberCard({
                     disabled={socialIndex === 0}
                     onClick={() => moveSocial(socialIndex, socialIndex - 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move link up"
+                    aria-label={t('Move link up')}
                   >
                     ↑
                   </button>
@@ -243,7 +245,7 @@ function TeamMemberCard({
                     disabled={socialIndex === socialFields.length - 1}
                     onClick={() => moveSocial(socialIndex, socialIndex + 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move link down"
+                    aria-label={t('Move link down')}
                   >
                     ↓
                   </button>
@@ -251,10 +253,10 @@ function TeamMemberCard({
                     type="button"
                     onClick={() => removeSocial(socialIndex)}
                     className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-red-50 hover:text-red-600 dark:hover:bg-red-500/10 dark:hover:text-red-400"
-                    aria-label="Remove link"
-                    title="Remove"
+                    aria-label={t('Remove link')}
+                    title={t('Remove')}
                   >
-                    ×
+                    {t('×')}
                   </button>
                 </div>
               </div>
@@ -273,7 +275,7 @@ function TeamMemberCard({
           >
             +
           </span>
-          Add link
+          {t('Add link')}
         </button>
       </div>
     </div>
@@ -292,10 +294,11 @@ export function ProfileTeamField({
   readOnly = false,
   values = [],
 }: ProfileTeamFieldProps) {
+  const t = useT();
   if (readOnly) {
     const filled = values.filter((item) => item.name.trim() && item.responsibility.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>No team members added.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No team members added.')}</p>;
     }
     return (
       <div className="space-y-3">
@@ -341,7 +344,7 @@ export function ProfileTeamField({
       <ProfileSectionItemCount count={fields.length} limit={MAX_TEAM} unit="team members" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No team members added.</p>
+        <p className={profileSectionEmptyClass}>{t('No team members added.')}</p>
       ) : (
         fields.map((field, index) => (
           <TeamMemberCard
@@ -365,7 +368,7 @@ export function ProfileTeamField({
           onClick={() => append(createEmptyTeamMember(fields.length))}
           className="rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
-          Add member
+          {t('Add member')}
         </button>
       ) : null}
     </div>

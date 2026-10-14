@@ -12,6 +12,7 @@ import {
   mergeProjectsPressSettings,
   workCardRadiusClass,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function workToolLabels(item: MarketplaceContentItem, max = 12): string[] {
   return Array.from(new Set((item.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean))).slice(
@@ -42,6 +43,7 @@ function PressProjectRow({
   presentation: PortfolioWorkPresentationSettings;
   settings: PortfolioWorkProjectsPressSettings;
 }) {
+  const t = useT();
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const labelColor = presentation.elementStyles?.categoryOnCard?.color || titleColor;
@@ -49,7 +51,7 @@ function PressProjectRow({
   const accent = presentation.ctaColor || presentation.categoryActiveColor || titleColor;
 
   const mediaUrl = item.mediaUrl?.trim() || null;
-  const title = item.title?.trim() || 'Untitled';
+  const title = item.title?.trim() || t('Untitled');
   const role = workRoleLabel(item);
   const category = item.category?.trim() || '';
   const description = item.description?.trim() || '';
@@ -78,7 +80,7 @@ function PressProjectRow({
           className="flex h-full w-full items-center justify-center px-6 text-center text-sm leading-relaxed"
           style={{ color: muted }}
         >
-          Add a thumbnail in Information → Portfolio
+          {t('Add a thumbnail in Information → Portfolio')}
         </div>
       )}
     </div>

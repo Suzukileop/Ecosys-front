@@ -6,6 +6,7 @@ import {
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioGalleryPresentationSettings } from '@/components/portfolio/portfolio-gallery-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type GalleryColorSlot =
   | 'sectionBackground'

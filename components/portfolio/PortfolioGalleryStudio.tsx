@@ -19,6 +19,7 @@ import {
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type MediaType = 'IMAGE' | 'VIDEO' | null;
 type GalleryItem = { id?: string; title: string; mediaUrl: string; mediaType: MediaType };
@@ -113,6 +114,7 @@ const GalleryTile = memo(function GalleryTile({
   onMove: (key: string, direction: -1 | 1) => void;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const { inputRef, uploading, uploadError, pickFile, onFileChange, uploadFile } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: (url) => onChange(row.key, mediaFromUrl(url)),
@@ -126,7 +128,7 @@ const GalleryTile = memo(function GalleryTile({
       <div
         {...handlers}
         className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl border bg-black/[0.03] transition-colors dark:bg-white/[0.04] ${
-          dragging ? 'border-[#FF5722]' : 'border-black/[0.04] dark:border-white/[0.04]'
+          dragging ? 'border-[#0F1419] dark:border-[#E7E9EA]' : 'border-black/[0.04] dark:border-white/[0.04]'
         }`}
       >
         <ContentMediaPreview locale="en" mediaUrl={row.mediaUrl} mediaType="FILE" large fluid fit="cover" />
@@ -148,18 +150,18 @@ const GalleryTile = memo(function GalleryTile({
 
         <div className="absolute inset-x-3 top-3 flex justify-between opacity-100 transition-opacity duration-200 sm:opacity-0 sm:group-hover/item:opacity-100 sm:group-focus-within/item:opacity-100">
           <div className="flex gap-1.5">
-            <MediaChip label="Move earlier" disabled={index === 0} onClick={() => onMove(row.key, -1)}>
+            <MediaChip label={t('Move earlier')} disabled={index === 0} onClick={() => onMove(row.key, -1)}>
               <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
             </MediaChip>
-            <MediaChip label="Move later" disabled={index >= total - 1} onClick={() => onMove(row.key, 1)}>
+            <MediaChip label={t('Move later')} disabled={index >= total - 1} onClick={() => onMove(row.key, 1)}>
               <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
             </MediaChip>
           </div>
           <div className="flex gap-1.5">
-            <MediaChip label="Replace media" disabled={uploading} onClick={pickFile}>
+            <MediaChip label={t('Replace media')} disabled={uploading} onClick={pickFile}>
               <FontAwesomeIcon icon={faArrowsRotate} className="h-3 w-3" />
             </MediaChip>
-            <MediaChip label="Remove media" danger disabled={uploading} onClick={() => onRemove(row.key)}>
+            <MediaChip label={t('Remove media')} danger disabled={uploading} onClick={() => onRemove(row.key)}>
               <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
             </MediaChip>
           </div>
@@ -168,7 +170,7 @@ const GalleryTile = memo(function GalleryTile({
         {uploading || dragging ? (
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-sm font-medium text-white">
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            {uploading ? 'Uploading…' : 'Drop to replace'}
+            {uploading ? t('Uploading…') : t('Drop to replace')}
           </div>
         ) : null}
       </div>
@@ -179,7 +181,7 @@ const GalleryTile = memo(function GalleryTile({
             type="text"
             value={row.title}
             maxLength={MAX_CAPTION}
-            placeholder="Add a caption"
+            placeholder={t('Add a caption')}
             aria-label={`Caption for item ${index + 1}`}
             autoComplete="off"
             onChange={(event) => onChange(row.key, { title: event.currentTarget.value })}
@@ -203,6 +205,7 @@ function AddTile({
   pickFile: () => void;
   uploadFile: (file: File) => Promise<void>;
 }) {
+  const t = useT();
   const { dragging, handlers } = useDropUpload(uploading, uploadFile);
 
   return (
@@ -214,14 +217,14 @@ function AddTile({
         {...handlers}
         className={`flex aspect-[4/3] w-full flex-col items-center justify-center gap-2 rounded-xl border border-dashed px-6 text-center transition-colors duration-200 disabled:cursor-wait ${
           dragging
-            ? 'border-[#FF5722] bg-[#FF5722]/[0.06]'
+            ? 'border-[#0F1419] bg-[#0F1419]/[0.04] dark:border-[#E7E9EA] dark:bg-white/[0.06]'
             : 'border-neutral-300 hover:border-neutral-500 hover:bg-black/[0.02] dark:border-white/15 dark:hover:border-white/35 dark:hover:bg-white/[0.02]'
         }`}
       >
         {uploading ? (
           <>
             <LoadingSpinner size="sm" />
-            <span className={STUDIO_SECONDARY_CLASS}>Uploading…</span>
+            <span className={STUDIO_SECONDARY_CLASS}>{t('Uploading…')}</span>
           </>
         ) : (
           <>
@@ -236,13 +239,13 @@ function AddTile({
               <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
             </svg>
             <span className="text-[15px] text-black dark:text-neutral-100">
-              {dragging ? 'Drop to upload' : (
+              {dragging ? t('Drop to upload') : (
                 <>
-                  Drop a file, or <span className="underline underline-offset-4">browse</span>
+                  {t('Drop a file, or')} <span className="underline underline-offset-4">{t('browse')}</span>
                 </>
               )}
             </span>
-            <span className={`text-[12px] ${STUDIO_SECONDARY_CLASS}`}>JPG, PNG, WEBP, MP4, MOV or WEBM</span>
+            <span className={`text-[12px] ${STUDIO_SECONDARY_CLASS}`}>{t('JPG, PNG, WEBP, MP4, MOV or WEBM')}</span>
           </>
         )}
       </button>
@@ -252,6 +255,7 @@ function AddTile({
 }
 
 function GalleryGrid({ getDraft, change }: { getDraft: () => GalleryDraft; change: StudioChangeHandler<GalleryDraft> }) {
+  const t = useT();
   const [rows, setRows] = useState(() => getDraft().items);
 
   const commitRows = useCallback(
@@ -296,14 +300,14 @@ function GalleryGrid({ getDraft, change }: { getDraft: () => GalleryDraft; chang
   const canAdd = rows.length < MAX_GALLERY;
 
   return (
-    <section className="pb-10 pt-3" aria-label="Gallery">
-      <StudioSectionHeader label={`Media · ${String(rows.length).padStart(2, '0')}`}>
+    <section className="pb-10 pt-3" aria-label={t('Gallery')}>
+      <StudioSectionHeader label={t('Media · {padStart}', { padStart: String(rows.length).padStart(2, '0') })}>
         <span className={STUDIO_SECONDARY_CLASS}>
-          {rows.length} of {MAX_GALLERY}
+          {t('{rowsLength} of {MAXGALLERY}', { rowsLength: rows.length, MAXGALLERY: MAX_GALLERY })}
         </span>
         <StudioIconAction
           icon="add"
-          label="Add media"
+          label={t('Add media')}
           onClick={pickFile}
           disabled={!canAdd || uploading}
         />

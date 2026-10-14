@@ -56,6 +56,7 @@ import {
   toolsDesignSupportsCategoryFilter,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The section renders one Tools design, so each design is its own chunk. */
 const EditorialToolsWorkflow = dynamic(() =>
@@ -224,6 +225,7 @@ function ToolsLevelCategoryFilterBar({
   onCategoryChange: (category: string) => void;
   presentation: PortfolioToolsPresentationSettings;
 }) {
+  const t = useT();
   const filterAccent =
     presentation.levelAccentColor?.trim() || presentation.labelColor?.trim() || '#ea580c';
   const filterInactiveText = presentation.descriptionColor?.trim() || '#737373';
@@ -233,7 +235,7 @@ function ToolsLevelCategoryFilterBar({
     <div
       className="pf-tools-filter mb-6 flex flex-wrap items-baseline gap-x-5 gap-y-2 sm:mb-7"
       role="tablist"
-      aria-label="Filter by category"
+      aria-label={t('Filter by category')}
       style={
         {
           '--pf-tools-filter-ink': filterAccent,
@@ -250,7 +252,7 @@ function ToolsLevelCategoryFilterBar({
         onClick={() => onCategoryChange('all')}
         className="pf-tools-filter-chip"
       >
-        All
+        {t('All')}
       </button>
       {categories.map((category) => {
         const selected = activeCategory.toLocaleLowerCase() === category.toLocaleLowerCase();

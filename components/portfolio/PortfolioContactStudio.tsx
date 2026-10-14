@@ -27,6 +27,8 @@ import {
   useInlineStudio,
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type ContactEntry = { id: string; value: string };
 type ContactRow = ContactEntry & { key: string; locked?: boolean };
@@ -46,24 +48,24 @@ const GROUPS: Array<{ kind: PortfolioContactKind; listKey: ContactListKey }> = [
 
 const KIND_COPY = {
   email: {
-    title: 'Email',
+    title: msg('Email'),
     noun: 'email',
     icon: faEnvelope,
-    placeholder: 'contact@yourbrand.com',
+    placeholder: msg('contact@yourbrand.com'),
     empty: 'No email yet — add where clients can write to you.',
   },
   phone: {
-    title: 'Phone',
+    title: msg('Phone'),
     noun: 'phone',
     icon: faPhone,
     placeholder: '6 12 34 56 78',
     empty: 'No phone yet — add a number clients can call.',
   },
   address: {
-    title: 'Address',
+    title: msg('Address'),
     noun: 'address',
     icon: faLocationDot,
-    placeholder: 'e.g. 12 rue de Rivoli, Paris, France',
+    placeholder: msg('e.g. 12 rue de Rivoli, Paris, France'),
     empty: 'No address yet — add where you are based.',
   },
 } as const;
@@ -131,6 +133,7 @@ function PhoneField({
   onChange: (value: string) => void;
   onBlur: () => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const rootRef = useRef<HTMLDivElement>(null);
@@ -161,7 +164,7 @@ function PhoneField({
     if (!q) return COUNTRY_DIAL_CODES;
     return COUNTRY_DIAL_CODES.filter(
       (country) =>
-        country.name.toLowerCase().includes(q) || country.dial.includes(q) || country.iso2.toLowerCase().includes(q)
+        country.name.toLowerCase().includes(q) || t.country(country.iso2, country.name).toLowerCase().includes(q) || country.dial.includes(q) || country.iso2.toLowerCase().includes(q)
     );
   }, [query]);
 
@@ -175,7 +178,7 @@ function PhoneField({
     <div ref={rootRef} className="relative flex items-end gap-3">
       <button
         type="button"
-        aria-label={`Country code, ${parsed.country.name}`}
+        aria-label={t('Country code, {name}', { name: t.country(parsed.country.iso2, parsed.country.name) })}
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
@@ -201,7 +204,7 @@ function PhoneField({
           type="tel"
           inputMode="tel"
           value={parsed.nationalNumber}
-          placeholder={KIND_COPY.phone.placeholder}
+          placeholder={t(KIND_COPY.phone.placeholder)}
           aria-label={label}
           aria-invalid={invalid ? true : undefined}
           autoFocus={autoFocus}
@@ -222,12 +225,12 @@ function PhoneField({
             type="search"
             value={query}
             autoFocus
-            placeholder="Search country or code"
-            aria-label="Search country or code"
+            placeholder={t('Search country or code')}
+            aria-label={t('Search country or code')}
             onChange={(event) => setQuery(event.currentTarget.value)}
             className="mb-1 w-full rounded-lg bg-black/[0.03] px-3 py-2 text-[14px] text-black outline-none placeholder:text-neutral-400 dark:bg-white/[0.05] dark:text-neutral-100 dark:placeholder:text-neutral-500"
           />
-          <ul role="listbox" aria-label="Country code" className="max-h-60 overflow-y-auto">
+          <ul role="listbox" aria-label={t('Country code')} className="max-h-60 overflow-y-auto">
             {countries.map((country) => {
               const selected = country.iso2 === parsed.country.iso2;
               return (
@@ -240,14 +243,14 @@ function PhoneField({
                     }`}
                   >
                     <CountryFlag iso2={country.iso2} size="sm" />
-                    <span className="min-w-0 flex-1 truncate">{country.name}</span>
+                    <span className="min-w-0 flex-1 truncate">{t.country(country.iso2, country.name)}</span>
                     <span className="shrink-0 tabular-nums text-neutral-400">{country.dial}</span>
                   </button>
                 </li>
               );
             })}
             {countries.length === 0 ? (
-              <li className={`px-3 py-4 text-center text-[14px] ${STUDIO_EMPTY_CLASS}`}>No country found</li>
+              <li className={`px-3 py-4 text-center text-[14px] ${STUDIO_EMPTY_CLASS}`}>{t('No country found')}</li>
             ) : null}
           </ul>
         </div>
@@ -271,6 +274,7 @@ const ContactRowView = memo(function ContactRowView({
   onChange: RowChangeHandler;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const copy = KIND_COPY[kind];
   const [touched, setTouched] = useState(!autoFocus);
   const invalid = entryError(kind, row.value);
@@ -297,7 +301,7 @@ const ContactRowView = memo(function ContactRowView({
             <p className={`truncate pb-1.5 ${STUDIO_VALUE_CLASS}`}>{row.value.trim()}</p>
             <p className={`mt-0.5 inline-flex items-center gap-1.5 text-[13px] ${STUDIO_SECONDARY_CLASS}`}>
               <FontAwesomeIcon icon={faLock} className="h-2.5 w-2.5" />
-              Primary · account email
+              {t('Primary · account email')}
             </p>
           </>
         ) : kind === 'phone' ? (
@@ -315,7 +319,7 @@ const ContactRowView = memo(function ContactRowView({
               rows={1}
               value={row.value}
               maxLength={MAX_CONTACT_LENGTH}
-              placeholder={copy.placeholder}
+              placeholder={t(copy.placeholder)}
               aria-label={label}
               aria-invalid={error ? true : undefined}
               autoFocus={autoFocus}
@@ -331,7 +335,7 @@ const ContactRowView = memo(function ContactRowView({
               inputMode="email"
               value={row.value}
               maxLength={MAX_CONTACT_LENGTH}
-              placeholder={copy.placeholder}
+              placeholder={t(copy.placeholder)}
               aria-label={label}
               aria-invalid={error ? true : undefined}
               autoFocus={autoFocus}
@@ -373,24 +377,25 @@ function ContactGroup({
   onChange: RowChangeHandler;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const copy = KIND_COPY[kind];
   const full = rows.length >= MAX_CONTACT_ENTRIES;
 
   return (
-    <section aria-label={copy.title}>
+    <section aria-label={t(copy.title)}>
       <StudioSectionHeader label={`${copy.title} · ${String(rows.length).padStart(2, '0')}`}>
         <span className={STUDIO_SECONDARY_CLASS}>
-          {rows.length} of {MAX_CONTACT_ENTRIES}
+          {t('{rowsLength} of {MAXCONTACTENTRIES}', { rowsLength: rows.length, MAXCONTACTENTRIES: MAX_CONTACT_ENTRIES })}
         </span>
         <PortfolioSectionVisibilityMenu value={visibility} onChange={onVisibilityChange} />
-        <StudioIconAction icon="add" label={`Add ${copy.noun}`} onClick={onAdd} disabled={full} />
+        <StudioIconAction icon="add" label={t('Add {noun}', { noun: copy.noun })} onClick={onAdd} disabled={full} />
       </StudioSectionHeader>
 
       {rows.length === 0 ? (
         <button
           type="button"
           onClick={onAdd}
-          className={`py-4 text-left ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}
+          className={`py-4 text-left ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA]`}
         >
           {copy.empty}
         </button>

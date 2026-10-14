@@ -15,7 +15,7 @@ import {
 import { useFieldArray, useForm, type FieldErrors } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useAuth } from '@/context/AuthContext';
-import { formatPrice, PRODUCT_TYPE_LABELS, uploadProductThumbnail } from '@/lib/marketplace-api';
+import { formatPrice, productTypeName, uploadProductThumbnail } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 import { CURRENCIES, DEFAULT_CURRENCY } from '@/lib/currencies';
@@ -55,6 +55,13 @@ import { InfoHint } from '@/components/ui/InfoHint';
 import { FormSelect, type FormSelectOption } from '@/components/ui/FormSelect';
 import { CurrencyPicker } from '@/components/ui/CurrencyPicker';
 import type { MarketplaceProductDetail, MarketplaceProductRequest } from '@/types/marketplace';
+import {
+  MAX_PRODUCT_STATUS_LABELS,
+  PRODUCT_STATUS_LABEL_OPTIONS,
+  normalizeProductStatusLabels,
+} from '@/lib/product-status-labels';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const GENRES = ['Tech', 'Lifestyle', 'Business', 'Art', 'Sport', 'Music', 'Other'] as const;
 const VIDEO_RESOLUTIONS = ['480p', '720p', '1080p', '4K'] as const;
@@ -69,8 +76,10 @@ const PRODUCT_LANGUAGES = [
   'Dutch',
   'Other',
 ] as const;
-const NOT_SPECIFIED: FormSelectOption = { value: '', label: 'Not specified' };
-const TYPE_OPTIONS: FormSelectOption[] = PRODUCT_TYPES.map((t) => ({ value: t, label: PRODUCT_TYPE_LABELS[t] ?? t }));
+const NOT_SPECIFIED: FormSelectOption = { value: '', label: msg('Not specified') };
+const TYPE_OPTIONS: FormSelectOption[] = PRODUCT_TYPES.map((t) => ({ value: t, label: productTypeName(t) }));
+const OTHER_TYPE = 'OTHER';
+const CUSTOM_TYPE_MAX = 60;
 const GENRE_OPTIONS: FormSelectOption[] = GENRES.map((g) => ({ value: g, label: g }));
 const OTHER_GENRE = 'Other';
 const CUSTOM_GENRE_MAX = 60;
@@ -127,26 +136,31 @@ function mmSsToSeconds(value: string | undefined): number | undefined {
 
 /* ─── Styles ─────────────────────────────────────────────────────────────── */
 
-const LABEL = 'block text-[14px] font-medium text-[#111111] dark:text-white';
-const OPTIONAL = 'ml-1.5 font-normal text-neutral-400 dark:text-neutral-500';
-const HINT = 'mt-2 text-[13px] leading-relaxed text-neutral-500 dark:text-neutral-400';
-const ERROR = 'mt-2 text-[13px] text-[#E0431A] dark:text-[#FF7A52]';
-const FIELD_BASE =
-  'rounded-lg border border-black/[0.1] bg-transparent transition-colors hover:border-black/20 dark:border-white/[0.12] dark:hover:border-white/25';
-const FIELD_FOCUS = 'focus:border-[#111111] focus:outline-none dark:focus:border-white/70';
-const FIELD_FOCUS_WITHIN = 'focus-within:border-[#111111] dark:focus-within:border-white/70';
+const LABEL = 'block text-[14px] font-semibold text-[#0F1419] dark:text-[#E7E9EA]';
+const OPTIONAL = 'ml-1.5 font-normal text-[#536471] dark:text-[#71767B]';
+const HINT = 'mt-2 text-[13px] leading-[18px] text-[#536471] dark:text-[#71767B]';
+const ERROR = 'mt-2 text-[13px] text-[#F4212E]';
+/**
+ * Fields are tonal, never outlined (News): `--x-field` is white on the page's #F7F9F9 sections and the
+ * X page-field grey inside the dialog (both #202327 in dark) — set in globals.css, PRODUCTS block.
+ */
+const FIELD_BASE = 'rounded-none border border-transparent bg-[color:var(--x-field,#EFF3F4)] transition-shadow';
+const FIELD_FOCUS =
+  'focus:outline-none focus:shadow-[inset_0_0_0_2px_#0F1419] dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]';
+const FIELD_FOCUS_WITHIN =
+  'focus-within:shadow-[inset_0_0_0_2px_#0F1419] dark:focus-within:shadow-[inset_0_0_0_2px_#E7E9EA]';
 const INPUT = `mt-2 block h-11 w-full ${FIELD_BASE} ${FIELD_FOCUS} px-3.5 text-[15px] text-[#111111] placeholder:text-neutral-400 disabled:opacity-50 dark:text-white dark:placeholder:text-neutral-500 dark:[color-scheme:dark]`;
 const TEXTAREA = `mt-2 block w-full ${FIELD_BASE} ${FIELD_FOCUS} resize-y px-3.5 py-3 text-[15px] leading-relaxed text-[#111111] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500`;
 const NO_SPIN =
   '[appearance:textfield] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none';
 const PRIMARY_BTN =
-  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111]';
+  'inline-flex h-11 w-full items-center justify-center gap-2 bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const SECONDARY_BTN =
-  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-lg border border-black/[0.1] px-5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30';
+  'inline-flex h-11 w-full items-center justify-center gap-2 border border-[#CFD9DE] px-5 text-[15px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]';
 const LINK_BTN =
-  'text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#111111] disabled:opacity-40 dark:text-neutral-400 dark:hover:text-white';
+  'text-[14px] font-semibold text-[#536471] transition-colors hover:text-[#0F1419] disabled:opacity-40 dark:text-[#71767B] dark:hover:text-[#E7E9EA]';
 const PILL_PRIMARY =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#111111] px-6 text-[15px] font-semibold text-white shadow-[inset_0_1px_0_rgba(255,255,255,0.14),0_8px_20px_-8px_rgba(0,0,0,0.5)] transition-[opacity,transform] hover:opacity-90 active:scale-[0.98] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:shadow-[0_8px_24px_-10px_rgba(255,255,255,0.35)]';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[#0F1419] px-6 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const PILL_GHOST =
   'inline-flex h-10 items-center justify-center gap-1.5 rounded-full px-4 text-[15px] font-medium text-[#111111] transition-colors hover:bg-black/[0.05] disabled:opacity-40 dark:text-white dark:hover:bg-white/[0.08]';
 const ROUND_ICON_BTN =
@@ -156,10 +170,15 @@ type StepKey = 'details' | 'media' | 'pricing';
 
 const STEP_KEYS: StepKey[] = ['details', 'media', 'pricing'];
 
+/*
+ * The creation wizard (modal) — Gumroad / Shopify order: 1. Essentials holds every field publishing
+ * needs (format, title, cover, price, stock); 2. Showcase the optional extras that sell (photos or
+ * sample, highlights, badges, hashtags); 3. Review the listing as buyers will see it, then publish.
+ */
 const STEP_LABELS: Record<StepKey, string> = {
-  details: 'Details',
-  media: 'Media',
-  pricing: 'Price & publish',
+  details: 'Essentials',
+  media: 'Showcase',
+  pricing: 'Review',
 };
 
 /** Wizard step that owns each field, used to jump back to the first invalid one on submit. */
@@ -167,13 +186,20 @@ const FIELD_STEP: Partial<Record<keyof ProductFormValues, StepKey>> = {
   title: 'details',
   description: 'details',
   type: 'details',
+  typeLabel: 'details',
   genre: 'details',
   thumbnailUrl: 'details',
+  priceAmount: 'details',
+  compareAtPriceAmount: 'details',
+  currency: 'details',
+  stockQuantity: 'details',
   galleryImages: 'media',
   demoType: 'media',
   demoUrl: 'media',
   demoSubtitles: 'media',
   whyProductBlocks: 'media',
+  tags: 'media',
+  statusLabels: 'media',
 };
 
 function initialsOf(name: string): string {
@@ -193,6 +219,7 @@ function productToFormValues(product: MarketplaceProductDetail): ProductFormValu
   return {
     productFormat: isPhysical ? 'physical' : 'virtual',
     type: product.type,
+    typeLabel: product.typeLabel ?? '',
     title: product.title,
     description: product.description ?? '',
     priceAmount: (product.priceCents / 100).toFixed(2),
@@ -214,6 +241,7 @@ function productToFormValues(product: MarketplaceProductDetail): ProductFormValu
     language: product.language ?? '',
     version: product.version ?? '',
     tags: product.tags.map((v) => ({ value: v })),
+    statusLabels: normalizeProductStatusLabels(product.statusLabels),
     videoDuration: secondsToMmSs(product.videoDurationSeconds),
     videoResolution: product.videoResolution ?? '',
   };
@@ -242,6 +270,7 @@ function formValuesToRequest(
 
   return {
     type: isPhysical ? 'PHYSICAL' : data.type === 'PHYSICAL' ? 'OTHER' : data.type,
+    ...(!isPhysical && data.type === OTHER_TYPE && data.typeLabel?.trim() ? { typeLabel: data.typeLabel.trim() } : {}),
     title: data.title.trim(),
     description: data.description.trim(),
     priceCents,
@@ -263,6 +292,7 @@ function formValuesToRequest(
     tags: data.tags.map((t) => normalizeHashtag(t.value)).filter(Boolean),
     galleryImageUrls,
     stockQuantity,
+    statusLabels: normalizeProductStatusLabels(data.statusLabels),
     ...(!isPhysical && data.type === 'VIDEO'
       ? {
           videoDurationSeconds: mmSsToSeconds(data.videoDuration),
@@ -295,7 +325,7 @@ function Section({
       className={
         inModal
           ? 'py-9 first:pt-8'
-          : 'rounded-xl border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111] sm:p-8'
+          : 'bg-[#F7F9F9] p-5 dark:bg-[#16181C] sm:p-6'
       }
     >
       <header className={`flex justify-between gap-4 ${inModal ? 'items-center' : 'items-start'}`}>
@@ -310,9 +340,9 @@ function Section({
           </div>
         ) : (
           <div>
-            <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">{title}</h2>
+            <h2 className="text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[#0F1419] dark:text-[#E7E9EA]">{title}</h2>
             {description ? (
-              <p className="mt-1 text-[14px] text-neutral-500 dark:text-neutral-400">{description}</p>
+              <p className="mt-1 text-[14px] leading-5 text-[#536471] dark:text-[#71767B]">{description}</p>
             ) : null}
           </div>
         )}
@@ -336,12 +366,13 @@ function CollapsibleSection({
   defaultOpen?: boolean;
   children: ReactNode;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(defaultOpen);
   const inModal = useContext(EditorVariantContext) === 'modal';
   return (
     <section
       className={
-        inModal ? '' : 'rounded-xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]'
+        inModal ? '' : 'bg-[#F7F9F9] dark:bg-[#16181C]'
       }
     >
       <button
@@ -349,13 +380,13 @@ function CollapsibleSection({
         onClick={() => setOpen((value) => !value)}
         aria-expanded={open}
         className={`flex w-full items-center justify-between gap-4 text-left ${
-          inModal ? 'py-6' : 'px-6 py-5 sm:px-8 sm:py-6'
+          inModal ? 'py-6' : 'px-5 py-5 sm:px-6'
         }`}
       >
         <span className="min-w-0">
           <span className="flex items-center gap-2 text-[17px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">
             {title}
-            <span className="text-[13px] font-normal text-neutral-400 dark:text-neutral-500">Optional</span>
+            <span className="text-[13px] font-normal text-neutral-400 dark:text-neutral-500">{t('Optional')}</span>
           </span>
           {!inModal || summary ? (
             <span className="mt-1 block text-[14px] text-neutral-500 dark:text-neutral-400">
@@ -381,7 +412,7 @@ function CollapsibleSection({
           className={
             inModal
               ? 'space-y-6 pb-9 pt-1'
-              : 'space-y-6 border-t border-black/[0.05] px-6 pb-8 pt-6 dark:border-white/[0.06] sm:px-8'
+              : 'space-y-6 px-5 pb-6 pt-1 sm:px-6'
           }
         >
           {children}
@@ -416,14 +447,15 @@ function MediaDrop({
   className?: string;
   compact?: boolean;
 }) {
+  const t = useT();
   const hasMedia = Boolean(url?.trim());
   return (
-    <div className={`group relative rounded-xl ${className}`}>
+    <div className={`group relative ${className}`}>
       <label
-        className={`relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden rounded-xl border transition-colors ${
+        className={`relative flex h-full w-full cursor-pointer flex-col items-center justify-center overflow-hidden transition-colors ${
           hasMedia
-            ? 'border-black/[0.06] shadow-[0_10px_30px_-14px_rgba(0,0,0,0.35)] dark:border-white/[0.08]'
-            : 'border-dashed border-black/[0.14] bg-gradient-to-b from-black/[0.012] to-black/[0.045] hover:border-black/30 hover:to-black/[0.06] dark:border-white/[0.14] dark:from-white/[0.015] dark:to-white/[0.05] dark:hover:border-white/30'
+            ? 'bg-[color:var(--x-field,#EFF3F4)]'
+            : 'bg-[color:var(--x-field,#EFF3F4)] hover:shadow-[inset_0_0_0_2px_#CFD9DE] dark:hover:shadow-[inset_0_0_0_2px_#536471]'
         } ${uploading || disabled ? 'pointer-events-none' : ''}`}
       >
         {hasMedia ? (
@@ -437,12 +469,12 @@ function MediaDrop({
               aria-hidden
               className="absolute inset-0 flex items-center justify-center bg-black/40 text-[14px] font-medium text-white opacity-0 transition-opacity group-hover:opacity-100"
             >
-              Replace
+              {t('Replace')}
             </span>
           </>
         ) : (
           <span className="flex flex-col items-center px-4 text-center">
-            <span className="flex h-11 w-11 items-center justify-center rounded-full border border-black/[0.06] bg-white text-[#111111] shadow-[0_4px_14px_-4px_rgba(0,0,0,0.2)] transition-transform duration-200 group-hover:scale-105 dark:border-white/[0.1] dark:bg-white/[0.08] dark:text-white">
+            <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#0F1419] text-white transition-transform duration-200 group-hover:scale-105 dark:bg-[#EFF3F4] dark:text-[#0F1419]">
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden>
                 <path d="M12 5v14M5 12h14" />
               </svg>
@@ -462,7 +494,7 @@ function MediaDrop({
         <button
           type="button"
           onClick={onRemove}
-          aria-label={`Remove ${title.toLowerCase()}`}
+          aria-label={t('Remove {toLowerCase}', { toLowerCase: title.toLowerCase() })}
           className="absolute right-2 top-2 flex h-7 w-7 items-center justify-center rounded-full bg-black/60 text-white opacity-0 transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover:opacity-100"
         >
           <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
@@ -496,11 +528,12 @@ function MediaRow({
   hint: string;
   preview?: UploadPreview | null;
 }) {
+  const t = useT();
   const hasMedia = Boolean(url?.trim());
   return (
     <div className="flex items-center gap-3">
       <label
-        className={`group flex min-w-0 flex-1 cursor-pointer items-center gap-4 rounded-xl border border-black/[0.08] p-2.5 pr-3 transition-colors hover:border-black/20 dark:border-white/[0.1] dark:hover:border-white/25 ${
+        className={`group flex min-w-0 flex-1 cursor-pointer items-center gap-4 bg-[color:var(--x-field,#EFF3F4)] p-2.5 pr-3 transition-shadow hover:shadow-[inset_0_0_0_2px_#CFD9DE] dark:hover:shadow-[inset_0_0_0_2px_#536471] ${
           uploading || disabled ? 'pointer-events-none opacity-70' : ''
         }`}
       >
@@ -525,7 +558,7 @@ function MediaRow({
           <span className="block truncate text-[12px] text-neutral-500 dark:text-neutral-400">{hint}</span>
         </span>
         <span className="inline-flex h-8 shrink-0 items-center rounded-full border border-black/[0.1] px-3.5 text-[13px] font-medium text-[#111111] transition-colors group-hover:border-black/25 dark:border-white/[0.14] dark:text-white dark:group-hover:border-white/30">
-          {uploading ? 'Uploading…' : hasMedia ? 'Replace' : 'Upload'}
+          {uploading ? t('Uploading…') : hasMedia ? t('Replace') : t('Upload')}
         </span>
         <input type="file" accept={accept} className="sr-only" disabled={uploading || disabled} onChange={onFile} />
       </label>
@@ -533,7 +566,7 @@ function MediaRow({
         <button
           type="button"
           onClick={onRemove}
-          aria-label="Remove file"
+          aria-label={t('Remove file')}
           className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-400 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:hover:bg-white/[0.08] dark:hover:text-white"
         >
           <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
@@ -553,14 +586,14 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: () =
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
-        checked ? 'bg-[#111111] dark:bg-white' : 'bg-black/[0.12] dark:bg-white/[0.16]'
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/50 ${
+        checked ? 'bg-[#0F1419] dark:bg-[#EFF3F4]' : 'bg-[#CFD9DE] dark:bg-[#3E4144]'
       }`}
     >
       <span
         aria-hidden
-        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200 ${
-          checked ? 'translate-x-5 dark:bg-[#111111]' : 'translate-x-0'
+        className={`absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-[#fff] transition-transform duration-200 ${
+          checked ? 'translate-x-5 dark:bg-[#0F1419]' : 'translate-x-0'
         }`}
       />
     </button>
@@ -582,6 +615,7 @@ function ChipsInput({
   placeholder: string;
   hint: string;
 }) {
+  const t = useT();
   const [draft, setDraft] = useState('');
   const commit = () => {
     const value = draft.trim();
@@ -618,7 +652,7 @@ function ChipsInput({
             <button
               type="button"
               onClick={() => onChange(values.filter((_, i) => i !== index))}
-              aria-label={`Remove ${value}`}
+              aria-label={t('Remove {value}', { value })}
               className="inline-flex h-6 w-6 items-center justify-center rounded text-neutral-400 hover:text-[#111111] dark:hover:text-white"
             >
               <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
@@ -633,7 +667,7 @@ function ChipsInput({
           onChange={(event) => setDraft(event.target.value)}
           onKeyDown={onKeyDown}
           onBlur={commit}
-          placeholder={values.length >= max ? 'Limit reached' : placeholder}
+          placeholder={values.length >= max ? t('Limit reached') : placeholder}
           aria-label={label}
           className="h-8 min-w-[8rem] flex-1 bg-transparent px-1.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
         />
@@ -653,15 +687,16 @@ function FormatSelector({
   disabled?: boolean;
   fullWidth?: boolean;
 }) {
+  const t = useT();
   const options: { id: ProductFormat; title: string; hint: string }[] = [
-    { id: 'virtual', title: 'Digital', hint: 'Files, courses, templates — delivered online' },
-    { id: 'physical', title: 'Material', hint: 'An item you ship to the buyer' },
+    { id: 'virtual', title: t('Digital'), hint: t('Files, courses, templates — delivered online') },
+    { id: 'physical', title: t('Material'), hint: t('An item you ship to the buyer') },
   ];
   return (
     <div>
       <div
         role="radiogroup"
-        aria-label="Product format"
+        aria-label={t('Product format')}
         className={`${fullWidth ? 'grid w-full grid-cols-2' : 'inline-flex'} rounded-full bg-black/[0.05] p-1 dark:bg-white/[0.06]`}
       >
         {options.map((option) => {
@@ -672,20 +707,93 @@ function FormatSelector({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.hint}
+              title={t(option.hint)}
               disabled={disabled}
               onClick={() => onChange(option.id)}
               className={`${fullWidth ? 'h-9' : 'h-8'} rounded-full px-4 text-[14px] font-medium transition-colors disabled:cursor-not-allowed ${
                 active
-                  ? 'bg-white text-[#111111] shadow-[0_1px_2px_rgba(0,0,0,0.08)] dark:bg-white dark:text-[#111111]'
-                  : 'text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+                  ? 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+                  : 'text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]'
               }`}
             >
-              {option.title}
+              {t(option.title)}
             </button>
           );
         })}
       </div>
+    </div>
+  );
+}
+
+/**
+ * The wizard's first decision, as two cards (icon, name, one line): the format changes the fields
+ * that follow (type and category, sample or photos, stock), so it leads the form instead of sitting
+ * as a small toggle in the header corner.
+ */
+function FormatCards({
+  value,
+  onChange,
+  disabled,
+}: {
+  value: ProductFormat;
+  onChange: (next: ProductFormat) => void;
+  disabled?: boolean;
+}) {
+  const t = useT();
+  const options: { id: ProductFormat; title: string; hint: string; icon: ReactNode }[] = [
+    {
+      id: 'virtual',
+      title: t('Digital'),
+      hint: t('Files, courses, templates'),
+      icon: (
+        <>
+          <path d="M12 4v11" />
+          <path d="m7.5 10.5 4.5 4.5 4.5-4.5" />
+          <path d="M4.5 15.5v3a1.5 1.5 0 0 0 1.5 1.5h12a1.5 1.5 0 0 0 1.5-1.5v-3" />
+        </>
+      ),
+    },
+    {
+      id: 'physical',
+      title: t('Material'),
+      hint: t('An item you ship'),
+      icon: (
+        <>
+          <path d="M12 2.8 20 7.2v9.6l-8 4.4-8-4.4V7.2z" />
+          <path d="m4 7.2 8 4.4 8-4.4" />
+          <path d="M12 11.6v9.6" />
+        </>
+      ),
+    },
+  ];
+  return (
+    <div role="radiogroup" aria-label={t('Product format')} className="grid grid-cols-2 gap-2 sm:gap-3">
+      {options.map((option) => {
+        const active = option.id === value;
+        return (
+          <button
+            key={option.id}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            disabled={disabled}
+            onClick={() => onChange(option.id)}
+            className={`flex items-center gap-3 px-4 py-3 text-left transition-[background-color,box-shadow] duration-150 disabled:cursor-not-allowed ${
+              active
+                ? 'bg-[#F7F9F9] shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#16181C] dark:shadow-[inset_0_0_0_2px_#E7E9EA]'
+                : 'shadow-[inset_0_0_0_1px_#CFD9DE] hover:bg-[#F7F9F9] dark:shadow-[inset_0_0_0_1px_#3E4144] dark:hover:bg-[#16181C]'
+            }`}
+          >
+            <svg viewBox="0 0 24 24" className="h-5 w-5 shrink-0 text-[#0F1419] dark:text-[#E7E9EA]" fill="none" stroke="currentColor" strokeWidth={active ? 2.1 : 1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              {option.icon}
+            </svg>
+            <span className="min-w-0">
+              <span className="block text-[15px] font-bold leading-5 text-[#0F1419] dark:text-[#E7E9EA]">{t(option.title)}</span>
+              <span className="block truncate text-[13px] leading-[18px] text-[#536471] dark:text-[#71767B]">{t(option.hint)}</span>
+            </span>
+          </button>
+        );
+      })}
     </div>
   );
 }
@@ -726,6 +834,7 @@ export function ProductEditorForm({
   heading = 'New product',
   onDirtyChange,
 }: ProductEditorFormProps) {
+  const t = useT();
   const headingId = useId();
   const [uploadingThumb, setUploadingThumb] = useState(false);
   const [uploadingDemo, setUploadingDemo] = useState(false);
@@ -765,6 +874,7 @@ export function ProductEditorForm({
       : {
           productFormat: controlledFormat ?? 'virtual',
           type: controlledFormat === 'physical' ? 'PHYSICAL' : 'TEMPLATE',
+          typeLabel: '',
           title: '',
           description: '',
           priceAmount: '',
@@ -785,6 +895,7 @@ export function ProductEditorForm({
           language: '',
           version: '',
           tags: [],
+          statusLabels: [],
           videoDuration: '',
           videoResolution: '',
         },
@@ -793,6 +904,11 @@ export function ProductEditorForm({
   const productFormat = (watch('productFormat') ?? 'virtual') as ProductFormat;
   const isPhysical = productFormat === 'physical';
   const productType = watch('type');
+  const typeLabel = watch('typeLabel') ?? '';
+  /* "Other" turns the Type field into a free text field; its chevron brings the list back. */
+  const [typeFromList, setTypeFromList] = useState(false);
+  const customTypeInputRef = useRef<HTMLInputElement>(null);
+  const customType = productType === OTHER_TYPE && !typeFromList;
   const setSelectValue = (name: 'genre' | 'language' | 'videoResolution', next: string) =>
     setValue(name, next, { shouldDirty: true, shouldValidate: true });
   const title = watch('title') ?? '';
@@ -809,6 +925,7 @@ export function ProductEditorForm({
   const stockQuantity = watch('stockQuantity');
   const galleryImages = watch('galleryImages') ?? [];
   const hashtags = (watch('tags') ?? []).map((tag) => tag.value).filter(Boolean);
+  const statusLabels = watch('statusLabels') ?? [];
   const tools = (watch('compatibleTools') ?? []).map((tool) => tool.value).filter(Boolean);
   const watchedGenre = watch('genre');
   const whyBlocksCount = (watch('whyProductBlocks') ?? []).length;
@@ -853,7 +970,7 @@ export function ProductEditorForm({
 
   const goToStep = async (target: number) => {
     const next = Math.max(0, Math.min(stepCount - 1, target));
-    if (next > step && step === 0 && !(await trigger(['title']))) return;
+    if (next > step && step === 0 && !(await trigger(['title', 'priceAmount', 'compareAtPriceAmount', 'stockQuantity']))) return;
     setStep(next);
   };
 
@@ -870,7 +987,7 @@ export function ProductEditorForm({
     if (!file) return;
     setMediaError(null);
     if (!isAllowedThumbnailFile(file) || (isPhysical && !file.type.startsWith('image/'))) {
-      setMediaError(isPhysical ? 'Cover: JPEG, PNG or WebP.' : 'Cover: an image (JPEG, PNG, WebP) or a video (MP4, WebM, MOV).');
+      setMediaError(isPhysical ? t('Cover: JPEG, PNG or WebP.') : t('Cover: an image (JPEG, PNG, WebP) or a video (MP4, WebM, MOV).'));
       return;
     }
     if (file.type.startsWith('video/')) {
@@ -882,7 +999,7 @@ export function ProductEditorForm({
         }
         setValue('videoDuration', secondsToMmSs(Math.ceil(duration)));
       } catch (e) {
-        setMediaError(getApiErrorMessage(e, 'Could not read the video length.'));
+        setMediaError(getApiErrorMessage(e, t('Could not read the video length.')));
         return;
       }
     }
@@ -892,7 +1009,7 @@ export function ProductEditorForm({
     try {
       setValue('thumbnailUrl', await uploadProductThumbnail(file), { shouldDirty: true });
     } catch (e) {
-      setMediaError(getApiErrorMessage(e, 'Cover upload failed.'));
+      setMediaError(getApiErrorMessage(e, t('Cover upload failed.')));
     } finally {
       setUploadingThumb(false);
       URL.revokeObjectURL(preview.url);
@@ -906,7 +1023,7 @@ export function ProductEditorForm({
     if (!file) return;
     setMediaError(null);
     if (!isAllowedDemoMediaFile(file)) {
-      setMediaError('Sample: an image (JPEG, PNG, WebP) or a video (MP4, WebM, MOV).');
+      setMediaError(t('Sample: an image (JPEG, PNG, WebP) or a video (MP4, WebM, MOV).'));
       return;
     }
     const preview = createUploadPreview(file);
@@ -917,7 +1034,7 @@ export function ProductEditorForm({
       setValue('demoUrl', url, { shouldDirty: true });
       setValue('demoType', detectDemoTypeFromFile(file));
     } catch (e) {
-      setMediaError(getApiErrorMessage(e, 'Sample upload failed.'));
+      setMediaError(getApiErrorMessage(e, t('Sample upload failed.')));
       setValue('demoUrl', '');
       setValue('demoType', 'NONE');
     } finally {
@@ -934,7 +1051,7 @@ export function ProductEditorForm({
     setMediaError(null);
     const selected = files.slice(0, GALLERY_MAX - galleryField.fields.length);
     if (selected.some((file) => !file.type.startsWith('image/') || !isAllowedThumbnailFile(file))) {
-      setMediaError('Photos: JPEG, PNG or WebP only.');
+      setMediaError(t('Photos: JPEG, PNG or WebP only.'));
       return;
     }
     const previews = selected.map(createUploadPreview);
@@ -946,7 +1063,7 @@ export function ProductEditorForm({
         setGalleryPending((pending) => pending.slice(1));
       }
     } catch (e) {
-      setMediaError(getApiErrorMessage(e, 'Photo upload failed.'));
+      setMediaError(getApiErrorMessage(e, t('Photo upload failed.')));
     } finally {
       setUploadingGallery(false);
       previews.forEach((preview) => URL.revokeObjectURL(preview.url));
@@ -993,11 +1110,11 @@ export function ProductEditorForm({
   const previewCurrency = /^[A-Z]{3}$/.test(currency) ? currency : 'EUR';
 
   const checklist = [
-    { label: 'Title', done: title.trim().length > 0, required: true },
-    { label: 'Price', done: priceCents != null, required: true },
-    { label: 'Cover', done: thumbnailUrl.trim().length > 0, required: false },
-    { label: 'Description', done: description.trim().length >= 40, required: false },
-    { label: 'Hashtags', done: hashtags.length > 0, required: false },
+    { label: t('Title'), done: title.trim().length > 0, required: true },
+    { label: t('Price'), done: priceCents != null, required: true },
+    { label: t('Cover'), done: thumbnailUrl.trim().length > 0, required: false },
+    { label: t('Description'), done: description.trim().length >= 40, required: false },
+    { label: t('Hashtags'), done: hashtags.length > 0, required: false },
   ];
   const doneCount = checklist.filter((item) => item.done).length;
 
@@ -1015,11 +1132,11 @@ export function ProductEditorForm({
   };
 
   const productSection = !inModal ? (
-        <Section title="Product" description="The essentials buyers read first.">
+        <Section title={t('Product')} description={t('The essentials buyers read first.')}>
           <div>
             <div className="flex items-baseline justify-between gap-3">
               <label htmlFor="title" className={LABEL}>
-                Title
+                {t('Title')}
               </label>
               <span className="text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">
                 {title.length}/{TITLE_MAX}
@@ -1030,7 +1147,7 @@ export function ProductEditorForm({
               maxLength={TITLE_MAX}
               autoComplete="off"
               className={INPUT}
-              placeholder={isPhysical ? 'e.g. Organic cotton oversized tee' : 'e.g. Notion template for freelancers'}
+              placeholder={isPhysical ? t('e.g. Organic cotton oversized tee') : t('e.g. Notion template for freelancers')}
               aria-invalid={Boolean(errors.title)}
               {...register('title')}
             />
@@ -1040,8 +1157,8 @@ export function ProductEditorForm({
           <div>
             <div className="flex items-baseline justify-between gap-3">
               <label htmlFor="description" className={LABEL}>
-                Description
-                <span className={OPTIONAL}>Recommended</span>
+                {t('Description')}
+                <span className={OPTIONAL}>{t('Recommended')}</span>
               </label>
               {description.length > 0 ? (
                 <span className="text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">
@@ -1054,7 +1171,7 @@ export function ProductEditorForm({
               rows={5}
               maxLength={DESCRIPTION_MAX}
               className={`${TEXTAREA} min-h-[8.5rem]`}
-              placeholder="What buyers get, who it’s for, and why it’s worth it."
+              placeholder={t('What buyers get, who it’s for, and why it’s worth it.')}
               {...register('description')}
             />
             {errors.description ? <p className={ERROR}>{errors.description.message}</p> : null}
@@ -1070,28 +1187,65 @@ export function ProductEditorForm({
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="type" className={LABEL}>
-                  Type
+                  {t('Type')}
                 </label>
-                <FormSelect
-                  id="type"
-                  className="mt-2"
-                  value={productType}
-                  options={TYPE_OPTIONS}
-                  onChange={(next) =>
-                    setValue('type', next as ProductFormValues['type'], { shouldDirty: true, shouldValidate: true })
-                  }
-                />
+                {customType ? (
+                  <div className="relative mt-2">
+                    <input
+                      id="type"
+                      ref={customTypeInputRef}
+                      value={typeLabel}
+                      maxLength={CUSTOM_TYPE_MAX}
+                      autoComplete="off"
+                      placeholder={t('Name your type, e.g. Notion workspace')}
+                      onChange={(event) =>
+                        setValue('typeLabel', event.target.value, { shouldDirty: true, shouldValidate: true })
+                      }
+                      className="block h-11 w-full rounded-lg border border-black/[0.1] bg-transparent pl-3.5 pr-11 text-[15px] text-[#111111] transition-colors placeholder:text-neutral-400 hover:border-black/20 focus:border-[#111111] focus:outline-none dark:border-white/[0.12] dark:text-white dark:placeholder:text-neutral-500 dark:hover:border-white/25 dark:focus:border-white/70"
+                    />
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTypeFromList(true);
+                        /* Reopen the list right away, where the text field was. */
+                        window.setTimeout(() => document.getElementById('type')?.click(), 0);
+                      }}
+                      aria-label={t('Choose a type from the list')}
+                      title={t('Choose from the list')}
+                      className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-black/[0.05] hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:ring-white/30"
+                    >
+                      <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
+                      </svg>
+                    </button>
+                  </div>
+                ) : (
+                  <FormSelect
+                    id="type"
+                    className="mt-2"
+                    /* Back on the list from "Other": no pick shown, so picking "Other" again still counts. */
+                    value={productType === OTHER_TYPE ? '' : productType}
+                    placeholder={typeLabel.trim() || t('Other')}
+                    options={TYPE_OPTIONS}
+                    onChange={(next) => {
+                      setValue('type', next as ProductFormValues['type'], { shouldDirty: true, shouldValidate: true });
+                      setTypeFromList(false);
+                      if (next === OTHER_TYPE) window.setTimeout(() => customTypeInputRef.current?.focus(), 0);
+                    }}
+                  />
+                )}
+                {errors.typeLabel ? <p className={ERROR}>{errors.typeLabel.message}</p> : null}
               </div>
               <div>
                 <label htmlFor="genre" className={LABEL}>
-                  Category
+                  {t('Category')}
                 </label>
                 <FormSelect
                   id="genre"
                   className="mt-2"
                   value={customGenre ? OTHER_GENRE : watchedGenre ?? ''}
                   options={GENRE_OPTIONS}
-                  placeholder="Choose a category"
+                  placeholder={t('Choose a category')}
                   onChange={(next) => {
                     if (next === OTHER_GENRE) {
                       setCustomGenre(true);
@@ -1106,11 +1260,11 @@ export function ProductEditorForm({
                 {customGenre ? (
                   <input
                     ref={customGenreInputRef}
-                    aria-label="Custom category"
+                    aria-label={t('Custom category')}
                     value={watchedGenre === OTHER_GENRE ? '' : watchedGenre ?? ''}
                     maxLength={CUSTOM_GENRE_MAX}
                     autoComplete="off"
-                    placeholder="Name your category, e.g. Photography"
+                    placeholder={t('Name your category, e.g. Photography')}
                     onChange={(event) => setSelectValue('genre', event.target.value)}
                     className={INPUT}
                   />
@@ -1122,19 +1276,19 @@ export function ProductEditorForm({
 
   const mediaSection = (
         <Section
-          title={inModal ? (isPhysical ? 'More photos' : 'Free sample') : 'Media'}
+          title={inModal ? (isPhysical ? t('More photos') : t('Free sample')) : t('Media')}
           description={
             inModal
               ? isPhysical
-                ? 'Add more angles so buyers see every detail.'
-                : 'Let buyers peek inside: a trailer, an extract or a few pages.'
+                ? t('Add more angles so buyers see every detail.')
+                : t('Let buyers peek inside: a trailer, an extract or a few pages.')
               : isPhysical
-                ? 'A sharp cover sells the product. Add more angles if you have them.'
-                : 'The cover sells the click in listings. The sample shows what’s inside, on your product page.'
+                ? t('A sharp cover sells the product. Add more angles if you have them.')
+                : t('The cover sells the click in listings. The sample shows what’s inside, on your product page.')
           }
         >
           {mediaError ? (
-            <p role="alert" className="rounded-lg bg-[#FF5722]/[0.07] px-4 py-3 text-[14px] text-[#C2410C] dark:text-[#FF9A7A]">
+            <p role="alert" className="bg-[#F4212E]/[0.08] px-4 py-3 text-[14px] text-[#F4212E]">
               {mediaError}
             </p>
           ) : null}
@@ -1150,15 +1304,15 @@ export function ProductEditorForm({
                   accept={IMAGE_ACCEPT}
                   onFile={(e) => void onThumbnailFile(e)}
                   onRemove={() => setValue('thumbnailUrl', '', { shouldDirty: true })}
-                  title="Cover photo"
-                  hint="JPEG, PNG or WebP"
+                  title={t('Cover photo')}
+                  hint={t('JPEG, PNG or WebP')}
                   className="col-span-2 row-span-2 aspect-square"
                 />
               ) : null}
               {galleryField.fields.map((field, index) => (
                 <div
                   key={field.id}
-                  className="group relative aspect-square overflow-hidden rounded-lg border border-black/[0.06] dark:border-white/[0.08]"
+                  className="group relative aspect-square overflow-hidden bg-[color:var(--x-field,#EFF3F4)]"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img src={galleryImages[index]?.value} alt={`Photo ${index + 2}`} className="h-full w-full object-cover" />
@@ -1175,20 +1329,20 @@ export function ProductEditorForm({
                 </div>
               ))}
               {galleryPending.map((preview, index) => (
-                <div key={preview.url} className="relative aspect-square overflow-hidden rounded-lg">
-                  <UploadingOverlay preview={preview} compact={index > 0} label={index > 0 ? 'Waiting…' : 'Uploading…'} />
+                <div key={preview.url} className="relative aspect-square overflow-hidden">
+                  <UploadingOverlay preview={preview} compact={index > 0} label={index > 0 ? t('Waiting…') : t('Uploading…')} />
                 </div>
               ))}
               {galleryField.fields.length + galleryPending.length < GALLERY_MAX ? (
                 <label
-                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 rounded-lg border border-dashed border-black/[0.16] text-neutral-500 transition-colors hover:border-black/30 hover:text-[#111111] dark:border-white/[0.16] dark:text-neutral-400 dark:hover:border-white/30 dark:hover:text-white ${
+                  className={`flex aspect-square cursor-pointer flex-col items-center justify-center gap-1.5 bg-[color:var(--x-field,#EFF3F4)] text-[#536471] transition-[color,box-shadow] hover:text-[#0F1419] hover:shadow-[inset_0_0_0_2px_#CFD9DE] dark:text-[#71767B] dark:hover:text-[#E7E9EA] dark:hover:shadow-[inset_0_0_0_2px_#536471] ${
                     uploadingGallery || isSubmitting ? 'pointer-events-none opacity-40' : ''
                   }`}
                 >
                   <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.6} strokeLinecap="round" aria-hidden>
                     <path d="M12 5v14M5 12h14" />
                   </svg>
-                  <span className="text-[12px] font-medium">Add photos</span>
+                  <span className="text-[12px] font-medium">{t('Add photos')}</span>
                   <input
                     type="file"
                     accept={IMAGE_ACCEPT}
@@ -1205,8 +1359,8 @@ export function ProductEditorForm({
               {!inModal ? (
                 <div>
                   <p className={LABEL}>
-                    Cover
-                    <span className={OPTIONAL}>Shown in listings</span>
+                    {t('Cover')}
+                    <span className={OPTIONAL}>{t('Shown in listings')}</span>
                   </p>
                   <MediaDrop
                     url={thumbnailUrl}
@@ -1216,8 +1370,8 @@ export function ProductEditorForm({
                     accept={MEDIA_ACCEPT}
                     onFile={(e) => void onThumbnailFile(e)}
                     onRemove={() => setValue('thumbnailUrl', '', { shouldDirty: true })}
-                    title="Add a cover"
-                    hint={`Image or video up to ${THUMBNAIL_VIDEO_MAX_SECONDS}s`}
+                    title={t('Add a cover')}
+                    hint={t('Image or video up to {THUMBNAILVIDEOMAXSECONDS}s', { THUMBNAILVIDEOMAXSECONDS: THUMBNAIL_VIDEO_MAX_SECONDS })}
                     className="mt-2 aspect-[16/10]"
                   />
                 </div>
@@ -1225,8 +1379,8 @@ export function ProductEditorForm({
               <div>
                 {!inModal ? (
                   <p className={LABEL}>
-                    Free sample
-                    <span className={OPTIONAL}>Optional</span>
+                    {t('Free sample')}
+                    <span className={OPTIONAL}>{t('Optional')}</span>
                   </p>
                 ) : null}
                 {inModal ? (
@@ -1241,8 +1395,8 @@ export function ProductEditorForm({
                       setValue('demoUrl', '', { shouldDirty: true });
                       setValue('demoType', 'NONE');
                     }}
-                    title={demoUrl.trim() ? 'Sample added' : 'Add a sample'}
-                    hint="Trailer, extract or inside pages"
+                    title={demoUrl.trim() ? t('Sample added') : t('Add a sample')}
+                    hint={t('Trailer, extract or inside pages')}
                   />
                 ) : (
                   <MediaDrop
@@ -1256,15 +1410,15 @@ export function ProductEditorForm({
                       setValue('demoUrl', '', { shouldDirty: true });
                       setValue('demoType', 'NONE');
                     }}
-                    title="Add a sample"
-                    hint="Trailer, extract or inside pages"
+                    title={t('Add a sample')}
+                    hint={t('Trailer, extract or inside pages')}
                     className="mt-2 aspect-[16/10]"
                   />
                 )}
               </div>
               {demoUrl.trim() ? (
                 <div className={inModal ? '' : 'sm:col-span-2'}>
-                  <ProductSubtitlesField control={control} register={register} label="Sample captions" />
+                  <ProductSubtitlesField control={control} register={register} label={t('Sample captions')} />
                 </div>
               ) : null}
             </div>
@@ -1274,12 +1428,12 @@ export function ProductEditorForm({
 
   const pricingSection = (
         <Section
-          title="Pricing"
+          title={t('Pricing')}
           aside={
             <label className="flex shrink-0 items-center gap-3 text-[14px] text-neutral-600 dark:text-neutral-300">
-              Free
+              {t('Free')}
               <Switch
-                label="Free product"
+                label={t('Free product')}
                 checked={isFree}
                 onChange={() => {
                   if (isFree) {
@@ -1296,13 +1450,13 @@ export function ProductEditorForm({
         >
           {isFree ? (
             <p className="rounded-lg bg-black/[0.03] px-4 py-3 text-[14px] text-neutral-600 dark:bg-white/[0.05] dark:text-neutral-300">
-              Buyers get this product at no cost.
+              {t('Buyers get this product at no cost.')}
             </p>
           ) : (
             <div className={`grid gap-5 ${showCompareAt ? 'sm:grid-cols-2' : ''}`}>
               <div>
                 <label htmlFor="priceAmount" className={LABEL}>
-                  Price
+                  {t('Price')}
                 </label>
                 <div className={`mt-2 flex h-14 items-center ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
                   <input
@@ -1332,9 +1486,9 @@ export function ProductEditorForm({
                   <div className="flex items-center justify-between gap-3">
                     <div className="flex items-center gap-2">
                       <label htmlFor="compareAtPriceAmount" className={LABEL}>
-                        Compare-at price
+                        {t('Compare-at price')}
                       </label>
-                      <InfoHint align="start">Shown crossed out next to your price to highlight a discount.</InfoHint>
+                      <InfoHint align="start">{t('Shown crossed out next to your price to highlight a discount.')}</InfoHint>
                     </div>
                     <button
                       type="button"
@@ -1344,7 +1498,7 @@ export function ProductEditorForm({
                       }}
                       className="text-[13px] text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
                     >
-                      Remove
+                      {t('Remove')}
                     </button>
                   </div>
                   <div className={`mt-2 flex h-14 items-center ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
@@ -1354,7 +1508,7 @@ export function ProductEditorForm({
                       inputMode="decimal"
                       step="0.01"
                       min="0"
-                      placeholder="e.g. 49.00"
+                      placeholder={t('e.g. 49.00')}
                       className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                       {...register('compareAtPriceAmount')}
                     />
@@ -1365,20 +1519,20 @@ export function ProductEditorForm({
                 </div>
               ) : (
                 <button type="button" onClick={() => setShowCompareAt(true)} className={`${LINK_BTN} -mt-1 justify-self-start`}>
-                  + Show a discount
+                  {t('+ Show a discount')}
                 </button>
               )}
             </div>
           )}
 
           {isPhysical ? (
-            <div className="border-t border-black/[0.05] pt-6 dark:border-white/[0.06]">
+            <div className="pt-2">
               <div className="flex items-center gap-2">
                 <label htmlFor="stockQuantity" className={LABEL}>
-                  Stock
-                  <span className={OPTIONAL}>Optional</span>
+                  {t('Stock')}
+                  <span className={OPTIONAL}>{t('Optional')}</span>
                 </label>
-                <InfoHint align="start">Units you have on hand. Leave empty for a single unit, set 0 when sold out.</InfoHint>
+                <InfoHint align="start">{t('Units you have on hand. Leave empty for a single unit, set 0 when sold out.')}</InfoHint>
               </div>
               <div className={`mt-2 flex h-11 items-center sm:max-w-[16rem] ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
                 <input
@@ -1393,20 +1547,71 @@ export function ProductEditorForm({
                   className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                   {...register('stockQuantity')}
                 />
-                <span className="pr-3.5 text-[14px] text-neutral-400 dark:text-neutral-500">units</span>
+                <span className="pr-3.5 text-[14px] text-neutral-400 dark:text-neutral-500">{t('units')}</span>
               </div>
               {errors.stockQuantity ? (
                 <p className={ERROR}>{errors.stockQuantity.message}</p>
               ) : stockQuantity?.trim() === '0' ? (
-                <p className={HINT}>Buyers will see this product as sold out.</p>
+                <p className={HINT}>{t('Buyers will see this product as sold out.')}</p>
               ) : null}
             </div>
           ) : null}
         </Section>
   );
 
+  // Merchandising badges (On sale, Clearance, Trending…): toggle chips, up to 3; once 3 are on, the
+  // rest are disabled so the limit is shown rather than reported as an error.
+  const statusSection = (
+        <Section
+          title={t('Product status')}
+          description={t('Badges shown on your product card, like On sale or Trending. Pick up to {MAXPRODUCTSTATUSLABELS}.', { MAXPRODUCTSTATUSLABELS: MAX_PRODUCT_STATUS_LABELS })}
+          aside={
+            <span className="shrink-0 text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400" aria-live="polite">
+              {statusLabels.length}/{MAX_PRODUCT_STATUS_LABELS}
+            </span>
+          }
+        >
+          <div className="flex flex-wrap gap-2" role="group" aria-label={t('Product status')}>
+            {PRODUCT_STATUS_LABEL_OPTIONS.map((option) => {
+              const selected = statusLabels.includes(option.value);
+              const full = !selected && statusLabels.length >= MAX_PRODUCT_STATUS_LABELS;
+              return (
+                <button
+                  key={option.value}
+                  type="button"
+                  aria-pressed={selected}
+                  disabled={full}
+                  title={t(option.hint)}
+                  onClick={() =>
+                    setValue(
+                      'statusLabels',
+                      selected
+                        ? statusLabels.filter((value) => value !== option.value)
+                        : [...statusLabels, option.value],
+                      { shouldDirty: true, shouldValidate: true }
+                    )
+                  }
+                  className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-white dark:focus-visible:ring-offset-black ${
+                    selected
+                      ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
+                      : 'border-black/[0.12] text-[#111111] hover:border-black/30 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30'
+                  }`}
+                >
+                  {selected ? (
+                    <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                    </svg>
+                  ) : null}
+                  {t(option.label)}
+                </button>
+              );
+            })}
+          </div>
+        </Section>
+  );
+
   const hashtagsSection = (
-        <Section title="Hashtags" description="Help buyers find your product in search. Press Enter after each one.">
+        <Section title={t('Hashtags')} description={t('Help buyers find your product in search. Press Enter after each one.')}>
           <ProductHashtagsField
             value={hashtags}
             onChange={(next) =>
@@ -1423,8 +1628,8 @@ export function ProductEditorForm({
 
   const highlightsSection = !isPhysical ? (
             <CollapsibleSection
-              title="Highlights"
-              description="A few clear reasons to choose your product, with photos or text."
+              title={t('Highlights')}
+              description={t('A few clear reasons to choose your product, with photos or text.')}
               summary={whyBlocksCount > 0 ? `${whyBlocksCount} highlight${whyBlocksCount > 1 ? 's' : ''} added` : null}
               defaultOpen={isEdit && whyBlocksCount > 0}
             >
@@ -1442,21 +1647,21 @@ export function ProductEditorForm({
 
   const technicalSection = !isPhysical ? (
             <CollapsibleSection
-              title="Technical details"
-              description="Format, language, version and the tools buyers need."
+              title={t('Technical details')}
+              description={t('Format, language, version and the tools buyers need.')}
               summary={technicalCount > 0 ? `${technicalCount} detail${technicalCount > 1 ? 's' : ''} filled` : null}
               defaultOpen={isEdit && technicalCount > 0}
             >
               <div className="grid gap-5 sm:grid-cols-2">
                 <div>
                   <label htmlFor="fileFormat" className={LABEL}>
-                    File format
+                    {t('File format')}
                   </label>
-                  <input id="fileFormat" className={INPUT} placeholder="e.g. ZIP, PDF, MP4" {...register('fileFormat')} />
+                  <input id="fileFormat" className={INPUT} placeholder={t('e.g. ZIP, PDF, MP4')} {...register('fileFormat')} />
                 </div>
                 <div>
                   <label htmlFor="language" className={LABEL}>
-                    Language
+                    {t('Language')}
                   </label>
                   <FormSelect
                     id="language"
@@ -1477,11 +1682,11 @@ export function ProductEditorForm({
                   {customLanguage ? (
                     <input
                       ref={customLanguageInputRef}
-                      aria-label="Custom language"
+                      aria-label={t('Custom language')}
                       value={language === OTHER_LANGUAGE ? '' : language ?? ''}
                       maxLength={CUSTOM_LANGUAGE_MAX}
                       autoComplete="off"
-                      placeholder="Name the language, e.g. Japanese"
+                      placeholder={t('Name the language, e.g. Japanese')}
                       onChange={(event) => setSelectValue('language', event.target.value)}
                       className={INPUT}
                     />
@@ -1489,7 +1694,7 @@ export function ProductEditorForm({
                 </div>
                 <div>
                   <label htmlFor="fileSizeMb" className={LABEL}>
-                    File size
+                    {t('File size')}
                   </label>
                   <div className={`mt-2 flex h-11 items-center ${FIELD_BASE} ${FIELD_FOCUS_WITHIN}`}>
                     <input
@@ -1497,20 +1702,20 @@ export function ProductEditorForm({
                       type="number"
                       min="0"
                       step="0.1"
-                      placeholder={fileSizeUnit === 'GB' ? 'e.g. 1.5' : 'e.g. 250'}
+                      placeholder={fileSizeUnit === 'GB' ? t('e.g. 1.5') : t('e.g. 250')}
                       className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                       {...register('fileSizeMb')}
                     />
                     <span aria-hidden className="h-5 w-px bg-black/[0.1] dark:bg-white/[0.12]" />
                     <div className="relative h-full shrink-0">
                       <select
-                        aria-label="File size unit"
+                        aria-label={t('File size unit')}
                         value={fileSizeUnit}
                         onChange={(event) => setFileSizeUnit(event.target.value as FileSizeUnit)}
                         className="h-full cursor-pointer appearance-none bg-transparent pl-3 pr-8 text-[14px] font-medium text-[#111111] outline-none dark:text-white dark:[color-scheme:dark]"
                       >
-                        <option value="MB">MB</option>
-                        <option value="GB">GB</option>
+                        <option value="MB">{t('MB')}</option>
+                        <option value="GB">{t('GB')}</option>
                       </select>
                       <svg
                         className="pointer-events-none absolute right-2.5 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-400"
@@ -1529,21 +1734,21 @@ export function ProductEditorForm({
                 </div>
                 <div>
                   <label htmlFor="version" className={LABEL}>
-                    Version
+                    {t('Version')}
                   </label>
-                  <input id="version" className={INPUT} placeholder="e.g. v1.0" {...register('version')} />
+                  <input id="version" className={INPUT} placeholder={t('e.g. v1.0')} {...register('version')} />
                 </div>
                 {productType === 'VIDEO' ? (
                   <>
                     <div>
                       <label htmlFor="videoDuration" className={LABEL}>
-                        Video duration
+                        {t('Video duration')}
                       </label>
                       <input id="videoDuration" placeholder="m:ss" className={INPUT} {...register('videoDuration')} />
                     </div>
                     <div>
                       <label htmlFor="videoResolution" className={LABEL}>
-                        Resolution
+                        {t('Resolution')}
                       </label>
                       <FormSelect
                         id="videoResolution"
@@ -1558,11 +1763,11 @@ export function ProductEditorForm({
               </div>
 
               <ChipsInput
-                label="Compatible tools"
+                label={t('Compatible tools')}
                 values={tools}
                 max={TOOLS_MAX}
-                placeholder="e.g. Figma"
-                hint="Press Enter to add. The apps buyers need to use your product."
+                placeholder={t('e.g. Figma')}
+                hint={t('Press Enter to add. The apps buyers need to use your product.')}
                 onChange={(next) =>
                   setValue(
                     'compatibleTools',
@@ -1578,7 +1783,12 @@ export function ProductEditorForm({
   const creatorAvatarSrc = user?.avatarUrl ? resolveStorageMediaUrl(user.avatarUrl) || user.avatarUrl : null;
 
   const composeBlock = inModal ? (
-    <div className="pb-8 pt-6 sm:pb-9 sm:pt-8">
+    <div className="pb-8 pt-6 sm:pb-9 sm:pt-7">
+      {renderFormatSelector ? (
+        <div className="mb-7">
+          <FormatCards value={productFormat} onChange={changeFormat} disabled={isSubmitting} />
+        </div>
+      ) : null}
       <div className="flex gap-4">
         {creatorAvatarSrc ? (
           // eslint-disable-next-line @next/next/no-img-element
@@ -1598,8 +1808,8 @@ export function ProductEditorForm({
             maxLength={TITLE_MAX}
             autoComplete="off"
             autoFocus
-            aria-label="Product title"
-            placeholder={isPhysical ? 'Name your product' : 'What are you selling?'}
+            aria-label={t('Product title')}
+            placeholder={isPhysical ? t('Name your product') : t('What are you selling?')}
             aria-invalid={Boolean(errors.title)}
             className="block w-full border-0 bg-transparent p-0 text-[24px] font-semibold leading-tight sm:text-[26px] tracking-[-0.02em] text-[#111111] outline-none placeholder:text-neutral-300 dark:text-white dark:placeholder:text-neutral-600"
             {...register('title')}
@@ -1609,8 +1819,8 @@ export function ProductEditorForm({
             id="description"
             rows={2}
             maxLength={DESCRIPTION_MAX}
-            aria-label="Description"
-            placeholder="What buyers get, who it’s for, and why it’s worth it."
+            aria-label={t('Description')}
+            placeholder={t('What buyers get, who it’s for, and why it’s worth it.')}
             className="mt-3 block min-h-[3.5rem] w-full resize-none border-0 bg-transparent p-0 text-[16px] leading-relaxed text-[#111111] outline-none [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
             {...register('description')}
           />
@@ -1622,12 +1832,12 @@ export function ProductEditorForm({
           ) : null}
         </div>
       </div>
-      <div className="mt-8 space-y-7 border-t border-black/[0.06] pt-8 dark:border-white/[0.08] sm:mt-10 sm:space-y-8 sm:pt-10">
+      <div className="mt-8 space-y-7 sm:mt-10 sm:space-y-8">
         {renderTypeCategory()}
         <div>
           <div className="flex items-center gap-2">
-            <p className={LABEL}>Cover</p>
-            <InfoHint align="start">The first thing buyers see in listings and search.</InfoHint>
+            <p className={LABEL}>{t('Cover')}</p>
+            <InfoHint align="start">{t('The first thing buyers see in listings and search.')}</InfoHint>
           </div>
           <div className="mt-2">
             <MediaRow
@@ -1638,8 +1848,8 @@ export function ProductEditorForm({
               accept={isPhysical ? IMAGE_ACCEPT : MEDIA_ACCEPT}
               onFile={(e) => void onThumbnailFile(e)}
               onRemove={() => setValue('thumbnailUrl', '', { shouldDirty: true })}
-              title={thumbnailUrl.trim() ? 'Cover added' : 'Add a cover'}
-              hint={isPhysical ? 'JPEG, PNG or WebP' : `Image or video up to ${THUMBNAIL_VIDEO_MAX_SECONDS}s`}
+              title={thumbnailUrl.trim() ? t('Cover added') : t('Add a cover')}
+              hint={isPhysical ? t('JPEG, PNG or WebP') : t('Image or video up to {THUMBNAILVIDEOMAXSECONDS}s', { THUMBNAILVIDEOMAXSECONDS: THUMBNAIL_VIDEO_MAX_SECONDS })}
             />
           </div>
           {mediaError ? <p role="alert" className={ERROR}>{mediaError}</p> : null}
@@ -1664,20 +1874,20 @@ export function ProductEditorForm({
               onClick={() => setStep(0)}
               className="absolute inset-0 flex items-center justify-center text-[12px] font-medium text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
             >
-              + Add a cover
+              {t('+ Add a cover')}
             </button>
           )}
         </div>
         <div className="flex min-w-0 flex-1 flex-col justify-center gap-1.5 py-1 pr-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
-            {isPhysical ? 'Material' : PRODUCT_TYPE_LABELS[productType] ?? 'Digital'}
+            {isPhysical ? t('Material') : productTypeName(productType, typeLabel)}
           </p>
           <p
             className={`line-clamp-2 text-[16px] font-semibold leading-snug ${
               title.trim() ? 'text-[#111111] dark:text-white' : 'text-neutral-300 dark:text-neutral-600'
             }`}
           >
-            {title.trim() || 'Product title'}
+            {title.trim() || t('Product title')}
           </p>
           {hashtags.length > 0 ? (
             <p className="truncate text-[13px] text-neutral-500 dark:text-neutral-400">
@@ -1686,7 +1896,7 @@ export function ProductEditorForm({
           ) : null}
           <p className="mt-1 flex items-baseline gap-2">
             <span className="text-[18px] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
-              {isFree ? 'Free' : priceCents != null ? formatPrice(priceCents, previewCurrency) : '—'}
+              {isFree ? t('Free') : priceCents != null ? formatPrice(priceCents, previewCurrency) : '—'}
             </span>
             {compareCents != null && priceCents != null && compareCents > priceCents ? (
               <>
@@ -1704,16 +1914,64 @@ export function ProductEditorForm({
     </div>
   );
 
-  const stepLabels = stepKeys.map((key) => (key === 'media' && isPhysical ? 'Photos' : STEP_LABELS[key]));
+  const stepLabels = stepKeys.map((key) => STEP_LABELS[key]);
+
+  /* Review: what is set and what is missing, each line a way back to its step. */
+  const readinessBlock = (
+    <section className="py-8">
+      <div className="flex items-center justify-between">
+        <h2 className="text-[17px] font-semibold tracking-[-0.01em] text-[#0F1419] dark:text-[#E7E9EA]">{t('Ready to publish')}</h2>
+        <p className="text-[13px] tabular-nums text-[#536471] dark:text-[#71767B]">
+          {doneCount}/{checklist.length}
+        </p>
+      </div>
+      <div className="mt-3 h-1 overflow-hidden rounded-full bg-[#EFF3F4] dark:bg-[#2F3336]">
+        <div className="h-full rounded-full bg-[#0F1419] transition-[width] duration-500 dark:bg-[#E7E9EA]" style={{ width: `${(doneCount / checklist.length) * 100}%` }} />
+      </div>
+      <ul className="mt-4 divide-y divide-[#EFF3F4] dark:divide-[#2F3336]">
+        {checklist.map((item) => (
+          <li key={item.label}>
+            <button
+              type="button"
+              onClick={() => setStep(item.label === 'Hashtags' ? 1 : 0)}
+              className="flex w-full items-center gap-3 py-2.5 text-left text-[15px]"
+            >
+              <span
+                aria-hidden
+                className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${
+                  item.done ? 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]' : 'shadow-[inset_0_0_0_1.5px_#CFD9DE] dark:shadow-[inset_0_0_0_1.5px_#536471]'
+                }`}
+              >
+                {item.done ? (
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={3.5} strokeLinecap="round" strokeLinejoin="round">
+                    <path d="m5 12 5 5 9-10" />
+                  </svg>
+                ) : null}
+              </span>
+              <span className={item.done ? 'text-[#0F1419] dark:text-[#E7E9EA]' : 'text-[#536471] dark:text-[#71767B]'}>{t(item.label)}</span>
+              {!item.done ? (
+                <span className={`ml-auto text-[13px] font-semibold ${item.required ? 'text-[#F4212E]' : 'text-[#536471] dark:text-[#71767B]'}`}>
+                  {item.required ? t('Required') : t('Add')}
+                </span>
+              ) : null}
+            </button>
+          </li>
+        ))}
+      </ul>
+    </section>
+  );
 
   const stepContent =
     currentStep === 'details' ? (
-      composeBlock
+      <>
+        {composeBlock}
+        {pricingSection}
+      </>
     ) : currentStep === 'media' ? (
       <>
         {mediaSection}
         {!isPhysical ? (
-          <Section title="Highlights" description="Optional. A few clear reasons to choose your product, with a photo or a short text.">
+          <Section title={t('Highlights')} description={t('Optional. A few clear reasons to choose your product, with a photo or a short text.')}>
             <ProductWhyBlocksField
               fields={whyField.fields}
               append={whyField.append}
@@ -1725,12 +1983,13 @@ export function ProductEditorForm({
             />
           </Section>
         ) : null}
+        {statusSection}
+        {hashtagsSection}
       </>
     ) : (
       <>
         {listingPreview}
-        {pricingSection}
-        {hashtagsSection}
+        {readinessBlock}
         {technicalSection}
       </>
     );
@@ -1740,6 +1999,7 @@ export function ProductEditorForm({
       {productSection}
       {mediaSection}
       {pricingSection}
+      {statusSection}
       {hashtagsSection}
       {highlightsSection}
       {technicalSection}
@@ -1750,12 +2010,12 @@ export function ProductEditorForm({
     const missingRequired = checklist.filter((item) => item.required && !item.done).map((item) => item.label);
     return (
       <EditorVariantContext.Provider value="modal">
-        <form {...formProps} aria-labelledby={headingId} className="flex min-h-0 flex-1 flex-col">
+        <form {...formProps} aria-labelledby={headingId} className="x-editor flex min-h-0 flex-1 flex-col">
           <header className="relative shrink-0 px-4 pb-4 pt-2 sm:px-6 sm:pt-4">
             <span aria-hidden className="mx-auto mb-2 block h-1 w-9 rounded-full bg-black/[0.12] dark:bg-white/[0.16] sm:hidden" />
             <div className="flex items-center gap-2 sm:gap-3">
               {step > 0 ? (
-                <button type="button" onClick={() => void goToStep(step - 1)} aria-label="Previous step" className={`${ROUND_ICON_BTN} -ml-1.5`}>
+                <button type="button" onClick={() => void goToStep(step - 1)} aria-label={t('Previous step')} className={`${ROUND_ICON_BTN} -ml-1.5`}>
                   <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M19 12H5m6-6-6 6 6 6" />
                   </svg>
@@ -1766,22 +2026,17 @@ export function ProductEditorForm({
                   {heading}
                 </h2>
                 <p className="mt-0.5 text-[13px] leading-tight text-neutral-500 dark:text-neutral-400">
-                  <span className="tabular-nums">Step {step + 1} of {stepCount}</span>
+                  <span className="tabular-nums">{t('Step')} {step + 1} {t('of')} {stepCount}</span>
                   <span aria-hidden> · </span>
                   {stepLabels[step]}
                 </p>
               </div>
-              {renderFormatSelector && step === 0 ? (
-                <div className="ml-auto hidden sm:block">
-                  <FormatSelector value={productFormat} onChange={changeFormat} disabled={isSubmitting} />
-                </div>
-              ) : null}
               {onCancel ? (
                 <button
                   type="button"
                   onClick={onCancel}
-                  aria-label="Close"
-                  className={`${ROUND_ICON_BTN} -mr-1.5 bg-black/[0.04] dark:bg-white/[0.06] ${renderFormatSelector && step === 0 ? 'ml-auto sm:ml-0' : 'ml-auto'}`}
+                  aria-label={t('Close')}
+                  className={`${ROUND_ICON_BTN} -mr-1.5 ml-auto bg-black/[0.04] dark:bg-white/[0.06]`}
                 >
                   <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
                     <path d="M6 6l12 12M18 6L6 18" />
@@ -1790,13 +2045,7 @@ export function ProductEditorForm({
               ) : null}
             </div>
 
-            {renderFormatSelector && step === 0 ? (
-              <div className="mt-4 sm:hidden">
-                <FormatSelector value={productFormat} onChange={changeFormat} disabled={isSubmitting} fullWidth />
-              </div>
-            ) : null}
-
-            <div className="absolute inset-x-0 bottom-0 flex gap-1" aria-label="Steps">
+            <div className="absolute inset-x-0 bottom-0 flex gap-1" aria-label={t('Steps')}>
               {stepLabels.map((label, index) => (
                 <button
                   key={label}
@@ -1811,7 +2060,7 @@ export function ProductEditorForm({
                       index < step
                         ? 'bg-[#111111] dark:bg-white'
                         : index === step
-                          ? 'bg-[#FF5722]'
+                          ? 'bg-[#0F1419] dark:bg-[#E7E9EA]'
                           : 'bg-black/[0.08] group-hover:bg-black/[0.16] dark:bg-white/[0.1] dark:group-hover:bg-white/[0.2]'
                     }`}
                   />
@@ -1827,23 +2076,23 @@ export function ProductEditorForm({
           <footer className="flex shrink-0 items-center gap-3 border-t border-black/[0.06] bg-white px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-3 dark:border-white/[0.08] dark:bg-[#0A0A0A] sm:px-6 sm:pb-3">
             {!isEdit ? (
               <button type="button" onClick={() => submit('draft')} disabled={busy} className={`${LINK_BTN} -ml-2 shrink-0 px-2 py-2`}>
-                {pendingAction === 'draft' && isSubmitting ? 'Saving…' : 'Save draft'}
+                {pendingAction === 'draft' && isSubmitting ? t('Saving…') : t('Save draft')}
               </button>
             ) : null}
             <div className="ml-auto flex items-center gap-2">
               {isLastStep && missingRequired.length > 0 ? (
                 <p className="hidden text-[13px] text-neutral-500 dark:text-neutral-400 sm:block">
-                  Add <span className="font-medium text-[#111111] dark:text-white">{missingRequired.join(' and ').toLowerCase()}</span>
+                  {t('Add')} <span className="font-medium text-[#111111] dark:text-white">{missingRequired.join(' and ').toLowerCase()}</span>
                 </p>
               ) : null}
               {step > 0 ? (
                 <button type="button" onClick={() => void goToStep(step - 1)} disabled={isSubmitting} className={`${PILL_GHOST} hidden sm:inline-flex`}>
-                  Back
+                  {t('Back')}
                 </button>
               ) : null}
               {!isLastStep ? (
                 <button type="button" onClick={() => void goToStep(step + 1)} disabled={busy} className={PILL_PRIMARY}>
-                  Next
+                  {t('Next')}
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                     <path d="M5 12h14m-6-6 6 6-6 6" />
                   </svg>
@@ -1851,7 +2100,7 @@ export function ProductEditorForm({
               ) : (
                 <button type="button" onClick={() => submit('publish')} disabled={busy} className={PILL_PRIMARY}>
                   {pendingAction === 'publish' && isSubmitting ? <LoadingSpinner size="sm" /> : null}
-                  {pendingAction === 'publish' && isSubmitting ? 'Publishing…' : submitLabel}
+                  {pendingAction === 'publish' && isSubmitting ? t('Publishing…') : submitLabel}
                 </button>
               )}
             </div>
@@ -1864,9 +2113,9 @@ export function ProductEditorForm({
   return (
     <form
       {...formProps}
-      className="grid items-start gap-8 lg:grid-cols-[minmax(0,1fr)_320px] lg:gap-10 xl:grid-cols-[minmax(0,1fr)_360px] xl:gap-14"
+      className="x-editor x-editor-page grid items-start gap-2 sm:gap-6 lg:grid-cols-[minmax(0,1fr)_320px] xl:grid-cols-[minmax(0,1fr)_360px]"
     >
-      <div className="min-w-0 space-y-6">
+      <div className="min-w-0 space-y-2 sm:space-y-6">
         {renderFormatSelector ? (
           <FormatSelector value={productFormat} onChange={changeFormat} disabled={isSubmitting} />
         ) : null}
@@ -1874,9 +2123,9 @@ export function ProductEditorForm({
       </div>
 
       {/* Sticky summary: live preview, readiness and actions. */}
-      <aside className="space-y-5 lg:sticky lg:top-24">
-        <div className="overflow-hidden rounded-xl border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
-          <div className="relative aspect-[4/3] bg-black/[0.03] dark:bg-white/[0.04]">
+      <aside className="space-y-2 sm:space-y-6 lg:sticky lg:top-24">
+        <div className="overflow-hidden bg-[#F7F9F9] dark:bg-[#16181C]">
+          <div className="relative aspect-[4/3] bg-[#EFF3F4] dark:bg-[#202327]">
             {thumbnailUrl.trim() ? (
               <ProductThumbnailMedia
                 url={thumbnailUrl.trim()}
@@ -1884,45 +2133,45 @@ export function ProductEditorForm({
                 className="absolute inset-0 h-full w-full object-cover"
               />
             ) : (
-              <span className="absolute inset-0 flex items-center justify-center text-[13px] text-neutral-400 dark:text-neutral-500">
-                Your cover appears here
+              <span className="absolute inset-0 flex items-center justify-center text-[13px] text-[#536471] dark:text-[#71767B]">
+                {t('Your cover appears here')}
               </span>
             )}
           </div>
-          <div className="space-y-2 p-5">
-            <p className="text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
-              {isPhysical ? 'Material' : PRODUCT_TYPE_LABELS[productType] ?? 'Digital'}
+          <div className="space-y-1.5 p-5">
+            <p className="text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#536471] dark:text-[#71767B]">
+              {isPhysical ? t('Material') : productTypeName(productType, typeLabel)}
             </p>
             <p
-              className={`line-clamp-2 text-[16px] font-semibold leading-snug ${
-                title.trim() ? 'text-[#111111] dark:text-white' : 'text-neutral-300 dark:text-neutral-600'
+              className={`line-clamp-2 text-[16px] font-bold leading-[22px] ${
+                title.trim() ? 'text-[#0F1419] dark:text-[#E7E9EA]' : 'text-[#8B98A5] dark:text-[#536471]'
               }`}
             >
-              {title.trim() || 'Product title'}
+              {title.trim() || t('Product title')}
             </p>
             <p className="flex items-baseline gap-2">
+              <span className="text-[17px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">
+                {priceCents != null ? formatPrice(priceCents, previewCurrency) : '—'}
+              </span>
               {compareCents != null && priceCents != null && compareCents > priceCents ? (
-                <span className="text-[14px] text-neutral-400 line-through dark:text-neutral-500">
+                <span className="text-[13px] text-[#8B98A5] line-through dark:text-[#536471]">
                   {formatPrice(compareCents, previewCurrency)}
                 </span>
               ) : null}
-              <span className="text-[17px] font-semibold text-[#111111] dark:text-white">
-                {priceCents != null ? formatPrice(priceCents, previewCurrency) : '—'}
-              </span>
             </p>
           </div>
         </div>
 
-        <div className="rounded-xl border border-black/[0.06] bg-white p-5 dark:border-white/[0.08] dark:bg-[#111111]">
+        <div className="bg-[#F7F9F9] p-5 dark:bg-[#16181C]">
           <div className="flex items-center justify-between">
-            <p className="text-[14px] font-semibold text-[#111111] dark:text-white">Ready to publish</p>
-            <p className="text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
+            <p className="text-[15px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{t('Ready to publish')}</p>
+            <p className="text-[13px] tabular-nums text-[#536471] dark:text-[#71767B]">
               {doneCount}/{checklist.length}
             </p>
           </div>
-          <div className="mt-3 h-1 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+          <div className="mt-3 h-1 overflow-hidden rounded-full bg-[#EFF3F4] dark:bg-[#2F3336]">
             <div
-              className="h-full rounded-full bg-[#111111] transition-[width] duration-500 dark:bg-white"
+              className="h-full rounded-full bg-[#0F1419] transition-[width] duration-500 dark:bg-[#E7E9EA]"
               style={{ width: `${(doneCount / checklist.length) * 100}%` }}
             />
           </div>
@@ -1932,7 +2181,9 @@ export function ProductEditorForm({
                 <span
                   aria-hidden
                   className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full ${
-                    item.done ? 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]' : 'border border-black/20 dark:border-white/25'
+                    item.done
+                      ? 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+                      : 'border border-[#CFD9DE] dark:border-[#536471]'
                   }`}
                 >
                   {item.done ? (
@@ -1941,11 +2192,11 @@ export function ProductEditorForm({
                     </svg>
                   ) : null}
                 </span>
-                <span className={item.done ? 'text-[#111111] dark:text-white' : 'text-neutral-500 dark:text-neutral-400'}>
-                  {item.label}
+                <span className={item.done ? 'text-[#0F1419] dark:text-[#E7E9EA]' : 'text-[#536471] dark:text-[#71767B]'}>
+                  {t(item.label)}
                 </span>
                 {!item.required && !item.done ? (
-                  <span className="ml-auto text-[12px] text-neutral-400 dark:text-neutral-500">Recommended</span>
+                  <span className="ml-auto text-[13px] text-[#536471] dark:text-[#71767B]">{t('Recommended')}</span>
                 ) : null}
               </li>
             ))}
@@ -1954,20 +2205,20 @@ export function ProductEditorForm({
           <div className="mt-6 space-y-2.5">
             <button type="button" onClick={() => submit('publish')} disabled={busy} className={PRIMARY_BTN}>
               {pendingAction === 'publish' && isSubmitting ? <LoadingSpinner size="sm" /> : null}
-              {pendingAction === 'publish' && isSubmitting ? 'Saving…' : submitLabel}
+              {pendingAction === 'publish' && isSubmitting ? t('Saving…') : submitLabel}
             </button>
             {!isEdit ? (
               <button type="button" onClick={() => submit('draft')} disabled={busy} className={SECONDARY_BTN}>
-                {pendingAction === 'draft' && isSubmitting ? 'Saving…' : 'Save as draft'}
+                {pendingAction === 'draft' && isSubmitting ? t('Saving…') : t('Save as draft')}
               </button>
             ) : null}
             {onCancel ? (
               <button type="button" onClick={onCancel} className={`${LINK_BTN} block w-full py-1.5 text-center`}>
-                Cancel
+                {t('Cancel')}
               </button>
             ) : cancelHref ? (
               <Link href={cancelHref} className={`${LINK_BTN} block w-full py-1.5 text-center`}>
-                Cancel
+                {t('Cancel')}
               </Link>
             ) : null}
           </div>

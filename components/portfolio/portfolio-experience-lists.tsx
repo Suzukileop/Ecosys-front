@@ -1,5 +1,7 @@
 'use client';
 
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type ReactNode, type RefObject } from 'react';
 import { createPortal } from 'react-dom';
 import { employmentTypeLabel } from '@/lib/experience-employment';
@@ -38,6 +40,7 @@ import {
   getScrollParent,
   usePortfolioFinePointerDesktop,
 } from '@/components/portfolio/portfolio-section-primitives';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function splitExperienceText(text: string): { title: string | null; body: string | null } {
   const trimmed = text.trim();
@@ -375,7 +378,10 @@ export function ExperienceMilestoneHeader({
   const titleRef = useRef<HTMLHeadingElement>(null);
   const leadRef = useRef<HTMLParagraphElement>(null);
   const introPlayedRef = useRef(false);
-  const reduceMotion = useReducedMotion();
+  // Global → Animations → "Header animations" forces the static path, like prefers-reduced-motion.
+  const headerMotionOff = usePortfolioHeaderMotionOff();
+  const reducedMotionPreference = useReducedMotion();
+  const reduceMotion = headerMotionOff ? true : reducedMotionPreference;
 
   const isDark = presentation.activeColorMode !== 'light';
   const colorMode = resolveExperienceColorMode(presentation);
@@ -391,7 +397,10 @@ export function ExperienceMilestoneHeader({
     sectionTitle,
     presentation
   );
-  const hasLead = Boolean(yearsLead);
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'experience-milestone');
+  const showTitle = show('title');
+  const showLead = show('lead');
+  const hasLead = Boolean(yearsLead) && showLead;
 
   const leadWeight = presentation.centeredLeadWeight ?? 'light';
   const leadOpacity = presentation.centeredLeadOpacity ?? 'balanced';
@@ -477,7 +486,7 @@ export function ExperienceMilestoneHeader({
       ctx.revert();
       if (!header.isConnected) introPlayedRef.current = false;
     };
-  }, [hasLead, reduceMotion]);
+  }, [hasLead, showTitle, reduceMotion]);
 
   useLayoutEffect(() => {
     const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 40);
@@ -500,14 +509,16 @@ export function ExperienceMilestoneHeader({
         } as CSSProperties
       }
     >
-      <div ref={parallaxRef} className="pf-exp-centered-parallax">
-        <div className="pf-exp-centered-title-mask">
-          <h2 ref={titleRef} className="pf-exp-centered-title" style={{ color: titleColor }}>
-            {displayTitle}
-          </h2>
+      {showTitle ? (
+        <div ref={parallaxRef} className="pf-exp-centered-parallax">
+          <div className="pf-exp-centered-title-mask">
+            <h2 ref={titleRef} className="pf-exp-centered-title" style={{ color: titleColor }}>
+              {displayTitle}
+            </h2>
+          </div>
         </div>
-      </div>
-      {yearsLead ? (
+      ) : null}
+      {hasLead ? (
         <p
           ref={leadRef}
           className="pf-exp-centered-lead"
@@ -554,6 +565,7 @@ function ExperienceTasksDisplay({
   /** Kept for callers that still pass entry tools. */
   tools?: string[];
 }) {
+  const t = useT();
   if (tasks.length === 0) return null;
 
   const textClass =
@@ -806,6 +818,7 @@ function ExperienceToolsDisplay({
    * two-column grid doesn't read well as a single scrolling row. */
   layout?: 'wrap' | 'scroll-x';
 }) {
+  const t = useT();
   if (tools.length === 0) return null;
 
   const activeColor = isDark ? '#ffffff' : ink;
@@ -971,6 +984,7 @@ function ExperienceEditorialOngoingBadge({
   /** Secondary color token ("secondaire") — Finished derives its tint from it instead of the flat neutral gray fallback. */
   secondaryColor?: string;
 }) {
+  const t = useT();
   if (status !== 'ONGOING' && status !== 'FINISHED') return null;
   const isOngoing = status === 'ONGOING';
   const dotColor = isOngoing ? (accentColor ?? (isDark ? '#6EE7A0' : '#1B7A3D')) : 'currentColor';
@@ -992,7 +1006,7 @@ function ExperienceEditorialOngoingBadge({
       }
     >
       <span className="h-1.5 w-1.5 rounded-full" style={{ backgroundColor: dotColor }} aria-hidden />
-      {isOngoing ? 'Ongoing' : 'Finished'}
+      {isOngoing ? t('Ongoing') : t('Finished')}
     </span>
   );
 }
@@ -1126,6 +1140,7 @@ function ExperienceEditorialEntry({
   periodDesign?: PortfolioExperiencePeriodDesign;
   presentation: PortfolioExperiencePresentationSettings;
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const motionDisabled = reduceMotion === true;
   const secondary = experienceSecondaryStatusColor(presentation);
@@ -1187,7 +1202,7 @@ function ExperienceEditorialEntry({
         e.currentTarget.style.backgroundColor = 'transparent';
         e.currentTarget.style.color = mutedColor;
       }}
-      aria-label={effectiveExpanded ? 'Collapse role details' : 'Expand role details'}
+      aria-label={effectiveExpanded ? t('Collapse role details') : t('Expand role details')}
       onClick={toggleExpanded}
     >
       <motion.span
@@ -1241,7 +1256,7 @@ function ExperienceEditorialEntry({
           key={link.id}
           variant={linkVariant}
           href={link.url}
-          label={link.label || 'View repository'}
+          label={link.label || t('View repository')}
           palette={linkPalette}
         />
       ))}
@@ -1825,6 +1840,7 @@ function MilestoneExperienceEntry({
   index: number;
   presentation: PortfolioExperiencePresentationSettings;
 }) {
+  const t = useT();
   const articleRef = useRef<HTMLElement | null>(null);
   const displayYear = extractMilestoneDisplayYear(period);
   const secondary = experienceSecondaryStatusColor(presentation);
@@ -2003,7 +2019,7 @@ function MilestoneExperienceEntry({
                     key={link.id}
                     variant={linkVariant}
                     href={link.url}
-                    label={link.label || 'View repository'}
+                    label={link.label || t('View repository')}
                     palette={linkPalette}
                   />
                 ))}
@@ -2162,6 +2178,7 @@ function TableExperienceStatusCell({
   mutedColor: string;
   secondaryColor: string;
 }) {
+  const t = useT();
   if (status !== 'ONGOING' && status !== 'FINISHED') {
     return <span style={{ color: mutedColor }}>—</span>;
   }
@@ -2176,7 +2193,7 @@ function TableExperienceStatusCell({
         style={{ backgroundColor: isOngoing ? titleColor : secondaryColor }}
         aria-hidden
       />
-      {isOngoing ? 'Ongoing' : 'Completed'}
+      {isOngoing ? t('Ongoing') : t('Completed')}
     </span>
   );
 }
@@ -2233,6 +2250,7 @@ function TableExperienceRow({
   repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
   background?: string;
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const motionDisabled = reduceMotion === true;
   const orgMeta = [
@@ -2393,7 +2411,7 @@ function TableExperienceRow({
                         key={link.id}
                         variant={repoLinkButtonStyle}
                         href={link.url}
-                        label={link.label || 'View repository'}
+                        label={link.label || t('View repository')}
                         palette={experienceLinkButtonPalette({
                           ink: titleColor,
                           muted: mutedColor,
@@ -2516,7 +2534,10 @@ export function TableExperienceHeader({
   const leadRef = useRef<HTMLHeadingElement>(null);
   const lineRefs = useRef<(HTMLSpanElement | null)[]>([]);
   const introPlayedRef = useRef(false);
-  const reduceMotion = useReducedMotion();
+  // Global → Animations → "Header animations" forces the static path, like prefers-reduced-motion.
+  const headerMotionOff = usePortfolioHeaderMotionOff();
+  const reducedMotionPreference = useReducedMotion();
+  const reduceMotion = headerMotionOff ? true : reducedMotionPreference;
 
   const isDark = presentation.activeColorMode !== 'light';
   const colorMode = resolveExperienceColorMode(presentation);
@@ -2529,7 +2550,10 @@ export function TableExperienceHeader({
   );
   const ink = resolveSerifLeadInkColor(presentation, titleColor);
   const { label, title } = resolveSerifLeadCopy(years, sectionTitle, presentation);
-  const lines = splitSerifLeadLines(title);
+  const showTableElements = headerElementVisibility(presentation.headerHiddenElements, 'experience-table');
+  const showLabel = showTableElements('label');
+  const showLead = showTableElements('lead');
+  const lines = showLead ? splitSerifLeadLines(title) : [];
   const lineKey = lines.join('\n');
 
   const align = presentation.serifLeadAlign ?? 'left';
@@ -2557,7 +2581,7 @@ export function TableExperienceHeader({
     const header = headerRef.current;
     const labelEl = labelRef.current;
     const leadBlock = leadRef.current;
-    if (!header || !labelEl) return;
+    if (!header) return;
 
     gsap.registerPlugin(ScrollTrigger);
     const reduced = reduceMotion === true;
@@ -2577,7 +2601,7 @@ export function TableExperienceHeader({
             invalidateOnRefresh: true,
           },
         });
-        fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
+        if (labelEl) fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
         if (leadBlock) {
           const slideX = align === 'right' ? 16 : align === 'center' ? 0 : -16;
           fade.fromTo(
@@ -2591,7 +2615,7 @@ export function TableExperienceHeader({
       };
 
       if (!motionEnabled || introPlayedRef.current || reduced) {
-        gsap.set(labelEl, { opacity: 1, y: 0 });
+        if (labelEl) gsap.set(labelEl, { opacity: 1, y: 0 });
         if (lineEls.length) gsap.set(lineEls, { yPercent: 0 });
         if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
         introPlayedRef.current = true;
@@ -2600,7 +2624,7 @@ export function TableExperienceHeader({
       }
 
       introPlayedRef.current = true;
-      gsap.set(labelEl, { opacity: 0 });
+      if (labelEl) gsap.set(labelEl, { opacity: 0 });
       if (lineEls.length) gsap.set(lineEls, { yPercent: 110 });
       if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
 
@@ -2608,7 +2632,7 @@ export function TableExperienceHeader({
         defaults: { overwrite: true },
         onComplete: bindScrollMotion,
       });
-      intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
+      if (labelEl) intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
       if (lineEls.length) {
         intro.to(
           lineEls,
@@ -2635,7 +2659,7 @@ export function TableExperienceHeader({
       ctx.revert();
       if (!header.isConnected) introPlayedRef.current = false;
     };
-  }, [align, lineKey, motionEnabled, reduceMotion]);
+  }, [align, lineKey, motionEnabled, reduceMotion, showLabel]);
 
   useLayoutEffect(() => {
     const refreshId = window.setTimeout(() => ScrollTrigger.refresh(), 40);
@@ -2659,13 +2683,15 @@ export function TableExperienceHeader({
         } as CSSProperties
       }
     >
-      <p
-        ref={labelRef}
-        className="pf-exp-serif-label"
-        style={{ color: `color-mix(in srgb, ${ink} ${Math.round(labelAlpha * 100)}%, transparent)` }}
-      >
-        {label}
-      </p>
+      {showLabel ? (
+        <p
+          ref={labelRef}
+          className="pf-exp-serif-label"
+          style={{ color: `color-mix(in srgb, ${ink} ${Math.round(labelAlpha * 100)}%, transparent)` }}
+        >
+          {label}
+        </p>
+      ) : null}
       {lines.length > 0 ? (
         <h2
           ref={leadRef}
@@ -2704,6 +2730,7 @@ export function CardsExperienceHeader({
   years?: number | null;
   presentation?: PortfolioExperiencePresentationSettings;
 }) {
+  const t = useT();
   const isDark = presentation.activeColorMode !== 'light';
   const colorMode = resolveExperienceColorMode(presentation);
   const styles = normalizeExperienceElementStyles(presentation.elementStyles);
@@ -2737,7 +2764,7 @@ export function CardsExperienceHeader({
           className="shrink-0 text-[0.95rem] font-medium tracking-[-0.01em] sm:text-[1.05rem]"
           style={{ color: mutedColor }}
         >
-          {sectionTitle || 'Experience'}
+          {sectionTitle || t('Experience')}
         </p>
         {intro ? (
           <h2
@@ -2980,6 +3007,7 @@ function CardsExperienceEntry({
   presentation: PortfolioExperiencePresentationSettings;
   stackIndex?: number;
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const articleRef = useRef<HTMLElement | null>(null);
   const titleInnerRef = useRef<HTMLSpanElement | null>(null);
@@ -2992,7 +3020,7 @@ function CardsExperienceEntry({
     location?.trim() || '',
     employmentTypeLabel(employmentType),
   ].filter(Boolean);
-  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Finished' : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
   const statusColor = status === 'ONGOING' ? accent : secondary;
   // Period, status and org/role fold into one micro-typographic label line above
   // the title instead of a floating badge — each part keeps its own ink so the
@@ -3169,7 +3197,7 @@ function CardsExperienceEntry({
           ) : null}
 
           {tools.length > 0 ? (
-            <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Stack">
+            <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label={t('Stack')}>
               {tools.map((tool) => (
                 <li
                   key={tool}
@@ -3190,7 +3218,7 @@ function CardsExperienceEntry({
             <CardsRepoLink
               key={link.id}
               href={link.url}
-              label={link.label || 'View repository'}
+              label={link.label || t('View repository')}
               ink={titleColor}
             />
           ))}
@@ -3558,9 +3586,10 @@ function ReelStatusIndicator({
   bodyColor: string;
   hairline: string;
 }) {
+  const t = useT();
   const isFinished = status === 'FINISHED';
   const color = isFinished ? secondaryColor : accent;
-  const label = isFinished ? 'Completed' : 'Ongoing';
+  const label = isFinished ? t('Completed') : t('Ongoing');
 
   if (presentationStyle === 'minimal') {
     return (
@@ -3842,6 +3871,7 @@ function ReelExperienceEntry({
   showTools?: boolean;
   isDark?: boolean;
 }) {
+  const t = useT();
   const sectionRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
   const fadeReveal = scrollMotion === 'fade-reveal' && !reduceMotion;
@@ -4003,7 +4033,7 @@ function ReelExperienceEntry({
               <PortfolioLinkButton
                 variant={repoLinkButtonStyle}
                 href={repoLink.url}
-                label={repoLink.label || 'View repository'}
+                label={repoLink.label || t('View repository')}
                 palette={experienceLinkButtonPalette({
                   ink: titleColor,
                   muted: mutedColor,
@@ -4049,6 +4079,7 @@ function ReelStickyVerticalExperience({
   showTools?: boolean;
   isDark?: boolean;
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
@@ -4436,7 +4467,7 @@ function ReelStickyVerticalExperience({
                     <PortfolioLinkButton
                       variant={repoLinkButtonStyle}
                       href={repoLink.url}
-                      label={repoLink.label || 'View repository'}
+                      label={repoLink.label || t('View repository')}
                       palette={experienceLinkButtonPalette({
                         ink: titleColor,
                         muted: mutedColor,
@@ -4553,6 +4584,7 @@ function DuotoneConsultCursor({
   onDismiss: () => void;
   isDark: boolean;
 }) {
+  const t = useT();
   const elRef = useRef<HTMLDivElement>(null);
   const target = useRef({ x: 0, y: 0 });
   const current = useRef({ x: 0, y: 0 });
@@ -4629,7 +4661,7 @@ function DuotoneConsultCursor({
           boxShadow: '0 10px 28px -12px rgba(0,0,0,0.45)',
         }}
       >
-        <span>Consult</span>
+        <span>{t('Consult')}</span>
         <svg
           viewBox="0 0 24 24"
           className="h-3 w-3 shrink-0 opacity-80"
@@ -4714,13 +4746,14 @@ function DuotoneLeftPanel({
    * gets stuck at its desktop floor on narrow phones. */
   titleScale?: 'default' | 'compact';
 }) {
+  const t = useT();
   const { period, title, organization, status, location, employmentType } = resolveExperienceContent(block);
 
   const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
 
-  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Finished' : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
   const displayPeriod = showPeriod ? period : null;
   const displayMetaLine = showMeta ? metaLine : '';
   const displayStatusLabel = showMeta ? statusLabel : null;
@@ -4796,7 +4829,7 @@ function DuotoneLeftPanel({
         <div data-pf-no-color-transition="" className="pf-duotone-thumb-zoom">
           <ProductThumbnailMedia
             url={mediaUrl}
-            alt={title || 'Experience'}
+            alt={title || t('Experience')}
             fit="cover"
             className={
               thumbnailEffect === 'none'
@@ -4819,7 +4852,7 @@ function DuotoneLeftPanel({
           target="_blank"
           rel="noreferrer"
           className="absolute inset-0 z-[2]"
-          aria-label="Consult"
+          aria-label={t('Consult')}
         />
       ) : null}
     </div>
@@ -5020,6 +5053,7 @@ function DuotoneRightPanel({
   /** When thumb-cursor CTA is on, hide the footer repository button. */
   hideRepoButton?: boolean;
 }) {
+  const t = useT();
   const { description, tasks, tools, links, period, organization, status, location, employmentType } =
     resolveExperienceContent(block);
   const repoLink = showProof && !hideRepoButton ? links[0] ?? null : null;
@@ -5029,7 +5063,7 @@ function DuotoneRightPanel({
   const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
-  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Finished' : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
   const displayPeriod = showPeriod ? period : null;
   const displayMetaLine = showMeta ? metaLine : '';
   const displayStatusLabel = showMeta ? statusLabel : null;
@@ -5195,7 +5229,7 @@ function DuotoneRightPanel({
                   <PortfolioLinkButton
                     variant={repoLinkButtonStyle}
                     href={repoLink.url}
-                    label={repoLink.label || 'View repository'}
+                    label={repoLink.label || t('View repository')}
                     palette={{ background: cardBg, ink, muted, accent, border }}
                     radiusClass="rounded-[14px]"
                   />
@@ -5225,7 +5259,7 @@ function DuotoneRightPanel({
                 <PortfolioLinkButton
                   variant={repoLinkButtonStyle}
                   href={repoLink.url}
-                  label={repoLink.label || 'View repository'}
+                  label={repoLink.label || t('View repository')}
                   palette={{ background: cardBg, ink, muted, accent, border }}
                   radiusClass="rounded-[14px]"
                 />
@@ -5419,6 +5453,7 @@ function DuotoneSlideNav({
   border: string;
   onNavigate: (index: number) => void;
 }) {
+  const t = useT();
   if (navStyle === 'text') {
     const linkClass =
       'group relative text-[0.85rem] font-semibold disabled:opacity-30 disabled:after:hidden';
@@ -5434,26 +5469,24 @@ function DuotoneSlideNav({
       <div className="flex items-center gap-5">
         <button
           type="button"
-          aria-label="Previous role"
+          aria-label={t('Previous role')}
           disabled={activeIndex === 0}
           onClick={() => onNavigate(activeIndex - 1)}
           className={linkClass}
           style={{ color: accent, fontFamily: REEL_SANS }}
         >
-          Previous
-          {underline}
+          {t.rich('Previous {underline}', { underline })}
         </button>
         <span className="h-4 w-px" style={{ backgroundColor: border }} aria-hidden />
         <button
           type="button"
-          aria-label="Next role"
+          aria-label={t('Next role')}
           disabled={activeIndex === blocks.length - 1}
           onClick={() => onNavigate(activeIndex + 1)}
           className={linkClass}
           style={{ color: accent, fontFamily: REEL_SANS }}
         >
-          Next
-          {underline}
+          {t.rich('Next {underline}', { underline })}
         </button>
       </div>
     );
@@ -5463,7 +5496,7 @@ function DuotoneSlideNav({
     <div className="flex items-center gap-4">
       <button
         type="button"
-        aria-label="Previous role"
+        aria-label={t('Previous role')}
         disabled={activeIndex === 0}
         onClick={() => onNavigate(activeIndex - 1)}
         className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
@@ -5480,7 +5513,7 @@ function DuotoneSlideNav({
       </button>
       <button
         type="button"
-        aria-label="Next role"
+        aria-label={t('Next role')}
         disabled={activeIndex === blocks.length - 1}
         onClick={() => onNavigate(activeIndex + 1)}
         className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
@@ -6140,6 +6173,7 @@ function GalleryDetailContent({
   /** Smaller type + tighter spacing for the narrower Drawer / Inline contexts. */
   compact?: boolean;
 }) {
+  const t = useT();
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
   const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
@@ -6222,7 +6256,7 @@ function GalleryDetailContent({
           <PortfolioLinkButton
             variant={flags.repoLinkButtonStyle}
             href={repoLink.url}
-            label={repoLink.label || 'View repository'}
+            label={repoLink.label || t('View repository')}
             palette={{ background: cardBg, ink, muted, accent, border }}
           />
         </div>
@@ -6258,6 +6292,7 @@ function GalleryExperienceCard({
   hoverEffect: PortfolioExperienceLoftHoverEffect;
   onOpen: () => void;
 }) {
+  const t = useT();
   const { period, title, organization, status, tools, location, employmentType } =
     resolveExperienceContent(block);
   const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
@@ -6311,7 +6346,7 @@ function GalleryExperienceCard({
                 <div className="absolute inset-0 p-4">
                   <ProductThumbnailMedia
                     url={mediaUrl}
-                    alt={title || 'Experience'}
+                    alt={title || t('Experience')}
                     fit="contain"
                     className="h-full w-full drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
                   />
@@ -6320,7 +6355,7 @@ function GalleryExperienceCard({
             ) : mediaUrl ? (
               <ProductThumbnailMedia
                 url={mediaUrl}
-                alt={title || 'Experience'}
+                alt={title || t('Experience')}
                 fit="cover"
                 className="h-full w-full object-top"
               />
@@ -6364,7 +6399,7 @@ function GalleryExperienceCard({
                   backgroundColor: isDark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.4)',
                 }}
               >
-                [ View case ↗ ]
+                {t('[ View case ↗ ]')}
               </span>
             </div>
           ) : null}
@@ -6448,6 +6483,7 @@ function GalleryExperienceModal({
   canPrev: boolean;
   canNext: boolean;
 }) {
+  const t = useT();
   const [entered, setEntered] = useState(false);
   useEffect(() => {
     const id = window.requestAnimationFrame(() => setEntered(true));
@@ -6498,12 +6534,12 @@ function GalleryExperienceModal({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={title ?? 'Experience details'}
+        aria-label={title ?? t('Experience details')}
       >
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t('Close')}
           className="absolute right-4 top-4 z-10 flex h-7 w-7 items-center justify-center rounded-full opacity-60 transition hover:opacity-100"
           data-pf-no-color-transition=""
           style={{ backgroundColor: `color-mix(in srgb, ${ink} 6%, transparent)`, color: ink }}
@@ -6526,7 +6562,7 @@ function GalleryExperienceModal({
             <div className="absolute inset-0 p-5">
               <ProductThumbnailMedia
                 url={mediaUrl}
-                alt={title || 'Experience'}
+                alt={title || t('Experience')}
                 fit="contain"
                 className="h-full w-full drop-shadow-[0_12px_28px_rgba(0,0,0,0.35)]"
               />
@@ -6539,7 +6575,7 @@ function GalleryExperienceModal({
           >
             <ProductThumbnailMedia
               url={mediaUrl}
-              alt={title || 'Experience'}
+              alt={title || t('Experience')}
               fit="cover"
               className="absolute inset-0 h-full w-full object-top"
             />
@@ -6568,7 +6604,7 @@ function GalleryExperienceModal({
             event.stopPropagation();
             onPrev();
           }}
-          aria-label="Previous"
+          aria-label={t('Previous')}
           className="absolute left-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:scale-110 sm:flex"
           data-pf-no-color-transition=""
           style={{ backgroundColor: 'rgba(255,255,255,0.14)' }}
@@ -6583,7 +6619,7 @@ function GalleryExperienceModal({
             event.stopPropagation();
             onNext();
           }}
-          aria-label="Next"
+          aria-label={t('Next')}
           className="absolute right-3 top-1/2 hidden h-11 w-11 -translate-y-1/2 items-center justify-center rounded-full text-white transition hover:scale-110 sm:flex"
           data-pf-no-color-transition=""
           style={{ backgroundColor: 'rgba(255,255,255,0.14)' }}
@@ -6879,6 +6915,7 @@ function LoftCardMedia({
   title: string;
   initial: string;
 }) {
+  const t = useT();
   if (mediaUrl && thumbnailFit === 'glass') {
     return (
       <>
@@ -6893,7 +6930,7 @@ function LoftCardMedia({
         <div className="absolute inset-0 p-6">
           <ProductThumbnailMedia
             url={mediaUrl}
-            alt={title || 'Experience'}
+            alt={title || t('Experience')}
             fit="contain"
             className="h-full w-full drop-shadow-[0_8px_20px_rgba(0,0,0,0.3)]"
           />
@@ -6902,7 +6939,7 @@ function LoftCardMedia({
     );
   }
   if (mediaUrl) {
-    return <ProductThumbnailMedia url={mediaUrl} alt={title || 'Experience'} fit="cover" className="h-full w-full" />;
+    return <ProductThumbnailMedia url={mediaUrl} alt={title || t('Experience')} fit="cover" className="h-full w-full" />;
   }
   return (
     <div
@@ -6938,6 +6975,7 @@ function LoftCard({
   hoverEffect: PortfolioExperienceLoftHoverEffect;
   onOpen: () => void;
 }) {
+  const t = useT();
   const { title, organization } = resolveExperienceContent(block);
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
@@ -7004,7 +7042,7 @@ function LoftCard({
                   backgroundColor: isDark ? 'rgba(0,0,0,0.22)' : 'rgba(255,255,255,0.4)',
                 }}
               >
-                [ View case ↗ ]
+                {t('[ View case ↗ ]')}
               </span>
             </div>
           ) : null}
@@ -7052,6 +7090,7 @@ function LoftExperienceModal({
   flags: DuotoneContentFlags;
   onClose: () => void;
 }) {
+  const t = useT();
   const [entered, setEntered] = useState(false);
   useEffect(() => {
     const id = window.requestAnimationFrame(() => setEntered(true));
@@ -7107,12 +7146,12 @@ function LoftExperienceModal({
         onClick={(event) => event.stopPropagation()}
         role="dialog"
         aria-modal="true"
-        aria-label={title ?? 'Experience details'}
+        aria-label={title ?? t('Experience details')}
       >
         <button
           type="button"
           onClick={onClose}
-          aria-label="Close"
+          aria-label={t('Close')}
           className="absolute right-4 top-4 z-10 flex h-9 w-9 items-center justify-center rounded-full opacity-70 transition hover:opacity-100 sm:right-6 sm:top-6"
           data-pf-no-color-transition=""
           style={{ backgroundColor: `color-mix(in srgb, ${ink} 8%, transparent)`, color: ink }}
@@ -7137,7 +7176,7 @@ function LoftExperienceModal({
                     {mediaUrl ? (
                       <ProductThumbnailMedia
                         url={mediaUrl}
-                        alt={title || 'Experience'}
+                        alt={title || t('Experience')}
                         fit="cover"
                         className="h-full w-full"
                       />
@@ -7239,7 +7278,7 @@ function LoftExperienceModal({
                       <PortfolioLinkButton
                         variant={flags.repoLinkButtonStyle}
                         href={repoLink.url}
-                        label={repoLink.label || 'View repository'}
+                        label={repoLink.label || t('View repository')}
                         palette={{ background: cardBg, ink, muted, accent, border }}
                       />
                     </div>
@@ -7401,6 +7440,7 @@ function PressExperienceRow({
   flags: DuotoneContentFlags;
   thumbnailRadius: PortfolioExperienceCardsBorderRadius;
 }) {
+  const t = useT();
   const { period, title, organization, description, tasks, tools, links } = resolveExperienceContent(block);
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
@@ -7422,7 +7462,7 @@ function PressExperienceRow({
       {mediaUrl ? (
         <ProductThumbnailMedia
           url={mediaUrl}
-          alt={title || 'Experience'}
+          alt={title || t('Experience')}
           fit="cover"
           className="h-full w-full"
         />
@@ -7444,7 +7484,7 @@ function PressExperienceRow({
         href={repoLink.url}
         target="_blank"
         rel="noopener noreferrer"
-        aria-label={repoLink.label || title || 'Open link'}
+        aria-label={repoLink.label || title || t('Open link')}
         className={`block shrink-0 ${thumbnailRadiusClass}`}
       >
         {thumbnail}
@@ -7796,6 +7836,7 @@ function LegacyExperienceCard({
   /** Off by default for this design, unlike every other design's task list. */
   showTasksLegacy: boolean;
 }) {
+  const t = useT();
   const { period, title, organization, description, status, links, tasks, tools } = resolveExperienceContent(block);
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
@@ -7804,7 +7845,7 @@ function LegacyExperienceCard({
   const reverse = alternateSides ? index % 2 === 1 : fixedSide === 'right';
   const hoverTasks = flags.showTasks && showTasksLegacy ? tasks.slice(0, 5) : [];
   const stackTools = flags.showTools ? tools : [];
-  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Completed' : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Completed') : null;
   const statusColor = status === 'ONGOING' ? accent : secondary;
   const showFooter = flags.showMeta && Boolean(statusLabel || period || badgeText);
   // A native CSS `cursor: url(...)` can't lag behind the pointer — it's a static image the
@@ -7864,7 +7905,7 @@ function LegacyExperienceCard({
                 // transition-property down to color-only and killing the transform
                 // animation entirely — the "zoom" was really just an instant jump.
                 <div className="pf-legacy-thumb-zoom h-full w-full" data-pf-no-color-transition="">
-                  <ProductThumbnailMedia url={mediaUrl} alt={title || 'Experience'} fit="cover" className="h-full w-full" />
+                  <ProductThumbnailMedia url={mediaUrl} alt={title || t('Experience')} fit="cover" className="h-full w-full" />
                 </div>
               ) : (
                 <div
@@ -7964,7 +8005,7 @@ function LegacyExperienceCard({
                   <PortfolioLinkButton
                     variant={flags.repoLinkButtonStyle}
                     href={repoLink.url}
-                    label={repoLink.label || 'View repository'}
+                    label={repoLink.label || t('View repository')}
                     palette={experienceLinkButtonPalette({
                       ink,
                       muted,
@@ -8156,11 +8197,12 @@ function KineticExperienceRow({
   flags: DuotoneContentFlags;
   isLast: boolean;
 }) {
+  const t = useT();
   const { period, title, organization, description, status, tasks, tools, links } = resolveExperienceContent(block);
   const repoLink = flags.showProof ? (links[0] ?? null) : null;
   const displayTasks = flags.showTasks ? tasks.slice(0, 4) : [];
   const displayTools = flags.showTools ? tools : [];
-  const statusLabel = status === 'ONGOING' ? 'Ongoing' : status === 'FINISHED' ? 'Done' : null;
+  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Done') : null;
 
   return (
     <article
@@ -8233,7 +8275,7 @@ function KineticExperienceRow({
             <PortfolioLinkButton
               variant={flags.repoLinkButtonStyle}
               href={repoLink.url}
-              label={repoLink.label || 'View repository'}
+              label={repoLink.label || t('View repository')}
               palette={experienceLinkButtonPalette({
                 ink,
                 muted,

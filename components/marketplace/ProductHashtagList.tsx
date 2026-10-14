@@ -11,9 +11,9 @@ export function ProductHashtagList({ tags, className = '' }: { tags: string[]; c
         <li key={tag.toLowerCase()}>
           <Link
             href={buildGlobalSearchPageUrl(tag, 'products')}
-            className="text-[14px] font-medium text-[#111111] underline-offset-4 transition-colors hover:text-[#FF5722] hover:underline dark:text-neutral-200 dark:hover:text-[#FF5722]"
+            className="text-[15px] font-medium text-[#0F1419] underline-offset-4 hover:underline dark:text-[#E7E9EA]"
           >
-            <span className="text-neutral-400 dark:text-neutral-500">#</span>
+            <span className="text-[#536471] dark:text-[#71767B]">#</span>
             {tag}
           </Link>
         </li>

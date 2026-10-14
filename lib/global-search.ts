@@ -20,6 +20,18 @@ export type GlobalSearchCategory =
 
 export type GlobalSearchTab = 'all' | GlobalSearchCategory;
 
+/**
+ * A service provider: someone who offers services — at least one active service, an hourly rate, or
+ * the provider role. The creator search returns every matching person; this picks the providers.
+ */
+export function isServiceProvider(creator: MarketplaceCreatorSummary): boolean {
+  return (
+    (creator.serviceCount ?? 0) > 0 ||
+    creator.hourlyRateCents != null ||
+    /PROVIDER|FREELANCE/i.test(creator.appRole ?? '')
+  );
+}
+
 export type GlobalSearchItem = {
   id: string;
   category: GlobalSearchCategory;
@@ -153,7 +165,7 @@ export async function fetchGlobalSearch(
     : [];
 
   const serviceProviders = include('serviceProviders')
-    ? creatorRows.map((creator) => {
+    ? creatorRows.filter(isServiceProvider).map((creator) => {
         const id = creator.userId ?? creator.id ?? '';
         return {
           id,
@@ -257,7 +269,7 @@ export async function fetchGlobalSearchPageData(
   return {
     users: [],
     creators: include('creators') ? creatorRows : [],
-    serviceProviders: include('serviceProviders') ? creatorRows : [],
+    serviceProviders: include('serviceProviders') ? creatorRows.filter(isServiceProvider) : [],
     products:
       productsRes.status === 'fulfilled' && 'content' in productsRes.value
         ? productsRes.value.content

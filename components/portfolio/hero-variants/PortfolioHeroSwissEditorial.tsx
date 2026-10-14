@@ -20,6 +20,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SWISS_SERIF = "'Playfair Display', Georgia, 'Times New Roman', serif";
 const SWISS_EDGE = 'rgba(255, 255, 255, 0.05)';
@@ -47,6 +48,7 @@ function swissScrollParent(el: HTMLElement | null): HTMLElement | undefined {
  * full-width wordmark layered in front of the photo. Grain field on top.
  */
 export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const shellX = portfolioHeroContentShellClass(data.contentGutter, data.contentWidthClass);
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
@@ -59,7 +61,7 @@ export function PortfolioHeroSwissEditorial({ data }: { data: PortfolioHeroData 
 
   const statement =
     data.description?.trim() ||
-    'Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor, aenean massa.';
+    t('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Aenean commodo ligula eget dolor, aenean massa.');
   const currentlyLabel = resolveHeroCurrentlyLabel(data.presentation);
   const specializedLabel = resolveHeroSpecializedInLabel(data.presentation);
   const availabilityValue = resolveHeroAvailabilityValue(

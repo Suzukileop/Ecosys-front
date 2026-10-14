@@ -1,4 +1,5 @@
 'use client';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type StarRatingInputProps = {
   value: number;
@@ -7,6 +8,7 @@ type StarRatingInputProps = {
 };
 
 export function StarRatingInput({ value, onChange, disabled }: StarRatingInputProps) {
+  const t = useT();
   return (
     <div className="flex items-center gap-1">
       {Array.from({ length: 5 }, (_, i) => {
@@ -17,11 +19,11 @@ export function StarRatingInput({ value, onChange, disabled }: StarRatingInputPr
             type="button"
             disabled={disabled}
             onClick={() => onChange(star)}
-            className="rounded p-0.5 transition hover:scale-110 disabled:opacity-50"
-            aria-label={`Rate ${star} stars`}
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full transition hover:bg-[rgba(255,180,0,0.12)] disabled:opacity-50"
+            aria-label={t('Rate {star} stars', { star })}
           >
             <svg
-              className={`h-7 w-7 ${star <= value ? 'text-amber-400' : 'text-gray-300'}`}
+              className={`h-7 w-7 ${star <= value ? 'text-[#FFB400]' : 'text-[#CFD9DE] dark:text-[#3E4144]'}`}
               viewBox="0 0 20 20"
               fill="currentColor"
             >

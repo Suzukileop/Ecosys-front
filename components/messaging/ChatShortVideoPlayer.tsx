@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ChatShortVideoPlayerProps = {
   src: string;
@@ -26,6 +27,7 @@ export function ChatShortVideoPlayer({
   onReady,
   className = '',
 }: ChatShortVideoPlayerProps) {
+  const t = useT();
   const videoRef = useRef<HTMLVideoElement>(null);
   usePauseOffscreenVideo(videoRef);
   const [playing, setPlaying] = useState(false);
@@ -133,7 +135,7 @@ export function ChatShortVideoPlayer({
           type="button"
           onClick={togglePlay}
           className="absolute inset-0 m-auto flex h-14 w-14 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:group-hover/media:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:opacity-90"
-          aria-label="Play video"
+          aria-label={t('Play video')}
         >
           <svg className="ml-1 h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path d="M8 5v14l11-7z" />
@@ -151,7 +153,7 @@ export function ChatShortVideoPlayer({
         <div className="absolute inset-x-0 bottom-0 px-2 pb-2 pt-6">
           <div
             role="slider"
-            aria-label="Seek"
+            aria-label={t('Seek')}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(progress)}
@@ -173,7 +175,7 @@ export function ChatShortVideoPlayer({
               type="button"
               onClick={toggleMute}
               className="rounded-full p-1 hover:bg-white/15"
-              aria-label={muted ? 'Unmute' : 'Mute'}
+              aria-label={muted ? t('Unmute') : t('Mute')}
             >
               {muted ? (
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -193,7 +195,7 @@ export function ChatShortVideoPlayer({
                 type="button"
                 onClick={onDownload}
                 className="rounded-full p-1 hover:bg-white/15"
-                aria-label="Download video"
+                aria-label={t('Download video')}
               >
                 <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2M7 10l5 5m0 0l5-5m-5 5V4" />
@@ -205,7 +207,7 @@ export function ChatShortVideoPlayer({
               type="button"
               onClick={toggleFullscreen}
               className="rounded-full p-1 hover:bg-white/15"
-              aria-label="Fullscreen"
+              aria-label={t('Fullscreen')}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-5h-4m4 0v4m0-4l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />

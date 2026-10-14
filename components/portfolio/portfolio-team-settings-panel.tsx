@@ -1,6 +1,11 @@
 'use client';
 
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -79,6 +84,9 @@ import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-he
 import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
 import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -89,10 +97,10 @@ import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/por
 export type TeamSubSection = 'general' | 'design' | 'background' | 'header';
 
 const TEAM_SUB_SECTIONS: { id: TeamSubSection; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'design', label: 'Design' },
-  { id: 'header', label: 'Header' },
-  { id: 'background', label: 'Background' },
+  { id: 'general', label: msg('General') },
+  { id: 'design', label: msg('Design') },
+  { id: 'header', label: msg('Header') },
+  { id: 'background', label: msg('Background') },
 ];
 
 /** Maps legacy subsection ids (saved UI state / search) onto the current Team menu. */
@@ -117,14 +125,14 @@ function asTeamPatch(patch: Record<string, unknown> | object): Partial<Portfolio
 /* ---------------------------------------------------------------------- */
 
 const TEAM_INPUT_CLASS =
-  'w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400';
+  'w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]';
 
 function TeamSectionLabel({ children }: { children: string }) {
-  return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
+  return <p className="pf-stack-block-label">{children}</p>;
 }
 
 function TeamGroupLabel({ children }: { children: string }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{children}</p>;
+  return <p className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">{children}</p>;
 }
 
 /** Same animated switch as the Footer/Gallery/Contact panels — shared settings-UI chrome. */
@@ -164,9 +172,9 @@ function TeamVisibilityRow({
   const rows = useSettingsRows();
   if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
+    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--pf-palette-bordure)] py-3.5 last:border-b-0">
       <span
-        className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-neutral-950"
+        className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]"
         onClick={() => onChange(!checked)}
       >
         {label}
@@ -201,6 +209,7 @@ function TeamOptionGrid<T extends string>({
   /** Keeps `label` as the accessible name only — for a pill that sits right under its own heading. */
   hideLabel?: boolean;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
@@ -228,7 +237,7 @@ function TeamOptionGrid<T extends string>({
               onClick={() => onChange(option.value)}
               className="pf-exp-segment-btn px-2.5 py-2 text-center text-[13px] font-semibold"
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -299,7 +308,7 @@ function TeamManualColorField({
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
+          className="h-11 w-14 cursor-pointer rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
           aria-label={`${label} picker`}
         />
         <input
@@ -309,7 +318,7 @@ function TeamManualColorField({
             const next = event.target.value.trim();
             if (isValidProfileHexColor(next)) onChange(next);
           }}
-          className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
+          className="w-28 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm font-mono text-[color:var(--pf-palette-texte-fort)]"
           aria-label={`${label} hex`}
         />
       </div>
@@ -331,6 +340,7 @@ function TeamColorField({
   slot: TeamColorSlot;
   label: string;
 }) {
+  const t = useT();
   const palette = mergeTeamPalette(DEFAULT_TEAM_PALETTE, team.teamPalette);
   const bindings = mergeTeamColorBindings(DEFAULT_TEAM_COLOR_BINDINGS, team.teamColorBindings);
   const token = bindings[slot];
@@ -341,7 +351,7 @@ function TeamColorField({
       <div className="flex items-start justify-between gap-3">
         <TeamSectionLabel>{label}</TeamSectionLabel>
         <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
+          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
           style={{ backgroundColor: resolved }}
           title={resolved}
           aria-hidden
@@ -352,12 +362,12 @@ function TeamColorField({
         onChange={(event) =>
           onChange(asTeamPatch(patchTeamColorBinding(team, slot, event.target.value as HeroPaletteTokenId)))
         }
-        className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-        aria-label={`${label} palette token`}
+        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+        aria-label={t('{label} palette token', { label })}
       >
         {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {t(option.label)}
           </option>
         ))}
       </select>
@@ -413,22 +423,23 @@ function TeamDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <TeamSectionLabel>{label}</TeamSectionLabel>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
             {children}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -614,28 +625,50 @@ function TeamLayoutChoiceGrid({
   showGrid: boolean;
   setShowGrid: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_TEAM_LAYOUT_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_TEAM_LAYOUT_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <TeamSectionLabel>Section design</TeamSectionLabel>
+          <TeamSectionLabel>{t('Section design')}</TeamSectionLabel>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_TEAM_LAYOUT_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-team-design-card"
+                labelClassName="pf-team-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'team', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_TEAM_LAYOUT_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === value}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => {
                 onChange(option.value);
                 setShowGrid(false);
@@ -645,12 +678,13 @@ function TeamLayoutChoiceGrid({
             </TeamPickerCard>
           ))}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <TeamDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <TeamDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <TeamLayoutWireframe layout={value} />
     </TeamDesignSummaryRow>
   );
@@ -794,16 +828,17 @@ function TeamPolaroidLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Print color</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Print color" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Print color')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Print color')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.polaroidPhotoTone ?? 'hover')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ polaroidPhotoTone: option.value })}
             >
               <TeamPolaroidToneWireframe value={option.value} />
@@ -812,16 +847,16 @@ function TeamPolaroidLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Prints per row</TeamSectionLabel>
-        <p className="mt-2 text-xs text-neutral-500">
-          Only applies to the “View all” grid — visitors toggle it from the button above the rail.
+        <TeamSectionLabel>{t('Prints per row')}</TeamSectionLabel>
+        <p className="mt-2 text-xs text-[color:var(--pf-palette-texte-muted)]">
+          {t('Only applies to the “View all” grid — visitors toggle it from the button above the rail.')}
         </p>
-        <div role="radiogroup" aria-label="Prints per row" className="mt-3 grid grid-cols-3 gap-3">
+        <div role="radiogroup" aria-label={t('Prints per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.polaroidColumns ?? 3)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ polaroidColumns: option.value as PortfolioTeamRailColumns })}
             >
               <TeamRailColumnsWireframe columns={option.value} />
@@ -840,17 +875,18 @@ function TeamRailLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   const navigation = team.railNavigation ?? 'drag';
   return (
     <>
       <div>
-          <TeamSectionLabel>Navigation</TeamSectionLabel>
-          <div role="radiogroup" aria-label="Navigation" className="mt-3 grid grid-cols-3 gap-3">
+          <TeamSectionLabel>{t('Navigation')}</TeamSectionLabel>
+          <div role="radiogroup" aria-label={t('Navigation')} className="mt-3 grid grid-cols-3 gap-3">
             {PORTFOLIO_TEAM_RAIL_NAVIGATION_OPTIONS.map((option) => (
               <TeamPickerCard
                 key={option.value}
                 active={option.value === navigation}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => onChange({ railNavigation: option.value })}
               >
                 <TeamRailNavigationWireframe value={option.value} />
@@ -859,13 +895,13 @@ function TeamRailLayoutFields({
           </div>
         </div>
         <div>
-          <TeamSectionLabel>Image height</TeamSectionLabel>
-          <div role="radiogroup" aria-label="Image height" className="mt-3 grid grid-cols-3 gap-3">
+          <TeamSectionLabel>{t('Image height')}</TeamSectionLabel>
+          <div role="radiogroup" aria-label={t('Image height')} className="mt-3 grid grid-cols-3 gap-3">
             {PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS.map((option) => (
               <TeamPickerCard
                 key={option.value}
                 active={option.value === (team.railImageHeight ?? 'tall')}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => onChange({ railImageHeight: option.value })}
               >
                 <TeamRailHeightWireframe value={option.value} />
@@ -874,13 +910,13 @@ function TeamRailLayoutFields({
           </div>
         </div>
         <div>
-          <TeamSectionLabel>Image corners</TeamSectionLabel>
-          <div role="radiogroup" aria-label="Image corners" className="mt-3 grid grid-cols-4 gap-2">
+          <TeamSectionLabel>{t('Image corners')}</TeamSectionLabel>
+          <div role="radiogroup" aria-label={t('Image corners')} className="mt-3 grid grid-cols-4 gap-2">
             {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
               <TeamPickerCard
                 key={option.value}
                 active={option.value === (team.railImageRadius ?? 'md')}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => onChange({ railImageRadius: option.value })}
               >
                 <TeamRailRadiusWireframe value={option.value} />
@@ -890,13 +926,13 @@ function TeamRailLayoutFields({
         </div>
         {navigation === 'show-all' ? (
           <div>
-            <TeamSectionLabel>Portraits per row</TeamSectionLabel>
-            <div role="radiogroup" aria-label="Portraits per row" className="mt-3 grid grid-cols-3 gap-3">
+            <TeamSectionLabel>{t('Portraits per row')}</TeamSectionLabel>
+            <div role="radiogroup" aria-label={t('Portraits per row')} className="mt-3 grid grid-cols-3 gap-3">
               {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
                 <TeamPickerCard
                   key={option.value}
                   active={option.value === (team.railColumns ?? 3)}
-                  label={option.label}
+                  label={t(option.label)}
                   onClick={() => onChange({ railColumns: option.value as PortfolioTeamRailColumns })}
                 >
                   <TeamRailColumnsWireframe columns={option.value} />
@@ -1026,20 +1062,21 @@ function TeamFloatCardsLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   const view = team.floatCardsView ?? 'grid';
   return (
     <>
       <div>
-        <TeamSectionLabel>Opening view</TeamSectionLabel>
-        <p className="mt-2 text-xs text-neutral-500">
-          Visitors can switch between both from the toolbar under the cards.
+        <TeamSectionLabel>{t('Opening view')}</TeamSectionLabel>
+        <p className="mt-2 text-xs text-[color:var(--pf-palette-texte-muted)]">
+          {t('Visitors can switch between both from the toolbar under the cards.')}
         </p>
-        <div role="radiogroup" aria-label="Opening view" className="mt-3 grid grid-cols-2 gap-3">
+        <div role="radiogroup" aria-label={t('Opening view')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === view}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ floatCardsView: option.value })}
             >
               <TeamHoverViewWireframe value={option.value} />
@@ -1048,13 +1085,13 @@ function TeamFloatCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Card alignment</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Card alignment" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Card alignment')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Card alignment')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.floatCardsAlign ?? 'center')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ floatCardsAlign: option.value })}
             >
               <TeamFloatAlignWireframe value={option.value} />
@@ -1063,7 +1100,7 @@ function TeamFloatCardsLayoutFields({
         </div>
       </div>
       <TeamPxSlider
-        label="Horizontal spacing"
+        label={t('Horizontal spacing')}
         value={team.floatCardsColumnGap ?? teamFloatDefaultColumnGap(team.gap)}
         min={TEAM_FLOAT_COLUMN_GAP.min}
         max={TEAM_FLOAT_COLUMN_GAP.max}
@@ -1071,13 +1108,13 @@ function TeamFloatCardsLayoutFields({
         onChange={(floatCardsColumnGap) => onChange({ floatCardsColumnGap })}
       />
       <div>
-        <TeamSectionLabel>Cards per row</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Cards per row" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Cards per row')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Cards per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.floatCardsColumns ?? 3)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ floatCardsColumns: option.value as PortfolioTeamRailColumns })}
             >
               <TeamRailColumnsWireframe columns={option.value} />
@@ -1086,16 +1123,16 @@ function TeamFloatCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Grid baseline</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Grid baseline" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Grid baseline')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Grid baseline')} className="mt-3 grid grid-cols-2 gap-3">
           {[
-            { value: true, label: 'Staggered' },
-            { value: false, label: 'Aligned' },
+            { value: true, label: t('Staggered') },
+            { value: false, label: t('Aligned') },
           ].map((option) => (
             <TeamPickerCard
               key={String(option.value)}
               active={option.value === (team.floatCardsStagger !== false)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ floatCardsStagger: option.value })}
             >
               <TeamHoverStaggerWireframe staggered={option.value} />
@@ -1104,16 +1141,16 @@ function TeamFloatCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Card motion</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Card motion" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Card motion')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Card motion')} className="mt-3 grid grid-cols-2 gap-3">
           {[
-            { value: true, label: '3D tilt' },
-            { value: false, label: 'Flat' },
+            { value: true, label: t('3D tilt') },
+            { value: false, label: t('Flat') },
           ].map((option) => (
             <TeamPickerCard
               key={String(option.value)}
               active={option.value === (team.floatCardsTilt !== false)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ floatCardsTilt: option.value })}
             >
               <TeamFloatTiltWireframe tilted={option.value} />
@@ -1165,16 +1202,17 @@ function TeamSpotlightLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Navigation</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Navigation" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Navigation')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Navigation')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATION_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.spotlightNavigation ?? 'thumbnails')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ spotlightNavigation: option.value })}
             >
               <TeamSpotlightNavigationWireframe value={option.value} />
@@ -1183,13 +1221,13 @@ function TeamSpotlightLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Portrait side</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Portrait side" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Portrait side')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Portrait side')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.spotlightPortraitSide ?? 'left')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ spotlightPortraitSide: option.value })}
             >
               <TeamSpotlightSideWireframe value={option.value} />
@@ -1198,13 +1236,13 @@ function TeamSpotlightLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Panel corners</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Panel corners" className="mt-3 grid grid-cols-4 gap-2">
+        <TeamSectionLabel>{t('Panel corners')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Panel corners')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.spotlightPanelRadius ?? 'md')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ spotlightPanelRadius: option.value })}
             >
               <TeamRailRadiusWireframe value={option.value} />
@@ -1214,7 +1252,7 @@ function TeamSpotlightLayoutFields({
       </div>
       <div>
         <TeamVisibilityRow
-          label="Switch on hover"
+          label={t('Switch on hover')}
           checked={team.spotlightHoverSwitch !== false}
           onChange={(spotlightHoverSwitch) => onChange({ spotlightHoverSwitch })}
         />
@@ -1315,16 +1353,17 @@ function TeamDirectoryLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Portrait</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Portrait" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Portrait')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Portrait')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.directoryPortrait ?? 'cursor')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ directoryPortrait: option.value })}
             >
               <TeamDirectoryPortraitWireframe value={option.value} />
@@ -1333,15 +1372,15 @@ function TeamDirectoryLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Portrait corners</TeamSectionLabel>
+        <TeamSectionLabel>{t('Portrait corners')}</TeamSectionLabel>
         {/* Three per row like the Portrait group above: five across would squeeze the labels below
             the 13px minimum, and matching widths keep the band on one grid. */}
-        <div role="radiogroup" aria-label="Portrait corners" className="mt-3 grid grid-cols-3 gap-3">
+        <div role="radiogroup" aria-label={t('Portrait corners')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_AVATAR_RADIUS_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.directoryPortraitRadius ?? 'md')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ directoryPortraitRadius: option.value })}
             >
               <TeamDirectoryRadiusWireframe value={option.value} />
@@ -1350,7 +1389,7 @@ function TeamDirectoryLayoutFields({
         </div>
       </div>
       <TeamPxSlider
-        label="Card spacing"
+        label={t('Card spacing')}
         value={team.directoryCardGap ?? teamDirectoryDefaultCardGap(team.gap)}
         min={TEAM_DIRECTORY_CARD_GAP.min}
         max={TEAM_DIRECTORY_CARD_GAP.max}
@@ -1388,7 +1427,7 @@ function TeamPxSlider({
     <div>
       {rows ? null : (<div className="flex items-baseline justify-between gap-3">
         <TeamSectionLabel>{label}</TeamSectionLabel>
-        <span className="text-[13px] font-semibold tabular-nums text-neutral-700">{`${value}px`}</span>
+        <span className="text-[13px] font-semibold tabular-nums text-[color:var(--pf-palette-texte-muted)]">{`${value}px`}</span>
       </div>)}
       <input
         type="range"
@@ -1438,6 +1477,7 @@ function TeamProfileViewWireframe({ value }: { value: PortfolioTeamProfileView }
 
 /** The standard "i" affordance: a hint that is needed but does not deserve a permanent line. */
 function TeamInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -1446,12 +1486,12 @@ function TeamInfoTooltip({ text }: { text: string }) {
         role="button"
         tabIndex={0}
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -1489,6 +1529,7 @@ function TeamOptionSlider<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const index = Math.max(
     0,
@@ -1503,7 +1544,7 @@ function TeamOptionSlider<T extends string>({
           <TeamSectionLabel>{label}</TeamSectionLabel>
           {hint ? <TeamInfoTooltip text={hint} /> : null}
         </span>)}
-        <span className="pf-exp-centered-slider-value">{current?.label}</span>
+        <span className="pf-exp-centered-slider-value">{t(current?.label)}</span>
       </div>
       <input
         type="range"
@@ -1535,7 +1576,7 @@ function TeamOptionSlider<T extends string>({
             data-active={option.value === value ? 'true' : 'false'}
             onClick={() => onChange(option.value)}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         ))}
       </div>
@@ -1620,16 +1661,17 @@ function TeamProfileCardsLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Opens on</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Opens on" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Opens on')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Opens on')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.profileCardsView ?? 'grid')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ profileCardsView: option.value })}
             >
               <TeamProfileViewWireframe value={option.value} />
@@ -1638,13 +1680,13 @@ function TeamProfileCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Cards per row</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Cards per row" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Cards per row')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Cards per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.profileCardsColumns ?? 3)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ profileCardsColumns: option.value })}
             >
               <TeamRailColumnsWireframe columns={option.value} />
@@ -1653,14 +1695,14 @@ function TeamProfileCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Card ratio</TeamSectionLabel>
+        <TeamSectionLabel>{t('Card ratio')}</TeamSectionLabel>
         {/* Five steps, widest → tallest: three per row keeps every card the same size (rule 3). */}
-        <div role="radiogroup" aria-label="Card ratio" className="mt-3 grid grid-cols-3 gap-3">
+        <div role="radiogroup" aria-label={t('Card ratio')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_PROFILE_RATIO_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.profileCardsRatio ?? 'portrait')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ profileCardsRatio: option.value })}
             >
               <TeamProfileRatioWireframe value={option.value} />
@@ -1670,21 +1712,21 @@ function TeamProfileCardsLayoutFields({
       </div>
       <div>
         <TeamOptionSlider
-          label="Column spacing"
-          hint="Applies on desktop only — phones and tablets keep one comfortable gap."
+          label={t('Column spacing')}
+          hint={t('Applies on desktop only — phones and tablets keep one comfortable gap.')}
           options={PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS}
           value={(team.profileCardsGutter ?? 'md') as PortfolioTeamProfileGutter}
           onChange={(profileCardsGutter) => onChange({ profileCardsGutter })}
         />
       </div>
       <div>
-        <TeamSectionLabel>Info panel</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Info panel" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Info panel')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Info panel')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.profileCardsPanel ?? 'always')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ profileCardsPanel: option.value })}
             >
               <TeamProfilePanelWireframe value={option.value} />
@@ -1693,10 +1735,10 @@ function TeamProfileCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Visible at first</TeamSectionLabel>
+        <TeamSectionLabel>{t('Visible at first')}</TeamSectionLabel>
         <div className="mt-3">
           <TeamOptionGrid
-            label="Visible at first"
+            label={t('Visible at first')}
             hideLabel
             columns={4}
             options={PORTFOLIO_TEAM_PROFILE_VISIBLE_OPTIONS}
@@ -1707,7 +1749,7 @@ function TeamProfileCardsLayoutFields({
       </div>
       <div>
         <TeamVisibilityRow
-          label="Staggered columns"
+          label={t('Staggered columns')}
           checked={team.profileCardsStagger !== false}
           onChange={(profileCardsStagger) => onChange({ profileCardsStagger })}
         />
@@ -1843,16 +1885,17 @@ function TeamAvatarCardsLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Opens on</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Opens on" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Opens on')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Opens on')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.avatarCardsView ?? 'grid')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ avatarCardsView: option.value })}
             >
               <TeamAvatarViewWireframe value={option.value} />
@@ -1861,13 +1904,13 @@ function TeamAvatarCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Members per row</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Members per row" className="mt-3 grid grid-cols-4 gap-2">
+        <TeamSectionLabel>{t('Members per row')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Members per row')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.avatarCardsColumns ?? (team.columns as PortfolioTeamAvatarColumns) ?? 3)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ avatarCardsColumns: option.value })}
             >
               <TeamRailColumnsWireframe columns={option.value} />
@@ -1876,13 +1919,13 @@ function TeamAvatarCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Horizontal spacing</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Horizontal spacing" className="mt-3 grid grid-cols-4 gap-2">
+        <TeamSectionLabel>{t('Horizontal spacing')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Horizontal spacing')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.avatarCardsColumnGap ?? 'md')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ avatarCardsColumnGap: option.value })}
             >
               <TeamAvatarColumnGapWireframe value={option.value} />
@@ -1891,13 +1934,13 @@ function TeamAvatarCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Grid width</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Grid width" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Grid width')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Grid width')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.avatarCardsGridWidth ?? 'centered')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ avatarCardsGridWidth: option.value })}
             >
               <TeamAvatarGridWidthWireframe value={option.value} />
@@ -1906,13 +1949,13 @@ function TeamAvatarCardsLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Hover shape</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Hover shape" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Hover shape')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Hover shape')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_AVATAR_SHAPE_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.avatarCardsShape ?? 'squircle')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ avatarCardsShape: option.value })}
             >
               <TeamAvatarShapeWireframe value={option.value} />
@@ -1922,12 +1965,12 @@ function TeamAvatarCardsLayoutFields({
       </div>
       <div>
         <TeamVisibilityRow
-          label="Staggered rows"
+          label={t('Staggered rows')}
           checked={team.avatarCardsStagger !== false}
           onChange={(avatarCardsStagger) => onChange({ avatarCardsStagger })}
         />
         <TeamVisibilityRow
-          label="Avatar glow"
+          label={t('Avatar glow')}
           checked={team.avatarCardsGlow !== false}
           onChange={(avatarCardsGlow) => onChange({ avatarCardsGlow })}
         />
@@ -1995,16 +2038,17 @@ function TeamSplitScreenLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Portrait side</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Portrait side" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Portrait side')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Portrait side')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.splitPortraitSide ?? 'right')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ splitPortraitSide: option.value })}
             >
               <TeamSplitSideWireframe value={option.value} />
@@ -2013,13 +2057,13 @@ function TeamSplitScreenLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Portrait tone</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Portrait tone" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Portrait tone')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Portrait tone')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.splitPhotoTone ?? 'monochrome')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ splitPhotoTone: option.value })}
             >
               <TeamSplitToneWireframe value={option.value} />
@@ -2028,13 +2072,13 @@ function TeamSplitScreenLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Portrait corners</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Portrait corners" className="mt-3 grid grid-cols-4 gap-2">
+        <TeamSectionLabel>{t('Portrait corners')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Portrait corners')} className="mt-3 grid grid-cols-4 gap-2">
           {PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.splitPanelRadius ?? 'none')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ splitPanelRadius: option.value })}
             >
               <TeamSplitRadiusWireframe value={option.value} />
@@ -2044,7 +2088,7 @@ function TeamSplitScreenLayoutFields({
       </div>
       <div>
         <TeamVisibilityRow
-          label="Social links behind a button"
+          label={t('Social links behind a button')}
           checked={team.splitSocialsReveal !== false}
           onChange={(splitSocialsReveal) => onChange({ splitSocialsReveal })}
         />
@@ -2073,16 +2117,17 @@ function TeamFloatingCanvasLayoutFields({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   return (
     <>
       <div>
-        <TeamSectionLabel>Cards per row</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Cards per row" className="mt-3 grid grid-cols-3 gap-3">
+        <TeamSectionLabel>{t('Cards per row')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Cards per row')} className="mt-3 grid grid-cols-3 gap-3">
           {PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.canvasColumns ?? 3)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ canvasColumns: option.value as PortfolioTeamRailColumns })}
             >
               <TeamRailColumnsWireframe columns={option.value} />
@@ -2091,13 +2136,13 @@ function TeamFloatingCanvasLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Composition width</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Composition width" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Composition width')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Composition width')} className="mt-3 grid grid-cols-2 gap-3">
           {PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS.map((option) => (
             <TeamPickerCard
               key={option.value}
               active={option.value === (team.canvasAlign ?? 'center')}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ canvasAlign: option.value })}
             >
               <TeamFloatAlignWireframe value={option.value} />
@@ -2106,16 +2151,16 @@ function TeamFloatingCanvasLayoutFields({
         </div>
       </div>
       <div>
-        <TeamSectionLabel>Scroll parallax</TeamSectionLabel>
-        <div role="radiogroup" aria-label="Scroll parallax" className="mt-3 grid grid-cols-2 gap-3">
+        <TeamSectionLabel>{t('Scroll parallax')}</TeamSectionLabel>
+        <div role="radiogroup" aria-label={t('Scroll parallax')} className="mt-3 grid grid-cols-2 gap-3">
           {[
-            { value: true, label: 'On' },
-            { value: false, label: 'Off' },
+            { value: true, label: t('On') },
+            { value: false, label: t('Off') },
           ].map((option) => (
             <TeamPickerCard
               key={String(option.value)}
               active={option.value === (team.canvasParallax !== false)}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => onChange({ canvasParallax: option.value })}
             >
               <TeamCanvasParallaxWireframe active={option.value} />
@@ -2124,15 +2169,15 @@ function TeamFloatingCanvasLayoutFields({
         </div>
       </div>
       <TeamTextField
-        label="Editorial label"
+        label={t('Editorial label')}
         value={team.canvasEditorialLabel}
-        placeholder="Studio note"
+        placeholder={t('Studio note')}
         onChange={(canvasEditorialLabel) => onChange({ canvasEditorialLabel })}
       />
       <TeamTextField
-        label="Editorial text"
+        label={t('Editorial text')}
         value={team.canvasEditorialText}
-        placeholder="A small collective of specialists who each choose their own tools…"
+        placeholder={t('A small collective of specialists who each choose their own tools…')}
         onChange={(canvasEditorialText) => onChange({ canvasEditorialText })}
         multiline
       />
@@ -2151,6 +2196,7 @@ function TeamLayoutSettingsBand({
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
 }) {
+  const t = useT();
   const fields =
     team.layout === 'portrait-rail' ? (
       <TeamRailLayoutFields team={team} onChange={onChange} />
@@ -2175,7 +2221,7 @@ function TeamLayoutSettingsBand({
   return (
     <section className="pf-exp-layout-settings" aria-labelledby="team-layout-settings-title">
       <h3 id="team-layout-settings-title" className="pf-exp-layout-settings-title">
-        Layout settings
+        {t('Layout settings')}
       </h3>
       <div className="pf-exp-layout-settings-body space-y-7">{fields}</div>
     </section>
@@ -2185,6 +2231,7 @@ function TeamLayoutSettingsBand({
 /** One wireframe per Header design — the shared 8-design GSAP header mounted above the
  *  Team section, independent of the section's own member `layout`. */
 function TeamHeaderWireframe({ design }: { design: PortfolioTeamHeaderDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
@@ -2206,7 +2253,7 @@ function TeamHeaderWireframe({ design }: { design: PortfolioTeamHeaderDesign }) 
             opacity={0.14}
             className="pf-stack-mini-ink"
           >
-            TEAM
+            {t('TEAM')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="11" rx="2" />
         </TeamMiniStage>
@@ -2249,7 +2296,7 @@ function TeamHeaderWireframe({ design }: { design: PortfolioTeamHeaderDesign }) 
             opacity={0.1}
             className="pf-stack-mini-ink"
           >
-            TEAM
+            {t('TEAM')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="9" rx="2" />
           <rect className="pf-stack-mini-mute" x="18" y="44" width="40" height="3" rx="1.5" />
@@ -2290,6 +2337,7 @@ function TeamHeaderDesignGrid({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS[0];
@@ -2298,13 +2346,13 @@ function TeamHeaderDesignGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <TeamSectionLabel>Header design</TeamSectionLabel>
+          <TeamSectionLabel>{t('Header design')}</TeamSectionLabel>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -2312,7 +2360,7 @@ function TeamHeaderDesignGrid({
             <PortfolioHeaderDesignOption key={option.value} design={option.value}>
               <TeamPickerCard
                 active={option.value === value}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -2328,7 +2376,7 @@ function TeamHeaderDesignGrid({
   }
 
   return (
-    <TeamDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <TeamDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <TeamHeaderWireframe design={value} />
     </TeamDesignSummaryRow>
   );
@@ -2362,14 +2410,14 @@ function TeamSettingsBand({
 }
 
 const TEAM_HEADER_COPY: HeaderCopy = {
-  editorial: { label: 'Team', title: 'Meet the team', subtitle: 'The people behind every project, in one place.' },
-  index: { rule: 'Index', title: 'Meet the team', subtitle: 'The people behind every project, in one place.', count: 'Members' },
+  editorial: { label: msg('Team'), title: msg('Meet the team'), subtitle: msg('The people behind every project, in one place.') },
+  index: { rule: 'Index', title: msg('Meet the team'), subtitle: msg('The people behind every project, in one place.'), count: 'Members' },
   marquee: ['Team', 'Optional', 'Optional', 'Optional'],
   accent: { badge: '{count}+ members', lead: 'A small team of people who make it happen.' },
-  serif: { label: 'Team', title: 'A small group of people who make everything happen.', subtitle: 'The people behind every project, in one place.' },
-  billboard: { word: 'TEAM', title: 'Meet the team', count: '{count} people — meet the team below' },
+  serif: { label: msg('Team'), title: msg('A small group of people who make everything happen.'), subtitle: msg('The people behind every project, in one place.') },
+  billboard: { word: 'TEAM', title: msg('Meet the team'), count: '{count} people — meet the team below' },
   masthead: ['Real people.', 'Chosen with care.', 'Built to deliver.'],
-  split: { title: 'Meet the team', label: 'Team' },
+  split: { title: msg('Meet the team'), label: msg('Team') },
 };
 
 /** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
@@ -2413,6 +2461,7 @@ export function TeamSettingsPanel({
   subSection?: TeamSubSection;
   onSubSectionChange?: (value: TeamSubSection) => void;
 }) {
+  const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<TeamSubSection>('general');
@@ -2425,72 +2474,48 @@ export function TeamSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
-        {TEAM_SUB_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => setSubSection(section.id)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              subSection === section.id
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs tabs={TEAM_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
       {subSection === 'general' ? (
         <div className="space-y-8">
-          <div>
-            <TeamSectionLabel>Visibility</TeamSectionLabel>
-            <div className="mt-4">
+          <SettingsSwitchRow
+            label={t('Show Team section')}
+            description={team.enabled !== false ? undefined : t('Visitors go straight to the next section.')}
+            checked={team.enabled !== false}
+            onChange={(enabled) => onChange({ enabled })}
+          />
+          {team.enabled !== false ? (
+          <SettingsGroup label={t('Content shown')}>
+            <div>
               <TeamVisibilityRow
-                label="Show Team section"
-                checked={team.enabled !== false}
-                onChange={(enabled) => onChange({ enabled })}
-              />
-              <TeamVisibilityRow
-                label="Member photo"
+                label={t('Member photo')}
                 checked={team.showImage}
                 onChange={(showImage) => onChange({ showImage })}
               />
               <TeamVisibilityRow
-                label="Member name"
+                label={t('Member name')}
                 checked={team.showName}
                 onChange={(showName) => onChange({ showName })}
               />
               <TeamVisibilityRow
-                label="Role"
+                label={t('Role')}
                 checked={team.showResponsibility}
                 onChange={(showResponsibility) => onChange({ showResponsibility })}
               />
               <TeamVisibilityRow
-                label="Social links"
+                label={t('Social links')}
                 checked={team.showSocials}
                 onChange={(showSocials) => onChange({ showSocials })}
               />
             </div>
-          </div>
-
-          <SectionColorModeControl
-            value={team.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <TeamOptionGrid
-            label="Font size"
-            options={PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS}
-            value={team.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
+          </SettingsGroup>
+          ) : null}
         </div>
       ) : null}
 
-      {subSection === 'design' ? (
+      {subSection !== 'general' && !(team.enabled !== false) ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {subSection === 'design' && team.enabled !== false ? (
         <div className="space-y-6">
           <TeamLayoutChoiceGrid
             showGrid={designCatalogOpen}
@@ -2500,16 +2525,36 @@ export function TeamSettingsPanel({
           />
           {designCatalogOpen ? null : (
             <>
-              <p className="text-xs text-neutral-400">
-                Each design renders straight from your members — what shows on a card is set in General → Visibility.
+              <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+                {t('Each design renders straight from your members — what shows on a card is set in General → Visibility.')}
               </p>
-              <SettingsRowsScope title="Layout options"><TeamLayoutSettingsBand team={team} onChange={onChange} /></SettingsRowsScope>
+              <SettingsRowsScope title={t('Layout options')}><TeamLayoutSettingsBand team={team} onChange={onChange} /></SettingsRowsScope>
             </>
+          )}
+          {designCatalogOpen ? null : (
+          <div>
+          <SettingsGroup label={t('Style')}>
+
+          <SectionColorModeControl
+            label={t('Color mode')}
+            value={team.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+
+          <TeamOptionGrid
+            label={t('Text size')}
+            options={PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS}
+            value={team.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
+          />
+          </SettingsGroup>
+          </div>
           )}
         </div>
       ) : null}
 
-      {subSection === 'background' ? (
+      {subSection === 'background' && team.enabled !== false ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={team}
@@ -2527,7 +2572,7 @@ export function TeamSettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'header' ? (
+      {subSection === 'header' && team.enabled !== false ? (
         <div className="space-y-6">
           <TeamHeaderDesignGrid
             value={team.headerDesign ?? 'editorial'}
@@ -2538,7 +2583,7 @@ export function TeamSettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <TeamSettingsBand id="team-header-settings-title" title="Header settings" motionKey={team.headerDesign ?? 'editorial'} flush>
+            <TeamSettingsBand id="team-header-settings-title" title={t('Header settings')} motionKey={team.headerDesign ?? 'editorial'} flush>
               <TeamHeaderDesignFields team={team} onChange={onChange} />
             </TeamSettingsBand>
           )}

@@ -1,3 +1,4 @@
+import { localeTag, tr } from '@/lib/i18n/active';
 import type { DirectMessage } from '@/types/messaging';
 
 type TimelineItem =
@@ -10,6 +11,7 @@ function dayKey(iso: string): string {
   return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
 }
 
+/** Day rule label, News-style sentence case: "Today", "Yesterday", "Mon, Sep 29", "Sep 29, 2025". */
 function formatConversationDateLabel(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
@@ -18,22 +20,24 @@ function formatConversationDateLabel(iso: string): string {
     date.getFullYear() === now.getFullYear() &&
     date.getMonth() === now.getMonth() &&
     date.getDate() === now.getDate();
-  const datePart = date.toLocaleDateString('en-US', { day: 'numeric', month: 'short' }).toUpperCase();
-  if (sameDay) return `TODAY — ${datePart}`;
+  if (sameDay) return tr('Today');
   const yesterday = new Date(now);
   yesterday.setDate(now.getDate() - 1);
   const isYesterday =
     date.getFullYear() === yesterday.getFullYear() &&
     date.getMonth() === yesterday.getMonth() &&
     date.getDate() === yesterday.getDate();
-  if (isYesterday) return `YESTERDAY — ${datePart}`;
-  return date.toLocaleDateString('en-US', { weekday: 'short', day: 'numeric', month: 'short' }).toUpperCase();
+  if (isYesterday) return tr('Yesterday');
+  if (date.getFullYear() !== now.getFullYear()) {
+    return date.toLocaleDateString(localeTag(), { day: 'numeric', month: 'short', year: 'numeric' });
+  }
+  return date.toLocaleDateString(localeTag(), { weekday: 'short', day: 'numeric', month: 'short' });
 }
 
 export function formatConversationTime(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return '';
-  return date.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+  return date.toLocaleTimeString(localeTag(), { hour: 'numeric', minute: '2-digit' });
 }
 
 /** Build timeline with date separators from chronological messages. */

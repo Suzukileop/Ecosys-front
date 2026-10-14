@@ -14,6 +14,7 @@ import {
 import { listFollowingCreators } from '@/lib/marketplace-api';
 import type { MarketplaceCreatorSummary } from '@/types/marketplace';
 import type { ConversationSummary, MessagingUserSummary } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type AddGroupMemberModalProps = {
   conversationId: string;
@@ -67,6 +68,7 @@ export function AddGroupMemberModal({
   onClose,
   onAdded,
 }: AddGroupMemberModalProps) {
+  const t = useT();
   const [memberSearch, setMemberSearch] = useState('');
   const [existingMemberIds, setExistingMemberIds] = useState<string[]>([]);
   const [searchResults, setSearchResults] = useState<MessagingUserSummary[]>([]);
@@ -161,22 +163,22 @@ export function AddGroupMemberModal({
       onAdded();
       onClose();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to add member.'));
+      setError(getApiErrorMessage(e, t('Unable to add member.')));
     } finally {
       setAddingId(null);
     }
   };
 
   const emptyMessage = (() => {
-    if (isSearching) return 'No users found. Try another name.';
-    if (query.length === 1) return 'Type at least 2 characters to search all users.';
+    if (isSearching) return t('No users found. Try another name.');
+    if (query.length === 1) return t('Type at least 2 characters to search all users.');
     if (suggestionsLoading) return null;
-    return 'No recent contacts. Type a name to search all users.';
+    return t('No recent contacts. Type a name to search all users.');
   })();
 
   return (
     <div className="fixed inset-0 z-[100] flex items-center justify-center p-4">
-      <button type="button" className="absolute inset-0 bg-black/50" aria-label="Close" onClick={onClose} />
+      <button type="button" className="absolute inset-0 bg-black/50" aria-label={t('Close')} onClick={onClose} />
       <div
         role="dialog"
         aria-modal="true"
@@ -185,10 +187,10 @@ export function AddGroupMemberModal({
       >
         <div className="border-b border-neutral-200 px-5 py-4 dark:border-neutral-700">
           <h2 id="add-member-title" className="text-lg font-bold text-neutral-900 dark:text-white">
-            Add member
+            {t('Add member')}
           </h2>
           <p className="mt-1 text-sm text-neutral-500 dark:text-neutral-400">
-            Search any user by name to add them to this group.
+            {t('Search any user by name to add them to this group.')}
           </p>
         </div>
 
@@ -203,7 +205,7 @@ export function AddGroupMemberModal({
             type="search"
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
-            placeholder="Search by name…"
+            placeholder={t('Search by name…')}
             className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-400/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
             autoFocus
           />
@@ -234,7 +236,7 @@ export function AddGroupMemberModal({
                         </p>
                       </div>
                       <span className="text-xs font-semibold text-neutral-600 dark:text-neutral-300">
-                        {addingId === candidate.id ? '…' : 'Add'}
+                        {addingId === candidate.id ? '…' : t('Add')}
                       </span>
                     </button>
                   </li>
@@ -250,7 +252,7 @@ export function AddGroupMemberModal({
             onClick={onClose}
             className="w-full rounded-full border border-neutral-200 px-4 py-2.5 text-sm font-semibold text-neutral-700 dark:border-neutral-700 dark:text-neutral-300"
           >
-            Close
+            {t('Close')}
           </button>
         </div>
       </div>

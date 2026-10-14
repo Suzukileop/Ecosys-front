@@ -19,6 +19,7 @@ import {
   type PortfolioTeamPresentationSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import type { ProfileTeamMember } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** One easing for the whole family — a long, soft expo-out, the premium-motion default here. */
 export const EASE_CLS = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
@@ -62,6 +63,7 @@ export function TeamMemberImage({
   /** Marks the portrait as the node the shared entrance settles out of its over-scale. */
   reveal?: boolean;
 }) {
+  const t = useT();
   if (!presentation.showImage) return null;
   const fit = presentation.imageFit === 'contain' ? 'object-contain' : 'object-cover';
   const position = {
@@ -79,7 +81,7 @@ export function TeamMemberImage({
       {member.imageUrl?.trim() ? (
         <PortfolioDeferredMedia
           src={member.imageUrl}
-          alt={`Portrait de ${member.name}`}
+          alt={t('Portrait de {name}', { name: member.name })}
           className={`h-full w-full ${fit} ${position}`}
           sizes="(max-width: 768px) 50vw, 280px"
           objectFit={presentation.imageFit === 'contain' ? 'contain' : 'cover'}
@@ -147,6 +149,7 @@ export function TeamSocialLinks({
   /** `wide` lets the row breathe inside a large, sparse composition (spotlight). */
   spacing?: 'default' | 'wide';
 }) {
+  const t = useT();
   const links = (member.socialLinks ?? []).filter((link) => link.url.trim());
   if (!presentation.showSocials) return null;
   const size = teamSocialIconButtonClass(presentation.socialIconSize);
@@ -172,7 +175,7 @@ export function TeamSocialLinks({
   return (
     <div
       className={`flex flex-wrap ${spacing === 'wide' ? 'gap-3.5 sm:gap-4' : 'gap-2'} ${align}`}
-      aria-label={`Liens sociaux de ${member.name}`}
+      aria-label={t('Liens sociaux de {name}', { name: member.name })}
     >
       {links.map((link, index) => {
         const href =

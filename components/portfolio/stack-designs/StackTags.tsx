@@ -16,6 +16,7 @@ import {
   stackTagsListClass,
 } from '@/components/portfolio/portfolio-stack-settings';
 import type { PortfolioToolsCardGap, PortfolioToolsContentAlignment } from '@/components/portfolio/portfolio-tools-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function stackTagsJustifyClass(alignment: PortfolioToolsContentAlignment): string {
   switch (alignment) {
@@ -71,6 +72,7 @@ export function EditorialStackTags({
   items: PortfolioSkillRef[];
   presentation: PortfolioStackPresentationSettings;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const names = items.map(resolveSkillName).map((name) => name.trim()).filter(Boolean);
   const contentAlignment = resolveStackTagsContentAlignment(presentation);
@@ -142,7 +144,7 @@ export function EditorialStackTags({
     >
       <ul
         className={`pf-stack-tags-list ${stackTagsListClass(tagSize)} flex w-full max-w-none list-none flex-wrap p-0 ${stackTagsGapClass(presentation.cardGap)} ${stackTagsJustifyClass(contentAlignment)}`}
-        aria-label="Stack"
+        aria-label={t('Stack')}
       >
         {names.map((name, index) => (
           <li

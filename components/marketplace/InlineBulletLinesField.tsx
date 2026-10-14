@@ -10,6 +10,7 @@ import type {
 import { useFieldArray } from 'react-hook-form';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type InlineBulletLinesFieldProps<T extends FieldValues> = {
   control: Control<T>;
@@ -35,6 +36,7 @@ export function InlineBulletLinesField<T extends FieldValues>({
   maxItems = 10,
   onRemoveSection,
 }: InlineBulletLinesFieldProps<T>) {
+  const t = useT();
   const { fields, append, remove } = useFieldArray({
     control,
     // eslint-disable-next-line @typescript-eslint/no-explicit-any -- field array path is dynamic
@@ -58,14 +60,14 @@ export function InlineBulletLinesField<T extends FieldValues>({
             onClick={() => append({ value: '' } as never)}
             className="text-[13px] font-medium text-neutral-500 transition-colors hover:text-[#111111] disabled:opacity-40 dark:text-neutral-400 dark:hover:text-white"
           >
-            Add line
+            {t('Add line')}
           </button>
           {onRemoveSection ? (
             <button
               type="button"
               onClick={onRemoveSection}
               className="text-neutral-400 transition-colors hover:text-[#111111] dark:text-neutral-500 dark:hover:text-white"
-              aria-label="Remove section"
+              aria-label={t('Remove section')}
             >
               <FontAwesomeIcon icon={faTrashCan} className="text-[12px]" />
             </button>

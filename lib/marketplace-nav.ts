@@ -1,12 +1,8 @@
 import { ROUTES, isPathWithin, providerPath } from '@/lib/routes';
 
-/** Product marketplace: catalogue, product pages and the buyer's purchases. */
+/** Product marketplace: catalogue and product pages. */
 export function isMarketplaceHubPath(pathname: string): boolean {
-  return (
-    pathname === ROUTES.marketplace ||
-    isPathWithin(pathname, `${ROUTES.marketplace}/products`) ||
-    isPathWithin(pathname, ROUTES.purchases)
-  );
+  return pathname === ROUTES.marketplace || isPathWithin(pathname, `${ROUTES.marketplace}/products`);
 }
 
 const CREATOR_PROFILE_PATTERN = /^\/providers\/[^/]+\/?$/;

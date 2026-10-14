@@ -17,6 +17,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FALLBACK_INTRO =
   'Ingénieur en informatique, passionné par des solutions innovantes et performantes.';
@@ -47,6 +48,7 @@ function identityScrollParent(el: HTMLElement | null): HTMLElement | undefined {
  * All colors come from the Hero / Global palette (fond, texteFort, texteMuted, bordure, principal, neutre).
  */
 export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -399,7 +401,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                     borderRadius: 10,
                   }}
                 >
-                  View project
+                  {t('View project')}
                 </a>
                 <a
                   href={contactHref}
@@ -412,7 +414,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                     borderRadius: 10,
                   }}
                 >
-                  Contact me
+                  {t('Contact me')}
                 </a>
               </div>
 
@@ -425,7 +427,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                     backgroundColor: `color-mix(in srgb, ${ink} 4%, transparent)`,
                   }}
                 >
-                  Scroll ✕
+                  {t('Scroll ✕')}
                 </span>
               </div>
             </div>
@@ -506,7 +508,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               className="inline-flex h-12 min-h-12 shrink-0 items-center justify-center px-7 font-sans text-[0.95rem] font-normal tracking-[-0.01em] transition hover:brightness-110"
               style={{ backgroundColor: principal, color: '#FFFFFF', borderRadius: 10 }}
             >
-              View project
+              {t('View project')}
             </a>
             <a
               href={contactHref}
@@ -519,7 +521,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                 borderRadius: 10,
               }}
             >
-              Contact me
+              {t('Contact me')}
             </a>
           </div>
         </div>

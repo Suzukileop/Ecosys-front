@@ -110,6 +110,7 @@ import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker'
 import type { PortfolioListMarkerStyle } from '@/components/portfolio/portfolio-list-marker';
 import { readPortfolioNavTopClearancePx } from '@/components/portfolio/portfolio-nav-top-clearance';
 import { mediaImageResponsive } from '@/lib/media-image-url';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Portraits and photos in this section are user uploads; serve a derivative, not the original. */
 const ABOUT_MEDIA_WIDTHS = [256, 384, 640, 828] as const;
@@ -585,6 +586,7 @@ function AboutMeClassicLayout({
   cardBorder: string;
   contentSize: PortfolioInfoPremiumFontSize;
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const motionOff = reduceMotion === true;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -627,7 +629,7 @@ function AboutMeClassicLayout({
             variants={motionOff ? undefined : ABOUT_CLASSIC_FADE_UP}
           >
             <span aria-hidden className="pf-about-classic-kicker-mark" />
-            <span>Education</span>
+            <span>{t('Education')}</span>
           </motion.p>
           <motion.ol className="pf-about-classic-edu-index" variants={motionOff ? undefined : ABOUT_CLASSIC_STAGGER}>
             {educationItems.map((entry, index) => (
@@ -681,7 +683,7 @@ function AboutMeClassicLayout({
                   className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
                   style={{ color: aboutClassicMuted(subtitleColor) }}
                 >
-                  Skills
+                  {t('Skills')}
                 </p>
                 <AboutClassicItemList items={skillEntryLabels(skillItems)} bodySizeClass={bodyClass} />
               </AboutClassicBentoCard>
@@ -695,7 +697,7 @@ function AboutMeClassicLayout({
                   className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
                   style={{ color: aboutClassicMuted(subtitleColor) }}
                 >
-                  Languages
+                  {t('Languages')}
                 </p>
                 <AboutClassicLanguageList items={languageItems} ink={subtitleColor} body={bodyColor} />
               </AboutClassicBentoCard>
@@ -710,7 +712,7 @@ function AboutMeClassicLayout({
                     className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
                     style={{ color: aboutClassicMuted(subtitleColor) }}
                   >
-                    Strengths
+                    {t('Strengths')}
                   </p>
                   <AboutClassicKeywordList items={strengthItems} ink={subtitleColor} bodyColor={bodyColor} />
                 </AboutClassicBentoCard>
@@ -721,7 +723,7 @@ function AboutMeClassicLayout({
                     className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
                     style={{ color: aboutClassicMuted(subtitleColor) }}
                   >
-                    Systems &amp; tools
+                    {t('Systems & tools')}
                   </p>
                   <AboutClassicKeywordList
                     items={aboutClassicFlattenToolItems(toolItems)}
@@ -738,7 +740,7 @@ function AboutMeClassicLayout({
                   className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
                   style={{ color: aboutClassicMuted(subtitleColor) }}
                 >
-                  Strengths
+                  {t('Strengths')}
                 </p>
                 <AboutClassicKeywordList items={strengthItems} ink={subtitleColor} bodyColor={bodyColor} />
               </AboutClassicBentoCard>
@@ -750,7 +752,7 @@ function AboutMeClassicLayout({
                   className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
                   style={{ color: aboutClassicMuted(subtitleColor) }}
                 >
-                  Systems &amp; tools
+                  {t('Systems & tools')}
                 </p>
                 <AboutClassicKeywordList
                   items={aboutClassicFlattenToolItems(toolItems)}
@@ -874,6 +876,7 @@ function AboutMeTraitLayout({
   portraitGrayscale: boolean;
   colorMode?: 'light' | 'dark';
 }) {
+  const t = useT();
   const initials = (fullName ?? '')
     .trim()
     .split(/\s+/)
@@ -928,7 +931,7 @@ function AboutMeTraitLayout({
                 <img
                   {...mediaImageResponsive(avatarUrl.trim(), ABOUT_MEDIA_WIDTHS)}
                   sizes={ABOUT_MEDIA_SIZES}
-                  alt={fullName?.trim() || 'Profile'}
+                  alt={fullName?.trim() || t('Profile')}
                   className={infoPortraitImageClass('h-full w-full object-cover', portraitGrayscale)}
                 />
               ) : (
@@ -945,7 +948,7 @@ function AboutMeTraitLayout({
           {showHeadline ? (
             <div className="flex min-h-0 min-w-0 lg:h-full">
               <AboutMeTraitHeadline
-                text={headlineText.trim() || 'Turning Hard\nProblems Into\nSimple Software'}
+                text={headlineText.trim() || t('Turning Hard\nProblems Into\nSimple Software')}
                 contentSize={contentSize}
               />
             </div>
@@ -966,7 +969,7 @@ function AboutMeTraitLayout({
                 transition={{ duration: 0.72, delay: 0.05, ease: ABOUT_ME_TRAIT_EASE }}
               >
                 <TraitHeadingList
-                  label="Skills"
+                  label={t('Skills')}
                   items={skillEntryLabels(skillItems)}
                   titleColor={titleColor}
                   bodyColor={bodyColor}
@@ -985,7 +988,7 @@ function AboutMeTraitLayout({
                 transition={{ duration: 0.72, delay: 0.16, ease: ABOUT_ME_TRAIT_EASE }}
               >
                 <TraitHeadingList
-                  label="Strengths"
+                  label={t('Strengths')}
                   items={strengthItems}
                   titleColor={titleColor}
                   bodyColor={bodyColor}
@@ -1004,7 +1007,7 @@ function AboutMeTraitLayout({
                 transition={{ duration: 0.72, delay: 0.27, ease: ABOUT_ME_TRAIT_EASE }}
               >
                 <TraitLanguageList
-                  label="Languages"
+                  label={t('Languages')}
                   items={languageItems}
                   titleColor={titleColor}
                   bodyColor={bodyColor}
@@ -1202,6 +1205,7 @@ function AboutPlatformSkillCard({
   cardTitleClass: string;
   cardBodyClass: string;
 }) {
+  const t = useT();
   const skillTitle = skill.title?.trim() || '';
   const skillDescription = skill.description?.trim() || '';
   const isPlaceholder = !skillDescription;
@@ -1296,7 +1300,7 @@ function AboutPlatformSkillCard({
         data-reveal="body"
         data-placeholder={isPlaceholder ? 'true' : undefined}
       >
-        {skillDescription || 'Add a description for this skill in Creator Studio → Information.'}
+        {skillDescription || t('Add a description for this skill in Creator Studio → Information.')}
       </p>
     </article>
   );
@@ -2139,6 +2143,7 @@ function AboutPortraitSkillsLayout({
   contentSize: PortfolioInfoPremiumFontSize;
   portraitGrayscale?: boolean;
 }) {
+  const t = useT();
   const reduceMotion = Boolean(useReducedMotion());
   const rootRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLElement>(null);
@@ -2571,7 +2576,7 @@ function AboutPortraitSkillsLayout({
                   animate={{ opacity: 0.6, y: 0 }}
                   transition={aboutPortraitSkillsTween(reduceMotion, 0.7, 0.28)}
                 >
-                  Ajoute des skills dans Creator Studio → Information.
+                  {t('Ajoute des skills dans Creator Studio → Information.')}
                 </motion.p>
               )}
 
@@ -3065,6 +3070,7 @@ function AboutBannerLayout({
   cardBorder: string;
   portraitGrayscale: boolean;
 }) {
+  const t = useT();
   const bioText = bio?.trim() || subtitle?.trim() || '';
   const bioClass = aboutBannerBioSizeClass(contentSize);
   const bodyClass = aboutBannerContentSizeClass(contentSize);
@@ -3323,7 +3329,7 @@ function AboutBannerLayout({
               {bioText ? (
                 bioText
               ) : (
-                <span className="opacity-60">Add a bio in Creator Studio → Information.</span>
+                <span className="opacity-60">{t('Add a bio in Creator Studio → Information.')}</span>
               )}
             </blockquote>
           </div>
@@ -3691,6 +3697,7 @@ function AboutSplitLayout({
   sectionLabels: AboutSplitSectionLabels;
   portraitGrayscale: boolean;
 }) {
+  const t = useT();
   const reduceMotion = useHydrationSafeReducedMotion();
   const rootRef = useRef<HTMLDivElement>(null);
   const bodyClass = infoContentBodySizeClass(contentSize);
@@ -3704,7 +3711,7 @@ function AboutSplitLayout({
     .map((part) => part[0]?.toUpperCase() ?? '')
     .join('');
 
-  const specialtyHeadline = specialty?.trim() || 'Software engineer';
+  const specialtyHeadline = specialty?.trim() || t('Software engineer');
   const portraitName = fullName?.trim() || 'Profile';
 
   const visibleSkills = skillItems.filter((item) => item.title?.trim());
@@ -3864,7 +3871,7 @@ function AboutSplitLayout({
               viewport={reduceMotion ? undefined : { once: true, amount: 0.16 }}
               transition={{ duration: 0.7, ease: ABOUT_SPLIT_EASE }}
             >
-              <AboutSplitSectionHeading label="Education" titleColor={titleColor} />
+              <AboutSplitSectionHeading label={t('Education')} titleColor={titleColor} />
               <ul className={`pf-about-split-edu ${bodyClass}`}>
                 {educationItems.map((entry) => (
                   <li
@@ -3901,7 +3908,7 @@ function AboutSplitLayout({
               viewport={reduceMotion ? undefined : { once: true, amount: 0.16 }}
               transition={{ duration: 0.7, ease: ABOUT_SPLIT_EASE }}
             >
-              <AboutSplitSectionHeading label="Systems & tools" titleColor={titleColor} />
+              <AboutSplitSectionHeading label={t('Systems & tools')} titleColor={titleColor} />
               <InfoBulletList
                 items={toolItems}
                 accent={accent}
@@ -4093,6 +4100,7 @@ function ManifestoEducationList({
   contentSize: PortfolioInfoPremiumFontSize;
   includeLabel?: boolean;
 }) {
+  const t = useT();
   const visible = entries.filter(
     (entry) => entry.title?.trim() || entry.institution?.trim() || entry.schoolYear?.trim()
   );
@@ -4106,7 +4114,7 @@ function ManifestoEducationList({
     <div>
       {includeLabel ? (
         <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-        Education
+        {t('Education')}
         </ManifestoSectionLabel>
       ) : null}
       <ol className={`pf-about-manifesto-edu ${includeLabel ? 'mt-5' : 'mt-0'}`}>
@@ -4253,6 +4261,7 @@ function ManifestoIndexGrid({
   contentSize: PortfolioInfoPremiumFontSize;
   motionOff?: boolean;
 }) {
+  const t = useT();
   const showSkillsCol = showSkills && skillLabels.length > 0;
   const showStrengthsCol = showStrengths && strengthItems.length > 0;
   const showLangCol = showLanguages && languageItems.length > 0;
@@ -4269,7 +4278,7 @@ function ManifestoIndexGrid({
         <div className="pf-about-manifesto-col-shell min-h-0 h-full min-w-0" data-col="skills">
           <div className="pf-about-manifesto-col">
             <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-              Skills
+              {t('Skills')}
             </ManifestoSectionLabel>
             <ManifestoEditorialList
               items={skillLabels}
@@ -4285,7 +4294,7 @@ function ManifestoIndexGrid({
         <div className="pf-about-manifesto-col-shell min-h-0 h-full min-w-0" data-col="strengths">
           <div className="pf-about-manifesto-col">
             <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-              Strengths
+              {t('Strengths')}
             </ManifestoSectionLabel>
             <ManifestoEditorialList
               items={strengthItems}
@@ -4300,7 +4309,7 @@ function ManifestoIndexGrid({
         <div className="pf-about-manifesto-col-shell min-h-0 h-full min-w-0" data-col="languages">
           <div className="pf-about-manifesto-col">
             <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-              Languages
+              {t('Languages')}
             </ManifestoSectionLabel>
             <ManifestoLanguageRail
               items={languageItems}
@@ -4396,6 +4405,7 @@ function ManifestoDetailsSection({
   sectionTopClass?: string;
   motionOff?: boolean;
 }) {
+  const t = useT();
   const visibleEducation = educationItems.filter(
     (entry) => entry.title?.trim() || entry.institution?.trim() || entry.schoolYear?.trim()
   );
@@ -4433,7 +4443,7 @@ function ManifestoDetailsSection({
       node: (
         <>
           <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-            Interests
+            {t('Interests')}
           </ManifestoSectionLabel>
           <ManifestoEditorialList
             items={interestItems}
@@ -4451,7 +4461,7 @@ function ManifestoDetailsSection({
       node: (
         <>
           <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
-            Systems &amp; tools
+            {t('Systems & tools')}
           </ManifestoSectionLabel>
           <ManifestoEditorialList
             items={toolItems}
@@ -4601,6 +4611,7 @@ function ManifestoPortraitFrame({
   subtitleColor: string;
   compact?: boolean;
 }) {
+  const t = useT();
   const imageClass = `h-full w-full object-cover object-center ${avatarGrayscale ? 'grayscale' : ''}`;
   const squareClass = compact ? MANIFESTO_PORTRAIT_COMPACT_CLASS : MANIFESTO_PORTRAIT_SIZE_CLASS;
   const rectClass = compact ? MANIFESTO_PORTRAIT_COMPACT_RECT_CLASS : MANIFESTO_PORTRAIT_RECT_CLASS;
@@ -4629,7 +4640,7 @@ function ManifestoPortraitFrame({
     <div className="pf-about-manifesto-portrait-media">
       {avatarSrc ? (
         // eslint-disable-next-line @next/next/no-img-element
-        <img {...mediaImageResponsive(avatarSrc, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt={fullName?.trim() || 'Profile'} className={imageClass} />
+        <img {...mediaImageResponsive(avatarSrc, ABOUT_MEDIA_WIDTHS)} sizes={ABOUT_MEDIA_SIZES} alt={fullName?.trim() || t('Profile')} className={imageClass} />
       ) : (
         <div
           className="flex h-full w-full items-center justify-center"
@@ -5044,6 +5055,7 @@ function AboutManifestoLayout({
   statementStyle?: PortfolioElementTextStyle | null;
   colorMode?: 'light' | 'dark';
 }) {
+  const t = useT();
   const reduceMotion = useReducedMotion();
   const motionOff = reduceMotion === true;
   const rootRef = useRef<HTMLDivElement>(null);
@@ -5203,7 +5215,7 @@ function AboutManifestoLayout({
                 className={`pf-about-manifesto-bio pf-about-manifesto-bio--empty ${secondaryBodyClass}`}
                 style={{ color: bodyColor }}
               >
-                Ajoute un sous-titre dans Creator Studio → Information.
+                {t('Ajoute un sous-titre dans Creator Studio → Information.')}
               </p>
             ) : null}
           </header>
@@ -6388,12 +6400,13 @@ function ValueStepsSquarePortrait({
   bodyColor: string;
   portraitGrayscale: boolean;
 }) {
+  const t = useT();
   const media = avatarSrc ? (
     // eslint-disable-next-line @next/next/no-img-element
     <img
       {...mediaImageResponsive(avatarSrc, ABOUT_MEDIA_WIDTHS)}
       sizes={ABOUT_MEDIA_SIZES}
-      alt={fullName?.trim() || 'Profile'}
+      alt={fullName?.trim() || t('Profile')}
       className={infoPortraitImageClass('h-full w-full object-cover object-center', portraitGrayscale)}
     />
   ) : (
@@ -6589,6 +6602,7 @@ function AboutValueStepsLayout({
   listMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
   portraitGrayscale: boolean;
 }) {
+  const t = useT();
   const motionOff = useReducedMotion() === true;
   const rootRef = useRef<HTMLDivElement>(null);
   const stepTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
@@ -6761,7 +6775,7 @@ function AboutValueStepsLayout({
             subtitleColor={subtitleColor}
             bodyColor={bodyColor}
               contentSize={contentSize}
-              emptyMessage="Ajoute des skills dans Creator Studio → Information."
+              emptyMessage={t('Ajoute des skills dans Creator Studio → Information.')}
             />
           ) : null}
           {valuesLayout === 'indexed-list' ? (
@@ -6773,13 +6787,13 @@ function AboutValueStepsLayout({
               bodyColor={bodyColor}
               cardBorder={cardBorder}
               contentSize={contentSize}
-              emptyMessage="Ajoute des skills dans Creator Studio → Information."
+              emptyMessage={t('Ajoute des skills dans Creator Studio → Information.')}
             />
           ) : null}
         </div>
       ) : !showIntro && showSkills ? (
         <p className={`opacity-60 ${emptyMessageClass}`} style={{ color: bodyColor }}>
-          Ajoute des skills dans Creator Studio → Information.
+          {t('Ajoute des skills dans Creator Studio → Information.')}
         </p>
       ) : null}
 

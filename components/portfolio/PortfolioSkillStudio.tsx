@@ -38,6 +38,8 @@ import {
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { uploadContentMedia } from '@/lib/marketplace-api';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type PortfolioSkillVariant = 'stack' | 'tools';
 
@@ -58,16 +60,16 @@ type SkillView = 'list' | 'icons' | 'grid' | 'table' | 'category';
 type ColorMode = 'light' | 'dark';
 
 const SKILL_VIEWS: Array<{ id: SkillView; label: string; icon: IconDefinition }> = [
-  { id: 'list', label: 'List — edit', icon: faList },
-  { id: 'icons', label: 'Icons only', icon: faIcons },
-  { id: 'grid', label: 'Grid', icon: faTableCellsLarge },
-  { id: 'table', label: 'Table', icon: faTable },
-  { id: 'category', label: 'By category', icon: faLayerGroup },
+  { id: 'list', label: msg('List — edit'), icon: faList },
+  { id: 'icons', label: msg('Icons only'), icon: faIcons },
+  { id: 'grid', label: msg('Grid'), icon: faTableCellsLarge },
+  { id: 'table', label: msg('Table'), icon: faTable },
+  { id: 'category', label: msg('By category'), icon: faLayerGroup },
 ];
 
 const UNCATEGORIZED = 'Other';
 const TILE_CLASS =
-  'border border-black/[0.06] transition-colors duration-200 hover:border-black/25 focus-visible:border-[#FF5722] focus-visible:outline-none dark:border-white/[0.08] dark:hover:border-white/30';
+  'border border-black/[0.06] transition-colors duration-200 hover:border-black/25 focus-visible:border-[#0F1419] dark:focus-visible:border-[#E7E9EA] focus-visible:outline-none dark:border-white/[0.08] dark:hover:border-white/30';
 
 function subscribeTheme(onChange: () => void) {
   const observer = new MutationObserver(onChange);
@@ -161,6 +163,7 @@ function LevelPicker({
   value: StrengthToolLevel | null;
   onChange: (next: StrengthToolLevel | null) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   useDismiss(open, () => setOpen(false), rootRef);
@@ -168,7 +171,7 @@ function LevelPicker({
   const label = levelLabel(value);
   const options: Array<{ value: StrengthToolLevel | null; label: string }> = [
     ...LEVEL_OPTIONS,
-    { value: null, label: 'No level' },
+    { value: null, label: t('No level') },
   ];
 
   return (
@@ -182,7 +185,7 @@ function LevelPicker({
           label ? 'text-neutral-600 dark:text-neutral-300' : 'text-neutral-400 dark:text-neutral-500'
         }`}
       >
-        {label ?? 'Level'}
+        {label ?? t('Level')}
         <svg
           aria-hidden
           viewBox="0 0 16 16"
@@ -199,7 +202,7 @@ function LevelPicker({
       {open ? (
         <ul
           role="listbox"
-          aria-label="Level"
+          aria-label={t('Level')}
           style={STUDIO_FLOAT_IN_STYLE}
           className={`${STUDIO_GLASS_PANEL_CLASS} absolute right-0 top-full z-50 mt-2 w-40 p-1.5`}
         >
@@ -217,8 +220,8 @@ function LevelPicker({
                     selected ? 'font-semibold text-black dark:text-white' : 'text-neutral-600 dark:text-neutral-300'
                   }`}
                 >
-                  {option.label}
-                  {selected ? <span aria-hidden className="h-1 w-1 rounded-full bg-[#FF5722]" /> : null}
+                  {t(option.label)}
+                  {selected ? <span aria-hidden className="h-1 w-1 rounded-full bg-current" /> : null}
                 </button>
               </li>
             );
@@ -241,6 +244,7 @@ function SkillLogo({
   colorMode: ColorMode;
   onChange: (next: string) => void;
 }) {
+  const t = useT();
   const inputRef = useRef<HTMLInputElement>(null);
   const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -254,7 +258,7 @@ function SkillLogo({
     try {
       onChange(await uploadContentMedia(file));
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to upload logo.'));
+      setError(getApiErrorMessage(e, t('Unable to upload logo.')));
     } finally {
       setUploading(false);
     }
@@ -273,9 +277,9 @@ function SkillLogo({
         type="button"
         onClick={() => inputRef.current?.click()}
         disabled={uploading}
-        title={error ?? 'Replace logo'}
+        title={error ?? t('Replace logo')}
         aria-label={`Replace logo for ${name || 'item'}`}
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40"
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
       >
         {uploading ? (
           <LoadingSpinner size="sm" />
@@ -302,6 +306,7 @@ const SkillRowView = memo(function SkillRowView({
   onChange: RowChangeHandler;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const patch = (next: RowPatch) => onChange(row.key, next);
   const name = row.value.trim();
 
@@ -314,8 +319,8 @@ const SkillRowView = memo(function SkillRowView({
           value={row.category}
           maxLength={80}
           rows={1}
-          placeholder="Category"
-          aria-label="Category"
+          placeholder={t('Category')}
+          aria-label={t('Category')}
           onChange={(event) => patch({ category: event.currentTarget.value.replace(/\n/g, ' ') })}
           onKeyDown={(event) => {
             if (event.key === 'Enter') event.preventDefault();
@@ -336,8 +341,8 @@ const SkillRowView = memo(function SkillRowView({
             <input
               type="text"
               value={row.value}
-              placeholder={variant === 'stack' ? 'Technology' : 'Tool'}
-              aria-label="Name"
+              placeholder={variant === 'stack' ? t('Technology') : t('Tool')}
+              aria-label={t('Name')}
               autoFocus={autoFocus}
               onChange={(event) => patch({ value: event.currentTarget.value })}
               className={`${STUDIO_BARE_INPUT_CLASS} ${VALUE_CLASS}`}
@@ -352,8 +357,8 @@ const SkillRowView = memo(function SkillRowView({
             value={row.description}
             maxLength={MAX_DESCRIPTION}
             rows={1}
-            placeholder="How you use it"
-            aria-label="Description"
+            placeholder={t('How you use it')}
+            aria-label={t('Description')}
             onChange={(event) => patch({ description: event.currentTarget.value })}
             className={`${STUDIO_BARE_INPUT_CLASS} resize-none leading-relaxed [field-sizing:content] ${SECONDARY_CLASS}`}
           />
@@ -372,6 +377,7 @@ function SkillViewSwitch({
   views: typeof SKILL_VIEWS;
   onChange: (next: SkillView) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
   useDismiss(open, () => setOpen(false), rootRef);
@@ -383,8 +389,8 @@ function SkillViewSwitch({
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`View: ${current.label}`}
-        title={`View: ${current.label}`}
+        aria-label={t('View: {label}', { label: current.label })}
+        title={t('View: {label}', { label: current.label })}
         onClick={() => setOpen(!open)}
         className={`inline-flex h-8 items-center gap-1.5 rounded-full border pl-3 pr-2 transition-colors duration-200 ${
           open
@@ -409,7 +415,7 @@ function SkillViewSwitch({
       {open ? (
         <ul
           role="listbox"
-          aria-label="View"
+          aria-label={t('View')}
           style={STUDIO_FLOAT_IN_STYLE}
           className={`${STUDIO_GLASS_PANEL_CLASS} absolute right-0 top-full z-50 mt-2 w-48 p-1.5`}
         >
@@ -428,8 +434,8 @@ function SkillViewSwitch({
                   }`}
                 >
                   <FontAwesomeIcon icon={view.icon} className="h-3 w-3 opacity-70" fixedWidth />
-                  <span className="flex-1">{view.label}</span>
-                  {selected ? <span aria-hidden className="h-1 w-1 rounded-full bg-[#FF5722]" /> : null}
+                  <span className="flex-1">{t(view.label)}</span>
+                  {selected ? <span aria-hidden className="h-1 w-1 rounded-full bg-current" /> : null}
                 </button>
               </li>
             );
@@ -458,6 +464,7 @@ function SkillOverview({
   colorMode: ColorMode;
   onOpen: (key: string) => void;
 }) {
+  const t = useT();
   if (view === 'icons') {
     return (
       <ul style={STUDIO_FLOAT_IN_STYLE} className="flex flex-wrap gap-3 py-2">
@@ -466,7 +473,7 @@ function SkillOverview({
             <button
               type="button"
               title={displayName(row)}
-              aria-label={`Edit ${displayName(row)}`}
+              aria-label={t('Edit {displayName}', { displayName: displayName(row) })}
               onClick={() => onOpen(row.key)}
               className={`flex h-16 w-16 items-center justify-center rounded-2xl ${TILE_CLASS}`}
             >
@@ -485,7 +492,7 @@ function SkillOverview({
           <li key={row.key}>
             <button
               type="button"
-              aria-label={`Edit ${displayName(row)}`}
+              aria-label={t('Edit {displayName}', { displayName: displayName(row) })}
               onClick={() => onOpen(row.key)}
               className={`flex w-full flex-col items-start gap-5 rounded-2xl p-4 text-left ${TILE_CLASS}`}
             >
@@ -509,16 +516,16 @@ function SkillOverview({
           <thead>
             <tr className="border-b border-black/[0.06] dark:border-white/[0.06]">
               <th scope="col" className={headClass}>
-                {variant === 'stack' ? 'Technology' : 'Tool'}
+                {variant === 'stack' ? t('Technology') : t('Tool')}
               </th>
               <th scope="col" className={headClass}>
-                Category
+                {t('Category')}
               </th>
               <th scope="col" className={headClass}>
-                Level
+                {t('Level')}
               </th>
               <th scope="col" className={`${headClass} hidden md:table-cell`}>
-                Description
+                {t('Description')}
               </th>
             </tr>
           </thead>
@@ -532,8 +539,8 @@ function SkillOverview({
                 <td className="py-3 pr-6">
                   <button
                     type="button"
-                    aria-label={`Edit ${displayName(row)}`}
-                    className="flex items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40"
+                    aria-label={t('Edit {displayName}', { displayName: displayName(row) })}
+                    className="flex items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
                   >
                     <CreatorToolLogo label={displayName(row)} iconUrl={row.iconUrl} size={24} colorMode={colorMode} />
                     <span className={VALUE_CLASS}>{displayName(row)}</span>
@@ -565,7 +572,7 @@ function SkillOverview({
               <li key={row.key}>
                 <button
                   type="button"
-                  aria-label={`Edit ${displayName(row)}`}
+                  aria-label={t('Edit {displayName}', { displayName: displayName(row) })}
                   onClick={() => onOpen(row.key)}
                   className={`inline-flex items-center gap-2.5 rounded-full py-1.5 pl-2 pr-4 ${TILE_CLASS}`}
                 >
@@ -591,6 +598,7 @@ function SkillList({
   getDraft: () => SkillDraft;
   change: StudioChangeHandler<SkillDraft>;
 }) {
+  const t = useT();
   const [rows, setRows] = useState(() => getDraft().items);
   const [freshKey, setFreshKey] = useState<string | null>(null);
   const [view, setView] = useState<SkillView>('list');
@@ -631,7 +639,7 @@ function SkillList({
     commitRows([...rows, row]);
   };
 
-  const label = variant === 'stack' ? 'Stack' : 'Tools';
+  const label = variant === 'stack' ? t('Stack') : t('Tools');
 
   return (
     <section className={STUDIO_BLOCK_CLASS} aria-label={label}>
@@ -640,14 +648,14 @@ function SkillList({
           {rows.length > 0 ? <SkillViewSwitch value={view} views={SKILL_VIEWS} onChange={changeView} /> : null}
           <StudioIconAction
             icon="add"
-            label={variant === 'stack' ? 'Add technology' : 'Add tool'}
+            label={variant === 'stack' ? t('Add technology') : t('Add tool')}
             onClick={add}
             disabled={rows.length >= MAX_ITEMS}
           />
         </StudioSectionHeader>
         {rows.length === 0 ? (
-          <button type="button" onClick={add} className={`py-8 ${EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}>
-            {variant === 'stack' ? 'No technology yet — add your first one.' : 'No tool yet — add your first one.'}
+          <button type="button" onClick={add} className={`py-8 ${EMPTY_CLASS} transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA]`}>
+            {variant === 'stack' ? t('No technology yet — add your first one.') : t('No tool yet — add your first one.')}
           </button>
         ) : view === 'list' ? (
           <ul style={STUDIO_FLOAT_IN_STYLE}>

@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -24,12 +25,14 @@ export function ContentPostVideoPlayer({
   onLoadedMetadata,
   fit = 'contain',
 }: ContentPostVideoPlayerProps) {
+  const t = useT();
   const shellRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   usePauseOffscreenVideo(videoRef);
   const touchHideTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [playing, setPlaying] = useState(false);
+  const [started, setStarted] = useState(false);
   const [hovered, setHovered] = useState(false);
   const [volume, setVolume] = useState(1);
   const [current, setCurrent] = useState(0);
@@ -79,7 +82,8 @@ export function ContentPostVideoPlayer({
   }, []);
 
   const progress = duration > 0 ? (current / duration) * 100 : 0;
-  const chromeVisible = hovered || seeking;
+  // Paused = controls stay up, so the play button is never hidden behind a hover.
+  const chromeVisible = hovered || seeking || !playing;
 
   return (
     <div
@@ -109,118 +113,136 @@ export function ContentPostVideoPlayer({
         onTimeUpdate={(e) => {
           if (!seeking) setCurrent(e.currentTarget.currentTime);
         }}
-        onPlay={() => setPlaying(true)}
+        onPlay={() => {
+          setPlaying(true);
+          setStarted(true);
+        }}
         onPause={() => setPlaying(false)}
         onEnded={() => setPlaying(false)}
       />
 
+      {/* Large centred button while paused — the obvious way to start the video. */}
+      {!playing ? (
+        <button
+          type="button"
+          data-player-control
+          onClick={(e) => {
+            e.stopPropagation();
+            togglePlay();
+          }}
+          aria-label={t('Play')}
+          className="absolute left-1/2 top-1/2 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#0F1419] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-transform duration-200 hover:scale-105 active:scale-95"
+        >
+          <svg className="ml-0.5 h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+            <path d="M8 5.14v13.72a1 1 0 001.52.85l10.6-6.86a1 1 0 000-1.7L9.52 4.29A1 1 0 008 5.14z" />
+          </svg>
+        </button>
+      ) : null}
+
+      {/* Hairline progress while the controls are hidden. */}
       <div
-        className={`pointer-events-none absolute inset-x-0 top-0 z-20 bg-gradient-to-b from-black/70 to-transparent px-3 pb-8 pt-2 transition-opacity duration-300 ${
-          chromeVisible ? 'opacity-100' : 'pointer-events-none opacity-0 invisible'
+        aria-hidden
+        className={`pointer-events-none absolute inset-x-0 bottom-0 z-10 h-[2px] bg-white/15 transition-opacity duration-300 ${
+          chromeVisible || !started ? 'opacity-0' : 'opacity-100'
         }`}
       >
-        <div
-          className={`flex items-center gap-1 text-white ${chromeVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}
-        >
+        <div className="h-full bg-white/90" style={{ width: `${progress}%` }} />
+      </div>
+
+      {/* Controls sit at the bottom: seek bar, then play / pause, time, volume, fullscreen. They stay
+          visible while the video is paused so play is never hidden. */}
+      <div
+        data-player-control
+        onClick={(e) => e.stopPropagation()}
+        className={`absolute inset-x-0 bottom-0 z-20 bg-gradient-to-t from-black/75 via-black/35 to-transparent px-3 pb-2.5 pt-10 text-white transition-opacity duration-300 ${
+          chromeVisible ? 'opacity-100' : 'pointer-events-none opacity-0'
+        }`}
+      >
+        <input
+          type="range"
+          min={0}
+          max={1000}
+          value={Math.round(progress * 10)}
+          aria-label={t('Seek')}
+          className="block h-1 w-full cursor-pointer appearance-none rounded-full [&::-moz-range-thumb]:h-3 [&::-moz-range-thumb]:w-3 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white"
+          style={{
+            background: `linear-gradient(to right, #FF5722 ${progress}%, rgba(255,255,255,0.25) ${progress}%)`,
+          }}
+          onPointerDown={() => setSeeking(true)}
+          onPointerUp={() => setSeeking(false)}
+          onPointerCancel={() => setSeeking(false)}
+          onChange={(e) => seekToRatio(Number(e.target.value) / 1000)}
+        />
+
+        <div className="mt-2 flex items-center gap-2.5">
           <button
             type="button"
-            data-player-control
             onClick={(e) => {
               e.stopPropagation();
               togglePlay();
             }}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg transition hover:bg-white/10"
-            aria-label={playing ? 'Pause' : 'Play'}
+            className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-white text-[#0F1419] transition-transform hover:scale-105 active:scale-95"
+            aria-label={playing ? t('Pause') : t('Play')}
           >
             {playing ? (
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path d="M6 5h4v14H6V5zm8 0h4v14h-4V5z" />
+              <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <rect x="6" y="5" width="4" height="14" rx="1.2" />
+                <rect x="14" y="5" width="4" height="14" rx="1.2" />
               </svg>
             ) : (
-              <svg className="h-5 w-5" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
-                <path d="M8 5v14l11-7z" />
+              <svg className="ml-0.5 h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
+                <path d="M8 5.14v13.72a1 1 0 001.52.85l10.6-6.86a1 1 0 000-1.7L9.52 4.29A1 1 0 008 5.14z" />
               </svg>
             )}
           </button>
 
-          <div
-            data-player-control
-            className="flex items-center gap-1.5"
-            onClick={(e) => e.stopPropagation()}
-          >
+          <span className="shrink-0 text-[12.5px] tabular-nums text-white/85">
+            {formatTime(current)} <span className="text-white/55">/ {formatTime(duration)}</span>
+          </span>
+
+          <div className="flex-1" />
+
+          <div className="flex shrink-0 items-center gap-1.5">
             <svg
               className="h-5 w-5 shrink-0 text-white/80"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={1.75}
+              strokeLinecap="round"
+              strokeLinejoin="round"
               aria-hidden
             >
-              {volume === 0 ? (
-                <>
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 3v18a1 1 0 01-1.707.707L5.586 15z" />
-                  <path strokeLinecap="round" strokeLinejoin="round" d="M17 14l2-2m0 0l2-2m-2 2l-2-2m2 2l2 2" />
-                </>
-              ) : (
-                <path strokeLinecap="round" strokeLinejoin="round" d="M15.536 8.464a5 5 0 010 7.072M12 6v12m0 0l-4-4m4 4l4-4M5.586 15H4a1 1 0 01-1-1v-4a1 1 0 011-1h1.586l4.707-4.707A1 1 0 0112 3v18a1 1 0 01-1.707.707L5.586 15z" />
-              )}
+              <path d="M11 5L6 9H3v6h3l5 4V5z" />
+              {volume === 0 ? <path d="M16 9.5l5 5m0-5l-5 5" /> : <path d="M15.5 8.5a5 5 0 010 7M18.5 5.5a9 9 0 010 13" />}
             </svg>
             <input
               type="range"
               min={0}
               max={100}
               value={Math.round(volume * 100)}
-              aria-label="Volume"
-              className="h-1 w-16 cursor-pointer appearance-none rounded-full bg-white/25 accent-orange-400 sm:w-20 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-400"
+              aria-label={t('Volume')}
+              className="hidden h-1 w-16 cursor-pointer appearance-none rounded-full [&::-moz-range-thumb]:h-2.5 [&::-moz-range-thumb]:w-2.5 [&::-moz-range-thumb]:rounded-full [&::-moz-range-thumb]:border-0 [&::-moz-range-thumb]:bg-white [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-white sm:block sm:w-20"
+              style={{
+                background: `linear-gradient(to right, #ffffff ${Math.round(volume * 100)}%, rgba(255,255,255,0.25) ${Math.round(volume * 100)}%)`,
+              }}
               onChange={(e) => setVolumeLevel(Number(e.target.value) / 100)}
             />
           </div>
 
-          <span className="ml-1 text-[11px] tabular-nums text-white/75">
-            {formatTime(current)} / {formatTime(duration)}
-          </span>
-
-          <div className="flex-1" />
-
           <button
             type="button"
-            data-player-control
             onClick={(e) => {
               e.stopPropagation();
               toggleFullscreen();
             }}
-            className="inline-flex h-9 w-9 items-center justify-center rounded-lg transition hover:bg-white/10"
-            aria-label="Fullscreen"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 hover:text-white"
+            aria-label={t('Fullscreen')}
           >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+            <svg className="h-[18px] w-[18px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="M4 9V5a1 1 0 011-1h4M20 9V5a1 1 0 00-1-1h-4M4 15v4a1 1 0 001 1h4M20 15v4a1 1 0 01-1 1h-4" />
             </svg>
           </button>
-        </div>
-      </div>
-
-      <div
-        className={`pointer-events-none absolute inset-x-0 bottom-0 z-20 transition-opacity duration-300 ${
-          chromeVisible ? 'opacity-100' : 'pointer-events-none opacity-0 invisible'
-        }`}
-      >
-        <div
-          data-player-control
-          className={`px-0 ${chromeVisible ? 'pointer-events-auto' : 'pointer-events-none'}`}
-          onClick={(e) => e.stopPropagation()}
-        >
-          <input
-            type="range"
-            min={0}
-            max={1000}
-            value={Math.round(progress * 10)}
-            aria-label="Seek"
-            className="h-1 w-full cursor-pointer appearance-none bg-white/20 accent-orange-500 [&::-webkit-slider-runnable-track]:h-1 [&::-webkit-slider-runnable-track]:rounded-none [&::-webkit-slider-thumb]:-mt-1 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-400"
-            onMouseDown={() => setSeeking(true)}
-            onMouseUp={() => setSeeking(false)}
-            onTouchEnd={() => setSeeking(false)}
-            onChange={(e) => seekToRatio(Number(e.target.value) / 1000)}
-          />
         </div>
       </div>
     </div>
@@ -233,6 +255,7 @@ type ContentPostAudioPlayerProps = {
 };
 
 export function ContentPostAudioPlayer({ src, locale = 'en' }: ContentPostAudioPlayerProps) {
+  const t = useT();
   const audioRef = useRef<HTMLAudioElement>(null);
   const [playing, setPlaying] = useState(false);
   const [volume, setVolume] = useState(1);
@@ -273,7 +296,7 @@ export function ContentPostAudioPlayer({ src, locale = 'en' }: ContentPostAudioP
             type="button"
             onClick={togglePlay}
             className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-orange-500 text-white shadow-md transition hover:bg-orange-600"
-            aria-label={playing ? 'Pause' : 'Play'}
+            aria-label={playing ? t('Pause') : t('Play')}
           >
             {playing ? (
               <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
@@ -291,13 +314,13 @@ export function ContentPostAudioPlayer({ src, locale = 'en' }: ContentPostAudioP
               min={0}
               max={100}
               value={Math.round(volume * 100)}
-              aria-label="Volume"
+              aria-label={t('Volume')}
               className="h-1 w-14 shrink-0 cursor-pointer appearance-none rounded-full bg-white/20 accent-orange-400 [&::-webkit-slider-thumb]:h-2.5 [&::-webkit-slider-thumb]:w-2.5 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-400"
               onChange={(e) => setVolumeLevel(Number(e.target.value) / 100)}
             />
             <div className="min-w-0">
               <p className="truncate text-xs font-semibold text-white/85">
-                {locale === 'fr' ? 'Piste audio' : 'Audio track'}
+                {locale === 'fr' ? t('Piste audio') : t('Audio track')}
               </p>
               <p className="text-[11px] tabular-nums text-white/55">
                 {formatTime(current)} / {formatTime(duration)}
@@ -311,7 +334,7 @@ export function ContentPostAudioPlayer({ src, locale = 'en' }: ContentPostAudioP
           min={0}
           max={1000}
           value={Math.round(progress * 10)}
-          aria-label="Seek audio"
+          aria-label={t('Seek audio')}
           className="h-1 w-full cursor-pointer appearance-none rounded-full bg-white/20 accent-orange-500 [&::-webkit-slider-thumb]:h-3 [&::-webkit-slider-thumb]:w-3 [&::-webkit-slider-thumb]:appearance-none [&::-webkit-slider-thumb]:rounded-full [&::-webkit-slider-thumb]:bg-orange-400"
           onMouseDown={() => setSeeking(true)}
           onMouseUp={() => setSeeking(false)}

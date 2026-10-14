@@ -8,6 +8,7 @@ import { ContentPostStudioHeader } from '@/components/creator/ContentPostStudioH
 import { listComments } from '@/lib/marketplace-api';
 import { useAuth } from '@/context/AuthContext';
 import type { PublicContentFeedItem } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const EASE = 'duration-300 ease-out';
 
@@ -26,6 +27,7 @@ export function PublicContentPostCard({
   className = '',
   layout = 'stack',
 }: PublicContentPostCardProps) {
+  const t = useT();
   const { isAuthenticated } = useAuth();
   const [commentsOpen, setCommentsOpen] = useState(false);
   const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
@@ -58,7 +60,7 @@ export function PublicContentPostCard({
 
   /* A repost carries no media of its own: show what it points at. */
   const shown = post.repostOf ?? post;
-  const title = shown.title?.trim() || post.title?.trim() || 'Untitled';
+  const title = shown.title?.trim() || post.title?.trim() || t('Untitled');
   const openLightbox = () => setLightboxOpen(true);
   const isSplit = layout === 'split';
 
@@ -66,7 +68,7 @@ export function PublicContentPostCard({
     <div
       role="button"
       tabIndex={0}
-      aria-label="Open media fullscreen"
+      aria-label={t('Open media fullscreen')}
       onClick={openLightbox}
       onKeyDown={(e) => {
         if (e.key === 'Enter' || e.key === ' ') {

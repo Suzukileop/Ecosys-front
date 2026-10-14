@@ -19,6 +19,7 @@ import {
   type PortfolioToolsCardGap,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
@@ -90,6 +91,7 @@ function toolRowKey(tool: PortfolioSkillRef): string {
  * Hairlines sit on the type axis, flush to the name’s first letter.
  */
 export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryProps) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const motionKey = tools.map(toolRowKey).join('\u001f');
 
@@ -258,7 +260,7 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
                     {hasChips ? (
                       <ul
                         className="pf-stack-brand-index-chips m-0 flex list-none flex-wrap p-0"
-                        aria-label="Use cases"
+                        aria-label={t('Use cases')}
                       >
                         {useCases.map((useCase) => (
                           <li key={useCase} className="pf-stack-brand-index-chip">

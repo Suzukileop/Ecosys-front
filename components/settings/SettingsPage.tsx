@@ -4,6 +4,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
+import { faLanguage } from '@fortawesome/free-solid-svg-icons';
 import {
   faBell,
   faBookmark,
@@ -14,8 +15,9 @@ import {
   faSun,
 } from '@fortawesome/free-regular-svg-icons';
 import { ProfileSectionStickyAside } from '@/components/creator/studio/ProfileSectionStickyAside';
-import { PORTFOLIO_FRAME_CLASS } from '@/components/portfolio/portfolioFrame';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { msg } from '@/lib/i18n/config';
+import { useT } from '@/lib/i18n/I18nProvider';
 import {
   getAccountSecurity,
   getUserSettings,
@@ -26,6 +28,7 @@ import {
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { AccountSettingsSection } from './AccountSettingsSection';
 import { DataSettingsSection } from './DataSettingsSection';
+import { LanguageSettingsSection } from './LanguageSettingsSection';
 import {
   AppearanceSettingsSection,
   NotificationSettingsSection,
@@ -33,18 +36,19 @@ import {
 } from './PreferenceSettingsSections';
 import { SavedPostsSettingsSection } from './SavedPostsSettingsSection';
 import { SecuritySettingsSection } from './SecuritySettingsSection';
-import { SECONDARY_BUTTON_CLASS, SETTINGS_CARD_CLASS, Spinner } from './settingsUi';
+import { SECONDARY_BUTTON_CLASS, SETTINGS_SECTION_CLASS, Spinner } from './settingsUi';
 
-type SectionId = 'account' | 'saved' | 'security' | 'notifications' | 'privacy' | 'appearance' | 'data';
+type SectionId = 'account' | 'saved' | 'security' | 'notifications' | 'privacy' | 'appearance' | 'language' | 'data';
 
 const SECTIONS: { id: SectionId; label: string; icon: IconDefinition }[] = [
-  { id: 'account', label: 'Account', icon: faCircleUser },
-  { id: 'saved', label: 'Saved posts', icon: faBookmark },
-  { id: 'security', label: 'Security', icon: faIdBadge },
-  { id: 'notifications', label: 'Notifications', icon: faBell },
-  { id: 'privacy', label: 'Privacy', icon: faEye },
-  { id: 'appearance', label: 'Appearance', icon: faSun },
-  { id: 'data', label: 'Your data', icon: faHardDrive },
+  { id: 'account', label: msg('Account'), icon: faCircleUser },
+  { id: 'saved', label: msg('Saved posts'), icon: faBookmark },
+  { id: 'security', label: msg('Security'), icon: faIdBadge },
+  { id: 'notifications', label: msg('Notifications'), icon: faBell },
+  { id: 'privacy', label: msg('Privacy'), icon: faEye },
+  { id: 'appearance', label: msg('Appearance'), icon: faSun },
+  { id: 'language', label: msg('Language'), icon: faLanguage },
+  { id: 'data', label: msg('Your data'), icon: faHardDrive },
 ];
 
 type SaveState = 'idle' | 'saving' | 'saved' | 'error';
@@ -69,15 +73,16 @@ function SettingsNavItem({
       type="button"
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
-      className={`flex min-h-[3.25rem] w-full items-center gap-3.5 rounded-lg px-3 py-3.5 text-left text-[16px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
-        active
-          ? 'font-medium text-[#FF5722]'
-          : 'font-normal text-[#222222] hover:bg-black/[0.03] hover:text-[#0A0A0A] dark:text-neutral-300 dark:hover:bg-white/[0.05] dark:hover:text-white'
+      data-pf-no-color-transition
+      className={`relative flex min-h-11 w-full items-center gap-3 px-6 py-3.5 text-start text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+        active ? 'font-bold' : 'font-normal'
       }`}
     >
+      {/* The open section: a 2px ink bar on the box's left edge, as in My Profile's "Manage" rail. */}
+      {active ? <span aria-hidden className="absolute inset-y-2 start-0 w-[2px] rounded-full bg-[color:var(--gn-ink)]" /> : null}
       <FontAwesomeIcon
         icon={icon}
-        className={`h-[1.05rem] w-[1.05rem] shrink-0 ${active ? '' : 'text-[#555555] dark:text-neutral-400'}`}
+        className={`h-4 w-4 shrink-0 ${active ? 'text-[color:var(--gn-ink)]' : 'text-[color:var(--gn-ink2)]'}`}
       />
       <span className="min-w-0 flex-1 truncate">{label}</span>
     </button>
@@ -85,26 +90,28 @@ function SettingsNavItem({
 }
 
 function SaveIndicator({ state }: { state: SaveState }) {
+  const t = useT();
   if (state === 'idle') return null;
   return (
     <span
       aria-live="polite"
-      className="inline-flex items-center gap-2 text-[13px] text-[#666666] dark:text-neutral-400"
+      className="inline-flex items-center gap-1.5 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]"
     >
       {state === 'saving' ? (
         <>
           <Spinner className="h-3.5 w-3.5" />
-          Saving…
+          {t('Saving…')}
         </>
       ) : state === 'saved' ? (
         <>
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
-          All changes saved
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            <path d="m5 12.5 4.5 4.5L19 7.5" />
+          </svg>
+          {t('All changes saved')}
         </>
       ) : (
         <>
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-red-500" />
-          Not saved
+          <span className="text-[#F4212E]">{t('Not saved')}</span>
         </>
       )}
     </span>
@@ -114,14 +121,21 @@ function SaveIndicator({ state }: { state: SaveState }) {
 function SectionSkeleton() {
   return (
     <div className="animate-pulse" aria-hidden>
-      <div className="h-8 w-48 rounded-md bg-black/[0.06] dark:bg-white/[0.08]" />
-      <div className="mt-3 h-4 w-80 max-w-full rounded bg-black/[0.05] dark:bg-white/[0.06]" />
-      <div className={`mt-8 h-72 ${SETTINGS_CARD_CLASS}`} />
+      <div className="mx-4 h-8 w-48 bg-[color:var(--gn-surface)] sm:mx-0" />
+      <div className="mx-4 mt-3 h-4 w-80 max-w-full bg-[color:var(--gn-surface)] sm:mx-0" />
+      <div className={`mt-6 ${SETTINGS_SECTION_CLASS} lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12`}>
+        <div className="mx-4 h-5 w-36 bg-[color:var(--gn-surface)] sm:mx-0" />
+        <div className="mt-4 flex flex-col gap-4 px-4 sm:px-0 lg:mt-0">
+          <div className="h-11 rounded-md bg-[color:var(--gn-surface)]" />
+          <div className="h-11 rounded-md bg-[color:var(--gn-surface)]" />
+        </div>
+      </div>
     </div>
   );
 }
 
 export function SettingsPage() {
+  const t = useT();
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
@@ -146,11 +160,11 @@ export function SettingsPage() {
       setSettings(nextSettings);
       setSecurity(nextSecurity);
     } catch (error) {
-      setLoadError(getApiErrorMessage(error, 'We could not load your settings.'));
+      setLoadError(getApiErrorMessage(error, t('We could not load your settings.')));
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -161,6 +175,7 @@ export function SettingsPage() {
 
   const selectSection = (id: SectionId) => {
     const params = new URLSearchParams(searchParams.toString());
+    params.delete('collection');
     if (id === 'account') params.delete('section');
     else params.set('section', id);
     const query = params.toString();
@@ -199,28 +214,29 @@ export function SettingsPage() {
         setSaveState('error');
         pushFlashFeedback({
           variant: 'error',
-          title: 'Setting not saved',
-          description: getApiErrorMessage(error, 'Please try again.'),
+          title: t('Setting not saved'),
+          description: getApiErrorMessage(error, t('Please try again.')),
         });
       }
     },
-    [],
+    [t],
   );
 
   const renderSection = () => {
     if (active === 'appearance') return <AppearanceSettingsSection />;
+    if (active === 'language') return <LanguageSettingsSection />;
     if (active === 'account') return <AccountSettingsSection security={security} />;
     if (active === 'saved') return <SavedPostsSettingsSection />;
     if (loading) return <SectionSkeleton />;
     if (loadError) {
       return (
-        <div className={`${SETTINGS_CARD_CLASS} flex flex-col items-start gap-4 px-6 py-8`}>
+        <div className={`${SETTINGS_SECTION_CLASS} flex flex-col items-start gap-4 px-4 sm:px-0`}>
           <div>
-            <p className="text-[16px] font-semibold text-[#111111] dark:text-white">Settings unavailable</p>
-            <p className="mt-1 text-[14px] text-[#666666] dark:text-neutral-400">{loadError}</p>
+            <p className="text-[17px] font-bold leading-[22px] text-[color:var(--gn-ink)]">{t('Settings unavailable')}</p>
+            <p className="mt-1 text-[14px] leading-5 text-[color:var(--gn-ink2)]">{loadError}</p>
           </div>
           <button type="button" onClick={() => void load()} className={SECONDARY_BUTTON_CLASS}>
-            Try again
+            {t('Try again')}
           </button>
         </div>
       );
@@ -234,17 +250,22 @@ export function SettingsPage() {
     return <PrivacySettingsSection settings={settings} onUpdate={(patch) => void handleUpdate(patch)} />;
   };
 
+  /* The navbar's frame (1240px inside 32 / 48 / 64px gutters — NAVBAR_FRAME_CLASS), like News and My
+     Profile, so the page's edges sit under the wordmark and the avatar. The rail is My Profile's 20rem
+     "Manage" box, mirrored to the left (settings navigation leads), 48px from the section column, which
+     takes the rest of the frame. Sections sit on the page, split by hairlines (SettingsCard); on phones
+     the rail becomes a scrollable tab row. */
   return (
-    <div className={`${PORTFOLIO_FRAME_CLASS} pb-20 pt-4`}>
-      <div className="mb-8 flex items-end justify-between gap-4 md:hidden">
-        <h1 className="text-[28px] font-semibold tracking-[-0.02em] text-[#111111] dark:text-white">
-          Settings &amp; privacy
+    <div className="news-theme news-feed news-mono mx-auto w-full max-w-[1368px] pb-24 pt-2 sm:px-8 sm:pt-4 md:px-12 lg:px-16">
+      <div className="px-4 pb-1 pt-1 md:hidden">
+        <h1 className="text-[22px] font-extrabold leading-7 tracking-[-0.01em] text-[color:var(--gn-ink)]">
+          {t('Settings & privacy')}
         </h1>
       </div>
 
       <nav
-        aria-label="Settings sections"
-        className="-mx-4 mb-8 flex gap-1 overflow-x-auto border-b border-black/[0.06] px-4 [scrollbar-width:none] md:hidden dark:border-white/[0.08] [&::-webkit-scrollbar]:hidden"
+        aria-label={t('Settings sections')}
+        className="mb-4 flex overflow-x-auto px-2 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden"
       >
         {SECTIONS.map((section) => {
           const isActive = section.id === active;
@@ -254,30 +275,31 @@ export function SettingsPage() {
               type="button"
               onClick={() => selectSection(section.id)}
               aria-current={isActive ? 'page' : undefined}
-              className={`relative shrink-0 px-3 pb-3 pt-1 text-[15px] transition-colors ${
-                isActive ? 'font-medium text-[#FF5722]' : 'text-[#444444] dark:text-neutral-400'
+              data-pf-no-color-transition
+              className={`relative min-h-11 shrink-0 px-3 text-[15px] leading-5 transition-colors ${
+                isActive ? 'font-bold text-[color:var(--gn-ink)]' : 'font-medium text-[color:var(--gn-ink2)]'
               }`}
             >
-              {section.label}
-              {isActive ? <span aria-hidden className="absolute inset-x-3 -bottom-px h-0.5 rounded-full bg-[#FF5722]" /> : null}
+              {t(section.label)}
+              {isActive ? (
+                <span aria-hidden className="absolute inset-x-3 bottom-0 h-1 rounded-full bg-[color:var(--gn-ink)]" />
+              ) : null}
             </button>
           );
         })}
       </nav>
 
-      <div className="grid gap-10 md:grid-cols-[15rem_minmax(0,1fr)] lg:grid-cols-[17rem_minmax(0,1fr)] lg:gap-16">
-        <ProfileSectionStickyAside className="w-full" surfaceClassName="flex w-full max-w-full min-w-0 flex-col">
-          <div className="flex min-h-0 flex-col overflow-hidden rounded-lg border border-black/10 bg-white dark:border-0 dark:bg-white/[0.06]">
-            <div className="flex h-14 shrink-0 items-center border-b border-black/[0.05] px-5 dark:border-white/[0.05]">
-              <h1 className="text-[13px] font-semibold uppercase tracking-[0.16em] text-[#666666] dark:text-neutral-500">
-                Settings &amp; privacy
-              </h1>
-            </div>
-            <nav aria-label="Settings sections" className="flex flex-col gap-2 px-2.5 pb-3 pt-3">
+      <div className="grid items-start gap-8 md:grid-cols-[240px_minmax(0,1fr)] lg:grid-cols-[20rem_minmax(0,1fr)] xl:gap-12">
+        <ProfileSectionStickyAside className="hidden w-full md:block" surfaceClassName="flex w-full max-w-full min-w-0 flex-col">
+          <div className="gn-rail-box flex min-h-0 flex-col px-px pb-2 pt-5">
+            <h1 className="px-6 pb-2 pt-1 text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]">
+              {t('Settings')}
+            </h1>
+            <nav aria-label={t('Settings sections')} className="flex flex-col">
               {SECTIONS.map((section) => (
                 <SettingsNavItem
                   key={section.id}
-                  label={section.label}
+                  label={t(section.label)}
                   icon={section.icon}
                   active={section.id === active}
                   onClick={() => selectSection(section.id)}
@@ -287,10 +309,12 @@ export function SettingsPage() {
           </div>
         </ProfileSectionStickyAside>
 
-        <div className="min-w-0 max-w-3xl">
-          <div className="mb-2 flex h-5 justify-end">
-            <SaveIndicator state={saveState} />
-          </div>
+        <div className="min-w-0">
+          {saveState !== 'idle' ? (
+            <div className="mb-2 flex h-5 justify-end px-4 sm:px-0">
+              <SaveIndicator state={saveState} />
+            </div>
+          ) : null}
           {renderSection()}
         </div>
       </div>

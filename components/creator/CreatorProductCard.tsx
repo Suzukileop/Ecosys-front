@@ -1,24 +1,25 @@
 'use client';
 
+import { localeTag, tr } from '@/lib/i18n/active';
+import { ProductStatusBadges } from '@/components/marketplace/ProductStatusBadges';
 import Link from 'next/link';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faCrown, faEye, faEyeSlash, faThumbtack } from '@fortawesome/free-solid-svg-icons';
+import { faCrown, faEyeSlash, faStar, faThumbtack } from '@fortawesome/free-solid-svg-icons';
 import {
   collectProductLabels,
   formatPrice,
   formatVideoDuration,
   isFreeProduct,
-  PRODUCT_TYPE_LABELS,
+  productTypeName,
 } from '@/lib/marketplace-api';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { DEFAULT_PHYSICAL_STOCK, LOW_STOCK_THRESHOLD, physicalStockQuantity } from '@/lib/product-stock';
 import { ProductCardEngagementStrip } from '@/components/marketplace/ProductCardEngagementStrip';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
+import { CreatorProductActionsMenu } from '@/components/creator/CreatorProductActionsMenu';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
-import {
-  creatorProductViewPath,
-  type CreatorProductNavFrom,
-} from '@/lib/creator-product-nav';
+import { creatorProductViewPath, type CreatorProductNavFrom } from '@/lib/creator-product-nav';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorProductCardProps = {
   product: MarketplaceProductSummary;
@@ -31,17 +32,92 @@ type CreatorProductCardProps = {
   onTogglePublish?: (product: MarketplaceProductSummary) => void;
   onTogglePin?: (product: MarketplaceProductSummary) => void;
   onToggleProfileVisibility?: (product: MarketplaceProductSummary) => void;
-  /** Square, side-border-free card that runs edge to edge on phones. */
+  /** Kept for callers: cards are square, tone-only blocks everywhere now (edge to edge on phones). */
   flushOnMobile?: boolean;
 };
 
+/** The creator's grid: News / Products' rhythm — 8px apart on phones, 20px from sm. */
 export const creatorProductGridClassName =
-  'grid min-w-0 grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3';
+  'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3';
 
-const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2.5 py-1 text-[14px] font-medium text-white backdrop-blur-sm';
-const FLAG_BUTTON =
-  'inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 shadow-sm transition disabled:opacity-60 dark:bg-[#111111]/95';
+const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-sm';
+const OVERLAY_ROUND =
+  'inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#0F1419] dark:bg-black/80 dark:text-[#E7E9EA]';
+export const CREATOR_EYEBROW = 'truncate text-[13px] leading-[18px] text-[color:var(--gn-ink2)]';
+const PUBLISH_PILL =
+  'inline-flex h-9 shrink-0 items-center rounded-full bg-[color:var(--gn-primary)] px-4 text-[14px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] disabled:opacity-50';
 
+/** What a creator card / row shows besides the title — shared by the grid card and the list row. */
+export function creatorProductMeta(product: MarketplaceProductSummary) {
+  const { genre } = collectProductLabels(product);
+  const eyebrow = genre || (product.type !== 'PHYSICAL' ? productTypeName(product.type, product.typeLabel) : null);
+  const shopRankLabel = product.bestsellerRank ? tr('#{rank} best seller', { rank: product.bestsellerRank }) : null;
+  const rankLabels = [
+    ...(shopRankLabel ? [shopRankLabel] : []),
+    ...(product.catalogueBestsellers ?? []).map((entry) => tr('#{rank} in {catalogue}', { rank: entry.rank, catalogue: entry.catalogueName })),
+  ];
+  const stockQuantity = physicalStockQuantity(product);
+  const stock = stockQuantity != null && stockQuantity !== DEFAULT_PHYSICAL_STOCK ? stockQuantity : null;
+  const hasDiscount =
+    !isFreeProduct(product.priceCents) &&
+    product.compareAtPriceCents != null &&
+    product.compareAtPriceCents > product.priceCents;
+  const rating =
+    product.averageRating != null && product.reviewCount != null && product.reviewCount > 0
+      ? { value: product.averageRating, count: product.reviewCount }
+      : null;
+  return {
+    eyebrow,
+    shopRankLabel,
+    rankLabels,
+    stock,
+    hasDiscount,
+    rating,
+    hiddenFromProfile: product.showOnProfile === false,
+  };
+}
+
+/** Stock as a dot + words: green in stock, amber low, red out — the status dots' semantics. */
+export function stockDotClass(stock: number) {
+  return stock === 0 ? 'bg-[#F4212E]' : stock <= LOW_STOCK_THRESHOLD ? 'bg-[#FFAD1F]' : 'bg-[#00BA7C]';
+}
+
+export function stockLabel(stock: number) {
+  return stock === 0 ? tr('Out of stock') : tr('{count} in stock', { count: stock.toLocaleString(localeTag()) });
+}
+
+/** "● Published · Hidden from profile" — My services' status line. */
+export function CreatorProductStatus({
+  product,
+  hiddenFromProfile,
+  showHidden = true,
+}: {
+  product: MarketplaceProductSummary;
+  hiddenFromProfile: boolean;
+  showHidden?: boolean;
+}) {
+  const t = useT();
+  return (
+    <span className="inline-flex min-w-0 items-center gap-1.5">
+      <span aria-hidden className={`h-1.5 w-1.5 shrink-0 rounded-full ${product.isPublished ? 'bg-[#00BA7C]' : 'bg-[#FFAD1F]'}`} />
+      {product.isPublished ? t('Published') : t('Draft')}
+      {showHidden && hiddenFromProfile ? (
+        <>
+          <span aria-hidden>·</span>
+          <FontAwesomeIcon icon={faEyeSlash} className="h-3 w-3 shrink-0" aria-hidden />
+          <span className="truncate">{t('Hidden')}</span>
+        </>
+      ) : null}
+    </span>
+  );
+}
+
+/**
+ * A creator's product card — the public product card's anatomy (4:3 media, small-caps eyebrow,
+ * title, price then the struck-through one) plus what managing needs: the status line, stock on
+ * the media, the best-seller rank in ink (no gold), and one action. A draft shows "Publish"; every
+ * other action (Edit, Pin, profile visibility, Unpublish) sits behind ⋮.
+ */
 export function CreatorProductCard({
   product,
   readOnly = false,
@@ -51,246 +127,134 @@ export function CreatorProductCard({
   onTogglePublish,
   onTogglePin,
   onToggleProfileVisibility,
-  flushOnMobile = false,
 }: CreatorProductCardProps) {
+  const t = useT();
   const isVideo = product.type === 'VIDEO';
   const hasVideoThumbnail = isVideoThumbnailUrl(product.thumbnailUrl);
-  const { genre, tags } = collectProductLabels(product);
-  const labels = [...(genre ? [genre] : []), ...tags];
   const isPublishing = publishingId === product.id;
   const isFlagBusy = flagBusyId === product.id;
   const viewHref = creatorProductViewPath(product.id, from);
   const showDuration =
-    (isVideo || hasVideoThumbnail) &&
-    product.videoDurationSeconds != null &&
-    product.videoDurationSeconds > 0;
-  const hasDiscount =
-    !isFreeProduct(product.priceCents) &&
-    product.compareAtPriceCents != null &&
-    product.compareAtPriceCents > product.priceCents;
-  const canManageFlags = !readOnly && (onTogglePin || onToggleProfileVisibility);
-  const hiddenFromProfile = product.showOnProfile === false;
-  const shopRankLabel = product.bestsellerRank ? `#${product.bestsellerRank} best seller` : null;
-  const rankLabels = [
-    ...(shopRankLabel ? [shopRankLabel] : []),
-    ...(product.catalogueBestsellers ?? []).map((entry) => `#${entry.rank} in ${entry.catalogueName}`),
-  ];
-  const stockQuantity = physicalStockQuantity(product);
-  const stock = stockQuantity != null && stockQuantity !== DEFAULT_PHYSICAL_STOCK ? stockQuantity : null;
+    (isVideo || hasVideoThumbnail) && product.videoDurationSeconds != null && product.videoDurationSeconds > 0;
+  const { eyebrow, shopRankLabel, rankLabels, stock, hasDiscount, rating, hiddenFromProfile } = creatorProductMeta(product);
+  const manageable = !readOnly && Boolean(onTogglePublish || onTogglePin || onToggleProfileVisibility);
 
   return (
     <article
-      className={`group flex w-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16] ${
-        flushOnMobile ? 'max-sm:rounded-none max-sm:border-x-0 max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16]' : ''
-      }`}
+      // `!` on the fills: the theme's `.news-theme article` rule paints articles itself.
+      className="group relative flex w-full flex-col overflow-visible !rounded-none !bg-[color:var(--gn-surface)] transition-colors duration-200"
     >
-      <div className="relative aspect-[5/4] w-full shrink-0 overflow-hidden bg-black/[0.04] dark:bg-white/[0.04]">
-        <Link href={viewHref} className="block h-full w-full">
+      <div className="relative aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#EFF3F4] dark:bg-[#202327]">
+        <Link href={viewHref} className="block h-full w-full" tabIndex={-1} aria-hidden>
           {product.thumbnailUrl ? (
             <div className="h-full w-full transition-transform duration-700 ease-out group-hover:scale-105">
-              <ProductThumbnailMedia
-                url={product.thumbnailUrl}
-                autoPlay={hasVideoThumbnail}
-                fit="cover"
-                className="h-full w-full"
-              />
+              <ProductThumbnailMedia url={product.thumbnailUrl} autoPlay={hasVideoThumbnail} fit="cover" className="h-full w-full" />
             </div>
           ) : (
-            <div className="flex h-full items-center justify-center text-[14px] text-neutral-400 dark:text-neutral-500">
-              Preview unavailable
-            </div>
+            <div className="flex h-full items-center justify-center text-[13px] text-[color:var(--gn-ink2)]">{t('No preview')}</div>
           )}
         </Link>
 
-        <div className="pointer-events-none absolute left-3 top-3 flex flex-wrap gap-1.5">
-          {product.type !== 'PHYSICAL' ? (
-            <span className={OVERLAY_CHIP}>{PRODUCT_TYPE_LABELS[product.type] ?? product.type}</span>
-          ) : null}
-          {product.videoResolution ? <span className={OVERLAY_CHIP}>{product.videoResolution}</span> : null}
-        </div>
-
-        {canManageFlags ? (
-          <div className="absolute right-3 top-3 z-10 flex flex-row items-center gap-1.5">
-            {onTogglePin ? (
-              <button
-                type="button"
-                disabled={isFlagBusy}
-                title={product.isPinned ? 'Unpin' : 'Pin to top'}
-                aria-label={product.isPinned ? 'Unpin product' : 'Pin product to top'}
-                aria-pressed={Boolean(product.isPinned)}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onTogglePin(product);
-                }}
-                className={`${FLAG_BUTTON} ${
-                  product.isPinned
-                    ? 'text-[#FF5722] opacity-100'
-                    : 'text-neutral-600 opacity-0 hover:text-[#FF5722] group-hover:opacity-100 dark:text-neutral-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
-              </button>
-            ) : null}
-            {product.isBestseller ? (
-              <span title={shopRankLabel ?? undefined} className={`${FLAG_BUTTON} text-amber-500`}>
-                <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
-              </span>
-            ) : null}
-            {onToggleProfileVisibility ? (
-              <button
-                type="button"
-                disabled={isFlagBusy}
-                title={hiddenFromProfile ? 'Show on profile' : 'Hide from profile'}
-                aria-label={hiddenFromProfile ? 'Show product on profile' : 'Hide product from profile'}
-                aria-pressed={hiddenFromProfile}
-                onClick={(e) => {
-                  e.preventDefault();
-                  e.stopPropagation();
-                  onToggleProfileVisibility(product);
-                }}
-                className={`${FLAG_BUTTON} ${
-                  hiddenFromProfile
-                    ? 'text-[#111111] opacity-100 dark:text-white'
-                    : 'text-neutral-600 opacity-0 hover:text-[#FF5722] group-hover:opacity-100 dark:text-neutral-300'
-                }`}
-              >
-                <FontAwesomeIcon icon={hiddenFromProfile ? faEyeSlash : faEye} className="h-3 w-3" />
-              </button>
-            ) : null}
+        {(product.statusLabels?.length ?? 0) > 0 || product.videoResolution ? (
+          <div className="pointer-events-none absolute left-3 right-24 top-3 flex flex-wrap gap-1.5">
+            <ProductStatusBadges labels={product.statusLabels} />
+            {product.videoResolution ? <span className={OVERLAY_CHIP}>{product.videoResolution}</span> : null}
           </div>
-        ) : product.isPinned || product.isBestseller ? (
-          <div className="pointer-events-none absolute right-3 top-3 z-10 flex flex-row items-center gap-1.5">
+        ) : null}
+
+        {product.isPinned || product.isBestseller ? (
+          <div className="pointer-events-none absolute right-3 top-3 flex items-center gap-1.5">
             {product.isPinned ? (
-              <span className={`${FLAG_BUTTON} text-[#FF5722]`}>
+              <span title={t('Pinned')} className={OVERLAY_ROUND}>
                 <FontAwesomeIcon icon={faThumbtack} className="h-3 w-3" />
               </span>
             ) : null}
             {product.isBestseller ? (
-              <span title={shopRankLabel ?? undefined} className={`${FLAG_BUTTON} text-amber-500`}>
+              <span title={shopRankLabel ?? t('Best seller')} className={OVERLAY_ROUND}>
                 <FontAwesomeIcon icon={faCrown} className="h-3 w-3" />
               </span>
             ) : null}
           </div>
         ) : null}
 
-        {showDuration ? (
-          <div className="pointer-events-none absolute bottom-3 left-3">
-            <span className={`${OVERLAY_CHIP} inline-flex items-center gap-1`}>
-              <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden>
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              {formatVideoDuration(product.videoDurationSeconds!)}
-            </span>
-          </div>
-        ) : null}
-
-        {stock != null ? (
-          <div className="pointer-events-none absolute bottom-3 left-3">
-            <span className={`${OVERLAY_CHIP} inline-flex items-center gap-1.5`}>
-              <span
-                aria-hidden
-                className={`h-1.5 w-1.5 rounded-full ${
-                  stock === 0 ? 'bg-red-400' : stock <= LOW_STOCK_THRESHOLD ? 'bg-amber-400' : 'bg-emerald-400'
-                }`}
-              />
-              {stock === 0 ? 'Out of stock' : `${stock.toLocaleString('en-US')} in stock`}
-            </span>
+        {stock != null || showDuration ? (
+          <div className="pointer-events-none absolute bottom-3 left-3 flex gap-1.5">
+            {stock != null ? (
+              <span className={`${OVERLAY_CHIP} inline-flex items-center gap-1.5`}>
+                <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${stockDotClass(stock)}`} />
+                {stockLabel(stock)}
+              </span>
+            ) : null}
+            {showDuration ? (
+              <span className={OVERLAY_CHIP}>{formatVideoDuration(product.videoDurationSeconds!)}</span>
+            ) : null}
           </div>
         ) : null}
       </div>
 
-      <div className="flex flex-1 flex-col gap-3.5 p-5 sm:p-6">
-        <div className="flex items-center justify-between gap-3 text-[15px] text-neutral-500 dark:text-neutral-400">
-          <span className="inline-flex items-center gap-2">
-            <span
-              aria-hidden
-              className={`h-1.5 w-1.5 rounded-full ${product.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`}
-            />
-            {product.isPublished ? 'Published' : 'Draft'}
-            {!readOnly && hiddenFromProfile ? (
-              <span className="inline-flex items-center gap-1.5 text-neutral-400 dark:text-neutral-500">
-                <span aria-hidden>·</span>
-                <FontAwesomeIcon icon={faEyeSlash} className="h-3 w-3" aria-hidden />
-                Hidden from profile
-              </span>
-            ) : null}
-          </span>
-          <div className="flex shrink-0 items-center gap-3">
+      <div className="flex flex-1 flex-col gap-1.5 p-4 sm:p-5">
+        {eyebrow ? <p className={CREATOR_EYEBROW}>{eyebrow}</p> : null}
+        <Link
+          href={viewHref}
+          className="line-clamp-2 text-[16px] font-semibold leading-[22px] tracking-[-0.01em] text-[color:var(--gn-ink)] decoration-[1.5px] underline-offset-4 hover:underline"
+          title={product.title}
+        >
+          {product.title}
+        </Link>
+
+        <div className="flex min-w-0 items-center justify-between gap-3 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
+          <CreatorProductStatus product={product} hiddenFromProfile={!readOnly && hiddenFromProfile} />
+          <span className="flex shrink-0 items-center gap-3">
             <ProductCardEngagementStrip
               productId={product.id}
               initialLikes={product.likes ?? 0}
               views={product.views ?? 0}
               showLikeButton={false}
             />
-            {product.averageRating != null && product.reviewCount != null && product.reviewCount > 0 ? (
-              <span className="inline-flex items-center gap-1 font-medium">
-                <svg className="h-3.5 w-3.5 text-amber-500" viewBox="0 0 20 20" fill="currentColor" aria-hidden>
-                  <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.286 3.967a1 1 0 00.95.69h4.178c.969 0 1.371 1.24.588 1.81l-3.388 2.46a1 1 0 00-.364 1.118l1.287 3.966c.3.922-.755 1.688-1.54 1.118l-3.388-2.46a1 1 0 00-1.176 0l-3.388 2.46c-.784.57-1.838-.196-1.54-1.118l1.287-3.966a1 1 0 00-.364-1.118L2.047 9.394c-.783-.57-.38-1.81.588-1.81h4.178a1 1 0 00.95-.69l1.286-3.967z" />
-                </svg>
-                {product.averageRating.toFixed(1)} ({product.reviewCount})
+            {rating ? (
+              <span className="inline-flex items-center gap-1">
+                <FontAwesomeIcon icon={faStar} className="h-3 w-3 text-[#FFB400]" />
+                <span className="font-semibold tabular-nums text-[color:var(--gn-ink)]">{rating.value.toFixed(1)}</span>
+                <span className="tabular-nums">({rating.count})</span>
               </span>
             ) : null}
-          </div>
+          </span>
         </div>
 
-        <Link
-          href={viewHref}
-          className="line-clamp-2 text-[19px] font-semibold leading-snug tracking-[-0.01em] text-[#111111] transition-colors duration-200 group-hover:text-[#FF5722] dark:text-white"
-          title={product.title}
-        >
-          {product.title}
-        </Link>
-
         {rankLabels.length > 0 ? (
-          <p className="-mt-1.5 flex flex-wrap items-center gap-x-2 text-[14px] font-medium text-amber-600 dark:text-amber-400">
-            <FontAwesomeIcon icon={faCrown} className="h-3 w-3" aria-hidden />
-            {rankLabels.join(' · ')}
+          <p className="flex min-w-0 items-center gap-1.5 text-[13px] font-semibold leading-[18px] text-[color:var(--gn-ink)]">
+            <FontAwesomeIcon icon={faCrown} className="h-3 w-3 shrink-0" aria-hidden />
+            <span className="truncate">{rankLabels.join(' · ')}</span>
           </p>
         ) : null}
 
-        {labels.length > 0 ? (
-          <div className="flex flex-wrap gap-1.5">
-            {labels.map((label, index) => (
-              <span
-                key={`${label}-${index}`}
-                className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[14px] lowercase text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300"
-              >
-                {label}
-              </span>
-            ))}
-          </div>
-        ) : null}
-
-        <div className="mt-auto flex items-center justify-between gap-4 border-t border-black/[0.06] pt-4 dark:border-white/[0.06]">
-          <div className="flex min-w-0 flex-wrap items-baseline gap-x-2">
+        <div className="mt-auto flex items-center justify-between gap-3 pt-2">
+          <p className="flex min-w-0 items-baseline gap-2">
+            <span className="text-[17px] font-bold leading-[22px] tabular-nums text-[color:var(--gn-ink)]">
+              {formatPrice(product.priceCents, product.currency)}
+            </span>
             {hasDiscount ? (
-              <span className="text-[15px] text-neutral-400 line-through dark:text-neutral-500">
+              <span className="text-[13px] tabular-nums text-[color:var(--gn-ink3)] line-through">
                 {formatPrice(product.compareAtPriceCents!, product.currency)}
               </span>
             ) : null}
-            <span className="text-[18px] font-semibold text-[#111111] dark:text-white">
-              {formatPrice(product.priceCents, product.currency)}
-            </span>
-          </div>
-          {!readOnly && onTogglePublish ? (
-            <button
-              type="button"
-              disabled={isPublishing}
-              onClick={() => onTogglePublish(product)}
-              className={`shrink-0 rounded-lg px-4 py-2 text-[15px] font-medium transition disabled:opacity-60 ${
-                product.isPublished
-                  ? 'border border-black/[0.12] text-[#111111] hover:border-black/25 dark:border-white/[0.12] dark:text-white dark:hover:border-white/25'
-                  : 'bg-[#111111] text-white hover:opacity-85 dark:bg-white dark:text-[#111111]'
-              }`}
-            >
-              {isPublishing ? 'Updating…' : product.isPublished ? 'Unpublish' : 'Publish'}
-            </button>
+          </p>
+          {manageable ? (
+            <div className="-mr-1.5 flex shrink-0 items-center gap-1">
+              {!product.isPublished && onTogglePublish ? (
+                <button type="button" disabled={isPublishing} onClick={() => onTogglePublish(product)} className={PUBLISH_PILL}>
+                  {isPublishing ? t('Publishing…') : t('Publish')}
+                </button>
+              ) : null}
+              <CreatorProductActionsMenu
+                product={product}
+                from={from}
+                busy={isPublishing || isFlagBusy}
+                onTogglePublish={onTogglePublish}
+                onTogglePin={onTogglePin}
+                onToggleProfileVisibility={onToggleProfileVisibility}
+              />
+            </div>
           ) : null}
         </div>
       </div>

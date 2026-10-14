@@ -5,6 +5,7 @@ import { createPortal } from 'react-dom';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { formatPrice } from '@/lib/marketplace-api';
 import type { MarketplaceProductGroup, MarketplaceProductSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const subscribeNoop = () => () => {};
 const NAME_MAX = 120;
@@ -53,6 +54,7 @@ function ProductRow({
   checked: boolean;
   onToggle: () => void;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -77,7 +79,7 @@ function ProductRow({
               aria-hidden
               className={`h-1.5 w-1.5 rounded-full ${product.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`}
             />
-            {product.isPublished ? 'Published' : 'Draft'}
+            {product.isPublished ? t('Published') : t('Draft')}
           </span>
           <span aria-hidden>·</span>
           <span className="tabular-nums">{formatPrice(product.priceCents, product.currency)}</span>
@@ -97,6 +99,7 @@ export function CreatorProductGroupModal({
   onSubmit,
   onDelete,
 }: CreatorProductGroupModalProps) {
+  const t = useT();
   const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const [name, setName] = useState('');
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
@@ -164,7 +167,7 @@ export function CreatorProductGroupModal({
   const isEdit = Boolean(initialGroup);
   const trimmedName = name.trim();
   const canSubmit = trimmedName.length > 0 && !saving;
-  const nameError = nameTouched && !trimmedName ? 'Give your catalogue a name.' : null;
+  const nameError = nameTouched && !trimmedName ? t('Give your catalogue a name.') : null;
 
   const selectedSet = new Set(selectedIds);
   const visibleSelectedCount = visibleProducts.filter((product) => selectedSet.has(product.id)).length;
@@ -194,7 +197,7 @@ export function CreatorProductGroupModal({
     <div className="fixed inset-0 z-[200] flex items-end justify-center sm:items-start sm:px-5 sm:pt-[8vh]">
       <button
         type="button"
-        aria-label="Close"
+        aria-label={t('Close')}
         className="fixed inset-0 h-[100dvh] w-full cursor-default bg-black/40 dark:bg-black/60"
         onClick={() => !saving && onClose()}
       />
@@ -208,17 +211,17 @@ export function CreatorProductGroupModal({
         <div className="flex shrink-0 items-start justify-between gap-4 px-6 pb-2 pt-5">
           <div>
             <h2 id="product-catalogue-modal-title" className="text-[18px] font-bold text-[#111111] dark:text-white">
-              {isEdit ? 'Edit catalogue' : 'New catalogue'}
+              {isEdit ? t('Edit catalogue') : t('New catalogue')}
             </h2>
             <p className="mt-0.5 text-[14px] text-neutral-500 dark:text-neutral-400">
-              Group products into a collection buyers can browse on your shop.
+              {t('Group products into a collection buyers can browse on your shop.')}
             </p>
           </div>
           <button
             type="button"
             onClick={onClose}
             disabled={saving}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="-mr-2 flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-black/[0.06] hover:text-[#111111] disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -231,7 +234,7 @@ export function CreatorProductGroupModal({
           <div>
             <div className="flex items-baseline justify-between gap-3">
               <label htmlFor="catalogue-name" className="text-[14px] font-medium text-[#111111] dark:text-white">
-                Name
+                {t('Name')}
               </label>
               <span className="text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">
                 {name.length}/{NAME_MAX}
@@ -253,7 +256,7 @@ export function CreatorProductGroupModal({
                   submit();
                 }
               }}
-              placeholder="e.g. Summer collection, Starter pack"
+              placeholder={t('e.g. Summer collection, Starter pack')}
               className={`mt-2 block w-full rounded-lg border bg-transparent px-3.5 py-2.5 text-[15px] text-[#111111] outline-none transition-[border-color,box-shadow] placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:text-white dark:placeholder:text-neutral-500 ${
                 nameError ? 'border-[#FF5722]/70' : 'border-black/[0.12] hover:border-black/25 dark:border-white/[0.14] dark:hover:border-white/25'
               }`}
@@ -264,12 +267,12 @@ export function CreatorProductGroupModal({
           <div>
             <div className="flex items-baseline justify-between gap-3">
               <p className="text-[14px] font-medium text-[#111111] dark:text-white">
-                Products
-                <span className="ml-1.5 font-normal text-neutral-400 dark:text-neutral-500">Optional</span>
+                {t('Products')}
+                <span className="ml-1.5 font-normal text-neutral-400 dark:text-neutral-500">{t('Optional')}</span>
               </p>
               {products.length > 0 ? (
                 <span className="text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
-                  {selectedIds.length} of {products.length} selected
+                  {t('{selectedIdsLength} of {productsLength} selected', { selectedIdsLength: selectedIds.length, productsLength: products.length })}
                 </span>
               ) : null}
             </div>
@@ -284,13 +287,13 @@ export function CreatorProductGroupModal({
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search products"
-                    aria-label="Search products"
+                    placeholder={t('Search products')}
+                    aria-label={t('Search products')}
                     className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
                   />
                 </label>
                 {showFormatFilter ? (
-                  <div className="flex shrink-0 gap-1.5" role="radiogroup" aria-label="Format">
+                  <div className="flex shrink-0 gap-1.5" role="radiogroup" aria-label={t('Format')}>
                     {(
                       [
                         ['all', 'All', products.length],
@@ -324,11 +327,11 @@ export function CreatorProductGroupModal({
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain border-t border-black/[0.08] dark:border-white/[0.08]">
           {products.length === 0 ? (
             <p className="px-6 py-12 text-center text-[14px] text-neutral-500 dark:text-neutral-400">
-              You have no products yet. You can create the catalogue now and add products later.
+              {t('You have no products yet. You can create the catalogue now and add products later.')}
             </p>
           ) : visibleProducts.length === 0 ? (
             <p className="px-6 py-12 text-center text-[14px] text-neutral-500 dark:text-neutral-400">
-              No products match your search.
+              {t('No products match your search.')}
             </p>
           ) : (
             <>
@@ -341,7 +344,7 @@ export function CreatorProductGroupModal({
               >
                 <Checkbox checked={allVisibleSelected} indeterminate={!allVisibleSelected && visibleSelectedCount > 0} />
                 <span className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400">
-                  {allVisibleSelected ? 'Deselect all' : 'Select all'}
+                  {allVisibleSelected ? t('Deselect all') : t('Select all')}
                   {query || format !== 'all' ? ` (${visibleProducts.length})` : ''}
                 </span>
               </button>
@@ -370,21 +373,21 @@ export function CreatorProductGroupModal({
             {isEdit && onDelete ? (
               confirmDelete ? (
                 <div className="flex items-center gap-2 text-[13px]">
-                  <span className="text-neutral-500 dark:text-neutral-400">Delete it?</span>
+                  <span className="text-neutral-500 dark:text-neutral-400">{t('Delete it?')}</span>
                   <button
                     type="button"
                     disabled={saving}
                     onClick={onDelete}
                     className="rounded-md px-2 py-1 font-semibold text-[#E0431A] transition-colors hover:bg-[#FF5722]/10 disabled:opacity-50 dark:text-[#FF7A52]"
                   >
-                    Yes, delete
+                    {t('Yes, delete')}
                   </button>
                   <button
                     type="button"
                     onClick={() => setConfirmDelete(false)}
                     className="rounded-md px-2 py-1 font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
                   >
-                    Keep
+                    {t('Keep')}
                   </button>
                 </div>
               ) : (
@@ -394,7 +397,7 @@ export function CreatorProductGroupModal({
                   onClick={() => setConfirmDelete(true)}
                   className="text-[14px] font-medium text-neutral-500 transition-colors hover:text-[#E0431A] disabled:opacity-50 dark:text-neutral-400 dark:hover:text-[#FF7A52]"
                 >
-                  Delete catalogue
+                  {t('Delete catalogue')}
                 </button>
               )
             ) : (
@@ -407,7 +410,7 @@ export function CreatorProductGroupModal({
                 disabled={saving}
                 className="rounded-lg px-4 py-2.5 text-[15px] font-medium text-neutral-500 transition-colors hover:bg-black/[0.04] hover:text-[#111111] disabled:opacity-50 dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-white"
               >
-                Cancel
+                {t('Cancel')}
               </button>
               <button
                 type="button"
@@ -420,7 +423,7 @@ export function CreatorProductGroupModal({
                 {saving ? (
                   <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
                 ) : null}
-                {saving ? 'Saving…' : isEdit ? 'Save changes' : 'Create catalogue'}
+                {saving ? t('Saving…') : isEdit ? t('Save changes') : t('Create catalogue')}
               </button>
             </div>
           </div>

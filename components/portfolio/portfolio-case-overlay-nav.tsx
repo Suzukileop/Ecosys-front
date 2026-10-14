@@ -35,6 +35,7 @@ import type {
   PortfolioNavMenuControlIcon,
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type NavItem = {
   id: string;
@@ -157,8 +158,9 @@ function CaseOverlayMenuTrigger({
   reduceMotion: boolean | null;
   onToggle: () => void;
 }) {
+  const t = useT();
   const useIcon = triggerStyle === 'icon';
-  const label = open ? 'Close' : 'Menu';
+  const label = open ? t('Close') : t('Menu');
   const ink = open ? openInk : triggerInk;
 
   return (
@@ -166,7 +168,7 @@ function CaseOverlayMenuTrigger({
       type="button"
       aria-expanded={open}
       aria-controls="portfolio-case-overlay-panel"
-      aria-label={useIcon ? (open ? 'Close navigation menu' : 'Open navigation menu') : undefined}
+      aria-label={useIcon ? (open ? t('Close navigation menu') : t('Open navigation menu')) : undefined}
       onClick={onToggle}
       className={`group relative inline-flex min-h-11 items-center justify-center transition ${
         useIcon ? 'h-11 w-11 rounded-full' : 'px-1 text-sm font-semibold uppercase tracking-[0.22em]'
@@ -317,6 +319,7 @@ export function PortfolioCaseOverlayNav({
   colorMode = 'dark',
   onColorModeToggle,
 }: PortfolioCaseOverlayNavProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const navRootRef = useRef<HTMLElement>(null);
@@ -487,7 +490,7 @@ export function PortfolioCaseOverlayNav({
         className={`pointer-events-none fixed inset-x-0 top-0 transition-opacity duration-300 ${
           open ? 'z-[240]' : 'z-[120]'
         } ${visible ? 'opacity-100' : 'pointer-events-none opacity-0'}`}
-        aria-label="Portfolio navigation"
+        aria-label={t('Portfolio navigation')}
         aria-hidden={!visible}
         style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
       >
@@ -515,7 +518,7 @@ export function PortfolioCaseOverlayNav({
             id="portfolio-case-overlay-panel"
             role="dialog"
             aria-modal="true"
-            aria-label="Navigation menu"
+            aria-label={t('Navigation menu')}
             tabIndex={-1}
             className="fixed inset-0 z-[228] flex flex-col focus:outline-none"
             initial={reduceMotion ? false : { opacity: 0 }}
@@ -547,7 +550,7 @@ export function PortfolioCaseOverlayNav({
                     className="mb-8 shrink-0 text-[11px] font-semibold uppercase tracking-[0.24em]"
                     style={{ color: mutedInk }}
                   >
-                    Navigation
+                    {t('Navigation')}
                   </motion.p>
 
                   <ul className="w-full shrink-0">

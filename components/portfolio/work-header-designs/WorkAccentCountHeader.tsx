@@ -9,7 +9,8 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_BADGE_TEXT = '{count}+ projects';
 const DEFAULT_LEAD_TEXT = 'A selection of recent work.';
@@ -61,12 +62,13 @@ export function WorkAccentCountHeader({
   projectCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'accent-count');
   const align = presentation.accentCountAlignment ?? 'left';
-  const lead = (presentation.accentCountLeadText || DEFAULT_LEAD_TEXT).trim();
+  const lead = show('lead') ? (presentation.accentCountLeadText || DEFAULT_LEAD_TEXT).trim() : '';
   const badgeTemplate = presentation.accentCountBadgeText || DEFAULT_BADGE_TEXT;
-  const badgeText = badgeTemplate.replace('{count}', String(projectCount ?? 0));
+  const badgeText = show('badge') ? badgeTemplate.replace('{count}', String(projectCount ?? 0)) : '';
   const badgeColor = workPaletteTokenColor(presentation.accentCountBadgeColor ?? 'principal');
   const leadColor = workPaletteTokenColor(presentation.accentCountLeadColor ?? 'secondaire');
 

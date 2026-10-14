@@ -1,6 +1,8 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import { useEffect, useRef, useState } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type MarketplaceCatalogPaginationProps = {
   page: number;
@@ -42,7 +44,7 @@ function scrollParentToTop(from: HTMLElement | null) {
 }
 
 const ARROW_BUTTON =
-  'inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] disabled:pointer-events-none disabled:opacity-30 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white';
+  'inline-flex h-10 w-10 items-center justify-center rounded-full text-[#536471] transition-colors hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] disabled:pointer-events-none disabled:opacity-30 dark:text-[#71767B] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]';
 
 function Chevron({ direction }: { direction: 'left' | 'right' }) {
   return (
@@ -65,6 +67,7 @@ function PageSizeMenu({
   options: readonly number[];
   onChange: (size: number) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -91,11 +94,11 @@ function PageSizeMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className="inline-flex items-center gap-1.5 text-[14px] text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
+        className="inline-flex h-10 items-center gap-1.5 text-[14px] text-[#536471] transition-colors hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]"
       >
-        Show
-        <span className="font-semibold tabular-nums text-[#111111] dark:text-white">{value}</span>
-        per page
+        {t('Show')}
+        <span className="font-semibold tabular-nums text-[#0F1419] dark:text-[#E7E9EA]">{value}</span>
+        {t('per page')}
         <svg
           className={`h-3.5 w-3.5 transition-transform ${open ? 'rotate-180' : ''}`}
           fill="none"
@@ -110,8 +113,8 @@ function PageSizeMenu({
       {open ? (
         <ul
           role="listbox"
-          aria-label="Items per page"
-          className="absolute bottom-full right-0 z-20 mb-2 min-w-[7.5rem] overflow-hidden rounded-lg border border-black/[0.08] bg-white p-1 shadow-[0_12px_32px_-12px_rgba(0,0,0,0.18)] dark:border-white/[0.1] dark:bg-[#161616]"
+          aria-label={t('Items per page')}
+          className="absolute bottom-full right-0 z-20 mb-2 min-w-[7.5rem] overflow-hidden rounded-2xl bg-[#fff] py-1.5 shadow-[0_0_15px_rgba(101,119,134,0.2),0_0_3px_1px_rgba(101,119,134,0.15)] dark:bg-black dark:shadow-[0_0_15px_rgba(255,255,255,0.2),0_0_3px_1px_rgba(255,255,255,0.15)]"
         >
           {options.map((option) => {
             const selected = option === value;
@@ -125,13 +128,11 @@ function PageSizeMenu({
                     setOpen(false);
                     if (!selected) onChange(option);
                   }}
-                  className={`flex w-full items-center justify-between gap-4 rounded-md px-3 py-2 text-left text-[14px] tabular-nums transition-colors ${
-                    selected
-                      ? 'font-semibold text-[#111111] dark:text-white'
-                      : 'text-neutral-600 hover:bg-black/[0.04] dark:text-neutral-300 dark:hover:bg-white/[0.06]'
+                  className={`flex min-h-10 w-full items-center justify-between gap-4 px-4 py-2 text-left text-[15px] tabular-nums text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] ${
+                    selected ? 'font-bold' : 'font-medium'
                   }`}
                 >
-                  {option.toLocaleString('en-US')}
+                  {option.toLocaleString(localeTag())}
                   {selected ? (
                     <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5} aria-hidden>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
@@ -157,6 +158,7 @@ export function MarketplaceCatalogPagination({
   onPageChange,
   onPageSizeChange,
 }: MarketplaceCatalogPaginationProps) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const pages = Math.max(1, totalPages);
   const from = totalElements === 0 ? 0 : page * pageSize + 1;
@@ -170,25 +172,20 @@ export function MarketplaceCatalogPagination({
 
   if (pages <= 1) {
     return (
-      <div ref={rootRef} className="flex flex-col items-center gap-5 pt-10 text-center">
-        <div className="flex w-full items-center gap-4">
-          <span className="h-px flex-1 bg-black/[0.08] dark:bg-white/[0.08]" />
-          <span className="text-[14px] text-neutral-500 dark:text-neutral-400">
-            You’ve seen all{' '}
-            <span className="font-semibold tabular-nums text-[#111111] dark:text-white">{totalElements}</span> {noun}
-          </span>
-          <span className="h-px flex-1 bg-black/[0.08] dark:bg-white/[0.08]" />
-        </div>
+      <div ref={rootRef} className="flex flex-col items-center gap-3 pt-8 text-center">
+        <p className="text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#536471] dark:text-[#71767B]">
+          {t('You’ve seen all {totalElements} {noun}', { totalElements, noun })}
+        </p>
         <div className="flex items-center gap-6">
           <button
             type="button"
             onClick={() => scrollParentToTop(rootRef.current)}
-            className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[#111111] transition-colors hover:text-[#FF5722] dark:text-white"
+            className="inline-flex h-10 items-center gap-1.5 text-[14px] font-semibold text-[#0F1419] underline-offset-4 hover:underline dark:text-[#E7E9EA]"
           >
             <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M5 15l7-7 7 7" />
             </svg>
-            Back to top
+            {t('Back to top')}
           </button>
           {totalElements > pageSizeOptions[0] || pageSize !== pageSizeOptions[0] ? (
             <PageSizeMenu value={pageSize} options={pageSizeOptions} onChange={onPageSizeChange} />
@@ -201,20 +198,20 @@ export function MarketplaceCatalogPagination({
   return (
     <nav
       ref={rootRef}
-      aria-label="Pagination"
-      className="flex flex-col gap-6 border-t border-black/[0.06] pt-8 dark:border-white/[0.06] sm:flex-row sm:items-center sm:justify-between"
+      aria-label={t('Pagination')}
+      className="flex flex-col gap-6 pt-8 sm:flex-row sm:items-center sm:justify-between"
     >
       <div className="space-y-2.5">
-        <p className="text-[14px] text-neutral-500 dark:text-neutral-400">
-          Showing{' '}
-          <span className="font-semibold tabular-nums text-[#111111] dark:text-white">
+        <p className="text-[14px] text-[#536471] dark:text-[#71767B]">
+          {t('Showing')}{' '}
+          <span className="font-semibold tabular-nums text-[#0F1419] dark:text-[#E7E9EA]">
             {from}–{to}
           </span>{' '}
-          of <span className="font-semibold tabular-nums text-[#111111] dark:text-white">{totalElements}</span> {noun}
+          {t('of')} <span className="font-semibold tabular-nums text-[#0F1419] dark:text-[#E7E9EA]">{totalElements}</span> {noun}
         </p>
-        <div className="h-[3px] w-40 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]" aria-hidden>
+        <div className="h-[3px] w-40 overflow-hidden rounded-full bg-[#EFF3F4] dark:bg-[#2F3336]" aria-hidden>
           <div
-            className="h-full rounded-full bg-[#111111] transition-[width] duration-500 ease-out dark:bg-white"
+            className="h-full rounded-full bg-[#0F1419] transition-[width] duration-500 ease-out dark:bg-[#E7E9EA]"
             style={{ width: `${progress}%` }}
           />
         </div>
@@ -224,7 +221,7 @@ export function MarketplaceCatalogPagination({
         <div className="flex items-center gap-1">
           <button
             type="button"
-            aria-label="Previous page"
+            aria-label={t('Previous page')}
             disabled={page <= 0}
             onClick={() => goTo(page - 1)}
             className={ARROW_BUTTON}
@@ -239,23 +236,23 @@ export function MarketplaceCatalogPagination({
                 aria-label={`Page ${item + 1}`}
                 aria-current={item === page ? 'page' : undefined}
                 onClick={() => goTo(item)}
-                className={`inline-flex h-9 min-w-9 items-center justify-center rounded-full px-2.5 text-[14px] tabular-nums transition-colors ${
+                className={`inline-flex h-10 min-w-10 items-center justify-center rounded-full px-2.5 text-[14px] tabular-nums transition-colors ${
                   item === page
-                    ? 'bg-[#111111] font-semibold text-white dark:bg-white dark:text-[#111111]'
-                    : 'text-neutral-600 hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-300 dark:hover:bg-white/[0.08] dark:hover:text-white'
+                    ? 'bg-[#0F1419] font-bold text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+                    : 'text-[#536471] hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]'
                 }`}
               >
                 {item + 1}
               </button>
             ) : (
-              <span key={item} aria-hidden className="w-6 text-center text-[14px] text-neutral-400">
+              <span key={item} aria-hidden className="w-6 text-center text-[14px] text-[#8B98A5] dark:text-[#536471]">
                 …
               </span>
             )
           )}
           <button
             type="button"
-            aria-label="Next page"
+            aria-label={t('Next page')}
             disabled={page >= pages - 1}
             onClick={() => goTo(page + 1)}
             className={ARROW_BUTTON}

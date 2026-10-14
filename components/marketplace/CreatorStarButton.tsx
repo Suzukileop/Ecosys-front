@@ -1,10 +1,12 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import Link from 'next/link';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { getCreatorStars, starCreator, unstarCreator } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorStarButtonProps = {
   creatorId: string;
@@ -15,11 +17,13 @@ type CreatorStarButtonProps = {
   /** `onDark` renders a glass pill for use over cover images. */
   tone?: 'default' | 'onDark';
   showCount?: boolean;
+  /** `pill` rounds the default tone into the X pill (beside other pills, e.g. the shop header). */
+  shape?: 'square' | 'pill';
   loginRedirect?: string;
 };
 
 function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
+  return new Intl.NumberFormat(localeTag()).format(value);
 }
 
 export function StarGlyph({ filled, className = 'h-4 w-4' }: { filled: boolean; className?: string }) {
@@ -39,9 +43,10 @@ export function StarGlyph({ filled, className = 'h-4 w-4' }: { filled: boolean; 
 }
 
 const baseClass =
-  'inline-flex items-center justify-center gap-2 rounded-lg border font-medium tabular-nums transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
-const idleClass = `${baseClass} border-black/10 bg-transparent text-[#111111] hover:border-black/25 dark:border-white/15 dark:text-neutral-100 dark:hover:border-white/30`;
-const starredClass = `${baseClass} border-transparent bg-black/[0.05] text-[#111111] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:text-neutral-100 dark:hover:bg-white/[0.12]`;
+  'inline-flex items-center justify-center gap-2 rounded-none border font-semibold tabular-nums transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
+/* X secondary button (1px outline, ink text); starred = the same outline on a soft tone, filled ink star. */
+const idleClass = `${baseClass} border-[#CFD9DE] bg-transparent text-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]`;
+const starredClass = `${baseClass} border-[#CFD9DE] bg-[rgba(15,20,25,0.06)] text-[#0F1419] hover:bg-[rgba(15,20,25,0.1)] dark:border-[#536471] dark:bg-[rgba(231,233,234,0.1)] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.16)]`;
 const onDarkBaseClass =
   'inline-flex items-center justify-center gap-2 rounded-full border font-medium tabular-nums backdrop-blur-md transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:pointer-events-none';
 const onDarkIdleClass = `${onDarkBaseClass} border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/20`;
@@ -57,10 +62,14 @@ export function CreatorStarButton({
   tone = 'default',
   showCount = true,
   loginRedirect,
+  shape = 'square',
 }: CreatorStarButtonProps) {
-  const idle = tone === 'onDark' ? onDarkIdleClass : idleClass;
-  const active = tone === 'onDark' ? onDarkStarredClass : starredClass;
-  const filledStarClass = tone === 'onDark' ? 'text-[#FF5722]' : 'text-amber-400';
+  const t = useT();
+  const pill = shape === 'pill' ? ' !rounded-full' : '';
+  const idle = tone === 'onDark' ? onDarkIdleClass : `${idleClass}${pill}`;
+  const active = tone === 'onDark' ? onDarkStarredClass : `${starredClass}${pill}`;
+  /* Black & white: the filled star is the ink of its button (white on the dark cover glass). */
+  const filledStarClass = tone === 'onDark' ? 'text-[#0F1419]' : 'text-current';
   const { user, isLoading, sessionStatus } = useAuth();
   const [starred, setStarred] = useState(initialStarred ?? false);
   const [starCount, setStarCount] = useState(initialStarCount ?? 0);
@@ -125,17 +134,19 @@ export function CreatorStarButton({
       applyState(stats.starred, stats.starCount);
     } catch (err) {
       applyState(prevStarred, prevCount);
-      setError(getApiErrorMessage(err, 'Unable to update your star.'));
+      setError(getApiErrorMessage(err, t('Unable to update your star.')));
     } finally {
       setBusy(false);
     }
-  }, [applyState, busy, canStar, creatorId, starCount, starred]);
+  }, [applyState, busy, canStar, creatorId, starCount, starred, t]);
 
   const content = (filled: boolean, label: string) => (
     <>
       <StarGlyph filled={filled} className={`h-4 w-4 ${filled ? filledStarClass : ''}`} />
       <span>{label}</span>
-      {showCount ? <span className="text-neutral-400 dark:text-neutral-500">{formatCount(starCount)}</span> : null}
+      {showCount && starCount > 0 ? (
+        <span className="font-normal text-[#536471] dark:text-[#71767B]">{formatCount(starCount)}</span>
+      ) : null}
     </>
   );
 
@@ -168,13 +179,13 @@ export function CreatorStarButton({
         disabled={busy}
         aria-pressed={starred}
         aria-busy={busy}
-        title={starred ? 'Remove your trust star' : 'Give a trust star'}
+        title={starred ? t('Remove your trust star') : t('Give a trust star')}
         className={`${starred ? active : idle} ${sizeClass} ${busy ? 'opacity-75' : ''}`}
       >
         {content(starred, starred ? 'Starred' : 'Star')}
       </button>
       {error ? (
-        <p className={`max-w-[14rem] text-xs ${tone === 'onDark' ? 'text-red-300' : 'text-red-600 dark:text-red-400'}`}>
+        <p className={`max-w-[14rem] text-xs ${tone === 'onDark' ? 'text-white' : 'text-[#F4212E]'}`}>
           {error}
         </p>
       ) : null}

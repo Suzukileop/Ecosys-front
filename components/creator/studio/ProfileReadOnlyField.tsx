@@ -1,9 +1,12 @@
+'use client';
+
 import {
   profileSectionEmptyClass,
   profileSectionFieldClass,
   profileSectionLabelClass,
   profileSectionValueClass,
 } from '@/components/creator/studio/profile-section-ui';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProfileReadOnlyFieldProps = {
   label: string;
@@ -19,6 +22,7 @@ export function ProfileReadOnlyField({
   href,
   variant = 'boxed',
 }: ProfileReadOnlyFieldProps & { variant?: 'boxed' | 'flat' }) {
+  const t = useT();
   const display = value?.trim();
 
   if (variant === 'flat') {
@@ -41,7 +45,7 @@ export function ProfileReadOnlyField({
             </p>
           )
         ) : (
-          <p className="mt-3 text-base italic text-neutral-500 dark:text-neutral-400">{emptyLabel}</p>
+          <p className="mt-3 text-base italic text-neutral-500 dark:text-neutral-400">{t(emptyLabel)}</p>
         )}
       </div>
     );
@@ -64,7 +68,7 @@ export function ProfileReadOnlyField({
           <p className={`${profileSectionValueClass} whitespace-pre-wrap`}>{display}</p>
         )
       ) : (
-        <p className={profileSectionEmptyClass}>{emptyLabel}</p>
+        <p className={profileSectionEmptyClass}>{t(emptyLabel)}</p>
       )}
     </div>
   );

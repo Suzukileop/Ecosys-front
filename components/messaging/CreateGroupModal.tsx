@@ -9,6 +9,8 @@ import { createGroupConversation } from '@/lib/messaging';
 import { listFollowingCreators, searchMarketplaceCreators } from '@/lib/marketplace-api';
 import type { ConversationSummary } from '@/types/messaging';
 import type { MarketplaceCreatorSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type CreateGroupModalProps = {
   open: boolean;
@@ -20,9 +22,9 @@ type CreateGroupModalProps = {
 type WizardStep = 'intro' | 'name' | 'members';
 
 const STEPS: { id: WizardStep; label: string }[] = [
-  { id: 'intro', label: 'Group' },
-  { id: 'name', label: 'Name' },
-  { id: 'members', label: 'Members' },
+  { id: 'intro', label: msg('Group') },
+  { id: 'name', label: msg('Name') },
+  { id: 'members', label: msg('Members') },
 ];
 
 function creatorUserId(creator: MarketplaceCreatorSummary): string {
@@ -30,6 +32,7 @@ function creatorUserId(creator: MarketplaceCreatorSummary): string {
 }
 
 export function CreateGroupModal({ open, currentUserId = null, onClose, onCreated }: CreateGroupModalProps) {
+  const t = useT();
   const [step, setStep] = useState<WizardStep>('intro');
   const [groupName, setGroupName] = useState('');
   const [coverFile, setCoverFile] = useState<File | null>(null);
@@ -65,11 +68,11 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
   const handleCoverSelected = (file: File | null) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      setError('Please choose an image file.');
+      setError(t('Please choose an image file.'));
       return;
     }
     if (file.size > 5 * 1024 * 1024) {
-      setError('Cover image must be 5 MB or smaller.');
+      setError(t('Cover image must be 5 MB or smaller.'));
       return;
     }
     setError(null);
@@ -170,7 +173,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
   const handleCreate = async () => {
     const title = groupName.trim();
     if (!title) {
-      setError('Please enter a group name.');
+      setError(t('Please enter a group name.'));
       setStep('name');
       return;
     }
@@ -186,7 +189,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
       reset();
       onClose();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to create group.'));
+      setError(getApiErrorMessage(e, t('Unable to create group.')));
     } finally {
       setSubmitting(false);
     }
@@ -199,7 +202,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
       <button
         type="button"
         className="absolute inset-0 bg-black/50"
-        aria-label="Close"
+        aria-label={t('Close')}
         onClick={handleClose}
       />
       <div
@@ -212,12 +215,12 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
           <div className="flex items-start justify-between gap-3">
             <div>
               <p className="text-[10px] font-bold uppercase tracking-[0.14em] text-[#EA580C] dark:text-[#FB923C]">
-                New group
+                {t('New group')}
               </p>
               <h2 id="create-group-title" className="text-lg font-bold text-neutral-900 dark:text-white">
-                {step === 'intro' && 'Create a group chat'}
-                {step === 'name' && 'Name your group'}
-                {step === 'members' && 'Add members'}
+                {step === 'intro' && t('Create a group chat')}
+                {step === 'name' && t('Name your group')}
+                {step === 'members' && t('Add members')}
               </h2>
             </div>
             <button
@@ -225,7 +228,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
               onClick={handleClose}
               disabled={submitting}
               className="flex h-8 w-8 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-900 dark:hover:bg-neutral-800 dark:hover:text-white"
-              aria-label="Close"
+              aria-label={t('Close')}
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -250,7 +253,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                     index === stepIndex ? 'text-neutral-900 dark:text-white' : 'text-neutral-500 dark:text-neutral-400'
                   }`}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </span>
                 {index < STEPS.length - 1 && (
                   <div
@@ -276,18 +279,17 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
             <div className="space-y-4">
               <div className="rounded-2xl bg-[#FFF7ED] px-4 py-5 dark:bg-[#F97316]/10">
                 <p className="text-sm leading-relaxed text-neutral-700 dark:text-neutral-200">
-                  Bring people together in one place. You will choose a group name, then invite members from creators
-                  you follow or search across the platform.
+                  {t('Bring people together in one place. You will choose a group name, then invite members from creators you follow or search across the platform.')}
                 </p>
               </div>
               <ul className="space-y-2 text-sm text-neutral-600 dark:text-neutral-300">
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-[#F97316]">•</span>
-                  Share messages, files, and calls with everyone in the group.
+                  {t('Share messages, files, and calls with everyone in the group.')}
                 </li>
                 <li className="flex items-start gap-2">
                   <span className="mt-0.5 text-[#F97316]">•</span>
-                  You can add more members later from the group info panel.
+                  {t('You can add more members later from the group info panel.')}
                 </li>
               </ul>
             </div>
@@ -296,15 +298,15 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
           {step === 'name' && (
             <div className="space-y-4">
               <div>
-                <p className="mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200">Group cover</p>
+                <p className="mb-2 text-sm font-semibold text-neutral-800 dark:text-neutral-200">{t('Group cover')}</p>
                 <div className="overflow-hidden rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-950">
                   {coverPreview ? (
                     <div className="relative">
                       {/* eslint-disable-next-line @next/next/no-img-element */}
-                      <img src={coverPreview} alt="Group cover preview" className="h-36 w-full object-cover" />
+                      <img src={coverPreview} alt={t('Group cover preview')} className="h-36 w-full object-cover" />
                       <div className="absolute inset-x-0 bottom-0 flex justify-end gap-2 bg-gradient-to-t from-black/60 to-transparent p-3">
                         <label className="cursor-pointer rounded-full bg-white/95 px-3 py-1.5 text-xs font-semibold text-neutral-900 transition hover:bg-white">
-                          Change
+                          {t('Change')}
                           <input
                             type="file"
                             accept="image/*"
@@ -317,7 +319,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                           onClick={clearCover}
                           className="rounded-full bg-black/50 px-3 py-1.5 text-xs font-semibold text-white transition hover:bg-black/70"
                         >
-                          Remove
+                          {t('Remove')}
                         </button>
                       </div>
                     </div>
@@ -326,8 +328,8 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                       <span className="flex h-11 w-11 items-center justify-center rounded-full bg-[#FFF7ED] text-xl text-[#EA580C] dark:bg-[#F97316]/15">
                         +
                       </span>
-                      <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">Add a cover photo</span>
-                      <span className="text-xs text-neutral-500 dark:text-neutral-400">JPG, PNG or WEBP · max 5 MB</span>
+                      <span className="text-sm font-semibold text-neutral-700 dark:text-neutral-200">{t('Add a cover photo')}</span>
+                      <span className="text-xs text-neutral-500 dark:text-neutral-400">{t('JPG, PNG or WEBP · max 5 MB')}</span>
                       <input
                         type="file"
                         accept="image/*"
@@ -341,7 +343,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
 
               <div>
                 <label htmlFor="group-name" className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                  Group name
+                  {t('Group name')}
                 </label>
                 <input
                   id="group-name"
@@ -349,12 +351,12 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                   value={groupName}
                   onChange={(e) => setGroupName(e.target.value)}
                   maxLength={80}
-                  placeholder="e.g. Design Sync, Project Alpha..."
+                  placeholder={t('e.g. Design Sync, Project Alpha...')}
                   className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[#F97316]/40 focus:ring-2 focus:ring-[#F97316]/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                   autoFocus
                 />
                 <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
-                  This name will be visible to all members in the inbox and chat header.
+                  {t('This name will be visible to all members in the inbox and chat header.')}
                 </p>
               </div>
             </div>
@@ -364,14 +366,14 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
             <div className="space-y-4">
               <div>
                 <label htmlFor="member-search" className="block text-sm font-semibold text-neutral-800 dark:text-neutral-200">
-                  Search members
+                  {t('Search members')}
                 </label>
                 <input
                   id="member-search"
                   type="search"
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
-                  placeholder="Search creators by name..."
+                  placeholder={t('Search creators by name...')}
                   className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[#F97316]/40 focus:ring-2 focus:ring-[#F97316]/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                 />
               </div>
@@ -387,7 +389,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                     >
                       <Avatar avatarUrl={member.avatarUrl} name={member.fullName} size="xs" />
                       <span>{member.fullName}</span>
-                      <span aria-hidden>×</span>
+                      <span aria-hidden>{t('×')}</span>
                     </button>
                   ))}
                 </div>
@@ -395,7 +397,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
 
               <div>
                 <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                  {memberSearch.trim().length >= 2 ? 'Search results' : 'Suggestions'}
+                  {memberSearch.trim().length >= 2 ? t('Search results') : t('Suggestions')}
                 </p>
                 {searchLoading ? (
                   <div className="flex justify-center py-8">
@@ -404,8 +406,8 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                 ) : visibleCandidates.length === 0 ? (
                   <p className="rounded-2xl border border-dashed border-neutral-300 px-4 py-8 text-center text-sm text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
                     {memberSearch.trim().length >= 2
-                      ? 'No creators found for this search.'
-                      : 'No suggestions available yet. Try searching by name.'}
+                      ? t('No creators found for this search.')
+                      : t('No suggestions available yet. Try searching by name.')}
                   </p>
                 ) : (
                   <ul className="space-y-1.5">
@@ -437,7 +439,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                                 selected ? 'text-[#EA580C] dark:text-[#FB923C]' : 'text-neutral-400'
                               }`}
                             >
-                              {selected ? 'Added' : 'Add'}
+                              {selected ? t('Added') : t('Add')}
                             </span>
                           </button>
                         </li>
@@ -461,7 +463,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
             disabled={submitting}
             className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 transition hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300 dark:hover:bg-neutral-800"
           >
-            {step === 'intro' ? 'Cancel' : 'Back'}
+            {step === 'intro' ? t('Cancel') : t('Back')}
           </button>
 
           {step === 'members' ? (
@@ -471,7 +473,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
               disabled={submitting || !groupName.trim()}
               className="inline-flex items-center gap-2 rounded-full bg-[#F97316] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#EA580C] disabled:cursor-not-allowed disabled:opacity-50"
             >
-              {submitting ? <LoadingSpinner size="sm" /> : 'Create group'}
+              {submitting ? <LoadingSpinner size="sm" /> : t('Create group')}
             </button>
           ) : (
             <button
@@ -480,7 +482,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                 if (step === 'intro') setStep('name');
                 else if (step === 'name') {
                   if (!groupName.trim()) {
-                    setError('Please enter a group name.');
+                    setError(t('Please enter a group name.'));
                     return;
                   }
                   setError(null);
@@ -489,7 +491,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
               }}
               className="rounded-full bg-[#F97316] px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-[#EA580C]"
             >
-              Continue
+              {t('Continue')}
             </button>
           )}
         </div>

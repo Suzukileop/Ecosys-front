@@ -17,6 +17,7 @@ import {
   isAboutUsQuoteSvgId,
   type AboutUsQuoteSvgId,
 } from '@/components/portfolio/about-us-quote-svgs';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioAboutUsHeaderAlignment = 'left' | 'center' | 'right';
 export type PortfolioAboutUsSectionLayout = 'stacked' | 'aside-left' | 'aside-right';
@@ -126,33 +127,33 @@ export const PORTFOLIO_ABOUT_US_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Classique',
-    description: 'Texte, tâches et images empilés. Quote et founder visibles.',
+    label: msg('Classique'),
+    description: msg('Texte, tâches et images empilés. Quote et founder visibles.'),
   },
   {
     value: 'split-overlap',
-    label: 'Split overlap',
-    description: 'Texte et photos côte à côte — une grande, ou deux décalées.',
+    label: msg('Split overlap'),
+    description: msg('Texte et photos côte à côte — une grande, ou deux décalées.'),
   },
   {
     value: 'split-founder',
-    label: 'Split founder',
-    description: 'Texte, bouton et founder d’un côté. Image de l’autre, avec plusieurs cadres.',
+    label: msg('Split founder'),
+    description: msg('Texte, bouton et founder d’un côté. Image de l’autre, avec plusieurs cadres.'),
   },
   {
     value: 'split-media-left',
-    label: 'Split image',
-    description: 'Grande photo arrondie d’un côté, texte et liste de l’autre.',
+    label: msg('Split image'),
+    description: msg('Grande photo arrondie d’un côté, texte et liste de l’autre.'),
   },
   {
     value: 'split-card',
-    label: 'Grand cadre',
-    description: 'Tout dans un grand cadre. Photo collée au bord, texte et quote à l’intérieur.',
+    label: msg('Grand cadre'),
+    description: msg('Tout dans un grand cadre. Photo collée au bord, texte et quote à l’intérieur.'),
   },
   {
     value: 'split-quote',
-    label: 'Split quote',
-    description: 'Texte et carte citation d’un côté, quatre illustrations SVG de l’autre.',
+    label: msg('Split quote'),
+    description: msg('Texte et carte citation d’un côté, quatre illustrations SVG de l’autre.'),
   },
 ];
 
@@ -293,15 +294,15 @@ export const PORTFOLIO_ABOUT_US_QUOTE_MEDIA_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'image', label: 'Photo', description: 'Image 1 d’Information → About us.' },
-  { value: 'svg', label: 'SVG', description: 'Un visuel à la fois, parmi 4 illustrations.' },
+  { value: 'image', label: msg('Photo'), description: msg('Image 1 d’Information → About us.') },
+  { value: 'svg', label: 'SVG', description: msg('Un visuel à la fois, parmi 4 illustrations.') },
 ];
 
 export const PORTFOLIO_ABOUT_US_CARD_RADIUS_OPTIONS: {
   value: PortfolioAboutUsCardRadius;
   label: string;
 }[] = [
-  { value: 'none', label: 'Aucun' },
+  { value: 'none', label: msg('Aucun') },
   { value: 'sm', label: 'S' },
   { value: 'md', label: 'M' },
   { value: 'lg', label: 'L' },
@@ -312,19 +313,19 @@ export const PORTFOLIO_ABOUT_US_CARD_SHADOW_OPTIONS: {
   value: PortfolioAboutUsCardShadow;
   label: string;
 }[] = [
-  { value: 'none', label: 'Aucune' },
-  { value: 'soft', label: 'Douce' },
-  { value: 'medium', label: 'Moyenne' },
-  { value: 'strong', label: 'Forte' },
+  { value: 'none', label: msg('Aucune') },
+  { value: 'soft', label: msg('Douce') },
+  { value: 'medium', label: msg('Moyenne') },
+  { value: 'strong', label: msg('Forte') },
 ];
 
 export const PORTFOLIO_ABOUT_US_CARD_BORDER_OPTIONS: {
   value: PortfolioAboutUsCardBorder;
   label: string;
 }[] = [
-  { value: 'none', label: 'Aucune' },
-  { value: 'thin', label: 'Fine' },
-  { value: 'medium', label: 'Moyenne' },
+  { value: 'none', label: msg('Aucune') },
+  { value: 'thin', label: msg('Fine') },
+  { value: 'medium', label: msg('Moyenne') },
 ];
 
 export function aboutUsIsDarkMode(
@@ -398,23 +399,23 @@ export const PORTFOLIO_ABOUT_US_IMAGE_FRAME_OPTIONS: {
 }[] = [
   {
     value: 'layered',
-    label: 'Calques',
-    description: 'Photo, dalle grise décalée et cadre en pointillés.',
+    label: msg('Calques'),
+    description: msg('Photo, dalle grise décalée et cadre en pointillés.'),
   },
   {
     value: 'slab',
-    label: 'Dalle',
-    description: 'Grande photo sur une dalle pleine décalée.',
+    label: msg('Dalle'),
+    description: msg('Grande photo sur une dalle pleine décalée.'),
   },
   {
     value: 'duo',
-    label: 'Duo',
-    description: 'Deux photos décalées, ou une photo avec un second plan.',
+    label: msg('Duo'),
+    description: msg('Deux photos décalées, ou une photo avec un second plan.'),
   },
   {
     value: 'ring',
-    label: 'Anneau',
-    description: 'Photo dans un cadre arrondi avec un anneau autour.',
+    label: msg('Anneau'),
+    description: msg('Photo dans un cadre arrondi avec un anneau autour.'),
   },
 ];
 
@@ -422,17 +423,17 @@ export const PORTFOLIO_ABOUT_US_CONTENT_PLACEMENT_OPTIONS: {
   value: PortfolioAboutUsContentPlacement;
   label: string;
 }[] = [
-  { value: 'left', label: 'Gauche' },
-  { value: 'center', label: 'Centre' },
-  { value: 'right', label: 'Droite' },
+  { value: 'left', label: msg('Gauche') },
+  { value: 'center', label: msg('Centre') },
+  { value: 'right', label: msg('Droite') },
 ];
 
 export const PORTFOLIO_ABOUT_US_MEDIA_SIDE_OPTIONS: {
   value: PortfolioAboutUsMediaSide;
   label: string;
 }[] = [
-  { value: 'left', label: 'Image à gauche' },
-  { value: 'right', label: 'Image à droite' },
+  { value: 'left', label: msg('Image à gauche') },
+  { value: 'right', label: msg('Image à droite') },
 ];
 
 export function aboutUsContentPlacementClass(placement: PortfolioAboutUsContentPlacement | undefined): string {
@@ -591,18 +592,18 @@ export const PORTFOLIO_ABOUT_US_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Empilé',
-    description: 'Titre au-dessus, contenu en dessous.',
+    label: msg('Empilé'),
+    description: msg('Titre au-dessus, contenu en dessous.'),
   },
   {
     value: 'aside-left',
-    label: 'Titre à gauche',
-    description: 'Titre à gauche, contenu à droite (côte à côte).',
+    label: msg('Titre à gauche'),
+    description: msg('Titre à gauche, contenu à droite (côte à côte).'),
   },
   {
     value: 'aside-right',
-    label: 'Titre à droite',
-    description: 'Contenu à gauche, titre à droite (côte à côte).',
+    label: msg('Titre à droite'),
+    description: msg('Contenu à gauche, titre à droite (côte à côte).'),
   },
 ];
 

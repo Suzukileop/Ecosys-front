@@ -48,7 +48,6 @@ export const config = {
     '/profile/:path*',
     '/my-products/:path*',
     '/my-services/:path*',
-    '/purchases/:path*',
     '/messages/:path*',
     '/notifications/:path*',
     '/search/:path*',

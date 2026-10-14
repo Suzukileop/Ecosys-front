@@ -21,13 +21,15 @@ import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { AxiosError } from 'axios';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { SIGNED_IN_HOME } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
 
 const PASSWORD_RULES = [
-  { label: '8+ characters', test: (v: string) => v.length >= 8 },
-  { label: 'One uppercase', test: (v: string) => /[A-Z]/.test(v) },
-  { label: 'One number', test: (v: string) => /[0-9]/.test(v) },
+  { label: msg('8+ characters'), test: (v: string) => v.length >= 8 },
+  { label: msg('One uppercase'), test: (v: string) => /[A-Z]/.test(v) },
+  { label: msg('One number'), test: (v: string) => /[0-9]/.test(v) },
 ] as const;
 
 const registerSchema = z
@@ -57,8 +59,9 @@ const registerSchema = z
 type RegisterFormData = z.infer<typeof registerSchema>;
 
 function PasswordRules({ value, showErrors }: { value: string; showErrors: boolean }) {
+  const t = useT();
   return (
-    <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5" aria-label="Password requirements">
+    <ul className="mt-2.5 flex flex-wrap gap-x-4 gap-y-1.5" aria-label={t('Password requirements')}>
       {PASSWORD_RULES.map((rule) => {
         const met = rule.test(value);
         const tone = met
@@ -80,8 +83,8 @@ function PasswordRules({ value, showErrors }: { value: string; showErrors: boole
                 </svg>
               ) : null}
             </span>
-            {rule.label}
-            <span className="sr-only">{met ? '(met)' : '(not met)'}</span>
+            {t(rule.label)}
+            <span className="sr-only">{met ? t('(met)') : t('(not met)')}</span>
           </li>
         );
       })}
@@ -90,6 +93,7 @@ function PasswordRules({ value, showErrors }: { value: string; showErrors: boole
 }
 
 function RegisterForm() {
+  const t = useT();
   const searchParams = useSearchParams();
   const { signup } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -124,9 +128,9 @@ function RegisterForm() {
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.response?.status === 429) {
-        setApiError('Too many sign-up attempts. Please try again in a minute.');
+        setApiError(t('Too many sign-up attempts. Please try again in a minute.'));
       } else {
-        setApiError(getApiErrorMessage(error, 'We couldn’t create your account. Please try again.'));
+        setApiError(getApiErrorMessage(error, t('We couldn’t create your account. Please try again.')));
       }
     }
   };
@@ -148,22 +152,22 @@ function RegisterForm() {
         <div className="grid gap-5 sm:grid-cols-2">
           <AuthTextField
             id="fullName"
-            label="Full name"
+            label={t('Full name')}
             type="text"
             autoComplete="name"
-            placeholder="Alex Morgan"
+            placeholder={t('Alex Morgan')}
             registration={register('fullName')}
             error={errors.fullName?.message}
           />
           <AuthTextField
             id="username"
-            label="Username"
+            label={t('Username')}
             type="text"
             autoComplete="username"
             autoCapitalize="none"
             spellCheck={false}
             placeholder="alex_morgan"
-            labelAside={<InfoHint align="end">Unique handle — case-sensitive (leopard ≠ Leopard).</InfoHint>}
+            labelAside={<InfoHint align="end">{t('Unique handle — case-sensitive (leopard ≠ Leopard).')}</InfoHint>}
             registration={register('username')}
             error={errors.username?.message}
           />
@@ -171,7 +175,7 @@ function RegisterForm() {
 
         <AuthTextField
           id="email"
-          label="Email"
+          label={t('Email')}
           type="email"
           autoComplete="email"
           inputMode="email"
@@ -182,7 +186,7 @@ function RegisterForm() {
 
         <AuthPasswordField
           id="password"
-          label="Password"
+          label={t('Password')}
           autoComplete="new-password"
           registration={register('password')}
           error={password ? undefined : errors.password?.message}
@@ -192,7 +196,7 @@ function RegisterForm() {
 
         <AuthPasswordField
           id="confirmPassword"
-          label="Repeat password"
+          label={t('Repeat password')}
           autoComplete="new-password"
           registration={register('confirmPassword')}
           error={errors.confirmPassword?.message}
@@ -206,19 +210,19 @@ function RegisterForm() {
               className="mt-[3px] h-4 w-4 shrink-0 cursor-pointer rounded accent-[#111111] dark:accent-white"
             />
             <span className="text-[14px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-              I accept the{' '}
+              {t('I accept the')}{' '}
               <Link
                 href="/terms"
                 className="font-medium text-[#111111] underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-[#111111] dark:text-white dark:decoration-white/30 dark:hover:decoration-white"
               >
-                Terms of Service
+                {t('Terms of Service')}
               </Link>{' '}
-              and{' '}
+              {t('and')}{' '}
               <Link
                 href="/privacy"
                 className="font-medium text-[#111111] underline decoration-black/20 underline-offset-4 transition-colors hover:decoration-[#111111] dark:text-white dark:decoration-white/30 dark:hover:decoration-white"
               >
-                Privacy Policy
+                {t('Privacy Policy')}
               </Link>
               .
             </span>
@@ -227,8 +231,8 @@ function RegisterForm() {
         </div>
 
         <div className="pt-2">
-          <AuthSubmitButton busy={isSubmitting} busyLabel="Creating account...">
-            Create account
+          <AuthSubmitButton busy={isSubmitting} busyLabel={t('Creating account...')}>
+            {t('Create account')}
           </AuthSubmitButton>
         </div>
       </form>
@@ -237,14 +241,14 @@ function RegisterForm() {
 }
 
 export default function RegisterPage() {
+  const t = useT();
   return (
     <AuthShell
-      title="Create your account"
-      subtitle="Start selling and sharing your work in minutes."
-      switchPrompt="Already have an account?"
-      switchLabel="Log in"
+      title={t('Create your account')}
+      subtitle={t('Start selling and sharing your work in minutes.')}
+      switchPrompt={t('Already have an account?')}
+      switchLabel={t('Log in')}
       switchHref="/login"
-      image={{ src: '/auth/register.jpg', alt: 'A creator arranging photographs at a studio table' }}
     >
       <Suspense
         fallback={

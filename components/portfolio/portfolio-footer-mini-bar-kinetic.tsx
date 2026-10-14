@@ -12,6 +12,7 @@ import {
   useFooterMiniBarLiveClock,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const REST_OPACITY = 0.55;
 const FOCUS_OPACITY = 1;
@@ -93,6 +94,7 @@ function useScrollProgressFill(barRef: React.RefObject<HTMLDivElement | null>) {
  *  a *continuous* looping bounce (repeat:-1, yoyo:true) that only settles back to rest on
  *  mouseleave, per spec. */
 function KineticBackToTop({ ink }: { ink: string }) {
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
@@ -191,7 +193,7 @@ function KineticBackToTop({ ink }: { ink: string }) {
         style={{ color: ink, opacity: REST_OPACITY }}
       >
         <span aria-hidden>[</span>
-        <span ref={labelRef}>Back to top</span>
+        <span ref={labelRef}>{t('Back to top')}</span>
         <span ref={arrowRef} aria-hidden className="inline-block">
           ↑
         </span>
@@ -211,6 +213,7 @@ function KineticBackToTop({ ink }: { ink: string }) {
  */
 export function FooterMiniBarKinetic({
   creatorName,
+  showCopyright = true,
   locationLabel,
   timezoneId,
   colorMode,
@@ -228,7 +231,7 @@ export function FooterMiniBarKinetic({
 
   const clock = useFooterMiniBarLiveClock(timezoneId);
   const trimmedLocation = locationLabel?.trim() || '';
-  const trimmedCopyright = footerMiniBarCopyrightBase(creatorName);
+  const trimmedCopyright = showCopyright ? footerMiniBarCopyrightBase(creatorName) : '';
   const hasCenter = Boolean(clock || trimmedLocation);
 
   return (

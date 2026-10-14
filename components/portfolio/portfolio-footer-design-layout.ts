@@ -9,6 +9,7 @@ import {
   type PortfolioFooterLinkItem,
   type PortfolioFooterPresentationSettings,
 } from '@/components/portfolio/portfolio-footer-settings';
+import { msg } from '@/lib/i18n/config';
 
 type Presentation = PortfolioFooterPresentationSettings;
 
@@ -87,10 +88,10 @@ export type FooterLayoutElementSpec =
 export type FooterInkToken = 'texteFort' | 'neutre' | 'texteMuted' | 'texteFaint';
 
 export const FOOTER_INK_TOKEN_OPTIONS: { value: FooterInkToken; label: string; swatch: string }[] = [
-  { value: 'texteFort', label: 'Strong text', swatch: 'var(--pf-palette-texte-fort, #f5f5f5)' },
-  { value: 'neutre', label: 'Neutral', swatch: 'var(--pf-palette-neutre, #171717)' },
-  { value: 'texteMuted', label: 'Muted text', swatch: 'var(--pf-palette-texte-muted, #a3a3a3)' },
-  { value: 'texteFaint', label: 'Faint text', swatch: 'var(--pf-palette-texte-faint, #737373)' },
+  { value: 'texteFort', label: msg('Strong text'), swatch: 'var(--pf-palette-texte-fort, #f5f5f5)' },
+  { value: 'neutre', label: msg('Neutral'), swatch: 'var(--pf-palette-neutre, #171717)' },
+  { value: 'texteMuted', label: msg('Muted text'), swatch: 'var(--pf-palette-texte-muted, #a3a3a3)' },
+  { value: 'texteFaint', label: msg('Faint text'), swatch: 'var(--pf-palette-texte-faint, #737373)' },
 ];
 
 type FooterDesignLayoutSpec = {
@@ -163,28 +164,28 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
           .filter((id): id is string => Boolean(id)),
     },
     elements: [
-      { kind: 'toggle', key: 'identity', label: 'Identity', group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'identity', label: msg('Identity'), group: 'identity', defaultVisible: always },
       {
         kind: 'choice',
         key: 'identityMode',
-        label: 'Identity style',
+        label: msg('Identity style'),
         group: 'identity',
         field: 'centeredIdentity',
         options: [
-          { value: 'name', label: 'Name' },
-          { value: 'avatar', label: 'Avatar' },
-          { value: 'custom', label: 'Custom' },
+          { value: 'name', label: msg('Name') },
+          { value: 'avatar', label: msg('Avatar') },
+          { value: 'custom', label: msg('Custom') },
         ],
         showWhen: (p) => resolveFooterLayoutVisible(p, 'centered-minimal', 'identity'),
       },
       {
         kind: 'text',
         key: 'identityText',
-        label: 'Custom text',
+        label: msg('Custom text'),
         group: 'identity',
         defaultText: (p) =>
           p.centeredCustomText && p.centeredCustomText !== 'Logo' ? p.centeredCustomText : '',
-        placeholder: 'Your name',
+        placeholder: msg('Your name'),
         hideable: false,
         showWhen: (p) =>
           p.centeredIdentity === 'custom' && resolveFooterLayoutVisible(p, 'centered-minimal', 'identity'),
@@ -195,18 +196,18 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
     sectionLinks: legacySectionLinks,
     elements: [
       nameToggle((p) => p.showBrand !== false),
-      { kind: 'toggle', key: 'avatar', label: 'Avatar', group: 'identity', defaultVisible: (p) => p.showAvatar === true },
+      { kind: 'toggle', key: 'avatar', label: msg('Avatar'), group: 'identity', defaultVisible: (p) => p.showAvatar === true },
       {
         kind: 'bio',
         key: 'bio',
-        label: 'Bio',
+        label: msg('Bio'),
         group: 'identity',
         defaultVisible: (p) => p.showDescription === true,
         defaultSource: profileBioSource,
         defaultCustom: profileBioCustom,
       },
       heading('contactLabel', 'Contact heading', 'Contact'),
-      { kind: 'text', key: 'linksLabel', label: 'Links heading', group: 'labels', defaultText: linksColumnTitle },
+      { kind: 'text', key: 'linksLabel', label: msg('Links heading'), group: 'labels', defaultText: linksColumnTitle },
     ],
   },
   compact: {
@@ -215,7 +216,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'bio',
         key: 'bio',
-        label: 'Bio',
+        label: msg('Bio'),
         group: 'identity',
         defaultVisible: always,
         defaultSource: profileBioSource,
@@ -229,7 +230,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'bio',
         key: 'bio',
-        label: 'Bio',
+        label: msg('Bio'),
         group: 'identity',
         defaultVisible: always,
         defaultSource: profileBioSource,
@@ -238,14 +239,14 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'toggle',
         key: 'avatar',
-        label: 'Portrait',
+        label: msg('Portrait'),
         group: 'identity',
         defaultVisible: (p) => p.showAvatar === true,
       },
       {
         kind: 'text',
         key: 'ctaLabel',
-        label: 'Button',
+        label: msg('Button'),
         group: 'text',
         defaultText: (p) => p.ctaButtonLabel?.trim() || 'Contact me',
       },
@@ -256,7 +257,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
     elements: [
       nameToggle((p) => p.showBrand !== false),
       heading('connectLabel', 'Social heading', 'Connect'),
-      { kind: 'text', key: 'linksLabel', label: 'Links heading', group: 'labels', defaultText: linksColumnTitle },
+      { kind: 'text', key: 'linksLabel', label: msg('Links heading'), group: 'labels', defaultText: linksColumnTitle },
     ],
   },
   monumental: {
@@ -266,7 +267,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'text',
         key: 'headline',
-        label: 'Headline',
+        label: msg('Headline'),
         group: 'text',
         defaultText: (p) => p.monumentalHeadline,
         multiline: true,
@@ -277,14 +278,14 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
   'hero-columns': {
     sectionLinks: legacySectionLinks,
     elements: [
-      { kind: 'toggle', key: 'portrait', label: 'Portrait', group: 'identity', defaultVisible: always },
-      { kind: 'toggle', key: 'initials', label: 'Initials', group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'portrait', label: msg('Portrait'), group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'initials', label: msg('Initials'), group: 'identity', defaultVisible: always },
       heading('navLabel', 'Navigation heading', '(NAVIGATION)'),
       heading('noteLabel', 'Note heading', '(ACKNOWLEDGEMENT)'),
       {
         kind: 'bio',
         key: 'note',
-        label: 'Note',
+        label: msg('Note'),
         group: 'text',
         defaultVisible: always,
         defaultSource: () => 'custom',
@@ -296,13 +297,13 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
   'split-form': {
     sectionLinks: legacySectionLinks,
     elements: [
-      { kind: 'toggle', key: 'portrait', label: 'Portrait', group: 'identity', defaultVisible: always },
-      { kind: 'toggle', key: 'mark', label: 'Brand mark', group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'portrait', label: msg('Portrait'), group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'mark', label: msg('Brand mark'), group: 'identity', defaultVisible: always },
       nameToggle(always),
       {
         kind: 'text',
         key: 'headline',
-        label: 'Headline',
+        label: msg('Headline'),
         group: 'text',
         defaultText: (p) => p.splitFormHeadline,
         multiline: true,
@@ -310,7 +311,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'text',
         key: 'description',
-        label: 'Intro',
+        label: msg('Intro'),
         group: 'text',
         defaultText: (p) => p.splitFormDescription,
         multiline: true,
@@ -324,7 +325,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
   },
   'timezone-editorial': {
     elements: [
-      { kind: 'toggle', key: 'avatar', label: 'Avatar', group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'avatar', label: msg('Avatar'), group: 'identity', defaultVisible: always },
       nameWatermark('watermark', 'Name watermark'),
     ],
   },
@@ -335,11 +336,11 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'option',
         key: 'wordmarkOrientation',
-        label: 'Orientation',
+        label: msg('Orientation'),
         group: 'wordmark',
         options: [
-          { value: 'mirrored', label: 'Mirrored' },
-          { value: 'normal', label: 'Normal' },
+          { value: 'mirrored', label: msg('Mirrored') },
+          { value: 'normal', label: msg('Normal') },
         ],
         defaultValue: 'mirrored',
         showWhen: (p) => resolveFooterLayoutVisible(p, 'inverted-wordmark', 'wordmark'),
@@ -347,7 +348,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'option',
         key: 'wordmarkColor',
-        label: 'Color',
+        label: msg('Color'),
         group: 'wordmark',
         options: FOOTER_INK_TOKEN_OPTIONS,
         defaultValue: 'texteFort',
@@ -367,12 +368,12 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
   'editorial-grid': {
     sectionLinks: legacySectionLinks,
     elements: [
-      { kind: 'toggle', key: 'avatar', label: 'Avatar', group: 'identity', defaultVisible: always },
-      { kind: 'toggle', key: 'year', label: 'Year', group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'avatar', label: msg('Avatar'), group: 'identity', defaultVisible: always },
+      { kind: 'toggle', key: 'year', label: msg('Year'), group: 'identity', defaultVisible: always },
       {
         kind: 'text',
         key: 'tagline',
-        label: 'Tagline',
+        label: msg('Tagline'),
         group: 'text',
         defaultText: (p) => p.editorialGridTagline,
         multiline: true,
@@ -387,7 +388,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'bio',
         key: 'bio',
-        label: 'Bio',
+        label: msg('Bio'),
         group: 'text',
         defaultVisible: always,
         defaultSource: () => 'bio',
@@ -397,7 +398,7 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'target',
         key: 'ctaTarget',
-        label: 'Button link',
+        label: msg('Button link'),
         group: 'text',
         defaultValue: 'email',
         showWhen: (p) => resolveFooterLayoutVisible(p, 'headline-reveal', 'ctaLabel'),
@@ -413,13 +414,13 @@ export const FOOTER_DESIGN_LAYOUT_SPECS: Record<PortfolioFooterDesign, FooterDes
       {
         kind: 'option',
         key: 'accent',
-        label: 'Accent',
+        label: msg('Accent'),
         group: 'text',
         options: [
-          { value: 'mint', label: 'Mint', swatch: '#9ce8c2' },
-          { value: 'amber', label: 'Amber', swatch: '#f2c65c' },
-          { value: 'violet', label: 'Violet', swatch: '#c3b5fd' },
-          { value: 'contrast', label: 'Contrast', swatch: 'var(--pf-palette-texte-fort, #f5f5f5)' },
+          { value: 'mint', label: msg('Mint'), swatch: '#9ce8c2' },
+          { value: 'amber', label: msg('Amber'), swatch: '#f2c65c' },
+          { value: 'violet', label: msg('Violet'), swatch: '#c3b5fd' },
+          { value: 'contrast', label: msg('Contrast'), swatch: 'var(--pf-palette-texte-fort, #f5f5f5)' },
         ],
         defaultValue: 'mint',
       },

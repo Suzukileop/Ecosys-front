@@ -12,23 +12,16 @@ type MessageCardProps = {
   status?: MessageStatusType | null;
   actions?: ReactNode;
   highlighted?: boolean;
+  /** Last message of a run from the same sender: shows the time (and status) under it. */
+  showMeta?: boolean;
+  /** Joins the bubble to the next one of the same run (tail corner stays round). */
+  groupedWithNext?: boolean;
 };
 
 /**
- * A message, unboxed.
- *
- * There is no bubble here any more — no fill, no border, no radius behind the words. The
- * orange and grey rectangles that used to sit under every line were carrying one single piece
- * of information, *who said it*, and they were the heaviest objects on the screen to carry it.
- * Two things say it better and cost nothing:
- *
- * - **Side.** Mine sits right, theirs sits left. That is already unambiguous on its own.
- * - **Ink.** Mine is `#111`, theirs is `#444`. Under a glance the column of deep black reads
- *   as one voice and the column of anthracite as the other, which is exactly the job the
- *   fills were doing, done by the type itself.
- *
- * Media still gets a frame, because an image is a real object with its own edges and needs
- * one; text does not.
+ * One message: a 15/20 bubble — mine filled in a soft grey (x-messages.css), theirs outlined with no
+ * fill, so the two sides read apart by fill as well as by side. No accent hue anywhere. The tail corner (bottom, sender side) is squared on the
+ * last bubble of a run; the time sits under that last bubble only, in secondary ink.
  */
 export function MessageCard({
   mine,
@@ -38,23 +31,21 @@ export function MessageCard({
   status = null,
   actions,
   highlighted = false,
+  showMeta = true,
+  groupedWithNext = false,
 }: MessageCardProps) {
   const hasBody = children != null && children !== false && children !== '';
-  const mediaOnly = Boolean(media) && !hasBody;
 
-  /* The whole speaker cue, in one value. */
-  const inkClass = mine ? 'text-[var(--msg-ink)]' : 'text-[var(--msg-ink-soft)]';
+  const tail = groupedWithNext ? '' : mine ? 'rounded-br-[4px]' : 'rounded-bl-[4px]';
+  const bubbleTone = mine
+    ? 'bg-[var(--msg-bubble-mine)] text-[var(--msg-bubble-mine-ink)]'
+    : 'bg-[var(--msg-bubble-theirs)] text-[var(--msg-ink)] shadow-[inset_0_0_0_1px_var(--xm-bubble-line)]';
+  const highlightRing = highlighted
+    ? 'ring-2 ring-[var(--msg-ink)] ring-offset-2 ring-offset-[var(--msg-panel)]'
+    : '';
 
-  /*
-   * A found message is marked by a coral rule on its own side, never by a ring: a ring would
-   * put back the very box this component exists to remove.
-   */
-  const highlightRuleClass = `absolute inset-y-0 w-[2px] bg-[var(--msg-coral)] transition-opacity duration-500 ${
-    mine ? '-right-3' : '-left-3'
-  } ${highlighted ? 'opacity-100' : 'opacity-0'}`;
-
-  const timestamp = (
-    <div className={`mt-1.5 flex items-center gap-1.5 ${mine ? 'justify-end' : 'justify-start'}`}>
+  const meta = showMeta ? (
+    <div className={`mt-1 flex items-center gap-1 px-1 ${mine ? 'justify-end' : 'justify-start'}`}>
       <time dateTime={sentAt} className="msg-micro text-[var(--msg-ink-faint)]">
         {formatConversationTime(sentAt)}
       </time>
@@ -64,48 +55,44 @@ export function MessageCard({
         </span>
       ) : null}
     </div>
-  );
+  ) : null;
+
+  const actionSlot = actions ? (
+    <div className="shrink-0 self-center text-[var(--msg-ink-faint)] opacity-0 transition-opacity duration-200 group-focus-within/msg:opacity-100 group-hover/msg:opacity-100">
+      {actions}
+    </div>
+  ) : null;
 
   return (
-    <div
-      className={`group/msg relative flex min-w-0 items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}
-    >
-      {mine && actions ? (
-        <div className="mt-0.5 shrink-0 text-[var(--msg-ink-faint)] opacity-0 transition-opacity duration-300 focus-within:opacity-100 group-hover/msg:opacity-100">
-          {actions}
-        </div>
-      ) : null}
+    <div className={`group/msg relative flex min-w-0 items-start gap-1 ${mine ? 'justify-end' : 'justify-start'}`}>
+      {mine ? actionSlot : null}
 
-      <div className="relative w-fit max-w-[min(100%,520px)] min-w-0">
-        <span aria-hidden className={highlightRuleClass} />
-
+      <div
+        tabIndex={0}
+        className={`flex min-w-0 max-w-[min(100%,520px)] flex-col outline-none ${mine ? 'items-end' : 'items-start'}`}
+      >
         {media ? (
-          <div className="overflow-hidden rounded-[var(--cw-radius)] border border-[var(--msg-hairline)]">
+          <div
+            className={`max-w-full overflow-hidden rounded-[16px] transition-shadow duration-300 ${hasBody ? '' : tail} ${highlightRing}`}
+          >
             {media}
           </div>
         ) : null}
 
         {hasBody ? (
-          <div className={media ? 'mt-2' : undefined}>
-            <div
-              className={`text-[0.9375rem] font-light leading-[1.65] [overflow-wrap:anywhere] whitespace-pre-wrap break-words ${inkClass} ${
-                mine ? 'text-right' : 'text-left'
-              }`}
-            >
-              {children}
-            </div>
-            {timestamp}
+          <div
+            className={`msg-bubble w-fit max-w-full rounded-[22px] px-4 py-2.5 text-[15px] leading-5 [overflow-wrap:anywhere] whitespace-pre-wrap break-words transition-shadow duration-300 ${bubbleTone} ${tail} ${
+              media ? 'mt-1' : ''
+            } ${highlightRing}`}
+          >
+            {children}
           </div>
-        ) : (
-          <div className={mediaOnly ? 'mt-1' : undefined}>{timestamp}</div>
-        )}
+        ) : null}
+
+        {meta}
       </div>
 
-      {!mine && actions ? (
-        <div className="mt-0.5 shrink-0 text-[var(--msg-ink-faint)] opacity-0 transition-opacity duration-300 focus-within:opacity-100 group-hover/msg:opacity-100">
-          {actions}
-        </div>
-      ) : null}
+      {!mine ? actionSlot : null}
     </div>
   );
 }

@@ -25,6 +25,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Compact editorial block — tighter than the previous 1.05 leading. */
 const TITLE_LINE_HEIGHT = 0.95;
@@ -77,6 +78,7 @@ function groupWordsIntoLines(words: HTMLElement[]): string[] {
  * Palette tokens only (fond, texteFort, texteMuted, principal, bordure, neutre).
  */
 export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -99,11 +101,11 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
     const cleaned = data.description?.replace(/\s+/g, ' ').trim();
     return (
       cleaned ||
-      'I turn complex ideas into thoughtful, high-performing products through strategy, design, and development.'
+      t('I turn complex ideas into thoughtful, high-performing products through strategy, design, and development.')
     );
   }, [data.description]);
   const tools = (data.tools ?? []).map((tool) => tool.trim()).filter(Boolean).slice(0, 4);
-  const toolsLabel = data.presentation.toolsLabelText.trim() || 'Best tools';
+  const toolsLabel = data.presentation.toolsLabelText.trim() || t('Best tools');
 
   const identityUnderPortrait =
     data.presentation.heroEditorialRailIdentityUnderPortrait === true;
@@ -238,7 +240,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
           }`}
           style={{ backgroundColor: ink, color: fond }}
         >
-          Start a project
+          {t('Start a project')}
         </a>
         <a
           href={secondaryHref}
@@ -248,7 +250,7 @@ export function PortfolioHeroEditorialRail({ data }: { data: PortfolioHeroData }
           }`}
           style={{ color: ink }}
         >
-          View project
+          {t('View project')}
         </a>
       </div>
     );
@@ -706,12 +708,13 @@ function EditorialRailPortrait({
   muted: string;
   imageBw: boolean;
 }) {
+  const t = useT();
   return (
     <>
       {avatarUrl ? (
         <Image
           src={avatarUrl}
-          alt={`Portrait of ${displayName}`}
+          alt={t('Portrait of {displayName}', { displayName })}
           fill
           sizes="(max-width: 768px) 92vw, 34vw"
           className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}

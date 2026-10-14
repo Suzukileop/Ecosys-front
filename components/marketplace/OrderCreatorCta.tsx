@@ -1,11 +1,16 @@
 'use client';
 
 import Link from 'next/link';
+import { PROVIDER_ACCENT_BUTTON_CLASS } from '@/components/marketplace/ProviderDirectoryPrimitives';
+import { PROFILE_MOBILE_PRIMARY_BUTTON } from '@/components/creator/creator-profile-header-types';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type OrderCreatorCtaProps = {
   creatorId: string;
   creatorName?: string;
   isAuthenticated: boolean;
+  /** `compact`: the phone action row (36px, full width of its cell). */
+  size?: 'default' | 'compact';
 };
 
 function MessageIcon({ className }: { className?: string }) {
@@ -20,32 +25,35 @@ function MessageIcon({ className }: { className?: string }) {
   );
 }
 
-/** Primary CTA — highest-intent action on a public creator profile. */
-const primaryButtonClass =
-  'inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-colors hover:bg-black focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200 dark:focus-visible:ring-white/30';
+/** Primary CTA — highest-intent action on a public creator profile: the ink primary button, as Discuss in the directory. */
+const primaryButtonClass = `inline-flex h-11 items-center justify-center gap-2 rounded-none px-5 text-[15px] font-bold transition-colors focus-visible:outline-none ${PROVIDER_ACCENT_BUTTON_CLASS}`;
 
-export function OrderCreatorCta({ creatorId, creatorName, isAuthenticated }: OrderCreatorCtaProps) {
+const compactButtonClass = `${PROFILE_MOBILE_PRIMARY_BUTTON} w-full`;
+
+export function OrderCreatorCta({ creatorId, creatorName, isAuthenticated, size = 'default' }: OrderCreatorCtaProps) {
+  const t = useT();
+  const buttonClass = size === 'compact' ? compactButtonClass : primaryButtonClass;
   const discussUrl = `/messages?user=${encodeURIComponent(creatorId)}`;
-  const a11yLabel = creatorName ? `Discuss with ${creatorName}` : 'Discuss with creator';
+  const a11yLabel = creatorName ? `Discuss with ${creatorName}` : t('Discuss with creator');
 
   if (!isAuthenticated) {
     return (
       <Link
         href={`/login?redirect=${encodeURIComponent(discussUrl)}`}
-        className={primaryButtonClass}
-        title="Sign in to discuss"
+        className={buttonClass}
+        title={t('Sign in to discuss')}
         aria-label={a11yLabel}
       >
         <MessageIcon className="h-4 w-4" />
-        Discuss
+        {t('Discuss')}
       </Link>
     );
   }
 
   return (
-    <Link href={discussUrl} className={primaryButtonClass} title={a11yLabel} aria-label={a11yLabel}>
+    <Link href={discussUrl} className={buttonClass} title={a11yLabel} aria-label={a11yLabel}>
       <MessageIcon className="h-4 w-4" />
-      Discuss
+      {t('Discuss')}
     </Link>
   );
 }

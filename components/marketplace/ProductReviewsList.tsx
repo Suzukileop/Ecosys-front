@@ -8,6 +8,7 @@ import { ProductReviewCard } from '@/components/marketplace/ProductReviewCard';
 import { ProductReviewDistributionChart } from '@/components/marketplace/ProductReviewDistributionChart';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import type { ProductReview, ProductReviewSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const REVIEWS_PAGE_SIZE = 20;
 
@@ -21,7 +22,7 @@ const EMPTY_SUMMARY: ProductReviewSummary = {
   rating1Count: 0,
 };
 
-const SKELETON = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
+const SKELETON = 'animate-pulse bg-[color:var(--gn-inset)]';
 
 function ReviewCardSkeleton() {
   return (
@@ -70,6 +71,7 @@ export function ProductReviewsList({
   initialAverageRating,
   prefetchedSummary,
 }: ProductReviewsListProps) {
+  const t = useT();
   const [reviews, setReviews] = useState<ProductReview[]>([]);
   const [loading, setLoading] = useState(true);
   const [summaryLoading, setSummaryLoading] = useState(!prefetchedSummary);
@@ -117,7 +119,7 @@ export function ProductReviewsList({
         await Promise.all([loadSummary(), loadPage(0, false)]);
       } catch (e) {
         if (!cancelled) {
-          setError(getApiErrorMessage(e, 'Unable to load reviews.'));
+          setError(getApiErrorMessage(e, t('Unable to load reviews.')));
         }
       } finally {
         if (!cancelled) {
@@ -130,14 +132,14 @@ export function ProductReviewsList({
     return () => {
       cancelled = true;
     };
-  }, [loadPage, loadSummary, refreshKey]);
+  }, [loadPage, loadSummary, refreshKey, t]);
 
   const onLoadMore = async () => {
     try {
       setLoadingMore(true);
       await loadPage(page + 1, true);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load more reviews.'));
+      setError(getApiErrorMessage(e, t('Unable to load more reviews.')));
     } finally {
       setLoadingMore(false);
     }
@@ -160,29 +162,31 @@ export function ProductReviewsList({
 
   return (
     <section>
-      <h2 className="text-xl font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">Customer reviews</h2>
+      <h2 className="px-4 text-[17px] font-bold leading-[22px] tracking-[-0.01em] text-[color:var(--gn-ink)] sm:px-0">
+        {t('Reviews')}
+      </h2>
 
       {error && (
-        <div className="mt-5">
+        <div className="mt-3 px-4 sm:mt-4 sm:px-0">
           <ErrorAlert message={error} onDismiss={() => setError(null)} />
         </div>
       )}
 
       {!loading && reviews.length === 0 && summary.reviewCount === 0 ? (
-        <div className="mt-5 rounded-lg border border-dashed border-black/[0.12] px-6 py-12 text-center dark:border-white/[0.14]">
-          <p className="text-base font-medium text-[#111111] dark:text-white">No reviews yet</p>
-          <p className="mt-2 text-[15px] text-neutral-500 dark:text-neutral-400">
-            Be the first to share your experience.
+        <div className="mt-3 bg-[color:var(--gn-surface)] px-6 py-10 text-center sm:mt-4">
+          <p className="text-[17px] font-bold leading-[22px] text-[color:var(--gn-ink)]">{t('No reviews yet')}</p>
+          <p className="mt-1 text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+            {t('Be the first to share your experience.')}
           </p>
         </div>
       ) : (
-        <div className="mt-5 overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
+        <div className="mt-3 bg-[color:var(--gn-surface)] sm:mt-4">
           <div>
-            <div className="border-b border-black/[0.06] p-6 dark:border-white/[0.08]">
+            <div className="p-5 sm:p-6">
               <ProductReviewDistributionChart summary={summary} loading={summaryLoading} />
             </div>
 
-            <div className="min-w-0 divide-y divide-black/[0.06] px-6 dark:divide-white/[0.08]">
+            <div className="min-w-0 space-y-2 px-5 pb-2 sm:px-6">
               {loading && reviews.length === 0
                 ? Array.from({ length: Math.min(Math.max(initialReviewCount, 1), 3) }, (_, index) => (
                     <ReviewCardSkeleton key={index} />
@@ -202,9 +206,9 @@ export function ProductReviewsList({
                     type="button"
                     disabled={loadingMore}
                     onClick={() => void onLoadMore()}
-                    className="h-10 rounded-lg border border-black/[0.1] px-5 text-sm font-medium text-[#111111] transition hover:border-black/[0.25] disabled:opacity-60 dark:border-white/[0.14] dark:text-white dark:hover:border-white/[0.3]"
+                    className="h-10 border border-[#CFD9DE] px-5 text-[14px] font-bold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] disabled:opacity-60 dark:border-[#536471]"
                   >
-                    {loadingMore ? 'Loading…' : 'Load more reviews'}
+                    {loadingMore ? t('Loading…') : t('Load more reviews')}
                   </button>
                 </div>
               )}

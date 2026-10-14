@@ -107,8 +107,9 @@ export async function detectUserCoordinates(): Promise<ViewerCoordinates> {
 
   const position = await getCurrentPosition({
     enableHighAccuracy: false,
-    timeout: 12_000,
-    maximumAge: 5 * 60_000,
+    timeout: 10_000,
+    // Any fix from the last 30 min is fine for sorting — Chrome answers at once instead of re-locating.
+    maximumAge: 30 * 60_000,
   }).catch((err) => {
     if (err instanceof GeolocationPositionError) {
       throw new UserFacingError(geolocationErrorMessage(err.code));
@@ -341,6 +342,11 @@ export function openStreetMapEmbedUrl(lat: number, lng: number, delta = 0.12): s
   const north = lat + delta * 0.65;
   const bbox = [west, south, east, north].join('%2C');
   return `https://www.openstreetmap.org/export/embed.html?bbox=${bbox}&layer=mapnik&marker=${lat}%2C${lng}`;
+}
+
+/** Straight-line km between two saved places (no accuracy gate — both are stored coordinates). */
+export function distanceKmBetween(a: { lat: number; lng: number }, b: { lat: number; lng: number }): number {
+  return haversineKm(a.lat, a.lng, b.lat, b.lng);
 }
 
 /** Great-circle distance in km (Haversine). */

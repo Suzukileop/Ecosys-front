@@ -20,16 +20,18 @@ import {
   profileSectionFieldClass,
   profileSectionSubheadingClass,
 } from '@/components/creator/studio/profile-section-ui';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const PROFILE_BLOCK_MEDIA_ACCEPT =
   'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov';
 
 const EMPLOYMENT_OPTIONS: { value: NonNullable<ProfileFormValues['experienceBlocks'][number]['employmentType']>; label: string }[] = [
-  { value: 'FREELANCE', label: 'Freelance' },
-  { value: 'CONTRACT', label: 'Contract' },
-  { value: 'FULL_TIME', label: 'Full-time' },
-  { value: 'PART_TIME', label: 'Part-time' },
-  { value: 'INTERNSHIP', label: 'Internship' },
+  { value: 'FREELANCE', label: msg('Freelance') },
+  { value: 'CONTRACT', label: msg('Contract') },
+  { value: 'FULL_TIME', label: msg('Full-time') },
+  { value: 'PART_TIME', label: msg('Part-time') },
+  { value: 'INTERNSHIP', label: msg('Internship') },
 ];
 
 type ProfileMediaBlocksFieldProps = {
@@ -84,6 +86,7 @@ function ProfileMediaBlockRow({
   canMoveUp: boolean;
   canMoveDown: boolean;
 }) {
+  const t = useT();
   const mediaUrl = allowMedia ? watch(`${name}.${index}.mediaUrl`) ?? '' : '';
   const mediaType = allowMedia ? watch(`${name}.${index}.mediaType`) : null;
   const status = watch(`${name}.${index}.status`);
@@ -118,7 +121,7 @@ function ProfileMediaBlockRow({
   return (
     <div className={profileSectionFieldClass}>
       <div className="mb-3 flex items-center justify-between gap-2">
-        <p className={profileSectionSubheadingClass}>Block {index + 1}</p>
+        <p className={profileSectionSubheadingClass}>{t('Block')} {index + 1}</p>
         {!readOnly && (
           <div className="flex items-center gap-2">
             <button
@@ -127,7 +130,7 @@ function ProfileMediaBlockRow({
               disabled={!canMoveUp}
               className="text-sm font-medium text-neutral-700 hover:text-neutral-950 disabled:opacity-30 dark:text-neutral-300 dark:hover:text-white"
             >
-              Up
+              {t('Up')}
             </button>
             <button
               type="button"
@@ -135,14 +138,14 @@ function ProfileMediaBlockRow({
               disabled={!canMoveDown}
               className="text-sm font-medium text-neutral-700 hover:text-neutral-950 disabled:opacity-30 dark:text-neutral-300 dark:hover:text-white"
             >
-              Down
+              {t('Down')}
             </button>
             <button
               type="button"
               onClick={onRemove}
               className="text-sm font-medium text-red-600 hover:text-red-700 dark:text-red-400"
             >
-              Remove
+              {t('Remove')}
             </button>
           </div>
         )}
@@ -150,13 +153,13 @@ function ProfileMediaBlockRow({
 
       <div className="space-y-3">
           <div>
-            <BlockFieldLabel>Status</BlockFieldLabel>
+            <BlockFieldLabel>{t('Status')}</BlockFieldLabel>
             <div className="flex flex-wrap gap-2">
               {(
                 [
-                  { value: null, label: 'Not set' },
-                  { value: 'ONGOING' as const, label: 'Ongoing' },
-                  { value: 'FINISHED' as const, label: 'Finished' },
+                  { value: null, label: t('Not set') },
+                  { value: 'ONGOING' as const, label: t('Ongoing') },
+                  { value: 'FINISHED' as const, label: t('Finished') },
                 ] as const
               ).map((option) => {
                 const active = (status ?? null) === option.value;
@@ -174,7 +177,7 @@ function ProfileMediaBlockRow({
                         : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300 dark:border-neutral-700 dark:bg-neutral-950 dark:text-neutral-200'
                     } disabled:opacity-60`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -183,21 +186,21 @@ function ProfileMediaBlockRow({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <BlockFieldLabel>Period</BlockFieldLabel>
+              <BlockFieldLabel>{t('Period')}</BlockFieldLabel>
               <input
                 type="text"
                 readOnly={readOnly}
-                placeholder="2021 — present"
+                placeholder={t('2021 — present')}
                 className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
                 {...register(`${name}.${index}.period`)}
               />
             </div>
             <div>
-              <BlockFieldLabel>Organization</BlockFieldLabel>
+              <BlockFieldLabel>{t('Organization')}</BlockFieldLabel>
               <input
                 type="text"
                 readOnly={readOnly}
-                placeholder="Freelance, Studio, Agency…"
+                placeholder={t('Freelance, Studio, Agency…')}
                 className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
                 {...register(`${name}.${index}.organization`)}
               />
@@ -206,7 +209,7 @@ function ProfileMediaBlockRow({
 
           <div className="grid gap-3 sm:grid-cols-2">
             <div>
-              <BlockFieldLabel>Employment type</BlockFieldLabel>
+              <BlockFieldLabel>{t('Employment type')}</BlockFieldLabel>
               <Controller
                 control={control}
                 name={`${name}.${index}.employmentType`}
@@ -219,10 +222,10 @@ function ProfileMediaBlockRow({
                     }
                     className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
                   >
-                    <option value="">Not set</option>
+                    <option value="">{t('Not set')}</option>
                     {EMPLOYMENT_OPTIONS.map((option) => (
                       <option key={option.value} value={option.value}>
-                        {option.label}
+                        {t(option.label)}
                       </option>
                     ))}
                   </select>
@@ -230,11 +233,11 @@ function ProfileMediaBlockRow({
               />
             </div>
             <div>
-              <BlockFieldLabel>Location</BlockFieldLabel>
+              <BlockFieldLabel>{t('Location')}</BlockFieldLabel>
               <input
                 type="text"
                 readOnly={readOnly}
-                placeholder="Paris, Remote…"
+                placeholder={t('Paris, Remote…')}
                 className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
                 {...register(`${name}.${index}.location`)}
               />
@@ -242,21 +245,21 @@ function ProfileMediaBlockRow({
           </div>
 
           <div>
-            <BlockFieldLabel>Job title</BlockFieldLabel>
+            <BlockFieldLabel>{t('Job title')}</BlockFieldLabel>
             <input
               type="text"
               readOnly={readOnly}
-              placeholder="Video director & editor"
+              placeholder={t('Video director & editor')}
               className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
               {...register(`${name}.${index}.title`)}
             />
           </div>
           <div>
-            <BlockFieldLabel>Description</BlockFieldLabel>
+            <BlockFieldLabel>{t('Description')}</BlockFieldLabel>
             <textarea
               rows={3}
               readOnly={readOnly}
-              placeholder="What you did, outcomes, scope of work…"
+              placeholder={t('What you did, outcomes, scope of work…')}
               className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
               {...register(`${name}.${index}.text`)}
             />
@@ -264,7 +267,7 @@ function ProfileMediaBlockRow({
 
           <div>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <BlockFieldLabel>Tasks</BlockFieldLabel>
+              <BlockFieldLabel>{t('Tasks')}</BlockFieldLabel>
               {!readOnly && (
                 <button
                   type="button"
@@ -272,13 +275,13 @@ function ProfileMediaBlockRow({
                   onClick={() => appendTask({ value: '' })}
                   className="text-[15px] font-semibold text-[#111111] underline-offset-4 hover:underline disabled:opacity-40 dark:text-white"
                 >
-                  + Add task
+                  {t('+ Add task')}
                 </button>
               )}
             </div>
             {taskFields.length === 0 ? (
               <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                No tasks yet — e.g. Directed shoots, Edited trailers, Color graded finals
+                {t('No tasks yet — e.g. Directed shoots, Edited trailers, Color graded finals')}
               </p>
             ) : (
               <div className="space-y-2">
@@ -296,7 +299,7 @@ function ProfileMediaBlockRow({
                         onClick={() => removeTask(taskIndex)}
                         className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
                       >
-                        Remove
+                        {t('Remove')}
                       </button>
                     )}
                   </div>
@@ -306,12 +309,12 @@ function ProfileMediaBlockRow({
           </div>
 
           <div>
-            <BlockFieldLabel>Tools</BlockFieldLabel>
+            <BlockFieldLabel>{t('Tools')}</BlockFieldLabel>
             <CreatorToolsPicker
               value={selectedTools}
               readOnly={readOnly}
               max={20}
-              emptyLabel="No tools yet."
+              emptyLabel={t('No tools yet.')}
               onChange={(next) =>
                 setValue(
                   `${name}.${index}.tools`,
@@ -328,7 +331,7 @@ function ProfileMediaBlockRow({
 
           <div>
             <div className="mb-2 flex items-center justify-between gap-2">
-              <BlockFieldLabel>Proof links</BlockFieldLabel>
+              <BlockFieldLabel>{t('Proof links')}</BlockFieldLabel>
               {!readOnly && (
                 <button
                   type="button"
@@ -336,13 +339,13 @@ function ProfileMediaBlockRow({
                   onClick={() => appendLink(createEmptyExperienceProofLink(linkFields.length))}
                   className="text-[15px] font-semibold text-[#111111] underline-offset-4 hover:underline disabled:opacity-40 dark:text-white"
                 >
-                  + Add link
+                  {t('+ Add link')}
                 </button>
               )}
             </div>
             {linkFields.length === 0 ? (
               <p className="rounded-lg border border-dashed border-neutral-200 px-4 py-4 text-[15px] text-neutral-500 dark:border-neutral-700 dark:text-neutral-400">
-                No proof links — GitHub repo, Facebook page, case study, reel…
+                {t('No proof links — GitHub repo, Facebook page, case study, reel…')}
               </p>
             ) : (
               <div className="space-y-3">
@@ -353,7 +356,7 @@ function ProfileMediaBlockRow({
                   >
                     <input
                       readOnly={readOnly}
-                      placeholder="Label (e.g. GitHub repo)"
+                      placeholder={t('Label (e.g. GitHub repo)')}
                       className={`${profileFormInputClass} mt-0 ${readOnlyClass}`}
                       {...register(`${name}.${index}.links.${linkIndex}.label`)}
                     />
@@ -375,7 +378,7 @@ function ProfileMediaBlockRow({
                             onClick={() => removeLink(linkIndex)}
                             className="shrink-0 text-sm font-medium text-red-600 dark:text-red-400"
                           >
-                            Remove
+                            {t('Remove')}
                           </button>
                         )}
                       </div>
@@ -410,7 +413,7 @@ function ProfileMediaBlockRow({
               }}
               className="text-sm font-medium text-neutral-700 hover:text-neutral-950 dark:text-neutral-300 dark:hover:text-white"
             >
-              Remove media
+              {t('Remove media')}
             </button>
           )}
         </div>
@@ -432,7 +435,7 @@ function ProfileMediaBlockRow({
             className="inline-flex items-center gap-2 rounded-full border border-neutral-300 px-4 py-2 text-sm font-semibold text-neutral-800 hover:bg-white dark:border-neutral-600 dark:text-neutral-100 dark:hover:bg-neutral-900"
           >
             {uploading && <LoadingSpinner size="sm" />}
-            {mediaUrl ? 'Replace image/video' : 'Add image or video'}
+            {mediaUrl ? t('Replace image/video') : t('Add image or video')}
           </button>
           {uploadError ? <p className="mt-2 text-sm text-red-600 dark:text-red-400">{uploadError}</p> : null}
         </div>
@@ -454,9 +457,10 @@ export function ProfileMediaBlocksField({
   readOnly = false,
   allowMedia = true,
 }: ProfileMediaBlocksFieldProps) {
+  const t = useT();
   if (readOnly) {
     if (fields.length === 0) {
-      return <p className={profileSectionEmptyClass}>No blocks added yet.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No blocks added yet.')}</p>;
     }
     return (
       <div className="space-y-3">
@@ -506,7 +510,7 @@ export function ProfileMediaBlocksField({
         onClick={() => append(createEmptyProfileBlock(fields.length))}
         className="inline-flex rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
       >
-        Add block
+        {t('Add block')}
       </button>
     </div>
   );

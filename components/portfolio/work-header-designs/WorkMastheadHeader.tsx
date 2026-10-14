@@ -9,7 +9,7 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 // Three short, punchy default lines — that's what makes the mast stack
 // dramatically. Each line is its own field now (not one string split on
@@ -54,7 +54,7 @@ export function WorkMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const centered = presentation.headerAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = workPaletteTokenColor(presentation.mastheadHeadlineColor ?? 'principal');
   const headlineWeight = HEADLINE_WEIGHT[presentation.mastheadHeadlineWeight ?? 'regular'];
@@ -62,15 +62,22 @@ export function WorkMastheadHeader({
   const sectionRef = useRef<HTMLElement>(null);
 
   const lines = useMemo(
-    () =>
-      [
-        presentation.mastheadLine1Text || DEFAULT_LINE_1,
-        presentation.mastheadLine2Text || DEFAULT_LINE_2,
-        presentation.mastheadLine3Text || DEFAULT_LINE_3,
+    () => {
+      const hidden = new Set(presentation.headerHiddenElements);
+      return [
+        hidden.has('masthead.line1') ? '' : presentation.mastheadLine1Text || DEFAULT_LINE_1,
+        hidden.has('masthead.line2') ? '' : presentation.mastheadLine2Text || DEFAULT_LINE_2,
+        hidden.has('masthead.line3') ? '' : presentation.mastheadLine3Text || DEFAULT_LINE_3,
       ]
         .map((line) => line.trim())
-        .filter(Boolean),
-    [presentation.mastheadLine1Text, presentation.mastheadLine2Text, presentation.mastheadLine3Text]
+        .filter(Boolean);
+    },
+    [
+      presentation.mastheadLine1Text,
+      presentation.mastheadLine2Text,
+      presentation.mastheadLine3Text,
+      presentation.headerHiddenElements,
+    ]
   );
 
   const styledLines = useMemo(

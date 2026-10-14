@@ -23,7 +23,6 @@ export interface CreatorContentCreateBody {
   moodEmoji?: string | null;
   taggedUserIds?: string[];
   priceInfo?: string | null;
-  toolsUsed?: string[];
   tags?: string[];
   isPublic: boolean;
   commentsEnabled?: boolean;
@@ -42,7 +41,6 @@ export interface CreatorContentItemDto {
   moodEmoji?: string | null;
   taggedUsers?: TaggedUserRef[];
   priceInfo: string | null;
-  toolsUsed: string[];
   tags?: string[];
   isPublic: boolean;
   commentsEnabled?: boolean;

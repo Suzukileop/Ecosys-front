@@ -17,6 +17,7 @@ import {
   profileSectionEmptyClass,
   profileSectionMutedTextClass,
 } from '@/components/creator/studio/profile-section-ui';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const MAX_LINKS = 10;
 
@@ -42,10 +43,11 @@ export function ProfileLinksField({
   readOnly = false,
   values = [],
 }: ProfileLinksFieldProps) {
+  const t = useT();
   if (readOnly) {
     const filled = values.filter((link) => link.url.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>No links added.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No links added.')}</p>;
     }
     return (
       <div className="space-y-2.5">
@@ -77,12 +79,11 @@ export function ProfileLinksField({
   return (
     <div className="space-y-4">
       <p className={profileSectionMutedTextClass}>
-        Add up to {MAX_LINKS} links. The first link becomes the main button on your public
-        profile.
+        {t('Add up to {MAXLINKS} links. The first link becomes the main button on your public profile.', { MAXLINKS: MAX_LINKS })}
       </p>
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No links added.</p>
+        <p className={profileSectionEmptyClass}>{t('No links added.')}</p>
       ) : (
         fields.map((field, index) => (
           <div
@@ -91,7 +92,7 @@ export function ProfileLinksField({
           >
             <div className="flex items-center justify-between gap-2">
               <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-                Link {index + 1}
+                {t('Link')} {index + 1}
               </p>
               <div className="flex items-center gap-1">
                 <button
@@ -99,7 +100,7 @@ export function ProfileLinksField({
                   disabled={index === 0}
                   onClick={() => move(index, index - 1)}
                   className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                  aria-label="Move up"
+                  aria-label={t('Move up')}
                 >
                   ↑
                 </button>
@@ -108,7 +109,7 @@ export function ProfileLinksField({
                   disabled={index === fields.length - 1}
                   onClick={() => move(index, index + 1)}
                   className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                  aria-label="Move down"
+                  aria-label={t('Move down')}
                 >
                   ↓
                 </button>
@@ -117,7 +118,7 @@ export function ProfileLinksField({
                   onClick={() => remove(index)}
                   className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                 >
-                  Remove
+                  {t('Remove')}
                 </button>
               </div>
             </div>
@@ -152,7 +153,7 @@ export function ProfileLinksField({
           onClick={() => append(createEmptyProfileLink(fields.length))}
           className="rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
-          Add link
+          {t('Add link')}
         </button>
       ) : null}
     </div>

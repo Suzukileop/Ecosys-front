@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import type { MarketplaceProductGroup, MarketplaceProductSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorProductGroupsExplorePanelProps = {
   groups: MarketplaceProductGroup[];
@@ -37,6 +38,7 @@ export function CreatorProductGroupsExplorePanel({
   onEditGroup,
   onCreateCatalogue,
 }: CreatorProductGroupsExplorePanelProps) {
+  const t = useT();
   const productsById = useMemo(
     () => new Map(products.map((product) => [product.id, product])),
     [products]
@@ -45,9 +47,9 @@ export function CreatorProductGroupsExplorePanel({
   return (
     <div className="space-y-6">
       <div>
-        <h2 className="text-lg font-bold text-[#111111] dark:text-white">Explore catalogues</h2>
+        <h2 className="text-lg font-bold text-[#111111] dark:text-white">{t('Explore catalogues')}</h2>
         <p className="mt-1 text-[15px] text-neutral-500 dark:text-neutral-400">
-          {groups.length} catalogue{groups.length !== 1 ? 's' : ''} — open one to view its products.
+          {groups.length} {t('catalogue')}{groups.length !== 1 ? 's' : ''} {t('— open one to view its products.')}
         </p>
       </div>
 
@@ -97,13 +99,13 @@ export function CreatorProductGroupsExplorePanel({
                         <svg className="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
                           <path strokeLinecap="round" strokeLinejoin="round" d="M20.25 7.5l-.625 10.632a2.25 2.25 0 01-2.247 2.118H6.622a2.25 2.25 0 01-2.247-2.118L3.75 7.5m16.5 0H3.75m16.5 0l-1.5-3h-13.5l-1.5 3" />
                         </svg>
-                        <span className="text-[14px]">{count === 0 ? 'Empty catalogue' : 'No preview'}</span>
+                        <span className="text-[14px]">{count === 0 ? t('Empty catalogue') : t('No preview')}</span>
                       </div>
                     )}
                     {count > 0 ? (
                       <div className="pointer-events-none absolute bottom-3 right-3">
                         <span className="rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium tabular-nums text-white backdrop-blur-sm">
-                          {count} item{count !== 1 ? 's' : ''}
+                          {count} {t('item')}{count !== 1 ? 's' : ''}
                         </span>
                       </div>
                     ) : null}
@@ -136,7 +138,7 @@ export function CreatorProductGroupsExplorePanel({
                       <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M15.232 5.232l3.536 3.536M4 20h4.586a1 1 0 00.707-.293l9.646-9.646a1.5 1.5 0 000-2.121l-2.879-2.879a1.5 1.5 0 00-2.121 0L4.293 14.707A1 1 0 004 15.414V20z" />
                       </svg>
-                      Edit catalogue
+                      {t('Edit catalogue')}
                     </button>
                   </div>
                 ) : null}
@@ -156,7 +158,7 @@ export function CreatorProductGroupsExplorePanel({
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 4.5v15m7.5-7.5h-15" />
               </svg>
             </span>
-            <span className="text-[15px] font-semibold text-[#111111] dark:text-white">New catalogue</span>
+            <span className="text-[15px] font-semibold text-[#111111] dark:text-white">{t('New catalogue')}</span>
           </button>
         ) : null}
       </div>

@@ -26,6 +26,8 @@ const DEMO_TYPES = ['NONE', 'IMAGE', 'VIDEO', 'FILE_EXTRACT'] as const satisfies
 export const productEditorSchema = z.object({
   productFormat: z.enum(['virtual', 'physical']),
   type: z.enum(ALL_PRODUCT_TYPES),
+  /** The creator's own name when the type is "Other". */
+  typeLabel: z.string().max(60, 'Keep the type under 60 characters.').optional(),
   title: z.string().min(1, 'Title is required.').max(200),
   description: z.string().max(5000, 'Keep the description under 5,000 characters.'),
   priceAmount: z
@@ -54,6 +56,7 @@ export const productEditorSchema = z.object({
   language: z.string().optional(),
   version: z.string().optional(),
   tags: z.array(z.object({ value: z.string().min(1) })).max(15),
+  statusLabels: z.array(z.string()).max(3, 'Pick up to 3 statuses.'),
   videoDuration: z.string().optional(),
   videoResolution: z.string().optional(),
 });

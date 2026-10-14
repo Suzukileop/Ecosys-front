@@ -30,7 +30,8 @@ import {
   creatorCanAccessServiceProviderMenu,
 } from '@/lib/creator-app-role';
 import { isMyServiceNavPath } from '@/components/layout/dashboard/navConfig';
-import { ROUTES, SIGNED_IN_HOME, isPathWithin, isProtectedPath } from '@/lib/routes';
+import { ROUTES, SIGNED_IN_HOME, isNewsGroundPath, isPathWithin, isProtectedPath } from '@/lib/routes';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Product consult page (`/my-products/[id]`) — plain surface, same as the My Products list. */
 function isMyProductConsultPath(pathname: string): boolean {
@@ -63,6 +64,7 @@ function SessionErrorScreen({
   title = 'Lost connection to the server',
   description = 'We couldn’t verify your session. The server may be restarting — your work is safe and we’ll reconnect you automatically.',
 }: SessionErrorScreenProps) {
+  const t = useT();
   const [retrying, setRetrying] = useState(false);
   const [countdown, setCountdown] = useState(SESSION_AUTO_RETRY_SECONDS);
 
@@ -159,21 +161,21 @@ function SessionErrorScreen({
                     <path d="M20 11a8 8 0 1 0-2.34 5.66" />
                     <path d="M20 4v7h-7" />
                   </svg>
-                  {retrying ? 'Reconnecting…' : 'Try again'}
+                  {retrying ? t('Reconnecting…') : t('Try again')}
                 </button>
                 <button
                   type="button"
                   onClick={() => window.location.reload()}
                   className="inline-flex h-11 flex-1 items-center justify-center rounded-lg border border-black/[0.1] px-5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/20 hover:bg-black/[0.02] dark:border-white/[0.14] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
                 >
-                  Reload page
+                  {t('Reload page')}
                 </button>
               </div>
             </div>
 
             <div className="border-t border-black/[0.05] px-8 py-4 dark:border-white/[0.06] sm:px-10">
               <div className="flex items-center justify-between text-[13px] text-neutral-400 dark:text-neutral-500" aria-live="polite">
-                <span>{retrying ? 'Checking the connection…' : 'Auto-retry'}</span>
+                <span>{retrying ? t('Checking the connection…') : 'Auto-retry'}</span>
                 <span className="tabular-nums">{retrying ? '' : `${countdown}s`}</span>
               </div>
               <div className="mt-2 h-[3px] overflow-hidden rounded-full bg-black/[0.05] dark:bg-white/[0.06]">
@@ -198,6 +200,7 @@ export function DashboardShell({
   transparentContent?: boolean;
   transparentHeader?: boolean;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const router = useRouter();
   const { isLoading, user, sessionStatus, restoreSession } = useAuth();
@@ -219,13 +222,18 @@ export function DashboardShell({
   }, []);
 
   const creatorStudioPattern = isPathWithin(pathname, ROUTES.profile);
-  const creatorProductsPattern = isMyProductWorkspacePath(pathname);
+  /* Pages on the News ground draw plain surfaces: no decorative motif behind them. */
+  const onNewsGround = isNewsGroundPath(pathname);
+  const creatorProductsPattern = isMyProductWorkspacePath(pathname) && !onNewsGround;
   const newsFeedPattern = isPathWithin(pathname, ROUTES.feed);
+  /* Notifications lays out its own News frame (gutters, rail) like the feed: no shell padding. */
+  const notificationsPage = isPathWithin(pathname, ROUTES.notifications);
   const settingsPage = isPathWithin(pathname, ROUTES.settings);
   const myProductPattern = pathname === ROUTES.myProducts;
   const myServicePattern = isPathWithin(pathname, ROUTES.myServices);
   const publicCreatorProfile = isMarketplaceCreatorProfilePath(pathname);
   const contentCreatorsPattern =
+    !onNewsGround &&
     isContentCreatorsPath(pathname) &&
     !isServiceProvidersCatalogPath(pathname) &&
     !publicCreatorProfile &&
@@ -265,7 +273,6 @@ export function DashboardShell({
 
     const onProductsExplore =
       pathname === ROUTES.marketplace ||
-      isPathWithin(pathname, ROUTES.purchases) ||
       isPathWithin(pathname, '/marketplace/products');
     if (onProductsExplore && !creatorCanAccessProductsMenu(appRole)) {
       router.replace(SIGNED_IN_HOME);
@@ -301,14 +308,14 @@ export function DashboardShell({
         onRetry={recheckServer}
         code="OFFLINE"
         status="No internet connection"
-        title="You’re offline"
-        description="Check your Wi‑Fi or mobile data. We’ll pick up right where you left off as soon as you’re back online."
+        title={t('You’re offline')}
+        description={t('Check your Wi‑Fi or mobile data. We’ll pick up right where you left off as soon as you’re back online.')}
       />
     ) : (
       <SessionErrorScreen
         onRetry={recheckServer}
-        title="We can’t reach the server"
-        description="Skraft is temporarily unavailable, possibly restarting. Nothing is lost — this page will come back on its own as soon as the server responds."
+        title={t('We can’t reach the server')}
+        description={t('Skraft is temporarily unavailable, possibly restarting. Nothing is lost — this page will come back on its own as soon as the server responds.')}
       />
     );
   }
@@ -323,7 +330,14 @@ export function DashboardShell({
    * white on it; the header bar follows the ground so chrome and page read as one sheet.
    */
   const appSurfaces = !discussionsLayout && !settingsPage;
-  const shellBg = usePatternBackground ? 'bg-transparent' : `${APP_GROUND} dark:bg-black`;
+  /* News sits one step under its cards: neutral-100 under white cards in light, zinc-950 under
+     zinc-900 cards in dark (the feed's elevation scale). */
+  const newsGround = isNewsGroundPath(pathname);
+  const shellBg = usePatternBackground
+    ? 'bg-transparent'
+    : newsGround
+      ? 'bg-[#FFFFFF] dark:bg-[#000000]'
+      : `${APP_GROUND} dark:bg-black`;
 
   return (
     <>
@@ -355,8 +369,8 @@ export function DashboardShell({
               ? 'max-w-full min-w-0 px-0 pb-0 pt-0'
               : fillMainLayout
               ? 'flex min-h-0 flex-col overflow-hidden px-0 pb-4 pt-4'
-              : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : creatorStudioPattern ? 'pt-0 sm:pt-6' : newsFeedPattern || serviceProvidersCatalog ? 'pt-2 lg:pt-6' : 'pt-6'} ${
-                  marketplaceDirectory || creatorStudioPattern || newsFeedPattern || settingsPage
+              : `overflow-x-clip pb-6 ${compactContentTop ? 'pt-2' : creatorStudioPattern ? 'pt-0 sm:pt-2' : newsFeedPattern ? 'pt-2 lg:pt-6' : notificationsPage ? 'pt-0' : serviceProvidersCatalog ? 'pt-2 lg:pt-0' : 'pt-6'} ${
+                  marketplaceDirectory || creatorStudioPattern || newsFeedPattern || notificationsPage || settingsPage
                     ? 'px-0'
                     : publicCreatorProfile
                       ? 'px-0 sm:px-6'

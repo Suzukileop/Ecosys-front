@@ -3,6 +3,7 @@
 import { useEffect, useRef } from 'react';
 import { CREATOR_CONTENT_TITLE_MAX } from '@/components/creator/creator-content-form';
 import type { ContentPostBucket, CreatorContentItemDto } from '@/types/creator-content';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentPostDetailsBlockProps = {
   post: ContentPostDetailsPost;
@@ -18,7 +19,7 @@ type ContentPostDetailsBlockProps = {
 
 export type ContentPostDetailsPost = Pick<
   CreatorContentItemDto,
-  'title' | 'description' | 'tags' | 'toolsUsed' | 'textColor' | 'genre' | 'priceInfo'
+  'title' | 'description' | 'tags' | 'textColor' | 'genre' | 'priceInfo'
 >;
 
 export type ContentDetailsDraft = {
@@ -27,7 +28,6 @@ export type ContentDetailsDraft = {
   description: string;
   priceInfo: string;
   tags: string[];
-  toolsUsed: string[];
 };
 
 export function toContentDetailsDraft(post: ContentPostDetailsPost): ContentDetailsDraft {
@@ -37,7 +37,6 @@ export function toContentDetailsDraft(post: ContentPostDetailsPost): ContentDeta
     description: post.description ?? '',
     priceInfo: post.priceInfo ?? '',
     tags: [...(post.tags ?? [])],
-    toolsUsed: [...(post.toolsUsed ?? [])],
   };
 }
 
@@ -101,6 +100,7 @@ const editInputClass =
   'w-full rounded-none border-0 border-b border-black/[0.08] bg-transparent px-0 py-1.5 caret-[#FF5722] outline-none transition placeholder:text-neutral-400 focus:border-[#FF5722] dark:border-white/[0.1] dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]';
 
 function ContentPostPriceEstimate({ priceInfo }: { priceInfo?: string | null }) {
+  const t = useT();
   const priceLabel = priceInfo?.trim() ? priceInfo.trim() : null;
   if (!priceLabel) return null;
 
@@ -110,7 +110,7 @@ function ContentPostPriceEstimate({ priceInfo }: { priceInfo?: string | null }) 
   return (
     <div className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-100 px-4 py-3.5 dark:bg-neutral-800">
       <p className="min-w-0 text-[11px] font-semibold uppercase leading-snug tracking-[0.12em] text-neutral-500 dark:text-neutral-400">
-        Estimated amount to recreate this piece
+        {t('Estimated amount to recreate this piece')}
       </p>
       <p className="flex shrink-0 items-baseline gap-2 text-neutral-950 dark:text-white">
         {glyph ? (
@@ -141,6 +141,7 @@ function EditableStringList({
   itemClassName: string;
   disabled?: boolean;
 }) {
+  const t = useT();
   const rows = values.length > 0 ? values : [''];
 
   const updateAt = (index: number, value: string) => {
@@ -179,9 +180,9 @@ function EditableStringList({
             disabled={disabled}
             onClick={() => removeAt(index)}
             className="shrink-0 px-1 text-xs text-neutral-400 hover:text-neutral-700 disabled:opacity-40 dark:hover:text-neutral-200"
-            aria-label="Remove"
+            aria-label={t('Remove')}
           >
-            ×
+            {t('×')}
           </button>
         </div>
       ))}
@@ -192,7 +193,7 @@ function EditableStringList({
           onClick={() => onChange([...rows, ''])}
           className="text-xs font-semibold text-orange-600 hover:text-orange-700 disabled:opacity-40 dark:text-orange-400"
         >
-          + Add
+          {t('+ Add')}
         </button>
       )}
     </div>
@@ -209,6 +210,7 @@ export function ContentPostDetailsBlock({
   onDraftChange,
   disabled = false,
 }: ContentPostDetailsBlockProps) {
+  const t = useT();
   const isSidebar = variant === 'sidebar';
   const titleInputRef = useRef<HTMLTextAreaElement>(null);
 
@@ -231,7 +233,7 @@ export function ContentPostDetailsBlock({
               disabled={disabled}
               maxLength={CREATOR_CONTENT_TITLE_MAX}
               onChange={(e) => onDraftChange({ ...draft, title: e.target.value })}
-              placeholder="Post headline"
+              placeholder={t('Post headline')}
               className={`${editInputClass} resize-none whitespace-pre-wrap font-bold leading-tight text-neutral-900 [field-sizing:content] dark:text-white ${
                 isSidebar ? 'text-xl' : 'text-lg'
               }`}
@@ -244,7 +246,7 @@ export function ContentPostDetailsBlock({
         {isSidebar && (
           <div>
             <p className="text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
-              Estimated amount to recreate this piece
+              {t('Estimated amount to recreate this piece')}
             </p>
             <input
               type="text"
@@ -252,7 +254,7 @@ export function ContentPostDetailsBlock({
               disabled={disabled}
               maxLength={200}
               onChange={(e) => onDraftChange({ ...draft, priceInfo: e.target.value })}
-              placeholder="e.g. 500 Ar"
+              placeholder={t('e.g. 500 Ar')}
               className={`${editInputClass} mt-3 text-2xl font-bold tracking-tight text-neutral-950 tabular-nums dark:text-white`}
             />
           </div>
@@ -261,14 +263,14 @@ export function ContentPostDetailsBlock({
         <div
           className={
             isSidebar
-              ? 'mt-6 grid grid-cols-2 gap-x-8 gap-y-6'
-              : 'mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'
+              ? 'mt-6 grid grid-cols-1 gap-y-6'
+              : 'mt-4 grid grid-cols-1 gap-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'
           }
         >
           <div className="min-w-0">
             {isSidebar ? (
               <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
-                Tags
+                {t('Tags')}
               </p>
             ) : null}
             <EditableStringList
@@ -280,30 +282,15 @@ export function ContentPostDetailsBlock({
               itemClassName={`font-medium text-orange-500 dark:text-orange-400 ${isSidebar ? 'text-sm' : 'text-xs'}`}
             />
           </div>
-          <div className="min-w-0">
-            {isSidebar ? (
-              <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
-                Deliverables
-              </p>
-            ) : null}
-            <EditableStringList
-              values={draft.toolsUsed}
-              onChange={(toolsUsed) => onDraftChange({ ...draft, toolsUsed })}
-              placeholder="Tool"
-              disabled={disabled}
-              itemClassName={`font-medium text-neutral-700 dark:text-neutral-200 ${isSidebar ? 'text-sm' : 'text-xs'}`}
-            />
-          </div>
         </div>
       </div>
     );
   }
 
-  const title = post.title?.trim() || 'Untitled';
+  const title = post.title?.trim() || t('Untitled');
   const tags = (post.tags ?? []).filter(Boolean);
-  const tools = (post.toolsUsed ?? []).filter(Boolean);
   const hasPrice = Boolean(post.priceInfo?.trim());
-  const hasMetaGrid = tags.length > 0 || tools.length > 0;
+  const hasMetaGrid = tags.length > 0;
 
   return (
     <div>
@@ -343,15 +330,15 @@ export function ContentPostDetailsBlock({
         <div
           className={
             isSidebar
-              ? 'mt-8 grid grid-cols-2 gap-x-8 gap-y-6'
-              : 'mt-4 grid grid-cols-2 gap-x-6 gap-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'
+              ? 'mt-8 grid grid-cols-1 gap-y-6'
+              : 'mt-4 grid grid-cols-1 gap-y-3 border-t border-neutral-200 pt-4 dark:border-neutral-800'
           }
         >
           {tags.length > 0 && (
             <div className="min-w-0">
               {isSidebar ? (
                 <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
-                  Tags
+                  {t('Tags')}
                 </p>
               ) : null}
               <div className="space-y-2">
@@ -363,27 +350,6 @@ export function ContentPostDetailsBlock({
                     }`}
                   >
                     #{tag}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-          {tools.length > 0 && (
-            <div className={`min-w-0 ${tags.length === 0 ? 'col-span-2' : ''}`}>
-              {isSidebar ? (
-                <p className="mb-3 text-[14px] font-semibold text-neutral-500 dark:text-neutral-400">
-                  Deliverables
-                </p>
-              ) : null}
-              <div className="space-y-2">
-                {tools.map((tool) => (
-                  <span
-                    key={tool}
-                    className={`block font-medium text-neutral-800 dark:text-neutral-200 ${
-                      isSidebar ? 'text-sm' : 'truncate text-xs'
-                    }`}
-                  >
-                    {tool}
                   </span>
                 ))}
               </div>

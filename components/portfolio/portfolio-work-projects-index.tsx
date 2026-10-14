@@ -23,6 +23,7 @@ import {
   mergeProjectsIndexSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 import { aboutBannerScrollParent } from '@/components/portfolio/portfolio-about-scroll-utils';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -123,11 +124,12 @@ function IndexTitleAnchor({
 }
 
 function IndexStack({ tools, ink }: { tools: string[]; ink: string }) {
+  const t = useT();
   if (tools.length === 0) return null;
   return (
     <ul
       className="pf-work-index-reveal flex flex-wrap items-center gap-x-0 gap-y-1.5"
-      aria-label="Stack"
+      aria-label={t('Stack')}
       style={{ transitionDelay: '0.18s' }}
     >
       {tools.map((tool, index) => (
@@ -197,6 +199,7 @@ function IndexScene({
   board: PortfolioWorkProjectsIndexSettings;
   isFirst: boolean;
 }) {
+  const t = useT();
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const subtitleColor = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const accent = presentation.ctaColor || presentation.categoryActiveColor || titleColor;
@@ -210,7 +213,7 @@ function IndexScene({
   const showStack = board.showStack && tools.length > 0;
   const showDescription = board.showDescription && Boolean(description);
   const href = item.linkUrl?.trim() || null;
-  const title = item.title?.trim() || 'Untitled';
+  const title = item.title?.trim() || t('Untitled');
 
   return (
     <article
@@ -443,6 +446,7 @@ function MagneticCursor({
   stageRef: RefObject<HTMLDivElement | null>;
   accent: string;
 }) {
+  const t = useT();
   const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -489,7 +493,7 @@ function MagneticCursor({
       aria-hidden
       style={{ ['--pf-cursor-accent' as string]: accent }}
     >
-      <span className="pf-work-index-cursor-label">View project</span>
+      <span className="pf-work-index-cursor-label">{t('View project')}</span>
     </div>
   );
 }

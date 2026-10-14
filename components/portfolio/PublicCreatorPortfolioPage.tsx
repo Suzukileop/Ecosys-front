@@ -3,8 +3,9 @@
 import dynamic from 'next/dynamic';
 import {
   Fragment,
+  startTransition,
   useCallback,
-  useEffect,
+  useEffect, useLayoutEffect,
   useMemo,
   useRef,
   useState,
@@ -12,6 +13,7 @@ import {
   type ReactNode,
 } from 'react';
 import Link from 'next/link';
+import { usePortfolioStudioInspect } from '@/components/portfolio/usePortfolioStudioInspect';
 import { useAuth } from '@/context/AuthContext';
 import { CreatorProfileViewTracker } from '@/components/marketplace/CreatorProfileViewTracker';
 import { formatAvailabilityHours, formatAvailabilityHoursLines, parseAvailabilityHours } from '@/lib/availabilityHours';
@@ -25,7 +27,6 @@ import {
 } from '@/components/portfolio/portfolio-themes';
 import { SOCIAL_PLATFORMS } from '@/types/profile';
 import type { ProfileServiceItem } from '@/types/profile';
-import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
 import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/types/marketplace';
 import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import { PortfolioHeroSection } from '@/components/portfolio/PortfolioHeroSection';
@@ -47,6 +48,14 @@ import {
   isPortfolioStudioPreviewMessage,
   PORTFOLIO_STUDIO_PREVIEW_SOURCE,
 } from '@/lib/portfolio-studio-preview';
+import {
+  DESIGN_PREVIEW_LOCATION_LABEL,
+  DESIGN_PREVIEW_PORTFOLIO_POSTS,
+  designPreviewReadyMessage,
+  designPreviewSizeMessage,
+  withDesignPreviewProfile,
+  type DesignPreviewTarget,
+} from '@/lib/portfolio-design-preview';
 import { scrollToPortfolioSection } from '@/components/portfolio/portfolio-nav-top-clearance';
 import { writeHeroBannerDesignHint } from '@/components/portfolio/portfolio-hero-banner-hint';
 import {
@@ -71,7 +80,9 @@ import {
   PortfolioFloatingNav,
   SIDE_INFO_ICONS,
   ServicesOrderCtaHrefProvider,
+  useNavVisibility,
 } from '@/components/portfolio/portfolio-section-primitives';
+import { ServicesBackgroundFrame } from '@/components/portfolio/portfolio-services-card-elements';
 import {
   ExperienceCardsHeader,
   ExperienceDuotoneHeader,
@@ -169,7 +180,7 @@ import {
   resolveHeroStatementCtaTools,
   resolveHeroPortraitBalanceTools,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
-import { pickWorkPresentationSettings, resolveWorkSectionSubtitle, resolveWorkSectionTitle } from '@/components/portfolio/portfolio-work-settings';
+import { pickWorkPresentationSettings, resolveWorkSectionSubtitle, resolveWorkSectionTitle, workSectionDesignSettingsPatch } from '@/components/portfolio/portfolio-work-settings';
 import { aboutContentPairAlignClass, aboutSidePanelTwinAlignClass, filterAboutStats, isAboutSideInfoItemVisible, pickAboutPresentationSettings } from '@/components/portfolio/portfolio-about-settings';
 import {
   pickServicesPresentationSettings,
@@ -249,9 +260,13 @@ import {
   pickInfoPresentationSettings,
   resolveInfoSectionSubtitle,
   resolveInfoSectionTitle,
+  infoDesignSettingsPatch,
 } from '@/components/portfolio/portfolio-info-settings';
-import { pickToolsPresentationSettings, resolveToolsSectionSubtitle, resolveToolsSectionTitle } from '@/components/portfolio/portfolio-tools-settings';
+import { pickToolsPresentationSettings, resolveToolsSectionSubtitle, resolveToolsSectionTitle, toolsDesignSettingsPatch } from '@/components/portfolio/portfolio-tools-settings';
 import { pickStackPresentationSettings, resolveStackSectionSubtitle, resolveStackSectionTitle, stackSectionLayoutIsAside, type PortfolioStackPresentationSettings } from '@/components/portfolio/portfolio-stack-settings';
+import { stackDesignSettingsPatch } from '@/components/portfolio/portfolio-stack-design-patch';
+import { portfolioNavLayoutDesignPatch } from '@/components/portfolio/portfolio-nav-layout-design';
+import { heroBannerDesignSettingsPatch } from '@/components/portfolio/portfolio-hero-banner-settings';
 import { EditorialStackGallery } from '@/components/portfolio/portfolio-stack-section';
 import { EditorialToolsGallery } from '@/components/portfolio/portfolio-tools-section';
 import {
@@ -261,6 +276,7 @@ import {
   aboutUsSectionLayoutIsAside,
   aboutUsSubtitleColorStyle,
   aboutUsTitleColorStyle,
+  defaultsForAboutUsDesign,
   pickAboutUsPresentationSettings,
   resolveAboutUsSectionSubtitle,
   resolveAboutUsSectionTitle,
@@ -337,9 +353,18 @@ import {
 } from '@/components/portfolio/portfolio-nav-extras';
 import { DEFAULT_PORTFOLIO_NAV_LINK_ICON_SOURCES } from '@/components/portfolio/portfolio-settings-types';
 import { motionProfileEnablesHeroGeomFade } from '@/components/portfolio/portfolio-motion-settings';
-import { PortfolioMotionOffContext, setPortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import {
+  PortfolioHeaderMotionOffContext,
+  PortfolioMotionOffContext,
+  setPortfolioMotionOff,
+} from '@/components/portfolio/portfolio-motion-off';
 import { PortfolioMotionProvider } from '@/components/portfolio/PortfolioMotionItem';
 import { PortfolioTaskListMarkerProvider } from '@/components/portfolio/portfolio-task-list-marker-context';
+import { useT } from '@/lib/i18n/I18nProvider';
+
+/** Navigation design preview: links shown, and how much the bar is blown up to read at card size. */
+const NAV_PREVIEW_MAX_ITEMS = 3;
+const NAV_PREVIEW_ZOOM = 1.75;
 
 /**
  * About and Experience sections are optional and the page renders one Services and one FAQ
@@ -365,23 +390,26 @@ const EditorialAboutMeSection = dynamic(() =>
 const EditorialAboutUsSection = dynamic(() =>
   import('@/components/portfolio/EditorialAboutUsSection').then((m) => m.EditorialAboutUsSection)
 );
-const ServicesShowcaseHero = dynamic(() =>
-  import('@/components/portfolio/portfolio-services-design-showcase-hero').then((m) => m.ServicesShowcaseHero)
-);
-const ServicesPricingGridSection = dynamic(() =>
-  import('@/components/portfolio/portfolio-services-pricing-grid').then((m) => m.ServicesPricingGridSection)
-);
-const ServicesPricingBentoSection = dynamic(() =>
-  import('@/components/portfolio/portfolio-services-pricing-bento').then((m) => m.ServicesPricingBentoSection)
-);
-const ServicesPricingMonolithSection = dynamic(() =>
-  import('@/components/portfolio/portfolio-services-pricing-monolith').then((m) => m.ServicesPricingMonolithSection)
+const ServicesPricingCardsSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-pricing-cards').then((m) => m.ServicesPricingCardsSection)
 );
 const ServicesPricingAuroraSection = dynamic(() =>
   import('@/components/portfolio/portfolio-services-pricing-aurora').then((m) => m.ServicesPricingAuroraSection)
 );
 const ServicesMediaColumnsSection = dynamic(() =>
   import('@/components/portfolio/portfolio-services-design-media-columns').then((m) => m.ServicesMediaColumnsSection)
+);
+const ServicesIconCardsSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-icon-cards').then((m) => m.ServicesIconCardsSection)
+);
+const ServicesBandIndexSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-band-index').then((m) => m.ServicesBandIndexSection)
+);
+const ServicesCascadeSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-cascade').then((m) => m.ServicesCascadeSection)
+);
+const ServicesCapabilitiesSection = dynamic(() =>
+  import('@/components/portfolio/portfolio-services-design-capabilities').then((m) => m.ServicesCapabilitiesSection)
 );
 const ServicesIndexListSection = dynamic(() =>
   import('@/components/portfolio/portfolio-services-design-index-list').then((m) => m.ServicesIndexListSection)
@@ -425,6 +453,9 @@ type PublicCreatorPortfolioPageProps = {
   portfolioPosts?: MarketplaceContentItem[];
   /** Dashboard Live Preview iframe — hide owner chrome and follow parent settings. */
   studioEmbed?: boolean;
+  /** Studio design picker preview (embed only): render just this section, in this design, with
+   *  placeholder profile data — see lib/portfolio-design-preview. */
+  designPreview?: DesignPreviewTarget | null;
 };
 
 function socialLabel(platform: string): string {
@@ -694,6 +725,7 @@ function SectionAsideContent({
   /** Keep the title visible while scrolling through the section (lg+). */
   stickyHeader?: boolean;
 }) {
+  const t = useT();
   const stickyTop = 'max(5.5rem, var(--portfolio-nav-top-clearance, 5.5rem))';
   // Match title column height to the list so vertical centering / sticky have room to move.
   const stretchRow = centerHeader || stickyHeader;
@@ -743,38 +775,33 @@ function SectionAsideContent({
   );
 }
 
-/**
- * Every Services pricing design renders off `PortfolioServiceItem` (`tasks: {value}[]`) —
- * the studio-editor shape — rather than the real public-page shape `ProfileServiceItem`
- * (`tasks?: string[]`) that `services` actually is here (from `profile.profileServices`).
- * Converts once at the dispatch call sites below instead of editing each design file.
- */
-function toPortfolioServiceItems(items: ProfileServiceItem[]): PortfolioServiceItem[] {
-  return items.map((item) => ({
-    id: item.id,
-    title: item.title,
-    description: item.description,
-    basePriceCents: item.basePriceCents,
-    deadline: item.deadline ?? '',
-    tasks: (item.tasks ?? []).map((value) => ({ value })),
-  }));
-}
-
 export function PublicCreatorPortfolioPage({
   creatorId,
-  profile,
+  profile: sourceProfile,
   isAuthenticated,
-  locationLabel,
-  portfolioPosts,
+  locationLabel: sourceLocationLabel,
+  portfolioPosts: sourcePortfolioPosts,
   studioEmbed = false,
+  designPreview = null,
 }: PublicCreatorPortfolioPageProps) {
+  const t = useT();
+  const previewTarget = studioEmbed ? designPreview : null;
+  const isDesignPreview = previewTarget != null;
+  const isFooterPreview = previewTarget?.section === 'footer';
+  const profile = useMemo(
+    () => (isDesignPreview ? withDesignPreviewProfile(sourceProfile) : sourceProfile),
+    [isDesignPreview, sourceProfile]
+  );
+  const locationLabel = isDesignPreview ? DESIGN_PREVIEW_LOCATION_LABEL : sourceLocationLabel;
+  // The Work section reads this prop before the profile's own posts — placeholders win in a preview.
+  const portfolioPosts = isDesignPreview ? DESIGN_PREVIEW_PORTFOLIO_POSTS : sourcePortfolioPosts;
   const { user, isLoading: authLoading } = useAuth();
   const isPortfolioOwner = !authLoading && user?.id === creatorId;
   const hideOwnerChrome = studioEmbed;
   const resolvedContactEmail = primaryContactEmail(profile);
   const [profileVisits, setProfileVisits] = useState<number>(profile.profileVisits ?? 0);
   const {
-    settings,
+    settings: storedSettings,
     setColorMode,
     applyExternalSettings,
   } =
@@ -782,7 +809,92 @@ export function PublicCreatorPortfolioPage({
       initialSettings: profile.portfolioSettings,
       canEdit: isPortfolioOwner && !hideOwnerChrome,
     });
+  // Design picker preview: the studio's live settings, with the previewed section forced on and
+  // set to the design this card shows.
+  const settings = useMemo(() => {
+    if (!previewTarget) return storedSettings;
+    switch (previewTarget.section) {
+      case 'footer':
+        return { ...storedSettings, footer: { ...storedSettings.footer, enabled: true, design: previewTarget.design } };
+      case 'contact':
+        return { ...storedSettings, contact: { ...storedSettings.contact, enabled: true, cardDesign: previewTarget.design } };
+      case 'team':
+        return { ...storedSettings, team: { ...storedSettings.team, enabled: true, layout: previewTarget.design } };
+      case 'gallery':
+        return { ...storedSettings, gallery: { ...storedSettings.gallery, enabled: true, design: previewTarget.design } };
+      case 'faq':
+        return { ...storedSettings, faq: { ...storedSettings.faq, enabled: true, design: previewTarget.design } };
+      case 'experience':
+        return {
+          ...storedSettings,
+          experience: { ...storedSettings.experience, enabled: true, experienceDesign: previewTarget.design },
+        };
+      case 'aboutUs':
+        // Picking an About us design also applies that design's own defaults (see the panel).
+        return {
+          ...storedSettings,
+          aboutUs: { ...storedSettings.aboutUs, ...defaultsForAboutUsDesign(previewTarget.design), enabled: true },
+        };
+      case 'services':
+        return {
+          ...storedSettings,
+          services: { ...storedSettings.services, enabled: true, sectionDesign: previewTarget.design },
+        };
+      // Tools / Work / Info: picking a design also applies its own defaults — mirror the panels.
+      case 'tools':
+        return {
+          ...storedSettings,
+          tools: {
+            ...storedSettings.tools,
+            ...toolsDesignSettingsPatch(storedSettings.tools, previewTarget.design),
+            enabled: true,
+          },
+        };
+      case 'work':
+        return {
+          ...storedSettings,
+          work: { ...storedSettings.work, ...workSectionDesignSettingsPatch(previewTarget.design), enabled: true },
+        };
+      case 'info':
+        return {
+          ...storedSettings,
+          info: { ...storedSettings.info, ...infoDesignSettingsPatch(previewTarget.design), enabled: true },
+        };
+      case 'stack':
+        return {
+          ...storedSettings,
+          stack: {
+            ...storedSettings.stack,
+            ...stackDesignSettingsPatch(storedSettings.stack, previewTarget.design),
+            enabled: true,
+          },
+        };
+      case 'hero':
+        return {
+          ...storedSettings,
+          hero: { ...storedSettings.hero, ...heroBannerDesignSettingsPatch(previewTarget.design), enabled: true },
+        };
+      case 'navigation': {
+        const pill = previewTarget.design === 'floating-pill';
+        return {
+          ...storedSettings,
+          global: pill ? { ...storedSettings.global, showColorModeToggleInNav: true } : storedSettings.global,
+          navigation: {
+            ...storedSettings.navigation,
+            ...portfolioNavLayoutDesignPatch(previewTarget.design, storedSettings.navigation),
+            ...(pill ? { mobileLayout: 'brand-bar' as const } : {}),
+            // The card shows the bar itself, whatever the scroll-based "When to appear" says.
+            displayMode: 'always' as const,
+            enabled: true,
+          },
+        };
+      }
+    }
+  }, [previewTarget, storedSettings]);
   const previewSectionFocusRef = useRef<(sectionId: string) => void>(() => {});
+  /* Studio preview only: hover outlines a section, a click opens its settings (set by the studio). */
+  const [studioInspect, setStudioInspect] = useState(false);
+  usePortfolioStudioInspect(hideOwnerChrome && studioInspect);
 
   /**
    * Inside the studio preview the iframe does two contradictory things at once: it applies the
@@ -859,13 +971,13 @@ export function PublicCreatorPortfolioPage({
           
           return {
             id: item.id,
-            title: item.title?.trim() || 'Untitled project',
+            title: item.title?.trim() || t('Untitled project'),
             imageUrl: raw,
             href: workHref,
           };
         })
         .filter((item): item is NonNullable<typeof item> => Boolean(item)),
-    [workItems]
+    [workItems, t]
   );
   const heroFeaturedWorks = useMemo(() => {
     const banner = normalizePortfolioHeroBannerDesign(
@@ -1000,12 +1112,22 @@ export function PublicCreatorPortfolioPage({
             pendingColorModeTimerRef.current = null;
           }
         }
-        applyExternalSettings(event.data.settings);
+        // A transition, not an urgent update: picking a design (or anything that mounts a section
+        // component not downloaded yet) suspends on its `next/dynamic` chunk. Those have no
+        // Suspense of their own, so urgently the suspension reaches the route's `loading.tsx` and
+        // the WHOLE page is swapped for the skeleton and remounted (scroll reset, every entrance
+        // replayed). In a transition React keeps the current page on screen until the chunk is in.
+        const incomingSettings = event.data.settings;
+        startTransition(() => applyExternalSettings(incomingSettings));
         return;
       }
       if (event.data.type === 'scroll-to-section') {
         const sectionId = event.data.sectionId;
         requestAnimationFrame(() => previewSectionFocusRef.current(sectionId));
+        return;
+      }
+      if (event.data.type === 'set-inspect') {
+        setStudioInspect(event.data.enabled);
       }
     };
 
@@ -1694,17 +1816,17 @@ export function PublicCreatorPortfolioPage({
   const pagesNavItems = useMemo(() => {
     const pages: { id: string; label: string; icon: PortfolioNavIconVariant }[] = [];
     if (settings.hero.enabled) {
-      pages.push({ id: 'hero', label: 'Home', icon: 'home' });
+      pages.push({ id: 'hero', label: t('Home'), icon: 'home' });
     }
     pages.push(...navItems);
     return pages;
-  }, [navItems, settings.hero.enabled]);
+  }, [navItems, settings.hero.enabled, t]);
 
   // Keyed on content, not identity: every settings apply from the studio dock rebuilds
   // `navItems`, and a new identity here would re-post `ready` → the dock re-sends settings →
   // another apply, looping forever.
   const footerSectionLinkOptionsKey = JSON.stringify([
-    ...(settings.hero.enabled ? [{ id: 'hero', label: 'Home', href: '#hero' }] : []),
+    ...(settings.hero.enabled ? [{ id: 'hero', label: t('Home'), href: '#hero' }] : []),
     ...navItems.map((item) => ({ id: item.id, label: item.label, href: `#${item.id}` })),
   ]);
   const footerSectionLinkOptions = useMemo(
@@ -1714,6 +1836,12 @@ export function PublicCreatorPortfolioPage({
 
   useEffect(() => {
     if (!hideOwnerChrome || typeof window === 'undefined' || window.parent === window) return;
+    // A design picker card, not the live preview: say so with our own message, so the studio's
+    // live-preview listener doesn't take this iframe (and its placeholder profile) for its page.
+    if (isDesignPreview) {
+      window.parent.postMessage(designPreviewReadyMessage(), window.location.origin);
+      return;
+    }
 
     const meta = {
       availableTools: strengthNames,
@@ -1735,10 +1863,76 @@ export function PublicCreatorPortfolioPage({
     navSocialLinkOptions,
     footerSectionLinkOptions,
     profile.avatarUrl,
+    isDesignPreview,
   ]);
+
+  // Design picker preview: report the section's height so the card can size its frame to it.
+  useEffect(() => {
+    if (!isDesignPreview || typeof window === 'undefined' || window.parent === window) return;
+    const root = document.querySelector<HTMLElement>('[data-design-preview-root]');
+    if (!root) return;
+    const report = () =>
+      window.parent.postMessage(
+        designPreviewSizeMessage(Math.ceil(root.getBoundingClientRect().height)),
+        window.location.origin
+      );
+    const observer = new ResizeObserver(report);
+    observer.observe(root);
+    report();
+    return () => observer.disconnect();
+  }, [isDesignPreview]);
+
+  // Navigation preview: the nav is fixed, so size its band to the bar itself — the same gap
+  // below it as the layout leaves above it (none for full-width bars, an even margin for
+  // floating ones). Re-measured a few times so entrance animations have settled.
+  const isNavigationPreview = previewTarget?.section === 'navigation';
+  const [navPreviewBandHeight, setNavPreviewBandHeight] = useState(48);
+  // Blown up so the bar reads at card size. CSS zoom leaves media queries on the real 1280px
+  // viewport, so the desktop layout is kept while the bar is laid out on a narrower width.
+  useLayoutEffect(() => {
+    if (!isNavigationPreview) return;
+    const root = document.documentElement;
+    const previous = root.style.zoom;
+    root.style.zoom = String(NAV_PREVIEW_ZOOM);
+    return () => {
+      root.style.zoom = previous;
+    };
+  }, [isNavigationPreview]);
+  useEffect(() => {
+    if (!isNavigationPreview || typeof window === 'undefined') return;
+    const measure = () => {
+      let top = Infinity;
+      let bottom = 0;
+      document.body.querySelectorAll<HTMLElement>('*').forEach((element) => {
+        if (element.tagName === 'NEXTJS-PORTAL') return;
+        const style = window.getComputedStyle(element);
+        // Only fixed layers with content: empty ones (the toast host, pinned to the bottom) are not the nav.
+        if (style.position !== 'fixed' || element.childElementCount === 0 || element.offsetHeight === 0) return;
+        const rect = element.getBoundingClientRect();
+        if (rect.top > 300) return;
+        top = Math.min(top, Math.max(0, rect.top));
+        bottom = Math.max(bottom, rect.bottom);
+      });
+      if (bottom > 0) setNavPreviewBandHeight(Math.max(20, Math.ceil((bottom + top) / NAV_PREVIEW_ZOOM)));
+    };
+    const timers = [150, 700, 1600].map((delay) => window.setTimeout(measure, delay));
+    return () => timers.forEach((timer) => window.clearTimeout(timer));
+  }, [isNavigationPreview, settings.navigation]);
 
   const navMode = settings.navigation.navMode ?? 'default';
   const isPagesMode = navMode === 'pages';
+
+  // Sections the creator left out of the menu stay on the page (reached by scrolling). Pages mode
+  // has no scrolling, so there every section keeps its link.
+  const hiddenNavItems = settings.navigation.hiddenNavItems;
+  // "When to appear" for the menu-panel layouts (the floating bar handles it itself). Pages mode
+  // has no page scroll, so the bar stays.
+  const panelNavVisible = useNavVisibility(settings.navigation.displayMode, isPagesMode);
+  const navBarItems = useMemo(() => {
+    const hidden = new Set(hiddenNavItems ?? []);
+    const items = isPagesMode ? pagesNavItems : navItems.filter((item) => !hidden.has(item.id));
+    return isNavigationPreview ? items.slice(0, NAV_PREVIEW_MAX_ITEMS) : items;
+  }, [isPagesMode, pagesNavItems, navItems, hiddenNavItems, isNavigationPreview]);
   const navActiveColorMode = resolveSectionActiveMode(
     settings.navigation.colorModeOverride,
     (settings.global.colorMode ?? 'dark') as 'light' | 'dark'
@@ -1901,6 +2095,9 @@ export function PublicCreatorPortfolioPage({
     () => portfolioEditorialShellClass(settings.global.contentGutter),
     [settings.global.contentGutter]
   );
+  /** The sections' column: Content width caps it (centred), Side margins pad it. Full-bleed
+   *  section backgrounds break out of it on their own (w-screen layers). */
+  const contentShellClass = `mx-auto ${globalWidthClass} ${editorialShellClass}`;
   const titleScrollBehavior = settings.global.titleScroll;
   const effectiveTitleScroll = titleScrollBehavior;
   const motionEnabled = settings.global.motionEnabled !== false;
@@ -2012,13 +2209,13 @@ export function PublicCreatorPortfolioPage({
       items.push({
         id: 'location',
         icon: SIDE_INFO_ICONS.location,
-        label: 'Location',
+        label: t('Location'),
         title: locationLabel,
         subtitle:
           profile.timezoneId
             ? `${profile.timezoneId.replace(/_/g, ' ')}${availabilityDisplay ? ' · Available remotely' : ''}`
             : availabilityDisplay
-              ? 'Available remotely'
+              ? t('Available remotely')
               : undefined,
       });
     }
@@ -2027,7 +2224,7 @@ export function PublicCreatorPortfolioPage({
       items.push({
         id: 'languages',
         icon: SIDE_INFO_ICONS.languages,
-        label: 'Languages',
+        label: t('Languages'),
         // Single line so horizontal layouts stay bottom-aligned with other 2-line cells.
         title: languageList.join(', '),
       });
@@ -2037,7 +2234,7 @@ export function PublicCreatorPortfolioPage({
       items.push({
         id: 'gender',
         icon: SIDE_INFO_ICONS.gender,
-        label: 'Gender',
+        label: t('Gender'),
         title: profile.gender,
       });
     }
@@ -2046,7 +2243,7 @@ export function PublicCreatorPortfolioPage({
       items.push({
         id: 'member-since',
         icon: SIDE_INFO_ICONS.memberSince,
-        label: 'Member since',
+        label: t('Member since'),
         title: memberSinceLabel,
       });
     }
@@ -2064,14 +2261,14 @@ export function PublicCreatorPortfolioPage({
       items.push({
         id: 'availability',
         icon: SIDE_INFO_ICONS.availability,
-        label: 'Availability',
-        title: profile.isAvailable === false ? 'Currently unavailable' : (availabilityDisplay ?? ''),
+        label: t('Availability'),
+        title: profile.isAvailable === false ? t('Currently unavailable') : (availabilityDisplay ?? ''),
         lines: availabilityLines,
         subtitle:
           profile.isAvailable !== false &&
           profile.responseTimeLabel?.trim() &&
           settings.about.showSidePanelResponseTime
-            ? `Reply ${profile.responseTimeLabel.toLowerCase()}`
+            ? t('Reply {toLowerCase}', { toLowerCase: profile.responseTimeLabel.toLowerCase() })
             : undefined,
       });
     }
@@ -2350,21 +2547,23 @@ export function PublicCreatorPortfolioPage({
             <ServicesHeaderEditorialHeader {...servicesHeaderProps} />
           );
         const servicesDesign = servicesPresentation.sectionDesign;
-        const servicesShowcaseHero = servicesDesign === 'showcase-hero';
-        const servicesPricingGrid = servicesDesign === 'services-pricing-grid';
-        const servicesPricingBento = servicesDesign === 'services-pricing-bento';
-        const servicesPricingMonolith = servicesDesign === 'services-pricing-monolith';
+        const servicesPricingCards = servicesDesign === 'services-pricing';
         const servicesPricingAurora = servicesDesign === 'services-pricing-aurora';
         const servicesPricingToggle = servicesDesign === 'services-pricing-toggle';
         const servicesIndexList = servicesDesign === 'services-index-list';
         const servicesMediaColumns = servicesDesign === 'services-media-columns';
+        const servicesIconCards = servicesDesign === 'services-icon-cards';
+        const servicesBandIndex = servicesDesign === 'services-band-index';
+        const servicesCascade = servicesDesign === 'services-cascade';
+        const servicesCapabilities = servicesDesign === 'services-capabilities';
         const namedServicesDesign =
+          servicesCapabilities ||
+          servicesIconCards ||
+          servicesBandIndex ||
+          servicesCascade ||
           servicesMediaColumns ||
           servicesIndexList ||
-          servicesShowcaseHero ||
-          servicesPricingGrid ||
-          servicesPricingBento ||
-          servicesPricingMonolith ||
+          servicesPricingCards ||
           servicesPricingAurora ||
           servicesPricingToggle;
         const servicesContentBlock = (
@@ -2380,43 +2579,30 @@ export function PublicCreatorPortfolioPage({
               surface={servicesPresentation.cardBackgroundColor}
             >
               <>
-                {servicesShowcaseHero ? (
-                  <ServicesShowcaseHero services={services} presentation={servicesPresentation} />
-                ) : servicesIndexList ? (
-                  <ServicesIndexListSection services={services} presentation={servicesPresentation} />
-                ) : servicesMediaColumns ? (
+                <ServicesBackgroundFrame presentation={servicesPresentation}>
+                {servicesMediaColumns ? (
                   <ServicesMediaColumnsSection services={services} presentation={servicesPresentation} />
-                ) : servicesPricingGrid ? (
-                  <ServicesPricingGridSection
-                    services={toPortfolioServiceItems(services)}
-                    presentation={servicesPresentation}
-                  />
-                ) : servicesPricingBento ? (
-                  <ServicesPricingBentoSection
-                    services={toPortfolioServiceItems(services)}
-                    presentation={servicesPresentation}
-                  />
-                ) : servicesPricingMonolith ? (
-                  <ServicesPricingMonolithSection
-                    services={toPortfolioServiceItems(services)}
-                    presentation={servicesPresentation}
-                  />
+                ) : servicesIconCards ? (
+                  <ServicesIconCardsSection services={services} presentation={servicesPresentation} />
+                ) : servicesBandIndex ? (
+                  <ServicesBandIndexSection services={services} presentation={servicesPresentation} />
+                ) : servicesCascade ? (
+                  <ServicesCascadeSection services={services} presentation={servicesPresentation} />
+                ) : servicesCapabilities ? (
+                  <ServicesCapabilitiesSection services={services} presentation={servicesPresentation} />
+                ) : servicesPricingCards ? (
+                  <ServicesPricingCardsSection services={services} presentation={servicesPresentation} />
                 ) : servicesPricingAurora ? (
-                  <ServicesPricingAuroraSection
-                    services={toPortfolioServiceItems(services)}
-                    presentation={servicesPresentation}
-                  />
+                  <ServicesPricingAuroraSection services={services} presentation={servicesPresentation} />
                 ) : servicesPricingToggle ? (
-                  <ServicesPricingToggleSection
-                    services={toPortfolioServiceItems(services)}
-                    presentation={servicesPresentation}
-                  />
+                  <ServicesPricingToggleSection services={services} presentation={servicesPresentation} />
                 ) : (
-                  <ServicesShowcaseHero services={services} presentation={servicesPresentation} />
+                  <ServicesIndexListSection services={services} presentation={servicesPresentation} />
                 )}
+                </ServicesBackgroundFrame>
                 {services.length === 0 ? (
                   <p className="mt-8 text-base leading-relaxed text-neutral-500">
-                    Contact me to discuss a custom engagement.
+                    {t('Contact me to discuss a custom engagement.')}
                   </p>
                 ) : null}
               </>
@@ -3276,9 +3462,9 @@ export function PublicCreatorPortfolioPage({
                     href={`/login?redirect=${encodeURIComponent(buildCreatorPortfolioPath(creatorId, profile.username))}`}
                     className="font-semibold text-orange-600 hover:text-orange-700 dark:text-orange-400"
                   >
-                    Sign in
+                    {t('Sign in')}
                   </Link>{' '}
-                  to see more contact details.
+                  {t('to see more contact details.')}
                 </p>
               ) : null
             }
@@ -3391,8 +3577,215 @@ export function PublicCreatorPortfolioPage({
     }
   }
 
+  /** The site navigation — shared by both layouts and the design preview. */
+  const navElement =
+    isCaseOverlayNav ? (
+      <PortfolioCaseOverlayNav
+        items={navBarItems}
+        visible={panelNavVisible}
+        settings={settings.navigation}
+        activeId={isPagesMode ? activePageId : undefined}
+        onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
+        brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
+        avatarUrl={profile.avatarUrl}
+        contentGutter={settings.global.contentGutter}
+        showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+        colorMode={navActiveColorMode}
+        onColorModeToggle={cyclePortfolioColorMode}
+      />
+    ) : isDutenPanelNav ? (
+      <PortfolioDutenPanelNav
+        items={navBarItems}
+        visible={panelNavVisible}
+        settings={settings.navigation}
+        activeId={isPagesMode ? activePageId : undefined}
+        onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
+        avatarUrl={profile.avatarUrl}
+        contentGutter={settings.global.contentGutter}
+        socialLinkOptions={navProfileLinkOptions}
+        contactPhone={profile.phone}
+        contactEmail={resolvedContactEmail}
+        showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+        colorMode={navActiveColorMode}
+        onColorModeToggle={cyclePortfolioColorMode}
+      />
+    ) : isHalfPanelNav ? (
+      <PortfolioHalfPanelNav
+        items={navBarItems}
+        visible={panelNavVisible}
+        settings={settings.navigation}
+        activeId={isPagesMode ? activePageId : undefined}
+        onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
+        avatarUrl={profile.avatarUrl}
+        contentGutter={settings.global.contentGutter}
+        socialLinkOptions={navProfileLinkOptions}
+        contactPhone={profile.phone}
+        contactEmail={resolvedContactEmail}
+        showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+        colorMode={navActiveColorMode}
+        onColorModeToggle={cyclePortfolioColorMode}
+      />
+    ) : (
+      <>
+        <PortfolioFloatingNav
+          items={navBarItems}
+          settings={settings.navigation}
+          activeId={isPagesMode ? activePageId : undefined}
+          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
+          chromeLinks={navChromeLinks}
+          monochrome={usesMonochromeChrome}
+          contactHref={navContactHref}
+          onContactNavigate={isPagesMode ? () => navigateToPage(pagesContactTarget) : undefined}
+          contactPhone={profile.phone}
+          contactEmail={resolvedContactEmail}
+          avatarUrl={profile.avatarUrl}
+          brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
+          contentGutter={settings.global.contentGutter}
+          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
+          colorMode={navActiveColorMode}
+          onColorModeToggle={cyclePortfolioColorMode}
+        />
+      </>
+    );
+
+  /** The hero banner — shared by both layouts and the design preview. */
+  const heroElement = (
+    <PortfolioHeroSection
+      creatorId={creatorId}
+      username={profile.username}
+      fullName={profile.fullName}
+      nameLead={nameLead}
+      nameAccent={nameAccent}
+      specialite={profile.specialite}
+      description={heroDescription}
+      avatarUrl={profile.avatarUrl}
+      isVerified={profile.isVerified}
+      isAvailable={profile.isAvailable}
+      responseTimeLabel={profile.responseTimeLabel}
+      yearsOfExperience={profile.yearsOfExperience}
+      workCount={resolveExactContentCount(profile) ?? undefined}
+      locationLabel={locationLabel}
+      stats={heroStats}
+      socialLinks={socialLinks}
+      tools={heroToolsProp}
+      toolDetails={heroToolDetailsProp}
+      contactHref={heroContactHref}
+      workHref={heroWorkHref}
+      featuredWorks={heroFeaturedWorks}
+      onNavigateSection={onNavigateSection}
+      showWorkCta={showWorkSection || showGallerySection}
+      showContactCta={settings.hero.showContactCta}
+      navItems={navItems}
+      presentation={heroPresentation}
+      suppressBackground={false}
+      geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
+      motionProfile={motionProfile}
+      contentGutter={settings.global.contentGutter}
+      contentWidthClass={globalWidthClass}
+      colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
+    />
+  );
+
+  /** Footer header block + Footer + Mini bar — shared by both layouts and the design preview.
+   *  The design preview leaves the header block out: it has its own design setting, so it would
+   *  only repeat the same block on top of every card. */
+  const footerStack = (
+    <div className="mt-auto w-full shrink-0">
+      {isFooterPreview ? null : (
+        <div
+          className={`w-full pf-footer-shell-x ${editorialShellClass}`}
+          style={footerHeaderBackgroundStyle}
+        >
+          {footerHeaderBlock}
+        </div>
+      )}
+      <EditorialPortfolioFooter
+        creatorName={profile.fullName}
+        creatorId={creatorId}
+        avatarUrl={profile.avatarUrl}
+        bio={profile.bio}
+        email={resolvedContactEmail || null}
+        phone={profile.phone}
+        locationLabel={locationLabel}
+        hoursLabel={availabilityDisplay}
+        profileVisits={profileVisits}
+        links={uniqueContactLinks}
+        contentClassName={contentShellClass}
+        presentation={footerPresentation}
+        transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
+        isAvailable={profile.isAvailable}
+        responseTimeLabel={profile.responseTimeLabel}
+        contactHref={
+          resolvedContactEmail
+            ? `mailto:${resolvedContactEmail}`
+            : heroContactHref
+        }
+        motionProfile={motionProfile}
+        bottomClearanceClass={footerNavClearanceClass}
+        sectionLinkOptions={footerSectionLinkOptions}
+                sectionPalette={footerPalette}
+        globalColorMode={footerColorMode}
+        timezoneId={profile.timezoneId}
+        contentGutter={settings.global.contentGutter}
+      />
+      {footerPresentation.showMiniBar ? (
+        <PortfolioFooterMiniBar
+          design={footerPresentation.miniBarDesign}
+          creatorName={profile.fullName}
+          locationLabel={footerPresentation.showLocation !== false ? locationLabel : null}
+          timezoneId={profile.timezoneId}
+          colorMode={footerColorMode}
+          accentColor={footerPresentation.accentColor}
+          contentGutter={settings.global.contentGutter}
+          copyrightText={footerMiniBarCopyrightText}
+          showCopyright={footerPresentation.showCopyright !== false}
+          isAvailable={profile.isAvailable}
+          hoursLabel={footerPresentation.showHours !== false ? availabilityDisplay : null}
+          creditLabel={footerPresentation.invertedWordmarkCredit}
+          backgroundStyle={footerMiniBarBackgroundStyle}
+        />
+      ) : null}
+    </div>
+  );
+
+  if (isDesignPreview) {
+    return (
+      <PortfolioMotionOffContext.Provider value={!motionEnabled}>
+        <PortfolioHeaderMotionOffContext.Provider value={settings.global.headerMotionEnabled === false}>
+          <PortfolioMotionProvider key={motionEnabled ? 'motion-on' : 'motion-off'} timing={settings.global.motionTiming}>
+            <PortfolioThemeRoot
+              themeId={settings.themeId}
+              customThemes={settings.customThemes}
+              monochromeUi={settings.global.monochromeUi}
+              colorMode={(settings.global.colorMode ?? 'dark') as 'dark' | 'light'}
+              activePalette={activeGlobalPalette}
+              fixedBackgroundStyle={globalFixedBgStyle}
+              suppressDefaultBackground={hasGlobalBg}
+            >
+              <div data-design-preview-root className="flex w-full flex-col">
+                {previewTarget.section === 'footer' ? (
+                  footerStack
+                ) : previewTarget.section === 'hero' ? (
+                  heroElement
+                ) : previewTarget.section === 'navigation' ? (
+                  /* The nav alone (it is fixed), in a band sized to the bar — see navPreviewBandHeight. */
+                  <div className="relative" style={{ height: navPreviewBandHeight }}>
+                    {navElement}
+                  </div>
+                ) : (
+                  <main className={`w-full ${contentShellClass}`}>{renderContentSection(previewTarget.section)}</main>
+                )}
+              </div>
+            </PortfolioThemeRoot>
+          </PortfolioMotionProvider>
+        </PortfolioHeaderMotionOffContext.Provider>
+      </PortfolioMotionOffContext.Provider>
+    );
+  }
+
   return (
     <PortfolioMotionOffContext.Provider value={!motionEnabled}>
+    <PortfolioHeaderMotionOffContext.Provider value={settings.global.headerMotionEnabled === false}>
     <PortfolioMotionProvider key={motionEnabled ? 'motion-on' : 'motion-off'} timing={settings.global.motionTiming}>
     <PortfolioTaskListMarkerProvider
       value={{
@@ -3426,111 +3819,12 @@ export function PublicCreatorPortfolioPage({
       }
     >
       <CreatorProfileViewTracker creatorId={creatorId} onVisitRecorded={setProfileVisits} />
-      {isCaseOverlayNav ? (
-        <PortfolioCaseOverlayNav
-          items={isPagesMode ? pagesNavItems : navItems}
-          settings={settings.navigation}
-          activeId={isPagesMode ? activePageId : undefined}
-          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
-          brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
-          avatarUrl={profile.avatarUrl}
-          contentGutter={settings.global.contentGutter}
-          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-          colorMode={navActiveColorMode}
-          onColorModeToggle={cyclePortfolioColorMode}
-        />
-      ) : isDutenPanelNav ? (
-        <PortfolioDutenPanelNav
-          items={isPagesMode ? pagesNavItems : navItems}
-          settings={settings.navigation}
-          activeId={isPagesMode ? activePageId : undefined}
-          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
-          avatarUrl={profile.avatarUrl}
-          contentGutter={settings.global.contentGutter}
-          socialLinkOptions={navProfileLinkOptions}
-          contactPhone={profile.phone}
-          contactEmail={resolvedContactEmail}
-          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-          colorMode={navActiveColorMode}
-          onColorModeToggle={cyclePortfolioColorMode}
-        />
-      ) : isHalfPanelNav ? (
-        <PortfolioHalfPanelNav
-          items={isPagesMode ? pagesNavItems : navItems}
-          settings={settings.navigation}
-          activeId={isPagesMode ? activePageId : undefined}
-          onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
-          avatarUrl={profile.avatarUrl}
-          contentGutter={settings.global.contentGutter}
-          socialLinkOptions={navProfileLinkOptions}
-          contactPhone={profile.phone}
-          contactEmail={resolvedContactEmail}
-          showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-          colorMode={navActiveColorMode}
-          onColorModeToggle={cyclePortfolioColorMode}
-        />
-      ) : (
-        <>
-          <PortfolioFloatingNav
-            items={isPagesMode ? pagesNavItems : navItems}
-            settings={settings.navigation}
-            activeId={isPagesMode ? activePageId : undefined}
-            onNavigate={isPagesMode ? (id) => navigateToPage(id) : undefined}
-            chromeLinks={navChromeLinks}
-            monochrome={usesMonochromeChrome}
-            contactHref={navContactHref}
-            onContactNavigate={isPagesMode ? () => navigateToPage(pagesContactTarget) : undefined}
-            contactPhone={profile.phone}
-            contactEmail={resolvedContactEmail}
-            avatarUrl={profile.avatarUrl}
-            brandName={(profile.fullName ?? '').trim().split(/\s+/).filter(Boolean)[0] ?? ''}
-            contentGutter={settings.global.contentGutter}
-            showColorModeToggle={settings.global.showColorModeToggleInNav ?? false}
-            colorMode={navActiveColorMode}
-            onColorModeToggle={cyclePortfolioColorMode}
-          />
-        </>
-      )}
+      {navElement}
 
       {isPagesMode ? (
         <div className="relative flex h-[100dvh] flex-col overflow-hidden">
           <PortfolioPagesSlideViewport pageId={activePageId} direction={pageSlideDirection}>
-            {settings.hero.enabled && activePageId === 'hero' ? (
-              <PortfolioHeroSection
-                creatorId={creatorId}
-                username={profile.username}
-                fullName={profile.fullName}
-                nameLead={nameLead}
-                nameAccent={nameAccent}
-                specialite={profile.specialite}
-                description={heroDescription}
-                avatarUrl={profile.avatarUrl}
-                isVerified={profile.isVerified}
-                isAvailable={profile.isAvailable}
-                responseTimeLabel={profile.responseTimeLabel}
-                yearsOfExperience={profile.yearsOfExperience}
-                workCount={resolveExactContentCount(profile) ?? undefined}
-                locationLabel={locationLabel}
-                stats={heroStats}
-                socialLinks={socialLinks}
-                tools={heroToolsProp}
-                toolDetails={heroToolDetailsProp}
-                contactHref={heroContactHref}
-                workHref={heroWorkHref}
-                featuredWorks={heroFeaturedWorks}
-                onNavigateSection={onNavigateSection}
-                showWorkCta={showWorkSection || showGallerySection}
-                showContactCta={settings.hero.showContactCta}
-                navItems={navItems}
-                presentation={heroPresentation}
-                suppressBackground={false}
-                geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
-                motionProfile={motionProfile}
-                contentGutter={settings.global.contentGutter}
-                contentWidthClass={globalWidthClass}
-                colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
-              />
-            ) : null}
+            {settings.hero.enabled && activePageId === 'hero' ? heroElement : null}
 
             {contentSectionOrder.map((sectionKey) => {
               if (!sectionVisibility[sectionKey]) return null;
@@ -3543,67 +3837,13 @@ export function PublicCreatorPortfolioPage({
                   style={{ minHeight: '100%' }}
                 >
                   <main
-                    className={`flex w-full flex-1 grow flex-col ${editorialShellClass} ${
+                    className={`flex w-full flex-1 grow flex-col ${contentShellClass} ${
                       showFooter ? 'pb-0' : 'pb-24 sm:pb-28'
                     }`}
                   >
                     {renderContentSection(sectionKey)}
                   </main>
-                  {showFooter ? (
-                    <div className="mt-auto w-full shrink-0">
-                      <div
-                        className={`w-full pf-footer-shell-x ${editorialShellClass}`}
-                        style={footerHeaderBackgroundStyle}
-                      >
-                        {footerHeaderBlock}
-                      </div>
-                      <EditorialPortfolioFooter
-                        creatorName={profile.fullName}
-                        creatorId={creatorId}
-                        avatarUrl={profile.avatarUrl}
-                        bio={profile.bio}
-                        email={resolvedContactEmail || null}
-                        phone={profile.phone}
-                        locationLabel={locationLabel}
-                        hoursLabel={availabilityDisplay}
-                        profileVisits={profileVisits}
-                        links={uniqueContactLinks}
-                        contentClassName={editorialShellClass}
-                        presentation={footerPresentation}
-                        transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
-                        isAvailable={profile.isAvailable}
-                        responseTimeLabel={profile.responseTimeLabel}
-                        contactHref={
-                          resolvedContactEmail
-                            ? `mailto:${resolvedContactEmail}`
-                            : heroContactHref
-                        }
-                        motionProfile={motionProfile}
-                        bottomClearanceClass={footerNavClearanceClass}
-                        sectionLinkOptions={footerSectionLinkOptions}
-                        sectionPalette={footerPalette}
-                        globalColorMode={footerColorMode}
-                        timezoneId={profile.timezoneId}
-                        contentGutter={settings.global.contentGutter}
-                      />
-                      {footerPresentation.showMiniBar ? (
-                        <PortfolioFooterMiniBar
-                          design={footerPresentation.miniBarDesign}
-                          creatorName={profile.fullName}
-                          locationLabel={locationLabel}
-                          timezoneId={profile.timezoneId}
-                          colorMode={footerColorMode}
-                          accentColor={footerPresentation.accentColor}
-                          contentGutter={settings.global.contentGutter}
-                          copyrightText={footerMiniBarCopyrightText}
-                          isAvailable={profile.isAvailable}
-                          hoursLabel={availabilityDisplay}
-                          creditLabel={footerPresentation.invertedWordmarkCredit}
-                          backgroundStyle={footerMiniBarBackgroundStyle}
-                        />
-                      ) : null}
-                    </div>
-                  ) : null}
+                  {showFooter ? footerStack : null}
                 </div>
               );
             })}
@@ -3611,45 +3851,10 @@ export function PublicCreatorPortfolioPage({
         </div>
       ) : (
         <div className="flex min-h-[100dvh] min-h-screen max-w-full flex-col overflow-x-clip">
-          {settings.hero.enabled ? (
-            <PortfolioHeroSection
-              creatorId={creatorId}
-              username={profile.username}
-              fullName={profile.fullName}
-              nameLead={nameLead}
-              nameAccent={nameAccent}
-              specialite={profile.specialite}
-              description={heroDescription}
-              avatarUrl={profile.avatarUrl}
-              isVerified={profile.isVerified}
-              isAvailable={profile.isAvailable}
-              responseTimeLabel={profile.responseTimeLabel}
-              yearsOfExperience={profile.yearsOfExperience}
-              workCount={resolveExactContentCount(profile) ?? undefined}
-              locationLabel={locationLabel}
-              stats={heroStats}
-              socialLinks={socialLinks}
-              tools={heroToolsProp}
-              toolDetails={heroToolDetailsProp}
-              contactHref={heroContactHref}
-              workHref={heroWorkHref}
-              featuredWorks={heroFeaturedWorks}
-              onNavigateSection={onNavigateSection}
-              showWorkCta={showWorkSection || showGallerySection}
-              showContactCta={settings.hero.showContactCta}
-              navItems={navItems}
-              presentation={heroPresentation}
-              suppressBackground={false}
-              geomFadeEnabled={motionProfileEnablesHeroGeomFade(motionProfile)}
-              motionProfile={motionProfile}
-              contentGutter={settings.global.contentGutter}
-              contentWidthClass={globalWidthClass}
-              colorMode={(settings.global.colorMode ?? 'dark') as 'light' | 'dark'}
-            />
-          ) : null}
+          {settings.hero.enabled ? heroElement : null}
 
           <main
-            className={`w-full flex-1 grow space-y-0 ${editorialShellClass} ${
+            className={`w-full flex-1 grow space-y-0 ${contentShellClass} ${
               settings.footer.enabled ? 'pb-0' : 'pb-24 sm:pb-28 xl:pb-20'
             }`}
           >
@@ -3658,66 +3863,13 @@ export function PublicCreatorPortfolioPage({
             ))}
           </main>
 
-          {settings.footer.enabled ? (
-            <div className="mt-auto w-full shrink-0">
-              <div
-                className={`w-full pf-footer-shell-x ${editorialShellClass}`}
-                style={footerHeaderBackgroundStyle}
-              >
-                {footerHeaderBlock}
-              </div>
-              <EditorialPortfolioFooter
-                creatorName={profile.fullName}
-                creatorId={creatorId}
-                avatarUrl={profile.avatarUrl}
-                bio={profile.bio}
-                email={resolvedContactEmail || null}
-                phone={profile.phone}
-                locationLabel={locationLabel}
-                hoursLabel={availabilityDisplay}
-                profileVisits={profileVisits}
-                links={uniqueContactLinks}
-                contentClassName={editorialShellClass}
-                presentation={footerPresentation}
-                transparentBase={hasGlobalBg && !footerPaintsOwnBackground}
-                isAvailable={profile.isAvailable}
-                responseTimeLabel={profile.responseTimeLabel}
-                contactHref={
-                  resolvedContactEmail
-                    ? `mailto:${resolvedContactEmail}`
-                    : heroContactHref
-                }
-                motionProfile={motionProfile}
-                bottomClearanceClass={footerNavClearanceClass}
-                sectionLinkOptions={footerSectionLinkOptions}
-                        sectionPalette={footerPalette}
-                globalColorMode={footerColorMode}
-                timezoneId={profile.timezoneId}
-                contentGutter={settings.global.contentGutter}
-              />
-              {footerPresentation.showMiniBar ? (
-                <PortfolioFooterMiniBar
-                  design={footerPresentation.miniBarDesign}
-                  creatorName={profile.fullName}
-                  locationLabel={locationLabel}
-                  timezoneId={profile.timezoneId}
-                  colorMode={footerColorMode}
-                  accentColor={footerPresentation.accentColor}
-                  contentGutter={settings.global.contentGutter}
-                  copyrightText={footerMiniBarCopyrightText}
-                  isAvailable={profile.isAvailable}
-                  hoursLabel={availabilityDisplay}
-                  creditLabel={footerPresentation.invertedWordmarkCredit}
-                  backgroundStyle={footerMiniBarBackgroundStyle}
-                />
-              ) : null}
-            </div>
-          ) : null}
+          {settings.footer.enabled ? footerStack : null}
         </div>
       )}
     </PortfolioThemeRoot>
     </PortfolioTaskListMarkerProvider>
     </PortfolioMotionProvider>
+    </PortfolioHeaderMotionOffContext.Provider>
     </PortfolioMotionOffContext.Provider>
   );
 }

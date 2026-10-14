@@ -34,15 +34,13 @@ function MyProductsPageInner() {
 
 export default function MarketplaceMyProductsPage() {
   return (
-    <DashboardHomeShell fullWidth fillViewport newsTheme>
-      <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden">
-        <div className="mx-auto flex w-full max-w-[1600px] flex-1 flex-col px-0 sm:px-6 2xl:px-0">
+    <DashboardHomeShell fullWidth fillViewport newsTheme newsGround>
+      {/* News / Products' frame: the same gutters outside a 1240px column, so its edges line up with
+          the top bar's (logo left, avatar right); `news-mono` gives it the rail boxes and type. */}
+      <div className="flex min-h-0 w-full flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] sm:px-8 md:px-12 lg:px-16 [&::-webkit-scrollbar]:hidden">
+        <div className="news-theme news-feed news-mono mx-auto flex w-full max-w-[1240px] flex-1 flex-col">
           <Suspense
-            fallback={
-              <div className="pt-8 sm:pt-10">
-                <CreatorStudioProductsTabSkeleton insetOnMobile />
-              </div>
-            }
+            fallback={<CreatorStudioProductsTabSkeleton insetOnMobile />}
           >
             <MyProductsPageInner />
           </Suspense>

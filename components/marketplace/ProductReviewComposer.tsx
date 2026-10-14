@@ -6,13 +6,14 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { StarRatingInput } from '@/components/marketplace/StarRatingInput';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductReviewComposerProps = {
   productId: string;
   onSubmitted?: () => void;
 };
 
-const SKELETON = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
+const SKELETON = 'animate-pulse bg-[color:var(--gn-inset)]';
 
 function ReviewComposerSkeleton() {
   return (
@@ -30,6 +31,7 @@ function ReviewComposerSkeleton() {
 }
 
 export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewComposerProps) {
+  const t = useT();
   const { hasRole, user, isLoading: authLoading } = useAuth();
   const isClient = hasRole('ROLE_CREATOR');
 
@@ -82,7 +84,7 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
       return;
     }
     if (rating < 1) {
-      setError('Please select a star rating.');
+      setError(t('Please select a star rating.'));
       return;
     }
     try {
@@ -97,7 +99,7 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
       await loadStatus();
       onSubmitted?.();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to save your review.'));
+      setError(getApiErrorMessage(e, t('Unable to save your review.')));
     } finally {
       setSubmitting(false);
     }
@@ -109,19 +111,14 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
 
   if (!user) {
     return (
-      <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
-        Sign in as a client to rate this product.
+      <p className="text-[15px] text-[color:var(--gn-ink2)]">
+        {t('Sign in as a client to rate this product.')}
       </p>
     );
   }
 
-  if (!isClient) {
-    return (
-      <p className="text-[15px] text-neutral-500 dark:text-neutral-400">
-        Only client accounts can leave product reviews.
-      </p>
-    );
-  }
+  // Creator accounts cannot review: render nothing (the wrapper hides itself when empty).
+  if (!isClient) return null;
 
   const remainingToday = Math.max(0, dailyReviewLimit - reviewsPostedToday);
 
@@ -130,8 +127,8 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
       <form onSubmit={(e) => void onSubmit(e)} className="space-y-4">
         <div className="space-y-1">
-          <p className="text-base font-semibold text-[#111111] dark:text-white">Write a review</p>
-          <p className="text-[13px] text-neutral-500 dark:text-neutral-400">
+          <p className="text-[17px] font-bold leading-[22px] text-[color:var(--gn-ink)]">{t('Write a review')}</p>
+          <p className="text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
             {canPostReviewToday
               ? `${remainingToday} of ${dailyReviewLimit} reviews remaining today. Your latest review sets your rating for this product.`
               : `Daily limit reached (${dailyReviewLimit}/${dailyReviewLimit}). You can post again tomorrow.`}
@@ -142,16 +139,16 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
           value={comment}
           onChange={(e) => setComment(e.target.value)}
           rows={4}
-          placeholder="Describe your experience with this product…"
-          className="w-full rounded-lg border border-black/[0.1] bg-transparent px-3.5 py-3 text-[15px] text-[#111111] outline-none transition placeholder:text-neutral-400 focus:border-[#FF5722] focus:ring-2 focus:ring-[#FF5722]/20 disabled:opacity-60 dark:border-white/[0.14] dark:text-white"
+          placeholder={t('Describe your experience with this product…')}
+          className="w-full border-0 bg-[color:var(--gn-inset)] px-4 py-3 text-[15px] text-[color:var(--gn-ink)] outline-none transition placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-60"
           disabled={submitting || !canPostReviewToday}
         />
         <button
           type="submit"
           disabled={submitting || !canPostReviewToday}
-          className="inline-flex h-11 items-center justify-center rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
+          className="inline-flex h-10 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] disabled:opacity-50"
         >
-          {submitting ? 'Posting…' : 'Post review'}
+          {submitting ? t('Posting…') : t('Post review')}
         </button>
       </form>
     </div>

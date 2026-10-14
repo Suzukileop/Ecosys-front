@@ -16,6 +16,7 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function Dot({ muted }: { muted: string }) {
   return (
@@ -78,6 +79,7 @@ export function FooterDesignCompact({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignCompactProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const ink = isLight ? '#000000' : '#ffffff';
   const muted = isLight ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.55)';
@@ -125,7 +127,7 @@ export function FooterDesignCompact({
             ) : null}
 
             {links.length > 0 ? (
-              <nav className="flex flex-wrap items-center justify-center gap-7 sm:justify-end" aria-label="Social">
+              <nav className="flex flex-wrap items-center justify-center gap-7 sm:justify-end" aria-label={t('Social')}>
                 {links.map((link) => (
                   <a
                     key={link.id}

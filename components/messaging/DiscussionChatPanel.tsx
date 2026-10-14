@@ -39,6 +39,8 @@ import type {
   TypingIndicator,
 } from '@/types/messaging';
 import { useAuth } from '@/context/AuthContext';
+import { usePresence } from '@/hooks/usePresence';
+import { Avatar } from '@/components/ui/Avatar';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { ConfirmDialog } from '@/components/ui/ConfirmDialog';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
@@ -56,6 +58,7 @@ import { filterGuestSessionTraces } from '@/lib/guest-session-trace';
 import { clearAttachmentLoadFailuresForConversation } from '@/lib/messaging-attachments';
 import { removePinnedMessage } from '@/lib/discussion-pins';
 import { SHOW_CALL_BUTTONS, SHOW_GROUP_CHAT } from '@/lib/messaging-feature-flags';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const AddGroupMemberModal = dynamic(
   () => import('@/components/messaging/AddGroupMemberModal').then((module) => module.AddGroupMemberModal),
@@ -159,6 +162,10 @@ function getOutgoingMessageStatusType(
   return 'sent';
 }
 
+/** Header actions in words ("Leave", "End access"): News's secondary pill — a 1px inset outline. */
+const HEADER_PILL =
+  'inline-flex h-9 items-center rounded-full px-4 text-[13px] font-semibold text-[var(--msg-ink)] shadow-[inset_0_0_0_1px_var(--msg-hairline-strong)] transition-colors hover:bg-[var(--msg-wash)] disabled:opacity-60';
+
 function HeaderIcon({ children }: { children: ReactNode }) {
   return (
     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
@@ -209,6 +216,7 @@ export function DiscussionChatPanel({
   incomingDeliveryReceipt = null,
   incomingReadReceipt = null,
 }: DiscussionChatPanelProps) {
+  const t = useT();
   const { user } = useAuth();
   const [messages, setMessages] = useState<DirectMessage[]>([]);
   const [input, setInput] = useState('');
@@ -492,7 +500,7 @@ export function DiscussionChatPanel({
       await cancelOutgoingGuestInvite(conversationId, inviteId);
       await loadPendingGuestInvites();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to cancel invite.'));
+      setError(getApiErrorMessage(e, t('Unable to cancel invite.')));
     } finally {
       setInviteActionLoading(false);
     }
@@ -506,7 +514,7 @@ export function DiscussionChatPanel({
       await Promise.all([loadActiveGuests(), loadParticipants(), loadHistory()]);
       scheduleInboxRefresh();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to end guest access.'));
+      setError(getApiErrorMessage(e, t('Unable to end guest access.')));
     } finally {
       setGuestActionLoading(false);
     }
@@ -531,7 +539,7 @@ export function DiscussionChatPanel({
       scheduleInboxRefresh();
     } catch (e) {
       leavingRef.current = false;
-      setError(getApiErrorMessage(e, 'Unable to leave this conversation.'));
+      setError(getApiErrorMessage(e, t('Unable to leave this conversation.')));
     } finally {
       setGuestActionLoading(false);
     }
@@ -560,7 +568,7 @@ export function DiscussionChatPanel({
         return;
       }
       if (switching) {
-        setError(getApiErrorMessage(e, 'Unable to load messages.'));
+        setError(getApiErrorMessage(e, t('Unable to load messages.')));
         setMessages([]);
       }
     } finally {
@@ -568,7 +576,7 @@ export function DiscussionChatPanel({
         setLoadingHistory(false);
       }
     }
-  }, [acknowledgeAllIncomingDeliveries, conversationId, handleConversationAccessLost]);
+  }, [acknowledgeAllIncomingDeliveries, conversationId, handleConversationAccessLost, t]);
 
   useEffect(() => {
     return onAccessTokenChange(() => {
@@ -763,7 +771,7 @@ export function DiscussionChatPanel({
           return;
         }
         if (/unauthorized|forbidden|access denied|invalid token|jwt/i.test(message)) {
-          setError('Real-time session expired. Reload or sign in again.');
+          setError(t('Real-time session expired. Reload or sign in again.'));
           setConnected(false);
         }
         // Transient broker errors: let STOMP reconnect quietly — keep composer frozen.
@@ -880,7 +888,7 @@ export function DiscussionChatPanel({
             scheduleInboxRefreshRef.current?.();
             requestAnimationFrame(() => tryMarkAsReadIfAtBottomRef.current?.());
           } catch {
-            if (!disposed) setError('Received an invalid message.');
+            if (!disposed) setError(t('Received an invalid message.'));
           }
         }),
 
@@ -1123,7 +1131,7 @@ export function DiscussionChatPanel({
           requestAnimationFrame(() => scrollToBottom('smooth'));
           scheduleInboxRefresh();
         } catch (e) {
-          if (mountedRef.current) setError(getApiErrorMessage(e, 'Unable to send message.'));
+          if (mountedRef.current) setError(getApiErrorMessage(e, t('Unable to send message.')));
         } finally {
           if (mountedRef.current) setSending(false);
         }
@@ -1146,7 +1154,7 @@ export function DiscussionChatPanel({
         }, 1200);
       } catch (e) {
         setSending(false);
-        setError(getApiErrorMessage(e, 'Unable to send message.'));
+        setError(getApiErrorMessage(e, t('Unable to send message.')));
       }
       return;
     }
@@ -1227,7 +1235,7 @@ export function DiscussionChatPanel({
       scheduleInboxRefresh();
     } catch (e) {
       if (mountedRef.current && conversationIdRef.current === uploadForConversationId) {
-        setError(getApiErrorMessage(e, 'Unable to send media.'));
+        setError(getApiErrorMessage(e, t('Unable to send media.')));
       }
     } finally {
       if (mountedRef.current && conversationIdRef.current === uploadForConversationId) {
@@ -1265,15 +1273,15 @@ export function DiscussionChatPanel({
       scheduleInboxRefresh();
       pushFlashFeedback({
         variant: 'success',
-        title: 'Message deleted',
+        title: t('Message deleted'),
       });
       setPendingDeleteMessage(null);
     } catch (e) {
       setMessages(previous);
-      setError(getApiErrorMessage(e, 'Unable to delete message.'));
+      setError(getApiErrorMessage(e, t('Unable to delete message.')));
       pushFlashFeedback({
         variant: 'error',
-        title: 'Unable to delete message',
+        title: t('Unable to delete message'),
       });
     } finally {
       setDeletingMessage(false);
@@ -1286,7 +1294,7 @@ export function DiscussionChatPanel({
       const session = await startCall(conversationId, callType);
       setActiveCall(session);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to start call.'));
+      setError(getApiErrorMessage(e, t('Unable to start call.')));
     }
   };
 
@@ -1428,7 +1436,15 @@ export function DiscussionChatPanel({
     return cleaned.split(/\s+/)[0] || cleaned || title;
   }, [isTemporarySession, participants, title]);
 
-  const headerSubtitle = typingLabel ?? (isGroup ? 'Group' : null);
+  const headerSubtitle = typingLabel ?? (isGroup ? t('Group') : null);
+
+  /* The partner's presence, for the header's green dot and "Online" line (direct chats only). */
+  const presenceIds = useMemo(
+    () => (!isGroup && !readOnlyGuestHistory && partnerUserId ? [partnerUserId] : []),
+    [isGroup, partnerUserId, readOnlyGuestHistory]
+  );
+  const { isOnline } = usePresence(presenceIds);
+  const partnerOnline = Boolean(partnerUserId) && presenceIds.length > 0 && isOnline(partnerUserId as string);
 
   const headerLeadingActions = isTemporarySession ? (
     <GuestSessionTraceMenu traces={guestSessionTraces} />
@@ -1441,10 +1457,10 @@ export function DiscussionChatPanel({
           type="button"
           onClick={() => void handleLeaveAsGuest()}
           disabled={guestActionLoading}
-          className="rounded-[8px] border border-[var(--cw-border)] px-3 py-2 text-[11px] font-semibold text-[var(--cw-text-primary)] transition hover:bg-[var(--cw-surface-soft)] disabled:opacity-60"
-          title="Leave this temporary conversation"
+          className={HEADER_PILL}
+          title={t('Leave this temporary conversation')}
         >
-          {guestActionLoading ? '…' : 'Leave'}
+          {guestActionLoading ? '…' : t('Leave')}
         </button>
       )}
       {!isCurrentUserGuest &&
@@ -1456,10 +1472,10 @@ export function DiscussionChatPanel({
               type="button"
               onClick={() => void handleEndGuestAccess(guest.guestUserId)}
               disabled={guestActionLoading}
-              className="rounded-[8px] border border-[var(--cw-border)] px-3 py-2 text-[11px] font-semibold text-[var(--cw-text-primary)] transition hover:bg-[var(--cw-surface-soft)] disabled:opacity-60"
-              title={`End guest access for ${guest.guestName}`}
+              className={HEADER_PILL}
+              title={t('End guest access for {guestName}', { guestName: guest.guestName })}
             >
-              {guestActionLoading ? '…' : 'End access'}
+              {guestActionLoading ? '…' : t('End access')}
             </button>
           ))}
       {!isGroup && SHOW_CALL_BUTTONS && (
@@ -1468,9 +1484,9 @@ export function DiscussionChatPanel({
             type="button"
             onClick={() => void initiateCall('VOICE')}
             disabled={callButtonsDisabled}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-[var(--cw-surface-soft)] hover:text-[var(--cw-text-primary)] disabled:opacity-40"
-            title={callButtonsDisabled && !connected ? 'Waiting for connection…' : 'Voice call'}
-            aria-label="Voice call"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors hover:bg-[var(--msg-wash)] disabled:opacity-40"
+            title={callButtonsDisabled && !connected ? t('Waiting for connection…') : t('Voice call')}
+            aria-label={t('Voice call')}
           >
             <PhoneIcon />
           </button>
@@ -1478,9 +1494,9 @@ export function DiscussionChatPanel({
             type="button"
             onClick={() => void initiateCall('VIDEO')}
             disabled={callButtonsDisabled}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-[8px] text-[var(--cw-text-secondary)] transition hover:bg-[var(--cw-surface-soft)] hover:text-[var(--cw-text-primary)] disabled:opacity-40"
-            title={callButtonsDisabled && !connected ? 'Waiting for connection…' : 'Video call'}
-            aria-label="Video call"
+            className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors hover:bg-[var(--msg-wash)] disabled:opacity-40"
+            title={callButtonsDisabled && !connected ? t('Waiting for connection…') : t('Video call')}
+            aria-label={t('Video call')}
           >
             <VideoIcon />
           </button>
@@ -1490,9 +1506,9 @@ export function DiscussionChatPanel({
         <button
           type="button"
           onClick={() => setAddMemberOpen(true)}
-          className="rounded-[8px] border border-[var(--cw-border)] bg-[var(--cw-surface)] px-3 py-2 text-[11px] font-semibold text-[var(--cw-text-primary)] transition hover:bg-[var(--cw-surface-soft)]"
+          className={HEADER_PILL}
         >
-          + Member
+          {t('+ Member')}
         </button>
       )}
       {!isTemporarySession && isGroup ? <GuestSessionTraceMenu traces={guestSessionTraces} /> : null}
@@ -1504,7 +1520,7 @@ export function DiscussionChatPanel({
       initial={{ opacity: 0, y: 8 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.3, ease: [0.22, 1, 0.36, 1] }}
-      className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--cw-surface,#fff)]"
+      className="flex h-full min-h-0 flex-col overflow-hidden bg-[var(--msg-ground)]"
       aria-labelledby="discussion-chat-heading"
       aria-busy={loadingHistory}
     >
@@ -1538,10 +1554,10 @@ export function DiscussionChatPanel({
       )}
       <ConfirmDialog
         open={Boolean(pendingDeleteMessage)}
-        title="Delete this message?"
-        description="This cannot be undone. The message will be removed from the conversation."
-        confirmLabel="Delete"
-        cancelLabel="Cancel"
+        title={t('Delete this message?')}
+        description={t('This cannot be undone. The message will be removed from the conversation.')}
+        confirmLabel={t('Delete')}
+        cancelLabel={t('Cancel')}
         tone="danger"
         busy={deletingMessage}
         onCancel={() => {
@@ -1555,6 +1571,8 @@ export function DiscussionChatPanel({
       <ConversationHeader
         title={headerTitle}
         subtitle={headerSubtitle}
+        avatarUrl={isTemporarySession ? undefined : partnerAvatarUrl ?? null}
+        online={partnerOnline}
         titleCentered={isTemporarySession}
         leadingActions={headerLeadingActions}
         detailsOpen={detailsOpen}
@@ -1579,16 +1597,16 @@ export function DiscussionChatPanel({
           />
         )}
 
-        <div className="space-y-2 px-5 pt-3 sm:px-8">
+        <div className="space-y-2 px-5 empty:hidden sm:px-6">
           {showWsHint && (
-            <p className="border-l-2 border-[var(--msg-coral)] px-3 py-2 text-xs font-light text-[var(--msg-ink-soft)]">
-              Real-time messaging requires an active session. Reload or sign in again.
+            <p className="bg-[var(--msg-surface)] px-4 py-3 text-[13px] text-[var(--msg-ink)]">
+              {t('Real-time messaging requires an active session. Reload or sign in again.')}
             </p>
           )}
 
           {readOnlyGuestHistory && (
-            <p className="border-l border-[var(--msg-hairline-strong)] px-3 py-2 text-xs font-light text-[var(--msg-ink-soft)]">
-              Viewing your temporary session history — only messages from when you joined until you left are shown.
+            <p className="bg-[var(--msg-surface)] px-4 py-3 text-[13px] text-[var(--msg-ink-soft)]">
+              {t('Viewing your temporary session history — only messages from when you joined until you left are shown.')}
             </p>
           )}
 
@@ -1610,7 +1628,7 @@ export function DiscussionChatPanel({
               tryMarkAsReadIfAtBottom();
             }
           }}
-          className="msg-scroll relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto bg-[var(--msg-thread-bg)] px-5 py-2 text-sm sm:px-8"
+          className="msg-scroll relative mb-0 min-h-0 min-w-0 flex-1 overflow-x-hidden overflow-y-auto overscroll-contain bg-[var(--msg-ground)] px-5 py-1 text-[15px] sm:px-6"
           role="log"
           aria-live="polite"
         >
@@ -1627,18 +1645,43 @@ export function DiscussionChatPanel({
               highlightedMessageId={highlightedMessageId}
               emptyLabel={
                 readOnlyGuestHistory
-                  ? 'No messages during your temporary session.'
-                  : 'No messages yet. Say hello!'
+                  ? t('No messages during your temporary session.')
+                  : t('No messages yet. Say hello!')
+              }
+              emptyState={
+                readOnlyGuestHistory || isTemporarySession ? undefined : (
+                  /* A new thread opens on who you are writing to — portrait, name, one line —
+                     rather than on an empty page with a hint in light grey. */
+                  <div className="flex flex-col items-center px-6 pb-6 pt-14 text-center">
+                    <span className="[&>*]:!h-16 [&>*]:!w-16 [&>*]:!text-[20px]">
+                      <Avatar avatarUrl={partnerAvatarUrl} name={title} size="lg" tone="muted" />
+                    </span>
+                    <p className="mt-4 text-[20px] font-extrabold leading-6 tracking-[-0.015em] text-[var(--msg-ink)]">
+                      {headerTitle}
+                    </p>
+                    <p className="mt-1.5 max-w-[18rem] text-[15px] leading-5 text-[var(--msg-ink-faint)]">
+                      {t('This is the start of your conversation. Say hello.')}
+                    </p>
+                  </div>
+                )
               }
             />
             <div ref={bottomRef} />
           </div>
         </div>
 
+        {/* Typing: X's three rising dots in a bubble of the other side's tone, at the foot of the
+            thread where the answer will land. The words stay for screen readers (and the header
+            says them in full). */}
         {typingLabel && (
-          <p className="msg-micro mb-1 px-5 text-[var(--msg-ink-faint)] sm:px-8" aria-live="polite">
-            {typingLabel}
-          </p>
+          <div className="flex items-center gap-2 px-5 pb-1.5 sm:px-6" aria-live="polite">
+            <span className="inline-flex h-8 items-center gap-1 rounded-[16px] rounded-bl-[4px] bg-[var(--msg-bubble-theirs)] shadow-[inset_0_0_0_1px_var(--xm-bubble-line)] px-3.5" aria-hidden>
+              <span className="xm-typing-dot h-1.5 w-1.5 rounded-full bg-[var(--msg-ink-faint)]" />
+              <span className="xm-typing-dot h-1.5 w-1.5 rounded-full bg-[var(--msg-ink-faint)]" />
+              <span className="xm-typing-dot h-1.5 w-1.5 rounded-full bg-[var(--msg-ink-faint)]" />
+            </span>
+            <span className="sr-only">{typingLabel}</span>
+          </div>
         )}
 
         <PendingGuestInviteStrip
@@ -1677,14 +1720,14 @@ export function DiscussionChatPanel({
           sending={sending}
           uploading={uploading}
           placeholder={
-            pendingFiles.length > 0 ? 'Add a caption, then send…' : 'Write your message…'
+            pendingFiles.length > 0 ? t('Add a caption…') : t('Start a message')
           }
           readOnlyLabel={
             showComposer
               ? null
               : readOnlyGuestHistory
-                ? 'Read-only temporary session history.'
-                : 'Read-only conversation.'
+                ? t('Read-only temporary session history.')
+                : t('Read-only conversation.')
           }
           attachment={
             attachedProductId ? (

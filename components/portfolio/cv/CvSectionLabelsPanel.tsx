@@ -8,6 +8,7 @@ import {
   type CvSectionLabels,
   type CvTemplateId,
 } from '@/lib/cv-data';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Headings each layout actually prints — the others are hidden from the editor. */
 const SECTIONS_BY_TEMPLATE: Record<CvTemplateId, readonly CvSectionId[]> = {
@@ -29,14 +30,15 @@ export function CvSectionLabelsPanel({
   maxLength: number;
   onChange: (next: CvSectionLabels) => void;
 }) {
+  const t = useT();
   const visible = CV_SECTIONS.filter((section) => SECTIONS_BY_TEMPLATE[template].includes(section.id));
   const hasCustom = visible.some((section) => labels[section.id]?.trim());
 
   return (
-    <div aria-label="Section labels" className="space-y-4">
+    <div aria-label={t('Section labels')} className="space-y-4">
       <p className="text-[13px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-        Leave a field empty to keep the default.
-        {template === 'ats' ? ' ATS software reads standard headings best.' : null}
+        {t('Leave a field empty to keep the default.')}
+        {template === 'ats' ? t(' ATS software reads standard headings best.') : null}
       </p>
 
       <div className="space-y-3">
@@ -73,7 +75,7 @@ export function CvSectionLabelsPanel({
           }}
           className="text-[13px] font-medium text-neutral-500 underline-offset-4 transition-colors hover:text-[#111111] hover:underline dark:text-neutral-400 dark:hover:text-white"
         >
-          Reset to defaults
+          {t('Reset to defaults')}
         </button>
       ) : null}
     </div>

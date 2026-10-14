@@ -10,6 +10,7 @@ import {
   FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_KICKER_TEXT = '( Get in touch )';
 const DEFAULT_TITLE_TEXT = "Let's start\na conversation.";
@@ -78,6 +79,7 @@ export function FooterHeaderTimezoneHeader({
   timezoneId?: string | null;
 }) {
   const presentation = presentationProp ?? DEFAULT_FOOTER_PRESENTATION;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'footer-timezone');
   const kickerText = (presentation.headerTimezoneKickerText || DEFAULT_KICKER_TEXT).trim();
   const titleText = (presentation.headerTimezoneTitleText || DEFAULT_TITLE_TEXT).trim();
   const descriptionText = (presentation.headerTimezoneDescriptionText || DEFAULT_DESCRIPTION_TEXT).trim();
@@ -103,7 +105,7 @@ export function FooterHeaderTimezoneHeader({
     >
       <div className="pf-footer-header-timezone-stage grid w-full grid-cols-1 gap-10 lg:grid-cols-[1fr_auto] lg:items-start lg:gap-16">
         <div className="flex min-w-0 flex-col gap-6 text-left">
-          {kickerText ? (
+          {show('kicker') && kickerText ? (
             <p
               className="pf-footer-header-timezone-kicker mb-0 text-xs font-semibold uppercase tracking-[0.32em]"
               style={{ color: kickerInk }}
@@ -111,7 +113,7 @@ export function FooterHeaderTimezoneHeader({
               {kickerText}
             </p>
           ) : null}
-          {titleLines.length > 0 ? (
+          {show('title') && titleLines.length > 0 ? (
             <h2 className="mb-0 font-sans text-[clamp(2.75rem,7.2vw,6rem)] font-black leading-none tracking-[-0.02em]" style={{ color: ink }}>
               {titleLines.map((line, index) => (
                 <span key={`${line}-${index}`} className="pf-footer-header-timezone-title-mask block overflow-hidden">
@@ -120,7 +122,7 @@ export function FooterHeaderTimezoneHeader({
               ))}
             </h2>
           ) : null}
-          {descriptionText ? (
+          {show('description') && descriptionText ? (
             <p
               className="pf-footer-header-timezone-description mb-0 max-w-sm text-sm leading-relaxed sm:text-base"
               style={{ color: descriptionInk }}
@@ -132,7 +134,7 @@ export function FooterHeaderTimezoneHeader({
         </div>
 
         <div className="flex min-w-0 shrink-0 flex-col items-start gap-1 lg:items-end lg:text-right">
-          {localTime ? (
+          {show('clock') && localTime ? (
             <span
               className="pf-footer-header-timezone-clock font-mono text-2xl font-medium tabular-nums sm:text-3xl"
               style={{ color: timeInk }}
@@ -140,7 +142,7 @@ export function FooterHeaderTimezoneHeader({
               {localTime}
             </span>
           ) : null}
-          {trimmedLocation ? (
+          {show('location') && trimmedLocation ? (
             <span className="pf-footer-header-timezone-clock text-xs uppercase tracking-[0.32em]" style={{ color: captionInk }}>
               {trimmedLocation}
             </span>

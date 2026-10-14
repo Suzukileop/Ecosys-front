@@ -1,37 +1,53 @@
 'use client';
 
+import { trPlural } from '@/lib/i18n/active';
 import { Fragment, useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import { faPenToSquare, faTrashCan } from '@fortawesome/free-regular-svg-icons';
 import { faCheck, faChevronLeft, faChevronRight, faCircleExclamation, faCircleInfo, faPlus, faXmark } from '@fortawesome/free-solid-svg-icons';
+import { useT } from '@/lib/i18n/I18nProvider';
 
+/* Field anatomy (the News composer's field): a small secondary label above a filled, square field on
+   the field tone (`--gn-field`), with a 1px frame in the line tone so it still reads as editable on the
+   card; hover darkens the frame, focus draws a 2px ink ring inside the edge — no accent colour, and
+   every colour from the News tokens (hex fallbacks only for a render outside the News scope). */
 export const STUDIO_LABEL_CLASS =
-  'block text-[15px] font-bold text-[#111111] group-focus-within:text-[#111111] dark:text-neutral-300 dark:group-focus-within:text-white';
+  'block text-[13px] font-medium leading-[18px] text-[color:var(--gn-ink2,#536471)]';
 export const STUDIO_INLINE_TEXT_CLASS =
-  'block w-full bg-transparent p-0 pb-3 text-base font-normal text-black caret-[#FF5722] outline-none placeholder:font-normal placeholder:text-neutral-400 disabled:opacity-60 dark:text-neutral-100 dark:placeholder:text-neutral-600';
+  'block w-full rounded-none bg-[color:var(--gn-field,#EFF3F4)] px-3.5 py-2.5 text-[15px] font-normal text-[color:var(--gn-ink,#0F1419)] caret-[color:var(--gn-ink,#0F1419)] shadow-[inset_0_0_0_1px_var(--gn-line,#EFF3F4)] outline-none transition-[box-shadow] duration-150 placeholder:font-normal placeholder:text-[color:var(--gn-ink3,#8B98A5)] hover:shadow-[inset_0_0_0_1px_var(--gn-ink3,#8B98A5)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink,#0F1419)] focus-visible:shadow-[inset_0_0_0_2px_var(--gn-ink,#0F1419)] disabled:opacity-60';
+/**
+ * Read-only value: no box at all — the text alone under its label, on the editable fields' 40px
+ * line so a row of mixed fields stays level. Only what can be edited is drawn as a field.
+ * (Editable fields paint `--gn-inset`, not `#FFFFFF`: the News theme repaints every `bg-[#FFFFFF]`
+ * in the card tone, which turned them grey on a white page.)
+ */
+export const STUDIO_STATIC_BOX_CLASS = 'flex min-h-[44px] w-full items-center';
 export const STUDIO_BLOCK_CLASS =
-  'grid grid-cols-1 gap-x-8 gap-y-10 py-10 first:pt-3 last:pb-10';
+  'grid grid-cols-1 gap-x-6 gap-y-6 py-6 first:pt-2 last:pb-8';
+/** Menus and tooltips: the site's menu panel (Products' "Sort by") — a solid fill, a crisp 1px frame and
+    a short drop shadow. No glow halo and no blur behind it. */
 export const STUDIO_GLASS_PANEL_CLASS =
-  'overflow-hidden rounded-xl border border-black/[0.06] bg-white/75 shadow-2xl backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#0D0D0D]/70';
+  'overflow-hidden rounded-2xl bg-[#FEFEFE] shadow-[0_0_0_1px_#E1E8ED,0_8px_20px_-14px_rgba(15,20,25,0.18)] dark:bg-[#000000] dark:shadow-[0_0_0_1px_#2F3336]';
 export const STUDIO_BARE_INPUT_CLASS =
-  'block w-full bg-transparent p-0 pb-1.5 caret-[#FF5722] outline-none placeholder:font-normal placeholder:not-italic placeholder:text-neutral-400 disabled:opacity-60 dark:placeholder:text-neutral-600';
-export const STUDIO_VALUE_CLASS = 'text-base font-normal text-black dark:text-neutral-100';
-export const STUDIO_SECONDARY_CLASS = 'text-[14px] text-neutral-500 dark:text-neutral-400';
-export const STUDIO_EMPTY_CLASS = 'text-base text-neutral-400 dark:text-neutral-600';
-export const STUDIO_ROW_RULE = 'border-b border-black/[0.06] dark:border-white/[0.06]';
+  'block w-full bg-transparent p-0 pb-1.5 caret-current outline-none placeholder:font-normal placeholder:not-italic placeholder:text-[#8B98A5] disabled:opacity-60 dark:placeholder:text-[#536471]';
+export const STUDIO_VALUE_CLASS = 'text-[15px] font-normal text-[#0F1419] dark:text-[#E7E9EA]';
+export const STUDIO_SECONDARY_CLASS = 'text-[14px] text-[#536471] dark:text-[#71767B]';
+export const STUDIO_EMPTY_CLASS = 'text-[15px] text-[#8B98A5] dark:text-[#536471]';
+/** Rows are separated by spacing, not hairlines (X rollout: no divider lines between blocks). */
+export const STUDIO_ROW_RULE = 'border-b border-transparent';
 /** Round icon buttons — same resting contrast and inverted hover as the visibility eye. */
 export const STUDIO_ICON_BUTTON_TONES = {
   neutral:
-    'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:bg-neutral-900 hover:text-white dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:hover:border-white dark:hover:bg-white dark:hover:text-black',
+    'border-[#CFD9DE] bg-white text-[#0F1419] hover:border-[#0F1419] hover:bg-[#0F1419] hover:text-white dark:border-[#536471] dark:bg-transparent dark:text-[#E7E9EA] dark:hover:border-[#EFF3F4] dark:hover:bg-[#EFF3F4] dark:hover:text-[#0F1419]',
   active:
-    'border-[#FF5722]/50 bg-[#FF5722]/[0.06] text-[#FF5722] dark:border-[#FF5722]/40 dark:bg-[#FF5722]/10',
+    'border-[#0F1419] bg-[#0F1419]/[0.06] text-[#0F1419] dark:border-[#E7E9EA] dark:bg-white/10 dark:text-[#E7E9EA]',
   confirm:
-    'border-[#FF5722] bg-[#FF5722] text-white hover:bg-[#E64A19] hover:border-[#E64A19]',
+    'border-[#0F1419] bg-[#0F1419] text-white hover:border-[#272C30] hover:bg-[#272C30] dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:border-[#D7DBDC] dark:hover:bg-[#D7DBDC]',
   cancel:
-    'border-neutral-300 bg-white text-neutral-700 hover:border-neutral-900 hover:text-neutral-900 dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:hover:border-white dark:hover:text-white',
+    'border-[#CFD9DE] bg-white text-[#536471] hover:border-[#0F1419] hover:text-[#0F1419] dark:border-[#536471] dark:bg-transparent dark:text-[#E7E9EA] dark:hover:border-[#E7E9EA] dark:hover:text-white',
   danger:
-    'border-neutral-300 bg-white text-neutral-700 hover:border-red-500 hover:bg-red-500 hover:text-white dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:hover:border-red-500 dark:hover:bg-red-500 dark:hover:text-white',
+    'border-[#CFD9DE] bg-white text-[#0F1419] hover:border-[#F4212E] hover:bg-[#F4212E] hover:text-white dark:border-[#536471] dark:bg-transparent dark:text-[#E7E9EA] dark:hover:border-[#F4212E] dark:hover:bg-[#F4212E] dark:hover:text-white',
 } as const;
 export const STUDIO_FLOAT_IN_STYLE = { animation: 'pf-float-in 220ms cubic-bezier(0.16, 1, 0.3, 1)' } as const;
 
@@ -78,25 +94,26 @@ export function StudioField({
   className?: string;
   children: ReactNode;
 }) {
+  const t = useT();
+  /* No resting underline any more: the field itself is a filled box (STUDIO_INLINE_TEXT_CLASS).
+     The aside (the visibility pill) sits right after its own label. Every label line is 28px tall —
+     the pill's height — so a field with a pill and one without line up, and the pill keeps an 8px gap
+     above its field instead of being pulled down onto it. */
   return (
-    <StudioUnderline className={className}>
-      {hint ? (
-        <div className="mb-2.5 flex items-center gap-2">
-          <label htmlFor={htmlFor} className={STUDIO_LABEL_CLASS}>
-            {label}
-          </label>
-          <StudioInfoTip label={`About ${label}`} glyph="exclamation" align="left">
-            {hint}
-          </StudioInfoTip>
-        </div>
-      ) : (
-        <label htmlFor={htmlFor} className={`${STUDIO_LABEL_CLASS} mb-2.5`}>
+    <div className={`group relative min-w-0 ${className}`}>
+      <div className="mb-2 flex min-h-7 items-center gap-2">
+        <label htmlFor={htmlFor} className={STUDIO_LABEL_CLASS}>
           {label}
         </label>
-      )}
-      {aside ? <div className="absolute -top-2 right-0 z-10">{aside}</div> : null}
+        {hint ? (
+          <StudioInfoTip label={t('About {label}', { label })} glyph="exclamation" align="left">
+            {hint}
+          </StudioInfoTip>
+        ) : null}
+        {aside ? <div className="relative z-10 shrink-0">{aside}</div> : null}
+      </div>
       {children}
-    </StudioUnderline>
+    </div>
   );
 }
 
@@ -104,7 +121,7 @@ export function StudioField({
 export function StudioSectionHeader({ label, children }: { label: string; children?: ReactNode }) {
   return (
     <div className="mb-4 flex min-h-8 items-center justify-between gap-4">
-      <h3 className="text-[15px] font-bold text-[#111111] dark:text-neutral-200">{label}</h3>
+      <h3 className="text-[15px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{label}</h3>
       {children ? <div className="flex shrink-0 items-center gap-3">{children}</div> : null}
     </div>
   );
@@ -235,6 +252,7 @@ export function StudioMenuSelect<T extends string>({
   placeholder: string;
   ariaLabel: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -303,8 +321,8 @@ export function StudioMenuSelect<T extends string>({
                     selected ? 'font-semibold text-black dark:text-white' : 'text-neutral-600 dark:text-neutral-300'
                   }`}
                 >
-                  {option.label}
-                  {selected ? <span aria-hidden className="h-1 w-1 rounded-full bg-[#FF5722]" /> : null}
+                  {t(option.label)}
+                  {selected ? <span aria-hidden className="h-1 w-1 rounded-full bg-current" /> : null}
                 </button>
               </li>
             );
@@ -316,7 +334,8 @@ export function StudioMenuSelect<T extends string>({
 }
 
 export function StudioFoldToggle({ open, onClick }: { open: boolean; onClick: () => void }) {
-  return <StudioIconAction icon={open ? 'done' : 'edit'} label={open ? 'Done' : 'Edit'} pressed={open} onClick={onClick} />;
+  const t = useT();
+  return <StudioIconAction icon={open ? 'done' : 'edit'} label={open ? t('Done') : t('Edit')} pressed={open} onClick={onClick} />;
 }
 
 export function StudioRemoveButton({ label, onClick }: { label: string; onClick: () => void }) {
@@ -346,38 +365,39 @@ function FloatingSaveBar({
   onDiscard: () => void;
   onSave: () => void;
 }) {
+  const t = useT();
   const tabIndex = visible ? 0 : -1;
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[60] flex justify-center px-4">
       <div
         role="region"
-        aria-label="Unsaved changes"
+        aria-label={t('Unsaved changes')}
         aria-hidden={!visible}
-        className={`flex items-center gap-2 rounded-full border border-white/[0.08] bg-[#141414]/90 py-2 pl-5 pr-2 shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl transition-all duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+        className={`flex items-center gap-2 rounded-full bg-[#0F1419] py-2 pl-5 pr-2 text-white shadow-[0_10px_32px_-8px_rgba(0,0,0,0.45)] transition-all dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:shadow-[0_10px_32px_-8px_rgba(0,0,0,0.8)] duration-500 ease-[cubic-bezier(0.16,1,0.3,1)] ${
           visible ? 'pointer-events-auto translate-y-0 opacity-100' : 'pointer-events-none translate-y-6 opacity-0'
         }`}
       >
-        <span className="mr-3 hidden items-center gap-2.5 text-[14px] font-normal text-white/80 sm:inline-flex">
-          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-[#FF5722]" />
-          {count} unsaved {count === 1 ? 'change' : 'changes'}
+        <span className="mr-3 hidden items-center gap-2.5 text-[15px] font-medium opacity-80 sm:inline-flex">
+          <span aria-hidden className="h-1.5 w-1.5 rounded-full bg-current" />
+          {count} {t('unsaved')} {trPlural(count, 'change', 'changes')}
         </span>
         <button
           type="button"
           tabIndex={tabIndex}
           disabled={saving}
           onClick={onDiscard}
-          className="rounded-full px-4 py-2 text-[14px] font-medium text-white/70 transition-colors duration-200 hover:bg-white/[0.06] hover:text-white disabled:opacity-40"
+          className="h-10 rounded-full px-4 text-[15px] font-bold opacity-80 transition-[background-color,opacity] duration-200 hover:bg-white/10 hover:opacity-100 disabled:opacity-40 dark:hover:bg-black/[0.06]"
         >
-          Discard
+          {t('Discard')}
         </button>
         <button
           type="button"
           tabIndex={tabIndex}
           disabled={saving}
           onClick={onSave}
-          className="rounded-full bg-[#FF5722] px-5 py-2 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#E64A19] disabled:opacity-60"
+          className="h-10 rounded-full bg-white px-5 text-[15px] font-bold text-[#0F1419] transition-colors duration-200 hover:bg-[#D7DBDC] disabled:opacity-60 dark:bg-[#0F1419] dark:text-white dark:hover:bg-[#272C30]"
         >
-          {saving ? 'Saving…' : 'Save changes'}
+          {saving ? t('Saving…') : t('Save changes')}
         </button>
       </div>
     </div>
@@ -389,13 +409,13 @@ type StudioToast = { id: number; tone: 'success' | 'error' | 'idle'; message: st
 function StudioSaveToast({ toast }: { toast: StudioToast | null }) {
   if (!toast) return null;
   const dot =
-    toast.tone === 'success' ? 'bg-[#FF5722]' : toast.tone === 'error' ? 'bg-red-500' : 'bg-neutral-400';
+    toast.tone === 'success' ? 'bg-current' : toast.tone === 'error' ? 'bg-[#F4212E]' : 'bg-current opacity-50';
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[61] flex justify-center px-4" role="status">
       <div
         key={toast.id}
         style={STUDIO_FLOAT_IN_STYLE}
-        className="flex items-center gap-2.5 rounded-full border border-white/[0.08] bg-[#141414]/90 px-5 py-3 text-[14px] font-medium text-white shadow-[0_16px_40px_-12px_rgba(0,0,0,0.6)] backdrop-blur-xl"
+        className="flex items-center gap-2.5 rounded-xl bg-[#0F1419] px-4 py-3 text-[15px] font-medium leading-5 text-white shadow-[0_10px_32px_-8px_rgba(0,0,0,0.45)] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:shadow-[0_10px_32px_-8px_rgba(0,0,0,0.8)]"
       >
         <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${dot}`} />
         {toast.message}
@@ -436,6 +456,7 @@ export function useInlineStudio<T extends object>({
   onSave: (draft: T) => Promise<void>;
   signature?: (key: keyof T, value: T[keyof T]) => string;
 }) {
+  const t = useT();
   const baselineRef = useRef(initial);
   const draftRef = useRef<T>(initial);
   const dirtyKeysRef = useRef(new Set<keyof T>());
@@ -494,12 +515,12 @@ export function useInlineStudio<T extends object>({
       window.dispatchEvent(new Event(STUDIO_SETTLED_EVENT));
       showToast('success', 'Changes saved');
     } catch (e) {
-      showToast('error', getApiErrorMessage(e, 'Could not save changes'));
+      showToast('error', getApiErrorMessage(e, t('Could not save changes')));
     } finally {
       savingRef.current = false;
       setSaving(false);
     }
-  }, [onSave, showToast, signature]);
+  }, [onSave, showToast, signature, t]);
 
   const saveRef = useRef(save);
   useEffect(() => {

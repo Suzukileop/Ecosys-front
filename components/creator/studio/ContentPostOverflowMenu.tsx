@@ -1,24 +1,13 @@
 'use client';
 
-import { useCallback, useEffect, useId, useLayoutEffect, useRef, useState } from 'react';
-import { createPortal } from 'react-dom';
-import Link from 'next/link';
+import { useRouter } from 'next/navigation';
+import {
+  ContentPostActionsMenu,
+  PostMenuIcons,
+  type ContentPostActionItem,
+} from '@/components/creator/ContentPostActionsMenu';
 import type { ContentPostBucket } from '@/types/creator-content';
-
-type MenuItem = {
-  id: string;
-  label: string;
-  onClick?: () => void;
-  href?: string;
-  tone?: 'default' | 'danger';
-  disabled?: boolean;
-};
-
-type MenuCoords = {
-  top: number;
-  left: number;
-  openUp: boolean;
-};
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentPostOverflowMenuProps = {
   postId: string;
@@ -40,10 +29,53 @@ type ContentPostOverflowMenuProps = {
   onPermanentDelete: () => void;
 };
 
-const MENU_MIN_WIDTH = 176;
-const VIEWPORT_PAD = 8;
-const GAP = 6;
+const iconProps = {
+  className: 'h-[18px] w-[18px]',
+  viewBox: '0 0 24 24',
+  fill: 'none',
+  stroke: 'currentColor',
+  strokeWidth: 1.7,
+  strokeLinecap: 'round' as const,
+  strokeLinejoin: 'round' as const,
+};
 
+const StudioMenuIcons = {
+  edit: (
+    <svg {...iconProps}>
+      <path d="M4 20h4L19 9a2.8 2.8 0 0 0-4-4L4 16v4Z" />
+      <path d="m13.5 6.5 4 4" />
+    </svg>
+  ),
+  pin: (
+    <svg {...iconProps}>
+      <path d="M9 4h6l-1 6 3 3H7l3-3-1-6Z" />
+      <path d="M12 13v7" />
+    </svg>
+  ),
+  archive: (
+    <svg {...iconProps}>
+      <rect x="3.5" y="4.5" width="17" height="4.5" rx="1" />
+      <path d="M5 9v9.5A1.5 1.5 0 0 0 6.5 20h11a1.5 1.5 0 0 0 1.5-1.5V9M10 13h4" />
+    </svg>
+  ),
+  restore: (
+    <svg {...iconProps}>
+      <path d="M4 12a8 8 0 1 0 2.4-5.7L4 8.5" />
+      <path d="M4 4v4.5h4.5" />
+    </svg>
+  ),
+  globe: (
+    <svg {...iconProps}>
+      <circle cx="12" cy="12" r="8.5" />
+      <path d="M3.5 12h17M12 3.5c2.3 2.4 3.4 5.2 3.4 8.5s-1.1 6.1-3.4 8.5c-2.3-2.4-3.4-5.2-3.4-8.5S9.7 5.9 12 3.5Z" />
+    </svg>
+  ),
+};
+
+/**
+ * The studio post's "…" menu — the News post menu (ContentPostActionsMenu: X-style rounded panel,
+ * icon + label rows, destructive actions set apart) fed with the owner's actions for the bucket.
+ */
 export function ContentPostOverflowMenu({
   postId,
   bucket,
@@ -63,251 +95,78 @@ export function ContentPostOverflowMenu({
   onRestore,
   onPermanentDelete,
 }: ContentPostOverflowMenuProps) {
-  const [open, setOpen] = useState(false);
-  const [coords, setCoords] = useState<MenuCoords | null>(null);
-  const [mounted, setMounted] = useState(false);
-  const triggerRef = useRef<HTMLButtonElement>(null);
-  const menuRef = useRef<HTMLDivElement>(null);
-  const menuId = useId();
-
-  useEffect(() => {
-    setMounted(true);
-  }, []);
-
-  const close = useCallback(() => {
-    setOpen(false);
-    setCoords(null);
-  }, []);
-
-  const updatePosition = useCallback(() => {
-    const trigger = triggerRef.current;
-    const menu = menuRef.current;
-    if (!trigger) return;
-
-    const rect = trigger.getBoundingClientRect();
-    const menuHeight = menu?.offsetHeight ?? 220;
-    const menuWidth = Math.max(menu?.offsetWidth ?? MENU_MIN_WIDTH, MENU_MIN_WIDTH);
-    const spaceBelow = window.innerHeight - rect.bottom - VIEWPORT_PAD;
-    const openUp = spaceBelow < menuHeight && rect.top > spaceBelow;
-
-    let top = openUp ? rect.top - GAP - menuHeight : rect.bottom + GAP;
-    let left = rect.right - menuWidth;
-
-    top = Math.min(
-      Math.max(VIEWPORT_PAD, top),
-      window.innerHeight - menuHeight - VIEWPORT_PAD
-    );
-    left = Math.min(
-      Math.max(VIEWPORT_PAD, left),
-      window.innerWidth - menuWidth - VIEWPORT_PAD
-    );
-
-    setCoords({ top, left, openUp });
-  }, []);
-
-  useLayoutEffect(() => {
-    if (!open) return;
-    updatePosition();
-    // Second pass after paint when menu dimensions are known
-    const frame = requestAnimationFrame(() => updatePosition());
-    return () => cancelAnimationFrame(frame);
-  }, [open, updatePosition, bucket, commentsEnabled, pinned, isPublic]);
-
-  useEffect(() => {
-    if (!open) return;
-
-    const onPointerDown = (event: PointerEvent) => {
-      const target = event.target as Node | null;
-      if (!target) return;
-      if (triggerRef.current?.contains(target)) return;
-      if (menuRef.current?.contains(target)) return;
-      close();
-    };
-
-    const onKeyDown = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') {
-        event.preventDefault();
-        close();
-        triggerRef.current?.focus();
-      }
-    };
-
-    const onViewportChange = () => {
-      // Scroll / resize often leaves fixed menus stranded — close reliably.
-      close();
-    };
-
-    document.addEventListener('pointerdown', onPointerDown, true);
-    document.addEventListener('keydown', onKeyDown);
-    window.addEventListener('resize', onViewportChange);
-    window.addEventListener('scroll', onViewportChange, true);
-
-    return () => {
-      document.removeEventListener('pointerdown', onPointerDown, true);
-      document.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('resize', onViewportChange);
-      window.removeEventListener('scroll', onViewportChange, true);
-    };
-  }, [open, close]);
-
-  // Never leave a dangling open panel after unmount / post change.
-  useEffect(() => close, [postId, bucket, close]);
-
-  const items: MenuItem[] = [];
+  const t = useT();
+  const router = useRouter();
+  const items: ContentPostActionItem[] = [];
 
   if (bucket === 'trash') {
     items.push(
-      { id: 'restore', label: 'Restore', onClick: onRestore },
-      { id: 'permanent', label: 'Delete permanently', onClick: onPermanentDelete, tone: 'danger' }
+      { id: 'restore', label: t('Restore'), icon: StudioMenuIcons.restore, onSelect: onRestore },
+      {
+        id: 'permanent',
+        label: t('Delete permanently'),
+        description: t('This cannot be undone.'),
+        icon: PostMenuIcons.trash,
+        tone: 'danger',
+        separated: true,
+        onSelect: onPermanentDelete,
+      }
     );
   } else {
-    if (onEdit) {
-      items.push({
-        id: 'edit',
-        label: 'Edit',
-        onClick: onEdit,
-      });
-    } else {
-      items.push({
-        id: 'edit',
-        label: 'Edit',
-        href: `/profile/content/${postId}/edit`,
-      });
-    }
-
-    if (onVisibilityChange) {
-      items.push({
-        id: 'visibility',
-        label: isPublic ? 'Make private' : 'Make public',
-        onClick: () => onVisibilityChange(!isPublic),
-        disabled: visibilityBusy,
-      });
-    }
-
-    if (onCommentsEnabledChange) {
-      items.push({
-        id: 'comments',
-        label: commentsEnabled ? 'Disable comments' : 'Enable comments',
-        onClick: () => onCommentsEnabledChange(!commentsEnabled),
-        disabled: commentsBusy,
-      });
-    }
-
+    items.push({
+      id: 'edit',
+      label: t('Edit'),
+      icon: StudioMenuIcons.edit,
+      onSelect: onEdit ?? (() => router.push(`/profile/content/${postId}/edit`)),
+    });
     if (bucket === 'active' || bucket === 'pinned') {
       items.push({
         id: 'pin',
-        label: pinned ? 'Unpin' : 'Pin to top',
-        onClick: pinned ? onUnpin : onPin,
+        label: pinned ? t('Unpin from profile') : t('Pin to your profile'),
+        icon: StudioMenuIcons.pin,
+        onSelect: pinned ? onUnpin : onPin,
       });
-      items.push({ id: 'archive', label: 'Archive', onClick: onArchive });
     }
-
+    if (onVisibilityChange) {
+      items.push({
+        id: 'visibility',
+        label: isPublic ? t('Make private') : t('Make public'),
+        description: isPublic ? t('Only you will see it, from your profile.') : t('Everyone can see it again.'),
+        icon: isPublic ? PostMenuIcons.lock : StudioMenuIcons.globe,
+        disabled: visibilityBusy,
+        onSelect: () => onVisibilityChange(!isPublic),
+      });
+    }
+    if (onCommentsEnabledChange) {
+      items.push({
+        id: 'comments',
+        label: commentsEnabled ? t('Turn off comments') : t('Turn on comments'),
+        icon: PostMenuIcons.comments,
+        disabled: commentsBusy,
+        onSelect: () => onCommentsEnabledChange(!commentsEnabled),
+      });
+    }
+    if (bucket === 'active' || bucket === 'pinned') {
+      items.push({
+        id: 'archive',
+        label: t('Archive'),
+        description: t('Hide it from the feed, keep it here.'),
+        icon: StudioMenuIcons.archive,
+        onSelect: onArchive,
+      });
+    }
     if (bucket === 'archived') {
-      items.push({ id: 'unarchive', label: 'Unarchive', onClick: onUnarchive });
+      items.push({ id: 'unarchive', label: t('Unarchive'), icon: StudioMenuIcons.restore, onSelect: onUnarchive });
     }
-
     items.push({
       id: 'trash',
-      label: 'Move to trash',
-      onClick: onMoveToTrash,
+      label: t('Move to trash'),
+      icon: PostMenuIcons.trash,
       tone: 'danger',
+      separated: true,
+      onSelect: onMoveToTrash,
     });
   }
 
-  const run = (item: MenuItem) => {
-    if (item.disabled) return;
-    close();
-    // Defer so the menu unmounts before confirm() blocks the main thread.
-    window.setTimeout(() => {
-      item.onClick?.();
-    }, 0);
-  };
-
-  const panel =
-    open && mounted
-      ? createPortal(
-          <div
-            ref={menuRef}
-            id={menuId}
-            role="menu"
-            aria-labelledby={`${menuId}-trigger`}
-            className="fixed z-[200] min-w-[11.5rem] overflow-hidden rounded-xl border border-neutral-200/90 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900"
-            style={{
-              top: coords?.top ?? -9999,
-              left: coords?.left ?? -9999,
-              visibility: coords ? 'visible' : 'hidden',
-              pointerEvents: coords ? 'auto' : 'none',
-            }}
-            onClick={(e) => e.stopPropagation()}
-            onPointerDown={(e) => e.stopPropagation()}
-          >
-            {items.map((item) => {
-              const className = `flex w-full items-center px-3 py-2.5 text-left text-sm transition hover:bg-neutral-50 dark:hover:bg-neutral-800 ${
-                item.tone === 'danger'
-                  ? 'text-red-600 hover:text-red-700 dark:text-red-400'
-                  : 'text-neutral-700 dark:text-neutral-200'
-              } ${item.disabled ? 'cursor-not-allowed opacity-50' : ''}`;
-
-              if (item.href) {
-                return (
-                  <Link
-                    key={item.id}
-                    href={item.href}
-                    onClick={() => close()}
-                    className={className}
-                    role="menuitem"
-                  >
-                    {item.label}
-                  </Link>
-                );
-              }
-
-              return (
-                <button
-                  key={item.id}
-                  type="button"
-                  onClick={() => run(item)}
-                  disabled={item.disabled}
-                  className={className}
-                  role="menuitem"
-                >
-                  {item.label}
-                </button>
-              );
-            })}
-          </div>,
-          document.body
-        )
-      : null;
-
-  return (
-    <div className="relative isolate">
-      <button
-        ref={triggerRef}
-        id={`${menuId}-trigger`}
-        type="button"
-        onClick={(e) => {
-          e.preventDefault();
-          e.stopPropagation();
-          setOpen((wasOpen) => {
-            if (wasOpen) {
-              setCoords(null);
-              return false;
-            }
-            return true;
-          });
-        }}
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
-        aria-label="Content actions"
-        aria-expanded={open}
-        aria-haspopup="menu"
-        aria-controls={open ? menuId : undefined}
-      >
-        <svg className="h-4 w-4" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4zm0 6a2 2 0 110-4 2 2 0 010 4z" />
-        </svg>
-      </button>
-      {panel}
-    </div>
-  );
+  return <ContentPostActionsMenu items={items} />;
 }

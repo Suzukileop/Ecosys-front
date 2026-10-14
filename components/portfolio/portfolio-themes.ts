@@ -1,4 +1,5 @@
 import type { CSSProperties } from 'react';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioBuiltinThemeId = 'editorial' | 'noir';
 
@@ -28,8 +29,8 @@ export type PortfolioTheme = {
 const PORTFOLIO_THEMES: PortfolioTheme[] = [
   {
     id: 'editorial',
-    label: 'Editorial Warm',
-    description: 'Warm orange accent on soft neutrals — the default portfolio look.',
+    label: msg('Editorial Warm'),
+    description: msg('Warm orange accent on soft neutrals — the default portfolio look.'),
     swatches: ['#EA580C', '#FFF7ED', '#F5F5F5', '#E5E5E5'],
     colors: {
       accent: '#EA580C',
@@ -42,8 +43,8 @@ const PORTFOLIO_THEMES: PortfolioTheme[] = [
   },
   {
     id: 'noir',
-    label: 'Noir / Blanc',
-    description: 'Strict black, white, and gray — accents, frames, and social marks stay monochrome.',
+    label: msg('Noir / Blanc'),
+    description: msg('Strict black, white, and gray — accents, frames, and social marks stay monochrome.'),
     swatches: ['#0A0A0A', '#FFFFFF', '#F5F5F5', '#A3A3A3'],
     colors: {
       accent: '#171717',

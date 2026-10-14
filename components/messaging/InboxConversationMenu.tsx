@@ -13,6 +13,8 @@ import {
 } from '@fortawesome/free-solid-svg-icons';
 import type { IconDefinition } from '@fortawesome/fontawesome-svg-core';
 import { marketplaceCreatorProfileHref } from '@/lib/marketplace-nav';
+import { X_MENU_ITEM, X_MENU_ITEM_DANGER, X_MENU_PANEL } from '@/components/messaging/messaging-x';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type MenuItem = {
   id: string;
@@ -56,6 +58,7 @@ export function InboxConversationMenu({
   onUnarchive,
   onDelete,
 }: InboxConversationMenuProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<MenuCoords | null>(null);
   const [mounted, setMounted] = useState(false);
@@ -146,7 +149,7 @@ export function InboxConversationMenu({
   const items: MenuItem[] = [
     {
       id: 'unread',
-      label: 'Mark as unread',
+      label: t('Mark as unread'),
       icon: faEnvelope,
       onClick: onMarkUnread,
     },
@@ -154,7 +157,7 @@ export function InboxConversationMenu({
       ? [
           {
             id: 'profile',
-            label: 'View profile',
+            label: t('View profile'),
             icon: faCircleUser,
             href: profileHref,
           } satisfies MenuItem,
@@ -162,13 +165,13 @@ export function InboxConversationMenu({
       : []),
     {
       id: archived ? 'unarchive' : 'archive',
-      label: archived ? 'Unarchive conversation' : 'Archive conversation',
+      label: archived ? t('Unarchive conversation') : t('Archive conversation'),
       icon: faBoxArchive,
       onClick: archived ? onUnarchive : onArchive,
     },
     {
       id: 'delete',
-      label: 'Delete conversation',
+      label: t('Delete conversation'),
       icon: faTrashCan,
       onClick: onDelete,
       tone: 'danger',
@@ -184,17 +187,18 @@ export function InboxConversationMenu({
         aria-haspopup="menu"
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
-        aria-label="Conversation options"
+        aria-label={t('Conversation options')}
         onClick={(event) => {
           event.preventDefault();
           event.stopPropagation();
           setOpen((value) => !value);
         }}
-        className={`inline-flex h-8 w-8 items-center justify-center rounded-full text-[var(--msg-ink-faint)] transition-[color,opacity] duration-300 hover:text-[var(--msg-ink)] focus-visible:outline-none disabled:opacity-40 ${
-          open ? 'opacity-100' : 'opacity-0 group-hover/row:opacity-100 focus-visible:opacity-100'
+        /* 40px touch target (always shown on touch screens, on hover / focus elsewhere). */
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--msg-ink-faint)] transition-[color,opacity,background-color] duration-200 hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:opacity-40 ${
+          open ? 'bg-[var(--msg-wash)] text-[var(--msg-ink)] opacity-100' : 'opacity-0 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100'
         }`}
       >
-        <FontAwesomeIcon icon={faEllipsis} className="h-3.5 w-3.5" />
+        <FontAwesomeIcon icon={faEllipsis} className="h-4 w-4" />
       </button>
 
       {mounted && open && coords
@@ -203,7 +207,7 @@ export function InboxConversationMenu({
               ref={menuRef}
               id={menuId}
               role="menu"
-              aria-label="Conversation options"
+              aria-label={t('Conversation options')}
               /*
                * `msg-mineral` is repeated here because this menu is portalled to <body> and so
                * escapes the scope the rest of the section lives in. Without it the charter's
@@ -212,42 +216,24 @@ export function InboxConversationMenu({
               className="msg-mineral fixed z-[230]"
               style={{ top: coords.top, left: coords.left, minWidth: MENU_MIN_WIDTH }}
             >
-              <div
-                className={`absolute left-1/2 h-2.5 w-2.5 -translate-x-1/2 rotate-45 border border-[var(--msg-hairline-strong)] bg-[var(--msg-panel)] ${
-                  coords.openUp ? 'bottom-[-5px] border-t-0 border-l-0' : 'top-[-5px] border-b-0 border-r-0'
-                }`}
-                style={{ left: 'calc(100% - 22px)' }}
-                aria-hidden
-              />
-              <div className="overflow-hidden rounded-[var(--cw-radius)] border border-[var(--msg-hairline-strong)] bg-[var(--msg-panel)] py-1.5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)]">
-                {items.map((item, index) => {
-                  const showDivider = item.id === 'archive' || item.id === 'unarchive' || item.id === 'delete';
-                  const prev = items[index - 1];
-                  const afterProfile =
-                    showDivider && prev && (prev.id === 'profile' || prev.id === 'unread');
+              <div className={X_MENU_PANEL}>
+                {items.map((item) => {
 
-                  const className = `flex w-full items-center gap-3 px-3.5 py-2.5 text-left text-[13px] transition ${
-                    item.tone === 'danger'
-                      ? 'text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40'
-                      : 'text-[var(--msg-ink-soft)] hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)]'
-                  }`;
+                  const className = item.tone === 'danger' ? X_MENU_ITEM_DANGER : X_MENU_ITEM;
 
                   const content = (
                     <>
                       <FontAwesomeIcon
                         icon={item.icon}
-                        className="h-4 w-4 shrink-0 opacity-80"
+                        className="h-[18px] w-[18px] shrink-0"
                         fixedWidth
                       />
-                      <span className="min-w-0 flex-1 font-medium">{item.label}</span>
+                      <span className="min-w-0 flex-1">{t(item.label)}</span>
                     </>
                   );
 
                   return (
                     <div key={item.id}>
-                      {afterProfile ? (
-                        <div className="my-1 border-t border-[var(--msg-hairline)]" />
-                      ) : null}
                       {item.href ? (
                         <Link
                           href={item.href}

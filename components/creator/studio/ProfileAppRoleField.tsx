@@ -8,6 +8,7 @@ import {
   creatorAppRoleAccent,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const ROLE_ICONS: Record<CreatorAppRole, IconDefinition> = {
   GENERAL_MEMBER: faUser,
@@ -25,16 +26,17 @@ type ProfileAppRoleFieldProps = {
 
 /** Single-select role list — hairline rows, the chosen role unfolds its full description. */
 export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRoleFieldProps) {
+  const t = useT();
   return (
     <div className="space-y-8">
       <p className="max-w-xl text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-        Choose one role so we can tailor your experience on the platform.
+        {t('Choose one role so we can tailor your experience on the platform.')}
       </p>
 
       <div
         className="divide-y divide-black/[0.06] border-y border-black/[0.06] dark:divide-white/[0.08] dark:border-white/[0.08]"
         role="radiogroup"
-        aria-label="My Role"
+        aria-label={t('My Role')}
       >
         {CREATOR_APP_ROLE_OPTIONS.map((option) => {
           const selected = value === option.value;
@@ -73,11 +75,11 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
                         : 'text-neutral-700 group-hover:text-[#111111] dark:text-neutral-300 dark:group-hover:text-white'
                     }`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </span>
                   {option.value === 'GENERAL_MEMBER' ? (
                     <span className="text-[12px] font-medium uppercase tracking-[0.14em] text-neutral-400 dark:text-neutral-500">
-                      Default
+                      {t('Default')}
                     </span>
                   ) : null}
                 </span>

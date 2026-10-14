@@ -27,6 +27,7 @@ import { getApiErrorMessage, UserFacingError } from '@/lib/api-error';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
 import { parseSpecialtyTags } from '@/lib/specialties';
 import type { CreatorProfileDto, ProfilePortfolioWork } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type WorkEntry = {
   id: string;
@@ -127,14 +128,15 @@ function WorksPager({
   active: number;
   onSelect: (index: number) => void;
 }) {
+  const t = useT();
   const count = labels.length;
   const nameOf = (index: number) => labels[index] || `Work ${index + 1}`;
 
   return (
-    <div role="group" aria-label="Works" className="flex items-center gap-2">
+    <div role="group" aria-label={t('Works')} className="flex items-center gap-2">
       <StudioIconAction
         icon="previous"
-        label={active > 0 ? `Previous: ${nameOf(active - 1)}` : 'Previous work'}
+        label={active > 0 ? `Previous: ${nameOf(active - 1)}` : t('Previous work')}
         onClick={() => onSelect(active - 1)}
         disabled={active === 0}
       />
@@ -147,7 +149,7 @@ function WorksPager({
       </span>
       <StudioIconAction
         icon="next"
-        label={active < count - 1 ? `Next: ${nameOf(active + 1)}` : 'Next work'}
+        label={active < count - 1 ? `Next: ${nameOf(active + 1)}` : t('Next work')}
         onClick={() => onSelect(active + 1)}
         disabled={active >= count - 1}
       />
@@ -199,20 +201,21 @@ function StackBlock({
   selected: string[];
   onChange: (next: string[]) => void;
 }) {
+  const t = useT();
   const isSelected = (tag: string) => selected.some((item) => item.toLowerCase() === tag.toLowerCase());
   const extra = selected.filter((tag) => !options.some((option) => option.toLowerCase() === tag.toLowerCase()));
   const tags = [...options, ...extra];
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Stack">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Stack')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Stack">
+        <StudioSectionHeader label={t('Stack')}>
           <span className={STUDIO_SECONDARY_CLASS}>
             {selected.length} / {MAX_STACK}
           </span>
         </StudioSectionHeader>
         {tags.length === 0 ? (
-          <p className={STUDIO_EMPTY_CLASS}>Add tags in About → Specialty first, then pick them here.</p>
+          <p className={STUDIO_EMPTY_CLASS}>{t('Add tags in About → Specialty first, then pick them here.')}</p>
         ) : (
           <div className="flex flex-wrap gap-2">
             {tags.map((tag) => {
@@ -248,12 +251,13 @@ function StackBlock({
 }
 
 function LinkBlock({ value, onChange }: { value: string; onChange: (next: string) => void }) {
+  const t = useT();
   const url = value.trim();
   const error = url ? getHttpUrlFieldError(url) : null;
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Project link">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Project link')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Project link" />
+        <StudioSectionHeader label={t('Project link')} />
         <StudioUnderline>
           <input
             type="text"
@@ -262,10 +266,10 @@ function LinkBlock({ value, onChange }: { value: string; onChange: (next: string
             value={value}
             maxLength={500}
             placeholder="https://"
-            aria-label="Project link"
+            aria-label={t('Project link')}
             aria-invalid={error ? true : undefined}
             onChange={(event) => onChange(event.currentTarget.value)}
-            className={`${STUDIO_BARE_INPUT_CLASS} pb-3 ${STUDIO_VALUE_CLASS} ${url && !error ? '!text-[#FF5722]' : ''}`}
+            className={`${STUDIO_BARE_INPUT_CLASS} pb-3 ${STUDIO_VALUE_CLASS} ${url && !error ? '!text-[#0F1419] underline decoration-[#CFD9DE] underline-offset-4 dark:!text-[#E7E9EA] dark:decoration-[#536471]' : ''}`}
           />
         </StudioUnderline>
         {error ? <p className="mt-1.5 text-[13px] text-red-600 dark:text-red-400">{error}</p> : null}
@@ -275,6 +279,7 @@ function LinkBlock({ value, onChange }: { value: string; onChange: (next: string
 }
 
 function CoverBlock({ imageUrl, onChange }: { imageUrl: string; onChange: (next: string) => void }) {
+  const t = useT();
   const url = imageUrl.trim();
   const [dragging, setDragging] = useState(false);
   const { inputRef, uploading, uploadError, pickFile, onFileChange, uploadFile } = useContentMediaUpload({
@@ -299,16 +304,16 @@ function CoverBlock({ imageUrl, onChange }: { imageUrl: string; onChange: (next:
   };
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Cover image">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Cover image')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Cover image" />
+        <StudioSectionHeader label={t('Cover image')} />
         <input ref={inputRef} type="file" accept={IMAGE_ACCEPT} className="hidden" onChange={onFileChange} />
 
         {url ? (
           <div
             {...dropHandlers}
             className={`group/media relative aspect-[16/10] w-full overflow-hidden rounded-lg border transition-colors ${
-              dragging ? 'border-[#FF5722]' : 'border-black/[0.04] dark:border-white/[0.04]'
+              dragging ? 'border-[#0F1419] dark:border-[#E7E9EA]' : 'border-black/[0.04] dark:border-white/[0.04]'
             }`}
           >
             <ContentMediaPreview locale="en" mediaUrl={url} mediaType="FILE" large fluid fit="cover" />
@@ -319,7 +324,7 @@ function CoverBlock({ imageUrl, onChange }: { imageUrl: string; onChange: (next:
                 disabled={uploading}
                 className="rounded-full bg-black/70 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur transition hover:bg-black disabled:opacity-50"
               >
-                Replace
+                {t('Replace')}
               </button>
               <button
                 type="button"
@@ -327,13 +332,13 @@ function CoverBlock({ imageUrl, onChange }: { imageUrl: string; onChange: (next:
                 disabled={uploading}
                 className="rounded-full bg-black/70 px-3 py-1.5 text-[12px] font-medium text-white backdrop-blur transition hover:bg-red-600 disabled:opacity-50"
               >
-                Remove
+                {t('Remove')}
               </button>
             </div>
             {uploading || dragging ? (
               <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-sm font-medium text-white">
                 {uploading ? <LoadingSpinner size="sm" /> : null}
-                {uploading ? 'Uploading…' : 'Drop to replace'}
+                {uploading ? t('Uploading…') : t('Drop to replace')}
               </div>
             ) : null}
           </div>
@@ -345,14 +350,14 @@ function CoverBlock({ imageUrl, onChange }: { imageUrl: string; onChange: (next:
             {...dropHandlers}
             className={`flex aspect-[16/7] w-full flex-col items-center justify-center gap-2 rounded-lg border border-dashed text-center transition-colors duration-200 disabled:cursor-wait ${
               dragging
-                ? 'border-[#FF5722] bg-[#FF5722]/[0.06]'
+                ? 'border-[#0F1419] bg-[#0F1419]/[0.04] dark:border-[#E7E9EA] dark:bg-white/[0.06]'
                 : 'border-neutral-300 hover:border-neutral-500 hover:bg-black/[0.02] dark:border-white/15 dark:hover:border-white/35 dark:hover:bg-white/[0.02]'
             }`}
           >
             {uploading ? (
               <>
                 <LoadingSpinner size="sm" />
-                <span className={STUDIO_SECONDARY_CLASS}>Uploading…</span>
+                <span className={STUDIO_SECONDARY_CLASS}>{t('Uploading…')}</span>
               </>
             ) : (
               <>
@@ -367,13 +372,13 @@ function CoverBlock({ imageUrl, onChange }: { imageUrl: string; onChange: (next:
                   <path strokeLinecap="round" strokeLinejoin="round" d="M12 16V4m0 0l-4 4m4-4l4 4M4 16v2a2 2 0 002 2h12a2 2 0 002-2v-2" />
                 </svg>
                 <span className={`text-[15px] ${STUDIO_VALUE_CLASS}`}>
-                  {dragging ? 'Drop to upload' : (
+                  {dragging ? t('Drop to upload') : (
                     <>
-                      Drop an image, or <span className="underline underline-offset-4">browse</span>
+                      {t('Drop an image, or')} <span className="underline underline-offset-4">{t('browse')}</span>
                     </>
                   )}
                 </span>
-                <span className={`text-[12px] ${STUDIO_SECONDARY_CLASS}`}>JPG, PNG or WEBP · required</span>
+                <span className={`text-[12px] ${STUDIO_SECONDARY_CLASS}`}>{t('JPG, PNG or WEBP · required')}</span>
               </>
             )}
           </button>
@@ -395,6 +400,7 @@ const WorkEditor = memo(function WorkEditor({
   autoFocusTitle: boolean;
   onChange: WorkChangeHandler;
 }) {
+  const t = useT();
   const [work, setWork] = useState(defaultValue);
   const patch = (partial: Partial<WorkEntry>) => {
     const next = { ...work, ...partial };
@@ -405,41 +411,41 @@ const WorkEditor = memo(function WorkEditor({
 
   return (
     <div style={STUDIO_FLOAT_IN_STYLE} role="tabpanel">
-      <section className={STUDIO_BLOCK_CLASS} aria-label="Project">
+      <section className={STUDIO_BLOCK_CLASS} aria-label={t('Project')}>
         <InlineInput
-          label="Project title"
+          label={t('Project title')}
           value={work.title}
-          placeholder="B2B supplier marketplace"
+          placeholder={t('B2B supplier marketplace')}
           maxLength={120}
           autoFocus={autoFocusTitle}
           onChange={(title) => patch({ title })}
         />
-        <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-2">
+        <div className="grid grid-cols-1 items-start gap-y-6">
           <InlineInput
-            label="Your role"
+            label={t('Your role')}
             value={work.role}
-            placeholder="Lead developer"
+            placeholder={t('Lead developer')}
             maxLength={80}
             onChange={(role) => patch({ role })}
           />
           <InlineInput
-            label="Category"
+            label={t('Category')}
             value={work.category}
-            placeholder="Web, mobile, branding…"
+            placeholder={t('Web, mobile, branding…')}
             maxLength={80}
             onChange={(category) => patch({ category })}
           />
         </div>
       </section>
 
-      <section className={STUDIO_BLOCK_CLASS} aria-label="Description">
-        <StudioField label="Description" htmlFor={descriptionId}>
+      <section className={STUDIO_BLOCK_CLASS} aria-label={t('Description')}>
+        <StudioField label={t('Description')} htmlFor={descriptionId}>
           <textarea
             id={descriptionId}
             value={work.description}
             rows={3}
             maxLength={2000}
-            placeholder="The problem, what you built and the outcome…"
+            placeholder={t('The problem, what you built and the outcome…')}
             onChange={(event) => patch({ description: event.currentTarget.value })}
             className={`${STUDIO_INLINE_TEXT_CLASS} resize-none leading-relaxed [field-sizing:content]`}
           />
@@ -462,6 +468,7 @@ function WorksBody({
   getDraft: () => WorksDraft;
   change: StudioChangeHandler<WorksDraft>;
 }) {
+  const t = useT();
   const [ids, setIds] = useState(() => getDraft().works.map((work) => work.id));
   const [labels, setLabels] = useState<Record<string, string>>(() =>
     Object.fromEntries(getDraft().works.map((work) => [work.id, workLabel(work)]))
@@ -507,7 +514,7 @@ function WorksBody({
 
   return (
     <>
-      <section className={STUDIO_BLOCK_CLASS} aria-label="Works">
+      <section className={STUDIO_BLOCK_CLASS} aria-label={t('Works')}>
         <div className="flex items-center justify-end gap-x-3">
           {ids.length > 1 ? (
             <>
@@ -519,10 +526,10 @@ function WorksBody({
               <span aria-hidden className="mx-1 h-5 w-px bg-neutral-200 dark:bg-white/10" />
             </>
           ) : null}
-          {ids.length > 0 ? <StudioIconAction icon="remove" label="Remove work" onClick={removeActive} /> : null}
+          {ids.length > 0 ? <StudioIconAction icon="remove" label={t('Remove work')} onClick={removeActive} /> : null}
           <StudioIconAction
             icon="add"
-            label="Add work"
+            label={t('Add work')}
             onClick={add}
             disabled={ids.length >= MAX_PORTFOLIO_WORKS}
           />
@@ -538,7 +545,7 @@ function WorksBody({
           onChange={updateWork}
         />
       ) : (
-        <p className={`py-10 text-center ${STUDIO_EMPTY_CLASS}`}>No work yet — add your first project.</p>
+        <p className={`py-10 text-center ${STUDIO_EMPTY_CLASS}`}>{t('No work yet — add your first project.')}</p>
       )}
     </>
   );
@@ -589,6 +596,7 @@ export function PortfolioWorksStudio({
   stackOptions?: string[];
   onCountChange?: (count: number) => void;
 }) {
+  const t = useT();
   const [state, setState] = useState<
     { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; works: WorkEntry[]; tags: string[] }
   >({ status: 'loading' });
@@ -604,12 +612,12 @@ export function PortfolioWorksStudio({
         setState({ status: 'ready', works, tags: parseSpecialtyTags(res.data.specialtyTags) });
       })
       .catch((e: unknown) => {
-        if (!cancelled) setState({ status: 'error', message: getApiErrorMessage(e, 'Unable to load portfolio works.') });
+        if (!cancelled) setState({ status: 'error', message: getApiErrorMessage(e, t('Unable to load portfolio works.')) });
       });
     return () => {
       cancelled = true;
     };
-  }, [onCountChange]);
+  }, [onCountChange, t]);
 
   if (state.status === 'loading') {
     return (

@@ -1,4 +1,5 @@
 'use client';
+import { msg } from '@/lib/i18n/config';
 
 export const ABOUT_US_QUOTE_SVG_IDS = ['globe', 'team', 'handshake', 'spark'] as const;
 
@@ -10,10 +11,10 @@ export const PORTFOLIO_ABOUT_US_QUOTE_SVG_OPTIONS: {
   value: AboutUsQuoteSvgId;
   label: string;
 }[] = [
-  { value: 'globe', label: 'Globe' },
-  { value: 'team', label: 'Équipe' },
-  { value: 'handshake', label: 'Partenaires' },
-  { value: 'spark', label: 'Élan' },
+  { value: 'globe', label: msg('Globe') },
+  { value: 'team', label: msg('Équipe') },
+  { value: 'handshake', label: msg('Partenaires') },
+  { value: 'spark', label: msg('Élan') },
 ];
 
 export function isAboutUsQuoteSvgId(value: unknown): value is AboutUsQuoteSvgId {

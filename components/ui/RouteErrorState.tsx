@@ -2,6 +2,7 @@
 
 import Link from 'next/link';
 import { useEffect } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type RouteErrorStateProps = {
   error: Error & { digest?: string };
@@ -20,6 +21,7 @@ export function RouteErrorState({
   title = 'Something went wrong',
   description = 'This page could not be displayed. Please try again in a moment.',
 }: RouteErrorStateProps) {
+  const t = useT();
   useEffect(() => {
     console.error('[route error]', error);
   }, [error]);
@@ -40,17 +42,17 @@ export function RouteErrorState({
             onClick={() => reset()}
             className="inline-flex h-11 items-center rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
           >
-            Try again
+            {t('Try again')}
           </button>
           <Link
             href="/feed"
             className="inline-flex h-11 items-center rounded-lg border border-black/[0.12] px-5 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 dark:border-white/[0.14] dark:text-white dark:hover:border-white/25"
           >
-            Go to home
+            {t('Go to home')}
           </Link>
         </div>
         {error.digest ? (
-          <p className="mt-8 font-mono text-[12px] text-neutral-400 dark:text-neutral-500">Error ID: {error.digest}</p>
+          <p className="mt-8 font-mono text-[12px] text-neutral-400 dark:text-neutral-500">{t('Error ID: {digest}', { digest: error.digest })}</p>
         ) : null}
       </div>
     </main>

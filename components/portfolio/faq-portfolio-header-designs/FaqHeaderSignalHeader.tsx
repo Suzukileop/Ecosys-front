@@ -20,7 +20,7 @@ import {
   createFaqHeaderLayoutResolver,
   faqHeaderCountLabel,
 } from '@/components/portfolio/portfolio-faq-header-layout';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -72,7 +72,7 @@ export function FaqHeaderSignalHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
@@ -81,6 +81,8 @@ export function FaqHeaderSignalHeader({
   const showPill = layout.isVisible('pill');
   const pillLabel = layout.text('pillLabel');
   const showCount = layout.isVisible('count');
+  const showTitle = layout.isVisible('title');
+  const showSubtitle = layout.isVisible('subtitle');
   const subtitleBelow = layout.option('subtitlePlacement') === 'below';
   const dotColor = faqHeaderPaletteTokenColor(layout.option('dotColor') as PortfolioFaqHeaderPaletteToken);
   const count = itemCount ?? 0;
@@ -143,7 +145,7 @@ export function FaqHeaderSignalHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, titleText, subtitleText, countLabel, showPill, subtitleBelow]);
+  }, [animationEnabled, titleText, subtitleText, countLabel, showPill, subtitleBelow, showTitle, showSubtitle]);
 
   return (
     <header
@@ -183,17 +185,19 @@ export function FaqHeaderSignalHeader({
           in globals.css), not at a viewport breakpoint — inside a narrow column such as Kinetic
           Split's left rail, a viewport `lg:` row pushed the subtitle out over the question list. */}
       <div className={`flex flex-col gap-6 ${subtitleBelow ? '' : 'pf-faq-header-signal-row--side'}`}>
-        <h2
-          className={`mb-0 max-w-3xl ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
-          style={faqTitleColorStyle(presentation.titleColor)}
-        >
-          {words.map((word, index) => (
-            <span key={`${word}-${index}`} className="mr-[0.28em] inline-block overflow-hidden align-bottom last:mr-0">
-              <span className="pf-faq-header-signal-word-line inline-block">{word}</span>
-            </span>
-          ))}
-        </h2>
-        {subtitleText ? (
+        {showTitle ? (
+          <h2
+            className={`mb-0 max-w-3xl ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
+            style={faqTitleColorStyle(presentation.titleColor)}
+          >
+            {words.map((word, index) => (
+              <span key={`${word}-${index}`} className="mr-[0.28em] inline-block overflow-hidden align-bottom last:mr-0">
+                <span className="pf-faq-header-signal-word-line inline-block">{word}</span>
+              </span>
+            ))}
+          </h2>
+        ) : null}
+        {showSubtitle && subtitleText ? (
           <p
             className={`pf-faq-header-signal-sub mb-0 shrink-0 ${
               subtitleBelow ? 'max-w-xl' : 'max-w-xs pf-faq-header-signal-sub--side'

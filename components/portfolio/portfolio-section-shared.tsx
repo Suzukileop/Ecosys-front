@@ -8,6 +8,7 @@ import {
   type ContactVisibilityLevel,
 } from '@/lib/contact-visibility';
 import { STUDIO_ICON_BUTTON_TONES } from '@/components/portfolio/PortfolioStudioKit';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export const portfolioInlineInputClass =
   'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-none transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white';
@@ -50,6 +51,7 @@ export function PortfolioSectionVisibilityMenu({
   value: ContactVisibilityLevel;
   onChange: (value: ContactVisibilityLevel) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement>(null);
 
@@ -63,12 +65,12 @@ export function PortfolioSectionVisibilityMenu({
   }, [open]);
 
   const hidden = value === 'HIDDEN';
-  const label = CONTACT_VISIBILITY_OPTIONS.find((option) => option.value === value)?.label ?? 'Public';
+  const label = CONTACT_VISIBILITY_OPTIONS.find((option) => option.value === value)?.label ?? t('Public');
 
   return (
     <div ref={rootRef} className="relative inline-flex shrink-0 items-center">
       <PortfolioSectionIconButton
-        label={`Visibility: ${label}`}
+        label={t('Visibility: {label}', { label })}
         active={open || hidden}
         onClick={() => setOpen((prev) => !prev)}
       >
@@ -90,7 +92,7 @@ export function PortfolioSectionVisibilityMenu({
                   : 'font-normal text-neutral-600 hover:bg-black/[0.03] hover:text-black dark:text-neutral-300 dark:hover:bg-white/[0.04] dark:hover:text-white'
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           ))}
         </div>

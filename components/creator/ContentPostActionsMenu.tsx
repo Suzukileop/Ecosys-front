@@ -11,6 +11,7 @@ import {
   type ReactNode,
 } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const subscribeNoop = () => () => {};
 
@@ -45,6 +46,7 @@ export function ContentPostActionsMenu({
   label?: string;
   className?: string;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [coords, setCoords] = useState<{ top: number; left: number } | null>(null);
   const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
@@ -153,14 +155,14 @@ export function ContentPostActionsMenu({
                     </span>
                   ) : null}
                   <span className="min-w-0">
-                    <span className="block text-[15px] font-medium leading-snug">{item.label}</span>
+                    <span className="block text-[15px] font-medium leading-snug">{t(item.label)}</span>
                     {item.description ? (
                       <span
                         className={`mt-0.5 block text-[13px] leading-snug ${
                           item.tone === 'danger' ? 'text-red-500/80 dark:text-red-400/80' : 'text-neutral-500 dark:text-neutral-400'
                         }`}
                       >
-                        {item.description}
+                        {t(item.description)}
                       </span>
                     ) : null}
                   </span>
@@ -253,6 +255,22 @@ export const PostMenuIcons = {
       <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
       <path d="m7 22-4-4 4-4" />
       <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+    </svg>
+  ),
+  collection: (
+    <svg {...iconProps}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+      <path d="M17 14v6M14 17h6" />
+    </svg>
+  ),
+  collectionRemove: (
+    <svg {...iconProps}>
+      <rect x="3.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="13.5" y="3.5" width="7" height="7" rx="1.5" />
+      <rect x="3.5" y="13.5" width="7" height="7" rx="1.5" />
+      <path d="M14 17h6" />
     </svg>
   ),
 };

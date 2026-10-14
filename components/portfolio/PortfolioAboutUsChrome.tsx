@@ -15,6 +15,7 @@ import {
   portfolioInlineInputClass,
 } from '@/components/portfolio/portfolio-section-shared';
 import { type AboutUsForm } from '@/components/creator/studio/profile-form-schema';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const MEDIA_ACCEPT = 'image/jpeg,image/png,image/webp,.jpg,.jpeg,.png,.webp';
 const MAX_TASKS = 12;
@@ -59,7 +60,7 @@ function IconButton({
 }) {
   const toneClass =
     tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100'
+      ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
       : tone === 'cancel'
         ? 'border-neutral-200 bg-white text-neutral-500 hover:bg-neutral-50'
         : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700';
@@ -88,6 +89,7 @@ function ImageSlot({
   onChange: (url: string) => void;
   disabled?: boolean;
 }) {
+  const t = useT();
   const { inputRef, uploading, pickFile, onFileChange } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: onChange,
@@ -109,7 +111,7 @@ function ImageSlot({
           onClick={pickFile}
           disabled={disabled || uploading}
           className="group relative block aspect-[4/3] w-full overflow-hidden disabled:cursor-not-allowed disabled:opacity-60"
-          aria-label={hasPhoto ? `Replace ${label}` : `Add ${label}`}
+          aria-label={hasPhoto ? t('Replace {label}', { label }) : t('Add {label}', { label })}
         >
           {hasPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -119,18 +121,18 @@ function ImageSlot({
               {uploading ? (
                 <LoadingSpinner size="sm" />
               ) : (
-                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 bg-white text-[#EA580C]">
+                <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-neutral-300 bg-white text-[#0F1419]">
                   <FontAwesomeIcon icon={faPlus} className="h-5 w-5" fixedWidth />
                 </span>
               )}
               <span className="text-sm font-semibold text-neutral-500">
-                {uploading ? 'Uploading…' : label}
+                {uploading ? t('Uploading…') : label}
               </span>
             </span>
           )}
           {hasPhoto ? (
             <span className="absolute inset-0 flex items-center justify-center bg-black/0 text-sm font-semibold text-white opacity-0 transition group-hover:bg-black/45 group-hover:opacity-100">
-              {uploading ? 'Uploading…' : 'Replace image'}
+              {uploading ? t('Uploading…') : t('Replace image')}
             </span>
           ) : null}
         </button>
@@ -140,7 +142,7 @@ function ImageSlot({
             onClick={() => onChange('')}
             disabled={disabled || uploading}
             className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-600 shadow-sm"
-            aria-label={`Remove ${label}`}
+            aria-label={t('Remove {label}', { label })}
           >
             <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" fixedWidth />
           </button>
@@ -161,6 +163,7 @@ export function PortfolioAboutUsReadOnly({
   saving?: boolean;
   editMode?: 'individual' | 'global';
 }) {
+  const t = useT();
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState<AboutUsForm>(() => cloneAboutUs(value));
 
@@ -208,11 +211,11 @@ export function PortfolioAboutUsReadOnly({
       <div className={`absolute right-0 top-0 flex items-center gap-1 ${itemActionVisibilityClass}`}>
         {editing ? (
           <>
-            <IconButton label="Cancel" tone="cancel" onClick={cancelEdit} disabled={saving}>
+            <IconButton label={t('Cancel')} tone="cancel" onClick={cancelEdit} disabled={saving}>
               <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
             </IconButton>
             <IconButton
-              label="Save"
+              label={t('Save')}
               tone="confirm"
               onClick={() => void confirmEdit()}
               disabled={saving || !dirty}
@@ -225,7 +228,7 @@ export function PortfolioAboutUsReadOnly({
             </IconButton>
           </>
         ) : (
-          <IconButton label="Edit About us" onClick={startEdit}>
+          <IconButton label={t('Edit About us')} onClick={startEdit}>
             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
           </IconButton>
         )}
@@ -239,18 +242,18 @@ export function PortfolioAboutUsReadOnly({
         <button
           type="button"
           onClick={startEdit}
-          className="flex w-full flex-col items-center justify-center gap-3 rounded-2xl border border-dashed border-neutral-300 bg-neutral-50 px-6 py-12 text-sm font-semibold text-neutral-500 transition hover:border-[#EA580C]/40 hover:bg-[#FFF7ED] hover:text-[#EA580C]"
+          className="flex w-full flex-col items-center justify-center gap-3 border border-dashed border-[#CFD9DE] bg-transparent px-6 py-12 text-[15px] font-semibold text-[#536471] transition hover:border-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] dark:border-[#536471] dark:text-[#71767B] dark:hover:border-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]"
         >
           <span className="inline-flex h-12 w-12 items-center justify-center rounded-full border-2 border-dashed border-current">
             <FontAwesomeIcon icon={faPlus} className="h-5 w-5" fixedWidth />
           </span>
-          Add About us
+          {t('Add About us')}
         </button>
       )}
 
       {!editing && hasContent ? (
         <p className="text-xs text-neutral-400">
-          {tasks.length} task{tasks.length === 1 ? '' : 's'}
+          {tasks.length} {t('task')}{tasks.length === 1 ? '' : 's'}
           {images.length ? ` · ${images.length} image${images.length === 1 ? '' : 's'}` : ''}
         </p>
       ) : null}
@@ -259,19 +262,20 @@ export function PortfolioAboutUsReadOnly({
 }
 
 function AboutUsPreview({ value }: { value: AboutUsForm }) {
+  const t = useT();
   const images = (value.imageUrls ?? []).filter((url) => url.trim());
   const tasks = value.tasks.filter((task) => task.trim());
   return (
     <div className="space-y-5 pr-10">
       {value.title.trim() ? (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Title</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Title')}</p>
           <p className="mt-1 text-[15px] font-semibold text-neutral-900 dark:text-white">{value.title}</p>
         </div>
       ) : null}
       {value.description.trim() ? (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Description</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Description')}</p>
           <p className="mt-1 whitespace-pre-wrap text-sm leading-relaxed text-neutral-600 dark:text-neutral-300">
             {value.description}
           </p>
@@ -279,11 +283,11 @@ function AboutUsPreview({ value }: { value: AboutUsForm }) {
       ) : null}
       {tasks.length > 0 ? (
         <div>
-          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Tasks</p>
+          <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Tasks')}</p>
           <ul className="mt-2 space-y-1.5 text-sm text-neutral-700 dark:text-neutral-200">
             {tasks.map((task) => (
               <li key={task} className="flex gap-2">
-                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#EA580C]" />
+                <span className="mt-2 h-1.5 w-1.5 shrink-0 rounded-full bg-[#536471] dark:bg-[#71767B]" />
                 <span>{task}</span>
               </li>
             ))}
@@ -336,24 +340,25 @@ function AboutUsFields({
   onChange: (next: AboutUsForm) => void;
   disabled?: boolean;
 }) {
+  const t = useT();
   const patch = (partial: Partial<AboutUsForm>) => onChange({ ...draft, ...partial });
   const canAddTask = draft.tasks.filter((task) => task.trim()).length < MAX_TASKS;
 
   return (
     <div className="space-y-5 pr-10">
       <label className="block">
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Title</span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Title')}</span>
         <input
           value={draft.title}
           maxLength={150}
           disabled={disabled}
           onChange={(event) => patch({ title: event.target.value })}
           className={`mt-1 ${portfolioInlineInputClass}`}
-          placeholder="About our studio"
+          placeholder={t('About our studio')}
         />
       </label>
       <label className="block">
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Description</span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Description')}</span>
         <textarea
           value={draft.description}
           maxLength={4000}
@@ -361,11 +366,11 @@ function AboutUsFields({
           disabled={disabled}
           onChange={(event) => patch({ description: event.target.value })}
           className={`mt-1 min-h-[6.5rem] resize-y ${portfolioInlineInputClass}`}
-          placeholder="Who you are and what you offer."
+          placeholder={t('Who you are and what you offer.')}
         />
       </label>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Tasks</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Tasks')}</p>
         <div className="mt-2 space-y-2">
           {draft.tasks.map((task, index) => (
             <div key={`task-${index}`} className="flex items-center gap-2">
@@ -379,10 +384,10 @@ function AboutUsFields({
                   patch({ tasks: next });
                 }}
                 className={portfolioInlineInputClass}
-                placeholder="A service or mission"
+                placeholder={t('A service or mission')}
               />
               <IconButton
-                label="Remove task"
+                label={t('Remove task')}
                 onClick={() => patch({ tasks: draft.tasks.filter((_, taskIndex) => taskIndex !== index) })}
                 disabled={disabled}
               >
@@ -395,33 +400,33 @@ function AboutUsFields({
               type="button"
               disabled={disabled}
               onClick={() => patch({ tasks: [...draft.tasks, ''] })}
-              className="inline-flex items-center gap-2 text-sm font-semibold text-[#EA580C]"
+              className="inline-flex items-center gap-2 text-sm font-semibold text-[#0F1419] dark:text-[#E7E9EA]"
             >
               <FontAwesomeIcon icon={faPlus} className="h-3.5 w-3.5" fixedWidth />
-              Add task
+              {t('Add task')}
             </button>
           ) : null}
         </div>
       </div>
       <div>
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Images (max 2)</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Images (max 2)')}</p>
         <div className="mt-2 grid grid-cols-2 gap-3">
           <ImageSlot
             imageUrl={draft.imageUrls[0] ?? ''}
-            label="Image 1"
+            label={t('Image 1')}
             disabled={disabled}
             onChange={(url) => patch({ imageUrls: [url, draft.imageUrls[1] ?? ''] })}
           />
           <ImageSlot
             imageUrl={draft.imageUrls[1] ?? ''}
-            label="Image 2"
+            label={t('Image 2')}
             disabled={disabled}
             onChange={(url) => patch({ imageUrls: [draft.imageUrls[0] ?? '', url] })}
           />
         </div>
       </div>
       <label className="block">
-        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Quote</span>
+        <span className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Quote')}</span>
         <textarea
           value={draft.quote}
           maxLength={500}
@@ -429,15 +434,15 @@ function AboutUsFields({
           disabled={disabled}
           onChange={(event) => patch({ quote: event.target.value })}
           className={`mt-1 min-h-[4.5rem] resize-y ${portfolioInlineInputClass}`}
-          placeholder="A short founder or brand quote."
+          placeholder={t('A short founder or brand quote.')}
         />
       </label>
       <div className="space-y-3 rounded-2xl border border-neutral-200 p-4 dark:border-neutral-700">
-        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">Founder</p>
+        <p className="text-[11px] font-bold uppercase tracking-[0.16em] text-neutral-400">{t('Founder')}</p>
         <div className="max-w-[8.5rem]">
           <ImageSlot
             imageUrl={draft.founder.logoUrl}
-            label="Logo"
+            label={t('Logo')}
             disabled={disabled}
             onChange={(logoUrl) => patch({ founder: { ...draft.founder, logoUrl } })}
           />
@@ -448,7 +453,7 @@ function AboutUsFields({
           disabled={disabled}
           onChange={(event) => patch({ founder: { ...draft.founder, name: event.target.value } })}
           className={portfolioInlineInputClass}
-          placeholder="Name"
+          placeholder={t('Name')}
         />
         <input
           value={draft.founder.function}
@@ -456,7 +461,7 @@ function AboutUsFields({
           disabled={disabled}
           onChange={(event) => patch({ founder: { ...draft.founder, function: event.target.value } })}
           className={portfolioInlineInputClass}
-          placeholder="Function"
+          placeholder={t('Function')}
         />
       </div>
     </div>

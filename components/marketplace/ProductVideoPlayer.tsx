@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef, useState, type KeyboardEvent } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductVideoPlayerProps = {
   src: string;
@@ -11,7 +12,7 @@ const SPEEDS = [1, 1.5, 2] as const;
 const HIDE_DELAY_MS = 2200;
 const SEEK_STEP_S = 5;
 const CONTROL_BUTTON =
-  'inline-flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]';
+  'inline-flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80';
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -23,6 +24,7 @@ function formatTime(seconds: number): string {
 }
 
 export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerProps) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const hideTimerRef = useRef<number | null>(null);
@@ -132,11 +134,11 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
       ref={containerRef}
       tabIndex={0}
       role="region"
-      aria-label="Video player"
+      aria-label={t('Video player')}
       onKeyDown={onKeyDown}
       onMouseMove={wake}
       onMouseLeave={() => setPointerActive(false)}
-      className={`group/player relative w-full overflow-hidden rounded-lg bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722] ${
+      className={`group/player relative w-full overflow-hidden rounded-lg bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
         controlsVisible ? '' : 'cursor-none'
       } ${className}`}
     >
@@ -167,7 +169,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
         <button
           type="button"
           onClick={togglePlay}
-          aria-label="Play video"
+          aria-label={t('Play video')}
           className="absolute inset-0 flex items-center justify-center bg-black/20 transition hover:bg-black/30 focus:outline-none"
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-[#111111] shadow-[0_12px_40px_-10px_rgba(0,0,0,0.6)] transition-transform duration-300 group-hover/player:scale-105 sm:h-20 sm:w-20">
@@ -186,7 +188,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
         <div className="group/seek relative flex h-4 items-center">
           <div className="relative h-1 w-full overflow-hidden rounded-full bg-white/20 transition-[height] group-hover/seek:h-1.5">
             <div className="absolute inset-y-0 left-0 bg-white/30" style={{ width: `${bufferedPercent}%` }} />
-            <div className="absolute inset-y-0 left-0 bg-[#FF5722]" style={{ width: `${progress}%` }} />
+            <div className="absolute inset-y-0 left-0 bg-white" style={{ width: `${progress}%` }} />
           </div>
           <span
             aria-hidden
@@ -199,7 +201,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
             max={duration || 0}
             step={0.1}
             value={current}
-            aria-label="Seek"
+            aria-label={t('Seek')}
             aria-valuetext={`${formatTime(current)} of ${formatTime(duration)}`}
             onChange={(e) => seekTo(Number(e.target.value))}
             className="absolute inset-0 h-full w-full cursor-pointer opacity-0"
@@ -207,7 +209,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
         </div>
 
         <div className="mt-1.5 flex items-center gap-1">
-          <button type="button" onClick={togglePlay} aria-label={playing ? 'Pause' : 'Play'} className={CONTROL_BUTTON}>
+          <button type="button" onClick={togglePlay} aria-label={playing ? t('Pause') : t('Play')} className={CONTROL_BUTTON}>
             {playing ? (
               <svg className="h-4 w-4" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                 <path d="M7 5h3.5v14H7zM13.5 5H17v14h-3.5z" />
@@ -224,7 +226,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
               const video = videoRef.current;
               if (video) seekTo(video.currentTime - 10);
             }}
-            aria-label="Back 10 seconds"
+            aria-label={t('Back 10 seconds')}
             className={CONTROL_BUTTON}
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -237,7 +239,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
               const video = videoRef.current;
               if (video) seekTo(video.currentTime + 10);
             }}
-            aria-label="Forward 10 seconds"
+            aria-label={t('Forward 10 seconds')}
             className={CONTROL_BUTTON}
           >
             <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -253,12 +255,12 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
             <button
               type="button"
               onClick={cycleSpeed}
-              aria-label={`Playback speed ${SPEEDS[speedIndex]}x`}
-              className="inline-flex h-9 min-w-[2.75rem] items-center justify-center rounded-full px-2 text-[13px] font-semibold text-white/90 tabular-nums transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]"
+              aria-label={t('Playback speed {value}x', { value: SPEEDS[speedIndex] })}
+              className="inline-flex h-9 min-w-[2.75rem] items-center justify-center rounded-full px-2 text-[13px] font-semibold text-white/90 tabular-nums transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
             >
-              {SPEEDS[speedIndex]}×
+              {t('{value}×', { value: SPEEDS[speedIndex] })}
             </button>
-            <button type="button" onClick={toggleMute} aria-label={muted ? 'Unmute' : 'Mute'} className={CONTROL_BUTTON}>
+            <button type="button" onClick={toggleMute} aria-label={muted ? t('Unmute') : t('Mute')} className={CONTROL_BUTTON}>
               {muted ? (
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
                   <path strokeLinecap="round" strokeLinejoin="round" d="M11 5 6 9H2v6h4l5 4V5zM22 9l-6 6M16 9l6 6" />
@@ -272,7 +274,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
             <button
               type="button"
               onClick={toggleFullscreen}
-              aria-label={fullscreen ? 'Exit full screen' : 'Full screen'}
+              aria-label={fullscreen ? t('Exit full screen') : t('Full screen')}
               className={CONTROL_BUTTON}
             >
               {fullscreen ? (

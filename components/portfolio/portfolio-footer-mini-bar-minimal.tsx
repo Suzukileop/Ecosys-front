@@ -12,6 +12,7 @@ import {
   useFooterMiniBarLiveClock,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const REST_OPACITY = 0.45;
 const FOCUS_OPACITY = 1;
@@ -40,6 +41,7 @@ function MiniBarStyles() {
  *  Reveal's "Contact me" pill). On direct hover the label snaps to full ink and the arrow
  *  jumps up then springs back (`back.out`); click smooth-scrolls to the very top. */
 function MiniBarBackToTop({ ink }: { ink: string }) {
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const labelRef = useRef<HTMLSpanElement>(null);
@@ -137,7 +139,7 @@ function MiniBarBackToTop({ ink }: { ink: string }) {
         className="pf-mini-bar-item inline-flex items-center gap-1.5 text-[0.7rem] font-semibold uppercase tracking-[0.15em] sm:text-[0.8rem]"
         style={{ color: ink, opacity: REST_OPACITY }}
       >
-        <span ref={labelRef}>Back to top</span>
+        <span ref={labelRef}>{t('Back to top')}</span>
         <span ref={arrowRef} aria-hidden className="inline-block">
           ↑
         </span>
@@ -158,6 +160,7 @@ function MiniBarBackToTop({ ink }: { ink: string }) {
  */
 export function FooterMiniBarMinimal({
   creatorName,
+  showCopyright = true,
   locationLabel,
   timezoneId,
   colorMode,
@@ -172,7 +175,7 @@ export function FooterMiniBarMinimal({
   const clock = useFooterMiniBarLiveClock(timezoneId);
   const trimmedLocation = locationLabel?.trim() || '';
   const copyrightBase = footerMiniBarCopyrightBase(creatorName);
-  const trimmedCopyright = copyrightBase ? `${copyrightBase} All rights reserved.` : '';
+  const trimmedCopyright = showCopyright && copyrightBase ? `${copyrightBase} All rights reserved.` : '';
   const hasClock = Boolean(clock);
   const hasCenter = hasClock || Boolean(trimmedLocation);
 

@@ -14,6 +14,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -105,6 +106,7 @@ export function FooterDesignServicesReveal({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignServicesRevealProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
 
   const isLight = colorMode === 'light';
@@ -239,7 +241,7 @@ export function FooterDesignServicesReveal({
     <footer
       id="footer"
       ref={rootRef}
-      aria-label={creatorName ? `${creatorName} — site footer` : 'Site footer'}
+      aria-label={creatorName ? t('{creatorName} — site footer', { creatorName }) : t('Site footer')}
       className="pf-svcreveal-mode relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden"
       style={{ ...backgroundStyle, color: ink, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
       data-pf-no-color-transition=""
@@ -286,7 +288,7 @@ export function FooterDesignServicesReveal({
                 {navHeading}
               </p>
             ) : null}
-            <nav aria-label="Footer" className="flex flex-col gap-1">
+            <nav aria-label={t('Footer')} className="flex flex-col gap-1">
               {navLinks.map((link) => (
                 <a
                   key={link.id}

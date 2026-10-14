@@ -13,6 +13,7 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Catalog header for Duotone Experience (no dedicated section chrome in the live layout).
@@ -27,6 +28,7 @@ export function ExperienceDuotoneHeader({
   sectionSubtitle?: string;
   presentation?: PortfolioExperiencePresentationSettings;
 }) {
+  const t = useT();
   const presentation: PortfolioExperiencePresentationSettings = {
     ...(presentationProp ?? DEFAULT_EXPERIENCE_PRESENTATION),
     experienceDesign: 'duotone',
@@ -52,7 +54,7 @@ export function ExperienceDuotoneHeader({
 
   return (
     <EditorialSectionStickyHeader
-      title={sectionTitle.trim() || 'Experience'}
+      title={sectionTitle.trim() || t('Experience')}
       subtitle={subtitle}
       scrollBehavior="static"
       titleTypographyStyle={{ color: titleColor }}

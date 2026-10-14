@@ -1,5 +1,6 @@
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioElementFont = 'sans' | 'serif' | 'display';
 
@@ -130,9 +131,9 @@ export const PORTFOLIO_ELEMENT_TEXT_DECORATION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'No underline or highlight.' },
-  { value: 'underline', label: 'Underline', description: 'Classic text underline.' },
-  { value: 'highlight', label: 'Highlight', description: 'Soft marker wash behind the word.' },
+  { value: 'none', label: msg('None'), description: msg('No underline or highlight.') },
+  { value: 'underline', label: msg('Underline'), description: msg('Classic text underline.') },
+  { value: 'highlight', label: msg('Highlight'), description: msg('Soft marker wash behind the word.') },
 ];
 
 function sanitizeHex(value: unknown, fallback: string): string {
@@ -379,10 +380,10 @@ export const PORTFOLIO_ELEMENT_TEXT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'Small', description: 'Compact body text.' },
-  { value: 'md', label: 'Medium', description: 'Default readable size.' },
-  { value: 'lg', label: 'Large', description: 'More prominent.' },
-  { value: 'xl', label: 'Extra large', description: 'Hero-level emphasis.' },
+  { value: 'sm', label: msg('Small'), description: msg('Compact body text.') },
+  { value: 'md', label: msg('Medium'), description: msg('Default readable size.') },
+  { value: 'lg', label: msg('Large'), description: msg('More prominent.') },
+  { value: 'xl', label: msg('Extra large'), description: msg('Hero-level emphasis.') },
 ];
 
 export const PORTFOLIO_ELEMENT_TEXT_WEIGHT_OPTIONS: {
@@ -390,10 +391,10 @@ export const PORTFOLIO_ELEMENT_TEXT_WEIGHT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'normal', label: 'Regular', description: 'Default body weight.' },
-  { value: 'medium', label: 'Medium', description: 'Slightly stronger.' },
-  { value: 'semibold', label: 'Semibold', description: 'Clear emphasis.' },
-  { value: 'bold', label: 'Bold', description: 'Strongest weight.' },
+  { value: 'normal', label: msg('Regular'), description: msg('Default body weight.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Slightly stronger.') },
+  { value: 'semibold', label: msg('Semibold'), description: msg('Clear emphasis.') },
+  { value: 'bold', label: msg('Bold'), description: msg('Strongest weight.') },
 ];
 
 export const PORTFOLIO_ELEMENT_FONT_OPTIONS: {
@@ -401,9 +402,9 @@ export const PORTFOLIO_ELEMENT_FONT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sans', label: 'Sans', description: 'Clean modern sans-serif.' },
-  { value: 'serif', label: 'Serif', description: 'Editorial serif.' },
-  { value: 'display', label: 'Display', description: 'Strong display weight.' },
+  { value: 'sans', label: msg('Sans'), description: msg('Clean modern sans-serif.') },
+  { value: 'serif', label: msg('Serif'), description: msg('Editorial serif.') },
+  { value: 'display', label: msg('Display'), description: msg('Strong display weight.') },
 ];
 
 export type PortfolioToolsIconSize = 'sm' | 'md' | 'lg' | 'xl';

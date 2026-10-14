@@ -39,6 +39,7 @@ import type {
   PortfolioNavMenuControlIcon,
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type NavItem = {
   id: string;
@@ -146,6 +147,7 @@ function HalfPanelFooter({
   mutedInk: string;
   reduceMotion: boolean | null;
 }) {
+  const t = useT();
   const showContact = settings.dutenPanelShowContact ?? false;
   const showSocial = settings.dutenPanelShowSocial ?? false;
   const mailHref = resolveEditorialBarContactHref('mail', { email: contactEmail });
@@ -171,7 +173,7 @@ function HalfPanelFooter({
       {showContact && (mailHref || phoneHref) ? (
         <div className="space-y-3">
           <p className="text-sm font-medium tracking-[0.08em] opacity-55" style={{ color: mutedInk }}>
-            Contact Us
+            {t('Contact Us')}
           </p>
           <p
             className="flex flex-wrap items-center gap-x-3 gap-y-2 text-[clamp(1rem,2vw,1.35rem)] font-medium leading-snug tracking-[-0.01em]"
@@ -207,7 +209,7 @@ function HalfPanelFooter({
       {socialLinks.length > 0 ? (
         <div className="space-y-4">
           <p className="text-sm font-medium tracking-[0.08em] opacity-55" style={{ color: mutedInk }}>
-            Stay Connected
+            {t('Stay Connected')}
           </p>
           <div className="flex flex-wrap items-center gap-5 sm:gap-6">
             {socialLinks.map((link) => (
@@ -296,6 +298,7 @@ export function PortfolioHalfPanelNav({
   colorMode = 'dark',
   onColorModeToggle,
 }: PortfolioHalfPanelNavProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [mounted, setMounted] = useState(false);
   const triggerRef = useRef<HTMLDivElement>(null);
@@ -326,7 +329,7 @@ export function PortfolioHalfPanelNav({
   const columns = settings.dutenPanelColumns ?? 2;
   const menuTrigger = settings.caseOverlayMenuTrigger ?? 'icon';
   const menuIcon = (settings.menuControlIcon ?? 'menu') as PortfolioNavMenuControlIcon;
-  const discoverLabel = (settings.halfPanelDiscoverLabel ?? 'Discover Pages').trim() || 'Discover Pages';
+  const discoverLabel = (settings.halfPanelDiscoverLabel ?? 'Discover Pages').trim() || t('Discover Pages');
   const useIconTrigger = menuTrigger === 'icon';
 
   const brandSettings = useMemo(() => {
@@ -424,7 +427,7 @@ export function PortfolioHalfPanelNav({
           <motion.button
             key="half-panel-scrim"
             type="button"
-            aria-label="Close navigation menu"
+            aria-label={t('Close navigation menu')}
             className="fixed inset-0 z-[225] backdrop-blur-[1px]"
             style={{ backgroundColor: `${scrim}66` }}
             initial={reduceMotion ? false : { opacity: 0 }}
@@ -444,7 +447,7 @@ export function PortfolioHalfPanelNav({
             id="portfolio-half-panel-drawer"
             role="dialog"
             aria-modal
-            aria-label="Navigation menu"
+            aria-label={t('Navigation menu')}
             tabIndex={-1}
             className="fixed inset-y-0 right-0 z-[230] flex w-[min(100%,50vw)] min-w-[min(100%,18rem)] max-w-[32rem] flex-col shadow-[-24px_0_80px_rgba(0,0,0,0.12)] focus:outline-none"
             style={{
@@ -466,7 +469,7 @@ export function PortfolioHalfPanelNav({
                 {colorModeToggle}
                 <button
                 type="button"
-                aria-label="Close navigation menu"
+                aria-label={t('Close navigation menu')}
                 onClick={() => setOpen(false)}
                 className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition hover:bg-black/5"
                 style={{ color: strongInk }}
@@ -553,7 +556,7 @@ export function PortfolioHalfPanelNav({
           type="button"
           aria-expanded={open}
           aria-controls="portfolio-half-panel-drawer"
-          aria-label={useIconTrigger ? 'Open navigation menu' : undefined}
+          aria-label={useIconTrigger ? t('Open navigation menu') : undefined}
           onClick={() => setOpen(true)}
           className={`inline-flex items-center justify-center transition hover:opacity-80 ${
             useIconTrigger
@@ -571,7 +574,7 @@ export function PortfolioHalfPanelNav({
           {useIconTrigger ? (
             <OverlayMenuGlyph icon={menuIcon} open={false} />
           ) : (
-            'Menu'
+            t('Menu')
           )}
         </button>
         </div>

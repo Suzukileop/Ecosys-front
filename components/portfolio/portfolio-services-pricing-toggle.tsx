@@ -1,197 +1,42 @@
 'use client';
 
-import {
-  useCallback,
-  useEffect,
-  useLayoutEffect,
-  useMemo,
-  useRef,
-  useState,
-  useSyncExternalStore,
-} from 'react';
+import { useLayoutEffect, useEffect, useMemo, useRef, type CSSProperties } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
-import type { PortfolioServiceItem } from '@/components/portfolio/PortfolioServicesChrome';
+import type { ProfileServiceItem } from '@/types/profile';
+import {
+  buildPricingCards,
+  ctaLookOverride,
+  featuredFill,
+  getScrollParent,
+  prefersReducedMotion,
+  useServicesCardHover,
+  useServicesFinePointer,
+  withAlpha,
+} from '@/components/portfolio/portfolio-services-pricing-shared';
+import { resolveServicesCardElements, resolveServicesCtaLabel } from '@/components/portfolio/portfolio-services-card-elements';
 import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
-import { readServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-style';
-import type { PortfolioServicesPresentationSettings } from '@/components/portfolio/portfolio-services-settings';
+import {
+  moveFeatured,
+  priceWordLabel,
+  resolveBillingSuffix,
+  resolveFeaturedIndex,
+  SERVICES_FEATURED_DEFAULT_OPACITY,
+} from '@/components/portfolio/portfolio-services-pricing-style';
+import { ServicesBulletItem } from '@/components/portfolio/portfolio-services-list-marker';
+import {
+  DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS,
+  type PortfolioServicesPresentationSettings,
+  type PortfolioServicesPricingToggleSettings,
+} from '@/components/portfolio/portfolio-services-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-type BillingCycle = 'monthly' | 'yearly';
-
-/**
- * Design-local mirror of the settings the coordinator wires onto
- * `PortfolioServicesPresentationSettings.pricingToggle` (see the `settingsTypeCode`
- * wiring snippet). Kept here too — self-contained, like every other design file in
- * this codebase — and read defensively via `readPricingToggleSettings` so this file
- * compiles cleanly whether or not that field has landed on the shared type yet.
- */
-type PricingToggleSettings = {
-  /** Which visible row (0-indexed) gets the full color-inversion treatment. */
-  popularIndex: number;
-  /** Small label on the popular row's badge. Empty hides the badge. */
-  popularBadgeLabel: string;
-  /** Suffix after the monthly price, e.g. "/ month". */
-  periodMonthlyLabel: string;
-  /** Suffix after the yearly price, e.g. "/ year". */
-  periodYearlyLabel: string;
-  /**
-   * There is no separate yearly price on a service (only `basePriceCents`), so
-   * Yearly is derived: monthly x 12 x (1 - discount / 100).
-   */
-  yearlyDiscountPercent: number;
-  /** CTA pill label on every row. */
-  ctaLabel: string;
-  /** Toggle position on first paint. */
-  defaultBilling: BillingCycle;
-};
-
-const DEFAULT_PRICING_TOGGLE_SETTINGS: PricingToggleSettings = {
-  popularIndex: 0,
-  popularBadgeLabel: 'Most popular',
-  periodMonthlyLabel: '/ month',
-  periodYearlyLabel: '/ year',
-  yearlyDiscountPercent: 15,
-  ctaLabel: 'Get Started',
-  defaultBilling: 'monthly',
-};
-
-function mergePricingToggleSettings(
-  base: PricingToggleSettings,
-  patch: unknown
-): PricingToggleSettings {
-  if (!patch || typeof patch !== 'object') return base;
-  const record = patch as Record<string, unknown>;
-  const popularIndex =
-    typeof record.popularIndex === 'number' && Number.isFinite(record.popularIndex)
-      ? Math.max(0, Math.round(record.popularIndex))
-      : base.popularIndex;
-  const popularBadgeLabel =
-    typeof record.popularBadgeLabel === 'string'
-      ? record.popularBadgeLabel.trim().slice(0, 40)
-      : base.popularBadgeLabel;
-  const periodMonthlyLabel =
-    typeof record.periodMonthlyLabel === 'string' && record.periodMonthlyLabel.trim()
-      ? record.periodMonthlyLabel.trim().slice(0, 24)
-      : base.periodMonthlyLabel;
-  const periodYearlyLabel =
-    typeof record.periodYearlyLabel === 'string' && record.periodYearlyLabel.trim()
-      ? record.periodYearlyLabel.trim().slice(0, 24)
-      : base.periodYearlyLabel;
-  const yearlyDiscountPercent =
-    typeof record.yearlyDiscountPercent === 'number' && Number.isFinite(record.yearlyDiscountPercent)
-      ? Math.min(90, Math.max(0, Math.round(record.yearlyDiscountPercent)))
-      : base.yearlyDiscountPercent;
-  const ctaLabel =
-    typeof record.ctaLabel === 'string' && record.ctaLabel.trim()
-      ? record.ctaLabel.trim().slice(0, 32)
-      : base.ctaLabel;
-  const defaultBilling =
-    record.defaultBilling === 'monthly' || record.defaultBilling === 'yearly'
-      ? record.defaultBilling
-      : base.defaultBilling;
-  return {
-    popularIndex,
-    popularBadgeLabel,
-    periodMonthlyLabel,
-    periodYearlyLabel,
-    yearlyDiscountPercent,
-    ctaLabel,
-    defaultBilling,
-  };
+function readToggleSettings(presentation: PortfolioServicesPresentationSettings): PortfolioServicesPricingToggleSettings {
+  return { ...DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS, ...(presentation.pricingToggle ?? {}) };
 }
 
-function readPricingToggleSettings(
-  presentation: PortfolioServicesPresentationSettings
-): PricingToggleSettings {
-  const raw = (presentation as { pricingToggle?: unknown }).pricingToggle;
-  return mergePricingToggleSettings(DEFAULT_PRICING_TOGGLE_SETTINGS, raw);
-}
-
-function prefersReducedMotion(): boolean {
-  return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-}
-
-/** Nearest scrollable ancestor — this app can render inside a nested overflow-y:auto
- *  "pages" container (Studio preview), and a hardcoded window scroller silently never
- *  fires there. Same helper duplicated per-file throughout this codebase on purpose. */
-function getScrollParent(el: HTMLElement | null): HTMLElement | null {
-  let node = el?.parentElement ?? null;
-  while (node && node !== document.body) {
-    const { overflowY } = getComputedStyle(node);
-    if (
-      (overflowY === 'auto' || overflowY === 'scroll' || overflowY === 'overlay') &&
-      node.scrollHeight > node.clientHeight + 1
-    ) {
-      return node;
-    }
-    node = node.parentElement;
-  }
-  return null;
-}
-
-/** True only for a genuine fine-pointer desktop — gates 3D tilt, sibling focus-blur
- *  and the magnetic CTA. Below 768px, or on any touch/coarse-pointer device, every
- *  row renders at rest: opacity 1, no transform, no blur. */
-function usePricingToggleFinePointerDesktop(minWidthPx = 768) {
-  const query = `(min-width: ${minWidthPx}px) and (hover: hover) and (pointer: fine)`;
-  return useSyncExternalStore(
-    (onStoreChange) => {
-      if (typeof window === 'undefined') return () => {};
-      const mq = window.matchMedia(query);
-      mq.addEventListener('change', onStoreChange);
-      return () => mq.removeEventListener('change', onStoreChange);
-    },
-    () => (typeof window === 'undefined' ? false : window.matchMedia(query).matches),
-    () => false
-  );
-}
-
-/** Mirrors PortfolioServicesChrome's private formatPrice/isFreePrice (not exported
- *  there) so this file stays self-contained without editing a shared file. */
-function isFreePriceLocal(cents: number | null | undefined): boolean {
-  return cents != null && !Number.isNaN(cents) && cents === 0;
-}
-
-function formatPriceLocal(cents: number | null | undefined): string {
-  if (cents == null || Number.isNaN(cents)) return '';
-  if (cents === 0) return 'Free';
-  return `${(cents / 100).toFixed(2)} €`;
-}
-
-/** No `priceYearly` field exists on a service — Yearly is derived from the single
- *  `basePriceCents` and the design's own `yearlyDiscountPercent` setting. */
-function deriveYearlyCents(
-  monthlyCents: number | null | undefined,
-  discountPercent: number
-): number | null {
-  if (monthlyCents == null || Number.isNaN(monthlyCents)) return null;
-  if (monthlyCents === 0) return 0;
-  const factor = Math.min(Math.max(discountPercent, 0), 90) / 100;
-  return Math.round(monthlyCents * 12 * (1 - factor));
-}
-
-function isValidHex(value: string): boolean {
-  return /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test(value.trim());
-}
-
-function hexToRgb(hex: string): [number, number, number] {
-  const clean = hex.replace('#', '').trim();
-  const full = clean.length === 3 ? clean.split('').map((c) => c + c).join('') : clean;
-  const num = parseInt(full, 16);
-  if (Number.isNaN(num) || full.length !== 6) return [249, 115, 22];
-  return [(num >> 16) & 255, (num >> 8) & 255, num & 255];
-}
-
-/** Simple YIQ-brightness contrast pick — white or near-black ink on an accent fill. */
-function contrastInkFor(hex: string): string {
-  const [r, g, b] = hexToRgb(hex);
-  const yiq = (r * 299 + g * 587 + b * 114) / 1000;
-  return yiq >= 150 ? '#0a0a0a' : '#ffffff';
-}
-
-function withAlpha(hex: string, alpha: number): string {
-  const [r, g, b] = hexToRgb(hex);
-  return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+function isValidHex(value: string | undefined): value is string {
+  return Boolean(value) && /^#([0-9a-fA-F]{3}|[0-9a-fA-F]{6})$/.test((value as string).trim());
 }
 
 type PricingTokens = {
@@ -200,480 +45,331 @@ type PricingTokens = {
   muted: string;
   border: string;
   cardBg: string;
-  toggleTrackBg: string;
-  toggleTrackBorder: string;
+  isLight: boolean;
 };
 
 function pricingTokens(isLight: boolean): PricingTokens {
   return isLight
     ? {
+        isLight,
         bg: '#ffffff',
         ink: '#0a0a0a',
         muted: 'rgba(10,10,10,0.56)',
         border: 'rgba(10,10,10,0.1)',
         cardBg: 'rgba(10,10,10,0.025)',
-        toggleTrackBg: 'rgba(10,10,10,0.04)',
-        toggleTrackBorder: 'rgba(10,10,10,0.12)',
       }
     : {
+        isLight,
         bg: '#000000',
         ink: '#ffffff',
         muted: 'rgba(255,255,255,0.56)',
         border: 'rgba(255,255,255,0.14)',
         cardBg: 'rgba(255,255,255,0.035)',
-        toggleTrackBg: 'rgba(255,255,255,0.06)',
-        toggleTrackBorder: 'rgba(255,255,255,0.16)',
       };
-}
-
-/** Ultra-refined "Monthly / Yearly" switch — a pill thumb that slides with a soft
- *  GSAP spring instead of snapping or sliding linearly. */
-function BillingSwitch({
-  billing,
-  onChange,
-  tokens,
-  accent,
-  accentInk,
-}: {
-  billing: BillingCycle;
-  onChange: (next: BillingCycle) => void;
-  tokens: PricingTokens;
-  accent: string;
-  accentInk: string;
-}) {
-  const thumbRef = useRef<HTMLSpanElement>(null);
-
-  useLayoutEffect(() => {
-    const el = thumbRef.current;
-    if (!el) return;
-    const xPercent = billing === 'yearly' ? 100 : 0;
-    if (prefersReducedMotion()) {
-      gsap.set(el, { xPercent });
-      return;
-    }
-    gsap.to(el, { xPercent, duration: 0.6, ease: 'elastic.out(1, 0.6)', overwrite: 'auto' });
-  }, [billing]);
-
-  return (
-    <div
-      role="group"
-      aria-label="Billing period"
-      className="relative inline-flex rounded-full p-1"
-      style={{ backgroundColor: tokens.toggleTrackBg, border: `1px solid ${tokens.toggleTrackBorder}` }}
-      data-pf-no-color-transition=""
-    >
-      <span
-        ref={thumbRef}
-        aria-hidden
-        className="absolute rounded-full will-change-transform"
-        style={{
-          backgroundColor: accent,
-          top: '0.25rem',
-          bottom: '0.25rem',
-          left: '0.25rem',
-          width: 'calc(50% - 0.25rem)',
-        }}
-        data-pf-no-color-transition=""
-      />
-      {(['monthly', 'yearly'] as const).map((cycle) => {
-        const active = billing === cycle;
-        return (
-          <button
-            key={cycle}
-            type="button"
-            onClick={() => onChange(cycle)}
-            aria-pressed={active}
-            className="relative z-[1] min-w-[6.5rem] rounded-full px-5 py-2.5 text-sm font-semibold transition-colors duration-300"
-            style={{ color: active ? accentInk : tokens.muted }}
-            data-pf-no-color-transition=""
-          >
-            {cycle === 'monthly' ? 'Monthly' : 'Yearly'}
-          </button>
-        );
-      })}
-    </div>
-  );
-}
-
-/** The massive price figure — never snaps between Monthly/Yearly. The outgoing value
- *  fades out sliding down, the incoming one surges in from above (fade + translate). */
-function PriceSwap({ text, ink }: { text: string; ink: string }) {
-  const ref = useRef<HTMLSpanElement>(null);
-  const [rendered, setRendered] = useState(text);
-  const prevTextRef = useRef(text);
-
-  useLayoutEffect(() => {
-    if (prevTextRef.current === text) return;
-    prevTextRef.current = text;
-    const el = ref.current;
-    if (!el || prefersReducedMotion()) {
-      setRendered(text);
-      return undefined;
-    }
-    gsap.killTweensOf(el);
-    const tl = gsap.timeline({ overwrite: 'auto' });
-    tl.to(el, { y: 10, opacity: 0, duration: 0.22, ease: 'power2.in' })
-      .call(() => setRendered(text))
-      .fromTo(el, { y: -10, opacity: 0 }, { y: 0, opacity: 1, duration: 0.36, ease: 'power3.out' });
-    return () => {
-      tl.kill();
-    };
-  }, [text]);
-
-  return (
-    <span
-      ref={ref}
-      className="inline-block font-sans font-black leading-none tracking-tight will-change-transform"
-      style={{
-        color: ink,
-        fontSize: 'calc(clamp(2.4rem, 4.2vw, 3.5rem) * var(--pf-services-font-scale, 1))',
-      }}
-      data-pf-no-color-transition=""
-    >
-      {rendered}
-    </span>
-  );
-}
-
-function PricingRow({
-  item,
-  index,
-  isPopular,
-  tokens,
-  accent,
-  accentInk,
-  billing,
-  settings,
-  presentation,
-  canHoverTilt,
-  registerRow,
-  onFocusRow,
-  onBlurRow,
-}: {
-  presentation: PortfolioServicesPresentationSettings;
-  item: PortfolioServiceItem;
-  index: number;
-  isPopular: boolean;
-  tokens: PricingTokens;
-  accent: string;
-  accentInk: string;
-  billing: BillingCycle;
-  settings: PricingToggleSettings;
-  canHoverTilt: boolean;
-  registerRow: (index: number, el: HTMLDivElement | null) => void;
-  onFocusRow: (index: number) => void;
-  onBlurRow: () => void;
-}) {
-  const rowRef = useRef<HTMLDivElement>(null);
-  const ctaRef = useRef<HTMLAnchorElement>(null);
-  const pricingStyle = useServicesPricingStyle(presentation);
-
-  useEffect(() => {
-    registerRow(index, rowRef.current);
-    return () => registerRow(index, null);
-  }, [index, registerRow]);
-
-  // 3D tilt (row) + magnetic pull (CTA) — fine-pointer desktop only, raw
-  // addEventListener + gsap.quickTo (not gsap.to per move — quickTo is the
-  // performant primitive for continuous pointer-follow tweens in this codebase).
-  useEffect(() => {
-    const row = rowRef.current;
-    const cta = ctaRef.current;
-    if (!row || !canHoverTilt) return undefined;
-
-    let detach = () => {};
-    try {
-      gsap.set(row, { transformPerspective: 1000 });
-      const rotateX = gsap.quickTo(row, 'rotationX', { duration: 0.7, ease: 'power3' });
-      const rotateY = gsap.quickTo(row, 'rotationY', { duration: 0.7, ease: 'power3' });
-      const ctaX = cta ? gsap.quickTo(cta, 'x', { duration: 0.45, ease: 'power3' }) : null;
-      const ctaY = cta ? gsap.quickTo(cta, 'y', { duration: 0.45, ease: 'power3' }) : null;
-
-      const onRowMove = (event: PointerEvent) => {
-        const rect = row.getBoundingClientRect();
-        const px = (event.clientX - rect.left) / rect.width - 0.5;
-        const py = (event.clientY - rect.top) / rect.height - 0.5;
-        rotateX(py * -3);
-        rotateY(px * 3);
-      };
-      const onRowEnter = () => onFocusRow(index);
-      const onRowLeave = () => {
-        rotateX(0);
-        rotateY(0);
-        onBlurRow();
-      };
-      const onCtaMove = (event: PointerEvent) => {
-        if (!cta || !ctaX || !ctaY) return;
-        const rect = cta.getBoundingClientRect();
-        ctaX((event.clientX - (rect.left + rect.width / 2)) * 0.4);
-        ctaY((event.clientY - (rect.top + rect.height / 2)) * 0.4);
-      };
-      const onCtaLeave = () => {
-        if (!cta) return;
-        gsap.to(cta, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
-      };
-
-      row.addEventListener('pointermove', onRowMove);
-      row.addEventListener('pointerenter', onRowEnter);
-      row.addEventListener('pointerleave', onRowLeave);
-      cta?.addEventListener('pointermove', onCtaMove);
-      cta?.addEventListener('pointerleave', onCtaLeave);
-
-      detach = () => {
-        row.removeEventListener('pointermove', onRowMove);
-        row.removeEventListener('pointerenter', onRowEnter);
-        row.removeEventListener('pointerleave', onRowLeave);
-        cta?.removeEventListener('pointermove', onCtaMove);
-        cta?.removeEventListener('pointerleave', onCtaLeave);
-      };
-    } catch (error) {
-      console.error('[ServicesPricingToggle] tilt/magnetic setup failed', error);
-    }
-    return () => detach();
-  }, [canHoverTilt, index, onFocusRow, onBlurRow]);
-
-  const features = item.tasks.map((task) => task.value.trim()).filter(Boolean);
-  const activeCents =
-    billing === 'yearly'
-      ? deriveYearlyCents(item.basePriceCents, settings.yearlyDiscountPercent)
-      : item.basePriceCents;
-  const priceText = activeCents == null ? 'Custom quote' : formatPriceLocal(activeCents);
-  const showPeriodSuffix = activeCents != null && !isFreePriceLocal(activeCents);
-  const periodLabel = billing === 'yearly' ? settings.periodYearlyLabel : settings.periodMonthlyLabel;
-
-  const ink = isPopular ? accentInk : tokens.ink;
-  const muted = isPopular ? withAlpha(accentInk, 0.72) : tokens.muted;
-  const featureOpacity = isPopular ? 0.72 : 0.5;
-
-  return (
-    <div
-      ref={rowRef}
-      className="relative rounded-[1.75rem] px-6 py-8 will-change-transform sm:px-8 sm:py-9 md:rounded-[2rem] md:px-10 md:py-10"
-      style={{
-        backgroundColor: isPopular ? accent : tokens.cardBg,
-        ...(pricingStyle.borderWidthPx != null || pricingStyle.borderColor != null
-          ? {
-              borderStyle: 'solid',
-              borderWidth: pricingStyle.borderWidthPx ?? (isPopular ? 0 : 1),
-              borderColor: pricingStyle.borderColor ?? (isPopular ? 'transparent' : tokens.border),
-            }
-          : { border: isPopular ? 'none' : `1px solid ${tokens.border}` }),
-        ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
-        boxShadow: isPopular ? '0 28px 64px -30px rgba(0,0,0,0.5)' : 'none',
-      }}
-      data-pf-no-color-transition=""
-    >
-      <div className="grid grid-cols-1 gap-7 md:grid-cols-[minmax(200px,1fr)_minmax(0,1.55fr)_minmax(150px,auto)] md:items-center md:gap-10 lg:gap-14">
-        <div>
-          {isPopular && settings.popularBadgeLabel.trim() ? (
-            <span
-              className="mb-3 inline-block rounded-full px-3 py-1 text-[0.65rem] font-bold uppercase tracking-[0.14em]"
-              style={{ backgroundColor: withAlpha(ink, 0.14), color: ink }}
-            >
-              {settings.popularBadgeLabel}
-            </span>
-          ) : null}
-          <h3 className="font-sans text-lg font-extrabold tracking-tight sm:text-xl" style={{ color: ink }}>
-            {item.title}
-          </h3>
-          {item.description.trim() ? (
-            <p className="mt-1.5 max-w-xs text-sm leading-relaxed" style={{ color: muted }}>
-              {item.description}
-            </p>
-          ) : null}
-          <div className="mt-5 flex items-baseline gap-1.5">
-            <PriceSwap text={priceText} ink={ink} />
-            {showPeriodSuffix ? (
-              <span className="text-[0.7rem] font-normal tracking-[0.04em]" style={{ color: muted }}>
-                {periodLabel}
-              </span>
-            ) : null}
-          </div>
-        </div>
-
-        {features.length > 0 ? (
-          <ul className="space-y-3.5">
-            {features.map((feature, featureIndex) => (
-              <li
-                key={`${item.id}-feature-${featureIndex}`}
-                className="text-sm font-medium leading-[1.7]"
-                style={{ color: ink, opacity: featureOpacity }}
-              >
-                {feature}
-              </li>
-            ))}
-          </ul>
-        ) : (
-          <div aria-hidden />
-        )}
-
-        <div className="flex md:justify-end">
-          <a
-            ref={ctaRef}
-            {...pricingStyle.anchorProps}
-            className="inline-flex min-h-[48px] w-full items-center justify-center whitespace-nowrap rounded-full px-7 text-sm font-semibold will-change-transform md:w-auto"
-            style={{
-              border: `1.5px solid ${withAlpha(ink, 0.4)}`,
-              color: ink,
-              ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
-            }}
-            data-pf-no-color-transition=""
-          >
-            {settings.ctaLabel}
-          </a>
-        </div>
-      </div>
-    </div>
-  );
 }
 
 /**
- * Services "Pricing Toggle" — borderless horizontal pricing rows (title+price /
- * iconless features / CTA, three internal columns) with a spring Monthly/Yearly
- * switch up top, one fully color-inverted "popular" row, GSAP 3D tilt + sibling
- * focus-blur on hover, and a magnetic CTA pill. Collapses to a single vertical
- * flow (price header, then features, then a full-width CTA) below 768px, where
- * tilt/blur/magnetic are switched off entirely.
+ * Services "Pricing Toggle" — horizontal pricing rows (title + price / features / button), one
+ * colour-inverted featured row that can be moved first / middle / last, a magnetic button and one
+ * simple hover effect (lift / glow / tilt) that never dims the other rows. Type is set at Pricing
+ * Aurora's scale. Each row's price comes from the service itself — currency, "from" marker and
+ * its own billing period. Below 768px the rows collapse to a single vertical flow with a
+ * full-width button and no hover motion.
  */
 export function ServicesPricingToggleSection({
   services,
   presentation,
 }: {
-  services: PortfolioServiceItem[];
+  services: ProfileServiceItem[];
   presentation: PortfolioServicesPresentationSettings;
 }) {
-  const settings = readPricingToggleSettings(presentation);
-  const showFrame = readServicesPricingStyle(presentation).showFrame;
-  const items = useMemo(
-    () => services.filter((service) => service.title?.trim()),
-    [services]
+  const t = useT();
+  const settings = readToggleSettings(presentation);
+  const pricingStyle = useServicesPricingStyle(presentation);
+  const style = pricingStyle.style;
+  const show = resolveServicesCardElements(presentation);
+  const listed = useMemo(
+    () => buildPricingCards(services, show),
+    // eslint-disable-next-line react-hooks/exhaustive-deps -- `show` is rebuilt every render; its six flags are the real deps
+    [services, show.title, show.description, show.price, show.delivery, show.tasks, show.cta, show.deliveryTemplate]
   );
 
-  const isLight = presentation.activeColorMode === 'light';
-  const tokens = pricingTokens(isLight);
-  const accentRaw = presentation.ctaColor || presentation.cardAccentColor;
+  const tokens = pricingTokens(presentation.activeColorMode === 'light');
+  const accentRaw = pricingStyle.featuredColor ?? (presentation.ctaColor || presentation.cardAccentColor);
   const accent = isValidHex(accentRaw) ? accentRaw : '#f97316';
-  const accentInk = contrastInkFor(accent);
+  const fill = featuredFill(
+    accent,
+    style.featuredOpacity ?? SERVICES_FEATURED_DEFAULT_OPACITY.toggle,
+    tokens.isLight ? '#ffffff' : '#0a0a0a'
+  );
+  const badge = style.featuredShowLabel && style.featuredLabel.trim() ? style.featuredLabel.trim() : null;
+  const listedFeatured = resolveFeaturedIndex(
+    style,
+    listed.map((item) => item.popularFlag)
+  );
+  // Rows are one column, so "center" is the middle of the whole list.
+  const items = moveFeatured(listed, listedFeatured, settings.featuredPosition, listed.length);
+  const featuredId = listedFeatured >= 0 ? listed[listedFeatured]?.id : undefined;
+  const includedLabel = settings.showIncludedLabel ? settings.includedLabel.trim() || t('What\'s included') : null;
 
-  const popularIndex =
-    items.length > 0 ? Math.min(Math.max(settings.popularIndex, 0), items.length - 1) : 0;
-
-  const [billing, setBilling] = useState<BillingCycle>(settings.defaultBilling);
-  const canHoverTilt = usePricingToggleFinePointerDesktop();
-
+  const finePointer = useServicesFinePointer();
   const rootRef = useRef<HTMLDivElement>(null);
-  const toggleWrapRef = useRef<HTMLDivElement>(null);
-  const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
+  const rowsRef = useRef<HTMLDivElement>(null);
+  const itemsKey = items.map((item) => item.id).join('|');
 
-  const registerRow = useCallback((index: number, el: HTMLDivElement | null) => {
-    rowRefs.current[index] = el;
-  }, []);
-
-  const handleFocusRow = useCallback((index: number) => {
-    rowRefs.current.forEach((row, i) => {
-      if (!row) return;
-      gsap.to(row, {
-        opacity: i === index ? 1 : 0.12,
-        filter: i === index ? 'blur(0px)' : 'blur(2px)',
-        duration: 0.5,
-        ease: 'power2.out',
-        overwrite: 'auto',
-      });
-    });
-  }, []);
-
-  const handleBlurRow = useCallback(() => {
-    rowRefs.current.forEach((row) => {
-      if (!row) return;
-      gsap.to(row, { opacity: 1, filter: 'blur(0px)', duration: 0.5, ease: 'power2.out', overwrite: 'auto' });
-    });
-  }, []);
-
-  // Entrance — toggle + rows fade/slide up once, on scroll into view.
+  // Entrance — rows fade/slide up once, on scroll into view.
   useLayoutEffect(() => {
     const root = rootRef.current;
     if (!root || items.length === 0) return undefined;
+    const rows = Array.from(root.querySelectorAll<HTMLElement>('[data-svc-card]'));
+    if (prefersReducedMotion()) {
+      gsap.set(rows, { opacity: 1, y: 0 });
+      return undefined;
+    }
 
-    gsap.registerPlugin(ScrollTrigger);
-    const scroller = getScrollParent(root) ?? undefined;
-    const toggle = toggleWrapRef.current;
-    const rows = rowRefs.current.filter((el): el is HTMLDivElement => Boolean(el));
-
-    const ctx = gsap.context(() => {
-      if (prefersReducedMotion()) {
-        if (toggle) gsap.set(toggle, { opacity: 1, y: 0 });
-        if (rows.length) gsap.set(rows, { opacity: 1, y: 0 });
-        return;
-      }
-      if (toggle) gsap.set(toggle, { opacity: 0, y: 16 });
-      if (rows.length) gsap.set(rows, { opacity: 0, y: 24 });
-
-      const tl = gsap.timeline({
-        scrollTrigger: { trigger: root, scroller, start: 'top 82%', once: true },
-      });
-      if (toggle) tl.to(toggle, { opacity: 1, y: 0, duration: 0.7, ease: 'power3.out' }, 0);
-      if (rows.length) {
-        tl.to(
-          rows,
-          { opacity: 1, y: 0, duration: 0.7, stagger: 0.09, ease: 'power3.out' },
-          toggle ? 0.15 : 0
-        );
-      }
-    }, root);
-
-    const refreshId = window.setTimeout(() => {
-      try {
-        ScrollTrigger.refresh();
-      } catch (error) {
-        console.error('[ScrollTrigger] deferred refresh() failed', error);
-      }
-    }, 90);
-
+    let ctx: gsap.Context | undefined;
+    let refreshId = 0;
+    try {
+      gsap.registerPlugin(ScrollTrigger);
+      ctx = gsap.context(() => {
+        gsap.set(rows, { opacity: 0, y: 24 });
+        gsap.to(rows, {
+          opacity: 1,
+          y: 0,
+          duration: 0.7,
+          stagger: 0.09,
+          ease: 'power3.out',
+          clearProps: 'opacity',
+          scrollTrigger: { trigger: root, scroller: getScrollParent(root), start: 'top 82%', once: true },
+        });
+      }, root);
+      refreshId = window.setTimeout(() => {
+        try {
+          ScrollTrigger.refresh();
+        } catch (error) {
+          console.error('[ScrollTrigger] deferred refresh() failed', error);
+        }
+      }, 90);
+    } catch (error) {
+      console.error('[ServicesPricingToggle] entrance setup failed', error);
+    }
     return () => {
       window.clearTimeout(refreshId);
-      ctx.revert();
+      ctx?.revert();
     };
-  }, [items.length]);
+  }, [itemsKey, items.length]);
 
-  if (services.length === 0 || items.length === 0) return null;
+  useServicesCardHover(rowsRef, style.hoverEffect, finePointer, itemsKey);
+
+  // Magnetic button (fine pointer only).
+  useEffect(() => {
+    const root = rootRef.current;
+    if (!root || !finePointer || prefersReducedMotion()) return undefined;
+    const cleanups: Array<() => void> = [];
+    Array.from(root.querySelectorAll<HTMLElement>('[data-svc-cta]')).forEach((el) => {
+      const moveX = gsap.quickTo(el, 'x', { duration: 0.45, ease: 'power3' });
+      const moveY = gsap.quickTo(el, 'y', { duration: 0.45, ease: 'power3' });
+      const onMove = (event: PointerEvent) => {
+        const rect = el.getBoundingClientRect();
+        moveX((event.clientX - (rect.left + rect.width / 2)) * 0.4);
+        moveY((event.clientY - (rect.top + rect.height / 2)) * 0.4);
+      };
+      const onLeave = () => gsap.to(el, { x: 0, y: 0, duration: 0.6, ease: 'elastic.out(1, 0.4)', overwrite: 'auto' });
+      el.addEventListener('pointermove', onMove);
+      el.addEventListener('pointerleave', onLeave);
+      cleanups.push(() => {
+        el.removeEventListener('pointermove', onMove);
+        el.removeEventListener('pointerleave', onLeave);
+        gsap.killTweensOf(el);
+        gsap.set(el, { clearProps: 'x,y' });
+      });
+    });
+    return () => cleanups.forEach((off) => off());
+  }, [finePointer, itemsKey]);
+
+  if (items.length === 0) return null;
 
   return (
     <div
       ref={rootRef}
-      className="relative left-1/2 w-screen -translate-x-1/2 px-5 py-20 sm:px-8 md:py-24"
-      style={showFrame ? { backgroundColor: tokens.bg } : undefined}
+      // The inset padding only belongs to the optional background frame; without it the rows sit
+      // flush in the section like every other design.
+      className={
+        style.showFrame ? 'relative left-1/2 w-screen -translate-x-1/2 px-4 py-14 sm:px-8 md:py-24' : 'relative w-full'
+      }
+      style={style.showFrame ? { backgroundColor: tokens.bg } : undefined}
       data-pf-no-color-transition=""
     >
       <div className="mx-auto flex max-w-5xl flex-col items-center">
-        <div ref={toggleWrapRef} className="mb-12 md:mb-16">
-          <BillingSwitch
-            billing={billing}
-            onChange={setBilling}
-            tokens={tokens}
-            accent={accent}
-            accentInk={accentInk}
-          />
-        </div>
+        <div ref={rowsRef} className="flex w-full flex-col gap-4 sm:gap-6">
+          {items.map((item) => {
+            const isFeatured = item.id === featuredId;
+            const { price } = item;
+            const period = price.kind === 'amount' ? resolveBillingSuffix(style, price.period) : null;
+            const ink = isFeatured ? fill.ink : tokens.ink;
+            const muted = isFeatured ? withAlpha(fill.ink, 0.72) : tokens.muted;
+            const featureOpacity = isFeatured ? 0.92 : 0.72;
+            const figure =
+              price.kind === 'amount'
+                ? price.amount
+                : priceWordLabel(style, price.kind, price.kind === 'free' ? 'Free' : 'Custom quote');
+            // Pricing Aurora's scale; words ("Custom quote", "Free") read heavier, so they are smaller.
+            const priceSize = price.kind === 'amount' ? 'clamp(2rem, 4.2vw, 3rem)' : 'clamp(1.6rem, 3.2vw, 2.25rem)';
 
-        <div className="flex w-full flex-col gap-5 sm:gap-6">
-          {items.map((item, index) => (
-            <PricingRow
-              key={item.id}
-              item={item}
-              index={index}
-              isPopular={index === popularIndex}
-              tokens={tokens}
-              accent={accent}
-              accentInk={accentInk}
-              billing={billing}
-              settings={settings}
-              presentation={presentation}
-              canHoverTilt={canHoverTilt}
-              registerRow={registerRow}
-              onFocusRow={handleFocusRow}
-              onBlurRow={handleBlurRow}
-            />
-          ))}
+            return (
+              <div
+                key={item.id}
+                data-svc-card=""
+                data-svc-hover={style.hoverEffect}
+                data-rest-y={0}
+                className="relative rounded-[1.5rem] px-5 py-7 sm:px-8 sm:py-8 md:rounded-[2rem] md:px-10 md:py-9"
+                style={{
+                  '--svc-glow': ink,
+                  '--svc-shadow': tokens.isLight ? 'rgba(10,10,10,0.22)' : 'rgba(0,0,0,0.65)',
+                  backgroundColor: isFeatured ? fill.fill : tokens.cardBg,
+                  ...(pricingStyle.borderWidthPx != null || pricingStyle.borderColor != null
+                    ? {
+                        borderStyle: 'solid',
+                        borderWidth: pricingStyle.borderWidthPx ?? (isFeatured ? 0 : 1),
+                        borderColor: pricingStyle.borderColor ?? (isFeatured ? 'transparent' : tokens.border),
+                      }
+                    : { border: isFeatured ? 'none' : `1px solid ${tokens.border}` }),
+                  ...(pricingStyle.cardRadiusPx != null ? { borderRadius: pricingStyle.cardRadiusPx } : null),
+                  boxShadow: isFeatured ? '0 28px 64px -30px rgba(0,0,0,0.5)' : 'none',
+                } as unknown as CSSProperties}
+                data-pf-no-color-transition=""
+              >
+                <div className="grid grid-cols-1 gap-6 md:grid-cols-[minmax(200px,1fr)_minmax(0,1.55fr)_minmax(150px,auto)] md:items-center md:gap-10 lg:gap-14">
+                  <div>
+                    {isFeatured && badge ? (
+                      <span
+                        className="mb-3 inline-block rounded-full px-3 py-1 text-[10px] font-bold uppercase tracking-[0.18em]"
+                        style={{ backgroundColor: withAlpha(ink, 0.14), color: ink }}
+                      >
+                        {badge}
+                      </span>
+                    ) : null}
+                    {show.title ? (
+                      <h3 className="font-sans text-[0.95rem] font-bold tracking-tight" style={{ color: ink }}>
+                        {item.title}
+                      </h3>
+                    ) : null}
+                    {item.description ? (
+                      <p className="mt-1.5 max-w-xs text-[0.86rem] leading-relaxed" style={{ color: muted }}>
+                        {item.description}
+                      </p>
+                    ) : null}
+                    {show.price ? (
+                    <div className="mt-4">
+                      {price.isFrom && price.kind === 'amount' ? (
+                        <span
+                          className="mb-1 block text-[0.68rem] font-semibold uppercase tracking-[0.18em]"
+                          style={{ color: muted }}
+                        >
+                          {t('From')}
+                        </span>
+                      ) : null}
+                      <div
+                        className="flex flex-wrap items-baseline gap-x-1.5 font-extrabold leading-none tracking-[-0.02em]"
+                        style={{ fontSize: `calc(${priceSize} * var(--pf-services-font-scale, 1))`, color: ink }}
+                      >
+                        {price.kind === 'amount' && price.symbolFirst ? (
+                          <span className="text-[0.4em] font-semibold" style={{ opacity: 0.6 }}>
+                            {price.symbol}
+                          </span>
+                        ) : null}
+                        <span>{figure}</span>
+                        {price.kind === 'amount' && !price.symbolFirst ? (
+                          <span className="text-[0.4em] font-semibold" style={{ opacity: 0.6 }}>
+                            {price.symbol}
+                          </span>
+                        ) : null}
+                        {period ? (
+                          <span
+                            className="ml-1 font-normal tracking-normal"
+                            style={{ color: muted, fontSize: 'max(0.8rem, 0.3em)' }}
+                          >
+                            {period}
+                          </span>
+                        ) : null}
+                      </div>
+                    </div>
+                    ) : null}
+                    {item.delivery ? (
+                      <p className="mt-2 text-[0.78rem] font-medium" style={{ color: muted }}>
+                        {item.delivery}
+                      </p>
+                    ) : null}
+                  </div>
+
+                  {item.features.length > 0 ? (
+                    <div>
+                      {includedLabel ? (
+                        <p
+                          className="mb-3 text-[0.68rem] font-semibold uppercase"
+                          style={{ letterSpacing: '0.2em', color: muted }}
+                        >
+                          {includedLabel}
+                        </p>
+                      ) : null}
+                      <ul className="space-y-2.5">
+                        {item.features.map((feature, featureIndex) =>
+                          style.listBullet !== 'auto' ? (
+                            <ServicesBulletItem
+                              key={`${item.id}-feature-${featureIndex}`}
+                              bullet={style.listBullet}
+                              index={featureIndex}
+                              markerColor={pricingStyle.bulletColor ?? ink}
+                              className="text-[0.86rem] font-medium leading-[1.6]"
+                              textStyle={{ color: ink, opacity: featureOpacity }}
+                            >
+                              {feature}
+                            </ServicesBulletItem>
+                          ) : (
+                          <li
+                            key={`${item.id}-feature-${featureIndex}`}
+                            className="text-[0.86rem] font-medium leading-[1.6]"
+                            style={{ color: ink, opacity: featureOpacity }}
+                          >
+                            {feature}
+                          </li>
+                          )
+                        )}
+                      </ul>
+                    </div>
+                  ) : (
+                    <div aria-hidden />
+                  )}
+
+                  {show.cta ? (
+                  <div className="flex md:justify-end">
+                    <a
+                      {...pricingStyle.anchorProps}
+                      data-svc-cta=""
+                      className="inline-flex min-h-12 w-full items-center justify-center whitespace-nowrap rounded-full px-6 text-[0.9rem] font-semibold md:w-auto"
+                      style={{
+                        borderStyle: 'solid',
+                        borderWidth: 1.5,
+                        borderColor: withAlpha(ink, 0.4),
+                        color: ink,
+                        ...(pricingStyle.ctaRadius != null ? { borderRadius: pricingStyle.ctaRadius } : null),
+                        ...ctaLookOverride(
+                          style.ctaStyle,
+                          ink,
+                          isFeatured ? fill.blended : tokens.isLight ? '#ffffff' : '#0a0a0a',
+                          pricingStyle.ctaRadius
+                        ),
+                      }}
+                      data-pf-no-color-transition=""
+                    >
+                      {resolveServicesCtaLabel(presentation)}
+                    </a>
+                  </div>
+                  ) : null}
+                </div>
+              </div>
+            );
+          })}
         </div>
       </div>
     </div>

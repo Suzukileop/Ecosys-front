@@ -28,6 +28,7 @@ import {
   type StudioChangeHandler,
 } from '@/components/portfolio/PortfolioStudioKit';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type TeamLink = { id: string; platform: string; label: string; url: string; sortOrder: number };
 type TeamMember = { name: string; responsibility: string; imageUrl: string; socialLinks: TeamLink[] };
@@ -124,6 +125,7 @@ function MemberPhoto({
   onMove: (key: string, direction: -1 | 1) => void;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const { inputRef, uploading, uploadError, pickFile, onFileChange, uploadFile } = useContentMediaUpload({
     locale: 'en',
     onUrlChange: (url) => onChange(row.key, { imageUrl: url.trim() }),
@@ -154,7 +156,7 @@ function MemberPhoto({
       <div
         {...dropHandlers}
         className={`relative aspect-[4/3] w-full overflow-hidden rounded-xl border bg-black/[0.03] transition-colors dark:bg-white/[0.04] ${
-          dragging ? 'border-[#FF5722]' : 'border-black/[0.04] dark:border-white/[0.04]'
+          dragging ? 'border-[#0F1419] dark:border-[#E7E9EA]' : 'border-black/[0.04] dark:border-white/[0.04]'
         }`}
       >
         {hasPhoto ? (
@@ -173,7 +175,7 @@ function MemberPhoto({
               <FontAwesomeIcon icon={faPlus} className="h-5 w-5 text-neutral-400 dark:text-neutral-500" />
             )}
             <span className={`text-[13px] ${STUDIO_SECONDARY_CLASS}`}>
-              Drop a photo, or <span className="underline underline-offset-4">browse</span>
+              {t('Drop a photo, or')} <span className="underline underline-offset-4">{t('browse')}</span>
             </span>
           </button>
         )}
@@ -185,18 +187,18 @@ function MemberPhoto({
 
         <div className={`absolute inset-x-3 top-3 flex justify-between ${HOVER_REVEAL_CLASS}`}>
           <div className="flex gap-1.5">
-            <PhotoChip label="Move earlier" disabled={index === 0} onClick={() => onMove(row.key, -1)}>
+            <PhotoChip label={t('Move earlier')} disabled={index === 0} onClick={() => onMove(row.key, -1)}>
               <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" />
             </PhotoChip>
-            <PhotoChip label="Move later" disabled={index >= total - 1} onClick={() => onMove(row.key, 1)}>
+            <PhotoChip label={t('Move later')} disabled={index >= total - 1} onClick={() => onMove(row.key, 1)}>
               <FontAwesomeIcon icon={faChevronRight} className="h-3 w-3" />
             </PhotoChip>
           </div>
           <div className="flex gap-1.5">
-            <PhotoChip label={hasPhoto ? 'Replace photo' : 'Add photo'} disabled={uploading} onClick={pickFile}>
+            <PhotoChip label={hasPhoto ? t('Replace photo') : t('Add photo')} disabled={uploading} onClick={pickFile}>
               <FontAwesomeIcon icon={hasPhoto ? faArrowsRotate : faPlus} className="h-3 w-3" />
             </PhotoChip>
-            <PhotoChip label="Remove member" danger disabled={uploading} onClick={() => onRemove(row.key)}>
+            <PhotoChip label={t('Remove member')} danger disabled={uploading} onClick={() => onRemove(row.key)}>
               <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
             </PhotoChip>
           </div>
@@ -205,7 +207,7 @@ function MemberPhoto({
         {uploading || dragging ? (
           <div className="absolute inset-0 flex items-center justify-center gap-2 bg-black/55 text-sm font-medium text-white">
             {uploading ? <LoadingSpinner size="sm" /> : null}
-            {uploading ? 'Uploading…' : 'Drop to replace'}
+            {uploading ? t('Uploading…') : t('Drop to replace')}
           </div>
         ) : null}
       </div>
@@ -223,6 +225,7 @@ function MemberLinks({
   memberLabel: string;
   onChange: (next: TeamLink[]) => void;
 }) {
+  const t = useT();
   const [open, setOpen] = useStudioFold();
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -250,7 +253,7 @@ function MemberLinks({
               key={link.id}
               type="button"
               title={error ?? link.url}
-              aria-label={`Edit ${link.url}`}
+              aria-label={t('Edit {url}', { url: link.url })}
               onClick={() => editLink(link.id)}
               className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition-colors duration-200 ${
                 error
@@ -265,15 +268,15 @@ function MemberLinks({
         {filled.length < MAX_SOCIAL_LINKS ? (
           <button
             type="button"
-            title="Add link"
-            aria-label={`Add link for ${memberLabel}`}
+            title={t('Add link')}
+            aria-label={t('Add link for {memberLabel}', { memberLabel })}
             onClick={add}
-            className={`inline-flex h-9 items-center justify-center gap-2 rounded-full border border-dashed border-neutral-300 transition-colors duration-200 hover:border-[#FF5722] hover:text-[#FF5722] dark:border-white/15 ${
+            className={`inline-flex h-9 items-center justify-center gap-2 rounded-full border border-dashed border-neutral-300 transition-colors duration-200 hover:border-[#0F1419] hover:text-[#0F1419] dark:hover:border-[#E7E9EA] dark:hover:text-[#E7E9EA] dark:border-white/15 ${
               filled.length === 0 ? 'px-3.5 text-[13px]' : 'w-9'
             } ${STUDIO_SECONDARY_CLASS}`}
           >
             <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-            {filled.length === 0 ? 'Add link' : null}
+            {filled.length === 0 ? t('Add link') : null}
           </button>
         ) : null}
       </div>
@@ -302,7 +305,7 @@ function MemberLinks({
                   inputMode="url"
                   value={link.url}
                   autoFocus={link.id === focusId}
-                  placeholder="Profile link or email"
+                  placeholder={t('Profile link or email')}
                   aria-label={`Link ${linkIndex + 1} for ${memberLabel}`}
                   aria-invalid={error ? true : undefined}
                   autoComplete="off"
@@ -327,10 +330,10 @@ function MemberLinks({
           <button
             type="button"
             onClick={add}
-            className={`inline-flex items-center gap-2 text-[13px] transition-colors hover:text-[#FF5722] ${STUDIO_SECONDARY_CLASS}`}
+            className={`inline-flex items-center gap-2 text-[13px] transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA] ${STUDIO_SECONDARY_CLASS}`}
           >
             <FontAwesomeIcon icon={faPlus} className="h-3 w-3" />
-            Add link
+            {t('Add link')}
           </button>
         ) : (
           <span />
@@ -338,9 +341,9 @@ function MemberLinks({
         <button
           type="button"
           onClick={() => setOpen(false)}
-          className="text-[13px] font-medium text-black transition-colors hover:text-[#FF5722] dark:text-neutral-100"
+          className="text-[13px] font-medium text-black transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA] dark:text-neutral-100"
         >
-          Done
+          {t('Done')}
         </button>
       </div>
     </div>
@@ -364,6 +367,7 @@ const MemberCard = memo(function MemberCard({
   onMove: (key: string, direction: -1 | 1) => void;
   onRemove: (key: string) => void;
 }) {
+  const t = useT();
   const memberLabel = row.name.trim() || `member ${index + 1}`;
   const missingRole = Boolean(row.name.trim()) && !row.responsibility.trim();
 
@@ -377,7 +381,7 @@ const MemberCard = memo(function MemberCard({
             type="text"
             value={row.name}
             maxLength={MAX_NAME}
-            placeholder="Full name"
+            placeholder={t('Full name')}
             aria-label={`Name of member ${index + 1}`}
             autoFocus={autoFocus}
             autoComplete="off"
@@ -390,15 +394,15 @@ const MemberCard = memo(function MemberCard({
             type="text"
             value={row.responsibility}
             maxLength={MAX_ROLE}
-            placeholder="Role, e.g. Art director"
-            aria-label={`Role of ${memberLabel}`}
+            placeholder={t('Role, e.g. Art director')}
+            aria-label={t('Role of {memberLabel}', { memberLabel })}
             autoComplete="off"
             onChange={(event) => onChange(row.key, { responsibility: event.currentTarget.value })}
             className={`${STUDIO_BARE_INPUT_CLASS} text-[15px] text-neutral-500 dark:text-neutral-400`}
           />
         </StudioUnderline>
         {missingRole ? (
-          <p className="mt-1 text-[13px] text-neutral-400 dark:text-neutral-500">A role is required.</p>
+          <p className="mt-1 text-[13px] text-neutral-400 dark:text-neutral-500">{t('A role is required.')}</p>
         ) : null}
       </div>
 
@@ -412,6 +416,7 @@ const MemberCard = memo(function MemberCard({
 });
 
 function TeamGrid({ getDraft, change }: { getDraft: () => TeamDraft; change: StudioChangeHandler<TeamDraft> }) {
+  const t = useT();
   const [rows, setRows] = useState(() => getDraft().items);
   const [freshKey, setFreshKey] = useState<string | null>(null);
 
@@ -453,17 +458,17 @@ function TeamGrid({ getDraft, change }: { getDraft: () => TeamDraft; change: Stu
   };
 
   return (
-    <section className="pb-10 pt-3" aria-label="Team">
-      <StudioSectionHeader label={`Members · ${String(rows.length).padStart(2, '0')}`}>
+    <section className="pb-10 pt-3" aria-label={t('Team')}>
+      <StudioSectionHeader label={t('Members · {padStart}', { padStart: String(rows.length).padStart(2, '0') })}>
         <span className={STUDIO_SECONDARY_CLASS}>
-          {rows.length} of {MAX_TEAM}
+          {t('{rowsLength} of {MAXTEAM}', { rowsLength: rows.length, MAXTEAM: MAX_TEAM })}
         </span>
-        <StudioIconAction icon="add" label="Add member" onClick={add} disabled={rows.length >= MAX_TEAM} />
+        <StudioIconAction icon="add" label={t('Add member')} onClick={add} disabled={rows.length >= MAX_TEAM} />
       </StudioSectionHeader>
 
       {rows.length === 0 ? (
-        <button type="button" onClick={add} className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}>
-          No member yet — introduce the people behind your work.
+        <button type="button" onClick={add} className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA]`}>
+          {t('No member yet — introduce the people behind your work.')}
         </button>
       ) : (
         <ul style={STUDIO_FLOAT_IN_STYLE} className="grid grid-cols-1 gap-x-8 gap-y-12 pt-2 sm:grid-cols-2">

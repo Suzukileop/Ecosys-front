@@ -13,7 +13,9 @@ import {
   resolveExperienceColorMode,
   resolveExperienceTextColor,
 } from '@/components/portfolio/portfolio-experience-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Loft design header — Editorial split heading: title left, "Experience" label right.
@@ -26,6 +28,7 @@ export function ExperienceLoftHeader({
 }: {
   presentation?: PortfolioExperiencePresentationSettings;
 }) {
+  const t = useT();
   const presentation: PortfolioExperiencePresentationSettings = {
     ...(presentationProp ?? DEFAULT_EXPERIENCE_PRESENTATION),
     experienceDesign: 'loft',
@@ -51,8 +54,11 @@ export function ExperienceLoftHeader({
     DEFAULT_EXPERIENCE_MUTED_COLOR_DARK
   );
 
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationsEnabled = presentation.loftHeaderAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'experience-loft');
+  const showTitle = show('title');
+  const showLabel = show('label');
 
   // Load-in entry reveal only — title rises from a mask, label fades in from the right.
   useEffect(() => {
@@ -92,7 +98,7 @@ export function ExperienceLoftHeader({
       timers.push(t);
     }
     return () => timers.forEach(clearTimeout);
-  }, [animationsEnabled]);
+  }, [animationsEnabled, showTitle, showLabel]);
 
   const initialOpacity = animationsEnabled ? 0 : 1;
   const initialTitleTransform = animationsEnabled ? 'translateY(100%)' : 'translateY(0)';
@@ -101,27 +107,31 @@ export function ExperienceLoftHeader({
   return (
     <div className="mb-14 sm:mb-20" data-experience-header="loft">
       <div className="flex flex-wrap items-start justify-between gap-x-8 gap-y-4">
-        <div className="overflow-hidden">
-          <h2
-            ref={titleRef}
-            className="max-w-4xl text-[clamp(2.75rem,7.5vw,5.5rem)] font-normal leading-[1.06] tracking-tight"
-            style={{ color: ink, opacity: initialOpacity, transform: initialTitleTransform }}
+        {showTitle ? (
+          <div className="overflow-hidden">
+            <h2
+              ref={titleRef}
+              className="max-w-4xl text-[clamp(2.75rem,7.5vw,5.5rem)] font-normal leading-[1.06] tracking-tight"
+              style={{ color: ink, opacity: initialOpacity, transform: initialTitleTransform }}
+            >
+              {t('Roles I\'ve taken on')}
+            </h2>
+          </div>
+        ) : null}
+        {showLabel ? (
+          <span
+            ref={labelRef}
+            className="whitespace-nowrap text-[0.7rem] font-medium uppercase"
+            style={{
+              color: muted,
+              letterSpacing: '0.14em',
+              opacity: initialOpacity,
+              transform: initialLabelTransform,
+            }}
           >
-            Roles I&apos;ve taken on
-          </h2>
-        </div>
-        <span
-          ref={labelRef}
-          className="whitespace-nowrap text-[0.7rem] font-medium uppercase"
-          style={{
-            color: muted,
-            letterSpacing: '0.14em',
-            opacity: initialOpacity,
-            transform: initialLabelTransform,
-          }}
-        >
-          Experience
-        </span>
+            {t('Experience')}
+          </span>
+        ) : null}
       </div>
     </div>
   );

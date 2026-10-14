@@ -1,82 +1,122 @@
 'use client';
 
-import type { NotificationFilter } from '@/lib/notifications';
+import { RailGlyph } from '@/components/home/NewsDiscoverRail';
+import { VIEW_GLYPHS, VIEW_LABELS, type NotificationView } from '@/components/notifications/notificationViews';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-const TABS: { id: NotificationFilter; label: string }[] = [
-  { id: 'all', label: 'All' },
-  { id: 'unread', label: 'Unread' },
-];
+/*
+ * The notification filters, in News's two forms (NewsDiscoverRail / ProviderDiscoverRail):
+ *  - phones, tablets and the bell's panel: a swipeable row of 36px chips — idle chips on the card
+ *    tone, the selected one solid ink, no outline;
+ *  - the page's rail from lg: an outlined `.gn-rail-box`, a bold 20px title over 48px rows, the 20px
+ *    stroke glyphs, the fill tone only under the pointer, the selected row bold with a check.
+ * The unread total rides on "Unread" in both, as a plain number — no orange pill inside the page.
+ * Both read the News tokens, so they must sit inside a `news-theme news-feed news-mono` scope.
+ */
 
-export function NotificationFilterTabs({
+export function NotificationViewChips({
+  views,
   value,
   onChange,
-  compact = false,
-  underline = false,
   unreadCount = 0,
+  className = '',
 }: {
-  value: NotificationFilter;
-  onChange: (value: NotificationFilter) => void;
-  compact?: boolean;
-  /** Text tabs with a coral underline — the page layout, matching the search results tabs. */
-  underline?: boolean;
+  views: NotificationView[];
+  value: NotificationView;
+  onChange: (view: NotificationView) => void;
   unreadCount?: number;
+  className?: string;
 }) {
-  if (underline) {
-    return (
-      <div
-        role="tablist"
-        aria-label="Filter notifications"
-        className={`flex border-b border-black/[0.06] dark:border-white/[0.08] ${compact ? 'mt-3 gap-5' : 'mt-6 gap-6'}`}
-      >
-        {TABS.map((tab) => {
-          const active = value === tab.id;
-          const count = tab.id === 'unread' && unreadCount > 0 ? unreadCount : null;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => onChange(tab.id)}
-              className={`relative inline-flex items-center gap-1.5 transition-colors duration-200 ${
-                compact ? 'py-2.5 text-[14px]' : 'py-3.5 text-base'
-              } ${
-                active
-                  ? 'font-semibold text-[#111111] dark:text-white'
-                  : 'font-medium text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
-              }`}
-            >
-              {tab.label}
-              {count != null ? (
-                <span className={`tabular-nums ${active ? 'text-[#FF5722]' : ''}`}>{count}</span>
-              ) : null}
-              {active ? (
-                <span aria-hidden className="absolute inset-x-0 -bottom-px h-0.5 rounded-full bg-[#FF5722]" />
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-    );
-  }
-
+  const t = useT();
   return (
-    <div className={`flex gap-2 ${compact ? 'mt-3' : 'pb-4'}`}>
-      {TABS.map((tab) => {
-        const active = value === tab.id;
+    <nav
+      aria-label={t('Filter notifications')}
+      className={`flex gap-2 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${className}`}
+    >
+      {views.map((view) => {
+        const active = value === view;
+        const count = view === 'unread' && unreadCount > 0 ? unreadCount : null;
         return (
           <button
-            key={tab.id}
+            key={view}
             type="button"
-            onClick={() => onChange(tab.id)}
-            className={`notification-filter-tab ${
-              active ? 'notification-filter-tab-active' : 'notification-filter-tab-idle'
+            aria-pressed={active}
+            /* A second tap on a selected filter goes back to everything, like News's interests. */
+            onClick={() => onChange(active && view !== 'all' ? 'all' : view)}
+            data-pf-no-color-transition
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+              active
+                ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
+                : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'
             }`}
           >
-            {tab.label}
+            {t(VIEW_LABELS[view].chip)}
+            {count != null ? (
+              <span className={`tabular-nums ${active ? '' : 'text-[color:var(--gn-ink2)]'}`}>
+                {count > 99 ? '99+' : count}
+              </span>
+            ) : null}
           </button>
         );
       })}
-    </div>
+    </nav>
+  );
+}
+
+function CheckMark() {
+  return (
+    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d="m5 12.5 4.5 4.5L19 7.5" />
+    </svg>
+  );
+}
+
+export function NotificationViewRailBox({
+  views,
+  value,
+  onChange,
+  unreadCount = 0,
+}: {
+  views: NotificationView[];
+  value: NotificationView;
+  onChange: (view: NotificationView) => void;
+  unreadCount?: number;
+}) {
+  const t = useT();
+  return (
+    <section className="gn-rail-box flex min-h-0 flex-col px-px pb-2 pt-5" aria-labelledby="notifications-show-title">
+      <h2
+        id="notifications-show-title"
+        className="px-6 pb-2 pt-1 text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]"
+      >
+        {t('Show')}
+      </h2>
+      <nav aria-label={t('Filter notifications')} className="flex w-full flex-col">
+        {views.map((view) => {
+          const active = value === view;
+          return (
+            <button
+              key={view}
+              type="button"
+              aria-pressed={active}
+              onClick={() => onChange(active && view !== 'all' ? 'all' : view)}
+              data-pf-no-color-transition
+              className={`flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+                active ? 'font-bold' : 'font-normal'
+              }`}
+            >
+              <RailGlyph active={active}>{VIEW_GLYPHS[view]}</RailGlyph>
+              <span className="min-w-0 flex-1 truncate">{t(VIEW_LABELS[view].rail)}</span>
+              {view === 'unread' && unreadCount > 0 ? (
+                <span className="shrink-0 text-[14px] font-medium tabular-nums text-[color:var(--gn-ink2)]">
+                  {unreadCount > 99 ? '99+' : unreadCount}
+                </span>
+              ) : null}
+              {active ? <CheckMark /> : null}
+            </button>
+          );
+        })}
+      </nav>
+    </section>
   );
 }

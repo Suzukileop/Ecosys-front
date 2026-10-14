@@ -1,5 +1,6 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import { useCallback, useEffect, useState } from 'react';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
@@ -11,13 +12,20 @@ import {
   type CreatorProfileImageItem,
 } from '@/lib/creator-profile-images-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function formatAddedAt(iso: string): string {
   const date = new Date(iso);
   if (Number.isNaN(date.getTime())) return iso;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(localeTag(), { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
+/**
+ * One photo. The current one is the bento's large tile — two columns by two rows from sm (the full
+ * row on phones) — its image filling whatever height the rows beside it set, labelled "Current" on
+ * the picture itself instead of a ring around it. The others are 4:5 tiles whose "Use as profile
+ * photo" (square, like the page's buttons) rises from the bottom under the pointer.
+ */
 function ImageTile({
   item,
   restoringId,
@@ -27,47 +35,53 @@ function ImageTile({
   restoringId: string | null;
   onRestore: (id: string) => void;
 }) {
+  const t = useT();
   const busy = restoringId === item.id;
+  const featured = item.current;
 
   return (
-    <li className="group">
+    <li className={`group flex flex-col ${featured ? 'col-span-2 sm:row-span-2' : ''}`}>
       <div
-        className={`relative aspect-[4/5] overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-900 ${
-          item.current
-            ? 'ring-2 ring-[#111111] ring-offset-4 ring-offset-[#F9F9F9] dark:ring-white dark:ring-offset-black'
-            : ''
+        className={`relative aspect-[4/5] overflow-hidden bg-[color:var(--gn-surface)] ${
+          featured ? 'sm:aspect-auto sm:min-h-0 sm:flex-1' : ''
         }`}
       >
         <MediaImage
           src={item.url}
-          widths={[256, 384, 640]}
-          sizes="(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw"
-          className="h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
+          widths={featured ? [384, 640, 960] : [256, 384, 640]}
+          sizes={
+            featured
+              ? '(min-width: 1024px) 50vw, 100vw'
+              : '(min-width: 1024px) 25vw, (min-width: 640px) 33vw, 50vw'
+          }
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
-        {!item.current ? (
-          <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/45 to-transparent p-4 pt-12 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
+        {featured ? (
+          <span className="absolute left-3 top-3 bg-black/70 px-2 py-1 text-[11px] font-bold uppercase leading-4 tracking-[0.12em] text-white backdrop-blur-sm">
+            {t('Current')}
+          </span>
+        ) : (
+          <div className="absolute inset-x-0 bottom-0 flex justify-center bg-gradient-to-t from-black/55 to-transparent p-4 pt-12 opacity-0 transition-opacity duration-300 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100">
             <button
               type="button"
               disabled={busy || restoringId != null}
               onClick={() => onRestore(item.id)}
-              className="rounded-full bg-white px-5 py-2.5 text-[15px] font-medium text-[#111111] shadow-sm transition-transform hover:scale-[1.03] disabled:opacity-60"
+              className="inline-flex h-10 items-center bg-white px-4 text-[14px] font-bold text-[#0F1419] transition-colors hover:bg-[#EFF3F4] disabled:opacity-60"
             >
-              {busy ? 'Applying…' : 'Use as profile photo'}
+              {busy ? t('Applying…') : t('Use as profile photo')}
             </button>
           </div>
-        ) : null}
+        )}
       </div>
-      <div className="mt-4 flex items-center justify-between gap-3">
-        <time dateTime={item.createdAt} className="truncate text-[15px] text-neutral-500 dark:text-neutral-400">
-          {formatAddedAt(item.createdAt)}
-        </time>
-        {item.current ? (
-          <span className="inline-flex shrink-0 items-center gap-2 text-[15px] font-medium text-[#111111] dark:text-white">
-            <span className="h-1.5 w-1.5 rounded-full bg-[#111111] dark:bg-white" aria-hidden />
-            Current
-          </span>
-        ) : null}
-      </div>
+      <time dateTime={item.createdAt} className="mt-2 block truncate text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
+        {featured ? (
+          <>
+            <span className="font-semibold text-[color:var(--gn-ink)]">{t('Profile photo')}</span> {t('since')} {formatAddedAt(item.createdAt)}
+          </>
+        ) : (
+          formatAddedAt(item.createdAt)
+        )}
+      </time>
     </li>
   );
 }
@@ -77,6 +91,7 @@ type CreatorStudioImagesTabProps = {
 };
 
 export function CreatorStudioImagesTab({ onImagesUpdated }: CreatorStudioImagesTabProps) {
+  const t = useT();
   const [items, setItems] = useState<CreatorProfileImageItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -89,12 +104,12 @@ export function CreatorStudioImagesTab({ onImagesUpdated }: CreatorStudioImagesT
       const data = await listCreatorProfileImages();
       setItems(data);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Could not load image history.'));
+      setError(getApiErrorMessage(e, t('Could not load image history.')));
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, []);
+  }, [t]);
 
   useEffect(() => {
     void load();
@@ -110,15 +125,15 @@ export function CreatorStudioImagesTab({ onImagesUpdated }: CreatorStudioImagesT
         onImagesUpdated?.();
         pushFlashFeedback({
           variant: 'success',
-          title: 'Profile photo restored',
+          title: t('Profile photo restored'),
         });
       } catch (e) {
-        setError(getApiErrorMessage(e, 'Could not restore this image.'));
+        setError(getApiErrorMessage(e, t('Could not restore this image.')));
       } finally {
         setRestoringId(null);
       }
     },
-    [load, onImagesUpdated]
+    [load, onImagesUpdated, t]
   );
 
   if (loading) {
@@ -130,27 +145,28 @@ export function CreatorStudioImagesTab({ onImagesUpdated }: CreatorStudioImagesT
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-6">
       <div>
-        <h2 className="text-[1.5rem] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
-          Profile
+        <h2 className="text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]">
+          {t('Photos')}
         </h2>
-        <p className="mt-2 max-w-xl text-base leading-relaxed text-neutral-500 dark:text-neutral-400">
-          Every photo you have used. Pick one to make it your profile photo again.
+        <p className="mt-1 max-w-xl text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+          {t('Every photo you have used. Hover one to make it your profile photo again.')}
         </p>
       </div>
 
       {error ? <ErrorAlert message={error} onDismiss={() => setError(null)} /> : null}
 
       {items.length === 0 ? (
-        <div className="rounded-xl bg-[#FFFFFF] px-6 py-16 text-center dark:bg-[#111111]">
-          <p className="text-base text-neutral-500 dark:text-neutral-400">
-            No profile photos yet. Upload one from the profile header.
+        <div className="gn-card px-6 py-12 text-center">
+          <p className="text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+            {t('No profile photos yet. Upload one from the profile header.')}
           </p>
         </div>
       ) : (
-        <ul className="grid grid-cols-2 gap-x-6 gap-y-10 sm:grid-cols-3 sm:gap-x-8 sm:gap-y-12">
-          {items.map((item) => (
+        <ul className="grid grid-cols-2 gap-x-3 gap-y-6 sm:grid-cols-3 sm:gap-x-4 sm:gap-y-6">
+          {/* The current photo leads, whatever the history order. */}
+          {[...items].sort((a, b) => Number(b.current) - Number(a.current)).map((item) => (
             <ImageTile
               key={item.id}
               item={item}

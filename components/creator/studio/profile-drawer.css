@@ -1,0 +1,91 @@
+/*
+ * My Profile's edit drawers (ProfileSectionDrawer, body `.x-drawer-body`): one field style for every
+ * form inside, News grammar — a filled field in the module tone (#F7F9F9 / #16181C) on the white /
+ * black panel, no outline, 12px corners, a 2px ink ring when focused.
+ *
+ * The drawers reuse the studio's field components (links, FAQ, stack, phone…), which still carry the
+ * old bordered input. Re-skinning them here, scoped to the drawer, gives every form the same fields
+ * without forking those components — My Portfolio's inline editors keep their own look.
+ */
+
+.x-drawer-body input:not([type='checkbox']):not([type='radio']):not([type='range']):not([type='file']):not([type='color']):not(.bg-transparent):not(.sr-only),
+.x-drawer-body select:not(.bg-transparent),
+.x-drawer-body textarea:not(.bg-transparent) {
+  background-color: var(--gn-surface) !important;
+  border-color: transparent !important;
+  border-radius: 12px !important;
+  box-shadow: none !important;
+  color: var(--gn-ink) !important;
+  transition: box-shadow 150ms ease, background-color 150ms ease;
+}
+
+.x-drawer-body input::placeholder,
+.x-drawer-body textarea::placeholder {
+  color: var(--gn-ink2) !important;
+  opacity: 1;
+}
+
+.x-drawer-body input:not([type='checkbox']):not([type='radio']):not(.bg-transparent):focus,
+.x-drawer-body select:not(.bg-transparent):focus,
+.x-drawer-body textarea:not(.bg-transparent):focus {
+  outline: none !important;
+  box-shadow: inset 0 0 0 2px var(--gn-ink) !important;
+}
+
+/* An invalid field: the error red as the ring. */
+.x-drawer-body [aria-invalid='true'] {
+  box-shadow: inset 0 0 0 2px #f4212e !important;
+}
+
+/* Numbers: no spinner arrows (the field is typed into, and the arrows read as clutter). */
+.x-drawer-body input[type='number']::-webkit-inner-spin-button,
+.x-drawer-body input[type='number']::-webkit-outer-spin-button {
+  -webkit-appearance: none;
+  margin: 0;
+}
+.x-drawer-body input[type='number'] {
+  -moz-appearance: textfield;
+  appearance: textfield;
+}
+
+/* Selects: the native arrow replaced by the page's chevron, in secondary ink. */
+.x-drawer-body select:not(.bg-transparent) {
+  -webkit-appearance: none;
+  appearance: none;
+  padding-right: 2.75rem !important;
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23536471' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+  background-repeat: no-repeat;
+  background-position: right 1rem center;
+  background-size: 1rem;
+  cursor: pointer;
+}
+.dark .x-drawer-body select:not(.bg-transparent) {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238B98A5' stroke-width='2.2' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='m6 9 6 6 6-6'/%3E%3C/svg%3E");
+}
+.x-drawer-body option {
+  background-color: #ffffff;
+  color: #0f1419;
+}
+.dark .x-drawer-body option {
+  background-color: #000000;
+  color: #e7e9ea;
+}
+
+/* The phone field is two halves (country code + number): join them into one filled field. */
+.x-drawer-body input[type='tel'] {
+  border-top-left-radius: 0 !important;
+  border-bottom-left-radius: 0 !important;
+}
+.x-drawer-body button:has(+ input[type='tel']) {
+  background-color: var(--gn-surface) !important;
+  border-color: transparent !important;
+  border-radius: 12px 0 0 12px !important;
+  color: var(--gn-ink) !important;
+  margin-right: 1px;
+}
+
+/* A field inside a filled row (a language's level): the inset tone (white / #202327), one step apart. */
+.x-drawer-body select.x-inset,
+.x-drawer-body input.x-inset {
+  background-color: var(--gn-inset) !important;
+}

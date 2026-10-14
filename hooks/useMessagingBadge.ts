@@ -1,34 +1,35 @@
 'use client';
 
-import { useCallback, useEffect, useState } from 'react';
-import {
-  computeMessagingBadgeCount,
-  dismissMessagingBadge,
-  getMessagingBadgeBaseline,
-  MESSAGING_BADGE_DISMISS_EVENT,
-} from '@/lib/messaging-badge';
+import { useCallback, useSyncExternalStore } from 'react';
+import { useAuth } from '@/context/AuthContext';
+import { computeMessagingBadgeCount, messagingBadgeStore } from '@/lib/messaging-badge';
 
+/**
+ * Header badge for new messages. Opening the Messages icon records the current unread total as
+ * seen — the badge clears even though the messages stay unread inside their conversations.
+ */
 export function useMessagingBadge(unreadTotal: number) {
-  const [baseline, setBaseline] = useState(getMessagingBadgeBaseline);
+  const { user } = useAuth();
+  const userId = user?.id ?? null;
 
-  useEffect(() => {
-    const onDismiss = (event: Event) => {
-      const detail = (event as CustomEvent<number>).detail;
-      setBaseline(typeof detail === 'number' ? detail : getMessagingBadgeBaseline());
-    };
-    window.addEventListener(MESSAGING_BADGE_DISMISS_EVENT, onDismiss);
-    return () => window.removeEventListener(MESSAGING_BADGE_DISMISS_EVENT, onDismiss);
-  }, []);
+  const baseline = useSyncExternalStore(
+    messagingBadgeStore.subscribe,
+    () => messagingBadgeStore.read(userId),
+    () => 0
+  );
 
   const badgeCount = computeMessagingBadgeCount(unreadTotal, baseline);
 
   const dismissBadge = useCallback(
-    (currentUnread = unreadTotal) => {
-      dismissMessagingBadge(currentUnread);
-      setBaseline(currentUnread);
-    },
-    [unreadTotal]
+    (currentUnread = unreadTotal) => messagingBadgeStore.write(currentUnread, userId),
+    [unreadTotal, userId]
   );
 
-  return { badgeCount, dismissBadge };
+  /** Call with a freshly fetched total: some messages were read elsewhere, so the baseline follows. */
+  const syncBaseline = useCallback(
+    (currentUnread: number) => messagingBadgeStore.lowerTo(currentUnread, userId),
+    [userId]
+  );
+
+  return { badgeCount, dismissBadge, syncBaseline };
 }

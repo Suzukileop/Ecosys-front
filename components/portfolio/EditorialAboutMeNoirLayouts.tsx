@@ -13,6 +13,7 @@ import {
   resolveSpokenLanguageLevelLabel,
   spokenLanguageMatchKey,
 } from '@/lib/spoken-languages';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type LanguageDisplayItem = {
   name: string;
@@ -336,6 +337,7 @@ export function AboutTerminalLayout({
   colorMode?: 'light' | 'dark';
   className?: string;
 } & InfoColors) {
+  const t = useT();
   const headerLabel = fullName?.trim() || title.trim();
   const roleLabel = subtitle?.trim() || title.trim();
   const showRole = roleLabel.length > 0 && roleLabel !== headerLabel;
@@ -437,7 +439,7 @@ export function AboutTerminalLayout({
           boxShadow: shellShadow,
         }}
         role="region"
-        aria-label={headerLabel ? `About ${headerLabel}` : 'About'}
+        aria-label={headerLabel ? t('About {headerLabel}', { headerLabel }) : t('About')}
       >
         <div
           className="pf-about-terminal-titlebar flex shrink-0 items-center gap-3 px-3 py-0 sm:gap-3.5 sm:px-3.5"
@@ -471,7 +473,7 @@ export function AboutTerminalLayout({
                 style={{ backgroundColor: accent }}
                 aria-hidden
               />
-              <span className="truncate">~/profile/{fileSlug}.md</span>
+              <span className="truncate">{t('~/profile/{fileSlug}.md', { fileSlug })}</span>
             </span>
           </div>
 
@@ -479,7 +481,7 @@ export function AboutTerminalLayout({
             className="pf-about-terminal-chrome-item hidden shrink-0 font-mono text-[11px] tracking-[0.08em] uppercase sm:block"
             style={{ color: faintColor, opacity: 0.42 }}
           >
-            zsh · utf-8
+            {t('zsh · utf-8')}
           </p>
         </div>
 
@@ -738,17 +740,17 @@ export function AboutTerminalLayout({
         >
           <span className="flex items-center gap-1.5" style={{ color: accent }}>
             <span className="pf-about-terminal-live h-1.5 w-1.5 rounded-full" aria-hidden />
-            ready
+            {t('ready')}
           </span>
           <span aria-hidden className="opacity-45">
             ·
           </span>
-          <span className="opacity-45">utf-8</span>
+          <span className="opacity-45">{t('utf-8')}</span>
           <span aria-hidden className="hidden opacity-45 sm:inline">
             ·
           </span>
-          <span className="hidden truncate opacity-45 sm:inline">{fileSlug}.md</span>
-          <span className="ml-auto tabular-nums opacity-45">{blockCount} blk</span>
+          <span className="hidden truncate opacity-45 sm:inline">{t('{fileSlug}.md', { fileSlug })}</span>
+          <span className="ml-auto tabular-nums opacity-45">{t('{blockCount} blk', { blockCount })}</span>
         </div>
       </div>
     </div>

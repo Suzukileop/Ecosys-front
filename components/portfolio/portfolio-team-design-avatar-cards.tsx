@@ -63,6 +63,7 @@ import {
   type PortfolioTeamPresentationSettings,
 } from '@/components/portfolio/portfolio-team-settings';
 import type { ProfileTeamMember } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /* ---------------------------------------------------------------------- */
 /* Scale — the single place this design is sized from                      */
@@ -395,6 +396,7 @@ export function TeamAvatarCards({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
+  const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const opensOn = presentation.avatarCardsView ?? 'grid';
   const [view, setView] = useState<PortfolioTeamAvatarView>(opensOn);
@@ -487,7 +489,7 @@ export function TeamAvatarCards({
             className="inline-flex items-center gap-1 rounded-full border p-1"
             style={{ borderColor: hairline }}
             role="group"
-            aria-label="Team layout"
+            aria-label={t('Team layout')}
           >
             {PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS.map((option) => {
               const selected = option.value === view;
@@ -524,7 +526,7 @@ export function TeamAvatarCards({
                     type="button"
                     onClick={() => stepRail(direction)}
                     disabled={disabled}
-                    aria-label={direction === -1 ? 'Previous members' : 'Next members'}
+                    aria-label={direction === -1 ? t('Previous members') : t('Next members')}
                     className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
                       disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
                     }`}

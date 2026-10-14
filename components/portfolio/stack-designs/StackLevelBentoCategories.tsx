@@ -1,5 +1,6 @@
 'use client';
 
+import { trPlural } from '@/lib/i18n/active';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
@@ -435,7 +436,7 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
             data-featured={featured ? 'true' : 'false'}
             data-span={featured ? '2' : '1'}
             aria-label={`${group.category}, ${group.tools.length} ${
-              group.tools.length === 1 ? 'skill' : 'skills'
+              trPlural(group.tools.length, 'skill', 'skills')
             }`}
           >
             <header className="pf-stack-bento-kicker">

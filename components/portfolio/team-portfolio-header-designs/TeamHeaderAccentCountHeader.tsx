@@ -8,7 +8,8 @@ import {
   type PortfolioTeamHeaderTitleSize,
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_BADGE_TEXT = '{count}+ members';
 const DEFAULT_LEAD_TEXT = 'A small team of people who make it happen.';
@@ -60,12 +61,13 @@ export function TeamHeaderAccentCountHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'accent-count');
   const align = presentation.headerAccentCountAlignment ?? 'left';
-  const lead = (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim();
+  const lead = show('lead') ? (presentation.headerAccentCountLeadText || DEFAULT_LEAD_TEXT).trim() : '';
   const badgeTemplate = presentation.headerAccentCountBadgeText || DEFAULT_BADGE_TEXT;
-  const badgeText = badgeTemplate.replace('{count}', String(itemCount ?? 0));
+  const badgeText = show('badge') ? badgeTemplate.replace('{count}', String(itemCount ?? 0)) : '';
   const badgeColor = teamHeaderPaletteTokenColor(presentation.headerAccentCountBadgeColor ?? 'principal');
   const leadColor = teamHeaderPaletteTokenColor(presentation.headerAccentCountLeadColor ?? 'secondaire');
 

@@ -42,6 +42,7 @@ import {
 import { fetchLanguageProficiencyLevels } from '@/lib/reference-api';
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
 import type { ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type PortfolioAboutDraft = {
   specialties: string[];
@@ -135,12 +136,13 @@ const SpecialtyField = memo(function SpecialtyField({
   defaultTags: string[];
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const [specialties, setSpecialties] = useState(defaultSpecialties);
   const [tags, setTags] = useState(defaultTags);
   const [open, setOpen] = useStudioFold();
   const filled = trimmedFilled(specialties);
   return (
-    <StudioField label="Specialty" aside={<FoldToggle open={open} onClick={() => setOpen(!open)} />}>
+    <StudioField label={t('Specialty')} aside={<FoldToggle open={open} onClick={() => setOpen(!open)} />}>
       {open ? null : filled.length > 0 ? (
         <SlashLine
           items={filled.map((item) => (
@@ -150,7 +152,7 @@ const SpecialtyField = memo(function SpecialtyField({
           ))}
         />
       ) : (
-        <p className={`pb-3 ${EMPTY_CLASS}`}>No specialty yet</p>
+        <p className={`pb-3 ${EMPTY_CLASS}`}>{t('No specialty yet')}</p>
       )}
       {open ? (
         <div style={STUDIO_FLOAT_IN_STYLE} className="pb-5">
@@ -185,10 +187,11 @@ const ExperienceField = memo(function ExperienceField({
   onChange: ChangeHandler;
   onCommit: () => void;
 }) {
+  const t = useT();
   const id = useId();
   return (
-    <StudioField label="Experience" htmlFor={id} aside={aside}>
-      <div className="flex items-baseline gap-2">
+    <StudioField label={t('Experience')} htmlFor={id} aside={aside}>
+      <div className="flex items-center gap-2">
         <input
           id={id}
           type="text"
@@ -206,9 +209,9 @@ const ExperienceField = memo(function ExperienceField({
               onCommit();
             }
           }}
-          className={`${STUDIO_INLINE_TEXT_CLASS} !w-[3ch] tabular-nums`}
+          className={`${STUDIO_INLINE_TEXT_CLASS} !w-[calc(3ch+1.5rem+2px)] tabular-nums`}
         />
-        <span className={`pb-3 ${SECONDARY_CLASS}`}>years</span>
+        <span className={SECONDARY_CLASS}>{t('years')}</span>
       </div>
     </StudioField>
   );
@@ -221,6 +224,7 @@ function LanguagesEditor({
   value: SpokenLanguageEntry[];
   onChange: (next: SpokenLanguageEntry[]) => void;
 }) {
+  const t = useT();
   const [levels, setLevels] = useState(DEFAULT_LANGUAGE_PROFICIENCY_LEVELS);
   const [draft, setDraft] = useState('');
   const selected = dedupeSpokenLanguageEntries(value);
@@ -258,18 +262,18 @@ function LanguagesEditor({
               <span className={`min-w-0 flex-1 truncate ${VALUE_CLASS}`}>{language.value}</span>
               <StudioMenuSelect
                 value={language.level ?? null}
-                ariaLabel={`Level for ${language.value}`}
-                placeholder="Level"
+                ariaLabel={t('Level for {value}', { value: language.value })}
+                placeholder={t('Level')}
                 options={[
                   ...levels.map((option) => ({
                     value: option.code as NonNullable<SpokenLanguageEntry['level']>,
                     label: option.label,
                   })),
-                  { value: null, label: 'No level' },
+                  { value: null, label: t('No level') },
                 ]}
                 onChange={(next) => setLevel(language.value, next)}
               />
-              <StudioRemoveButton label={`Remove ${language.value}`} onClick={() => remove(language.value)} />
+              <StudioRemoveButton label={t('Remove {value}', { value: language.value })} onClick={() => remove(language.value)} />
             </li>
           ))}
         </ul>
@@ -294,8 +298,8 @@ function LanguagesEditor({
         <input
           type="text"
           value={draft}
-          placeholder="Other language — press Enter"
-          aria-label="Add another language"
+          placeholder={t('Other language — press Enter')}
+          aria-label={t('Add another language')}
           onChange={(event) => setDraft(event.currentTarget.value)}
           onKeyDown={(event) => {
             if (event.key === 'Enter') {
@@ -320,12 +324,13 @@ const LanguagesField = memo(function LanguagesField({
   aside?: ReactNode;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const [languages, setLanguages] = useState(defaultValue);
   const [open, setOpen] = useStudioFold();
   const filled = languages.filter((language) => language.value.trim());
   return (
     <StudioField
-      label="Languages"
+      label={t('Languages')}
       aside={
         <div className="flex items-center gap-3">
           <FoldToggle open={open} onClick={() => setOpen(!open)} />
@@ -346,7 +351,7 @@ const LanguagesField = memo(function LanguagesField({
           })}
         />
       ) : (
-        <p className={`pb-3 ${EMPTY_CLASS}`}>No language yet</p>
+        <p className={`pb-3 ${EMPTY_CLASS}`}>{t('No language yet')}</p>
       )}
       {open ? (
         <div style={STUDIO_FLOAT_IN_STYLE} className="pb-5">
@@ -372,6 +377,7 @@ const EducationSection = memo(function EducationSection({
   aside?: ReactNode;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const [entries, setEntries] = useState(defaultValue);
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -388,14 +394,14 @@ const EducationSection = memo(function EducationSection({
   };
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Education">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Education')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Education">
-          <StudioIconAction icon="add" label="Add education" onClick={add} disabled={entries.length >= 8} />
+        <StudioSectionHeader label={t('Education')}>
+          <StudioIconAction icon="add" label={t('Add education')} onClick={add} disabled={entries.length >= 8} />
           {aside}
         </StudioSectionHeader>
         {entries.length === 0 ? (
-          <p className={EMPTY_CLASS}>No education yet</p>
+          <p className={EMPTY_CLASS}>{t('No education yet')}</p>
         ) : (
           <ol>
             {entries.map((entry) => (
@@ -408,7 +414,7 @@ const EducationSection = memo(function EducationSection({
                     type="text"
                     value={entry.schoolYear}
                     placeholder="2017 – 2019"
-                    aria-label="Years"
+                    aria-label={t('Years')}
                     autoFocus={entry.id === focusId}
                     onChange={(event) => update(entry.id, { schoolYear: event.currentTarget.value })}
                     className={`${STUDIO_BARE_INPUT_CLASS} tabular-nums ${SECONDARY_CLASS}`}
@@ -419,8 +425,8 @@ const EducationSection = memo(function EducationSection({
                     <input
                       type="text"
                       value={entry.title}
-                      placeholder="Master / Licence"
-                      aria-label="Degree"
+                      placeholder={t('Master / Licence')}
+                      aria-label={t('Degree')}
                       onChange={(event) => update(entry.id, { title: event.currentTarget.value })}
                       className={`${STUDIO_BARE_INPUT_CLASS} ${VALUE_CLASS}`}
                     />
@@ -429,15 +435,15 @@ const EducationSection = memo(function EducationSection({
                     <input
                       type="text"
                       value={entry.institution}
-                      placeholder="University"
-                      aria-label="Institution"
+                      placeholder={t('University')}
+                      aria-label={t('Institution')}
                       onChange={(event) => update(entry.id, { institution: event.currentTarget.value })}
                       className={`${STUDIO_BARE_INPUT_CLASS} ${SECONDARY_CLASS}`}
                     />
                   </StudioUnderline>
                 </div>
                 <StudioRemoveButton
-                  label="Remove education entry"
+                  label={t('Remove education entry')}
                   onClick={() => commit(entries.filter((item) => item.id !== entry.id))}
                 />
               </li>
@@ -458,6 +464,7 @@ const SkillsSection = memo(function SkillsSection({
   aside?: ReactNode;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const [entries, setEntries] = useState(defaultValue);
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -474,14 +481,14 @@ const SkillsSection = memo(function SkillsSection({
   };
 
   return (
-    <section className={STUDIO_BLOCK_CLASS} aria-label="Skills">
+    <section className={STUDIO_BLOCK_CLASS} aria-label={t('Skills')}>
       <div className="min-w-0">
-        <StudioSectionHeader label="Skills">
-          <StudioIconAction icon="add" label="Add skill" onClick={add} disabled={entries.length >= MAX_ABOUT_SKILLS} />
+        <StudioSectionHeader label={t('Skills')}>
+          <StudioIconAction icon="add" label={t('Add skill')} onClick={add} disabled={entries.length >= MAX_ABOUT_SKILLS} />
           {aside}
         </StudioSectionHeader>
         {entries.length === 0 ? (
-          <p className={EMPTY_CLASS}>No skill yet</p>
+          <p className={EMPTY_CLASS}>{t('No skill yet')}</p>
         ) : (
           <ul className="grid grid-cols-1 gap-x-12 sm:grid-cols-2">
             {entries.map((entry) => (
@@ -492,8 +499,8 @@ const SkillsSection = memo(function SkillsSection({
                       type="text"
                       value={entry.title}
                       maxLength={MAX_ABOUT_SKILL_TITLE}
-                      placeholder="Skill"
-                      aria-label="Skill title"
+                      placeholder={t('Skill')}
+                      aria-label={t('Skill title')}
                       autoFocus={entry.id === focusId}
                       onChange={(event) => update(entry.id, { title: event.currentTarget.value })}
                       className={`${STUDIO_BARE_INPUT_CLASS} ${VALUE_CLASS}`}
@@ -504,15 +511,15 @@ const SkillsSection = memo(function SkillsSection({
                       value={entry.description}
                       maxLength={MAX_ABOUT_SKILL_DESCRIPTION}
                       rows={1}
-                      placeholder="A short line of context"
-                      aria-label="Skill description"
+                      placeholder={t('A short line of context')}
+                      aria-label={t('Skill description')}
                       onChange={(event) => update(entry.id, { description: event.currentTarget.value })}
                       className={`${STUDIO_BARE_INPUT_CLASS} resize-none leading-relaxed [field-sizing:content] ${SECONDARY_CLASS}`}
                     />
                   </StudioUnderline>
                 </div>
                 <StudioRemoveButton
-                  label="Remove skill"
+                  label={t('Remove skill')}
                   onClick={() => commit(entries.filter((item) => item.id !== entry.id))}
                 />
               </li>
@@ -546,6 +553,7 @@ const StringListColumn = memo(function StringListColumn({
   aside?: ReactNode;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const [rows, setRows] = useState(() => toRows(defaultValue));
   const [focusId, setFocusId] = useState<string | null>(null);
 
@@ -562,11 +570,11 @@ const StringListColumn = memo(function StringListColumn({
   return (
     <div className="min-w-0">
       <StudioSectionHeader label={label}>
-        <StudioIconAction icon="add" label={`Add ${label.toLowerCase()}`} onClick={add} disabled={rows.length >= maxItems} />
+        <StudioIconAction icon="add" label={t('Add {toLowerCase}', { toLowerCase: label.toLowerCase() })} onClick={add} disabled={rows.length >= maxItems} />
         {aside}
       </StudioSectionHeader>
       {rows.length === 0 ? (
-        <p className={EMPTY_CLASS}>Nothing yet</p>
+        <p className={EMPTY_CLASS}>{t('Nothing yet')}</p>
       ) : (
         <ul>
           {rows.map((row) => (
@@ -592,7 +600,7 @@ const StringListColumn = memo(function StringListColumn({
                 />
               </StudioUnderline>
               <StudioRemoveButton
-                label={`Remove ${label} item`}
+                label={t('Remove {label} item', { label })}
                 onClick={() => commit(rows.filter((item) => item.id !== row.id))}
               />
             </li>
@@ -614,6 +622,7 @@ export function PortfolioAboutStudio({
   hideProviderFields: boolean;
   onSave: (draft: PortfolioAboutDraft) => Promise<void>;
 }) {
+  const t = useT();
   const studio = useInlineStudio({ initial, onSave, signature: aboutSignature });
   const { baseline, change, commit } = studio;
   const visibilityProps = { visibility, onVisibilityChange };
@@ -621,9 +630,9 @@ export function PortfolioAboutStudio({
   return (
     <>
       <div key={studio.revision}>
-        <section className={STUDIO_BLOCK_CLASS} aria-label="Profile">
+        <section className={STUDIO_BLOCK_CLASS} aria-label={t('Profile')}>
           {!hideProviderFields ? (
-            <div className="grid grid-cols-1 items-start gap-x-8 gap-y-10 sm:grid-cols-[minmax(0,1fr)_11rem]">
+            <div className="grid grid-cols-1 items-start gap-y-6">
               <SpecialtyField
                 defaultSpecialties={baseline.specialties}
                 defaultTags={baseline.specialtyTags}
@@ -656,31 +665,31 @@ export function PortfolioAboutStudio({
           aside={<VisibilityControl field="aboutSkills" {...visibilityProps} />}
         />
 
-        <section className={`${STUDIO_BLOCK_CLASS} sm:grid-cols-2 sm:gap-x-12 lg:grid-cols-3`} aria-label="Strengths, tools and interests">
+        <section className={STUDIO_BLOCK_CLASS} aria-label={t('Strengths, tools and interests')}>
           <StringListColumn
             name="aboutStrengths"
-            label="Strengths"
+            label={t('Strengths')}
             defaultValue={baseline.aboutStrengths}
             maxItems={12}
-            placeholder="Add a strength"
+            placeholder={t('Add a strength')}
             onChange={change}
             aside={<VisibilityControl field="aboutStrengths" {...visibilityProps} />}
           />
           <StringListColumn
             name="aboutSystemsTools"
-            label="Systems & Tools"
+            label={t('Systems & Tools')}
             defaultValue={baseline.aboutSystemsTools}
             maxItems={16}
-            placeholder="Add a tool"
+            placeholder={t('Add a tool')}
             onChange={change}
             aside={<VisibilityControl field="aboutSystemsTools" {...visibilityProps} />}
           />
           <StringListColumn
             name="aboutInterests"
-            label="Interests"
+            label={t('Interests')}
             defaultValue={baseline.aboutInterests}
             maxItems={12}
-            placeholder="Add an interest"
+            placeholder={t('Add an interest')}
             onChange={change}
             aside={<VisibilityControl field="aboutInterests" {...visibilityProps} />}
           />

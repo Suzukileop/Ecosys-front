@@ -7,6 +7,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { acceptConversationInvite } from '@/lib/messaging';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export default function JoinDiscussionPage() {
   return (
@@ -25,6 +26,7 @@ export default function JoinDiscussionPage() {
 }
 
 function JoinDiscussionContent() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const token = searchParams.get('token');
@@ -32,7 +34,7 @@ function JoinDiscussionContent() {
 
   useEffect(() => {
     if (!token) {
-      setError('Invalid invite link.');
+      setError(t('Invalid invite link.'));
       return;
     }
 
@@ -43,14 +45,14 @@ function JoinDiscussionContent() {
         if (cancelled) return;
         router.replace(`/messages?conversation=${encodeURIComponent(conversation.id)}`);
       } catch (e) {
-        if (!cancelled) setError(getApiErrorMessage(e, 'Unable to join conversation.'));
+        if (!cancelled) setError(getApiErrorMessage(e, t('Unable to join conversation.')));
       }
     })();
 
     return () => {
       cancelled = true;
     };
-  }, [token, router]);
+  }, [token, router, t]);
 
   return (
     <DashboardHomeShell wide fullWidth>
@@ -60,7 +62,7 @@ function JoinDiscussionContent() {
         ) : (
           <>
             <LoadingSpinner size="lg" />
-            <p className="text-sm text-gray-600 dark:text-neutral-400">Joining conversation…</p>
+            <p className="text-[15px] text-[#536471] dark:text-[#71767B]">{t('Joining conversation…')}</p>
           </>
         )}
       </div>

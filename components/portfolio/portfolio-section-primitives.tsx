@@ -1,5 +1,6 @@
 'use client';
 
+import { trPlural } from '@/lib/i18n/active';
 import dynamic from 'next/dynamic';
 import Link from 'next/link';
 import { Fragment, createContext, useContext, useEffect, useLayoutEffect, useMemo, useRef, useState, useSyncExternalStore, type CSSProperties, type FocusEvent, type MouseEvent as ReactMouseEvent, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
@@ -220,6 +221,7 @@ import {
   sectionBackgroundStyle,
 } from '@/components/portfolio/portfolio-section-background-settings';
 import { DEFAULT_CONTENT_GUTTER, portfolioEditorialGutterX, portfolioEditorialShellClass, type PortfolioContentGutter } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 // The Team section's member layouts now live in their own module (premium rework + shared GSAP
 // entrance); re-exported here so existing `portfolio-section-primitives` importers keep working.
 export { EditorialTeamGallery } from '@/components/portfolio/portfolio-team-designs';
@@ -402,6 +404,7 @@ export function EditorialGallerySection({
   presentation: PortfolioGalleryPresentationSettings;
   embeddedHeader?: ReactNode;
 }) {
+  const t = useT();
   const [activeItem, setActiveItem] = useState<ProfileGalleryItem | null>(null);
   const [carouselPage, setCarouselPage] = useState(0);
   const [cinemaX, setCinemaX] = useState(0);
@@ -651,7 +654,7 @@ export function EditorialGallerySection({
     const deferred = (
       <PortfolioDeferredMedia
         src={item.mediaUrl}
-        alt={galleryItemDisplayTitle(item.title) || 'Gallery media'}
+        alt={galleryItemDisplayTitle(item.title) || t('Gallery media')}
         className={zoomClass}
         sizes={sizes}
         eager={lightbox || eager}
@@ -792,7 +795,7 @@ export function EditorialGallerySection({
           options?.onActivate
             ? `Show ${galleryItemDisplayTitle(item.title) || 'this media'}`
             : presentation.lightboxEnabled
-              ? `Open ${item.title}`
+              ? t('Open {title}', { title: item.title })
               : undefined
         }
         onClick={activate}
@@ -966,7 +969,7 @@ export function EditorialGallerySection({
         >
           <PortfolioDeferredMedia
             src={item.mediaUrl}
-            alt={galleryItemDisplayTitle(item.title) || 'Gallery media'}
+            alt={galleryItemDisplayTitle(item.title) || t('Gallery media')}
             className={`h-full w-full ${
               presentation.hoverZoom
                 ? 'transition-transform duration-[1400ms] ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.07]'
@@ -1041,7 +1044,7 @@ export function EditorialGallerySection({
                 `color-mix(in srgb, ${presentation.itemTitleColor} 32%, transparent)`,
               color: presentation.itemTitleColor,
             }}
-            aria-label={direction === -1 ? 'Previous' : 'Next'}
+            aria-label={direction === -1 ? t('Previous') : t('Next')}
           >
             <svg
               viewBox="0 0 24 24"
@@ -1265,7 +1268,7 @@ export function EditorialGallerySection({
         direction === -1 ? 'left-3 sm:left-6' : 'right-3 sm:right-6'
       }`}
       data-pf-no-color-transition=""
-      aria-label={direction === -1 ? 'Previous image' : 'Next image'}
+      aria-label={direction === -1 ? t('Previous image') : t('Next image')}
     >
       <svg
         viewBox="0 0 24 24"
@@ -1321,7 +1324,7 @@ export function EditorialGallerySection({
                 onClick={() => setActiveItem(null)}
                 className="absolute right-4 top-4 z-[2] flex h-11 w-11 items-center justify-center rounded-full border border-white/25 text-white transition-[background-color,transform] duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:rotate-90 hover:bg-white/10 focus:outline-none focus-visible:ring-2 focus-visible:ring-white sm:right-8 sm:top-8"
                 data-pf-no-color-transition=""
-                aria-label="Close the gallery"
+                aria-label={t('Close the gallery')}
                 autoFocus
               >
                 <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.4} strokeLinecap="round" aria-hidden className="h-[38%] w-[38%]">
@@ -2055,7 +2058,7 @@ function VerticalSectionTitle({
 
 type NavItem = { id: string; label: string; icon: PortfolioNavIconVariant };
 
-function useNavVisibility(
+export function useNavVisibility(
   displayMode: PortfolioNavSettings['displayMode'],
   /** Pages mode locks body scroll — force always-visible chrome. */
   forceAlways = false
@@ -2345,6 +2348,73 @@ function useNavPresence(
   };
 }
 
+/**
+ * In-bar links (floating pill, editorial bar). Centred while they fit; once the bar runs out of
+ * room they scroll sideways instead of spilling over the brand or the buttons (`safe center`
+ * keeps the first one reachable), faded edges hint at the hidden ones, and the active link is
+ * kept in view.
+ */
+function NavLinksRail({
+  className,
+  activeKey,
+  children,
+}: {
+  className: string;
+  activeKey?: string;
+  children: ReactNode;
+}) {
+  const ref = useRef<HTMLDivElement>(null);
+  const [overflow, setOverflow] = useState({ start: false, end: false });
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node) return;
+    let frame = 0;
+    const update = () => {
+      window.cancelAnimationFrame(frame);
+      frame = window.requestAnimationFrame(() => {
+        const max = node.scrollWidth - node.clientWidth;
+        const next = { start: max > 1 && node.scrollLeft > 1, end: max > 1 && node.scrollLeft < max - 1 };
+        setOverflow((prev) => (prev.start === next.start && prev.end === next.end ? prev : next));
+      });
+    };
+    const observer = new ResizeObserver(update);
+    observer.observe(node);
+    Array.from(node.children).forEach((child) => observer.observe(child));
+    node.addEventListener('scroll', update, { passive: true });
+    update();
+    return () => {
+      window.cancelAnimationFrame(frame);
+      observer.disconnect();
+      node.removeEventListener('scroll', update);
+    };
+  }, [children]);
+
+  useEffect(() => {
+    const node = ref.current;
+    const active = node?.querySelector<HTMLElement>('[aria-current="page"]');
+    if (!node || !active || node.scrollWidth <= node.clientWidth) return;
+    const nodeRect = node.getBoundingClientRect();
+    const activeRect = active.getBoundingClientRect();
+    node.scrollTo({
+      left: node.scrollLeft + activeRect.left - nodeRect.left - (nodeRect.width - activeRect.width) / 2,
+      behavior: 'smooth',
+    });
+  }, [activeKey]);
+
+  const fade =
+    overflow.start || overflow.end
+      ? `linear-gradient(to right, ${overflow.start ? 'transparent' : '#000'} 0, #000 28px, #000 calc(100% - 28px), ${
+          overflow.end ? 'transparent' : '#000'
+        } 100%)`
+      : undefined;
+  return (
+    <div ref={ref} className={className} style={fade ? { maskImage: fade, WebkitMaskImage: fade } : undefined}>
+      {children}
+    </div>
+  );
+}
+
 export function PortfolioFloatingNav({
   items,
   settings,
@@ -2389,6 +2459,7 @@ export function PortfolioFloatingNav({
   colorMode?: 'light' | 'dark';
   onColorModeToggle?: () => void;
 }) {
+  const t = useT();
   const [drawerOpen, setDrawerOpen] = useState(false);
   const isControlled = typeof onNavigate === 'function';
   // Pages mode uses an inner scroller — window.scrollY never moves.
@@ -2404,6 +2475,12 @@ export function PortfolioFloatingNav({
   const menuEntries = useMemo(
     () => resolveNavMenuEntries(sectionItems, settings.navMenuGroups ?? []),
     [sectionItems, settings.navMenuGroups]
+  );
+  // The mobile drawer has no contact button, so it keeps the Contact link the bar leaves out —
+  // otherwise Contact is unreachable on phones.
+  const drawerMenuEntries = useMemo(
+    () => (contactButtonEnabled ? resolveNavMenuEntries(items, settings.navMenuGroups ?? []) : menuEntries),
+    [contactButtonEnabled, items, settings.navMenuGroups, menuEntries]
   );
   const splitMenuRails = useMemo(
     () => splitNavMenuEntries(menuEntries, settings.splitNavLeftSectionKeys ?? []),
@@ -2565,7 +2642,7 @@ export function PortfolioFloatingNav({
       (settings.mobileBrandWord ?? '').trim() ||
       (brandName ?? '').trim() ||
       (settings.customExtraText ?? '').trim() ||
-      'Menu';
+      t('Menu');
     const showAvatar = mobileBrand === 'avatar';
     const showWord = mobileBrand === 'word';
     const barJustify =
@@ -2628,7 +2705,7 @@ export function PortfolioFloatingNav({
         onClick={() => setDrawerOpen(true)}
         aria-expanded={drawerOpen}
         aria-controls="portfolio-nav-drawer"
-        aria-label="Open navigation menu"
+        aria-label={t('Open navigation menu')}
         className={
           useBrandBar
             ? 'inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-lg transition hover:bg-black/5'
@@ -2660,7 +2737,7 @@ export function PortfolioFloatingNav({
           className={`pointer-events-none fixed inset-x-0 top-0 z-[100] transition-opacity duration-300 ${
             visible ? 'opacity-100' : 'pointer-events-none opacity-0'
           }`}
-          aria-label="Portfolio navigation"
+          aria-label={t('Portfolio navigation')}
           aria-hidden={!visible}
           style={{ paddingTop: 'env(safe-area-inset-top, 0px)' }}
         >
@@ -2709,14 +2786,14 @@ export function PortfolioFloatingNav({
             <button
               type="button"
               className="absolute inset-0 z-0 bg-neutral-950/50 backdrop-blur-[2px] transition-opacity"
-              aria-label="Close navigation menu"
+              aria-label={t('Close navigation menu')}
               onClick={() => setDrawerOpen(false)}
             />
             <aside
               id="portfolio-nav-drawer"
               role="dialog"
               aria-modal="true"
-              aria-label="Navigation"
+              aria-label={t('Navigation')}
               className={`absolute top-0 z-10 flex h-full w-[min(18.5rem,86vw)] flex-col shadow-2xl transition-transform duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] ${
                 drawerSide === 'left' ? 'left-0' : 'right-0'
               } ${
@@ -2745,26 +2822,38 @@ export function PortfolioFloatingNav({
               }}
             >
               <div className="flex items-center justify-between gap-3 px-4 py-3">
-                <p className="text-xs font-bold uppercase tracking-[0.16em] opacity-60">Menu</p>
-                <button
-                  type="button"
-                  onClick={() => setDrawerOpen(false)}
-                  aria-label="Close navigation"
-                  className={`${handleChromeClass} h-10 w-10 min-h-10`}
-                  data-pf-no-color-transition=""
-                  style={handleChromeStyle}
-                >
-                  <NavMenuControlGlyph icon="x" expanded />
-                </button>
+                <p className="text-xs font-bold uppercase tracking-[0.16em] opacity-60">{t('Menu')}</p>
+                <div className="inline-flex items-center gap-2">
+                  <PortfolioNavColorModeToggleProvider
+                    show={showColorModeToggle}
+                    colorMode={colorMode}
+                    onToggle={() => onColorModeToggle?.()}
+                  >
+                    <PortfolioNavColorModeToggleButton
+                      settings={settings}
+                      inkColor={settings.itemTextColor ?? '#525252'}
+                    />
+                  </PortfolioNavColorModeToggleProvider>
+                  <button
+                    type="button"
+                    onClick={() => setDrawerOpen(false)}
+                    aria-label={t('Close navigation')}
+                    className={`${handleChromeClass} h-10 w-10 min-h-10`}
+                    data-pf-no-color-transition=""
+                    style={handleChromeStyle}
+                  >
+                    <NavMenuControlGlyph icon="x" expanded />
+                  </button>
+                </div>
               </div>
               <div className="flex-1 overflow-y-auto px-3 pb-6 pt-1">
                 <ul className="flex flex-col gap-1.5">
-                  {menuEntries.map((entry) => {
+                  {drawerMenuEntries.map((entry) => {
                     if (entry.type === 'group') {
                       return (
                         <li key={entry.id}>
                           <PortfolioNavMenuGroupDropdown
-                            groupLabel={entry.label}
+                            groupLabel={t(entry.label)}
                             items={entry.items}
                             activeId={activeId}
                             isControlled={isControlled}
@@ -2997,7 +3086,7 @@ export function PortfolioFloatingNav({
       ? `grid w-full max-w-full items-center gap-x-3 sm:gap-x-4 ${structuredBarHeightClass} ${
           centerLogoSplitLayout
             ? 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)] !grid'
-            : 'grid-cols-[minmax(0,1fr)_auto_minmax(0,1fr)]'
+            : 'grid-cols-[minmax(max-content,1fr)_minmax(0,auto)_minmax(max-content,1fr)]'
         }`
       : floatingPillLayout
         ? `grid w-fit max-w-[calc(100vw-1.5rem)] ${floatingPillGridColsClass} items-center gap-x-4 sm:gap-x-6 lg:gap-x-8 !px-2 sm:!px-3 ${structuredBarHeightClass}`
@@ -3007,8 +3096,8 @@ export function PortfolioFloatingNav({
     <button
       type="button"
       onClick={presence.onCollapse}
-      aria-label="Hide navigation"
-      title="Hide menu"
+      aria-label={t('Hide navigation')}
+      title={t('Hide menu')}
       className={`${handleChromeClass} h-10 w-10 min-h-10`}
       data-pf-no-color-transition=""
       style={handleChromeStyle}
@@ -3420,7 +3509,7 @@ export function PortfolioFloatingNav({
               <span className={portfolioNavRailDividerClass(vertical)} aria-hidden />
             ) : null}
             <PortfolioNavMenuGroupDropdown
-              groupLabel={entry.label}
+              groupLabel={t(entry.label)}
               items={entry.items}
               activeId={activeId}
               isControlled={isControlled}
@@ -3456,7 +3545,7 @@ export function PortfolioFloatingNav({
     <nav
       ref={navRootRef}
       className={`pointer-events-none fixed z-[100] ${placementClass} ${widthClass}`}
-      aria-label="Portfolio navigation"
+      aria-label={t('Portfolio navigation')}
       aria-hidden={!visible || (!presence.expanded && !presence.showHandle)}
     >
       <div
@@ -3493,13 +3582,13 @@ export function PortfolioFloatingNav({
             }`}
             style={handleChromeStyle}
             aria-expanded={presence.expanded}
-            aria-label="Show navigation"
+            aria-label={t('Show navigation')}
             tabIndex={presence.showHandle ? 0 : -1}
             data-pf-no-color-transition=""
           >
             {showMenuIcon ? <NavMenuControlGlyph icon={menuControlIcon} /> : null}
             {showMenuText ? (
-              <span className="text-xs font-bold uppercase tracking-[0.14em]">Menu</span>
+              <span className="text-xs font-bold uppercase tracking-[0.14em]">{t('Menu')}</span>
             ) : null}
           </button>
 
@@ -3565,11 +3654,12 @@ export function PortfolioFloatingNav({
                 {menuControlAlign === 'left' ? expandedToggleButton : null}
                 <PortfolioNavCenterBrand settings={settings} compact />
               </div>
-              <div
-                className={`flex min-w-0 items-center justify-center justify-self-center ${itemsGapClass} ${splitNavScrollClass}`}
+              <NavLinksRail
+                activeKey={activeId}
+                className={`flex min-w-0 items-center justify-self-stretch [justify-content:safe_center] overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${itemsGapClass}`}
               >
                 {renderNavSectionButtons()}
-              </div>
+              </NavLinksRail>
               <div className="flex min-w-0 items-center justify-end justify-self-end gap-2">
                 <PortfolioNavEditorialRightSlot
                   settings={settings}
@@ -3592,11 +3682,12 @@ export function PortfolioFloatingNav({
                   <PortfolioNavCenterBrand settings={settings} compact />
                 </div>
               ) : null}
-              <div
-                className={`flex min-w-0 items-center justify-center justify-self-center overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden [overflow-y:visible] ${itemsGapClass}`}
+              <NavLinksRail
+                activeKey={activeId}
+                className={`flex min-w-0 items-center justify-self-stretch [justify-content:safe_center] overflow-x-auto overscroll-x-contain [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden ${itemsGapClass}`}
               >
                 {renderNavSectionButtons()}
-              </div>
+              </NavLinksRail>
               {floatingPillHasRightColumn ? (
                 <div className="flex min-w-0 items-center justify-end justify-self-end gap-2">
                   <PortfolioNavFloatingPillRightSlot
@@ -3743,11 +3834,12 @@ function EditorialWorkCard({
   item: MarketplaceContentItem;
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const externalLink = item.linkUrl?.trim() || null;
   const href =
     externalLink ||
     (item.creatorId ? `/marketplace/content/${item.id}` : '#work');
-  const title = item.title?.trim() || 'Untitled project';
+  const title = item.title?.trim() || t('Untitled project');
   const description =
     item.description?.trim() ||
     (item.priceInfo?.trim() && !/^https?:\/\//i.test(item.priceInfo.trim())
@@ -3880,7 +3972,7 @@ function EditorialWorkCard({
     />
   ) : (
     <div className="flex h-full w-full items-center justify-center bg-neutral-200 text-sm text-neutral-500 dark:bg-neutral-800">
-      Preview unavailable
+      {t('Preview unavailable')}
     </div>
   );
 
@@ -4776,6 +4868,7 @@ function WorkCardThumb({
   title: string;
   className: string;
 }) {
+  const t = useT();
   return item.mediaUrl ? (
     <div className={className}>
       <ProductThumbnailMedia url={item.mediaUrl} alt={title} fit="cover" className="h-full w-full" />
@@ -4784,7 +4877,7 @@ function WorkCardThumb({
     <div
       className={`${className} flex items-center justify-center bg-neutral-200 text-[10px] text-neutral-500 dark:bg-neutral-800`}
     >
-      N/A
+      {t('N/A')}
     </div>
   );
 }
@@ -4797,10 +4890,11 @@ function EditorialWorkListCard({
   item: MarketplaceContentItem;
   presentation: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const href =
     item.linkUrl?.trim() ||
     (item.creatorId ? `/marketplace/content/${item.id}` : '#work');
-  const title = item.title?.trim() || 'Untitled project';
+  const title = item.title?.trim() || t('Untitled project');
   const description = item.description?.trim() || item.priceInfo?.trim() || null;
   const styles = normalizeWorkElementStyles(presentation.elementStyles);
   const surfaceClass = workListCardSurfaceClass(presentation);
@@ -5007,11 +5101,12 @@ function EditorialWorkAccordionRow({
   presentation: PortfolioWorkPresentationSettings;
   defaultOpen?: boolean;
 }) {
+  const t = useT();
   const [open, setOpen] = useState(defaultOpen);
   const href =
     item.linkUrl?.trim() ||
     (item.creatorId ? `/marketplace/content/${item.id}` : '#work');
-  const title = item.title?.trim() || 'Untitled project';
+  const title = item.title?.trim() || t('Untitled project');
   const description = item.description?.trim() || item.priceInfo?.trim() || null;
   const styles = normalizeWorkElementStyles(presentation.elementStyles);
   const iconShellClass = toolsIconShellClass(presentation.toolsIconSize);
@@ -5238,6 +5333,7 @@ export function EditorialWorkGallery({
   /** Split-screen nav: one project card per row so content matches the fixed title rail. */
   forceSingleColumn?: boolean;
 }) {
+  const t = useT();
   const [activeCategory, setActiveCategory] = useState(WORK_CATEGORY_ALL_KEY);
   const categories = useMemo(
     () => collectWorkCategories(items, presentation.categoryUncategorizedLabel),
@@ -5274,7 +5370,7 @@ export function EditorialWorkGallery({
       <div className={workCategoryBarAlignClass(presentation.cardAlignment)}>
       <nav
         className={workCategoryNavClass(presentation.categoryDesign)}
-        aria-label="Work categories"
+        aria-label={t('Work categories')}
         style={
           presentation.categoryDesign === 'tabs'
             ? { backgroundColor: `${presentation.cardBorderColor}55` }
@@ -5325,7 +5421,7 @@ export function EditorialWorkGallery({
               }
               aria-pressed={active}
             >
-              {category.label}
+              {t(category.label)}
               <span className="ml-1.5 text-xs font-medium opacity-60">{category.count}</span>
             </button>
           );
@@ -5356,7 +5452,7 @@ export function EditorialWorkGallery({
             className="text-sm font-bold uppercase tracking-[0.16em]"
             style={{ color: presentation.categoryActiveColor }}
           >
-            {group.label}
+            {t(group.label)}
           </h3>
           <span className="text-xs font-medium" style={{ color: presentation.categoryMutedColor }}>
             {group.items.length}
@@ -5386,6 +5482,7 @@ function WorkGalleryCarousel({
   motionProfile: PortfolioGlobalMotionProfile;
   startIndex?: number;
 }) {
+  const t = useT();
   const [activeIndex, setActiveIndex] = useState(0);
   const cardZoneRef = useRef<HTMLDivElement>(null);
   const wheelLockRef = useRef(false);
@@ -5491,7 +5588,7 @@ function WorkGalleryCarousel({
       type="button"
       onClick={goPrev}
       disabled={!canNavigate}
-      aria-label="Projet précédent"
+      aria-label={t('Projet précédent')}
       className={`${navButtonClassName} ${
         placement === 'side'
           ? 'hidden enabled:hover:-translate-x-0.5 sm:flex'
@@ -5512,7 +5609,7 @@ function WorkGalleryCarousel({
       type="button"
       onClick={goNext}
       disabled={!canNavigate}
-      aria-label="Projet suivant"
+      aria-label={t('Projet suivant')}
       className={`${navButtonClassName} ${
         placement === 'side'
           ? 'hidden enabled:hover:translate-x-0.5 sm:flex'
@@ -5534,7 +5631,7 @@ function WorkGalleryCarousel({
       tabIndex={0}
       role="region"
       aria-roledescription="carousel"
-      aria-label="Portfolio projects"
+      aria-label={t('Portfolio projects')}
       onKeyDown={(event) => {
         if (event.key === 'ArrowLeft') {
           event.preventDefault();
@@ -5581,17 +5678,17 @@ function WorkGalleryCarousel({
             {peekItems.length > 0 ? (
               <div
                 className="mt-2.5 hidden justify-end gap-1.5 lg:flex"
-                aria-label="Aperçus des autres projets"
+                aria-label={t('Aperçus des autres projets')}
               >
                 {peekItems.map(({ item, index }) => {
-                  const title = item.title?.trim() || 'Projet';
+                  const title = item.title?.trim() || t('Projet');
                   return (
                     <button
                       key={item.id}
                       type="button"
                       onClick={() => setActiveIndex(index)}
                       title={title}
-                      aria-label={`Afficher ${title}`}
+                      aria-label={t('Afficher {title}', { title })}
                       className="relative h-10 w-8 shrink-0 overflow-hidden rounded-md border transition hover:opacity-100 hover:shadow-sm focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
                       data-pf-no-color-transition=""
                       style={{
@@ -5625,7 +5722,7 @@ function WorkGalleryCarousel({
               <div
                 className="mt-3 hidden items-center justify-center gap-2 sm:flex"
                 role="tablist"
-                aria-label="Projets du carrousel"
+                aria-label={t('Projets du carrousel')}
               >
                 {items.map((item, index) => {
                   const active = index === safeIndex;
@@ -5661,7 +5758,7 @@ function WorkGalleryCarousel({
             <div
               className="flex items-center justify-center gap-2"
               role="tablist"
-              aria-label="Projets du carrousel"
+              aria-label={t('Projets du carrousel')}
             >
               {items.map((item, index) => {
                 const active = index === safeIndex;
@@ -6300,6 +6397,7 @@ function AboutUnifiedBandStats({
   presentation: PortfolioAboutPresentationSettings;
   motionProfile?: PortfolioGlobalMotionProfile;
 }) {
+  const t = useT();
   const typography = getAboutStatTypography(presentation, accent);
   const gapPx =
     presentation.statsGroupMode === 'unified'
@@ -6327,7 +6425,7 @@ function AboutUnifiedBandStats({
                 {stat.value}
               </p>
               <p className={`mt-2 ${typography.labelClass}`} style={typography.labelStyle}>
-                {stat.label}
+                {t(stat.label)}
               </p>
             </div>
           </AboutStatCardShell>
@@ -6348,6 +6446,7 @@ function AboutFeaturedStats({
   presentation: PortfolioAboutPresentationSettings;
   motionProfile?: PortfolioGlobalMotionProfile;
 }) {
+  const t = useT();
   const featured = stats.find((stat) => isAboutRatingStat(stat.label)) ?? stats[0];
   const secondary = stats.filter((stat) => stat !== featured);
   const typography = getAboutStatTypography(presentation, accent);
@@ -6370,7 +6469,7 @@ function AboutFeaturedStats({
             ) : null}
           </div>
           <p className={`mt-5 ${typography.labelClass}`} style={typography.labelStyle}>
-            {isAboutRatingStat(featured.label) ? 'Note moyenne des clients' : featured.label}
+            {isAboutRatingStat(featured.label) ? t('Note moyenne des clients') : featured.label}
           </p>
         </AboutStatCardShell>
       </PortfolioMotionItem>
@@ -6380,7 +6479,7 @@ function AboutFeaturedStats({
             <AboutStatCardShell presentation={presentation}>
               <div className="flex items-center justify-between gap-4">
                 <span className={typography.labelClass} style={typography.labelStyle}>
-                  {stat.label}
+                  {t(stat.label)}
                 </span>
                 <span className={typography.valueClass('bar')} style={typography.valueStyle(stat.label)}>
                   {stat.value}
@@ -6405,6 +6504,7 @@ function AboutEditorialListStats({
   presentation: PortfolioAboutPresentationSettings;
   motionProfile?: PortfolioGlobalMotionProfile;
 }) {
+  const t = useT();
   const typography = getAboutStatTypography(presentation, accent);
   const gapStyle = aboutStatsGapStyle(presentation.statsGap);
 
@@ -6422,7 +6522,7 @@ function AboutEditorialListStats({
               className="flex h-11 w-11 shrink-0 items-center justify-center"
             >
               <AboutStatEditorialIcon
-                label={stat.label}
+                label={t(stat.label)}
                 iconStyle={typography.iconStyle}
                 iconSizeClass={typography.iconSizeClass}
               />
@@ -6513,6 +6613,7 @@ function EditorialFaqItem({
   exclusiveOpen?: string | null;
   onExclusiveToggle?: (itemId: string, open: boolean) => void;
 }) {
+  const t = useT();
   const design = presentation.itemDesign;
   const plainExpandIcon = design === 'two-column';
   const isCard = faqIsCardDesign(design);
@@ -6585,7 +6686,7 @@ function EditorialFaqItem({
       style={{ color: presentation.numberColor || accent }}
       aria-hidden
     >
-      Q.
+      {t('Q.')}
     </span>
   ) : (
     <span className="mt-1 flex w-8 shrink-0 justify-center" style={{ color: itemMarker.color }}>
@@ -6643,7 +6744,7 @@ function EditorialFaqItem({
           className="invisible shrink-0 text-[15px] font-bold leading-snug sm:text-base"
           aria-hidden
         >
-          Q.
+          {t('Q.')}
         </span>
       ) : showInlineNumber ? (
         <span className="w-8 shrink-0" aria-hidden />
@@ -6886,7 +6987,7 @@ export function EditorialFaqList({
           <span style={{ color: accent }} aria-hidden>
             ✦
           </span>
-          {items.length} {items.length === 1 ? 'question' : 'questions'}
+          {items.length} {trPlural(items.length, 'question', 'questions')}
         </span>
         {updatedLabel ? (
           <span className="inline-flex items-center gap-1.5">
@@ -7189,6 +7290,7 @@ export function EditorialSideInfoPanel({
   presentation?: PortfolioAboutPresentationSettings;
   layoutMode?: PortfolioAboutLayoutMode;
 }) {
+  const t = useT();
   if (items.length === 0) return null;
 
   const isFullWidth = layoutMode === 'full-width';
@@ -7235,9 +7337,9 @@ export function EditorialSideInfoPanel({
   ) => (
     <div key={item.id} className={options?.cellClassName ?? cellClass}>
       <SideInfoRow
-        label={item.label}
-        title={item.title}
-        subtitle={item.subtitle}
+        label={t(item.label)}
+        title={t(item.title)}
+        subtitle={t(item.subtitle)}
         lines={item.lines}
         icon={item.icon}
         plainIcon={options?.plainIcon ?? true}
@@ -7289,9 +7391,9 @@ export function EditorialSideInfoPanel({
               ) : null}
               <div className="min-w-0 flex-1">
                 <SideInfoRow
-                  label={item.label}
-                  title={item.title}
-                  subtitle={item.subtitle}
+                  label={t(item.label)}
+                  title={t(item.title)}
+                  subtitle={t(item.subtitle)}
                   lines={item.lines}
                   icon={item.icon}
                   plainIcon
@@ -7375,7 +7477,7 @@ export function EditorialSideInfoPanel({
                   className="text-[11px] font-medium uppercase tracking-[0.16em]"
                   style={{ color: aboutSidePanelMicroLabelColor(presentation) }}
                 >
-                  {item.label}
+                  {t(item.label)}
                 </p>
                 {listLines.length > 0 ? (
                   <ul className={`space-y-0.5 ${titleClass}`} style={titleStyle}>
@@ -7387,12 +7489,12 @@ export function EditorialSideInfoPanel({
                   </ul>
                 ) : (
                   <p className={`leading-snug ${titleClass}`} style={titleStyle}>
-                    {item.title}
+                    {t(item.title)}
                   </p>
                 )}
                 {item.subtitle ? (
                   <p className={`leading-relaxed ${subtitleClass}`} style={subtitleStyle}>
-                    {item.subtitle}
+                    {t(item.subtitle)}
                   </p>
                 ) : null}
               </div>
@@ -7431,7 +7533,7 @@ export function EditorialSideInfoPanel({
               className="text-[11px] font-medium uppercase tracking-[0.16em]"
               style={{ color: aboutSidePanelMicroLabelColor(presentation) }}
             >
-              Philosophie
+              {t('Philosophie')}
             </p>
             <p
               className={`mt-3 text-base leading-relaxed sm:text-[1.05rem] sm:leading-relaxed ${elementTextStyleClass(
@@ -7477,7 +7579,7 @@ export function EditorialSideInfoPanel({
                     className="text-[11px] font-medium uppercase tracking-[0.16em]"
                     style={{ color: aboutSidePanelMicroLabelColor(presentation) }}
                   >
-                    {item.label}
+                    {t(item.label)}
                   </p>
                   <p
                     className={`mt-1.5 break-words leading-snug ${badgeTitleClass}`}
@@ -7490,7 +7592,7 @@ export function EditorialSideInfoPanel({
                       className={`mt-1 break-words leading-snug ${badgeSubtitleClass}`}
                       style={badgeSubtitleStyle}
                     >
-                      {item.subtitle}
+                      {t(item.subtitle)}
                     </p>
                   ) : null}
                 </div>
@@ -7515,9 +7617,9 @@ export function EditorialSideInfoPanel({
         {items.map((item) => (
           <SideInfoCard
             key={item.id}
-            label={item.label}
-            title={item.title}
-            subtitle={item.subtitle}
+            label={t(item.label)}
+            title={t(item.title)}
+            subtitle={t(item.subtitle)}
             lines={item.lines}
             icon={item.icon}
             presentation={presentation}
@@ -7547,9 +7649,9 @@ export function EditorialSideInfoPanel({
             }
           >
             <SideInfoRow
-              label={item.label}
-              title={item.title}
-              subtitle={item.subtitle}
+              label={t(item.label)}
+              title={t(item.title)}
+              subtitle={t(item.subtitle)}
               lines={item.lines}
               icon={item.icon}
               plainIcon
@@ -7760,6 +7862,7 @@ function ContactUnifiedItemRow({
   elementStyles: PortfolioContactElementStyles;
   colorMode?: 'light' | 'dark';
 }) {
+  const t = useT();
   const placement =
     design === 'directory'
       ? {
@@ -7806,11 +7909,11 @@ function ContactUnifiedItemRow({
         className={`truncate ${isChannelValue ? 'font-semibold' : ''} ${titleClass}`.trim()}
         style={titleStyle}
       >
-        {item.title}
+        {t(item.title)}
       </p>
       {showSubtitle ? (
         <p className={`mt-0.5 truncate ${subtitleClass}`} style={subtitleStyle}>
-          {item.subtitle}
+          {t(item.subtitle)}
         </p>
       ) : null}
     </div>
@@ -7864,6 +7967,7 @@ function ContactUnifiedList({
   /** When false, only email / phone / location rows are rendered (Directory socials sit outside). */
   includeLinks?: boolean;
 }) {
+  const t = useT();
   const glyphClass = contactIconGlyphClass(presentation.iconSize ?? 'sm');
   const isEditorial = presentation.cardDesign === 'editorial';
   const isDirectory = presentation.cardDesign === 'directory';
@@ -7907,7 +8011,7 @@ function ContactUnifiedList({
             id: 'channel-email',
             href: `mailto:${visibleEmail.trim()}`,
             title: visibleEmail.trim(),
-            subtitle: 'Email',
+            subtitle: t('Email'),
             icon: (
               <ContactItemIconBadge presentation={channelIconPresentation}>
                 <ContactChannelGlyph kind="email" className={glyphClass} />
@@ -7938,7 +8042,7 @@ function ContactUnifiedList({
             id: 'channel-phone',
             href: `tel:${visiblePhone.trim()}`,
             title: formatPhoneDisplay(visiblePhone.trim()),
-            subtitle: 'Phone',
+            subtitle: t('Phone'),
             icon: (
               <ContactItemIconBadge presentation={channelIconPresentation}>
                 <ContactChannelGlyph kind="phone" className={glyphClass} />
@@ -7970,7 +8074,7 @@ function ContactUnifiedList({
             id: 'channel-location',
             href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
             title: visibleLocation.trim(),
-            subtitle: 'Location',
+            subtitle: t('Location'),
             external: true,
             icon: (
               <ContactItemIconBadge presentation={channelIconPresentation}>
@@ -8081,6 +8185,7 @@ function ContactDirectorySocialIcons({
   /** Directory hero socials — much larger chips. */
   enlarged?: boolean;
 }) {
+  const t = useT();
   if (links.length === 0) return null;
   const glyphClass = enlarged
     ? 'h-10 w-10 sm:h-12 sm:w-12'
@@ -8098,7 +8203,7 @@ function ContactDirectorySocialIcons({
   return (
     <nav
       className={`flex flex-wrap items-center justify-center gap-6 sm:gap-8 ${className}`.trim()}
-      aria-label="Social links"
+      aria-label={t('Social links')}
     >
       {links.map((link) => {
         const platform = inferContactLinkPlatform(link);
@@ -8107,7 +8212,7 @@ function ContactDirectorySocialIcons({
         const useBrand = presentation.iconUseBrandColors !== false;
         const label =
           link.label?.trim() ||
-          (platform ? platform.replace(/_/g, ' ').toLowerCase() : 'Link');
+          (platform ? platform.replace(/_/g, ' ').toLowerCase() : t('Link'));
 
         let iconNode: React.ReactNode;
         let shellClass = `${
@@ -8415,6 +8520,7 @@ export function EditorialContactSection({
   bottomSpacingClass?: string;
   bottomSpacingStyle?: React.CSSProperties;
 }) {
+  const t = useT();
   const contactFontScale = contactPremiumFontScale(presentation.premiumFontSize);
   const contactSectionStyle = {
     ...topSpacingStyle,
@@ -8491,14 +8597,14 @@ export function EditorialContactSection({
     />
   );
 
-  const resolvedTitle = sectionTitle ?? 'Contact';
+  const resolvedTitle = sectionTitle ?? t('Contact');
   const resolvedSubtitle =
     sectionSubtitle ?? (
       <>
-        Should you have a project in mind, I would be pleased to hear from you
+        {t('Should you have a project in mind, I would be pleased to hear from you')}
         {responseTimeLabel?.trim() && presentation.showResponseTimeInSubtitle
-          ? ` — I typically reply ${responseTimeLabel.toLowerCase()}.`
-          : ' to discuss your objectives.'}
+          ? t(' — I typically reply {toLowerCase}.', { toLowerCase: responseTimeLabel.toLowerCase() })
+          : t(' to discuss your objectives.')}
       </>
     );
 
@@ -8826,7 +8932,7 @@ export function EditorialContactSection({
               className="text-xs font-bold uppercase tracking-[0.2em]"
               style={{ color: 'var(--contact-accent, #ea580c)' }}
             >
-              Contact
+              {t('Contact')}
             </p>
             <h2 className={`mt-3 ${inquiryTitleClass}`} style={titleTypographyStyle}>
               {resolvedTitle}
@@ -8897,11 +9003,11 @@ export function EditorialContactSection({
 
   if (isInquiryPanel) {
     const fallbackTitle =
-      typeof resolvedTitle === 'string' ? resolvedTitle : 'Contact us';
+      typeof resolvedTitle === 'string' ? resolvedTitle : t('Contact us');
     const fallbackSupporting =
       typeof sectionSubtitle === 'string'
         ? sectionSubtitle
-        : 'Share a short brief about your goals. I will get back to you with next steps.';
+        : t('Share a short brief about your goals. I will get back to you with next steps.');
     const inquiryHeadline = resolveContactInquiryHeadline(presentation, fallbackTitle);
     const inquirySupporting = resolveContactInquirySupporting(
       presentation,
@@ -8955,7 +9061,7 @@ export function EditorialContactSection({
               className="text-xs font-semibold uppercase tracking-[0.2em]"
               style={{ color: 'var(--contact-accent, #ea580c)' }}
             >
-              Contact
+              {t('Contact')}
             </p>
             <h2 className={`mt-3 ${inquiryTitleClass}`} style={titleTypographyStyle}>
               {inquiryHeadline}
@@ -8992,7 +9098,7 @@ export function EditorialContactSection({
             {visibleLinks.length > 0 ? (
               <nav
                 className="mt-8 flex flex-wrap items-center gap-x-5 gap-y-3"
-                aria-label="Social links"
+                aria-label={t('Social links')}
               >
                 {visibleLinks.map((link, index) => {
                   const platform = inferContactLinkPlatform(link);
@@ -9100,7 +9206,7 @@ export function EditorialContactSection({
     if (visibleLocation?.trim()) {
       deskChannels.push({
         key: 'location',
-        label: 'Location',
+        label: t('Location'),
         value: visibleLocation.trim(),
         kind: 'location',
       });
@@ -9108,7 +9214,7 @@ export function EditorialContactSection({
     if (visiblePhone?.trim()) {
       deskChannels.push({
         key: 'phone',
-        label: 'Phone',
+        label: t('Phone'),
         value: formatPhoneDisplay(visiblePhone.trim()),
         href: `tel:${visiblePhone.replace(/\s+/g, '')}`,
         kind: 'phone',
@@ -9117,7 +9223,7 @@ export function EditorialContactSection({
     if (visibleEmail?.trim()) {
       deskChannels.push({
         key: 'email',
-        label: 'Email',
+        label: t('Email'),
         value: visibleEmail.trim(),
         href: `mailto:${visibleEmail.trim()}`,
         kind: 'email',
@@ -9167,7 +9273,7 @@ export function EditorialContactSection({
                     </span>
                     <span className="min-w-0">
                       <span className="block text-[11px] font-semibold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]">
-                        {channel.label}
+                        {t(channel.label)}
                       </span>
                       <span className="mt-1 block truncate text-sm font-semibold text-[color:var(--contact-ink,#0a0a0a)] sm:text-[0.95rem]">
                         {channel.value}
@@ -9233,11 +9339,11 @@ export function EditorialContactSection({
 
   if (isInfoPanel) {
     const fallbackHeadline =
-      typeof resolvedTitle === 'string' ? resolvedTitle : 'Contact Information';
+      typeof resolvedTitle === 'string' ? resolvedTitle : t('Contact Information');
     const fallbackSupporting =
       typeof sectionSubtitle === 'string'
         ? sectionSubtitle
-        : 'Reach out with a short brief — I typically reply within one business day.';
+        : t('Reach out with a short brief — I typically reply within one business day.');
     const infoHeadline = resolveContactInfoPanelHeadline(presentation, fallbackHeadline);
     const infoSupporting = resolveContactInfoPanelSupporting(
       presentation,
@@ -9400,7 +9506,7 @@ export function EditorialContactSection({
         key: 'phone',
         href: `tel:${visiblePhone.replace(/\s+/g, '')}`,
         kind: 'phone',
-        title: 'Phone',
+        title: t('Phone'),
         lines: [formatPhoneDisplay(visiblePhone.trim())],
       });
     }
@@ -9409,7 +9515,7 @@ export function EditorialContactSection({
         key: 'email',
         href: `mailto:${visibleEmail.trim()}`,
         kind: 'email',
-        title: 'Email',
+        title: t('Email'),
         lines: [visibleEmail.trim()],
       });
     }
@@ -9422,7 +9528,7 @@ export function EditorialContactSection({
         key: 'location',
         href: `https://maps.google.com/?q=${encodeURIComponent(visibleLocation.trim())}`,
         kind: 'location',
-        title: 'Address',
+        title: t('Address'),
         lines: [parts.length >= 2 ? parts.join(' / ') : visibleLocation.trim()],
         external: true,
       });
@@ -9435,7 +9541,7 @@ export function EditorialContactSection({
             className="text-sm font-bold uppercase tracking-[0.2em] sm:text-[0.9375rem]"
             style={{ color: 'var(--contact-accent, #ea580c)' }}
           >
-            Contact
+            {t('Contact')}
           </p>
           <h2 className={`mt-3 ${hubTitleClass}`} style={titleTypographyStyle}>
             {resolvedTitle}
@@ -9466,7 +9572,7 @@ export function EditorialContactSection({
                       <ContactChannelGlyph kind={channel.kind} className="h-7 w-7" />
                     </span>
                     <p className="mt-5 text-lg font-semibold text-[color:var(--contact-ink,#0a0a0a)]">
-                      {channel.title}
+                      {t(channel.title)}
                     </p>
                     <div className="mt-2 space-y-0.5 text-sm leading-relaxed text-[color:var(--contact-muted,#737373)]">
                       {channel.lines.map((line) => (
@@ -9614,7 +9720,7 @@ export function EditorialContactSection({
               />
               <div className="flex min-w-0 flex-1 flex-col justify-center py-1 pl-1 sm:pl-2 md:py-0">
                 <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
-                  CONTACT
+                  {t('CONTACT')}
                 </p>
                 <h2
                   className="mt-4 text-[66px] font-normal leading-[1.05] tracking-[-0.03em] text-[color:var(--contact-ink,#0a0a0a)] md:mt-5 md:text-[110px] md:leading-[1.02]"
@@ -9646,7 +9752,7 @@ export function EditorialContactSection({
                   return (
                     <div key={channel.key} className="min-w-0 md:px-6 md:py-7 first:md:pl-0 last:md:pr-0">
                       <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]">
-                        {channel.label}
+                        {t(channel.label)}
                       </p>
                       {channel.href ? (
                         <a
@@ -9672,12 +9778,12 @@ export function EditorialContactSection({
           <div className="border-t border-[color:var(--contact-border,#e5e5e5)] px-5 sm:px-8 lg:px-10">
             <div className="hidden py-6 md:grid md:grid-cols-3 md:items-center md:gap-6">
               <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
-                FOLLOW ME
+                {t('FOLLOW ME')}
               </p>
               {swissSocials.length > 0 ? (
                 <nav
                   className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-[19px] font-semibold text-[color:var(--contact-ink,#0a0a0a)]"
-                  aria-label="Social links"
+                  aria-label={t('Social links')}
                 >
                   {swissSocials.map((link, index) => (
                     <Fragment key={link.id}>
@@ -9691,7 +9797,7 @@ export function EditorialContactSection({
                         className="underline decoration-[color:var(--contact-border,#d4d4d4)] underline-offset-4 transition hover:opacity-70"
                         data-pf-no-color-transition=""
                       >
-                        {link.label}
+                        {t(link.label)}
                       </a>
                     </Fragment>
                   ))}
@@ -9706,12 +9812,12 @@ export function EditorialContactSection({
 
             <div className="flex flex-col items-center gap-3 py-5 text-center md:hidden">
               <p className="text-[14px] font-bold uppercase tracking-[0.16em] text-[color:var(--contact-ink,#0a0a0a)]">
-                FOLLOW ME
+                {t('FOLLOW ME')}
               </p>
               {swissSocials.length > 0 ? (
                 <nav
                   className="flex flex-wrap items-center justify-center gap-x-1 gap-y-2 text-[19px] font-semibold text-[color:var(--contact-ink,#0a0a0a)]"
-                  aria-label="Social links"
+                  aria-label={t('Social links')}
                 >
                   {swissSocials.map((link, index) => (
                     <Fragment key={link.id}>
@@ -9725,7 +9831,7 @@ export function EditorialContactSection({
                         className="underline decoration-[color:var(--contact-border,#d4d4d4)] underline-offset-4 transition hover:opacity-70"
                         data-pf-no-color-transition=""
                       >
-                        {link.label}
+                        {t(link.label)}
                       </a>
                     </Fragment>
                   ))}
@@ -10136,6 +10242,7 @@ function FooterContactCtaBody({
   avatarUrl?: string | null;
   showAvatar?: boolean;
 }) {
+  const t = useT();
   const showPortrait = Boolean(showAvatar && avatarUrl);
 
   const cleanBrandClass = brandClass.replace(/\bfont-(?:bold|medium|normal|semibold)\b/g, '').trim();
@@ -10193,7 +10300,7 @@ function FooterContactCtaBody({
                           fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
                         }}
                       >
-                        {item.label}
+                        {t(item.label)}
                       </a>
                     </li>
                   ) : (
@@ -10206,7 +10313,7 @@ function FooterContactCtaBody({
                           fontSize: 'calc(var(--pf-footer-body-size) * var(--pf-footer-font-scale, 1))',
                         }}
                       >
-                        {item.label}
+                        {t(item.label)}
                       </span>
                     </li>
                   )
@@ -10215,15 +10322,15 @@ function FooterContactCtaBody({
             ) : null}
 
             {socialLinks.length > 0 ? (
-              <nav className="flex flex-wrap items-center gap-6" aria-label="Social">
+              <nav className="flex flex-wrap items-center gap-6" aria-label={t('Social')}>
                 {socialLinks.map((link) => (
                   <a
                     key={link.id}
                     href={link.url}
                     target="_blank"
                     rel="noreferrer"
-                    aria-label={link.label}
-                    title={link.label}
+                    aria-label={t(link.label)}
+                    title={t(link.label)}
                     data-pf-no-color-transition=""
                     className="inline-flex items-center justify-center transition-opacity duration-300 hover:opacity-70"
                     style={iconStyle}
@@ -10257,10 +10364,10 @@ export function EditorialPortfolioFooter({
   creatorId,
   avatarUrl: profileAvatarUrl,
   bio,
-  email,
-  phone,
-  locationLabel,
-  hoursLabel,
+  email: profileEmail,
+  phone: profilePhone,
+  locationLabel: profileLocationLabel,
+  hoursLabel: profileHoursLabel,
   profileVisits: _profileVisits,
   links,
   contentClassName,
@@ -10313,6 +10420,13 @@ export function EditorialPortfolioFooter({
    *  needs to line its own horizontal padding up with the rest of the page. */
   contentGutter?: PortfolioContentGutter;
 }) {
+  const t = useT();
+  // General → Contact details, applied once for every design: the newer full-bleed designs
+  // never read these switches and showed every detail regardless.
+  const email = presentation.showEmail !== false ? profileEmail : null;
+  const phone = presentation.showPhone !== false ? profilePhone : null;
+  const locationLabel = presentation.showLocation !== false ? profileLocationLabel : null;
+  const hoursLabel = presentation.showHours !== false ? profileHoursLabel : null;
   // Every design below used to hardcode its own solid black/white canvas, silently ignoring
   // this section's own Background tab. None of them own a background by default anymore —
   // `sectionBackgroundStyle` already returns `undefined` (transparent) when the Background
@@ -10347,6 +10461,7 @@ export function EditorialPortfolioFooter({
         contentGutter={contentGutter}
         backgroundStyle={footerBackgroundStyle}
         fontSizeScale={footerFontSizeScale}
+        colorMode={globalColorMode}
       />
     );
   }
@@ -10692,7 +10807,7 @@ export function EditorialPortfolioFooter({
         }
         const rawLabel = link.label?.trim() ?? '';
         const label =
-          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? 'Website' : rawLabel || hostname || url;
+          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? t('Website') : rawLabel || hostname || url;
         return { ...link, label };
       })
     : [];
@@ -10739,7 +10854,7 @@ export function EditorialPortfolioFooter({
                     style={glyphStyle}
                   />
                 ) : null}
-                <span className="min-w-0 text-left leading-none">{item.label}</span>
+                <span className="min-w-0 text-left leading-none">{t(item.label)}</span>
               </a>
             ) : (
               <span
@@ -10753,7 +10868,7 @@ export function EditorialPortfolioFooter({
                     style={glyphStyle}
                   />
                 ) : null}
-                <span className="min-w-0 text-left leading-none">{item.label}</span>
+                <span className="min-w-0 text-left leading-none">{t(item.label)}</span>
               </span>
             )}
           </li>
@@ -10776,7 +10891,7 @@ export function EditorialPortfolioFooter({
     creatorId
   );
   const marketplaceLabel =
-    presentation.marketplaceCtaLabel?.trim() || 'Marketplace profile';
+    presentation.marketplaceCtaLabel?.trim() || t('Marketplace profile');
   const marketplaceDesign = presentation.marketplaceCtaDesign ?? 'pill-outline';
   const marketplaceShowArrow = presentation.marketplaceCtaShowArrow !== false;
   const marketplaceExternal =
@@ -10858,7 +10973,7 @@ export function EditorialPortfolioFooter({
   const contactCtaLabel =
     presentation.design === 'minimal'
       ? footerLayout.text('ctaLabel')
-      : presentation.ctaButtonLabel?.trim() || 'Contact me';
+      : presentation.ctaButtonLabel?.trim() || t('Contact me');
   const contactCtaButton =
     (presentation.showContactCta || presentation.design === 'minimal') && contactCtaLabel ? (
     <a
@@ -10932,21 +11047,21 @@ export function EditorialPortfolioFooter({
       glyphStyle: cardGlyph,
     });
     const cardLocation = locationValue;
-    const internalLinks = { title: 'Links', links: footerNavLinks };
+    const internalLinks = { title: t('Links'), links: footerNavLinks };
     const cardSocials =
       visibleLinks.length > 0 ? (
         <div className="mt-5 flex flex-wrap items-center gap-3">
           <span className={`text-sm font-semibold ${descriptionClass}`} style={descriptionStyle}>
             {DEFAULT_FOOTER_CONNECT_LABEL}
           </span>
-          <nav className="flex flex-wrap gap-3" aria-label="Social">
+          <nav className="flex flex-wrap gap-3" aria-label={t('Social')}>
             {visibleLinks.map((link) => (
               <a
                 key={link.id}
                 href={link.url}
                 target="_blank"
                 rel="noreferrer"
-                aria-label={link.label}
+                aria-label={t(link.label)}
                 className={`flex h-12 w-12 items-center justify-center rounded-full border transition hover:opacity-90 ${
                   lightBackground
                     ? 'border-black/10 bg-white hover:border-orange-500/30'
@@ -10954,7 +11069,7 @@ export function EditorialPortfolioFooter({
                 }`}
                 data-pf-no-color-transition=""
                 style={iconStyle}
-                title={link.label}
+                title={t(link.label)}
               >
                 <FooterSocialLinkIcon link={link} bare iconClassName="h-5 w-5" />
               </a>
@@ -11026,11 +11141,11 @@ export function EditorialPortfolioFooter({
                           style={linkStyle}
                           {...(href.startsWith('http') ? { target: '_blank', rel: 'noreferrer' } : {})}
                         >
-                          {link.label}
+                          {t(link.label)}
                         </a>
                       ) : (
                         <Link href={href} className={linkClass} data-pf-no-color-transition="" style={linkStyle}>
-                          {link.label}
+                          {t(link.label)}
                         </Link>
                       )}
                     </li>
@@ -11227,6 +11342,7 @@ export function MarketplaceProfileLink({
   /** Accent color from the Work palette (Section title / Principal). */
   color?: string;
 }) {
+  const t = useT();
   return (
     <Link
       href={`/providers/${creatorId}`}
@@ -11234,7 +11350,7 @@ export function MarketplaceProfileLink({
       data-pf-no-color-transition=""
       style={color ? { color } : undefined}
     >
-      View all projects
+      {t('View all projects')}
       <ArrowUpRight className="h-3.5 w-3.5" />
     </Link>
   );

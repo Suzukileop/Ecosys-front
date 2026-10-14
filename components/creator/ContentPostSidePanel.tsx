@@ -11,6 +11,7 @@ import {
 import { ContentPostCommentsButton } from '@/components/creator/ContentPostSocialBar';
 import { CommentThread } from '@/components/marketplace/CommentThread';
 import type { ContentPostBucket } from '@/types/creator-content';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FADE_MS = 280;
 
@@ -51,6 +52,7 @@ export function ContentPostSidePanel({
   onCancelEdit,
   editSaving = false,
 }: ContentPostSidePanelProps) {
+  const t = useT();
   type PanelFace = 'details' | 'comments';
 
   const [renderedFace, setRenderedFace] = useState<PanelFace>('details');
@@ -130,8 +132,8 @@ export function ContentPostSidePanel({
                   type="button"
                   disabled={editSaving}
                   onClick={onCancelEdit}
-                  title="Cancel"
-                  aria-label="Cancel"
+                  title={t('Cancel')}
+                  aria-label={t('Cancel')}
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
                 >
                   <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
@@ -140,8 +142,8 @@ export function ContentPostSidePanel({
                   type="button"
                   disabled={editSaving}
                   onClick={onSaveEdit}
-                  title="Save"
-                  aria-label="Save"
+                  title={t('Save')}
+                  aria-label={t('Save')}
                   className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300"
                 >
                   <FontAwesomeIcon
@@ -164,7 +166,7 @@ export function ContentPostSidePanel({
                 )}
                 {bucket !== 'trash' && !commentsEnabled && (
                   <div className="mt-auto shrink-0 p-5 text-center text-sm text-neutral-500">
-                    Comments are disabled for this content.
+                    {t('Comments are disabled for this content.')}
                   </div>
                 )}
               </>

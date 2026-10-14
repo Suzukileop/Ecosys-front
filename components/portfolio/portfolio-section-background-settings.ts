@@ -17,6 +17,7 @@ import {
   type PortfolioServicesCardDividerShape,
   type PortfolioServicesCardSplitAxis,
 } from '@/components/portfolio/portfolio-services-card-background-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioSectionBackgroundFill = 'solid' | 'gradient' | 'image' | 'split';
 
@@ -90,14 +91,14 @@ export const PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'solid', label: 'Solid', description: 'Single flat color — not combined with image.' },
-  { value: 'gradient', label: 'Gradient', description: 'Blend two colors — linear or radial.' },
+  { value: 'solid', label: msg('Solid'), description: msg('Single flat color — not combined with image.') },
+  { value: 'gradient', label: msg('Gradient'), description: msg('Blend two colors — linear or radial.') },
   {
     value: 'split',
-    label: 'Split X / Y',
-    description: 'Two color zones separated by a geometric line — like card fills.',
+    label: msg('Split X / Y'),
+    description: msg('Two color zones separated by a geometric line — like card fills.'),
   },
-  { value: 'image', label: 'Image', description: 'Uploaded photo only — replaces solid/gradient.' },
+  { value: 'image', label: msg('Image'), description: msg('Uploaded photo only — replaces solid/gradient.') },
 ];
 
 function sanitizeHex(value: unknown, fallback: string): string {

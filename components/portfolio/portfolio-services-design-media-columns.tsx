@@ -5,6 +5,17 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import type { ProfileServiceItem } from '@/types/profile';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
+import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
+import {
+  applyServicePriceLabels,
+  resolveBillingSuffix,
+} from '@/components/portfolio/portfolio-services-pricing-style';
+import {
+  ServicesOrderButton,
+  resolveServicesCardElements,
+  resolveServicesCtaLabel,
+} from '@/components/portfolio/portfolio-services-card-elements';
+import { formatServiceDelivery, getServicePriceParts } from '@/lib/profile-services';
 import {
   DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS,
   type PortfolioServicesMediaColumnsGap,
@@ -12,6 +23,7 @@ import {
   type PortfolioServicesMediaColumnsRatio,
   type PortfolioServicesPresentationSettings,
 } from '@/components/portfolio/portfolio-services-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -63,7 +75,7 @@ const FONT = (rem: number) => `calc(${rem}rem * var(--pf-services-font-scale, 1)
  * Services "Media Columns" — a clean grid of service cards: cover media on top, the title and the
  * description underneath. Fully configurable from Layout settings: cards per row (desktop and
  * phone), media ratio, corner radius, gap, text alignment, whether an incomplete last row is
- * centered, the description, and the hover effect (zoom / lift / none). Cards are laid out with
+ * centered, the description, and the hover effect (zoom / lift / glow / none). Cards are laid out with
  * flex-wrap + a width calc driven by CSS variables, which is what lets an incomplete last row be
  * centered (a CSS grid cannot do that). Cards rise in with a short stagger when scrolled into view.
  */
@@ -74,6 +86,7 @@ export function ServicesMediaColumnsSection({
   services: ProfileServiceItem[];
   presentation: PortfolioServicesPresentationSettings;
 }) {
+  const t = useT();
   const items = useMemo(() => services.filter((service) => service.title?.trim()), [services]);
   const count = items.length;
   const settings = presentation.mediaColumns ?? DEFAULT_SERVICES_MEDIA_COLUMNS_SETTINGS;
@@ -82,20 +95,31 @@ export function ServicesMediaColumnsSection({
   const accent = presentation.ctaColor || presentation.cardAccentColor || '#f97316';
   const fallbackGradient = `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 45%, #0a0a0a) 100%)`;
 
+  const pricingStyle = useServicesPricingStyle(presentation);
+  const show = resolveServicesCardElements(presentation);
+  const ctaLabel = resolveServicesCtaLabel(presentation);
+  const ink = isLight ? '#0a0a0a' : '#fafafa';
+  const inverse = isLight ? '#fafafa' : '#0a0a0a';
+  // Tells the browser how wide each image is really drawn, so it asks for a matching rendition
+  // instead of the 100vw default (a right-sized, properly resampled picture is the crisp one).
+  const mediaSizes = `(min-width: 1024px) ${Math.round(100 / settings.columns)}vw, (min-width: 640px) 50vw, 100vw`;
+
   const gapPx = GAP_PX[settings.gap];
   const vars = {
     '--mc-gap': `${gapPx}px`,
     '--mc-row-gap': `${Math.round(gapPx * 1.6)}px`,
-    '--mc-c-base': settings.mobileColumns,
+    // Phones always stack one card per row.
+    '--mc-c-base': 1,
     '--mc-c-md': 2,
     '--mc-c-lg': settings.columns,
     '--mc-ink': isLight ? '#0a0a0a' : '#fafafa',
     '--mc-muted': isLight ? 'rgba(10,10,10,0.6)' : 'rgba(250,250,250,0.6)',
+    '--mc-accent': accent,
     color: 'var(--mc-ink)',
   } as CSSProperties;
 
   const listRef = useRef<HTMLDivElement>(null);
-  const entranceKey = `${count}|${settings.columns}|${settings.mobileColumns}|${settings.mediaRatio}`;
+  const entranceKey = `${count}|${settings.columns}|${settings.mediaRatio}|${show.title}|${show.description}|${show.price}|${show.delivery}|${show.tasks}|${show.cta}`;
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined' || count === 0) return undefined;
@@ -154,7 +178,14 @@ export function ServicesMediaColumnsSection({
       style={vars}
     >
       {items.map((item, index) => {
-        const description = item.description?.trim();
+        const description = show.description ? item.description?.trim() : '';
+        const delivery = show.delivery ? formatServiceDelivery(item, show.deliveryTemplate) : null;
+        const tasks = show.tasks ? (item.tasks ?? []).map((task) => task.trim()).filter(Boolean) : [];
+        const priceParts = show.price && pricingStyle.style.showPrice ? applyServicePriceLabels(getServicePriceParts(item), pricingStyle.style) : null;
+        const priceSuffix =
+          priceParts && priceParts.kind === 'amount'
+            ? resolveBillingSuffix(pricingStyle.style, priceParts.period)
+            : null;
         return (
           <article
             key={item.id || index}
@@ -163,19 +194,26 @@ export function ServicesMediaColumnsSection({
               centered ? 'text-center' : 'text-left'
             } ${
               settings.hoverEffect === 'lift'
-                ? 'transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-2'
+                ? 'md:transition-transform md:duration-500 md:ease-[cubic-bezier(0.22,1,0.36,1)] md:hover:-translate-y-2'
                 : ''
             }`}
             data-pf-no-color-transition=""
           >
             <div
-              className={`relative w-full overflow-hidden ${RATIO_CLASS[settings.mediaRatio]}`}
+              className={`relative w-full overflow-hidden transition-shadow duration-500 ${RATIO_CLASS[settings.mediaRatio]} ${
+                settings.hoverEffect === 'glow'
+                  ? 'md:group-hover:shadow-[0_0_0_2px_var(--mc-accent),0_26px_46px_-26px_var(--mc-accent)]'
+                  : ''
+              }`}
               style={{ borderRadius: RADIUS[settings.cardRadius] }}
             >
+              {/* No will-change here: a promoted layer is rasterised once at 1x and then scaled, which
+                  is what made the image go soft on hover. Without it the browser re-rasterises at the
+                  zoomed size and the picture stays sharp. */}
               <div
-                className={`absolute inset-0 will-change-transform ${
+                className={`absolute inset-0 ${
                   settings.hoverEffect === 'zoom'
-                    ? 'transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover:scale-[1.05]'
+                    ? 'md:transition-transform md:duration-[900ms] md:ease-[cubic-bezier(0.22,1,0.36,1)] md:group-hover:scale-[1.05]'
                     : ''
                 }`}
                 data-pf-no-color-transition=""
@@ -186,18 +224,41 @@ export function ServicesMediaColumnsSection({
                     alt={item.title}
                     className="h-full w-full"
                     objectFit="cover"
+                    crisp
+                    sizes={mediaSizes}
                   />
                 ) : (
                   <div className="h-full w-full" style={{ background: fallbackGradient }} aria-hidden />
                 )}
               </div>
             </div>
+            {show.title ? (
             <h3
-              className="mt-5 font-sans font-normal leading-[1.15] tracking-[-0.015em]"
-              style={{ fontSize: FONT(1.5), overflowWrap: 'anywhere' }}
+              className="mt-4 font-sans font-normal leading-[1.15] tracking-[-0.015em] sm:mt-5"
+              style={{
+                fontSize: `calc(clamp(1.05rem, 0.9rem + 1.2vw, 1.5rem) * var(--pf-services-font-scale, 1))`,
+                overflowWrap: 'anywhere',
+              }}
             >
               {item.title}
             </h3>
+            ) : null}
+            {priceParts ? (
+              <p className="mt-2 font-semibold tracking-tight" style={{ fontSize: FONT(1) }}>
+                {priceParts.isFrom && priceParts.kind === 'amount' ? `${t('From')} ` : ''}
+                {priceParts.text}
+                {priceSuffix ? (
+                  <span className="ml-1.5 font-normal text-[color:var(--mc-muted)]" style={{ fontSize: FONT(0.8) }}>
+                    {priceSuffix}
+                  </span>
+                ) : null}
+              </p>
+            ) : null}
+            {delivery ? (
+              <p className="mt-2 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[color:var(--mc-muted)]">
+                {delivery}
+              </p>
+            ) : null}
             {settings.showDescription && description ? (
               <p
                 className="mt-3 leading-[1.55] text-[color:var(--mc-muted)]"
@@ -205,6 +266,40 @@ export function ServicesMediaColumnsSection({
               >
                 {description}
               </p>
+            ) : null}
+            {tasks.length > 0 ? (
+              <ul
+                className={`mt-3 flex flex-col gap-y-1 text-[color:var(--mc-muted)] sm:flex-row sm:flex-wrap sm:gap-x-3 ${
+                  centered ? 'items-center sm:justify-center' : 'items-start sm:justify-start'
+                }`}
+                style={{ fontSize: FONT(0.82) }}
+                aria-label={t('{title} — included', { title: item.title })}
+              >
+                {tasks.map((task, taskIndex) => (
+                  <li key={`${task}-${taskIndex}`} className="flex items-center gap-3">
+                    {/* Phones list one task per line, so the separator only shows from sm up. */}
+                    {taskIndex > 0 ? <span aria-hidden className="hidden opacity-50 sm:inline">&middot;</span> : null}
+                    {task}
+                  </li>
+                ))}
+              </ul>
+            ) : null}
+            {show.cta ? (
+              <ServicesOrderButton
+                pricingStyle={pricingStyle}
+                label={ctaLabel}
+                ink={ink}
+                surface={inverse}
+                className="group/cta mt-5 inline-flex items-center gap-2 border-b border-current pb-1 text-[0.85rem] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                autoContent={
+                  <>
+                    {ctaLabel}
+                    <span aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-1">
+                      &rarr;
+                    </span>
+                  </>
+                }
+              />
             ) : null}
           </article>
         );

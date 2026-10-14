@@ -3,6 +3,7 @@
 import { useCallback, useState } from 'react';
 import { getReactionCounts, removeReaction, setReaction } from '@/lib/marketplace-api';
 import type { ReactionType } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function formatCount(value: number) {
   return new Intl.NumberFormat('fr-FR').format(value);
@@ -27,6 +28,7 @@ export function CommentReactionBar({
   onReactionChange,
   compact = false,
 }: CommentReactionBarProps) {
+  const t = useT();
   const [likes, setLikes] = useState(initialLikes);
   const [dislikes, setDislikes] = useState(initialDislikes);
   const [userReaction, setUserReaction] = useState<ReactionType | null>(initialUserReaction);
@@ -75,87 +77,50 @@ export function CommentReactionBar({
     [busy, commentId, dislikes, isAuthenticated, likes, onReactionChange, userReaction]
   );
 
-  const buttonClass = (active: boolean) =>
-    `inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium transition ${
-      active
-        ? 'text-orange-600 dark:text-orange-400'
-        : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200'
-    }`;
+  /*
+   * One reaction on a comment, X style: a like only (a dislike has no place in a professional
+   * thread — counts are still read from the API, the control is simply not offered), the count
+   * only above zero, and the liked state a filled heart in full ink — no accent colour.
+   */
+  const heart = (filled: boolean) => (
+    <svg className="h-4 w-4" fill={filled ? 'currentColor' : 'none'} viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} aria-hidden>
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
+      />
+    </svg>
+  );
+  const count = likes > 0 ? <span className="tabular-nums">{formatCount(likes)}</span> : null;
 
   if (!isAuthenticated) {
     return (
-      <div className={`flex flex-wrap items-center gap-2 ${compact ? '' : 'mt-2'}`}>
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-neutral-500">
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-            />
-          </svg>
-          {formatCount(likes)}
-        </span>
-        <span className="inline-flex items-center gap-1 px-1.5 py-0.5 text-xs text-neutral-500">
-          <svg className="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-            />
-          </svg>
-          {formatCount(dislikes)}
+      <div className={`flex items-center ${compact ? '' : 'mt-2'}`}>
+        <span className="inline-flex h-8 items-center gap-1 px-1.5 text-[13px] text-[#536471] dark:text-[#71767B]">
+          {heart(false)}
+          {count}
         </span>
       </div>
     );
   }
 
+  const liked = userReaction === 'LIKE';
   return (
-    <div className={`flex flex-wrap items-center gap-1 ${compact ? '' : 'mt-2'}`}>
+    <div className={`flex items-center ${compact ? '' : 'mt-2'}`}>
       <button
         type="button"
         disabled={busy}
         onClick={() => void applyReaction('LIKE')}
-        className={buttonClass(userReaction === 'LIKE')}
-        aria-pressed={userReaction === 'LIKE'}
-        aria-label="Like"
+        className={`-ml-1.5 inline-flex h-8 items-center gap-1 rounded-full px-1.5 text-[13px] font-medium transition-colors ${
+          liked
+            ? 'text-[#0F1419] dark:text-[#E7E9EA]'
+            : 'text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]'
+        }`}
+        aria-pressed={liked}
+        aria-label={liked ? t('Unlike') : t('Like')}
       >
-        <svg
-          className="h-3.5 w-3.5"
-          fill={userReaction === 'LIKE' ? 'currentColor' : 'none'}
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.75}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"
-          />
-        </svg>
-        {formatCount(likes)}
-      </button>
-      <button
-        type="button"
-        disabled={busy}
-        onClick={() => void applyReaction('DISLIKE')}
-        className={buttonClass(userReaction === 'DISLIKE')}
-        aria-pressed={userReaction === 'DISLIKE'}
-        aria-label="Dislike"
-      >
-        <svg
-          className="h-3.5 w-3.5"
-          fill={userReaction === 'DISLIKE' ? 'currentColor' : 'none'}
-          viewBox="0 0 24 24"
-          stroke="currentColor"
-          strokeWidth={1.75}
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            d="M10 14H5.236a2 2 0 01-1.789-2.894l3.5-7A2 2 0 018.736 3h4.018a2 2 0 01.485.06l3.76.94m-7 10v5a2 2 0 002 2h.096c.5 0 .905-.405.905-.904 0-.715.211-1.413.608-2.008L17 13V4m-7 10h2m5-10h2a2 2 0 012 2v6a2 2 0 01-2 2h-2.5"
-          />
-        </svg>
-        {formatCount(dislikes)}
+        {heart(liked)}
+        {count}
       </button>
     </div>
   );

@@ -1,9 +1,15 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
+import { stackDesignSettingsPatch } from '@/components/portfolio/portfolio-stack-design-patch';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import { PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS, PORTFOLIO_STACK_DESIGN_OPTIONS, PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS, PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS, PORTFOLIO_STACK_TAGS_SIZE_OPTIONS, PORTFOLIO_STACK_TITLE_PRESET_OPTIONS, STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS, STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS, STACK_HEADER_PALETTE_TOKEN_OPTIONS, stackHeaderPaletteTokenColor, stackBrandCardsDesignDefaults, stackBrandIndexDesignDefaults, stackBrandRowDesignDefaults, stackLevelBentoCategoriesDesignDefaults, stackLevelCategoryRowsDesignDefaults, stackLevelCircularCardsDesignDefaults, stackLevelIndicatorDesignSupportsCardFrame, stackLevelProgressRowsDesignDefaults, stackLevelStarCardsDesignDefaults, stackLevelSvgRingsDesignDefaults, stackLevelTableRowsDesignDefaults, stackSectionLayoutIsAside, DEFAULT_STACK_TITLE, type PortfolioStackAsideTitlePlacement, type PortfolioStackDesign, type PortfolioStackHeaderDesign, type PortfolioStackSectionLayout, type PortfolioStackSectionSettings, type PortfolioStackTagsSize } from '@/components/portfolio/portfolio-stack-settings';
+import { PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS, PORTFOLIO_STACK_DESIGN_OPTIONS, PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS, PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS, PORTFOLIO_STACK_TAGS_SIZE_OPTIONS, PORTFOLIO_STACK_TITLE_PRESET_OPTIONS, STACK_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS, STACK_HEADER_BILLBOARD_WORD_STYLE_OPTIONS, STACK_HEADER_PALETTE_TOKEN_OPTIONS, stackHeaderPaletteTokenColor, stackLevelIndicatorDesignSupportsCardFrame, stackSectionLayoutIsAside, type PortfolioStackAsideTitlePlacement, type PortfolioStackDesign, type PortfolioStackHeaderDesign, type PortfolioStackSectionLayout, type PortfolioStackSectionSettings, type PortfolioStackTagsSize } from '@/components/portfolio/portfolio-stack-settings';
 import {
   PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS,
   PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS,
@@ -42,6 +48,16 @@ import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-he
 import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
 import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import {
+  FieldLabel,
+  PF_TEXT_INPUT,
+  SectionHiddenNotice,
+  SettingsGroup,
+  SettingsSwitchRow,
+  SettingsTabs,
+} from '@/components/portfolio/portfolio-settings-ui';
 
 /** Same general / design / header mechanism as the Experience section settings panel, plus its own Background tab.
  *  Header is one shared, GSAP-animated header (copied from the Portfolio/Work section's Header mechanism)
@@ -49,52 +65,30 @@ import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/por
 export type StackSubSection = 'general' | 'design' | 'header' | 'background';
 
 const SUBSECTIONS: { value: StackSubSection; label: string }[] = [
-  { value: 'general', label: 'General' },
-  { value: 'design', label: 'Design' },
-  { value: 'header', label: 'Header' },
-  { value: 'background', label: 'Background' },
+  { value: 'general', label: msg('General') },
+  { value: 'design', label: msg('Design') },
+  { value: 'header', label: msg('Header') },
+  { value: 'background', label: msg('Background') },
 ];
 
 export function normalizeStackSubSection(value: string | undefined): StackSubSection {
   return SUBSECTIONS.some((item) => item.value === value) ? (value as StackSubSection) : 'design';
 }
 
-function Toggle({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-neutral-200 bg-white p-3">
-      <span className="text-sm font-semibold text-neutral-900">{label}</span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="h-4 w-4"
-      />
-    </label>
-  );
-}
-
 /** Curated 3-option quick palette for Name / Description text colors — separate from the full 8-token dropdown. */
 const STACK_QUICK_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
-  { value: 'principal', label: 'Principal' },
-  { value: 'texteFort', label: 'Texte fort' },
-  { value: 'texteMuted', label: 'Texte muted' },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'texteFort', label: msg('Strong text') },
+  { value: 'texteMuted', label: msg('Muted text') },
 ];
 
 /** For section-background-style fields (fill, gradient stops, split zones) — "fond"/"neutre"
  *  fit that context better than "texte fort", which is why this isn't just STACK_QUICK_PALETTE_TOKENS. */
 const STACK_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
-  { value: 'fond', label: 'Fond' },
-  { value: 'neutre', label: 'Neutre' },
-  { value: 'principal', label: 'Principal' },
-  { value: 'texteMuted', label: 'Texte muted' },
+  { value: 'fond', label: msg('Background') },
+  { value: 'neutre', label: msg('Neutral') },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'texteMuted', label: msg('Muted text') },
 ];
 
 function StackQuickColorPicker({
@@ -114,9 +108,10 @@ function StackQuickColorPicker({
   onPickToken: (token: HeroPaletteTokenId) => void;
   tokens?: { value: HeroPaletteTokenId; label: string }[];
 }) {
+  const t = useT();
   return (
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <FieldLabel>{label}</FieldLabel>
       <div className="mt-2 flex items-center gap-3">
         {tokens.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -127,8 +122,8 @@ function StackQuickColorPicker({
             <button
               key={token.value}
               type="button"
-              title={token.label}
-              aria-label={token.label}
+              title={t(token.label)}
+              aria-label={t(token.label)}
               aria-pressed={active}
               onClick={() => onPickToken(token.value)}
               className="flex flex-col items-center gap-1.5"
@@ -137,14 +132,14 @@ function StackQuickColorPicker({
                 className="h-8 w-8 rounded-full border-2 transition"
                 style={{
                   backgroundColor: hex,
-                  borderColor: active ? '#171717' : '#e5e5e5',
-                  boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
+                  borderColor: active ? 'var(--pf-palette-texte-fort)' : 'var(--pf-palette-bordure)',
+                  boxShadow: active ? '0 0 0 2px color-mix(in srgb, var(--pf-palette-texte-fort) 18%, transparent)' : 'none',
                 }}
               />
               <span
-                className={`text-[11px] font-medium ${active ? 'text-neutral-900' : 'text-neutral-500'}`}
+                className={`text-[11px] font-medium ${active ? 'text-[color:var(--pf-palette-texte-fort)]' : 'text-[color:var(--pf-palette-texte-muted)]'}`}
               >
-                {token.label}
+                {t(token.label)}
               </span>
             </button>
           );
@@ -300,6 +295,7 @@ function StackPickerCard({
 }
 
 function StackDesignWireframe({ design }: { design: PortfolioStackDesign }) {
+  const t = useT();
   switch (design) {
     case 'workflow-rail':
       return (
@@ -476,15 +472,15 @@ function StackDesignWireframe({ design }: { design: PortfolioStackDesign }) {
         <StackMiniSlide>
           <circle className="pf-stack-mini-ring" cx="24" cy="32" r="16" strokeWidth={3} />
           <StackMiniType x={24} y={34} size={6} anchor="middle">
-            CSS
+            {t('CSS')}
           </StackMiniType>
           <circle className="pf-stack-mini-ring" cx="60" cy="32" r="16" strokeWidth={3} />
           <StackMiniType x={60} y={34} size={6} anchor="middle">
-            JS
+            {t('JS')}
           </StackMiniType>
           <circle className="pf-stack-mini-ring" cx="96" cy="32" r="16" strokeWidth={3} />
           <StackMiniType x={96} y={34} size={6} anchor="middle">
-            GO
+            {t('GO')}
           </StackMiniType>
         </StackMiniSlide>
       );
@@ -537,6 +533,7 @@ function StackSwitchTrack({ checked }: { checked: boolean }) {
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. */
 function StackInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -547,13 +544,13 @@ function StackInfoTooltip({ text }: { text: string }) {
         role="button"
         tabIndex={0}
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -598,7 +595,7 @@ function StackToggleRow({
     >
       <span className="flex items-center justify-between gap-4">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate text-sm font-semibold text-neutral-950">{label}</span>
+          <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{label}</span>
           {info ? <StackInfoTooltip text={info} /> : null}
         </span>
         <StackSwitchTrack checked={checked} />
@@ -622,6 +619,7 @@ function StackOptionGrid<T extends string | number>({
   columns?: number;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const count = options.length;
   // Keep every option on one horizontal row up to 4 choices (Taille/Espacement/Écart-style fields);
@@ -650,7 +648,7 @@ function StackOptionGrid<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
@@ -661,7 +659,7 @@ function StackOptionGrid<T extends string | number>({
               }
             >
               {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
-              <span>{option.label}</span>
+              <span>{t(option.label)}</span>
             </button>
           );
         })}
@@ -686,6 +684,7 @@ function StackSlider<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const index = Math.max(
     0,
@@ -699,7 +698,7 @@ function StackSlider<T extends string>({
     <div>
       {rows ? null : (<div className="pf-stack-slider-row">
         <span className="pf-stack-slider-label">{label}</span>
-        <span className="pf-stack-slider-value">{current?.label}</span>
+        <span className="pf-stack-slider-value">{t(current?.label)}</span>
       </div>)}
       <input
         type="range"
@@ -739,6 +738,7 @@ function StackPreviewCardGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
@@ -755,7 +755,7 @@ function StackPreviewCardGrid<T extends string>({
           <StackPickerCard
             key={option.value}
             active={option.value === value}
-            label={option.label}
+            label={t(option.label)}
             onClick={() => onChange(option.value)}
             compact
           >
@@ -1016,22 +1016,23 @@ function StackDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
             {children}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -1055,24 +1056,46 @@ function StackDesignChoiceGrid({
   value: PortfolioStackDesign;
   onChange: (value: PortfolioStackDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_STACK_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_STACK_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Design</p>
+          <p className="pf-stack-block-label !mb-0">{t('Design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_STACK_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-stack-design-card"
+                labelClassName="pf-stack-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'stack', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_STACK_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -1080,7 +1103,7 @@ function StackDesignChoiceGrid({
               <StackPickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -1091,12 +1114,13 @@ function StackDesignChoiceGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <StackDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <StackDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <StackDesignWireframe design={value} />
     </StackDesignSummaryRow>
   );
@@ -1104,6 +1128,7 @@ function StackDesignChoiceGrid({
 
 /** Mini wireframes for the 8 Header design picker cards — same StackMiniSlide mechanism as Header. */
 function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
@@ -1125,7 +1150,7 @@ function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDe
             opacity={0.14}
             className="pf-stack-mini-ink"
           >
-            STACK
+            {t('STACK')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
         </StackMiniSlide>
@@ -1169,7 +1194,7 @@ function StackHeaderDesignWireframe({ design }: { design: PortfolioStackHeaderDe
             opacity={0.1}
             className="pf-stack-mini-ink"
           >
-            STACK
+            {t('STACK')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
           <rect className="pf-stack-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
@@ -1211,6 +1236,7 @@ function StackHeaderChoiceGrid({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_STACK_HEADER_DESIGN_OPTIONS[0];
@@ -1219,13 +1245,13 @@ function StackHeaderChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Header design</p>
+          <p className="pf-stack-block-label !mb-0">{t('Header design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -1235,7 +1261,7 @@ function StackHeaderChoiceGrid({
               <PortfolioHeaderDesignOption key={option.value} design={option.value}>
                 <StackPickerCard
                   active={active}
-                  label={option.label}
+                  label={t(option.label)}
                   onClick={() => {
                     onChange(option.value);
                     setShowGrid(false);
@@ -1252,7 +1278,7 @@ function StackHeaderChoiceGrid({
   }
 
   return (
-    <StackDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <StackDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <StackHeaderDesignWireframe design={value} />
     </StackDesignSummaryRow>
   );
@@ -1319,61 +1345,7 @@ function handleStackDesignChange(
   design: PortfolioStackDesign,
   onChange: (patch: Partial<PortfolioStackSectionSettings>) => void
 ) {
-  if (design === 'brand-cards') {
-    onChange(stackBrandCardsDesignDefaults());
-    return;
-  }
-  if (design === 'brand-index') {
-    onChange(stackBrandIndexDesignDefaults());
-    return;
-  }
-  if (design === 'brand-row') {
-    onChange(stackBrandRowDesignDefaults());
-    return;
-  }
-  if (design === 'level-progress-rows') {
-    onChange(stackLevelProgressRowsDesignDefaults());
-    return;
-  }
-  if (design === 'level-category-rows') {
-    onChange(stackLevelCategoryRowsDesignDefaults());
-    return;
-  }
-  if (design === 'level-table-rows') {
-    onChange(stackLevelTableRowsDesignDefaults());
-    return;
-  }
-  if (design === 'level-circular-cards') {
-    onChange(stackLevelCircularCardsDesignDefaults());
-    return;
-  }
-  if (design === 'level-star-cards') {
-    onChange(stackLevelStarCardsDesignDefaults());
-    return;
-  }
-  if (design === 'level-svg-rings') {
-    onChange(stackLevelSvgRingsDesignDefaults());
-    return;
-  }
-  if (design === 'level-bento-categories') {
-    onChange(stackLevelBentoCategoriesDesignDefaults());
-    return;
-  }
-  if (design === 'stack-tags') {
-    onChange({
-      design,
-      headerAlignment: 'center',
-      contentAlignment: 'center',
-      showDescription: false,
-      showUseCases: false,
-      showCategory: false,
-      ...(stack.titlePreset !== 'custom'
-        ? { titlePreset: 'core-stack', title: DEFAULT_STACK_TITLE }
-        : {}),
-    });
-    return;
-  }
-  onChange({ design });
+  onChange(stackDesignSettingsPatch(stack, design));
 }
 
 type StackSettingsPanelProps = {
@@ -1384,14 +1356,14 @@ type StackSettingsPanelProps = {
 };
 
 const STACK_HEADER_COPY: HeaderCopy = {
-  editorial: { label: 'Stack', title: 'Core stack', subtitle: 'Languages, frameworks, and tools.' },
-  index: { rule: 'Index', title: 'Core stack', subtitle: 'Languages, frameworks, and tools.', count: 'Technologies' },
+  editorial: { label: msg('Stack'), title: msg('Core stack'), subtitle: msg('Languages, frameworks, and tools.') },
+  index: { rule: 'Index', title: msg('Core stack'), subtitle: msg('Languages, frameworks, and tools.'), count: 'Technologies' },
   marquee: ['Stack', 'Optional', 'Optional', 'Optional'],
   accent: { badge: '{count}+ technologies', lead: 'A curated set of tools I rely on.' },
-  serif: { label: 'Stack', title: 'A curated set of languages, frameworks, and tools.', subtitle: 'Languages, frameworks, and tools.' },
-  billboard: { word: 'STACK', title: 'Core stack', count: '{count} technologies' },
+  serif: { label: msg('Stack'), title: msg('A curated set of languages, frameworks, and tools.'), subtitle: msg('Languages, frameworks, and tools.') },
+  billboard: { word: 'STACK', title: msg('Core stack'), count: '{count} technologies' },
   masthead: ['Core stack.', 'Chosen with intent.', 'Kept up to date.'],
-  split: { title: 'Core stack', label: 'Stack' },
+  split: { title: msg('Core stack'), label: msg('Stack') },
 };
 
 /** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
@@ -1422,6 +1394,7 @@ export function StackSettingsPanel({
   subSection = 'design',
   onSubSectionChange,
 }: StackSettingsPanelProps) {
+  const t = useT();
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, stack.toolsPalette);
   const bindings = mergeToolsColorBindings(DEFAULT_TOOLS_COLOR_BINDINGS, stack.toolsColorBindings);
   const current = normalizeStackSubSection(subSection);
@@ -1439,57 +1412,61 @@ export function StackSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
-        {SUBSECTIONS.map((item) => (
-          <button
-            key={item.value}
-            type="button"
-            onClick={() => onSubSectionChange?.(item.value)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              current === item.value
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {item.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs tabs={SUBSECTIONS.map((item) => ({ id: item.value, label: item.label }))} value={current} onChange={(value) => onSubSectionChange?.(value)} />
 
       {current === 'general' ? (
         <div className="space-y-4">
-          <Toggle
-            label="Show Stack section"
+          <SettingsSwitchRow
+            label={t('Show Stack section')}
+            description={stack.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={stack.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          <SectionColorModeControl
-            value={stack.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-          <div className="space-y-4 border-t border-neutral-200 pt-6">
+          {stack.enabled ? (
+          <>
+          <SettingsGroup label={t('Title')}>
             <StackOptionGrid
-              label="Title"
+              label={t('Wording')}
               value={stack.titlePreset}
               options={PORTFOLIO_STACK_TITLE_PRESET_OPTIONS}
               onChange={(titlePreset) => onChange({ titlePreset })}
             />
             {stack.titlePreset === 'custom' ? (
               <label className="block">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  Custom title
-                </span>
+                <FieldLabel>{t('Custom title')}</FieldLabel>
                 <input
                   type="text"
                   value={stack.titleCustom}
                   onChange={(event) => onChange({ titleCustom: event.target.value })}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-                  placeholder="Core Stack"
+                  className={`mt-2 ${PF_TEXT_INPUT}`}
+                  placeholder={t('Core Stack')}
                 />
               </label>
             ) : null}
+            <StackOptionGrid
+              label={t('Subtitle')}
+              value={stack.subtitlePreset ?? 'none'}
+              options={PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS}
+              onChange={(subtitlePreset: PortfolioToolsSubtitlePreset) => onChange({ subtitlePreset })}
+            />
+            {stack.subtitlePreset === 'custom' ? (
+              <label className="block">
+                <FieldLabel>{t('Subtitle text')}</FieldLabel>
+                <textarea
+                  rows={3}
+                  value={stack.subtitleCustom || stack.subtitle}
+                  onChange={(event) =>
+                    onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })
+                  }
+                  className={`mt-2 ${PF_TEXT_INPUT}`}
+                  placeholder={t('Languages, frameworks, and platforms I use to ship reliable products.')}
+                />
+              </label>
+            ) : null}
+          </SettingsGroup>
+          <SettingsGroup label={t('Layout')}>
             <StackPreviewCardGrid
-              label="Title / list layout"
+              label={t('Title / list layout')}
               value={sectionLayout}
               options={PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS.map((option) => ({
                 ...option,
@@ -1516,7 +1493,7 @@ export function StackSettingsPanel({
             {stackAside ? (
               <>
                 <StackOptionGrid
-                  label="Vertical title alignment"
+                  label={t('Vertical title alignment')}
                   value={stack.asideTitlePlacement ?? 'center'}
                   options={PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS}
                   onChange={(asideTitlePlacement: PortfolioStackAsideTitlePlacement) =>
@@ -1524,39 +1501,21 @@ export function StackSettingsPanel({
                   }
                 />
                 <StackToggleRow
-                  label="Sticky title on scroll"
+                  label={t('Sticky title on scroll')}
                   checked={stack.asideTitleSticky !== false}
                   onChange={(asideTitleSticky) => onChange({ asideTitleSticky })}
                 />
               </>
             ) : null}
-            <StackOptionGrid
-              label="Subtitle"
-              value={stack.subtitlePreset ?? 'none'}
-              options={PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS}
-              onChange={(subtitlePreset: PortfolioToolsSubtitlePreset) => onChange({ subtitlePreset })}
-            />
-            {stack.subtitlePreset === 'custom' ? (
-              <label className="block">
-                <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                  Subtitle text
-                </span>
-                <textarea
-                  rows={3}
-                  value={stack.subtitleCustom || stack.subtitle}
-                  onChange={(event) =>
-                    onChange({ subtitleCustom: event.target.value, subtitle: event.target.value })
-                  }
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
-                  placeholder="Languages, frameworks, and platforms I use to ship reliable products."
-                />
-              </label>
-            ) : null}
-          </div>
+          </SettingsGroup>
+          </>
+          ) : null}
         </div>
       ) : null}
 
-      {current === 'design' ? (
+      {current !== 'general' && !stack.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {current === 'design' && stack.enabled ? (
         <div className="space-y-4">
           {PORTFOLIO_STACK_DESIGN_OPTIONS.length > 1 ? (
             <StackDesignChoiceGrid
@@ -1564,11 +1523,18 @@ export function StackSettingsPanel({
               onChange={(design) => handleStackDesignChange(stack, design, onChange)}
             />
           ) : null}
+          <SettingsGroup label={t('Style')}>
+            <SectionColorModeControl
+              label={t('Color mode')}
+              value={stack.colorModeOverride}
+              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+            />
+          </SettingsGroup>
           <StackLayoutSettingsBand motionKey={stack.design}>
-<SettingsRowsScope title="Layout options">
+<SettingsRowsScope title={t('Layout options')}>
           {stack.design === 'stack-tags' ? (
             <StackOptionGrid
-              label="Tag alignment"
+              label={t('Tag alignment')}
               value={stack.contentAlignment ?? 'center'}
               options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1580,13 +1546,13 @@ export function StackSettingsPanel({
           {stack.design === 'stack-tags' ? (
             <>
               <StackSlider
-                label="Tag size"
+                label={t('Tag size')}
                 value={stack.stackTagsSize ?? 'medium'}
                 options={PORTFOLIO_STACK_TAGS_SIZE_OPTIONS}
                 onChange={(stackTagsSize: PortfolioStackTagsSize) => onChange({ stackTagsSize })}
               />
               <StackSlider
-                label="Tag spacing"
+                label={t('Tag spacing')}
                 value={stack.cardGap}
                 options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
                 onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
@@ -1594,7 +1560,7 @@ export function StackSettingsPanel({
             </>
           ) : (
             <StackSlider
-              label="Logo size"
+              label={t('Logo size')}
               value={stack.tileSize}
               options={PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS}
               onChange={(tileSize: PortfolioToolsTileSize) => onChange({ tileSize })}
@@ -1604,7 +1570,7 @@ export function StackSettingsPanel({
             <>
               {stack.design !== 'level-star-cards' ? (
                 <StackSlider
-                  label="Vertical spacing"
+                  label={t('Vertical spacing')}
                   value={stack.levelProgressRowGap ?? 'large'}
                   options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS}
                   onChange={(levelProgressRowGap: PortfolioToolsLevelProgressRowGap) =>
@@ -1614,7 +1580,7 @@ export function StackSettingsPanel({
               ) : null}
               {stack.design !== 'level-progress-rows' && stack.design !== 'level-category-rows' ? (
                 <StackToggleRow
-                  label="Full width"
+                  label={t('Full width')}
                   checked={resolveToolsLevelIndicatorFullWidth(stack)}
                   onChange={(levelIndicatorFullWidth) =>
                     onChange({
@@ -1625,7 +1591,7 @@ export function StackSettingsPanel({
                 />
               ) : null}
               <StackOptionGrid
-                label="Row order"
+                label={t('Row order')}
                 value={stack.levelTableGroupBy ?? 'category'}
                 options={PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS}
                 onChange={(levelTableGroupBy: PortfolioToolsLevelTableGroupBy) =>
@@ -1633,7 +1599,7 @@ export function StackSettingsPanel({
                 }
               />
               <StackToggleRow
-                label="Category filter"
+                label={t('Category filter')}
                 checked={resolveToolsLevelIndicatorShowCategoryFilter(stack)}
                 onChange={(levelIndicatorShowCategoryFilter) =>
                   onChange({
@@ -1647,7 +1613,7 @@ export function StackSettingsPanel({
                 // setting — level-circular-cards and level-svg-rings never read
                 // levelIndicatorDisplayStyle, so the control had no effect there.
                 <StackPreviewCardGrid
-                  label="Level display"
+                  label={t('Level display')}
                   value={
                     stack.levelIndicatorDisplayStyle ??
                     (stack.design === 'level-bento-categories' ? 'progress-bar' : 'text')
@@ -1673,7 +1639,7 @@ export function StackSettingsPanel({
           {stackLevelIndicatorDesignSupportsCardFrame(stack.design) ? (
             <>
               <StackPreviewCardGrid
-                label="Card frame"
+                label={t('Card frame')}
                 value={stack.levelIndicatorCardStyle ?? 'framed'}
                 options={PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS.map((option) => ({
                   ...option,
@@ -1694,7 +1660,7 @@ export function StackSettingsPanel({
           stack.design === 'level-table-rows' ? (
             <>
               <StackOptionGrid
-                label="List alignment"
+                label={t('List alignment')}
                 value={stack.levelProgressContentAlignment ?? 'center'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1704,7 +1670,7 @@ export function StackSettingsPanel({
               />
               {stack.design === 'level-table-rows' ? null : stackAside ? null : (
                 <StackPreviewCardGrid
-                  label="Columns (large screen)"
+                  label={t('Columns (large screen)')}
                   value={String(stack.levelProgressColumnsPerRow ?? 1) as '1' | '2'}
                   options={PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS.map((option) => ({
                     ...option,
@@ -1720,7 +1686,7 @@ export function StackSettingsPanel({
               )}
               {stack.design === 'level-progress-rows' || stack.design === 'level-category-rows' ? (
                 <StackToggleRow
-                  label="Full width"
+                  label={t('Full width')}
                   checked={resolveToolsLevelIndicatorFullWidth(stack)}
                   onChange={(levelIndicatorFullWidth) =>
                     onChange({
@@ -1734,13 +1700,13 @@ export function StackSettingsPanel({
           ) : stack.design === 'level-bento-categories' ? (
             <>
               <StackSlider
-                label="Card spacing"
+                label={t('Card spacing')}
                 value={stack.cardGap ?? 'medium'}
                 options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
                 onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
               />
               <StackPreviewCardGrid
-                label="Grid layout"
+                label={t('Grid layout')}
                 value={stack.levelBentoGridMode ?? 'equal'}
                 options={PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS.map((option) => ({
                   ...option,
@@ -1755,7 +1721,7 @@ export function StackSettingsPanel({
                 }
               />
               <StackOptionGrid
-                label="Content alignment"
+                label={t('Content alignment')}
                 value={stack.brandCardsContentAlignment ?? 'left'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1770,14 +1736,14 @@ export function StackSettingsPanel({
             <StackSlider
               label={
                 stack.design === 'brand-index'
-                  ? 'Row spacing'
+                  ? t('Row spacing')
                   : stack.design === 'brand-row'
                     ? (stack.brandRowCellStyle ?? 'dividers') === 'frames'
-                      ? 'Spacing between frames'
+                      ? t('Spacing between frames')
                       : (stack.brandRowCellStyle ?? 'dividers') === 'none'
-                        ? 'Spacing between cells'
-                        : 'Cell spacing'
-                    : 'Card spacing'
+                        ? t('Spacing between cells')
+                        : t('Cell spacing')
+                    : t('Card spacing')
               }
               value={stack.cardGap ?? 'tight'}
               options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
@@ -1787,7 +1753,7 @@ export function StackSettingsPanel({
           {stack.design === 'level-progress-rows' || stack.design === 'level-category-rows' ? (
             <>
               <StackPreviewCardGrid
-                label="Bar style"
+                label={t('Bar style')}
                 value={stack.levelBarStyle ?? 'rectangle'}
                 options={PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS.map((option) => ({
                   ...option,
@@ -1813,8 +1779,8 @@ export function StackSettingsPanel({
               <StackSlider
                 label={
                   stack.design === 'level-circular-cards' || stack.design === 'level-svg-rings'
-                    ? 'Thickness & % size'
-                    : 'Bar & % size'
+                    ? t('Thickness & % size')
+                    : t('Bar & % size')
                 }
                 value={stack.levelBarSize ?? 'small'}
                 options={
@@ -1829,7 +1795,7 @@ export function StackSettingsPanel({
           {stack.design === 'brand-cards' ? (
             <>
               <StackPreviewCardGrid
-                label="Icon placement"
+                label={t('Icon placement')}
                 value={stack.brandCardsIconPlacement ?? 'left'}
                 options={PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS.map((option) => ({
                   ...option,
@@ -1845,7 +1811,7 @@ export function StackSettingsPanel({
               />
               {stackAside ? null : (
                 <StackPreviewCardGrid
-                  label="Columns (large screen)"
+                  label={t('Columns (large screen)')}
                   value={String(stack.brandCardsColumnsPerRow ?? 2) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.map((option) => ({
                     ...option,
@@ -1859,7 +1825,7 @@ export function StackSettingsPanel({
                 />
               )}
               <StackOptionGrid
-                label="Content alignment"
+                label={t('Content alignment')}
                 value={stack.brandCardsContentAlignment ?? 'center'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1868,7 +1834,7 @@ export function StackSettingsPanel({
                 }
               />
               <StackToggleRow
-                label="Full width"
+                label={t('Full width')}
                 checked={stack.brandCardsFullWidth === true}
                 onChange={(brandCardsFullWidth) => onChange({ brandCardsFullWidth })}
               />
@@ -1877,13 +1843,13 @@ export function StackSettingsPanel({
           {stack.design === 'level-star-cards' ? (
             <>
               <StackSlider
-                label="Card spacing"
+                label={t('Card spacing')}
                 value={stack.cardGap ?? 'medium'}
                 options={PORTFOLIO_TOOLS_CARD_GAP_OPTIONS}
                 onChange={(cardGap: PortfolioToolsCardGap) => onChange({ cardGap })}
               />
               <StackOptionGrid
-                label="Content alignment"
+                label={t('Content alignment')}
                 value={stack.brandCardsContentAlignment ?? 'left'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1896,7 +1862,7 @@ export function StackSettingsPanel({
             <>
               {stackAside ? null : (
                 <StackPreviewCardGrid
-                  label="Columns (large screen)"
+                  label={t('Columns (large screen)')}
                   value={String(stack.brandCardsColumnsPerRow ?? 3) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
                     (item) => item.value !== '4'
@@ -1912,7 +1878,7 @@ export function StackSettingsPanel({
                 />
               )}
               <StackOptionGrid
-                label="Content alignment"
+                label={t('Content alignment')}
                 value={stack.brandCardsContentAlignment ?? 'center'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1925,7 +1891,7 @@ export function StackSettingsPanel({
           {stack.design === 'brand-index' ? (
             <>
               <StackOptionGrid
-                label="Content alignment"
+                label={t('Content alignment')}
                 value={stack.brandIndexContentAlignment ?? 'center'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1934,12 +1900,12 @@ export function StackSettingsPanel({
                 }
               />
               <StackToggleRow
-                label="Full width (1 per row)"
+                label={t('Full width (1 per row)')}
                 checked={stack.brandIndexFullWidth !== false}
                 onChange={(brandIndexFullWidth) => onChange({ brandIndexFullWidth })}
               />
               <StackToggleRow
-                label="Category filter"
+                label={t('Category filter')}
                 checked={resolveToolsLevelIndicatorShowCategoryFilter(stack)}
                 onChange={(levelIndicatorShowCategoryFilter) =>
                   onChange({
@@ -1953,7 +1919,7 @@ export function StackSettingsPanel({
           {stack.design === 'brand-row' ? (
             <>
               <StackPreviewCardGrid
-                label="Cell style"
+                label={t('Cell style')}
                 value={stack.brandRowCellStyle ?? 'dividers'}
                 options={PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS.map((option) => ({
                   ...option,
@@ -1969,7 +1935,7 @@ export function StackSettingsPanel({
                 }
               />
               <StackPreviewCardGrid
-                label="Columns (large screen)"
+                label={t('Columns (large screen)')}
                 value={String(stack.brandRowColumnsPerRow ?? 3) as '1' | '2' | '3'}
                 options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.map((option) => ({
                   ...option,
@@ -1982,7 +1948,7 @@ export function StackSettingsPanel({
                 }
               />
               <StackOptionGrid
-                label="Content alignment"
+                label={t('Content alignment')}
                 value={stack.brandRowContentAlignment ?? 'center'}
                 options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -1994,7 +1960,7 @@ export function StackSettingsPanel({
           ) : null}
           {stack.design === 'workflow-rail' ? (
             <StackOptionGrid
-              label="Content alignment"
+              label={t('Content alignment')}
               value={stack.workflowRailContentAlignment ?? 'center'}
               options={PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS}
                 icons={STACK_ALIGNMENT_ICONS}
@@ -2008,7 +1974,7 @@ export function StackSettingsPanel({
         </div>
       ) : null}
 
-      {current === 'background' ? (
+      {current === 'background' && stack.enabled ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={stack}
@@ -2027,7 +1993,7 @@ export function StackSettingsPanel({
         </div>
       ) : null}
 
-      {current === 'header' ? (
+      {current === 'header' && stack.enabled ? (
         <div className="space-y-6">
           <StackHeaderChoiceGrid
             value={stack.headerDesign ?? 'editorial'}
@@ -2038,7 +2004,7 @@ export function StackSettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <StackLayoutSettingsBand motionKey={stack.headerDesign ?? 'editorial'} title="Header settings" flush>
+            <StackLayoutSettingsBand motionKey={stack.headerDesign ?? 'editorial'} title={t('Header settings')} flush>
               <StackHeaderDesignFields stack={stack} onChange={onChange} />
             </StackLayoutSettingsBand>
           )}

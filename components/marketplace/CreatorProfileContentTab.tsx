@@ -11,15 +11,16 @@ import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { listPublicContentFeed } from '@/lib/marketplace-api';
 import type { PublicContentFeedItem } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function formatContentCountLabel(count: number, creatorName: string): string {
   if (count === 0) {
     return `No public content from ${creatorName} yet.`;
   }
   if (count === 1) {
-    return `1 public post by ${creatorName}.`;
+    return `1 public post by ${creatorName}`;
   }
-  return `${count} public posts by ${creatorName}.`;
+  return `${count} public posts by ${creatorName}`;
 }
 
 type CreatorProfileContentTabProps = {
@@ -28,6 +29,7 @@ type CreatorProfileContentTabProps = {
 };
 
 export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProfileContentTabProps) {
+  const t = useT();
   const searchParams = useSearchParams();
   const deepLinkPostId = searchParams.get('post');
   const [items, setItems] = useState<PublicContentFeedItem[]>([]);
@@ -42,12 +44,12 @@ export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProf
       const result = await listPublicContentFeed({ creatorId, page: 0, size: 50 });
       setItems(result.content);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load content.'));
+      setError(getApiErrorMessage(e, t('Unable to load content.')));
       setItems([]);
     } finally {
       setLoading(false);
     }
-  }, [creatorId]);
+  }, [creatorId, t]);
 
   useEffect(() => {
     void load();
@@ -66,12 +68,10 @@ export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProf
   }
 
   return (
-    <div className="space-y-10">
+    <div className="space-y-4 sm:space-y-6">
       <div>
-        <h2 className="text-[1.375rem] font-semibold tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[1.5rem]">
-          Content
-        </h2>
-        <p className="mt-2 text-[1rem] text-neutral-600 dark:text-neutral-300">
+        <h2 className="text-[20px] font-extrabold tracking-[-0.015em] text-[#0F1419] dark:text-[#E7E9EA]">{t('Content')}</h2>
+        <p className="mt-1 text-[15px] text-[#536471] dark:text-[#71767B]">
           {formatContentCountLabel(items.length, creatorName)}
         </p>
       </div>
@@ -79,11 +79,11 @@ export function CreatorProfileContentTab({ creatorId, creatorName }: CreatorProf
       {error && <ErrorAlert message={error} onDismiss={() => setError(null)} />}
 
       {items.length === 0 ? (
-        <div className="rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]">
-          <p className="text-[1.0625rem] text-neutral-600 dark:text-neutral-300">No public content yet.</p>
+        <div className="gn-card -mx-4 rounded-none bg-[#F7F9F9] dark:bg-[#16181C] px-6 py-16 text-center sm:mx-0">
+          <p className="text-[15px] text-[#536471] dark:text-[#71767B]">{t('No public content yet.')}</p>
         </div>
       ) : (
-        <div className="grid grid-cols-2 gap-4 sm:grid-cols-3 sm:gap-5 lg:grid-cols-4 lg:gap-6">
+        <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 sm:gap-4 lg:grid-cols-4 lg:gap-6">
           {items.map((post) => (
             <ContentPostGalleryThumb
               key={post.id}

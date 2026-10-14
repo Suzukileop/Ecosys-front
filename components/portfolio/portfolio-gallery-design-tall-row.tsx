@@ -38,6 +38,7 @@ import {
 import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
 import type { PortfolioGalleryPresentationSettings } from '@/components/portfolio/portfolio-gallery-settings';
 import type { ProfileGalleryItem } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /* ---------------------------------------------------------------------- */
 /* Scale — the single place this design is sized from                      */
@@ -325,12 +326,13 @@ function TallRowChevron({
   ink: string;
   hairline: string;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
       onClick={onClick}
       disabled={disabled}
-      aria-label={direction === -1 ? 'Previous' : 'Next'}
+      aria-label={direction === -1 ? t('Previous') : t('Next')}
       className={`group/nav flex h-14 w-14 shrink-0 items-center justify-center rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
         disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
       }`}

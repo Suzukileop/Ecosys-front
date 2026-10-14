@@ -1,190 +1,150 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { msg } from '@/lib/i18n/config';
+import { tr, trPlural } from '@/lib/i18n/active';
+import '@/app/(app)/search/x-search.css';
+import { useCallback, useEffect, useMemo, useRef, useState, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
-  GlobalSearchResultRow,
-  getGlobalSearchItemHref,
-} from '@/components/search/GlobalSearchResultRow';
+  addRecentSearch,
+  clearRecentSearches,
+  removeRecentSearch,
+  useRecentSearches,
+} from '@/components/search/recentSearches';
+import { Avatar } from '@/components/ui/Avatar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
-import { useAuth } from '@/context/AuthContext';
-import {
-  buildGlobalSearchPageUrl,
-  fetchGlobalSearch,
-  flattenGlobalSearchResults,
-  GLOBAL_SEARCH_CATEGORY_LABELS,
-  GLOBAL_SEARCH_MIN_LENGTH,
-  GLOBAL_SEARCH_MODAL_PREVIEW_SIZE,
-  type GlobalSearchCategory,
-  type GlobalSearchItem,
-  type GlobalSearchResults,
-} from '@/lib/global-search';
+import { buildGlobalSearchPageUrl, GLOBAL_SEARCH_MIN_LENGTH, isServiceProvider, type GlobalSearchTab } from '@/lib/global-search';
+import { searchMarketplaceCreators } from '@/lib/marketplace-api';
+import { formatHourlyRateAmount } from '@/lib/profile-services';
+import type { MarketplaceCreatorSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
- * The Spotlight, as an **exploration panel**: one wide card anchored at the top of the viewport,
- * the field lifted out of it in white, and below it two columns — a tab strip of product areas on
- * the left, the list they drive on the right, with a figure at the far end of every row.
+ * The search overlay — a compact command panel under the navbar.
  *
- * Below `lg` the two columns stack and the tab strip becomes a horizontal pill rail, because five
- * stacked tabs plus a list is a scroll before anything has been read.
+ *  - From sm: a panel on the navbar's frame (1240px), just under the bar, on a plain darkening veil:
+ *    the field across the top (with an ESC hint), then "What are you looking for?" and a row of pills
+ *    — Portfolios, Storefronts, Providers — that scope everything below them. On an empty field the
+ *    pills pick which suggestion chips show (plus your recent searches); while typing they filter the
+ *    result rows and carry their counts.
+ *  - Phones: the whole screen; the field with "Cancel", the same pills as a swipeable row.
  *
- * Chromatically it is the app's own system: `#111111` ink, one warm off-grey surface, and
- * neutral grays for chrome — accent color only on things that are actually active.
+ * What it suggests: people only — portfolios (profiles), storefronts (a creator's shop) and service
+ * providers — from one creator search. Posts are left to the full results page.
+ *
+ * Keyboard: the field is a combobox. Up / Down walk the rows (Left / Right too, on an empty field,
+ * where the rows are chips), Enter opens the highlighted row (the first, "Search for …", by default:
+ * the full results page), Tab / Shift+Tab switch pills, Escape closes.
+ *
+ * Portalled to <body>, outside the page's token scope, so the root re-opens it.
  */
 
 type GlobalSearchModalProps = {
   open: boolean;
   onClose: () => void;
+  /** Pre-fills the field (the current query on /search), selected so typing replaces it. */
+  initialQuery?: string;
 };
 
-const EMPTY_RESULTS: GlobalSearchResults = {
-  users: [],
-  creators: [],
-  serviceProviders: [],
-  products: [],
-  content: [],
+const DEBOUNCE_MS = 280;
+/** How many creators the quick search fetches — enough for the three views. */
+const QUICK_LIMIT = 12;
+
+type ViewId = 'profiles' | 'shops' | 'providers';
+
+const VIEWS: ViewId[] = ['profiles', 'shops', 'providers'];
+
+const VIEW_LABELS: Record<ViewId, string> = {
+  profiles: msg('Portfolios'),
+  shops: msg('Storefronts'),
+  providers: msg('Providers'),
 };
 
-const CATEGORY_ORDER: GlobalSearchCategory[] = ['creators', 'products', 'content'];
+/** Suggestions for an empty field, per pill: real specialties that fill the field. */
+const POPULAR_TERMS: Record<ViewId, string[]> = {
+  profiles: ['product designer', 'art direction', 'illustration', 'web development', 'photography', 'motion design', 'brand identity'],
+  shops: ['presets', 'templates', 'fonts', 'mockups', 'icons', 'ebooks', 'courses'],
+  providers: ['video editor', 'developer', 'ui / ux', 'marketing', 'copywriting', '3d modeling', 'photography'],
+};
 
-const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
+/** The results page tab a view's "Search for …" row opens. */
+const VIEW_TAB: Record<ViewId, GlobalSearchTab> = {
+  profiles: 'creators',
+  shops: 'creators',
+  providers: 'serviceProviders',
+};
 
-/** Entrance for a row, staggered down the panel. Keyframes live in `globals.css`. */
-function rowIn(index: number) {
-  return {
-    animation: `gsm-row-in 0.46s ${EASE} both`,
-    animationDelay: `${40 + index * 35}ms`,
-  };
-}
+/** One row of the open view. */
+type Row =
+  | { kind: 'all' }
+  | { kind: 'term'; term: string; recent: boolean }
+  | { kind: 'person'; creator: MarketplaceCreatorSummary };
 
-/**
- * The panel's content, as **scopes and terms**, not as a left rail and a right ledger.
- *
- * The rail-plus-list arrangement was the reference's, and read as it: a list of labels down the
- * left whose only job was to swap a list on the right, and a column of figures at the far edge
- * that nobody was going to compare. It is now one object — a row of scope pills under the field
- * and, below it, the terms of the selected scope as a wrapped field of chips. Scanning a wrapped
- * field is one pass over a shape; scanning a ruled list is one pass per row.
- *
- * Every chip is a real search term: clicking it fills the field and the existing debounce runs
- * the search, so the panel stays open and fills with real results.
- */
-type PanelSection = { key: string; label: string; terms: string[] };
+const subscribeNoop = () => () => {};
 
-const PANEL_SECTIONS: PanelSection[] = [
-  {
-    key: 'portfolios',
-    label: 'Portfolios',
-    terms: [
-      'product designer',
-      'art direction',
-      'illustration',
-      'web development',
-      'photography',
-      'motion design',
-      'brand identity',
-    ],
-  },
-  {
-    key: 'storefronts',
-    label: 'Storefronts',
-    terms: ['digital product', 'template', 'preset', 'course', 'ebook', 'ui kit'],
-  },
-  {
-    key: 'providers',
-    label: 'Providers',
-    terms: ['studio', 'designer', 'developer', 'copywriter', 'photographer', 'agency'],
-  },
-];
-
-function SearchIcon({ className, tone }: { className?: string; tone?: string }) {
+function Glyph({ children, className = 'h-[18px] w-[18px]' }: { children: ReactNode; className?: string }) {
   return (
-    <svg
-      className={className}
-      style={tone ? { color: tone } : undefined}
-      fill="none"
-      viewBox="0 0 24 24"
-      stroke="currentColor"
-      strokeWidth={1.5}
-      aria-hidden
-    >
-      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-    </svg>
-  );
-}
-
-function ClearIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-    </svg>
-  );
-}
-
-/** Small tracked caps that title a result group. The only uppercase in the panel. */
-function ColumnLabel({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mb-2 block text-[0.6rem] font-medium uppercase tracking-[0.28em] text-[#9A9A9A] dark:text-neutral-600">
+    <svg className={`shrink-0 ${className}`} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
       {children}
-    </span>
+    </svg>
   );
 }
 
-/**
- * Both chips, scope and term, are the same box at two weights.
- *
- * `rounded-xl` is **the field's own radius**, not a pill: the field is the largest box in the
- * panel and every box under it resolves its corners the same way. A pill beside a 12px field
- * reads as two components that came from different places.
- *
- * **The hover is one flat surface swap and nothing else** — no travel, no colour ramp, no rule
- * drawing itself in, and `transition-none` so it lands the instant the pointer does. Three
- * animated properties per row across thirty rows is a panel that shimmers while you read it, and
- * the only question a hover has to answer here is *which one is under the pointer*.
- */
-const CHIP_BASE =
-  'inline-flex shrink-0 items-center gap-2 rounded-xl px-4 py-2 text-[0.9rem] transition-none';
+const creatorId = (creator: MarketplaceCreatorSummary) => (creator.userId ?? creator.id ?? '').trim();
 
-const CHIP_IDLE =
-  'text-[#6B6B6B] hover:bg-white hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white';
+/** A shop: a creator with products in their storefront. */
+function hasShop(creator: MarketplaceCreatorSummary) {
+  return (creator.productCount ?? 0) > 0;
+}
 
-/** The selected scope: a filled pill, the dashboard's own active-tab idiom. */
-const CHIP_ACTIVE =
-  'bg-[#222222] text-white dark:bg-white dark:text-[#111111]';
+/** The row's right-hand meta, per view. */
+function personMeta(view: ViewId, creator: MarketplaceCreatorSummary) {
+  if (view === 'shops') return trPlural(creator.productCount ?? 0, '{count} product', '{count} products');
+  if (view === 'providers') {
+    const rate = formatHourlyRateAmount(creator.hourlyRateCents, creator.hourlyRateCurrency);
+    if (rate) return tr('{amount} / hour', { amount: rate });
+    if ((creator.serviceCount ?? 0) > 0) return trPlural(creator.serviceCount ?? 0, '{count} service', '{count} services');
+  }
+  return '';
+}
 
-export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
+function personHref(view: ViewId, creator: MarketplaceCreatorSummary) {
+  const id = encodeURIComponent(creatorId(creator));
+  return view === 'shops' ? `/providers/${id}/shop` : `/providers/${id}`;
+}
+
+export function GlobalSearchModal({ open, onClose, initialQuery = '' }: GlobalSearchModalProps) {
+  const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
+  if (!open || !mounted) return null;
+  /* Mounted on every open, so the field, the results and the highlight start fresh each time. */
+  return createPortal(<GlobalSearchPanel onClose={onClose} initialQuery={initialQuery} />, document.body);
+}
+
+function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; initialQuery: string }) {
+  const t = useT();
   const router = useRouter();
-  const { user } = useAuth();
-  const [query, setQuery] = useState('');
-  const [results, setResults] = useState<GlobalSearchResults>(EMPTY_RESULTS);
+  const recent = useRecentSearches();
+  const [query, setQuery] = useState(initialQuery);
+  const [creators, setCreators] = useState<MarketplaceCreatorSummary[]>([]);
+  const [resultsFor, setResultsFor] = useState('');
   const [loading, setLoading] = useState(false);
+  const [view, setView] = useState<ViewId>('profiles');
   const [selectedIndex, setSelectedIndex] = useState(0);
-  const [mounted, setMounted] = useState(false);
-  /* Which left-hand tab is showing. Deliberately not reset on open: reopening a launcher on the
-     list you were last reading is what every launcher does. */
-  const [sectionKey, setSectionKey] = useState(PANEL_SECTIONS[0].key);
   const inputRef = useRef<HTMLInputElement>(null);
 
-  const flatItems = useMemo(() => flattenGlobalSearchResults(results), [results]);
   const trimmedQuery = query.trim();
   const searching = trimmedQuery.length >= GLOBAL_SEARCH_MIN_LENGTH;
+  const settled = !loading && resultsFor === trimmedQuery;
 
   useEffect(() => {
-    setMounted(true);
+    const input = inputRef.current;
+    input?.focus();
+    input?.select();
   }, []);
 
+  /* Lock the page behind; Escape closes. */
   useEffect(() => {
-    if (!open) return;
-    setQuery('');
-    setResults(EMPTY_RESULTS);
-    setSelectedIndex(0);
-    const timer = window.setTimeout(() => inputRef.current?.focus(), 0);
-    return () => window.clearTimeout(timer);
-  }, [open]);
-
-  useEffect(() => {
-    if (!open || !mounted) return;
     const previousOverflow = document.body.style.overflow;
     document.body.style.overflow = 'hidden';
     const onKey = (event: KeyboardEvent) => {
@@ -195,301 +155,446 @@ export function GlobalSearchModal({ open, onClose }: GlobalSearchModalProps) {
       document.body.style.overflow = previousOverflow;
       document.removeEventListener('keydown', onKey);
     };
-  }, [open, mounted, onClose]);
+  }, [onClose]);
 
+  /* The debounced creator search — one call feeds Portfolios, Storefronts and Providers. */
   useEffect(() => {
-    if (!open) return;
-    if (trimmedQuery.length < GLOBAL_SEARCH_MIN_LENGTH) {
-      setResults(EMPTY_RESULTS);
-      setLoading(false);
-      setSelectedIndex(0);
-      return;
-    }
-
+    if (!searching) return;
     let cancelled = false;
     const timer = window.setTimeout(() => {
       setLoading(true);
       void (async () => {
         try {
-          const data = await fetchGlobalSearch(trimmedQuery, Boolean(user), {
-            limit: GLOBAL_SEARCH_MODAL_PREVIEW_SIZE,
-            categories: ['creators', 'products', 'content'],
-          });
+          const page = await searchMarketplaceCreators(trimmedQuery, 0, QUICK_LIMIT);
           if (!cancelled) {
-            setResults(data);
+            setCreators((page.content ?? []).filter((creator) => creatorId(creator)));
+            setResultsFor(trimmedQuery);
             setSelectedIndex(0);
+          }
+        } catch {
+          if (!cancelled) {
+            setCreators([]);
+            setResultsFor(trimmedQuery);
           }
         } finally {
           if (!cancelled) setLoading(false);
         }
       })();
-    }, 280);
-
+    }, DEBOUNCE_MS);
     return () => {
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [open, trimmedQuery, user]);
+  }, [searching, trimmedQuery]);
+
+  const lists = useMemo<Record<ViewId, MarketplaceCreatorSummary[]>>(() => {
+    const shown = searching ? creators : [];
+    return { profiles: shown, shops: shown.filter(hasShop), providers: shown.filter(isServiceProvider) };
+  }, [creators, searching]);
+
+  /* Empty field: recent searches, then the pill's suggestions. Typing: "Search for …", then people. */
+  const rows: Row[] = useMemo(() => {
+    if (!searching) {
+      return [
+        ...recent.map((term) => ({ kind: 'term' as const, term, recent: true })),
+        ...POPULAR_TERMS[view].map((term) => ({ kind: 'term' as const, term, recent: false })),
+      ];
+    }
+    return [{ kind: 'all' as const }, ...lists[view].map((creator) => ({ kind: 'person' as const, creator }))];
+  }, [lists, recent, searching, view]);
+
+  const activeIndex = rows.length === 0 ? -1 : Math.min(Math.max(selectedIndex, searching ? 0 : -1), rows.length - 1);
+  const optionId = (index: number) => `gsm-option-${index}`;
+
+  useEffect(() => {
+    if (activeIndex < 0) return;
+    document.getElementById(optionId(activeIndex))?.scrollIntoView({ block: 'nearest' });
+  }, [activeIndex]);
 
   const goToSearchPage = useCallback(
-    (tab: 'all' | GlobalSearchCategory = 'all') => {
-      if (trimmedQuery.length < GLOBAL_SEARCH_MIN_LENGTH) return;
+    (tab: GlobalSearchTab = 'all', term: string = trimmedQuery) => {
+      if (term.trim().length < GLOBAL_SEARCH_MIN_LENGTH) return;
+      addRecentSearch(term.trim());
       onClose();
-      router.push(buildGlobalSearchPageUrl(trimmedQuery, tab));
+      router.push(buildGlobalSearchPageUrl(term.trim(), tab));
     },
     [onClose, router, trimmedQuery]
   );
 
-  const activateItem = useCallback(
-    async (item: GlobalSearchItem) => {
-      onClose();
-      router.push(getGlobalSearchItemHref(item));
-    },
-    [onClose, router]
-  );
+  const fillField = (term: string) => {
+    setQuery(term);
+    setSelectedIndex(0);
+    inputRef.current?.focus();
+  };
 
-  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
-    if (event.key === 'ArrowDown') {
-      event.preventDefault();
-      if (flatItems.length === 0) return;
-      setSelectedIndex((index) => (index + 1) % flatItems.length);
-      return;
-    }
-    if (event.key === 'ArrowUp') {
-      event.preventDefault();
-      if (flatItems.length === 0) return;
-      setSelectedIndex((index) => (index - 1 + flatItems.length) % flatItems.length);
-      return;
-    }
-    if (event.key === 'Enter') {
-      event.preventDefault();
-      goToSearchPage('all');
+  const activateRow = (row: Row) => {
+    if (row.kind === 'all') goToSearchPage(VIEW_TAB[view]);
+    else if (row.kind === 'term') {
+      if (row.recent) goToSearchPage('all', row.term);
+      else fillField(row.term);
+    } else {
+      addRecentSearch(trimmedQuery);
+      onClose();
+      router.push(personHref(view, row.creator));
     }
   };
 
-  let runningIndex = -1;
+  const switchView = (next: ViewId) => {
+    setView(next);
+    setSelectedIndex(searching ? 0 : -1);
+    inputRef.current?.focus();
+  };
 
-  if (!open || !mounted) return null;
+  const onInputKeyDown = (event: React.KeyboardEvent<HTMLInputElement>) => {
+    /* On an empty field the rows are chips laid out in a line, so Left / Right walk them too. */
+    const forward = event.key === 'ArrowDown' || (!searching && query.length === 0 && event.key === 'ArrowRight');
+    const backward = event.key === 'ArrowUp' || (!searching && query.length === 0 && event.key === 'ArrowLeft');
+    if (forward) {
+      event.preventDefault();
+      if (rows.length > 0) setSelectedIndex((activeIndex + 1) % rows.length);
+    } else if (backward) {
+      event.preventDefault();
+      if (rows.length > 0) setSelectedIndex(activeIndex <= 0 ? rows.length - 1 : activeIndex - 1);
+    } else if (event.key === 'Tab') {
+      event.preventDefault();
+      const index = VIEWS.indexOf(view);
+      switchView(VIEWS[(index + (event.shiftKey ? VIEWS.length - 1 : 1)) % VIEWS.length]);
+    } else if (event.key === 'Enter') {
+      event.preventDefault();
+      const row = activeIndex >= 0 ? rows[activeIndex] : undefined;
+      if (row) activateRow(row);
+      else goToSearchPage('all');
+    }
+  };
 
-  /* The left column swaps role once there is a query: product areas are no use mid-search, where
-     the same space is exactly what a set of scopes needs — with real counts on them. */
-  const scopes: { key: 'all' | GlobalSearchCategory; label: string; count: number }[] = [
-    { key: 'all', label: 'Everything', count: flatItems.length },
-    ...CATEGORY_ORDER.map((category) => ({
-      key: category,
-      label: GLOBAL_SEARCH_CATEGORY_LABELS[category],
-      count: results[category].length,
-    })),
-  ];
+  const listboxId = 'gsm-listbox';
+  const peopleCount = rows.filter((row) => row.kind === 'person').length;
+  const recentCount = searching ? 0 : recent.length;
 
-  const section = PANEL_SECTIONS.find((entry) => entry.key === sectionKey) ?? PANEL_SECTIONS[0];
+  const chip = (row: Extract<Row, { kind: 'term' }>, index: number) => {
+    const selected = index === activeIndex;
+    return (
+      <span
+        key={`${row.recent ? 'recent' : 'popular'}-${row.term}`}
+        onMouseEnter={() => setSelectedIndex(index)}
+        className={`group/chip inline-flex h-8 max-w-full items-center rounded-lg text-[13px] leading-5 transition-colors duration-100 ${
+          selected
+            ? 'bg-[color:var(--gn-hover)] text-[color:var(--gn-ink)]'
+            : 'text-[color:var(--gn-ink2)] hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)]'
+        }`}
+      >
+        <button
+          type="button"
+          id={optionId(index)}
+          role="option"
+          aria-selected={selected}
+          tabIndex={-1}
+          onClick={() => activateRow(row)}
+          className={`inline-flex h-full min-w-0 items-center gap-1.5 truncate ${row.recent ? 'pl-3 pr-1' : 'px-3'}`}
+        >
+          {row.recent ? (
+            <Glyph className="h-3.5 w-3.5">
+              <circle cx="12" cy="12" r="8.5" />
+              <path d="M12 7.5V12l3 2" />
+            </Glyph>
+          ) : null}
+          <span className="truncate">{row.term}</span>
+        </button>
+        {row.recent ? (
+          <button
+            type="button"
+            onClick={() => removeRecentSearch(row.term)}
+            aria-label={t('Remove “{term}” from recent searches', { term: row.term })}
+            title={t('Remove')}
+            className="mr-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[color:var(--gn-ink2)] opacity-60 transition hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+          >
+            <Glyph className="h-3 w-3">
+              <path d="M6 6l12 12M18 6 6 18" />
+            </Glyph>
+          </button>
+        ) : null}
+      </span>
+    );
+  };
 
-  return createPortal(
-    <div className="fixed inset-0 z-[220] overflow-y-auto overscroll-contain p-3 sm:p-4">
-      {/*
-       * The scrim is a plain darkening — no `backdrop-filter` at all. The panel below is opaque,
-       * so the blur was never separating anything; it only smeared the page and cost a
-       * full-viewport compositor filter on every open. A flat tint reads as the page stepping
-       * back, which is all it has to say.
-       */}
+  return (
+    <div className="x-search-overlay news-theme news-feed news-mono fixed inset-0 z-[220] flex justify-center sm:items-start sm:px-8 sm:pt-3 md:px-12 lg:px-16">
       <button
         type="button"
-        aria-label="Close search"
+        tabIndex={-1}
+        aria-label={t('Close search')}
         onClick={onClose}
-        style={{ animation: `gsm-veil-in 0.36s ${EASE} both` }}
-        className="fixed inset-0 h-[100dvh] w-full bg-black/40 dark:bg-black/60"
+        className="xs-veil fixed inset-0 h-[100dvh] w-full cursor-default bg-black/40 dark:bg-black/60"
       />
 
-      {/*
-       * The panel. Anchored at the top, a touch narrower than the page plate so it reads as an
-       * overlay rather than a second page. Light is a warm off-grey with the
-       * field lifted out of it in white — the field has to read as the one thing you can type
-       * into, and on a flat panel only a tone change says that.
-       */}
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Global search"
-        style={{ animation: `gsm-row-in 0.42s ${EASE} both` }}
-        className="relative z-10 mx-auto w-full max-w-[72rem] overflow-hidden rounded-2xl border border-[rgba(34,34,34,0.05)] bg-[#EFEEEC] p-3 shadow-[0_40px_90px_-40px_rgba(0,0,0,0.45)] dark:border-white/[0.06] dark:bg-[#121212] sm:p-4"
+        aria-label={t('Search')}
+        className="xs-panel relative flex h-[100dvh] w-full flex-col overflow-hidden bg-[color:var(--gn-surface)] sm:h-auto sm:max-h-[min(620px,86dvh)] sm:max-w-[1240px] sm:rounded-2xl sm:shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35),0_0_0_1px_rgba(15,20,25,0.06)] sm:dark:shadow-[0_0_0_1px_#2F3336,0_24px_80px_-24px_rgba(0,0,0,0.6)]"
       >
+        {/* The field, across the panel. */}
         <form
-          className="flex items-center gap-3 rounded-xl bg-white px-4 dark:bg-white/[0.06]"
+          role="search"
+          className="flex shrink-0 items-center gap-2 px-4 pb-1 pt-[max(env(safe-area-inset-top),0.75rem)] sm:px-3 sm:pb-1 sm:pt-3"
           onSubmit={(event) => {
             event.preventDefault();
             goToSearchPage('all');
           }}
         >
-          <SearchIcon className="h-[1.05rem] w-[1.05rem] shrink-0 text-[#9A9A9A] dark:text-neutral-400" />
-          <input
-            ref={inputRef}
-            type="text"
-            value={query}
-            onChange={(event) => setQuery(event.target.value)}
-            onKeyDown={onInputKeyDown}
-            placeholder="Search anything…"
-            className="h-12 min-w-0 flex-1 bg-transparent text-[0.95rem] text-[#111111] outline-none placeholder:text-[#9A9A9A] dark:text-white dark:placeholder:text-neutral-500"
-            autoComplete="off"
-            spellCheck={false}
-          />
-          {query.length > 0 ? (
-            <button
-              type="button"
-              onClick={() => {
-                setQuery('');
-                inputRef.current?.focus();
+          <div className="relative h-11 min-w-0 flex-1 rounded-xl bg-[color:var(--gn-inset)] transition-[box-shadow] focus-within:shadow-[inset_0_0_0_1px_var(--gn-ink2)]">
+            <Glyph className="pointer-events-none absolute left-3.5 top-1/2 h-4 w-4 -translate-y-1/2 text-[color:var(--gn-ink2)]">
+              <circle cx="10.75" cy="10.75" r="6.75" />
+              <path d="m15.6 15.6 4.4 4.4" />
+            </Glyph>
+            <input
+              ref={inputRef}
+              type="search"
+              role="combobox"
+              aria-expanded={rows.length > 0}
+              aria-controls={listboxId}
+              aria-autocomplete="list"
+              aria-activedescendant={activeIndex >= 0 ? optionId(activeIndex) : undefined}
+              aria-label={t('Search Skraft')}
+              value={query}
+              onChange={(event) => {
+                setQuery(event.target.value);
+                setSelectedIndex(0);
               }}
-              className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-[#6B6B6B] transition-colors duration-[320ms] hover:text-[#111111] dark:text-neutral-500 dark:hover:text-white"
-              aria-label="Clear search"
-            >
-              <ClearIcon className="h-4 w-4" />
-            </button>
-          ) : null}
-          <span className="hidden shrink-0 font-mono text-[0.6rem] uppercase tracking-[0.18em] text-[#9A9A9A] dark:text-neutral-600 sm:inline">
-            esc
-          </span>
+              onKeyDown={onInputKeyDown}
+              placeholder={t('Search anything…')}
+              enterKeyHint="search"
+              autoComplete="off"
+              autoCorrect="off"
+              spellCheck={false}
+              className="h-full w-full rounded-xl border-0 bg-transparent p-0 pl-10 pr-24 text-[16px] text-[color:var(--gn-ink)] outline-none placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 sm:text-[14px]"
+            />
+            <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
+              {searching && loading ? (
+                <span className="px-1.5 text-[color:var(--gn-ink2)]">
+                  <LoadingSpinner size="sm" />
+                </span>
+              ) : null}
+              {query.length > 0 ? (
+                <button
+                  type="button"
+                  onClick={() => fillField('')}
+                  aria-label={t('Clear search')}
+                  title={t('Clear')}
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                >
+                  <Glyph className="h-3.5 w-3.5">
+                    <path d="M6 6l12 12M18 6 6 18" />
+                  </Glyph>
+                </button>
+              ) : null}
+              <kbd className="hidden h-5 items-center rounded px-1.5 font-sans text-[10px] font-semibold tracking-wider text-[color:var(--gn-ink2)] sm:inline-flex">
+                {t('ESC')}
+              </kbd>
+            </div>
+          </div>
+          <button
+            type="button"
+            onClick={onClose}
+            className="inline-flex h-10 shrink-0 items-center px-2 text-[15px] font-semibold text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:hidden"
+          >
+            {t('Cancel')}
+          </button>
         </form>
 
-        {/*
-          * One line of address under the field. The panel opens on an empty field and a field of
-          * nouns; without a question the chips read as the results of a search nobody ran. It
-          * steps aside the moment there is a query — at that point the results are the answer.
-          */}
-        {!searching ? (
-          <p
-            style={rowIn(0)}
-            className="mt-5 px-1 text-[0.95rem] text-[#6B6B6B] dark:text-neutral-400"
+        {/* What to look through: one row of pills, the open one inverted (ink fill, ground text). */}
+        <div className="shrink-0 px-4 pt-4 sm:px-4">
+          <p className="text-[13px] leading-5 text-[color:var(--gn-ink2)]">{t('What are you looking for?')}</p>
+          <nav
+            aria-label={t('Search in')}
+            className="-mx-1 mt-2.5 flex gap-1 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
           >
-            What are you looking for?
-          </p>
-        ) : null}
-
-        {/*
-         * Scopes as a single horizontal row rather than a column down the left. It puts the
-         * switch directly under the field where the pointer already is, it costs one line instead
-         * of a 15rem column, and it is the same pill strip the settings panels use — so the panel
-         * belongs to this app rather than to the site it was drawn from.
-         */}
-        <div
-          role="tablist"
-          aria-label="Search scopes"
-          className="pf-scrollbar-hide mt-3 flex gap-1.5 overflow-x-auto px-1 pb-1"
-        >
-          {searching
-            ? scopes.map((scope, index) => (
+            {VIEWS.map((id) => {
+              const active = id === view;
+              const count = searching && settled ? lists[id].length : null;
+              return (
                 <button
-                  key={scope.key}
+                  key={id}
                   type="button"
-                  role="tab"
-                  onClick={() => goToSearchPage(scope.key)}
-                  style={rowIn(index)}
-                  className={`${CHIP_BASE} ${
-                    scope.count > 0 ? CHIP_IDLE : 'text-[#C4C4C4] dark:text-neutral-700'
+                  aria-pressed={active}
+                  onClick={() => switchView(id)}
+                  data-pf-no-color-transition
+                  className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                    active
+                      ? 'bg-[color:var(--gn-ink)] text-[color:var(--xs-ground)]'
+                      : 'text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover)]'
                   }`}
                 >
-                  {scope.label}
-                  <span className="tabular-nums text-[0.78rem] opacity-60">{scope.count}</span>
+                  {t(VIEW_LABELS[id])}
+                  {count != null ? (
+                    <span className={`tabular-nums ${active ? 'opacity-70' : 'text-[color:var(--gn-ink2)]'}`}>{count}</span>
+                  ) : null}
                 </button>
-              ))
-            : PANEL_SECTIONS.map((entry, index) => {
-                const active = entry.key === section.key;
+              );
+            })}
+          </nav>
+        </div>
+
+        {/* The rows of the open pill: chips on an empty field, people while typing. */}
+        <div
+          id={listboxId}
+          role="listbox"
+          aria-label={searching ? t('{label} for {query}', { label: t(VIEW_LABELS[view]), query: trimmedQuery }) : t('{label} suggestions', { label: t(VIEW_LABELS[view]) })}
+          className="min-h-0 flex-1 overflow-y-auto overscroll-contain px-3 pb-[max(env(safe-area-inset-bottom),0.75rem)] pt-2 sm:pb-4"
+        >
+          {!searching ? (
+            <>
+              {recentCount > 0 ? (
+                <div className="mb-2">
+                  <div className="flex h-7 items-center justify-between px-1">
+                    <p className="text-[12px] leading-4 text-[color:var(--gn-ink2)]">{t('Recent')}</p>
+                    <button
+                      type="button"
+                      onClick={() => clearRecentSearches()}
+                      className="inline-flex h-7 items-center rounded-md px-2 text-[12px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                    >
+                      {t('Clear')}
+                    </button>
+                  </div>
+                  <div className="flex flex-wrap gap-1">
+                    {rows.slice(0, recentCount).map((row, index) => chip(row as Extract<Row, { kind: 'term' }>, index))}
+                  </div>
+                </div>
+              ) : null}
+              <div className="flex flex-wrap gap-1">
+                {rows.slice(recentCount).map((row, offset) => chip(row as Extract<Row, { kind: 'term' }>, recentCount + offset))}
+              </div>
+            </>
+          ) : (
+            <>
+              {rows.map((row, index) => {
+                const selected = index === activeIndex;
+                const rowClass = `flex min-h-12 w-full items-center gap-3 rounded-lg px-3 py-1.5 text-left transition-colors duration-100 ${
+                  selected ? 'bg-[color:var(--gn-hover)]' : 'hover:bg-[color:var(--gn-hover)]'
+                }`;
+
+                if (row.kind === 'all') {
+                  return (
+                    <button
+                      key="all"
+                      type="button"
+                      id={optionId(index)}
+                      role="option"
+                      aria-selected={selected}
+                      tabIndex={-1}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      onClick={() => activateRow(row)}
+                      className={rowClass}
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[color:var(--gn-inset)] text-[color:var(--gn-ink)]">
+                        <Glyph className="h-4 w-4">
+                          <circle cx="10.75" cy="10.75" r="6.75" />
+                          <path d="m15.6 15.6 4.4 4.4" />
+                        </Glyph>
+                      </span>
+                      <span className="min-w-0 flex-1 truncate text-[14px] leading-5 text-[color:var(--gn-ink)]">
+                        {t('Search for')} <span className="font-semibold">“{trimmedQuery}”</span>
+                      </span>
+                      <span className="shrink-0 text-[12px] text-[color:var(--gn-ink2)]">
+                        {t('All {toLowerCase}', { toLowerCase: t(VIEW_LABELS[view]).toLowerCase() })}
+                      </span>
+                    </button>
+                  );
+                }
+
+                if (row.kind !== 'person') return null;
+                const { creator } = row;
+                const meta = personMeta(view, creator);
+
+                /* Storefronts: the shop itself — its cover as a square tile, its name and what it sells. */
+                if (view === 'shops') {
+                  const shopName = creator.shopName || `${creator.fullName}'s shop`;
+                  const shopLine = creator.shopSellingFocus || creator.shopDescription || '';
+                  return (
+                    <button
+                      key={`${view}-${creatorId(creator)}`}
+                      type="button"
+                      id={optionId(index)}
+                      role="option"
+                      aria-selected={selected}
+                      tabIndex={-1}
+                      onMouseEnter={() => setSelectedIndex(index)}
+                      onClick={() => activateRow(row)}
+                      className={rowClass}
+                    >
+                      <span className="flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-lg bg-[color:var(--gn-inset)] text-[color:var(--gn-ink2)]">
+                        {creator.shopCoverUrl ? (
+                          // eslint-disable-next-line @next/next/no-img-element
+                          <img src={creator.shopCoverUrl} alt="" className="h-full w-full object-cover" />
+                        ) : (
+                          <Glyph className="h-4 w-4">
+                            <path d="M4 9h16l-1 11H5z" />
+                            <path d="M9 9V7a3 3 0 0 1 6 0v2" />
+                          </Glyph>
+                        )}
+                      </span>
+                      <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                        <span className="truncate text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)]">{shopName}</span>
+                        {shopLine ? <span className="hidden truncate text-[13px] text-[color:var(--gn-ink2)] sm:inline">{shopLine}</span> : null}
+                      </span>
+                      {meta ? <span className="shrink-0 text-[12px] tabular-nums text-[color:var(--gn-ink2)]">{meta}</span> : null}
+                    </button>
+                  );
+                }
+                const subtitle = [creator.specialite, creator.locationCity].filter(Boolean).join(' · ');
                 return (
                   <button
-                    key={entry.key}
+                    key={`${view}-${creatorId(creator)}`}
                     type="button"
-                    role="tab"
-                    aria-selected={active}
-                    onClick={() => setSectionKey(entry.key)}
-                    style={rowIn(index)}
-                    className={`${CHIP_BASE} ${active ? CHIP_ACTIVE : CHIP_IDLE}`}
+                    id={optionId(index)}
+                    role="option"
+                    aria-selected={selected}
+                    tabIndex={-1}
+                    onMouseEnter={() => setSelectedIndex(index)}
+                    onClick={() => activateRow(row)}
+                    className={rowClass}
                   >
-                    {entry.label}
+                    <Avatar name={creator.fullName} avatarUrl={creator.avatarUrl} size="sm" tone="muted" />
+                    <span className="flex min-w-0 flex-1 items-baseline gap-2">
+                      <span className="truncate text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)]">{creator.fullName}</span>
+                      {subtitle ? <span className="hidden truncate text-[13px] text-[color:var(--gn-ink2)] sm:inline">{subtitle}</span> : null}
+                    </span>
+                    {meta ? <span className="shrink-0 text-[12px] tabular-nums text-[color:var(--gn-ink2)]">{meta}</span> : null}
                   </button>
                 );
               })}
-        </div>
 
-        {/* A floor, not a reserved block: enough that switching scope or starting to type does not
-            make the panel jump, small enough that the resting state is not mostly empty. */}
-        <div className="mt-3 min-h-[3.5rem] px-1">
-          {!searching ? (
-            /* A wrapped field of terms, not a ruled list: no row rules, no right-hand column of
-               figures, and the set reads as one block the eye takes in at once. */
-            <div className="flex flex-wrap gap-1.5">
-              {section.terms.map((term, index) => (
-                <button
-                  key={term}
-                  type="button"
-                  onClick={() => {
-                    setQuery(term);
-                    inputRef.current?.focus();
-                  }}
-                  style={rowIn(index + 1)}
-                  className={`${CHIP_BASE} ${CHIP_IDLE}`}
-                >
-                  {term}
-                </button>
-              ))}
-            </div>
-          ) : loading ? (
-            <div className="flex justify-center py-14">
-              <LoadingSpinner size="sm" />
-            </div>
-          ) : flatItems.length === 0 ? (
-            <p className="py-14 text-[0.9rem] text-[#6B6B6B] dark:text-neutral-500">
-              No results for &ldquo;{trimmedQuery}&rdquo;
-            </p>
-          ) : (
-            <>
-              {CATEGORY_ORDER.map((category) => {
-                const items = results[category];
-                if (items.length === 0) return null;
-
-                return (
-                  <section key={category} className="mb-4">
-                    <div className="flex items-baseline justify-between gap-4">
-                      <ColumnLabel>{GLOBAL_SEARCH_CATEGORY_LABELS[category]}</ColumnLabel>
-                      <button
-                        type="button"
-                        onClick={() => goToSearchPage(category)}
-                        className="mb-2 shrink-0 text-[0.75rem] text-[#6B6B6B] transition-none hover:text-[#111111] dark:text-neutral-500 dark:hover:text-white"
-                      >
-                        See all
-                      </button>
-                    </div>
-                    <ul className="space-y-0.5">
-                      {items.map((item) => {
-                        runningIndex += 1;
-                        const itemIndex = runningIndex;
-                        return (
-                          <li key={`${item.category}-${item.id}`}>
-                            <GlobalSearchResultRow
-                              item={item}
-                              selected={itemIndex === selectedIndex}
-                              compact
-                              onMouseEnter={() => setSelectedIndex(itemIndex)}
-                              onClick={() => void activateItem(item)}
-                            />
-                          </li>
-                        );
-                      })}
-                    </ul>
-                  </section>
-                );
-              })}
-
-              <button
-                type="button"
-                onClick={() => goToSearchPage('all')}
-                className="self-start py-2 text-[0.9rem] text-[#6B6B6B] transition-none hover:text-[#111111] dark:text-neutral-500 dark:hover:text-white"
-              >
-                See all results for &ldquo;{trimmedQuery}&rdquo;
-              </button>
+              {/* No people for this query (once it has answered), or the first load holding the room. */}
+              {peopleCount === 0 ? (
+                settled ? (
+                  <div className="px-3 py-6">
+                    <p className="text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] [overflow-wrap:anywhere]">
+                      {view === 'shops'
+                        ? `No storefront matches “${trimmedQuery}”`
+                        : view === 'providers'
+                          ? `No provider matches “${trimmedQuery}”`
+                          : `No portfolio matches “${trimmedQuery}”`}
+                    </p>
+                    <p className="mt-1 text-[13px] leading-5 text-[color:var(--gn-ink2)]">
+                      {t('Search everything (posts and products too) with the first row, or try another spelling.')}
+                    </p>
+                  </div>
+                ) : (
+                  <div aria-hidden>
+                    {[0, 1, 2].map((item) => (
+                      <div key={item} className="xs-skeleton flex min-h-12 items-center gap-3 px-3 py-1.5">
+                        <span className="h-8 w-8 shrink-0 rounded-full bg-[color:var(--gn-inset)]" />
+                        <span className="h-3 w-1/3 rounded-full bg-[color:var(--gn-inset)]" />
+                        <span className="ml-auto h-2.5 w-16 rounded-full bg-[color:var(--gn-inset)]" />
+                      </div>
+                    ))}
+                  </div>
+                )
+              ) : null}
             </>
           )}
         </div>
       </div>
-    </div>,
-    document.body
+    </div>
   );
 }

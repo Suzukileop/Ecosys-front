@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 /**
  * Ultra-wide column grid for vertical hero divisions (xl+).
  * Lets copy / visual element units sit in 1, 2, or 3 columns with auto-placement.
@@ -27,19 +28,19 @@ const HERO_COPY_COLUMN_SLOT_OPTIONS: {
   value: HeroCopyColumnSlot;
   label: string;
 }[] = [
-  { value: 'availability', label: 'Availability' },
-  { value: 'headline', label: 'Headline' },
-  { value: 'description', label: 'Description' },
-  { value: 'tools', label: 'Tools' },
-  { value: 'cta', label: 'Contact CTA' },
+  { value: 'availability', label: msg('Availability') },
+  { value: 'headline', label: msg('Headline') },
+  { value: 'description', label: msg('Description') },
+  { value: 'tools', label: msg('Tools') },
+  { value: 'cta', label: msg('Contact CTA') },
 ];
 
 const HERO_VISUAL_COLUMN_SLOT_OPTIONS: {
   value: HeroVisualColumnSlot;
   label: string;
 }[] = [
-  { value: 'portrait', label: 'Portrait' },
-  { value: 'stats', label: 'Stats' },
+  { value: 'portrait', label: msg('Portrait') },
+  { value: 'stats', label: msg('Stats') },
 ];
 
 const ALL_IN_ONE: HeroUltraWideColumnLayout = {

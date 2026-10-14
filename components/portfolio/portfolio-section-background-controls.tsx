@@ -7,6 +7,8 @@ import {
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
 } from '@/components/portfolio/portfolio-global-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 function ToggleRow({
   label,
@@ -61,10 +63,10 @@ function ColorField({
 /** Fixed neutral spread — light to dark, pairs cleanly with any accent palette. No free-form
  *  hex input: pick a swatch, that's it. */
 const BACKGROUND_COLOR_PRESETS: { hex: string; label: string }[] = [
-  { hex: '#FFFFFF', label: 'Blanc' },
-  { hex: '#F5F5F5', label: 'Clair' },
-  { hex: '#171717', label: 'Sombre' },
-  { hex: '#0A0A0A', label: 'Noir' },
+  { hex: '#FFFFFF', label: msg('Blanc') },
+  { hex: '#F5F5F5', label: msg('Clair') },
+  { hex: '#171717', label: msg('Sombre') },
+  { hex: '#0A0A0A', label: msg('Noir') },
 ];
 
 function DefaultColorField({
@@ -76,6 +78,7 @@ function DefaultColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
+  const t = useT();
   const activeHex = value.trim().toLowerCase();
   return (
     <div>
@@ -89,8 +92,8 @@ function DefaultColorField({
               type="button"
               onClick={() => onChange(preset.hex)}
               aria-pressed={active}
-              aria-label={preset.label}
-              title={preset.label}
+              aria-label={t(preset.label)}
+              title={t(preset.label)}
               className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
                 active ? 'ring-2 ring-neutral-900 ring-offset-2' : 'hover:bg-neutral-100'
               }`}
@@ -99,7 +102,7 @@ function DefaultColorField({
                 className="h-9 w-9 rounded-full border border-neutral-200/80 shadow-inner"
                 style={{ backgroundColor: preset.hex }}
               />
-              <span className="text-[11px] font-medium text-neutral-500">{preset.label}</span>
+              <span className="text-[11px] font-medium text-neutral-500">{t(preset.label)}</span>
             </button>
           );
         })}
@@ -124,6 +127,7 @@ function OptionGrid<T extends string>({
   /** Labels only, tight pill row — no per-option description text. */
   compact?: boolean;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
@@ -155,9 +159,9 @@ function OptionGrid<T extends string>({
                     }`
               }
             >
-              <p className={compact ? '' : 'text-sm font-semibold text-neutral-950'}>{option.label}</p>
+              <p className={compact ? '' : 'text-sm font-semibold text-neutral-950'}>{t(option.label)}</p>
               {!compact && option.description ? (
-                <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+                <p className="mt-1 text-xs leading-relaxed text-neutral-500">{t(option.description)}</p>
               ) : null}
             </button>
           );
@@ -196,9 +200,9 @@ const GRADIENT_ORIENTATION_ANGLE: Record<GradientOrientation, number> = {
 };
 
 const GRADIENT_ORIENTATION_OPTIONS: { value: GradientOrientation; label: string }[] = [
-  { value: 'horizontal', label: 'Horizontal' },
-  { value: 'vertical', label: 'Vertical' },
-  { value: 'diagonal', label: 'Diagonal' },
+  { value: 'horizontal', label: msg('Horizontal') },
+  { value: 'vertical', label: msg('Vertical') },
+  { value: 'diagonal', label: msg('Diagonal') },
 ];
 
 /** The stored value is still a free angle (for older data) — snap it to whichever of the 3
@@ -217,8 +221,8 @@ function gradientOrientationFromAngle(angle: number): GradientOrientation {
 }
 
 const SPLIT_DIRECTION_OPTIONS: { value: PortfolioSectionBackgroundSettings['sectionBackgroundSplitAxis']; label: string }[] = [
-  { value: 'y', label: 'Horizontal' },
-  { value: 'x', label: 'Vertical' },
+  { value: 'y', label: msg('Horizontal') },
+  { value: 'x', label: msg('Vertical') },
 ];
 
 /** Fill type (solid / gradient / split / image), the relevant color(s) or uploaded photo, a
@@ -233,10 +237,11 @@ function SectionBackgroundFillControls({
   onChange: (patch: Partial<PortfolioSectionBackgroundSettings>) => void;
   renderColorField?: BackgroundColorFieldRenderer;
 }) {
+  const t = useT();
   return (
     <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
       <OptionGrid
-        label="Fill type"
+        label={t('Fill type')}
         options={PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS}
         value={settings.sectionBackgroundFill}
         onChange={(sectionBackgroundFill) => onChange({ sectionBackgroundFill })}
@@ -247,20 +252,20 @@ function SectionBackgroundFillControls({
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <ColorField
-              label="Gradient start"
+              label={t('Gradient start')}
               value={settings.sectionBackgroundGradientFrom}
               onChange={(sectionBackgroundGradientFrom) => onChange({ sectionBackgroundGradientFrom })}
               render={renderColorField}
             />
             <ColorField
-              label="Gradient end"
+              label={t('Gradient end')}
               value={settings.sectionBackgroundGradientTo}
               onChange={(sectionBackgroundGradientTo) => onChange({ sectionBackgroundGradientTo })}
               render={renderColorField}
             />
           </div>
           <OptionGrid
-            label="Orientation"
+            label={t('Orientation')}
             options={GRADIENT_ORIENTATION_OPTIONS}
             value={gradientOrientationFromAngle(settings.sectionBackgroundGradientAngle)}
             onChange={(orientation) =>
@@ -273,20 +278,20 @@ function SectionBackgroundFillControls({
         <>
           <div className="grid gap-4 sm:grid-cols-2">
             <ColorField
-              label="Color A"
+              label={t('Color A')}
               value={settings.sectionBackgroundColorA}
               onChange={(sectionBackgroundColorA) => onChange({ sectionBackgroundColorA })}
               render={renderColorField}
             />
             <ColorField
-              label="Color B"
+              label={t('Color B')}
               value={settings.sectionBackgroundColorB}
               onChange={(sectionBackgroundColorB) => onChange({ sectionBackgroundColorB })}
               render={renderColorField}
             />
           </div>
           <OptionGrid
-            label="Direction"
+            label={t('Direction')}
             options={SPLIT_DIRECTION_OPTIONS}
             value={settings.sectionBackgroundSplitAxis}
             onChange={(sectionBackgroundSplitAxis) => onChange({ sectionBackgroundSplitAxis })}
@@ -298,17 +303,17 @@ function SectionBackgroundFillControls({
           <PortfolioBackgroundImageUpload
             url={settings.sectionBackgroundImageUrl}
             onChange={(sectionBackgroundImageUrl) => onChange({ sectionBackgroundImageUrl })}
-            label="Background image"
+            label={t('Background image')}
           />
           <OptionGrid
-            label="Image size"
+            label={t('Image size')}
             options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS}
             value={settings.sectionBackgroundImageSize}
             onChange={(sectionBackgroundImageSize) => onChange({ sectionBackgroundImageSize })}
             compact
           />
           <OptionGrid
-            label="Image position"
+            label={t('Image position')}
             options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS}
             value={settings.sectionBackgroundImagePosition}
             onChange={(sectionBackgroundImagePosition) => onChange({ sectionBackgroundImagePosition })}
@@ -317,7 +322,7 @@ function SectionBackgroundFillControls({
         </>
       ) : (
         <ColorField
-          label="Color"
+          label={t('Color')}
           value={settings.sectionBackgroundColor}
           onChange={(sectionBackgroundColor) => onChange({ sectionBackgroundColor })}
           render={renderColorField}
@@ -325,14 +330,14 @@ function SectionBackgroundFillControls({
       )}
 
       <OpacitySlider
-        label="Opacity"
+        label={t('Opacity')}
         value={settings.sectionBackgroundOpacity}
         onChange={(sectionBackgroundOpacity) => onChange({ sectionBackgroundOpacity })}
       />
 
       <ToggleRow
-        label="Top/bottom fade"
-        description="Softens the background into the next section instead of a hard cut."
+        label={t('Top/bottom fade')}
+        description={t('Softens the background into the next section instead of a hard cut.')}
         checked={settings.sectionBackgroundEdgeFade}
         onChange={(sectionBackgroundEdgeFade) => onChange({ sectionBackgroundEdgeFade })}
       />
@@ -358,10 +363,11 @@ export function SectionBackgroundSettingsFields({
   onImageLibraryChange?: (urls: string[]) => void;
   renderColorField?: BackgroundColorFieldRenderer;
 }) {
+  const t = useT();
   return (
     <div className="space-y-4">
       <ToggleRow
-        label="Enable section background"
+        label={t('Enable section background')}
         checked={settings.sectionBackgroundEnabled}
         onChange={(sectionBackgroundEnabled) => onChange({ sectionBackgroundEnabled })}
       />

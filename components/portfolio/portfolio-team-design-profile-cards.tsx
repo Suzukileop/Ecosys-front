@@ -69,6 +69,7 @@ import {
 } from '@/components/portfolio/portfolio-team-settings';
 import { servicesColorLuminance } from '@/components/portfolio/portfolio-services-settings';
 import type { ProfileTeamMember } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /* ---------------------------------------------------------------------- */
 /* Proportions                                                             */
@@ -486,6 +487,7 @@ function TeamProfileRevealPill({
   hairline: string;
   onToggle: () => void;
 }) {
+  const t = useT();
   const pillRef = useRef<HTMLButtonElement | null>(null);
 
   const magnetize = (event: ReactPointerEvent<HTMLButtonElement>) => {
@@ -540,7 +542,7 @@ function TeamProfileRevealPill({
         style={{ color: readable.strong }}
       >
         <span className="group-hover/pill:![color:var(--team-pill-ink)] group-focus-visible/pill:![color:var(--team-pill-ink)]">
-          {expanded ? 'Show less' : `View all — ${total}`}
+          {expanded ? t('Show less') : `View all — ${total}`}
         </span>
       </span>
       <svg
@@ -575,6 +577,7 @@ export function TeamProfileCardsGallery({
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
+  const t = useT();
   const scrollerRef = useRef<HTMLDivElement | null>(null);
   const gridRef = useRef<HTMLDivElement | null>(null);
   const opensOn = presentation.profileCardsView ?? 'grid';
@@ -690,7 +693,7 @@ export function TeamProfileCardsGallery({
             className="inline-flex items-center gap-1 rounded-full border p-1"
             style={{ borderColor: hairline }}
             role="group"
-            aria-label="Team layout"
+            aria-label={t('Team layout')}
           >
             {(['rail', 'grid'] as const).map((option) => {
               const selected = option === view;
@@ -712,7 +715,7 @@ export function TeamProfileCardsGallery({
                   }}
                 >
                   <TeamViewToggleIcon view={option} />
-                  {option === 'rail' ? 'Rail' : 'Grid'}
+                  {option === 'rail' ? t('Rail') : t('Grid')}
                 </button>
               );
             })}
@@ -727,7 +730,7 @@ export function TeamProfileCardsGallery({
                     type="button"
                     onClick={() => stepRail(direction)}
                     disabled={disabled}
-                    aria-label={direction === -1 ? 'Previous members' : 'Next members'}
+                    aria-label={direction === -1 ? t('Previous members') : t('Next members')}
                     className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
                       disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
                     }`}

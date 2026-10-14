@@ -30,6 +30,7 @@ import {
 import { DEFAULT_SECTION_BACKGROUND, mergeSectionBackground, type PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import { createElementTextStyle, normalizeElementStylesRecord, DEFAULT_ELEMENT_MUTED_COLOR, type PortfolioElementTextStyle } from '@/components/portfolio/portfolio-element-text-style';
 import { isPortfolioListMarkerWeight, clampListMarkerSizePx, clampListMarkerWeightAmount, LIST_MARKER_WEIGHT_PRESET_AMOUNT, type PortfolioListMarkerWeight } from '@/components/portfolio/portfolio-list-marker';
+import { msg } from '@/lib/i18n/config';
 
 /** Larger glyph scale for Why me / side-panel list markers. */
 export const ABOUT_WHY_ME_MARKER_SIZE_PRESET_PX: Record<'sm' | 'md' | 'lg' | 'xl', number> = {
@@ -645,20 +646,20 @@ const PORTFOLIO_ABOUT_WHY_ME_MARKER_STYLE_OPTIONS: {
   description: string;
   preview: string;
 }[] = [
-  { value: 'number', label: 'Chiffres', description: '01, 02, 03… numérotation classique.', preview: '01' },
-  { value: 'roman', label: 'Romains', description: 'I, II, III, IV… chiffres romains.', preview: 'IV' },
-  { value: 'disc', label: 'Disque', description: 'Puce ronde pleine.', preview: '●' },
-  { value: 'bar-dot', label: 'Barre + point', description: 'Rectangle vertical avec point central.', preview: '▮' },
-  { value: 'bullseye', label: 'Cible', description: 'Cercles concentriques.', preview: '◎' },
-  { value: 'square', label: 'Carré', description: 'Case vide style checklist.', preview: '☐' },
-  { value: 'check-square', label: 'Case cochée', description: 'Carré avec coche.', preview: '☑' },
-  { value: 'x-square', label: 'Case ×', description: 'Carré avec croix.', preview: '☒' },
-  { value: 'check', label: 'Coche', description: 'Checkmark seul.', preview: '✓' },
-  { value: 'arrow', label: 'Flèche', description: 'Flèche horizontale →.', preview: '→' },
-  { value: 'chevron', label: 'Chevron', description: 'Chevron ouvert ›.', preview: '›' },
-  { value: 'chevron-double', label: 'Double chevron', description: 'Double chevron ».', preview: '»' },
-  { value: 'triangle', label: 'Triangle', description: 'Pointe pleine ▶.', preview: '▶' },
-  { value: 'none', label: 'Aucun', description: 'Pas de marqueur d’index.', preview: '—' },
+  { value: 'number', label: msg('Chiffres'), description: msg('01, 02, 03… numérotation classique.'), preview: '01' },
+  { value: 'roman', label: msg('Romains'), description: msg('I, II, III, IV… chiffres romains.'), preview: 'IV' },
+  { value: 'disc', label: msg('Disque'), description: msg('Puce ronde pleine.'), preview: '●' },
+  { value: 'bar-dot', label: msg('Barre + point'), description: msg('Rectangle vertical avec point central.'), preview: '▮' },
+  { value: 'bullseye', label: msg('Cible'), description: msg('Cercles concentriques.'), preview: '◎' },
+  { value: 'square', label: msg('Carré'), description: msg('Case vide style checklist.'), preview: '☐' },
+  { value: 'check-square', label: msg('Case cochée'), description: msg('Carré avec coche.'), preview: '☑' },
+  { value: 'x-square', label: msg('Case ×'), description: msg('Carré avec croix.'), preview: '☒' },
+  { value: 'check', label: msg('Coche'), description: msg('Checkmark seul.'), preview: '✓' },
+  { value: 'arrow', label: msg('Flèche'), description: msg('Flèche horizontale →.'), preview: '→' },
+  { value: 'chevron', label: msg('Chevron'), description: msg('Chevron ouvert ›.'), preview: '›' },
+  { value: 'chevron-double', label: msg('Double chevron'), description: msg('Double chevron ».'), preview: '»' },
+  { value: 'triangle', label: msg('Triangle'), description: msg('Pointe pleine ▶.'), preview: '▶' },
+  { value: 'none', label: msg('Aucun'), description: msg('Pas de marqueur d’index.'), preview: '—' },
 ];
 
 

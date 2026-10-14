@@ -22,6 +22,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsCascadeSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -227,6 +228,7 @@ function CascadeProjectCard({
   cardBg: string;
   stackIndex: number;
 }) {
+  const t = useT();
   const reduceMotion = prefersReducedMotion();
   const articleRef = useRef<HTMLElement | null>(null);
   const titleInnerRef = useRef<HTMLSpanElement | null>(null);
@@ -378,7 +380,7 @@ function CascadeProjectCard({
             ) : null}
 
             {tools.length > 0 ? (
-              <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label="Stack">
+              <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label={t('Stack')}>
                 {tools.map((tool) => (
                   <li
                     key={tool}
@@ -395,7 +397,7 @@ function CascadeProjectCard({
 
         {href ? (
           <div className="mt-8 flex flex-col items-start">
-            <CascadeProjectLink href={href} label={settings.linkLabel || 'View project'} ink={titleColor} />
+            <CascadeProjectLink href={href} label={settings.linkLabel || t('View project')} ink={titleColor} />
           </div>
         ) : null}
       </div>
@@ -405,7 +407,7 @@ function CascadeProjectCard({
           <div className={`relative h-full w-full overflow-hidden ${cascadeImageRadiusClass(settings.imageRadius)}`}>
             <Image
               src={mediaUrl}
-              alt={title || 'Project'}
+              alt={title || t('Project')}
               fill
               draggable={false}
               sizes="(max-width: 1024px) 90vw, 40vw"

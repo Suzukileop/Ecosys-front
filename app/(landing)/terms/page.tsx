@@ -2,16 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ContactLink, LegalDocument, type LegalSection } from '@/components/legal/LegalDocument';
 import { LEGAL } from '@/lib/legal';
+import { msg } from '@/lib/i18n/config';
 
 export const metadata: Metadata = {
-  title: 'Terms of service — Skraft',
-  description: 'The rules for using Skraft: accounts, plans and payments, the marketplace, your content and acceptable use.',
+  title: msg('Terms of service — Skraft'),
+  description: msg('The rules for using Skraft: accounts, plans and payments, the marketplace, your content and acceptable use.'),
 };
 
 const SECTIONS: LegalSection[] = [
   {
     id: 'agreement',
-    title: 'Agreement',
+    title: msg('Agreement'),
     content: (
       <>
         <p>
@@ -28,7 +29,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'who-we-are',
-    title: 'Who we are',
+    title: msg('Who we are'),
     content: (
       <p>
         {LEGAL.serviceName} is currently operated by an independent{' '}
@@ -39,7 +40,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'accounts',
-    title: 'Your account',
+    title: msg('Your account'),
     content: (
       <>
         <ul>
@@ -60,7 +61,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'the-service',
-    title: 'What Skraft offers',
+    title: msg('What Skraft offers'),
     content: (
       <>
         <p>
@@ -77,7 +78,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'plans-and-payments',
-    title: 'Plans and payments',
+    title: msg('Plans and payments'),
     content: (
       <>
         <ul>
@@ -105,7 +106,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'marketplace',
-    title: 'Buying and selling',
+    title: msg('Buying and selling'),
     content: (
       <>
         <p>
@@ -138,7 +139,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'your-content',
-    title: 'Your content',
+    title: msg('Your content'),
     content: (
       <>
         <p>
@@ -160,7 +161,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'acceptable-use',
-    title: 'Acceptable use',
+    title: msg('Acceptable use'),
     content: (
       <>
         <p>When using Skraft, you must not:</p>
@@ -182,7 +183,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'moderation',
-    title: 'Reports and moderation',
+    title: msg('Reports and moderation'),
     content: (
       <>
         <p>
@@ -199,7 +200,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'our-rights',
-    title: 'Our intellectual property',
+    title: msg('Our intellectual property'),
     content: (
       <p>
         Skraft, its name, logo, design, templates and software belong to us or our licensors. You may use the templates
@@ -210,7 +211,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'third-parties',
-    title: 'Third-party services',
+    title: msg('Third-party services'),
     content: (
       <p>
         Skraft relies on third-party services such as Google sign-in, payment and storage providers. Links to other
@@ -220,7 +221,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'termination',
-    title: 'Closing your account',
+    title: msg('Closing your account'),
     content: (
       <>
         <p>
@@ -238,7 +239,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'liability',
-    title: 'Responsibility and liability',
+    title: msg('Responsibility and liability'),
     content: (
       <>
         <p>
@@ -259,7 +260,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'changes',
-    title: 'Changes to these terms',
+    title: msg('Changes to these terms'),
     content: (
       <p>
         We may update these terms as Skraft evolves or the law changes. For significant changes, we will tell you by
@@ -270,7 +271,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'law',
-    title: 'Applicable law and disputes',
+    title: msg('Applicable law and disputes'),
     content: (
       <>
         <p>
@@ -289,7 +290,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'contact',
-    title: 'Contact',
+    title: msg('Contact'),
     content: (
       <p>
         Questions about these terms: <ContactLink />.

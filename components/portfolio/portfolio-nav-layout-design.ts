@@ -11,6 +11,7 @@ import type {
   PortfolioNavSettings,
 } from '@/components/portfolio/portfolio-settings-types';
 import { DEFAULT_EDITORIAL_BAR_MAIL_CONTACT } from '@/components/portfolio/portfolio-settings-types';
+import { msg } from '@/lib/i18n/config';
 
 export type { PortfolioNavLayoutDesign };
 
@@ -30,33 +31,33 @@ export const PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'editorial-bar',
-    label: 'Editorial bar',
-    description: 'Contact button in the global gutter.',
+    label: msg('Editorial bar'),
+    description: msg('Contact button in the global gutter.'),
   },
   {
     value: 'floating-pill',
-    label: 'Floating pill',
-    description: 'Contact button in a contrast color.',
+    label: msg('Floating pill'),
+    description: msg('Contact button in a contrast color.'),
   },
   {
     value: 'center-logo-split',
-    label: 'Split menu',
-    description: 'Hero-bar style, links split around logo.',
+    label: msg('Split menu'),
+    description: msg('Hero-bar style, links split around logo.'),
   },
   {
     value: 'case-overlay',
-    label: 'Fullscreen menu',
-    description: 'Numbered links with sub-link support.',
+    label: msg('Fullscreen menu'),
+    description: msg('Numbered links with sub-link support.'),
   },
   {
     value: 'duten-panel',
-    label: 'Docked panel',
-    description: 'Optional large wordmark below the links.',
+    label: msg('Docked panel'),
+    description: msg('Optional large wordmark below the links.'),
   },
   {
     value: 'half-panel-left',
-    label: 'Side panel',
-    description: 'Drawer opens at 50% width.',
+    label: msg('Side panel'),
+    description: msg('Drawer opens at 50% width.'),
   },
 ];
 

@@ -4,6 +4,7 @@ import {
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import type { PortfolioNavSettings } from '@/components/portfolio/portfolio-settings-types';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioNavPlacement = PortfolioNavSettings['placement'];
 type PortfolioNavMode = PortfolioNavSettings['navMode'];
@@ -38,13 +39,13 @@ export const PORTFOLIO_NAV_MODE_OPTIONS: {
 }[] = [
   {
     value: 'default',
-    label: 'Default',
-    description: 'Floating menu — scroll the page and jump with the nav bar.',
+    label: msg('Default'),
+    description: msg('Floating menu — scroll the page and jump with the nav bar.'),
   },
   {
     value: 'pages',
-    label: 'Page',
-    description: 'Each section is its own page — switch only with the nav bar (no scroll between sections).',
+    label: msg('Page'),
+    description: msg('Each section is its own page — switch only with the nav bar (no scroll between sections).'),
   },
 ];
 
@@ -56,13 +57,13 @@ export const PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS: {
 }[] = [
   {
     value: 'text',
-    label: 'Text',
-    description: 'Section labels in the pill (default).',
+    label: msg('Text'),
+    description: msg('Section labels in the pill (default).'),
   },
   {
     value: 'icons',
-    label: 'Icons only',
-    description: 'Compact glyphs instead of menu text.',
+    label: msg('Icons only'),
+    description: msg('Compact glyphs instead of menu text.'),
   },
 ];
 
@@ -80,33 +81,33 @@ export const PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS: {
 }[] = [
   {
     value: 'dot',
-    label: 'Dot below text',
-    description: 'Small accent dot centered below the active label.',
+    label: msg('Dot below text'),
+    description: msg('Small accent dot centered below the active label.'),
   },
   {
     value: 'underline',
-    label: 'Bar below text',
-    description: 'Accent bar underlining the active label.',
+    label: msg('Bar below text'),
+    description: msg('Accent bar underlining the active label.'),
   },
   {
     value: 'filled-pill',
-    label: 'Filled pill',
-    description: 'Rounded accent rectangle with contrasted text on the active item.',
+    label: msg('Filled pill'),
+    description: msg('Rounded accent rectangle with contrasted text on the active item.'),
   },
   {
     value: 'dot-left',
-    label: 'Dot on the left',
-    description: 'Small accent dot to the left of the active label.',
+    label: msg('Dot on the left'),
+    description: msg('Small accent dot to the left of the active label.'),
   },
   {
     value: 'accent-text',
-    label: 'Bold + accent text',
-    description: 'Active label in bold, accent color — no shape.',
+    label: msg('Bold + accent text'),
+    description: msg('Active label in bold, accent color — no shape.'),
   },
   {
     value: 'underline-animated',
-    label: 'Animated underline',
-    description: 'Accent underline with a width transition on the active item.',
+    label: msg('Animated underline'),
+    description: msg('Accent underline with a width transition on the active item.'),
   },
 ];
 
@@ -184,9 +185,9 @@ export const PORTFOLIO_NAV_DISPLAY_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'always', label: 'Always available', description: 'The bar can appear from the first paint.' },
-  { value: 'on-scroll', label: 'After scrolling', description: 'Appears once the visitor scrolls down.' },
-  { value: 'after-hero', label: 'After hero', description: 'Hidden until the hero section is passed.' },
+  { value: 'always', label: msg('Always available'), description: msg('The bar can appear from the first paint.') },
+  { value: 'on-scroll', label: msg('After scrolling'), description: msg('Appears once the visitor scrolls down.') },
+  { value: 'after-hero', label: msg('After hero'), description: msg('Hidden until the hero section is passed.') },
 ];
 
 /** Simplified presence control for Navigation → General (maps to `presence`). */
@@ -199,15 +200,15 @@ export const PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS: {
 }[] = [
   {
     value: 'full',
-    label: 'Always visible',
+    label: msg('Always visible'),
     description:
-      'The bar stays at full opacity as soon as it is shown (large screens).',
+      msg('The bar stays at full opacity as soon as it is shown (large screens).'),
   },
   {
     value: 'dim',
-    label: 'Discreet',
+    label: msg('Discreet'),
     description:
-      'The bar background stays opaque; only the labels dim at rest and sharpen again on hover.',
+      msg('The bar background stays opaque; only the labels dim at rest and sharpen again on hover.'),
   },
 ];
 
@@ -223,11 +224,11 @@ export const PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'dots-h', label: 'Dots ···', description: 'Horizontal ellipsis.' },
-  { value: 'dots-v', label: 'Dots ⋮', description: 'Vertical ellipsis.' },
-  { value: 'menu', label: 'Menu lines', description: 'Classic hamburger glyph.' },
-  { value: 'chevron', label: 'Chevron', description: 'Up/down chevron for open state.' },
-  { value: 'x', label: 'Close ×', description: 'Simple close mark.' },
+  { value: 'dots-h', label: msg('Dots ···'), description: msg('Horizontal ellipsis.') },
+  { value: 'dots-v', label: msg('Dots ⋮'), description: msg('Vertical ellipsis.') },
+  { value: 'menu', label: msg('Menu lines'), description: msg('Classic hamburger glyph.') },
+  { value: 'chevron', label: msg('Chevron'), description: msg('Up/down chevron for open state.') },
+  { value: 'x', label: msg('Close ×'), description: msg('Simple close mark.') },
 ];
 
 export const PORTFOLIO_NAV_BAR_SURFACE_OPTIONS: {
@@ -237,19 +238,29 @@ export const PORTFOLIO_NAV_BAR_SURFACE_OPTIONS: {
 }[] = [
   {
     value: 'neutre',
-    label: 'Neutral',
-    description: 'Card surface — white in light mode, slate in dark mode.',
+    label: msg('Neutral'),
+    description: msg('Card surface — white in light mode, slate in dark mode.'),
   },
   {
     value: 'fond',
-    label: 'Page background',
-    description: 'Same color as the page background.',
+    label: msg('Page background'),
+    description: msg('Same color as the page background.'),
   },
   {
     value: 'transparent',
-    label: 'Transparent',
-    description: 'Transparent bar, no border.',
+    label: msg('Transparent'),
+    description: msg('Transparent bar, no border.'),
   },
+];
+
+export const PORTFOLIO_NAV_ITEM_GAP_OPTIONS: {
+  value: Exclude<PortfolioNavItemGap, 'none' | 'spread'>;
+  label: string;
+}[] = [
+  { value: 'sm', label: msg('Tight') },
+  { value: 'md', label: msg('Normal') },
+  { value: 'lg', label: msg('Wide') },
+  { value: 'xl', label: msg('Extra wide') },
 ];
 
 export const PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS: {
@@ -257,10 +268,10 @@ export const PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'xs', label: 'Small', description: '12px — compact menu and link labels.' },
-  { value: 'sm', label: 'Compact', description: '13px — default size, discreet but readable.' },
-  { value: 'md', label: 'Medium', description: '15px — balanced and comfortable.' },
-  { value: 'lg', label: 'Large', description: '16px — more visible on large screens.' },
+  { value: 'xs', label: msg('Small'), description: msg('12px — compact menu and link labels.') },
+  { value: 'sm', label: msg('Compact'), description: msg('13px — default size, discreet but readable.') },
+  { value: 'md', label: msg('Medium'), description: msg('15px — balanced and comfortable.') },
+  { value: 'lg', label: msg('Large'), description: msg('16px — more visible on large screens.') },
 ];
 
 export function portfolioNavLabelFontSizeClass(
@@ -286,15 +297,15 @@ export const PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'brand-bar',
-    label: 'Full-width logo bar',
+    label: msg('Full-width logo bar'),
     description:
-      'Fixed top bar: logo on the left, menu icon on the right — opens the navigation drawer.',
+      msg('Fixed top bar: logo on the left, menu icon on the right — opens the navigation drawer.'),
   },
   {
     value: 'drawer',
-    label: 'Menu drawer',
+    label: msg('Menu drawer'),
     description:
-      'Compact menu trigger at the top (icon only, or with avatar / text) — opens the drawer.',
+      msg('Compact menu trigger at the top (icon only, or with avatar / text) — opens the drawer.'),
   },
 ];
 
@@ -303,12 +314,12 @@ export const PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'Menu icon only in the top bar.' },
-  { value: 'avatar', label: 'Avatar', description: 'Circular profile photo next to the menu icon.' },
+  { value: 'none', label: msg('None'), description: msg('Menu icon only in the top bar.') },
+  { value: 'avatar', label: msg('Avatar'), description: msg('Circular profile photo next to the menu icon.') },
   {
     value: 'word',
-    label: 'Word',
-    description: 'Short text label next to the menu icon (custom word or first name).',
+    label: msg('Word'),
+    description: msg('Short text label next to the menu icon (custom word or first name).'),
   },
 ];
 
@@ -317,8 +328,8 @@ export const PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'From left', description: 'Drawer slides in from the left edge.' },
-  { value: 'right', label: 'From right', description: 'Drawer slides in from the right edge.' },
+  { value: 'left', label: msg('From left'), description: msg('Drawer slides in from the left edge.') },
+  { value: 'right', label: msg('From right'), description: msg('Drawer slides in from the right edge.') },
 ];
 
 type PortfolioNavResolvedMobileChrome = {
@@ -404,18 +415,18 @@ export const PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS: {
 }[] = [
   {
     value: 'sm',
-    label: 'Small',
-    description: 'Short bar — reduced vertical padding and a compact click zone.',
+    label: msg('Small'),
+    description: msg('Short bar — reduced vertical padding and a compact click zone.'),
   },
   {
     value: 'md',
-    label: 'Normal',
-    description: 'Balanced default height (current appearance).',
+    label: msg('Normal'),
+    description: msg('Balanced default height (current appearance).'),
   },
   {
     value: 'lg',
-    label: 'Airy',
-    description: 'Taller bar — generous vertical padding and more comfortable targets.',
+    label: msg('Airy'),
+    description: msg('Taller bar — generous vertical padding and more comfortable targets.'),
   },
 ];
 
@@ -658,6 +669,10 @@ export function portfolioNavPlacementClass(
   const sideR = stretch ? 'right-0' : right;
   const resetX = 'translate-x-0';
   const resetY = 'translate-y-0';
+  /** Centred, content-sized bar. Auto margins between both edges — not `left-1/2` + a -50%
+   *  translate, which leaves a fit-width bar only the right half of the screen to size into
+   *  (wide menus then overflow a half-width bar). */
+  const centerX = `inset-x-0 mx-auto ${resetX}`;
 
   switch (placement) {
     case 'top-left':
@@ -671,7 +686,7 @@ export function portfolioNavPlacementClass(
     case 'bottom-center':
       return stretch
         ? `top-auto ${resetX} ${resetY} ${sideL} ${sideR} ${bottom}`
-        : `top-auto left-1/2 right-auto ${resetY} -translate-x-1/2 ${bottom}`;
+        : `top-auto ${centerX} ${resetY} ${bottom}`;
     case 'bottom-left':
       return stretch
         ? `top-auto ${resetX} ${resetY} ${sideL} ${sideR} ${bottom}`
@@ -688,7 +703,7 @@ export function portfolioNavPlacementClass(
       // top-center
       return stretch
         ? `bottom-auto ${resetX} ${resetY} ${sideL} ${sideR} ${top}`
-        : `right-auto bottom-auto ${resetY} left-1/2 ${top} -translate-x-1/2`;
+        : `bottom-auto ${centerX} ${resetY} ${top}`;
   }
 }
 
@@ -748,12 +763,14 @@ export function portfolioNavBarInnerClass(
 
 export function portfolioNavItemGapClass(itemGap: PortfolioNavItemGap, vertical: boolean): string {
   if (itemGap === 'spread') return 'gap-0';
+  // Horizontal links already carry their own padding: keep the gaps between them modest so a
+  // full menu still fits beside the brand and the contact button.
   const map: Record<Exclude<PortfolioNavItemGap, 'spread'>, string> = {
     none: 'gap-0',
-    sm: vertical ? 'gap-1.5' : 'gap-2',
-    md: vertical ? 'gap-4' : 'gap-5',
-    lg: vertical ? 'gap-7' : 'gap-10',
-    xl: vertical ? 'gap-10' : 'gap-16',
+    sm: vertical ? 'gap-1.5' : 'gap-1.5',
+    md: vertical ? 'gap-4' : 'gap-3',
+    lg: vertical ? 'gap-7' : 'gap-6',
+    xl: vertical ? 'gap-10' : 'gap-10',
   };
   return map[itemGap];
 }
@@ -768,10 +785,10 @@ export function portfolioNavTriZoneItemGapClass(
   }
   const map: Record<Exclude<PortfolioNavItemGap, 'spread'>, string> = {
     none: 'gap-0',
-    sm: 'gap-3',
-    md: 'gap-6 sm:gap-7',
-    lg: 'gap-11',
-    xl: 'gap-[4.5rem]',
+    sm: 'gap-2',
+    md: 'gap-4',
+    lg: 'gap-7',
+    xl: 'gap-11',
   };
   return map[itemGap];
 }

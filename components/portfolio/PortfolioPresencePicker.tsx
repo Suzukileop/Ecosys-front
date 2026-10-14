@@ -2,12 +2,12 @@
 
 import { useState } from 'react';
 import Image from 'next/image';
-import { ACCENT_ORANGE } from '@/components/landing/landingBrand';
 import {
   PORTFOLIO_PRESENCE_OPTIONS,
   type PortfolioPresenceKind,
 } from '@/components/portfolio/portfolio-presence';
 import { PortfolioPresenceIcon } from '@/components/portfolio/portfolio-presence-icons';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type PortfolioPresencePickerProps = {
   onSelect: (kind: PortfolioPresenceKind) => void;
@@ -17,7 +17,7 @@ type PortfolioPresencePickerProps = {
  * "Build your vision" — the one screen where the creator commits to what they are building.
  *
  * Three image panels. Hover is local to the panel under the pointer — lift, image scale and
- * accent rule only. The other two stay untouched.
+ * a white rule only (black & white chrome: no accent colour). The other two stay untouched.
  */
 
 const EASE = 'cubic-bezier(0.16, 1, 0.3, 1)';
@@ -25,29 +25,25 @@ const EASE_CLS = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
 const HOVER_MS = 600;
 
 export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerProps) {
+  const t = useT();
   const [active, setActive] = useState<PortfolioPresenceKind | null>(null);
 
   return (
     <section className="flex w-full flex-col justify-center lg:min-h-[calc(100dvh-5rem)]">
       <div className="mx-auto w-full max-w-[78rem] py-8 sm:py-10 lg:py-6">
-        <header className="mb-8 flex flex-col gap-4 sm:mb-10 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
-          <h2 className="shrink-0 text-[clamp(1.6rem,3.4vw,2.75rem)] font-semibold leading-[1.05] tracking-[-0.025em] text-[#222222] dark:text-white">
-            Build your vision
+        <header className="mb-6 flex flex-col items-start justify-between gap-4 md:flex-row md:items-end md:gap-10">
+          <h2 className="shrink-0 text-[clamp(1.75rem,3.4vw,2.75rem)] font-extrabold leading-[1.05] tracking-[-0.025em] text-[#0F1419] dark:text-[#E7E9EA]">
+            {t('Build your vision')}
           </h2>
-          <p className="max-w-[26rem] text-[16px] font-light leading-relaxed tracking-[0.02em] text-[#222222] sm:text-right sm:text-[17px] dark:text-white/55">
-            Choose how you present yourself. This unlocks the sections your workspace will offer.
+          <p className="max-w-[26rem] text-[15px] leading-5 text-[#536471] md:text-right dark:text-[#71767B]">
+            {t('Choose how you present yourself. This unlocks the sections your workspace will offer.')}
           </p>
         </header>
 
         <div
-          aria-hidden
-          className="mb-8 h-px w-full bg-[rgba(34,34,34,0.08)] sm:mb-10 dark:bg-white/[0.08]"
-        />
-
-        <div
           role="list"
-          aria-label="Presence types"
-          className="relative flex w-full flex-col gap-3 sm:gap-4 lg:h-[clamp(26rem,56vh,34rem)] lg:flex-row lg:gap-5"
+          aria-label={t('Presence types')}
+          className="relative flex w-full flex-col gap-2 sm:gap-4 lg:h-[clamp(26rem,56vh,34rem)] lg:flex-row lg:gap-6"
         >
           {PORTFOLIO_PRESENCE_OPTIONS.map((option) => {
             const isActive = active === option.id;
@@ -83,7 +79,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                  * instead of being re-rasterised against the moving still every frame.
                  */
                 style={{ transition: `transform ${HOVER_MS}ms ${EASE}` }}
-                className={`group/panel relative flex min-h-[17rem] w-full transform-gpu flex-col justify-between overflow-hidden bg-[#0a0a0a] p-6 text-left will-change-transform [backface-visibility:hidden] [contain:paint] focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-white/30 sm:min-h-[19rem] sm:p-7 md:min-h-[21rem] md:p-8 lg:h-full lg:min-h-0 lg:p-8 ${
+                className={`group/panel relative flex min-h-[17rem] w-full cursor-pointer transform-gpu flex-col justify-between overflow-hidden bg-[#0F1419] p-6 text-left will-change-transform [backface-visibility:hidden] [contain:paint] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:focus-visible:ring-[#E7E9EA] dark:ring-offset-black sm:min-h-[19rem] sm:p-7 md:min-h-[21rem] md:p-8 lg:h-full lg:min-h-0 lg:p-8 ${
                   isActive
                     ? 'z-[1] -translate-y-1.5 lg:-translate-y-2'
                     : 'translate-y-0'
@@ -102,7 +98,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                 >
                   <Image
                     src={option.image}
-                    alt={option.imageAlt}
+                    alt={t(option.imageAlt)}
                     fill
                     priority
                     unoptimized
@@ -117,7 +113,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                    */}
                   <span
                     aria-hidden
-                    className="absolute inset-x-0 bottom-0 h-[60%] bg-gradient-to-t from-black/70 from-[6%] via-black/25 to-transparent"
+                    className="absolute inset-x-0 bottom-0 h-[70%] bg-gradient-to-t from-zinc-950/90 via-zinc-950/40 to-transparent"
                   />
                 </span>
 
@@ -125,16 +121,16 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                 <span className="relative z-10 flex items-start justify-end">
                   <span
                     aria-hidden
-                    className={`block transition-transform duration-[600ms] ${EASE_CLS} ${
+                    className={`block transition-[transform,color] duration-[600ms] ${EASE_CLS} ${
                       isActive ? '-rotate-45 text-white' : 'rotate-0 text-white/45'
                     }`}
                   >
                     <svg
-                      className="h-4 w-4 sm:h-[1.05rem] sm:w-[1.05rem]"
+                      className="h-5 w-5 sm:h-6 sm:w-6"
                       viewBox="0 0 24 24"
                       fill="none"
                       stroke="currentColor"
-                      strokeWidth={1.5}
+                      strokeWidth={1.75}
                       strokeLinecap="round"
                       strokeLinejoin="round"
                     >
@@ -143,11 +139,12 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                   </span>
                 </span>
 
-                {/* Mark — optically centred in the open field above the copy */}
+                {/* Mark — optically centred in the open field above the copy. Brand orange set inline:
+                    the News/X theme remaps the `text-[#FF5722]` utility to its ink (white) with !important. */}
                 <span
                   aria-hidden
-                  style={{ color: ACCENT_ORANGE }}
                   className="relative z-10 flex flex-1 items-center justify-center"
+                  style={{ color: '#FF5722' }}
                 >
                   <PortfolioPresenceIcon
                     kind={option.id}
@@ -157,21 +154,20 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
 
                 {/* Copy foot */}
                 <span className="relative z-10 flex flex-col gap-2.5 pt-6 [text-shadow:0_1px_14px_rgba(0,0,0,0.6)] sm:gap-3 sm:pt-8">
-                  <span className="text-[0.9rem] font-semibold uppercase leading-[1.15] tracking-[0.22em] text-white sm:text-[1.05rem] lg:text-[1.2rem]">
-                    {option.title}
+                  <span className="text-[20px] font-extrabold leading-6 text-white lg:text-[24px] lg:leading-7">
+                    {t(option.title)}
                   </span>
                   <span
-                    className={`max-w-[22rem] text-[12px] font-normal leading-relaxed transition-colors duration-[600ms] ${EASE_CLS} sm:text-[13px] ${
-                      isActive ? 'text-white/90' : 'text-white/55'
+                    className={`max-w-[22rem] text-[15px] font-normal leading-5 transition-colors duration-[600ms] ${EASE_CLS} ${
+                      isActive ? 'text-white' : 'text-white/75'
                     }`}
                   >
-                    {option.teaser}
+                    {t(option.teaser)}
                   </span>
-                  {/* Accent hairline — grows under the active card only */}
+                  {/* White rule — grows under the active card only */}
                   <span
                     aria-hidden
-                    style={{ backgroundColor: ACCENT_ORANGE }}
-                    className={`mt-1 block h-px origin-left transition-transform duration-[600ms] ${EASE_CLS} ${
+                    className={`mt-1 block h-[2px] origin-left bg-white transition-transform duration-[600ms] ${EASE_CLS} ${
                       isActive ? 'w-10 scale-x-100' : 'w-10 scale-x-0'
                     }`}
                   />

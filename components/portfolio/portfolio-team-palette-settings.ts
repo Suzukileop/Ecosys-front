@@ -6,6 +6,7 @@ import {
   type HeroPaletteTokenId,
   type PortfolioHeroPalette,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioTeamPalette = PortfolioHeroPalette;
 

@@ -1,6 +1,7 @@
 import { parseSpecialtyList } from '@/lib/specialties';
 import { nationalityLabel } from '@/lib/countries';
 import type { CreatorProfileDto, ContactEntry } from '@/types/profile';
+import { msg } from '@/lib/i18n/config';
 
 export type CvTemplateId = 'ats' | 'modern' | 'editorial';
 
@@ -11,17 +12,17 @@ export const CV_TEMPLATES: ReadonlyArray<{
 }> = [
   {
     id: 'ats',
-    label: 'ATS friendly',
+    label: msg('ATS friendly'),
     blurb: 'Single column, standard headings, plain text. Parsed cleanly by applicant tracking systems.',
   },
   {
     id: 'modern',
-    label: 'Modern',
+    label: msg('Modern'),
     blurb: 'Two columns with a side panel for contact, skills and languages. Photo included.',
   },
   {
     id: 'editorial',
-    label: 'Editorial',
+    label: msg('Editorial'),
     blurb: 'Large name, generous whitespace and an accent rule. Made to stand out when read by people.',
   },
 ];
@@ -43,27 +44,27 @@ export const ATS_VARIANTS: ReadonlyArray<{
 }> = [
   {
     id: 'classic',
-    label: 'Classic',
+    label: msg('Classic'),
     blurb: 'Clean sans-serif, ruled headings, dates on the right.',
   },
   {
     id: 'compact',
-    label: 'Compact',
+    label: msg('Compact'),
     blurb: 'Narrow margins and dense spacing to keep everything on one page.',
   },
   {
     id: 'harvard',
-    label: 'Harvard',
+    label: msg('Harvard'),
     blurb: 'Centered header, serif type, organization first — the career-office standard.',
   },
   {
     id: 'banded',
-    label: 'Banded',
+    label: msg('Banded'),
     blurb: 'Centered headings on soft color bands, pipe-separated lists, dense and easy to scan.',
   },
   {
     id: 'signature',
-    label: 'Signature',
+    label: msg('Signature'),
     blurb: 'Spaced serif name, contact bar, education first and skills in columns — refined but still parseable.',
   },
 ];
@@ -74,10 +75,10 @@ export type AtsDensity = 'tight' | 'medium' | 'airy' | 'spacious';
 export const DEFAULT_ATS_DENSITY: AtsDensity = 'airy';
 
 export const ATS_DENSITIES: ReadonlyArray<{ id: AtsDensity; label: string }> = [
-  { id: 'tight', label: 'Tight' },
-  { id: 'medium', label: 'Medium' },
-  { id: 'airy', label: 'Airy' },
-  { id: 'spacious', label: 'Spacious' },
+  { id: 'tight', label: msg('Tight') },
+  { id: 'medium', label: msg('Medium') },
+  { id: 'airy', label: msg('Airy') },
+  { id: 'spacious', label: msg('Spacious') },
 ];
 
 export function parseAtsDensity(raw: string | null | undefined): AtsDensity {
@@ -105,7 +106,7 @@ export const CV_SECTIONS: ReadonlyArray<{ id: CvSectionId; name: string }> = [
 export type CvSectionLabels = Partial<Record<CvSectionId, string>>;
 
 const BASE_LABELS: Record<CvSectionId, string> = {
-  summary: 'Summary',
+  summary: msg('Summary'),
   experience: 'Experience',
   education: 'Education',
   skills: 'Skills',
@@ -116,16 +117,16 @@ const BASE_LABELS: Record<CvSectionId, string> = {
 
 const LAYOUT_LABELS: Record<string, Partial<Record<CvSectionId, string>>> = {
   'ats:banded': {
-    summary: 'Career Summary',
+    summary: msg('Career Summary'),
     skills: 'Expertise',
     experience: 'Professional Experience',
   },
   'ats:harvard': { skills: 'Skills & Interests' },
   'ats:signature': {
-    summary: 'Professional Profile',
+    summary: msg('Professional Profile'),
     experience: 'Work Experience',
   },
-  editorial: { summary: 'Profile', skills: 'Expertise' },
+  editorial: { summary: msg('Profile'), skills: 'Expertise' },
 };
 
 export function cvDefaultLabel(template: CvTemplateId, variant: AtsVariantId, id: CvSectionId): string {

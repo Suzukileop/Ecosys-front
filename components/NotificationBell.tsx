@@ -17,14 +17,20 @@ import {
   visitorPublicProfileUnavailableMessage,
   type NotificationFilter,
 } from '@/lib/notifications';
-import { NotificationFilterTabs } from '@/components/notifications/NotificationFilterTabs';
-import { NotificationGroupedList } from '@/components/notifications/NotificationGroupedList';
+import { NotificationViewChips } from '@/components/notifications/NotificationFilterTabs';
+import { NotificationGroupedList, NotificationListSkeleton } from '@/components/notifications/NotificationGroupedList';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { NotificationDto } from '@/types/profile';
+import '@/app/(app)/notifications/x-notifications.css';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const POLL_MS = 15_000;
 
+/** The panel offers the two quick views; the type filters live on the full page. */
+const PANEL_VIEWS: NotificationFilter[] = ['all', 'unread'];
+
 export function NotificationBell({ compact = false }: { compact?: boolean }) {
+  const t = useT();
   const router = useRouter();
 
   const [items, setItems] = useState<NotificationDto[]>([]);
@@ -32,10 +38,13 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
   const [open, setOpen] = useState(false);
   const [filter, setFilter] = useState<NotificationFilter>('all');
   const [error, setError] = useState<string | null>(null);
+  /* False until the first fetch settles, so a quick open shows placeholders, not "No notifications". */
+  const [loaded, setLoaded] = useState(false);
   const panelRef = useRef<HTMLDivElement>(null);
+  const buttonRef = useRef<HTMLButtonElement>(null);
   const unreadRef = useRef(0);
 
-  const { badgeCount, dismissBadge } = useNotificationBadge(unreadCount);
+  const { badgeCount, dismissBadge, syncBaseline } = useNotificationBadge(unreadCount);
   unreadRef.current = unreadCount;
 
   const load = useCallback(async () => {
@@ -44,10 +53,13 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
       const [page, count] = await Promise.all([fetchNotifications(0, 30), fetchUnreadCount()]);
       setItems(page.content);
       setUnreadCount(count);
+      syncBaseline(count);
     } catch (e) {
       setError(getApiErrorMessage(e));
+    } finally {
+      setLoaded(true);
     }
-  }, []);
+  }, [syncBaseline]);
 
   useEffect(() => {
     void load();
@@ -63,8 +75,18 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         setOpen(false);
       }
     };
+    /* Escape closes the panel and hands focus back to the bell. */
+    const onKey = (ev: KeyboardEvent) => {
+      if (ev.key !== 'Escape') return;
+      setOpen(false);
+      buttonRef.current?.focus();
+    };
     document.addEventListener('mousedown', onDoc);
-    return () => document.removeEventListener('mousedown', onDoc);
+    document.addEventListener('keydown', onKey);
+    return () => {
+      document.removeEventListener('mousedown', onDoc);
+      document.removeEventListener('keydown', onKey);
+    };
   }, [open, dismissBadge]);
 
   const filteredItems = filterNotifications(items, filter);
@@ -93,7 +115,9 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           isRead: false,
         });
         const readSet = new Set(readIds);
-        setUnreadCount((c) => Math.max(0, c - readIds.length));
+        const remaining = Math.max(0, unreadRef.current - readIds.length);
+        setUnreadCount(remaining);
+        syncBaseline(remaining);
         setItems((prev) =>
           prev.map((item) => (readSet.has(item.id) ? { ...item, isRead: true } : item)),
         );
@@ -111,7 +135,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           title: fallback.title,
           description: fallback.description,
           actionHref: '/profile?tab=visitors',
-          actionLabel: 'Open Visitors',
+          actionLabel: t('Open Visitors'),
         });
         return;
       }
@@ -141,6 +165,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
   return (
     <div className="relative" ref={panelRef}>
       <button
+        ref={buttonRef}
         type="button"
         onClick={handleToggle}
         /* `compact` is the bar's form: a bare 36px disc that brightens and lifts, with no plate at
@@ -149,20 +174,21 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         className={`relative transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
           compact
             ? 'flex h-9 w-9 items-center justify-center rounded-full hover:scale-105 text-[#222222] dark:text-neutral-300'
-            : 'rounded-lg p-2 text-neutral-600 hover:bg-gray-100 hover:text-neutral-900 dark:text-neutral-400 dark:hover:text-white'
+            : 'rounded-full p-2 text-[#536471] hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] dark:text-[#8B98A5] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]'
         }`}
         aria-expanded={open}
-        aria-haspopup="true"
+        aria-haspopup="dialog"
         aria-label={`Notifications${badgeCount > 0 ? `, ${badgeCount} new` : ''}`}
       >
         {/* In the bar (`compact`): same 24-unit box and `stroke-width: 1.5` as the magnifier and
-            the chat glyph beside it. */}
+            the chat glyph beside it. While the panel is open the bell is drawn a step heavier —
+            the "selected" weight of News's rail glyphs. */}
         <svg
           className={compact ? 'h-[1.6rem] w-[1.6rem]' : 'h-6 w-6'}
           viewBox="0 0 24 24"
           fill="none"
           stroke="currentColor"
-          strokeWidth={compact ? 1.5 : 2}
+          strokeWidth={compact ? (open ? 2 : 1.5) : 2}
           strokeLinecap="round"
           strokeLinejoin="round"
           aria-hidden="true"
@@ -174,50 +200,82 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
       </button>
 
       {open && (
+        /* The panel, in News's skin: it carries the News token scope itself (it lives in the navbar,
+           outside any page scope) and `x-notifications--panel`, which sets rows straight on the sheet.
+           A white / black sheet, 16px corners and the 1px #E1E8ED edge of the navbar's other menus
+           (dark: #2F3336). Title row, the All / Unread chips, the day-grouped list, then the way to
+           the full page on the card tone — separated by tone, not by lines.
+           Phones (the bell is only in the bar from lg, but HeaderAuth shows it everywhere): pinned
+           under the header across the screen instead of hanging off the bell. */
         <div
-          className="absolute right-0 z-50 mt-3 w-[26rem] max-w-[calc(100vw-2rem)] overflow-hidden rounded-lg border border-black/[0.06] bg-white shadow-[0_24px_60px_-24px_rgba(0,0,0,0.35)] dark:border-white/[0.08] dark:bg-[#111111]"
+          className="x-notifications x-notifications--panel news-theme news-feed news-mono fixed inset-x-2 top-[3.75rem] z-50 flex max-h-[calc(100dvh-4.5rem)] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_0_0_1px_#E1E8ED,0_16px_40px_-16px_rgba(15,20,25,0.28)] dark:bg-black dark:shadow-[0_0_0_1px_#2F3336,0_16px_40px_-16px_rgba(0,0,0,0.8)] sm:absolute sm:inset-x-auto sm:right-0 sm:top-auto sm:mt-3 sm:max-h-none sm:w-[26rem]"
           style={{ animation: 'pf-float-in 220ms cubic-bezier(0.16, 1, 0.3, 1)' }}
           role="dialog"
-          aria-label="Notification list"
+          aria-label={t('Notifications')}
         >
-          <div className="px-5 pt-5">
-            <div className="flex items-center justify-between gap-4">
-              <span className="text-[17px] font-bold tracking-[-0.01em] text-[#111111] dark:text-white">
-                Notifications
-                {unreadCount > 0 ? (
-                  <span className="text-[#FF5722]"> · {String(unreadCount).padStart(2, '0')}</span>
-                ) : null}
+          <div className="shrink-0 px-5 pb-1 pt-4">
+            <div className="flex min-h-10 items-center justify-between gap-3">
+              <span className="text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]">
+                {t('Notifications')}
               </span>
-              {unreadCount > 0 && (
-                <button
-                  type="button"
-                  onClick={() => void markAllRead()}
-                  className="text-[13.5px] font-medium text-neutral-500 transition-colors hover:text-[#FF5722] dark:text-neutral-400"
-                >
-                  Mark all as read
-                </button>
-              )}
+              <div className="-mr-2 flex items-center gap-0.5">
+                {unreadCount > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => void markAllRead()}
+                    data-pf-no-color-transition
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                  >
+                    <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="m5 12.5 4.5 4.5L19 7.5" />
+                    </svg>
+                    {t('Mark all as read')}
+                  </button>
+                )}
+              </div>
             </div>
-            <NotificationFilterTabs value={filter} onChange={setFilter} unreadCount={unreadCount} underline compact />
+            <NotificationViewChips
+              views={PANEL_VIEWS}
+              value={filter}
+              onChange={(view) => setFilter(view === 'unread' ? 'unread' : 'all')}
+              unreadCount={unreadCount}
+              className="pb-1 pt-3"
+            />
           </div>
 
-          {error && <p className="px-5 pt-3 text-[13px] text-red-600">{error}</p>}
+          {error && (
+            <p role="alert" className="shrink-0 px-5 pt-2 text-[13px] leading-[18px] text-[#B91C1C] dark:text-[#F4212E]">
+              {error}
+            </p>
+          )}
 
-          <div className="max-h-[min(26rem,70vh)] overflow-y-auto [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent]">
-            <NotificationGroupedList
-              items={filteredItems}
-              onItemClick={(n) => void handleNotificationClick(n)}
-              emptyMessage={filter === 'unread' ? 'You’re all caught up.' : 'No notifications yet.'}
-              variant="panel"
-            />
+          <div className="xn-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain sm:max-h-[min(28rem,65dvh)] sm:flex-none">
+            {!loaded ? (
+              <NotificationListSkeleton variant="panel" rows={4} />
+            ) : (
+              <NotificationGroupedList
+                items={filteredItems}
+                onItemClick={(n) => void handleNotificationClick(n)}
+                empty={
+                  filter === 'unread'
+                    ? { title: t('You’re all caught up'), description: t('Nothing unread right now.') }
+                    : { title: t('No notifications yet'), description: t('Followers, visits and new work from people you follow show up here.') }
+                }
+                variant="panel"
+              />
+            )}
           </div>
 
           <Link
             href="/notifications"
-            className="flex items-center justify-center gap-1.5 border-t border-black/[0.06] px-5 py-3.5 text-[14px] font-medium text-neutral-600 transition-colors hover:text-[#FF5722] dark:border-white/[0.08] dark:text-neutral-300"
+            data-pf-no-color-transition
+            className="group flex min-h-12 shrink-0 items-center justify-center gap-1.5 bg-[color:var(--gn-surface)] px-5 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]"
             onClick={openAllPage}
           >
-            View all notifications <span aria-hidden>→</span>
+            {t('View all notifications')}
+            <svg viewBox="0 0 24 24" className="h-4 w-4 transition-transform duration-200 group-hover:translate-x-0.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <path d="m9 6 6 6-6 6" />
+            </svg>
           </Link>
         </div>
       )}

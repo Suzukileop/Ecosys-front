@@ -6,6 +6,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { triggerBrowserDownload } from '@/lib/download';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { DeliveryMode } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type PurchaseAccessButtonProps = {
   purchaseId: string;
@@ -25,15 +26,16 @@ function canStream(deliveryMode: DeliveryMode): boolean {
   return deliveryMode === 'STREAM_ONLY' || deliveryMode === 'BOTH';
 }
 
+// X palette, black & white: primary = ink fill, secondary = hairline outline. Square like the page CTAs.
 const primaryClass =
-  'inline-flex items-center justify-center gap-2 rounded-xl bg-orange-200 px-4 py-3.5 text-sm font-bold text-orange-950 transition hover:bg-orange-300 disabled:opacity-60 dark:bg-orange-500 dark:text-white dark:hover:bg-orange-600';
+  'inline-flex h-11 items-center justify-center gap-2 bg-[#0F1419] px-4 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:opacity-60 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const secondaryClass =
-  'inline-flex items-center justify-center gap-2 rounded-xl border border-stone-200 bg-white px-4 py-3.5 text-sm font-semibold text-gray-800 transition hover:border-orange-200 hover:bg-orange-50 disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-800 dark:text-gray-100 dark:hover:border-orange-500/40';
+  'inline-flex h-11 items-center justify-center gap-2 border border-[#CFD9DE] px-4 text-[15px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:opacity-60 dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]';
 
 const pillClass =
-  'inline-flex shrink-0 items-center justify-center gap-2 rounded-full bg-orange-500 px-5 py-2.5 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60 dark:bg-orange-500 dark:hover:bg-orange-600';
+  'inline-flex h-10 shrink-0 items-center justify-center gap-2 rounded-full bg-[#0F1419] px-5 text-[14px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:opacity-60 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const cardActionClass =
-  'inline-flex w-full items-center justify-center gap-2 rounded-xl bg-orange-500 px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:opacity-60 dark:bg-orange-500 dark:hover:bg-orange-600';
+  'inline-flex h-11 w-full items-center justify-center gap-2 bg-[#0F1419] px-4 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] disabled:opacity-60 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 
 export function PurchaseAccessButton({
   purchaseId,
@@ -44,13 +46,14 @@ export function PurchaseAccessButton({
   fullWidth = false,
   size = 'default',
 }: PurchaseAccessButtonProps) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
   const allowed = mode === 'download' ? canDownload(deliveryMode) : canStream(deliveryMode);
   if (!allowed) return null;
 
-  const label = mode === 'download' ? 'Download' : 'Stream';
+  const label = mode === 'download' ? t('Download') : t('Stream');
   const widthClass = fullWidth || size === 'card' ? 'w-full' : '';
   const variantClass =
     size === 'card'
@@ -72,7 +75,7 @@ export function PurchaseAccessButton({
         window.open(access.url, '_blank', 'noopener,noreferrer');
       }
     } catch (e) {
-      setError(getApiErrorMessage(e, `Unable to ${mode} this file.`));
+      setError(getApiErrorMessage(e, t('Unable to {mode} this file.', { mode })));
     } finally {
       setLoading(false);
     }
@@ -89,7 +92,7 @@ export function PurchaseAccessButton({
         {loading ? (
           <>
             <LoadingSpinner size="sm" />
-            <span>Preparing…</span>
+            <span>{t('Preparing…')}</span>
           </>
         ) : (
           <>
@@ -98,7 +101,7 @@ export function PurchaseAccessButton({
           </>
         )}
       </button>
-      {error && <p className="mt-2 text-sm text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-[#F4212E]">{error}</p>}
     </div>
   );
 }

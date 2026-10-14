@@ -1,7 +1,9 @@
 'use client';
 
-import { useEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { useEffect, useLayoutEffect, useRef, useState, type DragEvent, type ReactNode } from 'react';
+import { X_MENU_ITEM, X_MENU_PANEL } from '@/components/messaging/messaging-x';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type ComposerPendingFile = {
   id: string;
@@ -33,22 +35,21 @@ function formatSize(bytes: number): string {
   return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
 }
 
-/**
- * Every glyph in the composer is drawn at `stroke-width: 1` on a 24 grid and carried at 20px.
- * One weight for the whole row is what makes a set of icons read as a set; the moment one of
- * them is heavier it becomes a button and the rest become decoration.
- */
+/** Composer glyph button: 40px circle (touch target), ink glyph, hover tint. */
 function ComposerIconButton({
   label,
   onClick,
   disabled,
   active = false,
+  className = 'inline-flex',
   children,
 }: {
   label: string;
   onClick: () => void;
   disabled?: boolean;
   active?: boolean;
+  /** Display utility (e.g. `hidden sm:inline-flex`); defaults to always shown. */
+  className?: string;
   children: ReactNode;
 }) {
   return (
@@ -59,8 +60,8 @@ function ComposerIconButton({
       title={label}
       aria-label={label}
       aria-expanded={active || undefined}
-      className={`inline-flex h-9 w-9 items-center justify-center transition-colors duration-300 hover:text-[var(--msg-ink)] focus-visible:text-[var(--msg-ink)] focus-visible:outline-none disabled:pointer-events-none disabled:opacity-30 ${
-        active ? 'text-[var(--msg-ink)]' : 'text-[var(--msg-ink-faint)]'
+      className={`h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors duration-200 hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:pointer-events-none disabled:opacity-30 ${className} ${
+        active ? 'bg-[var(--msg-wash)]' : ''
       }`}
     >
       {children}
@@ -84,13 +85,24 @@ export function MessageComposer({
   readOnlyLabel = null,
   attachment = null,
 }: MessageComposerProps) {
+  const t = useT();
   const [dragging, setDragging] = useState(false);
   const [emojiOpen, setEmojiOpen] = useState(false);
+  const [toolsOpen, setToolsOpen] = useState(false);
   const dragDepthRef = useRef(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const emojiRootRef = useRef<HTMLDivElement>(null);
+  const toolsRootRef = useRef<HTMLDivElement>(null);
   const valueRef = useRef(value);
   valueRef.current = value;
+
+  /* One-line field that grows with the text (up to ~6 lines), like X's DM composer. */
+  useLayoutEffect(() => {
+    const el = textareaRef.current;
+    if (!el) return;
+    el.style.height = 'auto';
+    el.style.height = `${Math.min(el.scrollHeight, 160)}px`;
+  }, [value]);
 
   useEffect(() => {
     if (!emojiOpen) return;
@@ -110,6 +122,23 @@ export function MessageComposer({
     };
   }, [emojiOpen]);
 
+  /* Phones' "+" tools menu: closes on an outside tap or Escape, like the emoji panel. */
+  useEffect(() => {
+    if (!toolsOpen) return;
+    const onPointerDown = (event: PointerEvent) => {
+      if (toolsRootRef.current && !toolsRootRef.current.contains(event.target as Node)) setToolsOpen(false);
+    };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setToolsOpen(false);
+    };
+    document.addEventListener('pointerdown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('pointerdown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
+  }, [toolsOpen]);
+
   const insertEmoji = (emoji: string) => {
     const current = valueRef.current;
     const field = textareaRef.current;
@@ -128,8 +157,8 @@ export function MessageComposer({
 
   if (readOnlyLabel) {
     return (
-      <div className="shrink-0 border-t border-[var(--msg-hairline)] px-5 py-5 sm:px-6">
-        <p className="msg-micro text-[var(--msg-ink-faint)]">{readOnlyLabel}</p>
+      <div className="shrink-0 px-5 pb-[calc(1rem+env(safe-area-inset-bottom))] pt-3 sm:px-6">
+        <p className="bg-[var(--msg-surface)] px-4 py-3.5 text-center text-[14px] leading-5 text-[var(--msg-ink-faint)]">{readOnlyLabel}</p>
       </div>
     );
   }
@@ -170,20 +199,19 @@ export function MessageComposer({
     }
   };
 
+  const glyph = (d: string) => (
+    <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+      <path d={d} />
+    </svg>
+  );
+
   return (
     /*
-     * No card, no field, no frame. The composer is the bottom of the conversation panel and is
-     * bounded by exactly one thing: the hairline it hangs from. The white rectangle that used
-     * to be here was a surface drawn on top of a surface of the same colour — it separated
-     * nothing and cost the panel its bottom edge.
-     *
-     * While a file is over the drop zone the hairline is the thing that answers, going to coral
-     * for the length of the drag. That is the one moment the composer is allowed an accent.
+     * X DM composer: one rounded field (#EFF3F4 / #202327) pinned to the bottom of the thread, tools
+     * inside it on the left, the ink send disc on the right. No rule above it: tone does the work.
      */
     <div
-      className={`relative shrink-0 border-t px-4 pb-[calc(0.5rem+env(safe-area-inset-bottom))] pt-2.5 transition-colors duration-300 sm:px-6 lg:pb-4 lg:pt-3 ${
-        dragging ? 'border-[var(--msg-coral)]' : 'border-[var(--msg-hairline)]'
-      }`}
+      className="relative shrink-0 bg-[var(--msg-ground)] px-4 pb-[calc(0.75rem+env(safe-area-inset-bottom))] pt-2 sm:px-5 lg:pb-4"
       onDragEnter={handleDragEnter}
       onDragLeave={handleDragLeave}
       onDragOver={handleDragOver}
@@ -191,59 +219,47 @@ export function MessageComposer({
     >
       {dragging ? (
         <div
-          className="pointer-events-none absolute inset-0 z-10 flex items-center justify-center bg-[var(--msg-panel)]/85"
+          className="pointer-events-none absolute inset-2 z-10 flex items-center justify-center rounded-[24px] bg-[var(--msg-ground)]/90 ring-2 ring-[var(--msg-ink)]"
           aria-hidden
         >
-          <p className="msg-micro text-[var(--msg-coral)]">Drop files to attach</p>
+          <p className="text-[15px] font-bold text-[var(--msg-ink)]">{t('Drop files to attach')}</p>
         </div>
       ) : null}
 
       {attachment}
 
       {pendingFiles.length > 0 ? (
-        <div className="mb-3 flex flex-wrap gap-2">
+        <div className="mb-2 flex flex-wrap gap-2">
           {pendingFiles.map((item) => {
             const isImage = item.file.type.startsWith('image/');
             const isVideo = item.file.type.startsWith('video/');
             return (
               <div
                 key={item.id}
-                className="relative flex max-w-[12rem] items-center gap-2.5 border border-[var(--msg-hairline)] p-1.5"
+                className="relative flex max-w-[14rem] items-center gap-2.5 rounded-2xl bg-[var(--msg-surface)] p-1.5 pr-8"
               >
                 {isImage && item.previewUrl ? (
                   // eslint-disable-next-line @next/next/no-img-element
-                  <img src={item.previewUrl} alt="" className="h-11 w-11 shrink-0 object-cover" />
+                  <img src={item.previewUrl} alt="" className="h-11 w-11 shrink-0 rounded-xl object-cover" />
                 ) : (
-                  <div className="msg-micro flex h-11 w-11 shrink-0 items-center justify-center border border-[var(--msg-hairline)] text-[var(--msg-ink-faint)]">
-                    {isVideo ? 'VID' : 'FILE'}
+                  <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-[var(--msg-field)] text-[11px] font-bold text-[var(--msg-ink-faint)]">
+                    {isVideo ? t('Video') : t('File')}
                   </div>
                 )}
-                <div className="min-w-0 flex-1 pr-5">
-                  <p className="truncate text-[13px] font-light text-[var(--msg-ink)]">
-                    {item.file.name}
-                  </p>
-                  <p className="msg-micro mt-1 text-[var(--msg-ink-faint)]">
-                    {formatSize(item.file.size)}
-                  </p>
+                <div className="min-w-0 flex-1">
+                  <p className="truncate text-[13px] font-bold text-[var(--msg-ink)]">{item.file.name}</p>
+                  <p className="msg-micro text-[var(--msg-ink-faint)]">{formatSize(item.file.size)}</p>
                 </div>
                 {onRemovePendingFile ? (
                   <button
                     type="button"
                     onClick={() => onRemovePendingFile(item.id)}
                     disabled={sending || uploading}
-                    className="absolute right-1 top-1 inline-flex h-5 w-5 items-center justify-center text-[var(--msg-ink-faint)] transition-colors duration-300 hover:text-[var(--msg-ink)] disabled:opacity-30"
-                    aria-label={`Remove ${item.file.name}`}
-                    title="Remove"
+                    className="absolute right-1 top-1/2 inline-flex h-7 w-7 -translate-y-1/2 items-center justify-center rounded-full text-[var(--msg-ink-faint)] transition-colors hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)] disabled:opacity-30"
+                    aria-label={t('Remove {name}', { name: item.file.name })}
+                    title={t('Remove')}
                   >
-                    <svg
-                      className="h-3 w-3"
-                      viewBox="0 0 24 24"
-                      fill="none"
-                      stroke="currentColor"
-                      strokeWidth="1"
-                      strokeLinecap="round"
-                      aria-hidden
-                    >
+                    <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
                       <path d="M6 6l12 12M18 6L6 18" />
                     </svg>
                   </button>
@@ -254,130 +270,128 @@ export function MessageComposer({
         </div>
       ) : null}
 
-      <label htmlFor="conversation-composer-input" className="sr-only">
-        Your message
-      </label>
-      <textarea
-        ref={textareaRef}
-        id="conversation-composer-input"
-        rows={2}
-        value={value}
-        disabled={disabled || sending || uploading}
-        onChange={(e) => onChange(e.target.value)}
-        onKeyDown={(e) => {
-          if (e.key === 'Enter' && !e.shiftKey) {
-            e.preventDefault();
-            if (canSend) onSend();
-          }
-        }}
-        placeholder={placeholder}
-        className="msg-scroll max-h-40 min-h-[2.75rem] w-full resize-none border-0 bg-transparent p-0 text-[16px] font-light lg:min-h-[3.25rem] lg:text-[0.9375rem] leading-[1.65] text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 disabled:opacity-50"
-      />
-
-      <div className="mt-1 flex items-center justify-between gap-2">
-        <div className="-ml-2 flex items-center gap-1">
-          {onAttach ? (
-            <ComposerIconButton label="Attach media" onClick={onAttach} disabled={sending || disabled}>
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <path d="M15.2 7 8.6 13.6a2 2 0 1 0 2.8 2.8l6.4-6.6a4 4 0 1 0-5.6-5.6l-6.5 6.6a6 6 0 1 0 8.5 8.5L20.5 13" />
-              </svg>
-            </ComposerIconButton>
-          ) : null}
-
-          {onInviteGuest ? (
+      <div className="flex items-end gap-0.5 rounded-[24px] bg-[var(--msg-field)] p-1 transition-shadow focus-within:shadow-[inset_0_0_0_1.5px_var(--msg-ink)]">
+        {/* Phones: one "+" holds the rare tools (attach, invite a guest), so the text gets the
+            width; the emoji button goes too — the phone keyboard has its own. From sm every tool
+            sits in the field. */}
+        {onAttach || onInviteGuest ? (
+          <div ref={toolsRootRef} className="relative shrink-0 sm:hidden">
             <ComposerIconButton
-              label="Invite guest"
-              onClick={onInviteGuest}
+              label={t('Add to message')}
+              onClick={() => setToolsOpen((open) => !open)}
               disabled={disabled || sending || uploading}
+              active={toolsOpen}
             >
               <svg
-                className="h-5 w-5"
+                className={`h-5 w-5 transition-transform duration-200 ${toolsOpen ? 'rotate-45' : ''}`}
                 viewBox="0 0 24 24"
                 fill="none"
                 stroke="currentColor"
-                strokeWidth="1"
+                strokeWidth="2"
                 strokeLinecap="round"
-                strokeLinejoin="round"
                 aria-hidden
               >
-                <path d="M18 9v6M21 12h-6M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM3 20a6 6 0 0 1 12 0v1H3v-1Z" />
+                <path d="M12 5v14M5 12h14" />
               </svg>
             </ComposerIconButton>
-          ) : null}
-
-          <div ref={emojiRootRef} className="relative">
-            <ComposerIconButton
-              label="Emoji"
-              onClick={() => setEmojiOpen((open) => !open)}
-              disabled={disabled || sending || uploading}
-              active={emojiOpen}
-            >
-              <svg
-                className="h-5 w-5"
-                viewBox="0 0 24 24"
-                fill="none"
-                stroke="currentColor"
-                strokeWidth="1"
-                strokeLinecap="round"
-                strokeLinejoin="round"
-                aria-hidden
-              >
-                <circle cx="12" cy="12" r="9" />
-                <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.75h.01M15 9.75h.01" />
-              </svg>
-            </ComposerIconButton>
-            {emojiOpen ? (
-              <div
-                role="dialog"
-                aria-label="Emoji"
-                className="absolute bottom-full left-0 z-40 mb-2 overflow-hidden rounded-xl border border-black/[0.08] bg-white shadow-[0_16px_48px_-16px_rgba(0,0,0,0.35)] dark:border-white/[0.1] dark:bg-[#111111]"
-              >
-                <EmojiPicker onSelect={insertEmoji} />
+            {toolsOpen ? (
+              <div role="menu" aria-label={t('Add to message')} className={`absolute bottom-full left-0 z-40 mb-2 min-w-[13rem] ${X_MENU_PANEL}`}>
+                {onAttach ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={X_MENU_ITEM}
+                    onClick={() => {
+                      setToolsOpen(false);
+                      onAttach();
+                    }}
+                  >
+                    {t.rich('{glyph} Photo, video or file', { glyph: glyph('M15.2 7 8.6 13.6a2 2 0 1 0 2.8 2.8l6.4-6.6a4 4 0 1 0-5.6-5.6l-6.5 6.6a6 6 0 1 0 8.5 8.5L20.5 13') })}
+                  </button>
+                ) : null}
+                {onInviteGuest ? (
+                  <button
+                    type="button"
+                    role="menuitem"
+                    className={X_MENU_ITEM}
+                    onClick={() => {
+                      setToolsOpen(false);
+                      onInviteGuest();
+                    }}
+                  >
+                    {t.rich('{glyph} Invite a guest', { glyph: glyph('M18 9v6M21 12h-6M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM3 20a6 6 0 0 1 12 0v1H3v-1Z') })}
+                  </button>
+                ) : null}
               </div>
             ) : null}
           </div>
+        ) : null}
+
+        {onAttach ? (
+          <ComposerIconButton label={t('Attach media')} onClick={onAttach} disabled={sending || disabled} className="hidden sm:inline-flex">
+            {glyph('M15.2 7 8.6 13.6a2 2 0 1 0 2.8 2.8l6.4-6.6a4 4 0 1 0-5.6-5.6l-6.5 6.6a6 6 0 1 0 8.5 8.5L20.5 13')}
+          </ComposerIconButton>
+        ) : null}
+
+        {onInviteGuest ? (
+          <ComposerIconButton label={t('Invite guest')} onClick={onInviteGuest} disabled={disabled || sending || uploading} className="hidden sm:inline-flex">
+            {glyph('M18 9v6M21 12h-6M13 7a4 4 0 1 1-8 0 4 4 0 0 1 8 0ZM3 20a6 6 0 0 1 12 0v1H3v-1Z')}
+          </ComposerIconButton>
+        ) : null}
+
+        <div ref={emojiRootRef} className="relative hidden shrink-0 sm:block">
+          <ComposerIconButton
+            label={t('Emoji')}
+            onClick={() => setEmojiOpen((open) => !open)}
+            disabled={disabled || sending || uploading}
+            active={emojiOpen}
+          >
+            <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.75" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+              <circle cx="12" cy="12" r="9" />
+              <path d="M8.5 14.5a4.5 4.5 0 0 0 7 0M9 9.75h.01M15 9.75h.01" />
+            </svg>
+          </ComposerIconButton>
+          {emojiOpen ? (
+            <div role="dialog" aria-label={t('Emoji')} className={`absolute bottom-full left-0 z-40 mb-2 ${X_MENU_PANEL}`}>
+              <EmojiPicker onSelect={insertEmoji} />
+            </div>
+          ) : null}
         </div>
 
-        {/*
-         * Send is a drawn arrow, not a disc. A filled circle here would be the only solid shape
-         * in the whole section and would sit at the very bottom of the reading order — the last
-         * place that should be shouting. Availability is carried by ink: faint when there is
-         * nothing to send, full black the instant there is.
-         */}
+        <label htmlFor="conversation-composer-input" className="sr-only">
+          {t('Your message')}
+        </label>
+        <textarea
+          ref={textareaRef}
+          id="conversation-composer-input"
+          rows={1}
+          value={value}
+          disabled={disabled || sending || uploading}
+          onChange={(e) => onChange(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && !e.shiftKey) {
+              e.preventDefault();
+              if (canSend) onSend();
+            }
+          }}
+          placeholder={placeholder}
+          className="msg-scroll max-h-40 min-h-10 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[16px] leading-6 text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 disabled:opacity-50 lg:text-[15px]"
+        />
+
         <button
           type="button"
           onClick={onSend}
           disabled={!canSend}
-          className={`-mr-1 inline-flex h-9 w-9 items-center justify-center transition-colors duration-300 focus-visible:outline-none ${
-            canSend
-              ? 'text-[var(--msg-ink)] hover:text-[var(--msg-coral)]'
-              : 'cursor-not-allowed text-[var(--msg-ink-faint)] opacity-40'
+          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--msg-primary)] text-[var(--msg-primary-ink)] transition-[background-color,opacity] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--msg-field)] ${
+            canSend ? 'hover:bg-[var(--msg-primary-hover)]' : 'cursor-not-allowed opacity-30'
           }`}
-          title={canSend ? 'Send' : 'Write a message to send'}
-          aria-label={canSend ? 'Send' : 'Send (disabled — empty message)'}
+          title={canSend ? t('Send') : t('Write a message to send')}
+          aria-label={canSend ? t('Send') : t('Send (disabled, empty message)')}
         >
           {sending || uploading ? (
-            <span className="msg-micro">…</span>
+            <span className="text-[13px] font-bold">…</span>
           ) : (
-            <svg
-              className="h-5 w-5"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth="1"
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
+            <svg className="h-[18px] w-[18px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.25" strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <path d="M12 19V5M5 12l7-7 7 7" />
             </svg>
           )}

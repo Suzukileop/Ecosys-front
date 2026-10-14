@@ -18,6 +18,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FALLBACK_BIO =
   'A software engineer and data scientist who turns complex problems into clear, reliable digital products through thoughtful systems and code.';
@@ -50,6 +51,7 @@ function isLaidOut(el: HTMLElement): boolean {
  * Mobile: left-aligned stacked name, value list, compact bio.
  */
 export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -63,7 +65,7 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
       .split(/\s+/)
       .filter(Boolean)
       .slice(0, 2);
-    return parts.length > 0 ? parts.join(' ') : 'Lorem Ipsum';
+    return parts.length > 0 ? parts.join(' ') : t('Lorem Ipsum');
   }, [data.fullName, data.nameLead]);
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const availability = resolveHeroAvailabilityValue(
@@ -115,9 +117,9 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
   const portraitAspectClass = portraitRadius === 'full' ? 'aspect-square' : 'aspect-[4/5]';
 
   const railItems = [
-    { label: 'Specialty', value: specialty },
-    { label: 'Availability', value: availability },
-    { label: 'Years of experience', value: years },
+    { label: t('Specialty'), value: specialty },
+    { label: t('Availability'), value: availability },
+    { label: t('Years of experience'), value: years },
   ] as const;
 
   const bioInk = `color-mix(in srgb, ${ink} 60%, transparent)`;
@@ -482,7 +484,7 @@ export function PortfolioHeroIdentityIndex({ data }: { data: PortfolioHeroData }
                 style={{ color: muted }}
                 aria-hidden
               >
-                Media
+                {t('Media')}
               </div>
             )}
           </div>

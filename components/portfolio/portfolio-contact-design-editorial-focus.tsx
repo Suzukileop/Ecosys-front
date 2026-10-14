@@ -18,6 +18,7 @@ import {
   portfolioEditorialGutterX,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Concept 1 — "Editorial focus": a monumental, asymmetric editorial composition, full-bleed
@@ -57,6 +58,7 @@ export function ContactDesignEditorialFocus({
    *  every other genuinely light/dark-aware premium Contact design. */
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
 
@@ -175,7 +177,7 @@ export function ContactDesignEditorialFocus({
                     {socialHeading}
                   </p>
                 ) : null}
-                <nav className="mt-3 flex flex-wrap items-center gap-5 lg:justify-end" aria-label="Social">
+                <nav className="mt-3 flex flex-wrap items-center gap-5 lg:justify-end" aria-label={t('Social')}>
                   {links.map((link) => (
                     <a
                       key={link.id}
@@ -196,7 +198,7 @@ export function ContactDesignEditorialFocus({
 
             {!hasEmail && !hasPhone && !hasLocation && !hasLinks ? (
               <a href={ctaHref} className={itemClass} style={itemStyle} data-pf-no-color-transition="">
-                Get in touch →
+                {t('Get in touch →')}
               </a>
             ) : null}
           </div>

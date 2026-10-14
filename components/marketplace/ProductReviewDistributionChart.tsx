@@ -2,6 +2,7 @@
 
 import { StarRating } from '@/components/marketplace/StarRating';
 import type { ProductReviewSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductReviewDistributionChartProps = {
   summary: ProductReviewSummary;
@@ -27,7 +28,7 @@ function countForStar(summary: ProductReviewSummary, star: (typeof STAR_LEVELS)[
   }
 }
 
-const SKELETON = 'animate-pulse rounded bg-black/[0.06] dark:bg-white/[0.08]';
+const SKELETON = 'animate-pulse bg-[color:var(--gn-inset)]';
 
 function DistributionSkeleton() {
   return (
@@ -52,6 +53,7 @@ export function ProductReviewDistributionChart({
   summary,
   loading = false,
 }: ProductReviewDistributionChartProps) {
+  const t = useT();
   if (loading) {
     return <DistributionSkeleton />;
   }
@@ -66,15 +68,15 @@ export function ProductReviewDistributionChart({
     <div className="flex flex-col gap-6 sm:flex-row sm:items-center sm:gap-12">
       <div className="shrink-0">
         <div className="flex items-baseline gap-1.5">
-          <p className="text-[44px] font-semibold leading-none tracking-[-0.03em] text-[#111111] tabular-nums dark:text-white">
+          <p className="text-[40px] font-extrabold leading-none tracking-[-0.03em] text-[color:var(--gn-ink)] tabular-nums">
             {average.toFixed(1)}
           </p>
-          <span className="text-[15px] text-neutral-400 dark:text-neutral-500">/ 5</span>
+          <span className="text-[15px] text-[color:var(--gn-ink2)]">/ 5</span>
         </div>
         <div className="mt-3 flex items-center gap-2.5">
           <StarRating rating={average} />
-          <span className="text-sm text-neutral-500 dark:text-neutral-400">
-            {summary.reviewCount.toLocaleString()} review{summary.reviewCount === 1 ? '' : 's'}
+          <span className="text-[13px] text-[color:var(--gn-ink2)]">
+            {summary.reviewCount.toLocaleString()} {t('review')}{summary.reviewCount === 1 ? '' : 's'}
           </span>
         </div>
       </div>
@@ -87,17 +89,17 @@ export function ProductReviewDistributionChart({
 
           return (
             <div key={star} className="flex items-center gap-3">
-              <dt className="w-3 shrink-0 text-center text-[13px] font-medium text-neutral-500 tabular-nums dark:text-neutral-400">
+              <dt className="w-3 shrink-0 text-center text-[13px] font-medium text-[color:var(--gn-ink2)] tabular-nums">
                 {star}
               </dt>
-              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-black/[0.06] dark:bg-white/[0.08]">
+              <div className="h-1.5 min-w-0 flex-1 overflow-hidden rounded-full bg-[color:var(--gn-inset)]">
                 <div
-                  className="h-full rounded-full bg-[#111111] transition-[width] duration-500 ease-out dark:bg-white"
+                  className="h-full rounded-full bg-[#FFB400] transition-[width] duration-500 ease-out"
                   style={{ width: `${percent}%` }}
                   role="presentation"
                 />
               </div>
-              <dd className="w-8 shrink-0 text-right text-[13px] text-neutral-400 tabular-nums dark:text-neutral-500">
+              <dd className="w-8 shrink-0 text-right text-[13px] text-[color:var(--gn-ink2)] tabular-nums">
                 {count.toLocaleString()}
               </dd>
             </div>

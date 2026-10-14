@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
 import { mergeSectionColorMode } from '@/components/portfolio/portfolio-section-color-mode';
@@ -298,6 +299,7 @@ export function mergeStackPresentationBase(
     headerDesign: pick(record.headerDesign, STACK_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,

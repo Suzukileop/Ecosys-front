@@ -1,5 +1,6 @@
 'use client';
 
+import { trPlural } from '@/lib/i18n/active';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useRef, type ReactNode } from 'react';
@@ -12,7 +13,7 @@ import {
 } from '@/components/portfolio/portfolio-faq-settings';
 import { FAQ_HEADER_MARGIN_BOTTOM_REM } from '@/components/portfolio/portfolio-faq-header-settings';
 import { FAQ_HEADER_TITLE_SIZE_CLASS, createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -63,7 +64,7 @@ export function FaqHeaderDialogueHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
@@ -73,8 +74,10 @@ export function FaqHeaderDialogueHeader({
   const tagText = layout.text('tag');
   const alternate = layout.isVisible('alternate');
   const showBadge = layout.isVisible('badge') && count > 0;
-  const badgeLabel = layout.text('badgeLabel') ?? (count === 1 ? 'question' : 'questions');
+  const badgeLabel = layout.text('badgeLabel') ?? (trPlural(count, 'question', 'questions'));
   const showRule = layout.isVisible('rule');
+  const showTitle = layout.isVisible('title');
+  const showSubtitle = layout.isVisible('subtitle');
   const titleSizeClass = FAQ_HEADER_TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md'] ?? FAQ_HEADER_TITLE_SIZE_CLASS.md;
 
   const headerRef = useRef<HTMLElement>(null);
@@ -143,7 +146,7 @@ export function FaqHeaderDialogueHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, titleText, subtitleText, count, showBadge, showRule, tagText]);
+  }, [animationEnabled, titleText, subtitleText, count, showBadge, showRule, tagText, showTitle, showSubtitle]);
 
   return (
     <header
@@ -155,40 +158,42 @@ export function FaqHeaderDialogueHeader({
           badge drops under it only when both genuinely can't share a row — in a narrow column
           (e.g. Kinetic Split's left rail) the badge used to hang out past the column edge. */}
       <div className="flex flex-wrap items-start justify-between gap-6">
-        <h2
-          className={`mb-0 max-w-3xl flex-1 ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
-        >
-          {tagText ? (
-            <span
-              className="pf-faq-header-dialogue-tag mr-3 inline-block align-middle font-mono text-[0.55em] font-semibold tracking-[0.1em]"
-              style={faqSubtitleColorStyle(presentation.subtitleColor)}
-            >
-              {tagText}
-            </span>
-          ) : null}
-          {words.map((word, index) => {
-            const softWord = alternate && index % 2 === 1;
-            return (
-              // Italic glyphs lean past their box, so the reveal mask would shave the last letter
-              // ("asked" → "askea"): soft words get 0.12em of room inside the mask, taken back
-              // from the margin so the word spacing stays 0.28em.
+        {showTitle || tagText ? (
+          <h2
+            className={`mb-0 max-w-3xl flex-1 ${titleSizeClass} ${faqHeaderFontClass(presentation.titleFont, 'title')} tracking-[-0.03em] lg:leading-[0.98]`}
+          >
+            {tagText ? (
               <span
-                key={`${word}-${index}`}
-                className={`${softWord ? 'mr-[0.16em] pr-[0.12em]' : 'mr-[0.28em]'} inline-block overflow-hidden align-bottom last:mr-0`}
+                className="pf-faq-header-dialogue-tag mr-3 inline-block align-middle font-mono text-[0.55em] font-semibold tracking-[0.1em]"
+                style={faqSubtitleColorStyle(presentation.subtitleColor)}
               >
-                <span
-                  className={`pf-faq-header-dialogue-word-line inline-block ${softWord ? 'italic opacity-70' : ''}`}
-                  style={{
-                    ...faqTitleColorStyle(presentation.titleColor),
-                    fontWeight: softWord ? 300 : undefined,
-                  }}
-                >
-                  {word}
-                </span>
+                {tagText}
               </span>
-            );
-          })}
-        </h2>
+            ) : null}
+            {(showTitle ? words : []).map((word, index) => {
+              const softWord = alternate && index % 2 === 1;
+              return (
+                // Italic glyphs lean past their box, so the reveal mask would shave the last letter
+                // ("asked" → "askea"): soft words get 0.12em of room inside the mask, taken back
+                // from the margin so the word spacing stays 0.28em.
+                <span
+                  key={`${word}-${index}`}
+                  className={`${softWord ? 'mr-[0.16em] pr-[0.12em]' : 'mr-[0.28em]'} inline-block overflow-hidden align-bottom last:mr-0`}
+                >
+                  <span
+                    className={`pf-faq-header-dialogue-word-line inline-block ${softWord ? 'italic opacity-70' : ''}`}
+                    style={{
+                      ...faqTitleColorStyle(presentation.titleColor),
+                      fontWeight: softWord ? 300 : undefined,
+                    }}
+                  >
+                    {word}
+                  </span>
+                </span>
+              );
+            })}
+          </h2>
+        ) : null}
 
         {showBadge ? (
           <span
@@ -206,7 +211,7 @@ export function FaqHeaderDialogueHeader({
         ) : null}
       </div>
 
-      {subtitleText ? (
+      {showSubtitle && subtitleText ? (
         <p
           className={`pf-faq-header-dialogue-sub mb-0 mt-6 max-w-xl ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
           style={faqSubtitleColorStyle(presentation.subtitleColor)}

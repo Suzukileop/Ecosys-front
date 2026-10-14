@@ -1,6 +1,7 @@
 'use client';
 
 import { useId } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type InfoHintProps = {
   children: React.ReactNode;
@@ -19,12 +20,13 @@ const BUBBLE_ALIGN = {
 
 /** Small "!" badge that reveals help text on hover or keyboard focus, keeping forms free of hint paragraphs. */
 export function InfoHint({ children, align = 'center', side = 'top', className = '' }: InfoHintProps) {
+  const t = useT();
   const tooltipId = useId();
   return (
     <span className={`group/info relative inline-flex align-middle ${className}`}>
       <button
         type="button"
-        aria-label="More information"
+        aria-label={t('More information')}
         aria-describedby={tooltipId}
         onClick={(e) => e.preventDefault()}
         className="inline-flex h-4 w-4 items-center justify-center rounded-full border border-neutral-300 text-[10px] font-bold leading-none text-neutral-400 transition-colors hover:border-[#111111] hover:text-[#111111] focus-visible:border-[#111111] focus-visible:text-[#111111] focus-visible:outline-none dark:border-neutral-600 dark:text-neutral-500 dark:hover:border-white dark:hover:text-white dark:focus-visible:border-white dark:focus-visible:text-white"

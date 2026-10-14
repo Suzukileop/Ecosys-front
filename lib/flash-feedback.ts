@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type FlashVariant = 'success' | 'error' | 'info' | 'neutral';
 
 export type FlashToast = {
@@ -6,11 +7,13 @@ export type FlashToast = {
   title: string;
   description?: string;
   durationMs?: number;
-  /** Toast position. Default is top center. */
+  /** Kept for older call sites; every toast now shows bottom-centre (see FlashToastHost). */
   placement?: 'top' | 'bottom';
   /** Optional CTA (e.g. upgrade). */
   actionHref?: string;
   actionLabel?: string;
+  /** In-page CTA instead of a link (e.g. "Add to collection" after saving a post). */
+  onAction?: () => void;
 };
 
 export const CREATOR_PRODUCT_FLASH = {
@@ -26,19 +29,19 @@ const CREATOR_PRODUCT_MESSAGES: Record<
   { title: string; description: (title?: string) => string }
 > = {
   created: {
-    title: 'Product created',
+    title: msg('Product created'),
     description: (title) =>
       title
         ? `"${title}" is saved and listed in your catalog.`
         : 'Your product was saved and added to your catalog.',
   },
   updated: {
-    title: 'Changes saved',
+    title: msg('Changes saved'),
     description: (title) =>
       title ? `"${title}" was updated successfully.` : 'Your product was updated successfully.',
   },
   deleted: {
-    title: 'Product deleted',
+    title: msg('Product deleted'),
     description: (title) =>
       title
         ? `"${title}" was permanently removed from your catalog.`

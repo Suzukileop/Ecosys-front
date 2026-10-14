@@ -1,6 +1,11 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -61,22 +66,23 @@ import {
   type PortfolioFaqFrameShadow,
 } from '@/components/portfolio/portfolio-faq-frame';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
 export type FaqSubSection = 'general' | 'design' | 'background' | 'header';
 
 const FAQ_SUB_SECTIONS: { id: FaqSubSection; label: string; description: string }[] = [
-  { id: 'general', label: 'General', description: 'Section visibility and defaults.' },
-  { id: 'design', label: 'Design', description: 'Layout and visual style.' },
-  { id: 'header', label: 'Header', description: 'The title block above the FAQ list.' },
-  { id: 'background', label: 'Background', description: 'Fill behind this section.' },
+  { id: 'design', label: msg('Design'), description: msg('Layout and visual style.') },
+  { id: 'header', label: msg('Header'), description: msg('The title block above the FAQ list.') },
+  { id: 'background', label: msg('Background'), description: msg('Fill behind this section.') },
 ];
 
 /** Map legacy subsection ids (saved UI state / search) onto the current FAQ menu. */
 export function normalizeFaqSubSection(value: string | undefined): FaqSubSection {
-  if (value === 'general' || value === 'design' || value === 'background' || value === 'header') {
-    return value;
-  }
-  return 'general';
+  // 'general' (legacy / search) held the switch and style controls, now at the top of Design.
+  if (value === 'design' || value === 'background' || value === 'header') return value;
+  return 'design';
 }
 
 /* ---------------------------------------------------------------------- */
@@ -110,7 +116,7 @@ function FaqToggleRow({
     >
       <span className="flex items-center justify-between gap-4">
         <span className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate text-sm font-semibold text-neutral-950">{label}</span>
+          <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{label}</span>
           {info ? <FaqInfoTooltip text={info} /> : null}
         </span>
         <FaqSwitchTrack checked={checked} />
@@ -145,6 +151,7 @@ function FaqSwitchTrack({ checked }: { checked: boolean }) {
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. */
 function FaqInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -153,13 +160,13 @@ function FaqInfoTooltip({ text }: { text: string }) {
         role="button"
         tabIndex={0}
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -244,20 +251,21 @@ function FaqDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">{children}</span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path d="M7.5 4.5l5 5.5-5 5.5" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
@@ -282,10 +290,11 @@ function FaqBentoDualColorSwatches({
   value: PortfolioFaqBentoDualCardColorToken;
   onChange: (value: PortfolioFaqBentoDualCardColorToken) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">Card color</span>
-      <div role="radiogroup" aria-label="Card color" className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+      <span className="pf-stack-block-label">{t('Card color')}</span>
+      <div role="radiogroup" aria-label={t('Card color')} className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
         {PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS.map((option) => {
           const active = option.value === value;
           return (
@@ -294,7 +303,7 @@ function FaqBentoDualColorSwatches({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
                 active ? 'pf-choice pf-choice--active' : 'pf-choice'
@@ -305,7 +314,7 @@ function FaqBentoDualColorSwatches({
                 className="h-3 w-3 shrink-0 rounded-full border border-black/10"
                 style={{ backgroundColor: faqBentoDualPaletteTokenColor(option.value) }}
               />
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -329,11 +338,12 @@ function FaqOptionGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
     <div>
-      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
+      {rows ? null : (<span className="pf-stack-block-label">{label}</span>)}
       <div
         role="radiogroup"
         aria-label={label}
@@ -348,13 +358,13 @@ function FaqOptionGrid<T extends string>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
                 active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -380,8 +390,8 @@ function FaqPercentSlider({
     <SettingRow label={label} value={String(value ?? '')}>
     <div>
       {rows ? null : (<div className="flex items-center justify-between gap-4">
-        <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
-        <span className="text-xs font-semibold tabular-nums text-neutral-500">{Math.round(value)}%</span>
+        <span className="pf-stack-block-label">{label}</span>
+        <span className="text-xs font-semibold tabular-nums text-[color:var(--pf-palette-texte-muted)]">{Math.round(value)}%</span>
       </div>)}
       <input
         type="range"
@@ -551,18 +561,40 @@ function FaqDesignChoiceGrid({
   value: PortfolioFaqDesign;
   onChange: (value: PortfolioFaqDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected = PORTFOLIO_FAQ_DESIGN_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_FAQ_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Design</p>
-          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-neutral-500 hover:text-neutral-800">
-            ← Back
+          <p className="pf-stack-block-label !mb-0">{t('Design')}</p>
+          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]">
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-stack-design-card"
+                labelClassName="pf-stack-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'faq', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -570,7 +602,7 @@ function FaqDesignChoiceGrid({
               <FaqPickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -581,12 +613,13 @@ function FaqDesignChoiceGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <FaqDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <FaqDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <FaqDesignWireframe design={value} />
     </FaqDesignSummaryRow>
   );
@@ -667,6 +700,7 @@ function FaqHeaderChoiceGrid({
   showGrid: boolean;
   setShowGrid: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS[0];
@@ -675,9 +709,9 @@ function FaqHeaderChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">Header</p>
-          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-neutral-500 hover:text-neutral-800">
-            ← Back
+          <p className="pf-stack-block-label !mb-0">{t('Header')}</p>
+          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]">
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -687,7 +721,7 @@ function FaqHeaderChoiceGrid({
               <FaqPickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -703,7 +737,7 @@ function FaqHeaderChoiceGrid({
   }
 
   return (
-    <FaqDesignSummaryRow label="Header" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <FaqDesignSummaryRow label={t('Header')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <FaqHeaderDesignWireframe design={selected.value} />
     </FaqDesignSummaryRow>
   );
@@ -717,7 +751,7 @@ function FaqHeaderChoiceGrid({
 type FaqPatch = (patch: Partial<PortfolioFaqSectionSettings>) => void;
 
 const FAQ_LAYOUT_INPUT_CLASS =
-  'w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400';
+  'w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)]';
 
 function FaqLayoutPills({
   label,
@@ -741,11 +775,12 @@ function FaqLayoutPills({
   /** Swatch grids with longer names pass 3 so labels never truncate. */
   columns?: number;
 }) {
+  const t = useT();
   // One row up to 5 steps (e.g. the 5-step weight scale) — a 4+1 wrap would break the axis.
   const columns = columnsProp ?? Math.min(options.length, 5);
   return (
     <div>
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <span className="pf-stack-block-label">{label}</span>
       <div
         role="radiogroup"
         aria-label={label}
@@ -760,7 +795,7 @@ function FaqLayoutPills({
               type="button"
               role="radio"
               aria-checked={active}
-              aria-label={option.label}
+              aria-label={t(option.label)}
               onClick={() => onChange(option.value)}
               className={`flex items-center justify-center gap-2 rounded-lg py-1.5 font-semibold leading-none transition ${
                 columns > 4 ? 'px-1' : 'px-2.5'
@@ -781,7 +816,7 @@ function FaqLayoutPills({
                 />
               ) : null}
               {option.preview}
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -848,6 +883,7 @@ function FaqTextColorsGroup({
   onChange: FaqPatch;
   palette: Record<HeroPaletteTokenId, string>;
 }) {
+  const t = useT();
   const options = FAQ_TEXT_COLOR_TOKENS.map((token) => ({
     value: token,
     label: FAQ_TEXT_COLOR_LABELS[token],
@@ -857,14 +893,14 @@ function FaqTextColorsGroup({
   return (
     <div className="space-y-5 pt-4">
       <FaqLayoutPills
-        label="Question color"
+        label={t('Question color')}
         columns={2}
         value={faq.questionColorToken ?? 'auto'}
         onChange={(value) => onChange({ questionColorToken: value as PortfolioFaqTextColorToken })}
         options={options}
       />
       <FaqLayoutPills
-        label="Answer color"
+        label={t('Answer color')}
         columns={2}
         value={faq.answerColorToken ?? 'auto'}
         onChange={(value) => onChange({ answerColorToken: value as PortfolioFaqTextColorToken })}
@@ -883,17 +919,18 @@ function FaqFrameGroup({
   onChange: FaqPatch;
   palette: Record<HeroPaletteTokenId, string>;
 }) {
+  const t = useT();
   const frame = faq.designFrame ?? DEFAULT_FAQ_FRAME;
   const set = (patch: Partial<PortfolioFaqFrameSettings>) => onChange({ designFrame: { ...frame, ...patch } });
   const swatch = (token: HeroPaletteTokenId) => resolveHeroPaletteColor(palette, token);
 
   return (
     <div className="space-y-5 pt-4">
-      <FaqToggleRow label="Frame" checked={frame.enabled} onChange={(enabled) => set({ enabled })} />
+      <FaqToggleRow label={t('Frame')} checked={frame.enabled} onChange={(enabled) => set({ enabled })} />
       {frame.enabled ? (
         <>
           <FaqLayoutPills
-            label="Border"
+            label={t('Border')}
             value={frame.borderWidth}
             onChange={(value) => set({ borderWidth: value as PortfolioFaqFrameBorderWidth })}
             options={FAQ_FRAME_BORDER_WIDTHS.map((width) => ({
@@ -909,7 +946,7 @@ function FaqFrameGroup({
           {frame.borderWidth !== 'none' ? (
             <>
               <FaqLayoutPills
-                label="Border color"
+                label={t('Border color')}
                 columns={3}
                 value={frame.borderColor}
                 onChange={(value) => set({ borderColor: value as PortfolioFaqFrameBorderColor })}
@@ -919,11 +956,11 @@ function FaqFrameGroup({
                   swatch: swatch(token),
                 }))}
               />
-              <FaqPercentSlider label="Border opacity" value={frame.borderOpacity} onChange={(borderOpacity) => set({ borderOpacity })} />
+              <FaqPercentSlider label={t('Border opacity')} value={frame.borderOpacity} onChange={(borderOpacity) => set({ borderOpacity })} />
             </>
           ) : null}
           <FaqLayoutPills
-            label="Fill"
+            label={t('Fill')}
             columns={3}
             value={frame.fill}
             onChange={(value) => {
@@ -938,10 +975,10 @@ function FaqFrameGroup({
             }))}
           />
           {frame.fill !== 'none' ? (
-            <FaqPercentSlider label="Fill opacity" value={frame.fillOpacity} onChange={(fillOpacity) => set({ fillOpacity })} />
+            <FaqPercentSlider label={t('Fill opacity')} value={frame.fillOpacity} onChange={(fillOpacity) => set({ fillOpacity })} />
           ) : null}
           <FaqLayoutPills
-            label="Corners"
+            label={t('Corners')}
             value={frame.radius}
             onChange={(value) => set({ radius: value as PortfolioFaqFrameRadius })}
             options={FAQ_FRAME_RADII.map((radius) => ({
@@ -958,13 +995,13 @@ function FaqFrameGroup({
             }))}
           />
           <FaqLayoutPills
-            label="Padding"
+            label={t('Padding')}
             value={frame.padding}
             onChange={(value) => set({ padding: value as PortfolioFaqFramePadding })}
             options={FAQ_FRAME_PADDINGS.map((padding) => ({ value: padding, label: FAQ_FRAME_PADDING_LABELS[padding] }))}
           />
           <FaqLayoutPills
-            label="Shadow"
+            label={t('Shadow')}
             value={frame.shadow}
             onChange={(value) => set({ shadow: value as PortfolioFaqFrameShadow })}
             options={FAQ_FRAME_SHADOWS.map((shadow) => ({
@@ -973,14 +1010,14 @@ function FaqFrameGroup({
               preview: (
                 <span
                   aria-hidden
-                  className="block h-3 w-3 shrink-0 rounded-[3px] bg-white"
+                  className="block h-3 w-3 shrink-0 rounded-[3px] bg-transparent"
                   style={{ boxShadow: FAQ_FRAME_SHADOW_PREVIEW[shadow] }}
                 />
               ),
             }))}
           />
           <FaqToggleRow
-            label="Glass blur"
+            label={t('Glass blur')}
             info="Blurs the section background behind the frame. Visible over an image or gradient Background."
             checked={frame.blur}
             onChange={(blur) => set({ blur })}
@@ -1002,6 +1039,7 @@ function FaqHeaderLayoutControl({
   spec: FaqHeaderLayoutElementSpec;
   onChange: FaqPatch;
 }) {
+  const t = useT();
   const setOverride = (patch: { visible?: boolean; text?: string; choice?: string }) =>
     onChange(patchFaqHeaderLayoutElement(faq, design, spec.key, patch));
 
@@ -1009,7 +1047,7 @@ function FaqHeaderLayoutControl({
     case 'toggle':
       return (
         <FaqToggleRow
-          label={spec.label}
+          label={t(spec.label)}
           checked={resolveFaqHeaderLayoutVisible(faq, design, spec.key)}
           onChange={(visible) => setOverride({ visible })}
         />
@@ -1017,7 +1055,7 @@ function FaqHeaderLayoutControl({
     case 'option':
       return (
         <FaqLayoutPills
-          label={spec.label}
+          label={t(spec.label)}
           options={spec.options}
           value={resolveFaqHeaderLayoutOption(faq, design, spec.key)}
           onChange={(choice) => setOverride({ choice })}
@@ -1026,7 +1064,7 @@ function FaqHeaderLayoutControl({
     case 'fieldOption':
       return (
         <FaqLayoutPills
-          label={spec.label}
+          label={t(spec.label)}
           options={spec.options}
           value={String(faq[spec.field] ?? spec.options[0].value)}
           onChange={(value) => onChange({ [spec.field]: value } as Partial<PortfolioFaqSectionSettings>)}
@@ -1038,16 +1076,16 @@ function FaqHeaderLayoutControl({
       return (
         <div className="space-y-2">
           {hideable ? (
-            <FaqToggleRow label={spec.label} checked={visible} onChange={(next) => setOverride({ visible: next })} />
+            <FaqToggleRow label={t(spec.label)} checked={visible} onChange={(next) => setOverride({ visible: next })} />
           ) : (
-            <p className="text-sm font-semibold text-neutral-950">{spec.label}</p>
+            <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(spec.label)}</p>
           )}
           {visible ? (
             <input
               type="text"
               value={faqHeaderLayoutOverride(faq, design, spec.key)?.text ?? ''}
               placeholder={spec.placeholder || spec.defaultText}
-              aria-label={spec.label}
+              aria-label={t(spec.label)}
               onChange={(event) => setOverride({ text: event.target.value })}
               className={FAQ_LAYOUT_INPUT_CLASS}
             />
@@ -1061,19 +1099,20 @@ function FaqHeaderLayoutControl({
 const FAQ_HEADER_LAYOUT_GROUP_ORDER: FaqHeaderLayoutGroup[] = ['this', 'all'];
 
 function FaqHeaderLayoutSettingsBand({ faq, onChange }: { faq: PortfolioFaqSectionSettings; onChange: FaqPatch }) {
+  const t = useT();
   // A saved legacy (frozen) header has no Layout settings of its own — nothing to show.
   if (!(FAQ_HEADER_DESIGNS_SELECTABLE as string[]).includes(faq.headerDesign)) return null;
   const design = faq.headerDesign as PortfolioFaqHeaderDesignSelectable;
   const specs = FAQ_HEADER_LAYOUT_SPECS[design].filter((spec) => !spec.showWhen || spec.showWhen(faq));
 
   return (
-    <FaqLayoutSettingsBand motionKey={design} title="Layout settings">
+    <FaqLayoutSettingsBand motionKey={design} title={t('Layout settings')}>
       {FAQ_HEADER_LAYOUT_GROUP_ORDER.map((group) => {
         const groupSpecs = specs.filter((spec) => spec.group === group);
         if (groupSpecs.length === 0) return null;
         return (
           <div key={group} className="space-y-4">
-            <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">
+            <p className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">
               {FAQ_HEADER_LAYOUT_GROUP_TITLES[group]}
             </p>
             {groupSpecs.map((spec) => (
@@ -1091,10 +1130,10 @@ function FaqHeaderLayoutSettingsBand({ faq, onChange }: { faq: PortfolioFaqSecti
  *  muted" swatches, no free-form hex, same as every other section's
  *  Background tab. */
 const FAQ_BACKGROUND_PALETTE_TOKENS: { value: HeroPaletteTokenId; label: string }[] = [
-  { value: 'fond', label: 'Fond' },
-  { value: 'neutre', label: 'Neutre' },
-  { value: 'principal', label: 'Principal' },
-  { value: 'texteMuted', label: 'Texte muted' },
+  { value: 'fond', label: msg('Background') },
+  { value: 'neutre', label: msg('Neutral') },
+  { value: 'principal', label: msg('Primary') },
+  { value: 'texteMuted', label: msg('Muted text') },
 ];
 
 const FAQ_BACKGROUND_LABEL_SLOTS: Record<string, { slot: FaqColorSlot; field: keyof PortfolioFaqSectionSettings }> = {
@@ -1120,6 +1159,7 @@ function FaqBackgroundColorField({
   label: string;
   value: string;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const mapping = FAQ_BACKGROUND_LABEL_SLOTS[label] ?? FAQ_BACKGROUND_LABEL_SLOTS.Color;
   const usingPalette = faq.useHeroPalette !== false;
@@ -1127,7 +1167,7 @@ function FaqBackgroundColorField({
   return (
     <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      {rows ? null : (<span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>)}
+      {rows ? null : (<span className="pf-stack-block-label">{label}</span>)}
       <div className="mt-2 flex items-center gap-3">
         {FAQ_BACKGROUND_PALETTE_TOKENS.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
@@ -1136,8 +1176,8 @@ function FaqBackgroundColorField({
             <button
               key={token.value}
               type="button"
-              title={token.label}
-              aria-label={token.label}
+              title={t(token.label)}
+              aria-label={t(token.label)}
               aria-pressed={active}
               onClick={() =>
                 onChange(
@@ -1156,7 +1196,7 @@ function FaqBackgroundColorField({
                   boxShadow: active ? '0 0 0 2px rgba(23,23,23,0.15)' : 'none',
                 }}
               />
-              <span className={`text-[11px] font-medium ${active ? 'text-neutral-900' : 'text-neutral-500'}`}>{token.label}</span>
+              <span className={`text-[11px] font-medium ${active ? 'text-[color:var(--pf-palette-texte-fort)]' : 'text-[color:var(--pf-palette-texte-muted)]'}`}>{t(token.label)}</span>
             </button>
           );
         })}
@@ -1177,8 +1217,9 @@ export function FaqSettingsPanel({
   subSection?: FaqSubSection;
   onSubSectionChange?: (value: FaqSubSection) => void;
 }) {
+  const t = useT();
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('general');
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('design');
   const subSection = normalizeFaqSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: FaqSubSection) => {
     const next = normalizeFaqSubSection(value);
@@ -1191,45 +1232,22 @@ export function FaqSettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
-        {FAQ_SUB_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => setSubSection(section.id)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              subSection === section.id
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
-
-      {subSection === 'general' ? (
-        <div className="space-y-4">
-          <FaqToggleRow label="Show FAQ section" checked={faq.enabled} onChange={(enabled) => onChange({ enabled })} />
-          <SectionColorModeControl value={faq.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
-          <FaqOptionGrid
-            label="Font size"
-            options={PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS}
-            value={faq.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
-          <FaqTextColorsGroup faq={faq} onChange={onChange} palette={faqPalette} />
-          <FaqFrameGroup faq={faq} onChange={onChange} palette={faqPalette} />
-        </div>
-      ) : null}
+      <SettingsTabs tabs={FAQ_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
       {subSection === 'design' ? (
         <div className="space-y-4">
+          <SettingsSwitchRow
+            label={t('Show FAQ section')}
+            description={faq.enabled ? undefined : t('Visitors go straight to the next section.')}
+            checked={faq.enabled}
+            onChange={(enabled) => onChange({ enabled })}
+          />
+          {faq.enabled ? (
+          <>
           <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} />
 
           <FaqLayoutSettingsBand motionKey={faq.design}>
-<SettingsRowsScope title="Layout options">
+<SettingsRowsScope title={t('Layout options')}>
             {faq.design === 'bento-dual' ? (
               <div className="space-y-6">
                 <FaqBentoDualColorSwatches
@@ -1237,51 +1255,66 @@ export function FaqSettingsPanel({
                   onChange={(bentoDualCardColorToken) => onChange({ bentoDualCardColorToken })}
                 />
                 <FaqOptionGrid
-                  label="Card radius"
+                  label={t('Card radius')}
                   options={PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS}
                   value={faq.bentoDualCardRadius ?? 'md'}
                   onChange={(bentoDualCardRadius) => onChange({ bentoDualCardRadius })}
                 />
                 <FaqOptionGrid
-                  label="Card border"
+                  label={t('Card border')}
                   options={PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS}
                   value={faq.bentoDualCardBorder ?? 'soft'}
                   onChange={(bentoDualCardBorder) => onChange({ bentoDualCardBorder })}
                 />
                 <FaqPercentSlider
-                  label="Card opacity"
+                  label={t('Card opacity')}
                   value={faq.bentoDualCardOpacity ?? 100}
                   onChange={(bentoDualCardOpacity) => onChange({ bentoDualCardOpacity })}
                 />
               </div>
             ) : (
-              <p className="text-sm leading-relaxed text-neutral-500">
-                This design ships with its own fixed visual identity — hover focus, spring-open
-                answers, and{' '}
+              <p className="text-sm leading-relaxed text-[color:var(--pf-palette-texte-muted)]">
+                {t('This design ships with its own fixed visual identity — hover focus, spring-open answers, and')}{' '}
                 {faq.design === 'floating-gallery'
-                  ? 'a frosted glass panel are'
+                  ? t('a frosted glass panel are')
                   : faq.design === 'editorial-masonry'
-                    ? 'an asymmetric offset grid are'
+                    ? t('an asymmetric offset grid are')
                     : faq.design === 'prism-cards'
-                      ? 'a violet-electric color flip are'
+                      ? t('a violet-electric color flip are')
                       : faq.design === 'star-scroll'
-                        ? 'a scroll-driven spinning star are'
+                        ? t('a scroll-driven spinning star are')
                         : faq.design === 'tri-grid'
-                          ? 'an asynchronous three-column parallax are'
+                          ? t('an asynchronous three-column parallax are')
                           : faq.design === 'split-index'
-                            ? 'a filled index badge on every row are'
+                            ? t('a filled index badge on every row are')
                             : faq.design === 'centered-focus'
-                              ? 'a soft hover zoom are'
-                              : 'a line-by-line reveal are'}{' '}
-                all built in. It doesn&rsquo;t expose extra styling controls.
+                              ? t('a soft hover zoom are')
+                              : t('a line-by-line reveal are')}{' '}
+                {t('all built in. It doesn’t expose extra styling controls.')}
               </p>
             )}
           </SettingsRowsScope>
 </FaqLayoutSettingsBand>
+          <SettingsGroup label={t('Style')}>
+            <SectionColorModeControl label={t('Color mode')} value={faq.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
+            <FaqOptionGrid
+              label={t('Text size')}
+              options={PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS}
+              value={faq.premiumFontSize ?? 'medium'}
+              onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+              columns={3}
+            />
+            <FaqTextColorsGroup faq={faq} onChange={onChange} palette={faqPalette} />
+            <FaqFrameGroup faq={faq} onChange={onChange} palette={faqPalette} />
+          </SettingsGroup>
+          </>
+          ) : null}
         </div>
       ) : null}
 
-      {subSection === 'header' ? (
+      {subSection !== 'design' && !faq.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {subSection === 'header' && faq.enabled ? (
         <div className="space-y-4">
           <FaqHeaderChoiceGrid
             value={faq.headerDesign}
@@ -1293,7 +1326,7 @@ export function FaqSettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'background' ? (
+      {subSection === 'background' && faq.enabled ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={faq}

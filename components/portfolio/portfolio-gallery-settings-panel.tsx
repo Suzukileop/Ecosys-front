@@ -1,6 +1,11 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -41,6 +46,9 @@ import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-he
 import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
 import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -53,10 +61,10 @@ export type GallerySubSection = 'general' | 'design' | 'background' | 'header';
 export type GallerySettingsSubSection = GallerySubSection;
 
 const GALLERY_SUB_SECTIONS: { id: GallerySubSection; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'design', label: 'Design' },
-  { id: 'header', label: 'Header' },
-  { id: 'background', label: 'Background' },
+  { id: 'general', label: msg('General') },
+  { id: 'design', label: msg('Design') },
+  { id: 'header', label: msg('Header') },
+  { id: 'background', label: msg('Background') },
 ];
 
 /** Maps legacy subsection ids (saved UI state / search) onto the current Gallery menu. */
@@ -76,11 +84,11 @@ type GalleryPatch = (patch: Partial<PortfolioGallerySectionSettings>) => void;
 /* ---------------------------------------------------------------------- */
 
 function GallerySectionLabel({ children }: { children: string }) {
-  return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
+  return <p className="pf-stack-block-label">{children}</p>;
 }
 
 function GalleryGroupLabel({ children }: { children: string }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{children}</p>;
+  return <p className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">{children}</p>;
 }
 
 /** Same animated switch as the Footer/Services/Contact panels — shared settings-UI chrome. */
@@ -127,7 +135,7 @@ function GalleryToggleRow({
       className="flex w-full cursor-pointer flex-col gap-1 text-left"
     >
       <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0 truncate text-sm font-medium text-neutral-950">{label}</span>
+        <span className="min-w-0 truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
         <GallerySwitchTrack checked={checked} />
       </span>
     </button>
@@ -147,9 +155,9 @@ function GalleryVisibilityRow({
   const rows = useSettingsRows();
   if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
+    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--pf-palette-bordure)] py-3.5 last:border-b-0">
       <span
-        className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-neutral-950"
+        className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]"
         onClick={() => onChange(!checked)}
       >
         {label}
@@ -184,6 +192,7 @@ function GalleryOptionGrid<T extends string>({
   /** Keeps `label` as the accessible name only — for a pill that sits right under its own heading. */
   hideLabel?: boolean;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
@@ -208,7 +217,7 @@ function GalleryOptionGrid<T extends string>({
                 active ? 'pf-choice pf-choice--active' : 'pf-choice'
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -237,7 +246,7 @@ function GalleryRange({
     <div>
       <div className="flex items-baseline justify-between gap-3">
         <GalleryGroupLabel>{label}</GalleryGroupLabel>
-        <span className="text-[11px] font-semibold tabular-nums text-neutral-400">
+        <span className="text-[11px] font-semibold tabular-nums text-[color:var(--pf-palette-texte-muted)]">
           {value}
           {suffix}
         </span>
@@ -274,7 +283,7 @@ function GalleryManualColorField({
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
+          className="h-11 w-14 cursor-pointer rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
           aria-label={`${label} picker`}
         />
         <input
@@ -284,7 +293,7 @@ function GalleryManualColorField({
             const next = event.target.value.trim();
             if (isValidProfileHexColor(next)) onChange(next);
           }}
-          className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
+          className="w-28 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm font-mono text-[color:var(--pf-palette-texte-fort)]"
           aria-label={`${label} hex`}
         />
       </div>
@@ -304,6 +313,7 @@ function GalleryBackgroundColorField({
   onChange: GalleryPatch;
   label: string;
 }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, gallery.galleryPalette);
   const bindings = mergeGalleryColorBindings(gallery.galleryColorBindings);
   const token = bindings.sectionBackground;
@@ -314,7 +324,7 @@ function GalleryBackgroundColorField({
       <div className="flex items-start justify-between gap-3">
         <GallerySectionLabel>{label}</GallerySectionLabel>
         <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
+          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
           style={{ backgroundColor: resolved }}
           title={resolved}
           aria-hidden
@@ -325,12 +335,12 @@ function GalleryBackgroundColorField({
         onChange={(event) =>
           onChange(patchGalleryColorBinding(gallery, 'sectionBackground', event.target.value as HeroPaletteTokenId))
         }
-        className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-        aria-label={`${label} palette token`}
+        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+        aria-label={t('{label} palette token', { label })}
       >
         {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {t(option.label)}
           </option>
         ))}
       </select>
@@ -386,22 +396,23 @@ function GalleryDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <GallerySectionLabel>{label}</GallerySectionLabel>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
             {children}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -521,29 +532,51 @@ function GalleryDesignChoiceGrid({
   showGrid: boolean;
   setShowGrid: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_GALLERY_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_GALLERY_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <GallerySectionLabel>Section design</GallerySectionLabel>
+          <GallerySectionLabel>{t('Section design')}</GallerySectionLabel>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-gallery-design-card"
+                labelClassName="pf-gallery-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'gallery', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => (
             <GalleryPickerCard
               key={option.value}
               active={option.value === value}
-              label={option.label}
+              label={t(option.label)}
               onClick={() => {
                 onChange(option.value);
                 setShowGrid(false);
@@ -553,12 +586,13 @@ function GalleryDesignChoiceGrid({
             </GalleryPickerCard>
           ))}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <GalleryDesignSummaryRow label="Design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <GalleryDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <GalleryDesignWireframe design={value} />
     </GalleryDesignSummaryRow>
   );
@@ -567,6 +601,7 @@ function GalleryDesignChoiceGrid({
 /** One wireframe per Header design — the shared 8-design GSAP header mounted above the
  *  Gallery section, independent of the gallery's own layout `design`. */
 function GalleryHeaderWireframe({ design }: { design: PortfolioGalleryHeaderDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
@@ -588,7 +623,7 @@ function GalleryHeaderWireframe({ design }: { design: PortfolioGalleryHeaderDesi
             opacity={0.14}
             className="pf-stack-mini-ink"
           >
-            GALLERY
+            {t('GALLERY')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="84" height="11" rx="2" />
         </GalleryMiniStage>
@@ -631,7 +666,7 @@ function GalleryHeaderWireframe({ design }: { design: PortfolioGalleryHeaderDesi
             opacity={0.1}
             className="pf-stack-mini-ink"
           >
-            GALLERY
+            {t('GALLERY')}
           </text>
           <rect className="pf-stack-mini-ink" x="18" y="30" width="60" height="9" rx="2" />
           <rect className="pf-stack-mini-mute" x="18" y="44" width="40" height="3" rx="1.5" />
@@ -672,6 +707,7 @@ function GalleryHeaderDesignGrid({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
+  const t = useT();
   const selected =
     PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS[0];
@@ -680,13 +716,13 @@ function GalleryHeaderDesignGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <GallerySectionLabel>Header design</GallerySectionLabel>
+          <GallerySectionLabel>{t('Header design')}</GallerySectionLabel>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -694,7 +730,7 @@ function GalleryHeaderDesignGrid({
             <PortfolioHeaderDesignOption key={option.value} design={option.value}>
               <GalleryPickerCard
                 active={option.value === value}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -710,7 +746,7 @@ function GalleryHeaderDesignGrid({
   }
 
   return (
-    <GalleryDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <GalleryDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <GalleryHeaderWireframe design={value} />
     </GalleryDesignSummaryRow>
   );
@@ -757,14 +793,14 @@ function GalleryBandGroup({ title, children }: { title: string; children: ReactN
 /* ---------------------------------------------------------------------- */
 
 const GALLERY_HEADER_COPY: HeaderCopy = {
-  editorial: { label: 'Gallery', title: 'Visual journal', subtitle: 'Images, films, and chosen moments.' },
-  index: { rule: 'Index', title: 'Visual journal', subtitle: 'Images, films, and chosen moments.', count: 'Images' },
+  editorial: { label: msg('Gallery'), title: msg('Visual journal'), subtitle: msg('Images, films, and chosen moments.') },
+  index: { rule: 'Index', title: msg('Visual journal'), subtitle: msg('Images, films, and chosen moments.'), count: 'Images' },
   marquee: ['Gallery', 'Optional', 'Optional', 'Optional'],
   accent: { badge: '{count}+ moments', lead: 'A curated set of images and moments worth revisiting.' },
-  serif: { label: 'Gallery', title: 'A curated collection of images, films, and chosen moments.', subtitle: 'Images, films, and chosen moments.' },
-  billboard: { word: 'GALLERY', title: 'Visual journal', count: '{count} images — visual journal below' },
+  serif: { label: msg('Gallery'), title: msg('A curated collection of images, films, and chosen moments.'), subtitle: msg('Images, films, and chosen moments.') },
+  billboard: { word: 'GALLERY', title: msg('Visual journal'), count: '{count} images — visual journal below' },
   masthead: ['Visual stories.', 'Chosen with intent.', 'Captured over time.'],
-  split: { title: 'Visual journal', label: 'Gallery' },
+  split: { title: msg('Visual journal'), label: msg('Gallery') },
 };
 
 /** The Header tab body: this design's texts, one style editor, then the controls every design shares. */
@@ -790,8 +826,8 @@ function GalleryHeaderDesignFields({
 }
 
 const GALLERY_CAPTION_PAGER_OPTIONS = [
-  { value: 'chevrons' as const, label: 'Chevrons' },
-  { value: 'dots' as const, label: 'Dots' },
+  { value: 'chevrons' as const, label: msg('Chevrons') },
+  { value: 'dots' as const, label: msg('Dots') },
 ];
 
 function GalleryLayoutSettingsBand({
@@ -801,6 +837,7 @@ function GalleryLayoutSettingsBand({
   gallery: PortfolioGallerySectionSettings;
   onChange: GalleryPatch;
 }) {
+  const t = useT();
   const usesCarouselNav = galleryDesignUsesCarouselNav(gallery.design);
   const usesCardWidth = galleryDesignUsesCaptionCardWidth(gallery.design);
   const isCaptionCarousel = gallery.design === 'caption-carousel';
@@ -812,19 +849,19 @@ function GalleryLayoutSettingsBand({
 
   if (!hasComposition && !hasNavigation && !isHeroMosaic && !isFramedGrid && !isFloatingCanvas) {
     return (
-      <p className="text-xs text-neutral-400">
-        This design has no options of its own — it renders straight from your media.
+      <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+        {t('This design has no options of its own — it renders straight from your media.')}
       </p>
     );
   }
 
   return (
-    <GallerySettingsBand id="gallery-layout-settings-title" title="Layout settings" motionKey={gallery.design}>
-<SettingsRowsScope title="Layout options">
+    <GallerySettingsBand id="gallery-layout-settings-title" title={t('Layout settings')} motionKey={gallery.design}>
+<SettingsRowsScope title={t('Layout options')}>
       {isHeroMosaic ? (
-        <GalleryBandGroup title="Hover">
+        <GalleryBandGroup title={t('Hover')}>
           <GalleryToggleRow
-            label="Focus on hover"
+            label={t('Focus on hover')}
             checked={gallery.mosaicFocusEnabled !== false}
             onChange={(mosaicFocusEnabled) => onChange({ mosaicFocusEnabled })}
           />
@@ -832,32 +869,32 @@ function GalleryLayoutSettingsBand({
       ) : null}
       {isFloatingCanvas ? (
         <>
-          <GalleryBandGroup title="Canvas">
+          <GalleryBandGroup title={t('Canvas')}>
             <GalleryOptionGrid
-              label="Lanes"
+              label={t('Lanes')}
               options={PORTFOLIO_GALLERY_FLOATING_CANVAS_LANE_OPTIONS}
               value={gallery.floatingCanvasLanes ?? '3'}
               onChange={(floatingCanvasLanes) => onChange({ floatingCanvasLanes })}
               columns={2}
             />
             <GalleryOptionGrid
-              label="Dispersion"
+              label={t('Dispersion')}
               options={PORTFOLIO_GALLERY_FLOATING_CANVAS_DISPERSION_OPTIONS}
               value={gallery.floatingCanvasDispersion ?? 'medium'}
               onChange={(floatingCanvasDispersion) => onChange({ floatingCanvasDispersion })}
               columns={4}
             />
             <GalleryOptionGrid
-              label="Scroll parallax"
+              label={t('Scroll parallax')}
               options={PORTFOLIO_GALLERY_FLOATING_CANVAS_PARALLAX_OPTIONS}
               value={gallery.floatingCanvasParallax ?? 'medium'}
               onChange={(floatingCanvasParallax) => onChange({ floatingCanvasParallax })}
               columns={4}
             />
           </GalleryBandGroup>
-          <GalleryBandGroup title="Title badge">
+          <GalleryBandGroup title={t('Title badge')}>
             <GalleryOptionGrid
-              label="Badge style"
+              label={t('Badge style')}
               hideLabel
               options={PORTFOLIO_GALLERY_FLOATING_CANVAS_BADGE_OPTIONS}
               value={gallery.floatingCanvasBadge ?? 'dark'}
@@ -868,16 +905,16 @@ function GalleryLayoutSettingsBand({
         </>
       ) : null}
       {isFramedGrid ? (
-        <GalleryBandGroup title="Motion & title">
+        <GalleryBandGroup title={t('Motion & title')}>
           <GalleryOptionGrid
-            label="Scroll parallax"
+            label={t('Scroll parallax')}
             options={PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS}
             value={gallery.framedGridParallax ?? 'medium'}
             onChange={(framedGridParallax) => onChange({ framedGridParallax })}
             columns={4}
           />
           <GalleryOptionGrid
-            label="Hover title style"
+            label={t('Hover title style')}
             options={PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS}
             value={gallery.framedGridTitleStyle ?? 'serif'}
             onChange={(framedGridTitleStyle) => onChange({ framedGridTitleStyle })}
@@ -885,30 +922,29 @@ function GalleryLayoutSettingsBand({
           />
           <div className="space-y-1.5">
             <GalleryToggleRow
-              label="Monochrome-to-color hover"
+              label={t('Monochrome-to-color hover')}
               checked={gallery.framedGridColorReveal !== false}
               onChange={(framedGridColorReveal) => onChange({ framedGridColorReveal })}
             />
-            <p className="text-xs text-neutral-400">
-              Images cool to a muted monochrome at rest, then bloom to full color on hover.
+            <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+              {t('Images cool to a muted monochrome at rest, then bloom to full color on hover.')}
             </p>
           </div>
         </GalleryBandGroup>
       ) : null}
       {hasComposition ? (
-        <GalleryBandGroup title="Composition">
+        <GalleryBandGroup title={t('Composition')}>
           {usesCardWidth ? (
             <div className="space-y-1.5">
               <GalleryRange
-                label="Image size"
+                label={t('Image size')}
                 value={gallery.captionCardWidthPx}
                 min={180}
                 max={420}
                 onChange={(captionCardWidthPx) => onChange({ captionCardWidthPx })}
               />
-              <p className="text-xs text-neutral-400">
-                Scales the plates. With a ratio set they share one height and their widths vary; with
-                Original ratio each keeps its own proportions.
+              <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+                {t('Scales the plates. With a ratio set they share one height and their widths vary; with Original ratio each keeps its own proportions.')}
               </p>
             </div>
           ) : null}
@@ -916,30 +952,30 @@ function GalleryLayoutSettingsBand({
       ) : null}
 
       {hasNavigation ? (
-        <GalleryBandGroup title="Navigation">
+        <GalleryBandGroup title={t('Navigation')}>
           {usesCarouselNav ? (
             <div className="space-y-1.5">
               <GalleryToggleRow
-                label="Navigation arrows"
+                label={t('Navigation arrows')}
                 checked={gallery.showCarouselNav}
                 onChange={(showCarouselNav) => onChange({ showCarouselNav })}
               />
-              <p className="text-xs text-neutral-400">Previous / next buttons for scrolling galleries.</p>
+              <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">{t('Previous / next buttons for scrolling galleries.')}</p>
             </div>
           ) : null}
           {isCaptionCarousel ? (
             <>
               <div className="space-y-1.5">
                 <GalleryToggleRow
-                  label="Carousel controls"
+                  label={t('Carousel controls')}
                   checked={gallery.showPagination}
                   onChange={(showPagination) => onChange({ showPagination })}
                 />
-                <p className="text-xs text-neutral-400">Shows the controls under the cards.</p>
+                <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">{t('Shows the controls under the cards.')}</p>
               </div>
               {gallery.showPagination ? (
                 <GalleryOptionGrid
-                  label="Control style"
+                  label={t('Control style')}
                   options={GALLERY_CAPTION_PAGER_OPTIONS}
                   value={gallery.captionPager ?? 'chevrons'}
                   onChange={(captionPager) => onChange({ captionPager })}
@@ -968,6 +1004,7 @@ export function GallerySettingsPanel({
   subSection?: GallerySubSection;
   onSubSectionChange?: (value: GallerySubSection) => void;
 }) {
+  const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<GallerySubSection>('general');
@@ -980,67 +1017,43 @@ export function GallerySettingsPanel({
 
   return (
     <div className="space-y-6">
-      <div className="pf-subtabs" role="tablist" aria-label="Settings sections">
-        {GALLERY_SUB_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => setSubSection(section.id)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              subSection === section.id
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs tabs={GALLERY_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
       {subSection === 'general' ? (
         <div className="space-y-8">
-          <div>
-            <GallerySectionLabel>Visibility</GallerySectionLabel>
-            <div className="mt-4">
+          <SettingsSwitchRow
+            label={t('Show Gallery section')}
+            description={gallery.enabled !== false ? undefined : t('Visitors go straight to the next section.')}
+            checked={gallery.enabled !== false}
+            onChange={(enabled) => onChange({ enabled })}
+          />
+          {gallery.enabled !== false ? (
+          <SettingsGroup label={t('Content shown')}>
+            <div>
               <GalleryVisibilityRow
-                label="Show Gallery section"
-                checked={gallery.enabled !== false}
-                onChange={(enabled) => onChange({ enabled })}
-              />
-              <GalleryVisibilityRow
-                label="Media titles"
+                label={t('Media titles')}
                 checked={gallery.showTitle}
                 onChange={(showTitle) => onChange({ showTitle })}
               />
               <GalleryVisibilityRow
-                label="Lightbox"
+                label={t('Lightbox')}
                 checked={gallery.lightboxEnabled}
                 onChange={(lightboxEnabled) => onChange({ lightboxEnabled })}
               />
               <GalleryVisibilityRow
-                label="Hover zoom"
+                label={t('Hover zoom')}
                 checked={gallery.hoverZoom}
                 onChange={(hoverZoom) => onChange({ hoverZoom })}
               />
             </div>
-          </div>
-
-          <SectionColorModeControl
-            value={gallery.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <GalleryOptionGrid
-            label="Font size"
-            options={PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS}
-            value={gallery.premiumFontSize ?? 'medium'}
-            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-            columns={3}
-          />
+          </SettingsGroup>
+          ) : null}
         </div>
       ) : null}
 
-      {subSection === 'design' ? (
+      {subSection !== 'general' && !(gallery.enabled !== false) ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {subSection === 'design' && gallery.enabled !== false ? (
         <div className="space-y-6">
           <GalleryDesignChoiceGrid
             showGrid={designCatalogOpen}
@@ -1049,10 +1062,30 @@ export function GallerySettingsPanel({
             onChange={(design) => onChange({ design })}
           />
           {designCatalogOpen ? null : <GalleryLayoutSettingsBand gallery={gallery} onChange={onChange} />}
+          {designCatalogOpen ? null : (
+          <div>
+          <SettingsGroup label={t('Style')}>
+
+          <SectionColorModeControl
+            label={t('Color mode')}
+            value={gallery.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+
+          <GalleryOptionGrid
+            label={t('Text size')}
+            options={PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS}
+            value={gallery.premiumFontSize ?? 'medium'}
+            onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+            columns={3}
+          />
+          </SettingsGroup>
+          </div>
+          )}
         </div>
       ) : null}
 
-      {subSection === 'background' ? (
+      {subSection === 'background' && gallery.enabled !== false ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={gallery}
@@ -1069,7 +1102,7 @@ export function GallerySettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'header' ? (
+      {subSection === 'header' && gallery.enabled !== false ? (
         <div className="space-y-6">
           <GalleryHeaderDesignGrid
             value={gallery.headerDesign ?? 'editorial'}
@@ -1080,7 +1113,7 @@ export function GallerySettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <GallerySettingsBand id="gallery-header-settings-title" title="Header settings" motionKey={gallery.headerDesign ?? 'editorial'} flush>
+            <GallerySettingsBand id="gallery-header-settings-title" title={t('Header settings')} motionKey={gallery.headerDesign ?? 'editorial'} flush>
               <GalleryHeaderDesignFields gallery={gallery} onChange={onChange} />
             </GallerySettingsBand>
           )}

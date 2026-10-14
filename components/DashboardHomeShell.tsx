@@ -7,6 +7,7 @@ export function DashboardHomeShell({
   fullWidth = false,
   fillViewport = false,
   newsTheme = false,
+  newsGround = false,
 }: {
   children: React.ReactNode;
   wide?: boolean;
@@ -16,6 +17,11 @@ export function DashboardHomeShell({
   fillViewport?: boolean;
   /** Use the News palette (`.news-theme`: soft #1c1c1e cards, ink tokens, orange accent only). */
   newsTheme?: boolean;
+  /**
+   * The page sits on the News ground (neutral-100 / zinc-950, see `isNewsGroundPath`): blocks are
+   * drawn white / zinc-900 on it — the `.news-feed` light tokens — instead of grey on white.
+   */
+  newsGround?: boolean;
 }) {
   const widthClass = fullWidth
     ? 'w-full max-w-none'
@@ -25,7 +31,7 @@ export function DashboardHomeShell({
 
   return (
     <main
-      className={`relative z-10 ${newsTheme ? 'news-theme ' : ''}${widthClass} ${
+      className={`relative z-10 ${newsTheme ? 'news-theme ' : ''}${newsTheme && newsGround ? 'news-feed ' : ''}${widthClass} ${
         fillViewport ? 'flex min-h-0 flex-1 flex-col' : 'space-y-6'
       }`}
     >

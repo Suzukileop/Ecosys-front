@@ -29,12 +29,12 @@ export function LoadingSpinner({ size = 'md' }: LoadingSpinnerProps) {
   );
 }
 
-/** Full-viewport loader: orange progress line pinned to the top, dots centred on the page ground. */
+/** Full-viewport loader: an ink progress line pinned to the top, dots centred on the page ground. */
 export function AppLoadingScreen() {
   return (
-    <div className="relative flex min-h-screen items-center justify-center bg-white text-[#111111] dark:bg-neutral-950 dark:text-white">
-      <div className="fixed inset-x-0 top-0 h-0.5 overflow-hidden bg-black/[0.04] dark:bg-white/[0.06]" aria-hidden>
-        <div className="app-loader-bar h-full w-2/5 rounded-full bg-[#FF5722]" />
+    <div className="relative flex min-h-screen items-center justify-center bg-white text-[#0F1419] dark:bg-black dark:text-[#E7E9EA]">
+      <div className="fixed inset-x-0 top-0 h-0.5 overflow-hidden bg-[#0F1419]/[0.06] dark:bg-[#E7E9EA]/[0.1]" aria-hidden>
+        <div className="app-loader-bar h-full w-2/5 rounded-full bg-[#0F1419] dark:bg-[#E7E9EA]" />
       </div>
       <LoadingSpinner size="lg" />
     </div>

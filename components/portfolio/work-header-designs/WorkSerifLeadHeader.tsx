@@ -11,7 +11,8 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 /** Label is a small uppercase kicker — sizes stay compact at every step. */
 const LABEL_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
@@ -116,11 +117,15 @@ export function WorkSerifLeadHeader({
   const align = presentation.headerAlignment ?? 'left';
   const centered = align === 'center';
   const alignRight = align === 'right';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'serif-lead');
+  const showLabel = show('label');
+  const showTitle = show('title');
+  const showSubtitle = show('subtitle');
   const title = (presentation.serifLeadTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.serifLeadLabelText || DEFAULT_LABEL_TEXT).trim();
-  const lines = splitSerifLeadLines(title);
+  const lines = showTitle ? splitSerifLeadLines(title) : [];
 
   const labelTone = workPaletteTokenColor(presentation.serifLeadLabelColor ?? 'texteFort');
   const titleTone = workPaletteTokenColor(presentation.serifLeadTitleColor ?? 'texteFort');
@@ -141,7 +146,7 @@ export function WorkSerifLeadHeader({
     const header = headerRef.current;
     const labelEl = labelRef.current;
     const leadBlock = leadRef.current;
-    if (!header || !labelEl) return;
+    if (!header) return;
     if (prefersReducedMotion() || !animationEnabled) return;
 
     gsap.registerPlugin(ScrollTrigger);
@@ -161,7 +166,7 @@ export function WorkSerifLeadHeader({
     const lineEls = lineRefs.current.filter((node): node is HTMLSpanElement => Boolean(node));
 
     const ctx = gsap.context(() => {
-      gsap.set(labelEl, { opacity: 0 });
+      if (labelEl) gsap.set(labelEl, { opacity: 0 });
       if (lineEls.length) gsap.set(lineEls, { yPercent: 110 });
       if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
 
@@ -173,7 +178,7 @@ export function WorkSerifLeadHeader({
         defaults: { overwrite: true },
         scrollTrigger: { trigger: header, scroller, start: 'top 85%', once: true },
       });
-      intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
+      if (labelEl) intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
       if (lineEls.length) {
         intro.to(lineEls, { yPercent: 0, duration: 0.95, ease: 'power3.out', stagger: 0.14 }, 0.12);
       }
@@ -188,7 +193,7 @@ export function WorkSerifLeadHeader({
           invalidateOnRefresh: true,
         },
       });
-      fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
+      if (labelEl) fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
       if (leadBlock) {
         const slideX = centered ? 0 : alignRight ? 16 : -16;
         fade.fromTo(leadBlock, { x: 0, opacity: 1 }, { x: 0, opacity: 1, duration: 0.22, ease: 'none' }, 0);
@@ -200,7 +205,7 @@ export function WorkSerifLeadHeader({
       window.clearTimeout(refreshId);
       ctx.revert();
     };
-  }, [animationEnabled, title, label, centered, alignRight]);
+  }, [animationEnabled, title, label, centered, alignRight, showLabel, showTitle]);
 
   const textAlignClass = centered ? 'text-center' : alignRight ? 'text-right' : 'text-left';
   const itemsAlignClass = centered ? 'items-center' : alignRight ? 'items-end' : 'items-start';
@@ -215,17 +220,19 @@ export function WorkSerifLeadHeader({
     >
       <div className={`flex flex-col gap-3 ${itemsAlignClass}`}>
         <div className="min-w-0">
-          <p
-            ref={labelRef}
-            className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
-            style={{
-              color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
-              fontSize: labelFontSize,
-              fontWeight: labelFontWeight,
-            }}
-          >
-            {label}
-          </p>
+          {showLabel ? (
+            <p
+              ref={labelRef}
+              className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
+              style={{
+                color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
+                fontSize: labelFontSize,
+                fontWeight: labelFontWeight,
+              }}
+            >
+              {label}
+            </p>
+          ) : null}
           {lines.length > 0 ? (
             <h2
               ref={leadRef}
@@ -256,7 +263,7 @@ export function WorkSerifLeadHeader({
               ))}
             </h2>
           ) : null}
-          {sectionSubtitle ? (
+          {showSubtitle && sectionSubtitle ? (
             <p
               className="mb-0 mt-3 max-w-xl leading-relaxed"
               style={{ color: subtitleTone, fontSize: subtitleFontSize, fontWeight: subtitleFontWeight }}

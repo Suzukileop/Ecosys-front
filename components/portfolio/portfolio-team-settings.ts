@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -39,6 +40,7 @@ import {
   type PortfolioTeamHeaderTitleSize,
   type PortfolioTeamHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-team-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 /** `meet-cards` and `hover-cards` are retired: still accepted from storage, remapped on merge. */
 export type PortfolioTeamLayout = 'meet-cards' | 'portrait-rail' | 'spotlight' | 'split-screen' | 'editorial-rhythm' | 'directory' | 'polaroid' | 'profile-cards' | 'hover-cards' | 'avatar-cards' | 'cover-cards' | 'float-cards' | 'floating-canvas';
@@ -311,6 +313,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   headerDesign: PortfolioTeamHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioTeamHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioTeamHeaderMarginBottom;
@@ -452,17 +456,17 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'portrait-rail', label: 'Portrait rail', description: 'Immersive portraits in a draggable rail with a scrub indicator.' },
-  { value: 'spotlight', label: 'Spotlight', description: 'A monumental portrait panel; thumbnails swap it with a directional wipe.' },
-  { value: 'split-screen', label: 'Split screen', description: 'Monumental names stacked on one side; the addressed one fills a full-height portrait on the other.' },
-  { value: 'editorial-rhythm', label: 'Editorial rhythm', description: 'A broken grid of unequal plates; the first name is printed across its own portrait.' },
-  { value: 'directory', label: 'Directory', description: 'A monumental numbered index; the portrait follows the cursor or sits in every row.' },
-  { value: 'polaroid', label: 'Polaroid', description: 'Grained instant prints on a dark table — drag/chevron rail, monochrome-to-color hover, a grid toggle.' },
-  { value: 'profile-cards', label: 'Profile cards', description: 'Portrait on top, name and socials centered below.' },
-  { value: 'cover-cards', label: 'Hover veil', description: 'Portrait only — a dark veil reveals name, role, and links on hover.' },
-  { value: 'avatar-cards', label: 'Avatar cards', description: 'Haloed avatars that morph out of their circle on hover — rail or staggered grid.' },
-  { value: 'float-cards', label: 'Floating cards', description: 'A portrait floating over a card that tilts in 3D; the accent washes in from the cursor.' },
-  { value: 'floating-canvas', label: 'Floating canvas', description: 'An irregular, ultra-airy canvas — names float above or below their portrait, broken by an editorial passage.' },
+  { value: 'portrait-rail', label: msg('Portrait rail'), description: msg('Immersive portraits in a draggable rail with a scrub indicator.') },
+  { value: 'spotlight', label: msg('Spotlight'), description: msg('A monumental portrait panel; thumbnails swap it with a directional wipe.') },
+  { value: 'split-screen', label: msg('Split screen'), description: msg('Monumental names stacked on one side; the addressed one fills a full-height portrait on the other.') },
+  { value: 'editorial-rhythm', label: msg('Editorial rhythm'), description: msg('A broken grid of unequal plates; the first name is printed across its own portrait.') },
+  { value: 'directory', label: msg('Directory'), description: msg('A monumental numbered index; the portrait follows the cursor or sits in every row.') },
+  { value: 'polaroid', label: msg('Polaroid'), description: msg('Grained instant prints on a dark table — drag/chevron rail, monochrome-to-color hover, a grid toggle.') },
+  { value: 'profile-cards', label: msg('Profile cards'), description: msg('Portrait on top, name and socials centered below.') },
+  { value: 'cover-cards', label: msg('Hover veil'), description: msg('Portrait only — a dark veil reveals name, role, and links on hover.') },
+  { value: 'avatar-cards', label: msg('Avatar cards'), description: msg('Haloed avatars that morph out of their circle on hover — rail or staggered grid.') },
+  { value: 'float-cards', label: msg('Floating cards'), description: msg('A portrait floating over a card that tilts in 3D; the accent washes in from the cursor.') },
+  { value: 'floating-canvas', label: msg('Floating canvas'), description: msg('An irregular, ultra-airy canvas — names float above or below their portrait, broken by an editorial passage.') },
 ];
 
 const PORTFOLIO_TEAM_RAIL_NAVIGATIONS = [
@@ -475,9 +479,9 @@ export const PORTFOLIO_TEAM_RAIL_NAVIGATION_OPTIONS: {
   value: PortfolioTeamRailNavigation;
   label: string;
 }[] = [
-  { value: 'drag', label: 'Drag' },
-  { value: 'chevrons', label: 'Arrows' },
-  { value: 'show-all', label: 'Show all' },
+  { value: 'drag', label: msg('Drag') },
+  { value: 'chevrons', label: msg('Arrows') },
+  { value: 'show-all', label: msg('Show all') },
 ];
 
 export const PORTFOLIO_TEAM_RAIL_COLUMN_OPTIONS: {
@@ -500,9 +504,9 @@ export const PORTFOLIO_TEAM_POLAROID_PHOTO_TONE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'hover', label: 'Hover to reveal', description: 'Black & white at rest, full color on hover.' },
-  { value: 'monochrome', label: 'Black & white', description: 'Always black & white, even on hover.' },
-  { value: 'color', label: 'Full color', description: 'Always in color — no monochrome filter.' },
+  { value: 'hover', label: msg('Hover to reveal'), description: msg('Black & white at rest, full color on hover.') },
+  { value: 'monochrome', label: msg('Black & white'), description: msg('Always black & white, even on hover.') },
+  { value: 'color', label: msg('Full color'), description: msg('Always in color — no monochrome filter.') },
 ];
 
 const PORTFOLIO_TEAM_PROFILE_VIEWS = [
@@ -521,10 +525,10 @@ export const PORTFOLIO_TEAM_FLOAT_ALIGN_OPTIONS: {
   value: PortfolioTeamFloatAlign;
   label: string;
 }[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
-  { value: 'full', label: 'Full width' },
+  { value: 'left', label: msg('Left') },
+  { value: 'center', label: msg('Center') },
+  { value: 'right', label: msg('Right') },
+  { value: 'full', label: msg('Full width') },
 ];
 
 export const TEAM_FLOAT_COLUMN_GAP = { min: 0, max: 96, step: 4 } as const;
@@ -550,8 +554,8 @@ export const PORTFOLIO_TEAM_PROFILE_VIEW_OPTIONS: {
   value: PortfolioTeamProfileView;
   label: string;
 }[] = [
-  { value: 'rail', label: 'Rail' },
-  { value: 'grid', label: 'Grid' },
+  { value: 'rail', label: msg('Rail') },
+  { value: 'grid', label: msg('Grid') },
 ];
 
 const PORTFOLIO_TEAM_PROFILE_RATIOS = [
@@ -586,10 +590,10 @@ export const PORTFOLIO_TEAM_PROFILE_GUTTER_OPTIONS: {
   value: PortfolioTeamProfileGutter;
   label: string;
 }[] = [
-  { value: 'sm', label: 'Tight' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Wide' },
-  { value: 'xl', label: 'Extra wide' },
+  { value: 'sm', label: msg('Tight') },
+  { value: 'md', label: msg('Medium') },
+  { value: 'lg', label: msg('Wide') },
+  { value: 'xl', label: msg('Extra wide') },
 ];
 
 const PORTFOLIO_TEAM_PROFILE_PANELS = [
@@ -601,8 +605,8 @@ export const PORTFOLIO_TEAM_PROFILE_PANEL_OPTIONS: {
   value: PortfolioTeamProfilePanel;
   label: string;
 }[] = [
-  { value: 'always', label: 'Always' },
-  { value: 'hover', label: 'On hover' },
+  { value: 'always', label: msg('Always') },
+  { value: 'hover', label: msg('On hover') },
 ];
 
 const PORTFOLIO_TEAM_PROFILE_VISIBLES = [
@@ -619,7 +623,7 @@ export const PORTFOLIO_TEAM_PROFILE_VISIBLE_OPTIONS: {
   { value: '4', label: '4' },
   { value: '6', label: '6' },
   { value: '8', label: '8' },
-  { value: 'all', label: 'All' },
+  { value: 'all', label: msg('All') },
 ];
 
 const PORTFOLIO_TEAM_AVATAR_VIEWS = [
@@ -631,8 +635,8 @@ export const PORTFOLIO_TEAM_AVATAR_VIEW_OPTIONS: {
   value: PortfolioTeamAvatarView;
   label: string;
 }[] = [
-  { value: 'rail', label: 'Rail' },
-  { value: 'grid', label: 'Grid' },
+  { value: 'rail', label: msg('Rail') },
+  { value: 'grid', label: msg('Grid') },
 ];
 
 const PORTFOLIO_TEAM_AVATAR_SHAPES = [
@@ -645,9 +649,9 @@ export const PORTFOLIO_TEAM_AVATAR_SHAPE_OPTIONS: {
   value: PortfolioTeamAvatarShape;
   label: string;
 }[] = [
-  { value: 'circle', label: 'Circle' },
-  { value: 'squircle', label: 'Squircle' },
-  { value: 'arch', label: 'Arch' },
+  { value: 'circle', label: msg('Circle') },
+  { value: 'squircle', label: msg('Squircle') },
+  { value: 'arch', label: msg('Arch') },
 ];
 
 export const PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS: {
@@ -671,10 +675,10 @@ export const PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS: {
   value: PortfolioTeamAvatarColumnGap;
   label: string;
 }[] = [
-  { value: 'sm', label: 'Tight' },
-  { value: 'md', label: 'Snug' },
-  { value: 'lg', label: 'Roomy' },
-  { value: 'xl', label: 'Wide' },
+  { value: 'sm', label: msg('Tight') },
+  { value: 'md', label: msg('Snug') },
+  { value: 'lg', label: msg('Roomy') },
+  { value: 'xl', label: msg('Wide') },
 ];
 
 const PORTFOLIO_TEAM_AVATAR_GRID_WIDTHS = [
@@ -686,8 +690,8 @@ export const PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS: {
   value: PortfolioTeamAvatarGridWidth;
   label: string;
 }[] = [
-  { value: 'centered', label: 'Centered' },
-  { value: 'full', label: 'Full width' },
+  { value: 'centered', label: msg('Centered') },
+  { value: 'full', label: msg('Full width') },
 ];
 
 const PORTFOLIO_TEAM_CORNER_RADII = [
@@ -701,10 +705,10 @@ export const PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS: {
   value: PortfolioTeamCornerRadius;
   label: string;
 }[] = [
-  { value: 'none', label: 'Square' },
-  { value: 'sm', label: 'Small' },
-  { value: 'md', label: 'Medium' },
-  { value: 'lg', label: 'Large' },
+  { value: 'none', label: msg('Square') },
+  { value: 'sm', label: msg('Small') },
+  { value: 'md', label: msg('Medium') },
+  { value: 'lg', label: msg('Large') },
 ];
 
 const PORTFOLIO_TEAM_AVATAR_RADII = [
@@ -715,7 +719,7 @@ const PORTFOLIO_TEAM_AVATAR_RADII = [
 export const PORTFOLIO_TEAM_AVATAR_RADIUS_OPTIONS: {
   value: PortfolioTeamAvatarRadius;
   label: string;
-}[] = [...PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS, { value: 'full', label: 'Full' }];
+}[] = [...PORTFOLIO_TEAM_CORNER_RADIUS_OPTIONS, { value: 'full', label: msg('Full') }];
 
 const PORTFOLIO_TEAM_IMAGE_HEIGHTS = [
   'short',
@@ -727,9 +731,9 @@ export const PORTFOLIO_TEAM_IMAGE_HEIGHT_OPTIONS: {
   value: PortfolioTeamImageHeight;
   label: string;
 }[] = [
-  { value: 'short', label: 'Short' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'tall', label: 'Tall' },
+  { value: 'short', label: msg('Short') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'tall', label: msg('Tall') },
 ];
 
 const PORTFOLIO_TEAM_SPOTLIGHT_SIDES = [
@@ -747,17 +751,17 @@ export const PORTFOLIO_TEAM_SPOTLIGHT_NAVIGATION_OPTIONS: {
   value: PortfolioTeamSpotlightNavigation;
   label: string;
 }[] = [
-  { value: 'thumbnails', label: 'Thumbnails' },
-  { value: 'arrows', label: 'Arrows' },
-  { value: 'both', label: 'Both' },
+  { value: 'thumbnails', label: msg('Thumbnails') },
+  { value: 'arrows', label: msg('Arrows') },
+  { value: 'both', label: msg('Both') },
 ];
 
 export const PORTFOLIO_TEAM_SPOTLIGHT_SIDE_OPTIONS: {
   value: PortfolioTeamSpotlightSide;
   label: string;
 }[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'right', label: 'Right' },
+  { value: 'left', label: msg('Left') },
+  { value: 'right', label: msg('Right') },
 ];
 
 
@@ -771,24 +775,24 @@ export const PORTFOLIO_TEAM_DIRECTORY_PORTRAIT_OPTIONS: {
   value: PortfolioTeamDirectoryPortrait;
   label: string;
 }[] = [
-  { value: 'cursor', label: 'On hover' },
-  { value: 'left', label: 'Left' },
-  { value: 'right', label: 'Right' },
+  { value: 'cursor', label: msg('On hover') },
+  { value: 'left', label: msg('Left') },
+  { value: 'right', label: msg('Right') },
 ];
 
 export const PORTFOLIO_TEAM_TITLE_PRESET_OPTIONS = [
-  { value: 'team' as const, label: 'Our team', description: 'Default English title.' },
-  { value: 'meet-team' as const, label: 'Meet the team', description: 'A warm invitation.' },
-  { value: 'people' as const, label: 'The talent', description: 'Focus on the people.' },
-  { value: 'custom' as const, label: 'Custom', description: 'Your own title.' },
+  { value: 'team' as const, label: msg('Our team'), description: msg('Default English title.') },
+  { value: 'meet-team' as const, label: msg('Meet the team'), description: msg('A warm invitation.') },
+  { value: 'people' as const, label: msg('The talent'), description: msg('Focus on the people.') },
+  { value: 'custom' as const, label: msg('Custom'), description: msg('Your own title.') },
 ];
 
 export const PORTFOLIO_TEAM_SUBTITLE_PRESET_OPTIONS = [
-  { value: 'default' as const, label: 'Default', description: 'Uses the section subtitle text.' },
-  { value: 'together' as const, label: 'Together', description: 'A line about collaboration.' },
-  { value: 'expertise' as const, label: 'Expertise', description: 'Highlights complementary skills.' },
-  { value: 'minimal' as const, label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom' as const, label: 'Custom', description: 'Your own subtitle.' },
+  { value: 'default' as const, label: msg('Default'), description: msg('Uses the section subtitle text.') },
+  { value: 'together' as const, label: msg('Together'), description: msg('A line about collaboration.') },
+  { value: 'expertise' as const, label: msg('Expertise'), description: msg('Highlights complementary skills.') },
+  { value: 'minimal' as const, label: msg('None'), description: msg('Hide the subtitle.') },
+  { value: 'custom' as const, label: msg('Custom'), description: msg('Your own subtitle.') },
 ];
 
 export {
@@ -892,6 +896,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   headerAlignment: 'center',
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
@@ -1105,14 +1110,14 @@ export const PORTFOLIO_TEAM_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across the Team section.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across the Team section.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -1526,6 +1531,7 @@ export function mergeTeamPresentation(
     headerDesign: pick(record.headerDesign, TEAM_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,

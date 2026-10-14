@@ -2,16 +2,17 @@ import type { Metadata } from 'next';
 import Link from 'next/link';
 import { ContactLink, LegalDocument, type LegalSection } from '@/components/legal/LegalDocument';
 import { LEGAL } from '@/lib/legal';
+import { msg } from '@/lib/i18n/config';
 
 export const metadata: Metadata = {
-  title: 'Privacy policy — Skraft',
-  description: 'What personal data Skraft collects, why, who it is shared with and how to exercise your rights.',
+  title: msg('Privacy policy — Skraft'),
+  description: msg('What personal data Skraft collects, why, who it is shared with and how to exercise your rights.'),
 };
 
 const SECTIONS: LegalSection[] = [
   {
     id: 'who-we-are',
-    title: 'Who is responsible',
+    title: msg('Who is responsible'),
     content: (
       <>
         <p>
@@ -28,7 +29,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'data-we-collect',
-    title: 'What we collect',
+    title: msg('What we collect'),
     content: (
       <>
         <h3>Account</h3>
@@ -95,7 +96,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'how-we-use-it',
-    title: 'Why we use it',
+    title: msg('Why we use it'),
     content: (
       <>
         <p>We only use your data for the purposes below, each with a legal basis under the GDPR:</p>
@@ -132,7 +133,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'what-others-see',
-    title: 'What other people can see',
+    title: msg('What other people can see'),
     content: (
       <>
         <ul>
@@ -152,7 +153,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'sharing',
-    title: 'Who we share it with',
+    title: msg('Who we share it with'),
     content: (
       <>
         <p>
@@ -185,7 +186,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'transfers',
-    title: 'International transfers',
+    title: msg('International transfers'),
     content: (
       <>
         <p>
@@ -199,7 +200,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'cookies',
-    title: 'Cookies and local storage',
+    title: msg('Cookies and local storage'),
     content: (
       <>
         <p>
@@ -233,7 +234,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'retention',
-    title: 'How long we keep it',
+    title: msg('How long we keep it'),
     content: (
       <>
         <ul>
@@ -258,7 +259,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'security',
-    title: 'Security',
+    title: msg('Security'),
     content: (
       <>
         <p>
@@ -278,7 +279,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'your-rights',
-    title: 'Your rights',
+    title: msg('Your rights'),
     content: (
       <>
         <p>You can at any time:</p>
@@ -314,7 +315,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'children',
-    title: 'Children',
+    title: msg('Children'),
     content: (
       <>
         <p>
@@ -331,7 +332,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'changes',
-    title: 'Changes to this policy',
+    title: msg('Changes to this policy'),
     content: (
       <p>
         If we change this policy, we will update the date at the top of this page. If the change is significant, we
@@ -341,7 +342,7 @@ const SECTIONS: LegalSection[] = [
   },
   {
     id: 'contact',
-    title: 'Contact',
+    title: msg('Contact'),
     content: (
       <p>
         Questions, requests or concerns about your privacy: <ContactLink />.

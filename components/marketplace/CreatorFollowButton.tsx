@@ -8,7 +8,9 @@ import {
   unfollowCreator,
 } from '@/lib/marketplace-api';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { PROFILE_MOBILE_SOFT_BUTTON } from '@/components/creator/creator-profile-header-types';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorFollowButtonProps = {
   creatorId: string;
@@ -16,19 +18,18 @@ type CreatorFollowButtonProps = {
   initialFollowerCount?: number;
   onFollowingChange?: (following: boolean, followerCount: number) => void;
   size?: 'default' | 'sm';
+  /** `soft`: the phone profile header (filled grey, 40px, rounded, full width of its cell). */
+  appearance?: 'default' | 'soft';
 };
-
-function formatCount(value: number) {
-  return new Intl.NumberFormat('en-US').format(value);
-}
 
 /** Secondary action — social follow, never competes with Discuss. */
 const secondaryBaseClass =
-  'inline-flex items-center justify-center gap-2 rounded-lg border font-medium transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
+  'inline-flex items-center justify-center gap-2 rounded-none border font-semibold transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
 
-const secondaryIdleClass = `${secondaryBaseClass} border-black/10 bg-transparent text-[#111111] hover:border-black/25 dark:border-white/15 dark:text-neutral-100 dark:hover:border-white/30`;
+/* X secondary button: 1px outline, ink text. Following = the same outline on a soft tone. */
+const secondaryIdleClass = `${secondaryBaseClass} border-[#CFD9DE] bg-transparent text-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]`;
 
-const secondaryFollowingClass = `${secondaryBaseClass} border-transparent bg-black/[0.05] text-[#111111] hover:bg-black/[0.08] dark:bg-white/[0.08] dark:text-neutral-100 dark:hover:bg-white/[0.12]`;
+const secondaryFollowingClass = `${secondaryBaseClass} border-[#CFD9DE] bg-[rgba(15,20,25,0.06)] text-[#0F1419] hover:bg-[rgba(15,20,25,0.1)] dark:border-[#536471] dark:bg-[rgba(231,233,234,0.1)] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.16)]`;
 
 export function CreatorFollowButton({
   creatorId,
@@ -36,7 +37,9 @@ export function CreatorFollowButton({
   initialFollowerCount,
   onFollowingChange,
   size = 'default',
+  appearance = 'default',
 }: CreatorFollowButtonProps) {
+  const t = useT();
   const { user, isLoading, sessionStatus } = useAuth();
   const [following, setFollowing] = useState(initialFollowing ?? false);
   const [followerCount, setFollowerCount] = useState(initialFollowerCount ?? 0);
@@ -52,7 +55,10 @@ export function CreatorFollowButton({
   const sessionReady = !isLoading && sessionStatus !== 'loading';
   const canFollow = Boolean(user) && sessionReady && !isSelf;
   const compact = size === 'sm';
-  const sizeClass = compact ? 'h-9 px-4 text-sm' : 'h-11 px-5 text-[15px]';
+  const soft = appearance === 'soft';
+  const sizeClass = soft ? '' : compact ? 'h-9 px-4 text-sm' : 'h-11 px-5 text-[15px]';
+  const idleClass = soft ? `${PROFILE_MOBILE_SOFT_BUTTON} w-full` : secondaryIdleClass;
+  const followingClass = soft ? `${PROFILE_MOBILE_SOFT_BUTTON} w-full` : secondaryFollowingClass;
 
   useEffect(() => {
     touchedRef.current = false;
@@ -133,31 +139,26 @@ export function CreatorFollowButton({
       if (stats) applyState(stats.isFollowing, stats.followerCount);
     } catch (err) {
       applyState(prevFollowing, prevCount);
-      setError(getApiErrorMessage(err, 'Unable to update follow status.'));
+      setError(getApiErrorMessage(err, t('Unable to update follow status.')));
     } finally {
       setBusy(false);
     }
-  }, [applyState, busy, canFollow, creatorId, followerCount, following, triggerPop]);
+  }, [applyState, busy, canFollow, creatorId, followerCount, following, triggerPop, t]);
 
-  const label = following ? 'Following' : 'Follow';
-  const buttonClass = `${following ? secondaryFollowingClass : secondaryIdleClass} ${sizeClass} ${
+  const label = following ? t('Following') : t('Follow');
+  const buttonClass = `${following ? followingClass : idleClass} ${sizeClass} ${
     pop ? 'follow-btn-pop' : ''
   } ${busy ? 'opacity-75' : ''}`;
 
-  if (isSelf) {
-    if (followerCount <= 0) return null;
-    return (
-      <span className={`${secondaryFollowingClass} ${sizeClass}`}>
-        {formatCount(followerCount)} subscriber{followerCount !== 1 ? 's' : ''}
-      </span>
-    );
-  }
+  // On your own profile there is nothing to follow, and the subscriber count already sits in the
+  // header's stats column — repeating it as a pill was a duplicate.
+  if (isSelf) return null;
 
   // Avoid a fake "Follow → /login" bounce while the session is still restoring.
   if (!sessionReady) {
     return (
-      <button type="button" disabled className={`${secondaryIdleClass} ${sizeClass} opacity-60`}>
-        Follow
+      <button type="button" disabled className={`${idleClass} ${sizeClass} opacity-60`}>
+        {t('Follow')}
       </button>
     );
   }
@@ -166,9 +167,9 @@ export function CreatorFollowButton({
     return (
       <Link
         href={`/login?redirect=${encodeURIComponent(`/providers/${creatorId}`)}`}
-        className={`${secondaryIdleClass} ${sizeClass}`}
+        className={`${idleClass} ${sizeClass}`}
       >
-        Follow
+        {t('Follow')}
       </Link>
     );
   }
@@ -187,7 +188,7 @@ export function CreatorFollowButton({
           {label}
         </span>
       </button>
-      {error ? <p className="max-w-[14rem] text-xs text-red-600 dark:text-red-400">{error}</p> : null}
+      {error ? <p className="max-w-[14rem] text-xs text-[#F4212E]">{error}</p> : null}
     </div>
   );
 }

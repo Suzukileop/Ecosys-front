@@ -26,6 +26,7 @@ import { DensityGlyph, TemplateThumb, VariantThumb } from '@/components/portfoli
 import { useCvSectionLabels } from '@/components/portfolio/cv/use-cv-section-labels';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { CreatorProfileDto } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** A4 size in CSS pixels (96 dpi). */
 const A4_HEIGHT_PX = (297 / 25.4) * 96;
@@ -131,6 +132,7 @@ function PaperOption({
 }
 
 export function CvGeneratorPage() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, isLoading } = useAuth();
@@ -155,7 +157,7 @@ export function CvGeneratorPage() {
         if (!cancelled) setProfile(res.data);
       })
       .catch((e) => {
-        if (!cancelled) setError(getApiErrorMessage(e, 'Unable to load your profile.'));
+        if (!cancelled) setError(getApiErrorMessage(e, t('Unable to load your profile.')));
       });
     return () => {
       cancelled = true;
@@ -213,7 +215,7 @@ export function CvGeneratorPage() {
       href="/studio"
       className="whitespace-nowrap text-[13px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
     >
-      ← Portfolio
+      {t('← Portfolio')}
     </Link>
   );
 
@@ -224,18 +226,18 @@ export function CvGeneratorPage() {
       }`}
     >
       <span aria-hidden className={`h-1.5 w-1.5 rounded-full ${pages > 1 ? 'bg-[#D97706]' : 'bg-emerald-500'}`} />
-      {pages > 1 ? `${pages} pages` : '1 page · A4'}
+      {pages > 1 ? `${pages} pages` : t('1 page · A4')}
     </span>
   ) : null;
 
   const controls = (
     <>
       <h1 className="text-[34px] font-semibold leading-[1.02] tracking-[-0.04em] text-[#111111] dark:text-white">
-        Your resume<span className="text-[#FF5722]">.</span>
+        {t('Your resume')}<span className="text-[#FF5722]">.</span>
       </h1>
 
-      <Step index="01" title="Template">
-        <div role="radiogroup" aria-label="CV template" className="grid grid-cols-3 gap-3">
+      <Step index="01" title={t('Template')}>
+        <div role="radiogroup" aria-label={t('CV template')} className="grid grid-cols-3 gap-3">
           {CV_TEMPLATES.map((option) => (
             <PaperOption
               key={option.id}
@@ -258,15 +260,15 @@ export function CvGeneratorPage() {
         <>
           <Step
             index="02"
-            title="Layout"
-            aside={<span className="text-[13px] text-neutral-500 dark:text-neutral-400">{variantInfo?.label}</span>}
+            title={t('Layout')}
+            aside={<span className="text-[13px] text-neutral-500 dark:text-neutral-400">{t(variantInfo?.label)}</span>}
           >
-            <div role="radiogroup" aria-label="ATS layout" className="grid grid-cols-3 gap-x-3 gap-y-4">
+            <div role="radiogroup" aria-label={t('ATS layout')} className="grid grid-cols-3 gap-x-3 gap-y-4">
               {ATS_VARIANTS.map((variant) => (
                 <PaperOption
                   key={variant.id}
                   active={variant.id === atsVariant}
-                  label={variant.label}
+                  label={t(variant.label)}
                   onClick={() => navigate('ats', variant.id)}
                 >
                   <VariantThumb id={variant.id} />
@@ -280,8 +282,8 @@ export function CvGeneratorPage() {
             ) : null}
           </Step>
 
-          <Step index="03" title="Spacing">
-            <div role="radiogroup" aria-label="Spacing" className="grid grid-cols-4 gap-2">
+          <Step index="03" title={t('Spacing')}>
+            <div role="radiogroup" aria-label={t('Spacing')} className="grid grid-cols-4 gap-2">
               {ATS_DENSITIES.map((density) => {
                 const active = density.id === atsDensity;
                 return (
@@ -298,14 +300,14 @@ export function CvGeneratorPage() {
                     }`}
                   >
                     <DensityGlyph id={density.id} />
-                    {density.label}
+                    {t(density.label)}
                   </button>
                 );
               })}
             </div>
             {pages > 1 && atsDensity !== 'tight' ? (
               <p className="mt-4 text-[13px] leading-relaxed text-[#B45309] dark:text-amber-400">
-                Switch to Tight to fit everything on one page.
+                {t('Switch to Tight to fit everything on one page.')}
               </p>
             ) : null}
           </Step>
@@ -323,7 +325,7 @@ export function CvGeneratorPage() {
             <span className="text-[12px] font-normal tabular-nums text-neutral-400 dark:text-neutral-500">
               {template === 'ats' ? '04' : '02'}
             </span>
-            Section labels
+            {t('Section labels')}
           </span>
           <span className="flex items-center gap-2 text-[13px] text-neutral-500 dark:text-neutral-400">
             {customLabelCount > 0 ? `${customLabelCount} edited` : null}
@@ -354,14 +356,14 @@ export function CvGeneratorPage() {
 
       {missing.length > 0 ? (
         <p className="text-[13px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-          Add {missing.join(', ')} in{' '}
+          {t('Add')} {missing.join(', ')} {t('in')}{' '}
           <Link
             href="/studio"
             className="font-medium text-[#111111] underline-offset-4 hover:underline dark:text-white"
           >
-            My Portfolio
+            {t('My Portfolio')}
           </Link>{' '}
-          for a more complete CV.
+          {t('for a more complete CV.')}
         </p>
       ) : null}
     </>
@@ -375,7 +377,7 @@ export function CvGeneratorPage() {
         disabled={!data}
         className="flex h-14 w-full items-center justify-between rounded-full bg-[#111111] pl-6 pr-2 text-[15px] font-semibold text-white disabled:opacity-40 dark:bg-white dark:text-[#111111]"
       >
-        Download PDF
+        {t('Download PDF')}
         <span className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF5722] text-white">
           <svg aria-hidden viewBox="0 0 16 16" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth="1.8">
             <path d="M8 3v9m0 0 3.5-3.5M8 12 4.5 8.5" strokeLinecap="round" strokeLinejoin="round" />
@@ -383,7 +385,7 @@ export function CvGeneratorPage() {
         </span>
       </button>
       <p className="mt-3 text-center text-[12px] text-neutral-400 dark:text-neutral-500">
-        Choose “Save as PDF” in the print dialog.
+        {t('Choose “Save as PDF” in the print dialog.')}
       </p>
     </>
   );
@@ -423,13 +425,13 @@ export function CvGeneratorPage() {
               <circle cx="10" cy="4.5" r="1.5" />
               <circle cx="6" cy="11.5" r="1.5" />
             </svg>
-            Customize
+            {t('Customize')}
           </button>
           <button
             type="button"
             onClick={() => window.print()}
             disabled={!data}
-            aria-label="Download PDF"
+            aria-label={t('Download PDF')}
             className="flex h-10 w-10 items-center justify-center rounded-full bg-[#FF5722] text-white disabled:opacity-40"
           >
             <svg
@@ -451,11 +453,11 @@ export function CvGeneratorPage() {
           className="fixed inset-0 z-40 print:hidden lg:hidden"
           role="dialog"
           aria-modal="true"
-          aria-label="Customize resume"
+          aria-label={t('Customize resume')}
         >
           <button
             type="button"
-            aria-label="Close"
+            aria-label={t('Close')}
             onClick={() => setDrawerOpen(false)}
             className="absolute inset-0 bg-black/40"
           />
@@ -466,7 +468,7 @@ export function CvGeneratorPage() {
               <button
                 type="button"
                 onClick={() => setDrawerOpen(false)}
-                aria-label="Close"
+                aria-label={t('Close')}
                 className="absolute right-4 top-3 flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white sm:static"
               >
                 <svg
@@ -527,7 +529,7 @@ export function CvGeneratorPage() {
                 type="button"
                 onClick={() => stepZoom(-1)}
                 disabled={scale <= ZOOM_MIN}
-                aria-label="Zoom out"
+                aria-label={t('Zoom out')}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[#111111] hover:bg-black/[0.05] disabled:opacity-30 dark:text-white dark:hover:bg-white/[0.08]"
               >
                 <svg
@@ -548,7 +550,7 @@ export function CvGeneratorPage() {
                 type="button"
                 onClick={() => stepZoom(1)}
                 disabled={scale >= ZOOM_MAX}
-                aria-label="Zoom in"
+                aria-label={t('Zoom in')}
                 className="flex h-9 w-9 items-center justify-center rounded-full text-[#111111] hover:bg-black/[0.05] disabled:opacity-30 dark:text-white dark:hover:bg-white/[0.08]"
               >
                 <svg
@@ -573,7 +575,7 @@ export function CvGeneratorPage() {
                     : 'text-[#111111] hover:bg-black/[0.05] dark:text-white dark:hover:bg-white/[0.08]'
                 }`}
               >
-                Fit
+                {t('Fit')}
               </button>
               <button
                 type="button"

@@ -1,5 +1,11 @@
 'use client';
 
+import { useState } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { useContentMediaUpload } from '@/components/creator/creator-content-media';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -33,8 +39,21 @@ import {
   type PortfolioAboutUsSectionLayout,
   type PortfolioAboutUsSectionSettings,
 } from '@/components/portfolio/portfolio-about-us-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
-export type AboutUsSubSection = 'general' | 'header' | 'background';
+export type AboutUsSubSection = 'general' | 'design' | 'header' | 'background';
+
+const ABOUT_US_SUB_SECTIONS: { id: 'general' | 'design'; label: string }[] = [
+  { id: 'general', label: msg('General') },
+  { id: 'design', label: msg('Design') },
+];
+
+/** About us has two tabs; any other saved id (header, background) opens Design. */
+export function normalizeAboutUsSubSection(value: string | undefined): 'general' | 'design' {
+  return value === 'general' || value === undefined ? 'general' : 'design';
+}
 
 function Toggle({
   label,
@@ -48,10 +67,10 @@ function Toggle({
   onChange: (value: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-4 py-3">
+    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3">
       <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-900">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
+        <span className="block text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{label}</span>
+        {description ? <span className="mt-1 block text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</span> : null}
       </span>
       <input
         type="checkbox"
@@ -80,7 +99,7 @@ function Range({
 }) {
   return (
     <label className="block">
-      <span className="flex justify-between text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+      <span className="flex justify-between text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
         <span>{label}</span>
         <span>
           {value}
@@ -111,19 +130,19 @@ function ColorField({
   const hex = /^#[0-9A-Fa-f]{6}$/.test(value) ? value : '#e5e7eb';
   return (
     <label className="block">
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <span className="pf-stack-block-label">{label}</span>
       <div className="mt-2 flex items-center gap-2">
         <input
           type="color"
           value={hex}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-neutral-200 bg-white p-1"
+          className="h-10 w-10 shrink-0 cursor-pointer rounded-lg border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
         />
         <input
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
+          className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
         />
       </div>
     </label>
@@ -149,6 +168,7 @@ function QuoteSvgEditor({
   onSelectId: (id: AboutUsQuoteSvgId) => void;
   onUrlsChange: (urls: [string, string, string, string]) => void;
 }) {
+  const t = useT();
   const slot = quoteSvgSlotIndex(selectedId);
   const custom = (urls[slot] ?? '').trim();
   const { inputRef, uploading, pickFile, onFileChange } = useContentMediaUpload({
@@ -159,9 +179,9 @@ function QuoteSvgEditor({
   return (
     <div className="space-y-3">
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Illustration SVG</p>
-        <p className="mt-1 text-sm text-neutral-500">
-          Un seul visuel à l’écran. Cliquez pour passer de l’un à l’autre.
+        <p className="pf-stack-block-label">{t('SVG illustration')}</p>
+        <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+          {t('One visual on screen at a time. Click to switch between them.')}
         </p>
       </div>
       <input
@@ -182,8 +202,8 @@ function QuoteSvgEditor({
               onClick={() => onSelectId(option.value)}
               className={`rounded-2xl border p-3 text-left transition ${
                 active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                  ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                  : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
               }`}
             >
               <span
@@ -203,7 +223,7 @@ function QuoteSvgEditor({
                   </span>
                 )}
               </span>
-              <p className="mt-2 text-sm font-semibold text-neutral-950">{option.label}</p>
+              <p className="mt-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
             </button>
           );
         })}
@@ -213,17 +233,17 @@ function QuoteSvgEditor({
           type="button"
           onClick={pickFile}
           disabled={uploading}
-          className="flex-1 rounded-xl border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-700 hover:border-neutral-300"
+          className="flex-1 rounded-xl border border-[color:var(--pf-palette-bordure)] px-3 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]"
         >
-          {uploading ? 'Téléversement…' : 'Remplacer celui-ci'}
+          {uploading ? t('Uploading…') : t('Replace this one')}
         </button>
         {custom ? (
           <button
             type="button"
             onClick={() => onUrlsChange(patchTuple(urls, slot, ''))}
-            className="rounded-xl border border-neutral-200 px-3 py-2 text-sm font-semibold text-neutral-500 hover:border-neutral-300"
+            className="rounded-xl border border-[color:var(--pf-palette-bordure)] px-3 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]"
           >
-            SVG d’origine
+            {t('Original SVG')}
           </button>
         ) : null}
       </div>
@@ -242,12 +262,12 @@ function TextField({
 }) {
   return (
     <label className="block">
-      <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{label}</span>
+      <span className="pf-stack-block-label">{label}</span>
       <input
         type="text"
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm text-neutral-900"
+        className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
       />
     </label>
   );
@@ -256,12 +276,16 @@ function TextField({
 export function AboutUsSettingsPanel({
   aboutUs,
   onChange,
+  subSection: controlledSubSection,
+  onSubSectionChange,
 }: {
   aboutUs: PortfolioAboutUsSectionSettings;
   onChange: (patch: Partial<PortfolioAboutUsSectionSettings>) => void;
   subSection?: AboutUsSubSection;
   onSubSectionChange?: (value: AboutUsSubSection) => void;
 }) {
+  const t = useT();
+  const previewSource = usePortfolioDesignPreviewSource();
   const isSplitOverlap = aboutUs.design === 'split-overlap';
   const isSplitFounder = aboutUs.design === 'split-founder';
   const isSplitMediaLeft = aboutUs.design === 'split-media-left';
@@ -269,24 +293,119 @@ export function AboutUsSettingsPanel({
   const isSplitQuote = aboutUs.design === 'split-quote';
   const usesSplitChrome = aboutUsDesignUsesSplitChrome(aboutUs.design);
   const mediaSide = resolveAboutUsMediaSide(aboutUs.design, aboutUs.mediaSide);
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<'general' | 'design'>('general');
+  const subSection = normalizeAboutUsSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const setSubSection = (value: 'general' | 'design') => {
+    onSubSectionChange?.(value);
+    if (controlledSubSection === undefined) setUncontrolledSubSection(value);
+  };
 
   return (
     <div className="space-y-6">
-      <Toggle
-        label="Show section"
-        description="Display About us on the public portfolio."
-        checked={aboutUs.enabled}
-        onChange={(enabled) => onChange({ enabled })}
-      />
+      <SettingsTabs tabs={ABOUT_US_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
-      <SectionColorModeControl
-        value={aboutUs.colorModeOverride}
-        onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-      />
+      {subSection === 'general' ? (
+        <div>
+          <SettingsSwitchRow
+            label={t('Show section')}
+            description={aboutUs.enabled ? t('Display About us on the public portfolio.') : t('Visitors go straight to the next section.')}
+            checked={aboutUs.enabled}
+            onChange={(enabled) => onChange({ enabled })}
+          />
+          {aboutUs.enabled ? (
+            <SettingsGroup label={t('Content')}>
+      <TextField label={t('Section title')} value={aboutUs.title} onChange={(title) => onChange({ title })} />
+      {usesSplitChrome && !isSplitQuote ? null : (
+        <TextField
+          label={t('Section subtitle')}
+          value={aboutUs.subtitle}
+          onChange={(subtitle) => onChange({ subtitle })}
+        />
+      )}
 
+      {usesSplitChrome ? (
+        <>
+          {isSplitFounder || isSplitCard || isSplitQuote ? (
+            <Toggle
+              label={t('Show task list')}
+              description={t('Hidden by default on this design.')}
+              checked={aboutUs.showTasks}
+              onChange={(showTasks) => onChange({ showTasks })}
+            />
+          ) : null}
+          <Toggle
+            label={t('Show button')}
+            description={t('Button under the text. Links to Contact.')}
+            checked={aboutUs.showCta}
+            onChange={(showCta) => onChange({ showCta })}
+          />
+          {aboutUs.showCta ? (
+            <TextField
+              label={t('Button label')}
+              value={aboutUs.ctaLabel}
+              onChange={(ctaLabel) => onChange({ ctaLabel })}
+            />
+          ) : null}
+          {isSplitOverlap || isSplitMediaLeft || isSplitCard || isSplitQuote ? (
+            <Toggle
+              label={t('Show quote')}
+              checked={aboutUs.showQuote}
+              onChange={(showQuote) => onChange({ showQuote })}
+            />
+          ) : null}
+          <Toggle
+            label={t('Show founder')}
+            checked={aboutUs.showFounder}
+            onChange={(showFounder) => onChange({ showFounder })}
+          />
+          {isSplitFounder && aboutUs.showFounder ? (
+            <Toggle
+              label={t('Show founder rating')}
+              description={t('Stars next to the founder name.')}
+              checked={aboutUs.showFounderRating}
+              onChange={(showFounderRating) => onChange({ showFounderRating })}
+            />
+          ) : null}
+        </>
+      ) : null}
+
+              <p className="text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
+                {t('Title, description, tasks, images, quote, and founder are edited in Information → About us.')}
+              </p>
+            </SettingsGroup>
+          ) : null}
+        </div>
+      ) : null}
+
+      {subSection === 'design' && !aboutUs.enabled ? (
+        <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} />
+      ) : null}
+
+      {subSection === 'design' && aboutUs.enabled ? (
+        <div>
+          <SettingsGroup label={t('Design')}>
       <div>
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Design</p>
-        <div className="mt-3 grid gap-2">
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="flex flex-col gap-3">
+            {PORTFOLIO_ABOUT_US_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-stack-design-card"
+                labelClassName="pf-stack-card-label"
+                active={option.value === aboutUs.design}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, {
+                  section: 'aboutUs',
+                  design: option.value as PortfolioAboutUsDesign,
+                })}
+                settings={previewSource.settings}
+                onClick={() => onChange(defaultsForAboutUsDesign(option.value as PortfolioAboutUsDesign))}
+              />
+            ))}
+          </div>
+        ) : (
+        <div className="grid gap-2">
           {PORTFOLIO_ABOUT_US_DESIGN_OPTIONS.map((option) => {
             const active = option.value === aboutUs.design;
             return (
@@ -296,33 +415,44 @@ export function AboutUsSettingsPanel({
                 onClick={() => onChange(defaultsForAboutUsDesign(option.value as PortfolioAboutUsDesign))}
                 className={`rounded-2xl border px-4 py-3 text-left transition ${
                   active
-                    ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                    : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                    ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                    : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                 }`}
               >
-                <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-                <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+                <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
+                <p className="mt-1 text-xs leading-relaxed text-[color:var(--pf-palette-texte-muted)]">{t(option.description)}</p>
               </button>
             );
           })}
         </div>
+        )}
       </div>
 
+          </SettingsGroup>
+          <SettingsGroup label={t('Style')}>
+      <SectionColorModeControl
+        label={t('Color mode')}
+        value={aboutUs.colorModeOverride}
+        onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+      />
+
+          </SettingsGroup>
+          <SettingsGroup label={t('Layout')}>
       {usesSplitChrome ? (
         <>
-          <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
+          <p className="rounded-2xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3 text-sm text-[color:var(--pf-palette-texte-muted)]">
             {isSplitQuote
-              ? 'Choisissez Photo ou SVG à droite (ou à gauche). La photo vient d’Information → About us.'
+              ? t('Pick Photo or SVG on the right (or left). The photo comes from Information → About us.')
               : isSplitCard
-              ? 'Tout tient dans un grand cadre. La quote s’affiche par défaut. Inversez l’image à gauche ou à droite sans changer de design.'
+              ? t('Everything sits in one large frame. The quote shows by default. Flip the image left or right without changing the design.')
               : isSplitFounder
-                ? 'Founder is shown under the button. The task list is hidden unless you turn it on. Inversez l’image à gauche ou à droite.'
+                ? t('Founder is shown under the button. The task list is hidden unless you turn it on. Flip the image left or right.')
                 : isSplitMediaLeft
-                  ? 'Grande photo arrondie d’un côté, texte et liste de l’autre. Inversez l’image à gauche ou à droite.'
-                  : 'Quote and founder stay hidden unless you turn them on. Inversez l’image à gauche ou à droite.'}
+                  ? t('A large rounded photo on one side, text and list on the other. Flip the image left or right.')
+                  : t('Quote and founder stay hidden unless you turn them on. Flip the image left or right.')}
           </p>
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Image</p>
+            <p className="pf-stack-block-label">{t('Image')}</p>
             <div className="mt-3 grid grid-cols-2 gap-2">
               {PORTFOLIO_ABOUT_US_MEDIA_SIDE_OPTIONS.map((option) => {
                 const active = option.value === mediaSide;
@@ -333,11 +463,11 @@ export function AboutUsSettingsPanel({
                     onClick={() => onChange({ mediaSide: option.value as PortfolioAboutUsMediaSide })}
                     className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
                       active
-                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                        : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                     }`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -345,8 +475,8 @@ export function AboutUsSettingsPanel({
           </div>
           {isSplitQuote ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Photo ou SVG
+              <p className="pf-stack-block-label">
+                {t('Photo or SVG')}
               </p>
               <div className="mt-3 grid grid-cols-2 gap-2">
                 {PORTFOLIO_ABOUT_US_QUOTE_MEDIA_OPTIONS.map((option) => {
@@ -358,12 +488,12 @@ export function AboutUsSettingsPanel({
                       onClick={() => onChange({ quoteMedia: option.value as PortfolioAboutUsQuoteMedia })}
                       className={`rounded-2xl border px-4 py-3 text-left transition ${
                         active
-                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                          : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                          ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                          : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                       }`}
                     >
-                      <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+                      <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-[color:var(--pf-palette-texte-muted)]">{t(option.description)}</p>
                     </button>
                   );
                 })}
@@ -380,7 +510,7 @@ export function AboutUsSettingsPanel({
             />
           ) : null}
           <div>
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Placement</p>
+            <p className="pf-stack-block-label">{t('Placement')}</p>
             <div className="mt-3 grid grid-cols-3 gap-2">
               {PORTFOLIO_ABOUT_US_CONTENT_PLACEMENT_OPTIONS.map((option) => {
                 const active = option.value === (aboutUs.contentPlacement ?? 'left');
@@ -393,18 +523,18 @@ export function AboutUsSettingsPanel({
                     }
                     className={`rounded-2xl border px-3 py-2.5 text-sm font-semibold transition ${
                       active
-                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                        : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                     }`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
             </div>
           </div>
           <Range
-            label="Largeur"
+            label={t('Width')}
             value={aboutUs.contentWidthPercent ?? 100}
             min={50}
             max={100}
@@ -412,8 +542,8 @@ export function AboutUsSettingsPanel({
           />
           {isSplitFounder ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Forme de l’image
+              <p className="pf-stack-block-label">
+                {t('Image shape')}
               </p>
               <div className="mt-3 grid gap-2 sm:grid-cols-2">
                 {PORTFOLIO_ABOUT_US_IMAGE_FRAME_OPTIONS.map((option) => {
@@ -427,12 +557,12 @@ export function AboutUsSettingsPanel({
                       }
                       className={`rounded-2xl border px-4 py-3 text-left transition ${
                         active
-                          ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                          : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                          ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                          : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                       }`}
                     >
-                      <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-                      <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+                      <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
+                      <p className="mt-1 text-xs leading-relaxed text-[color:var(--pf-palette-texte-muted)]">{t(option.description)}</p>
                     </button>
                   );
                 })}
@@ -441,11 +571,11 @@ export function AboutUsSettingsPanel({
           ) : null}
           {isSplitCard || isSplitQuote ? (
             <div className="space-y-5">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                {isSplitQuote ? 'Carte quote' : 'Cadre'}
+              <p className="pf-stack-block-label">
+                {isSplitQuote ? t('Quote card') : t('Frame')}
               </p>
               <div>
-                <p className="text-xs font-semibold text-neutral-500">Arrondi</p>
+                <p className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Rounding')}</p>
                 <div className="mt-2 grid grid-cols-5 gap-2">
                   {PORTFOLIO_ABOUT_US_CARD_RADIUS_OPTIONS.map((option) => {
                     const active = option.value === (aboutUs.cardRadius ?? 'lg');
@@ -456,18 +586,18 @@ export function AboutUsSettingsPanel({
                         onClick={() => onChange({ cardRadius: option.value as PortfolioAboutUsCardRadius })}
                         className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
                           active
-                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                            ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                            : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                         }`}
                       >
-                        {option.label}
+                        {t(option.label)}
                       </button>
                     );
                   })}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-neutral-500">Ombre</p>
+                <p className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Shadow')}</p>
                 <div className="mt-2 grid grid-cols-4 gap-2">
                   {PORTFOLIO_ABOUT_US_CARD_SHADOW_OPTIONS.map((option) => {
                     const active = option.value === (aboutUs.cardShadow ?? 'medium');
@@ -478,18 +608,18 @@ export function AboutUsSettingsPanel({
                         onClick={() => onChange({ cardShadow: option.value as PortfolioAboutUsCardShadow })}
                         className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
                           active
-                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                            ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                            : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                         }`}
                       >
-                        {option.label}
+                        {t(option.label)}
                       </button>
                     );
                   })}
                 </div>
               </div>
               <div>
-                <p className="text-xs font-semibold text-neutral-500">Bordure</p>
+                <p className="text-xs font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Border')}</p>
                 <div className="mt-2 grid grid-cols-3 gap-2">
                   {PORTFOLIO_ABOUT_US_CARD_BORDER_OPTIONS.map((option) => {
                     const active = option.value === (aboutUs.cardBorder ?? 'thin');
@@ -500,11 +630,11 @@ export function AboutUsSettingsPanel({
                         onClick={() => onChange({ cardBorder: option.value as PortfolioAboutUsCardBorder })}
                         className={`rounded-2xl border px-2 py-2.5 text-sm font-semibold transition ${
                           active
-                            ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                            : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                            ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                            : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                         }`}
                       >
-                        {option.label}
+                        {t(option.label)}
                       </button>
                     );
                   })}
@@ -512,22 +642,22 @@ export function AboutUsSettingsPanel({
               </div>
               {isSplitQuote ? (
                 <Toggle
-                  label="Fond de la quote"
-                  description="Décochez pour un fond transparent. La bordure reste."
+                  label={t('Quote background')}
+                  description={t('Untick for a transparent background. The border stays.')}
                   checked={aboutUs.cardBackgroundEnabled !== false}
                   onChange={(cardBackgroundEnabled) => onChange({ cardBackgroundEnabled })}
                 />
               ) : null}
               {isSplitQuote && aboutUs.cardBackgroundEnabled === false ? null : (
                 <ColorField
-                  label={isSplitQuote ? 'Couleur du fond' : 'Fond du cadre'}
+                  label={isSplitQuote ? t('Background colour') : t('Frame background')}
                   value={aboutUs.cardBackgroundColor ?? '#ffffff'}
                   onChange={(cardBackgroundColor) => onChange({ cardBackgroundColor })}
                 />
               )}
               {(aboutUs.cardBorder ?? 'thin') !== 'none' ? (
                 <ColorField
-                  label="Couleur de bordure"
+                  label={t('Border colour')}
                   value={aboutUs.cardBorderColor ?? '#e5e7eb'}
                   onChange={(cardBorderColor) => onChange({ cardBorderColor })}
                 />
@@ -537,8 +667,8 @@ export function AboutUsSettingsPanel({
         </>
       ) : (
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Disposition titre / contenu
+          <p className="pf-stack-block-label">
+            {t('Title / content layout')}
           </p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {PORTFOLIO_ABOUT_US_SECTION_LAYOUT_OPTIONS.map((option) => {
@@ -550,12 +680,12 @@ export function AboutUsSettingsPanel({
                   onClick={() => onChange({ sectionLayout: option.value as PortfolioAboutUsSectionLayout })}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     active
-                      ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                      : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
+                      ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-surface)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
+                      : 'border-[color:var(--pf-palette-bordure)] bg-transparent hover:border-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                   }`}
                 >
-                  <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+                  <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[color:var(--pf-palette-texte-muted)]">{t(option.description)}</p>
                 </button>
               );
             })}
@@ -563,64 +693,9 @@ export function AboutUsSettingsPanel({
         </div>
       )}
 
-      <TextField label="Section title" value={aboutUs.title} onChange={(title) => onChange({ title })} />
-      {usesSplitChrome && !isSplitQuote ? null : (
-        <TextField
-          label="Section subtitle"
-          value={aboutUs.subtitle}
-          onChange={(subtitle) => onChange({ subtitle })}
-        />
-      )}
-
-      {usesSplitChrome ? (
-        <>
-          {isSplitFounder || isSplitCard || isSplitQuote ? (
-            <Toggle
-              label="Show task list"
-              description="Hidden by default on this design."
-              checked={aboutUs.showTasks}
-              onChange={(showTasks) => onChange({ showTasks })}
-            />
-          ) : null}
-          <Toggle
-            label="Show button"
-            description="Button under the text. Links to Contact."
-            checked={aboutUs.showCta}
-            onChange={(showCta) => onChange({ showCta })}
-          />
-          {aboutUs.showCta ? (
-            <TextField
-              label="Button label"
-              value={aboutUs.ctaLabel}
-              onChange={(ctaLabel) => onChange({ ctaLabel })}
-            />
-          ) : null}
-          {isSplitOverlap || isSplitMediaLeft || isSplitCard || isSplitQuote ? (
-            <Toggle
-              label="Show quote"
-              checked={aboutUs.showQuote}
-              onChange={(showQuote) => onChange({ showQuote })}
-            />
-          ) : null}
-          <Toggle
-            label="Show founder"
-            checked={aboutUs.showFounder}
-            onChange={(showFounder) => onChange({ showFounder })}
-          />
-          {isSplitFounder && aboutUs.showFounder ? (
-            <Toggle
-              label="Show founder rating"
-              description="Stars next to the founder name."
-              checked={aboutUs.showFounderRating}
-              onChange={(showFounderRating) => onChange({ showFounderRating })}
-            />
-          ) : null}
-        </>
+          </SettingsGroup>
+        </div>
       ) : null}
-
-      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Title, description, tasks, images, quote, and founder are edited in Information → About us.
-      </p>
     </div>
   );
 }

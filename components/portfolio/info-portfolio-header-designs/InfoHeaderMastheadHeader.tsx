@@ -8,7 +8,7 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 // Three short, punchy default lines — that's what makes the mast stack
 // dramatically. Each line is its own field (not one string split on
@@ -53,7 +53,7 @@ export function InfoHeaderMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_INFO_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = infoHeaderPaletteTokenColor(presentation.headerMastheadHeadlineColor ?? 'principal');
   const headlineWeight = HEADLINE_WEIGHT[presentation.headerMastheadHeadlineWeight ?? 'regular'];
@@ -61,15 +61,22 @@ export function InfoHeaderMastheadHeader({
   const sectionRef = useRef<HTMLElement>(null);
 
   const lines = useMemo(
-    () =>
-      [
-        presentation.headerMastheadLine1Text || DEFAULT_LINE_1,
-        presentation.headerMastheadLine2Text || DEFAULT_LINE_2,
-        presentation.headerMastheadLine3Text || DEFAULT_LINE_3,
+    () => {
+      const hidden = new Set(presentation.headerHiddenElements);
+      return [
+        hidden.has('masthead.line1') ? '' : presentation.headerMastheadLine1Text || DEFAULT_LINE_1,
+        hidden.has('masthead.line2') ? '' : presentation.headerMastheadLine2Text || DEFAULT_LINE_2,
+        hidden.has('masthead.line3') ? '' : presentation.headerMastheadLine3Text || DEFAULT_LINE_3,
       ]
         .map((line) => line.trim())
-        .filter(Boolean),
-    [presentation.headerMastheadLine1Text, presentation.headerMastheadLine2Text, presentation.headerMastheadLine3Text]
+        .filter(Boolean);
+    },
+    [
+      presentation.headerMastheadLine1Text,
+      presentation.headerMastheadLine2Text,
+      presentation.headerMastheadLine3Text,
+      presentation.headerHiddenElements,
+    ]
   );
 
   const styledLines = useMemo(

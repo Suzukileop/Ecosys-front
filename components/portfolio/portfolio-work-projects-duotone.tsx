@@ -16,6 +16,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsDuotoneSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DUOTONE_SERIF = "'Fraunces', serif";
 const DUOTONE_SANS = "'Inter', sans-serif";
@@ -157,6 +158,7 @@ function WorkDuotoneChevronIcon({ direction }: { direction: 'left' | 'right' }) 
 }
 
 function WorkDuotoneLinkButton({ href, ink }: { href: string; ink: string }) {
+  const t = useT();
   return (
     <a
       href={href}
@@ -165,17 +167,18 @@ function WorkDuotoneLinkButton({ href, ink }: { href: string; ink: string }) {
       className="inline-flex items-center gap-1.5 text-[0.85rem] font-semibold underline-offset-4 hover:underline"
       style={{ color: ink, fontFamily: DUOTONE_SANS }}
     >
-      View project
+      {t('View project')}
       <span aria-hidden>→</span>
     </a>
   );
 }
 
 function WorkDuotoneIntroPanel({ ink, muted, accent }: { ink: string; muted: string; accent: string }) {
+  const t = useT();
   return (
     <div className="flex w-full flex-col pt-[20vh] pb-[5vh] max-[800px]:pt-16 max-[800px]:pb-6">
       <span className="text-[0.85rem] font-semibold" style={{ color: accent, fontFamily: DUOTONE_SANS }}>
-        Portfolio
+        {t('Portfolio')}
       </span>
       <h2
         className="mt-3 max-w-[16ch] text-[clamp(2.6rem,6vw,5.2rem)]"
@@ -187,10 +190,10 @@ function WorkDuotoneIntroPanel({ ink, muted, accent }: { ink: string; muted: str
           letterSpacing: '-0.015em',
         }}
       >
-        Selected work, one project at a time.
+        {t('Selected work, one project at a time.')}
       </h2>
       <p className="mt-3 max-w-[34rem] text-[1.1rem]" style={{ color: muted, fontFamily: DUOTONE_SANS }}>
-        A closer look at a few recent projects.
+        {t('A closer look at a few recent projects.')}
       </p>
     </div>
   );
@@ -234,7 +237,8 @@ function WorkDuotoneLeftPanel({
   inView?: boolean;
   scrollPart?: 'all' | 'title' | 'thumb';
 }) {
-  const title = item.title?.trim() || 'Untitled';
+  const t = useT();
+  const title = item.title?.trim() || t('Untitled');
   const metaLine = workDuotoneMetaLine(item);
   const mediaUrl = premium ? item.mediaUrl?.trim() || '' : '';
   const showTitleBlock = scrollPart !== 'thumb' && showTitle && Boolean(title);
@@ -636,6 +640,7 @@ function WorkDuotoneSlideNav({
   border: string;
   onNavigate: (index: number) => void;
 }) {
+  const t = useT();
   if (navStyle === 'text') {
     const linkClass = 'group relative text-[0.85rem] font-semibold disabled:opacity-30 disabled:after:hidden';
     const underline = (
@@ -650,26 +655,24 @@ function WorkDuotoneSlideNav({
       <div className="flex items-center gap-5">
         <button
           type="button"
-          aria-label="Previous project"
+          aria-label={t('Previous project')}
           disabled={activeIndex === 0}
           onClick={() => onNavigate(activeIndex - 1)}
           className={linkClass}
           style={{ color: accent, fontFamily: DUOTONE_SANS }}
         >
-          Previous
-          {underline}
+          {t.rich('Previous {underline}', { underline })}
         </button>
         <span className="h-4 w-px" style={{ backgroundColor: border }} aria-hidden />
         <button
           type="button"
-          aria-label="Next project"
+          aria-label={t('Next project')}
           disabled={activeIndex === items.length - 1}
           onClick={() => onNavigate(activeIndex + 1)}
           className={linkClass}
           style={{ color: accent, fontFamily: DUOTONE_SANS }}
         >
-          Next
-          {underline}
+          {t.rich('Next {underline}', { underline })}
         </button>
       </div>
     );
@@ -679,7 +682,7 @@ function WorkDuotoneSlideNav({
     <div className="flex items-center gap-4">
       <button
         type="button"
-        aria-label="Previous project"
+        aria-label={t('Previous project')}
         disabled={activeIndex === 0}
         onClick={() => onNavigate(activeIndex - 1)}
         className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
@@ -696,7 +699,7 @@ function WorkDuotoneSlideNav({
       </button>
       <button
         type="button"
-        aria-label="Next project"
+        aria-label={t('Next project')}
         disabled={activeIndex === items.length - 1}
         onClick={() => onNavigate(activeIndex + 1)}
         className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"

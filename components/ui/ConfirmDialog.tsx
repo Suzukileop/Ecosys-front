@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useRef } from 'react';
 import { createPortal } from 'react-dom';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ConfirmDialogProps = {
   open: boolean;
@@ -17,12 +18,12 @@ type ConfirmDialogProps = {
 };
 
 const confirmToneClass: Record<NonNullable<ConfirmDialogProps['tone']>, string> = {
-  danger:
-    'bg-red-600 text-white hover:bg-red-700 focus-visible:ring-red-500/40 disabled:opacity-60',
+  danger: 'bg-[#F4212E] text-white hover:bg-[#DC1D29] focus-visible:ring-[#F4212E]/40 disabled:opacity-60',
+  /* X palette: "brand" is the ink action fill like "neutral" — no accent hue on chrome. */
   brand:
-    'bg-[var(--msg-brand,#F47B20)] text-white hover:bg-[var(--msg-brand-hover,#E06E18)] focus-visible:ring-[var(--msg-brand)]/40 disabled:opacity-60',
+    'bg-[#0F1419] text-white hover:bg-[#272C30] focus-visible:ring-[#0F1419]/35 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC] disabled:opacity-60',
   neutral:
-    'bg-neutral-900 text-white hover:bg-neutral-800 focus-visible:ring-neutral-400/40 dark:bg-white dark:text-neutral-900 dark:hover:bg-neutral-200 disabled:opacity-60',
+    'bg-[#0F1419] text-white hover:bg-[#272C30] focus-visible:ring-[#0F1419]/35 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC] disabled:opacity-60',
 };
 
 export function ConfirmDialog({
@@ -36,6 +37,7 @@ export function ConfirmDialog({
   onConfirm,
   onCancel,
 }: ConfirmDialogProps) {
+  const t = useT();
   const titleId = useId();
   const descriptionId = useId();
   const confirmRef = useRef<HTMLButtonElement>(null);
@@ -60,13 +62,13 @@ export function ConfirmDialog({
 
   return createPortal(
     <div
-      className="fixed inset-0 z-[220] flex items-center justify-center p-4"
+      className="fixed inset-0 z-[220] flex items-end justify-center sm:items-center sm:p-4"
       role="presentation"
     >
       <button
         type="button"
-        className="absolute inset-0 bg-black/45 backdrop-blur-sm"
-        aria-label="Close"
+        className="absolute inset-0 bg-black/40 dark:bg-black/60"
+        aria-label={t('Close')}
         disabled={busy}
         onClick={() => {
           if (!busy) onCancel();
@@ -77,13 +79,13 @@ export function ConfirmDialog({
         aria-modal="true"
         aria-labelledby={titleId}
         aria-describedby={description ? descriptionId : undefined}
-        className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-6 shadow-xl dark:border-neutral-700 dark:bg-neutral-950"
+        className="relative w-full max-w-md rounded-t-2xl bg-white p-6 pb-[calc(1.5rem+env(safe-area-inset-bottom))] shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)] dark:bg-black dark:shadow-[0_0_0_1px_#2F3336] sm:rounded-2xl sm:pb-6"
       >
-        <h2 id={titleId} className="text-lg font-semibold text-neutral-900 dark:text-white">
+        <h2 id={titleId} className="text-[20px] font-extrabold leading-6 text-[#0F1419] dark:text-[#E7E9EA]">
           {title}
         </h2>
         {description ? (
-          <p id={descriptionId} className="mt-2 text-sm leading-relaxed text-neutral-600 dark:text-neutral-400">
+          <p id={descriptionId} className="mt-2 text-[15px] leading-5 text-[#536471] dark:text-[#71767B]">
             {description}
           </p>
         ) : null}
@@ -92,7 +94,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onCancel}
-            className="rounded-full border border-neutral-300 px-4 py-2 text-sm font-medium text-neutral-700 transition hover:bg-neutral-50 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-900"
+            className="inline-flex h-10 items-center rounded-full border border-[#CFD9DE] px-5 text-[15px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:opacity-60 dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]"
           >
             {cancelLabel}
           </button>
@@ -101,9 +103,9 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className={`rounded-full px-4 py-2 text-sm font-medium transition focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-neutral-950 ${confirmToneClass[tone]}`}
+            className={`inline-flex h-10 items-center rounded-full px-5 text-[15px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${confirmToneClass[tone]}`}
           >
-            {busy ? 'Please wait…' : confirmLabel}
+            {busy ? t('Please wait…') : confirmLabel}
           </button>
         </div>
       </div>

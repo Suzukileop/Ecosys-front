@@ -7,7 +7,8 @@ import {
   galleryHeaderPaletteTokenColor,
   type PortfolioGalleryHeaderBillboardWordStyle,
 } from '@/components/portfolio/portfolio-gallery-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_BIG_WORD = 'GALLERY';
 const DEFAULT_COUNT_TEXT = '{count} images — visual journal below';
@@ -122,11 +123,14 @@ export function GalleryHeaderBillboardHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_GALLERY_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'billboard');
+  const showWord = show('word');
+  const showTitle = show('title');
   const bigWord = (presentation.headerBillboardBigWord || DEFAULT_BIG_WORD).trim();
   const countTemplate = presentation.headerBillboardCountText || DEFAULT_COUNT_TEXT;
-  const countText = countTemplate.replace('{count}', String(itemCount ?? 0));
+  const countText = show('count') ? countTemplate.replace('{count}', String(itemCount ?? 0)) : '';
   const title = (presentation.headerBillboardTitleText || DEFAULT_TITLE_TEXT).trim();
 
   // Every element bound to one of our actual palette colors, chosen
@@ -231,7 +235,7 @@ export function GalleryHeaderBillboardHeader({
       observer.disconnect();
       timers.forEach((t) => clearTimeout(t));
     };
-  }, [animationEnabled]);
+  }, [animationEnabled, showWord, showTitle, countText]);
 
   // ========== ANIMATION: Scroll — asymmetric parallax ==========
   useEffect(() => {
@@ -302,7 +306,7 @@ export function GalleryHeaderBillboardHeader({
         if (el) el.style.willChange = '';
       });
     };
-  }, [animationEnabled]);
+  }, [animationEnabled, showWord, showTitle, countText]);
 
   return (
     <div
@@ -311,18 +315,22 @@ export function GalleryHeaderBillboardHeader({
       style={{ marginBottom: `${GALLERY_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
       data-gallery-header="billboard"
     >
-      <div style={getInitialBigTitleStyle()} data-gallery-header-gsap-big-title>
-        <GalleryHeaderBillboardBigWord text={bigWord} tone={wordTone} wordStyle={presentation.headerBillboardWordStyle ?? 'outline'} />
-      </div>
+      {showWord ? (
+        <div style={getInitialBigTitleStyle()} data-gallery-header-gsap-big-title>
+          <GalleryHeaderBillboardBigWord text={bigWord} tone={wordTone} wordStyle={presentation.headerBillboardWordStyle ?? 'outline'} />
+        </div>
+      ) : null}
 
       <div className="mt-8 flex flex-col gap-5 sm:mt-10 sm:flex-row sm:items-end sm:justify-between sm:gap-10">
-        <h2
-          className="text-[clamp(1.9rem,4vw,2.75rem)] leading-[1.08] tracking-[-0.02em]"
-          style={getInitialSecondaryStyle()}
-          data-gallery-header-gsap-secondary
-        >
-          {renderSecondaryTitle}
-        </h2>
+        {showTitle ? (
+          <h2
+            className="text-[clamp(1.9rem,4vw,2.75rem)] leading-[1.08] tracking-[-0.02em]"
+            style={getInitialSecondaryStyle()}
+            data-gallery-header-gsap-secondary
+          >
+            {renderSecondaryTitle}
+          </h2>
+        ) : null}
 
         <div className="flex max-w-xs flex-col items-start gap-3 sm:items-end" style={getInitialMetaStyle()} data-gallery-header-gsap-meta>
           {countText ? (

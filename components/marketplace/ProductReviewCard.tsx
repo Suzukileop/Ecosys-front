@@ -1,5 +1,6 @@
 'use client';
 
+import { trPlural } from '@/lib/i18n/active';
 import { useState } from 'react';
 import Link from 'next/link';
 import { voteProductReviewHelpful, deleteProductReview } from '@/lib/marketplace-api';
@@ -8,6 +9,8 @@ import { StarRating } from '@/components/marketplace/StarRating';
 import { AvatarImage } from '@/components/ui/PersonAvatar';
 import { useAuth } from '@/context/AuthContext';
 import type { ProductReview } from '@/types/marketplace';
+import { formatCompactDate } from '@/components/marketplace/product-relative-date';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductReviewCardProps = {
   review: ProductReview;
@@ -17,14 +20,11 @@ type ProductReviewCardProps = {
 };
 
 function formatReviewDate(value: string): string {
-  return new Date(value).toLocaleDateString('en-US', {
-    year: 'numeric',
-    month: 'short',
-    day: 'numeric',
-  });
+  return formatCompactDate(value);
 }
 
 export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted }: ProductReviewCardProps) {
+  const t = useT();
   const { user, hasRole } = useAuth();
   const isClient = hasRole('ROLE_CREATOR');
   const isOwnReview = user?.id === review.userId;
@@ -40,7 +40,7 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
       const updated = await voteProductReviewHelpful(review.id, helpful);
       onUpdated(updated);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to record your vote.'));
+      setError(getApiErrorMessage(e, t('Unable to record your vote.')));
     } finally {
       setBusy(false);
     }
@@ -57,20 +57,20 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
       await deleteProductReview(review.id);
       onDeleted?.(review.id);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to delete your review.'));
+      setError(getApiErrorMessage(e, t('Unable to delete your review.')));
     } finally {
       setDeleting(false);
     }
   };
 
   return (
-    <article className="py-6">
+    <article className="!rounded-none !bg-transparent py-4">
       <div className="flex items-start gap-3.5">
         <AvatarImage
           src={review.userAvatarUrl}
           className="h-10 w-10 shrink-0 rounded-full object-cover"
           fallback={
-            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-black/[0.05] text-[13px] font-semibold text-[#111111] dark:bg-white/[0.08] dark:text-white">
+            <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color:var(--gn-inset)] text-[13px] font-semibold text-[color:var(--gn-ink)]">
               {review.userName.slice(0, 2).toUpperCase()}
             </div>
           }
@@ -78,9 +78,9 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
 
         <div className="min-w-0 flex-1">
           <div className="flex flex-wrap items-center justify-between gap-x-3 gap-y-1">
-            <p className="text-[15px] font-semibold text-[#111111] dark:text-white">{review.userName}</p>
+            <p className="text-[15px] font-bold leading-5 text-[color:var(--gn-ink)]">{review.userName}</p>
             <div className="flex items-center gap-3">
-              <time className="text-[13px] text-neutral-400 dark:text-neutral-500" dateTime={review.createdAt}>
+              <time className="text-[13px] text-[color:var(--gn-ink2)]" dateTime={review.createdAt}>
                 {formatReviewDate(review.createdAt)}
               </time>
               {isOwnReview && (
@@ -88,9 +88,9 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
                   type="button"
                   onClick={() => void onDelete()}
                   disabled={deleting}
-                  className="text-[13px] font-medium text-[#E0431A] hover:underline disabled:opacity-50 dark:text-[#FF7A52]"
+                  className="text-[13px] font-semibold text-[#F4212E] hover:underline disabled:opacity-50"
                 >
-                  {deleting ? 'Deleting…' : 'Delete'}
+                  {deleting ? t('Deleting…') : t('Delete')}
                 </button>
               )}
             </div>
@@ -101,25 +101,25 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
           </div>
 
           {review.comment ? (
-            <p className="mt-3 text-[15px] leading-relaxed text-neutral-700 dark:text-neutral-300">{review.comment}</p>
+            <p className="mt-2 text-[15px] leading-[22px] text-[color:var(--gn-ink)]">{review.comment}</p>
           ) : (
-            <p className="mt-3 text-[15px] italic text-neutral-400 dark:text-neutral-500">No written review.</p>
+            <p className="mt-2 text-[15px] text-[color:var(--gn-ink3)]">{t('No written review.')}</p>
           )}
 
           <div className="mt-4 flex flex-wrap items-center gap-x-3 gap-y-2">
-            <span className="text-[13px] text-neutral-500 dark:text-neutral-400">Helpful?</span>
+            <span className="text-[13px] text-[color:var(--gn-ink2)]">{t('Helpful?')}</span>
             {!user ? (
               <Link
                 href={`/login?redirect=${encodeURIComponent(loginRedirect)}`}
                 className="text-[13px] font-medium text-[#111111] underline-offset-4 hover:underline dark:text-white"
               >
-                Sign in to vote
+                {t('Sign in to vote')}
               </Link>
             ) : isOwnReview ? (
-              <span className="text-[13px] text-neutral-400 dark:text-neutral-500">This is your review.</span>
+              <span className="text-[13px] text-neutral-400 dark:text-neutral-500">{t('This is your review.')}</span>
             ) : !isClient ? (
               <span className="text-[13px] text-neutral-400 dark:text-neutral-500">
-                Only client accounts can vote on reviews.
+                {t('Only client accounts can vote on reviews.')}
               </span>
             ) : (
               <>
@@ -132,13 +132,13 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
                       disabled={busy}
                       aria-pressed={active}
                       onClick={() => void onVote(helpful)}
-                      className={`h-8 rounded-full border px-3.5 text-[13px] font-medium transition disabled:opacity-50 ${
+                      className={`h-8 rounded-full px-3.5 text-[13px] font-semibold transition-colors disabled:opacity-50 ${
                         active
-                          ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
-                          : 'border-black/[0.1] text-neutral-700 hover:border-black/[0.25] dark:border-white/[0.14] dark:text-neutral-200 dark:hover:border-white/[0.3]'
+                          ? 'bg-[color:var(--gn-primary)] text-[color:var(--gn-primary-ink)]'
+                          : 'bg-[color:var(--gn-inset)] text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover)]'
                       }`}
                     >
-                      {helpful ? 'Yes' : 'No'}
+                      {helpful ? t('Yes') : t('No')}
                     </button>
                   );
                 })}
@@ -146,11 +146,11 @@ export function ProductReviewCard({ review, loginRedirect, onUpdated, onDeleted 
             )}
             {review.helpfulYesCount > 0 && (
               <span className="text-[13px] text-neutral-400 dark:text-neutral-500">
-                {review.helpfulYesCount} {review.helpfulYesCount === 1 ? 'person' : 'people'} found this helpful
+                {review.helpfulYesCount} {trPlural(review.helpfulYesCount, 'person', 'people')} {t('found this helpful')}
               </span>
             )}
           </div>
-          {error && <p className="mt-2 text-sm text-[#E0431A] dark:text-[#FF7A52]">{error}</p>}
+          {error && <p className="mt-2 text-[13px] text-[#F4212E]">{error}</p>}
         </div>
       </div>
     </article>

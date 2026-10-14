@@ -51,7 +51,10 @@ export default async function CreatorShopPage({
 
   return (
     <DashboardHomeShell fullWidth>
-      <div className="mx-auto w-full max-w-[1440px] px-4 sm:px-6">
+      {/* News / Products' frame: gutters outside a 1240px column whose edges sit under the top bar's
+          (logo left, avatar right); `news-mono` gives it the rail boxes and type. */}
+      <div className="w-full sm:px-8 md:px-12 lg:px-16">
+        <div className="news-theme news-feed news-mono mx-auto w-full max-w-[1240px]">
         <CreatorPublicShopView
           creatorId={creatorId}
           creatorName={profile.fullName}
@@ -63,6 +66,7 @@ export default async function CreatorShopPage({
           starCount={profile.starCount}
           isStarred={profile.isStarred}
         />
+        </div>
       </div>
     </DashboardHomeShell>
   );

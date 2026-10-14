@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -35,6 +36,7 @@ import {
   type PortfolioToolsHeaderTitleSize,
   type PortfolioToolsHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-tools-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 /**
  * `workflow-rail` — logo tiles.
@@ -135,6 +137,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   headerDesign: PortfolioToolsHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioToolsHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioToolsHeaderMarginBottom;
@@ -357,86 +361,86 @@ export const PORTFOLIO_TOOLS_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'workflow-rail',
-    label: 'Workflow rail',
-    description: 'Logo in a rounded tile, tool name below — one horizontal row.',
+    label: msg('Workflow rail'),
+    description: msg('Logo in a rounded tile, tool name below — one horizontal row.'),
   },
   {
     value: 'brand-cards',
-    label: 'Brand cards',
+    label: msg('Brand cards'),
     description:
-      'Card grid — logo top or left, name, description, use cases, and level.',
+      msg('Card grid — logo top or left, name, description, use cases, and level.'),
   },
   {
     value: 'brand-directory',
-    label: 'Brand directory',
+    label: msg('Brand directory'),
     description:
-      'Webflow / Framer directory rows — logo left, details center, level right, hairline dividers.',
+      msg('Webflow / Framer directory rows — logo left, details center, level right, hairline dividers.'),
   },
   {
     value: 'brand-index',
-    label: 'Brand index',
+    label: msg('Brand index'),
     description:
-      'Portfolio index rows — logo left, title + use cases, description right, hairline dividers.',
+      msg('Portfolio index rows — logo left, title + use cases, description right, hairline dividers.'),
   },
   {
     value: 'brand-row',
-    label: 'Brand row',
+    label: msg('Brand row'),
     description:
-      'Compact horizontal grid — logo and name per cell, vertical dividers, no arrows.',
+      msg('Compact horizontal grid — logo and name per cell, vertical dividers, no arrows.'),
   },
   {
     value: 'brand-float',
-    label: 'Brand float',
+    label: msg('Brand float'),
     description:
-      'Framer / Landbook fluid tile grid — logo-centered cards, hover lift, soft glow, optional description & tags.',
+      msg('Framer / Landbook fluid tile grid — logo-centered cards, hover lift, soft glow, optional description & tags.'),
   },
   {
     value: 'level-stat-bars',
-    label: 'Level stat bars',
+    label: msg('Level stat bars'),
     description:
-      'Minimal card grid — logo, name, and a 4-segment proficiency bar (no text level labels).',
+      msg('Minimal card grid — logo, name, and a 4-segment proficiency bar (no text level labels).'),
   },
   {
     value: 'level-progress-rows',
-    label: 'Level progress rows',
+    label: msg('Level progress rows'),
     description:
-      'Editorial list — logo without frame, name, and a horizontal progress bar (no text level labels).',
+      msg('Editorial list — logo without frame, name, and a horizontal progress bar (no text level labels).'),
   },
   {
     value: 'level-category-rows',
-    label: 'Level category rows',
+    label: msg('Level category rows'),
     description:
-      'Editorial list — logo, name + category label, thin progress bar and % on the right.',
+      msg('Editorial list — logo, name + category label, thin progress bar and % on the right.'),
   },
   {
     value: 'level-table-rows',
-    label: 'Level table rows',
+    label: msg('Level table rows'),
     description:
-      'Table layout without header — logo + name, category, colored level label, and % (no experience column).',
+      msg('Table layout without header — logo + name, category, colored level label, and % (no experience column).'),
   },
   {
     value: 'level-circular-cards',
-    label: 'Level circular cards',
+    label: msg('Level circular cards'),
     description:
-      'Card grid — circular ring around the logo (no inner square), name and % below.',
+      msg('Card grid — circular ring around the logo (no inner square), name and % below.'),
   },
   {
     value: 'level-star-cards',
-    label: 'Level star cards',
+    label: msg('Level star cards'),
     description:
-      'Horizontal framed cards — skill name on the left, 5-star rating on the right (no logos).',
+      msg('Horizontal framed cards — skill name on the left, 5-star rating on the right (no logos).'),
   },
   {
     value: 'level-svg-rings',
-    label: 'Level SVG rings',
+    label: msg('Level SVG rings'),
     description:
-      'Card grid — circular SVG progress ring with the tool name centered inside (no logo, no %).',
+      msg('Card grid — circular SVG progress ring with the tool name centered inside (no logo, no %).'),
   },
   {
     value: 'level-bento-categories',
-    label: 'Level bento categories',
+    label: msg('Level bento categories'),
     description:
-      'Bento grid — one card per category (Frontend, Backend…), logo + name + colored level label per row.',
+      msg('Bento grid — one card per category (Frontend, Backend…), logo + name + colored level label per row.'),
   },
 ];
 
@@ -463,23 +467,23 @@ export const PORTFOLIO_TOOLS_LEVEL_BAR_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'rectangle',
-    label: 'Rectangle',
-    description: 'Continuous horizontal bar with sharp corners (no radius) — default.',
+    label: msg('Rectangle'),
+    description: msg('Continuous horizontal bar with sharp corners (no radius) — default.'),
   },
   {
     value: 'pill',
-    label: 'Pill',
-    description: 'Continuous bar with rounded ends.',
+    label: msg('Pill'),
+    description: msg('Continuous bar with rounded ends.'),
   },
   {
     value: 'pill-gradient',
-    label: 'Gradient pill',
-    description: 'Pill with a fade-out gradient toward the right.',
+    label: msg('Gradient pill'),
+    description: msg('Pill with a fade-out gradient toward the right.'),
   },
   {
     value: 'segments',
-    label: 'Segments',
-    description: '10 separate pills — one pill per 10% step.',
+    label: msg('Segments'),
+    description: msg('10 separate pills — one pill per 10% step.'),
   },
 ];
 
@@ -505,28 +509,28 @@ export const PORTFOLIO_TOOLS_LEVEL_BAR_SIZE_OPTIONS: {
 }[] = [
   {
     value: 'tight',
-    label: 'Tight',
-    description: 'Thin bar and compact % label (14px).',
+    label: msg('Tight'),
+    description: msg('Thin bar and compact % label (14px).'),
   },
   {
     value: 'small',
-    label: 'Small',
-    description: 'Slightly larger bar and % label (16px) — default.',
+    label: msg('Small'),
+    description: msg('Slightly larger bar and % label (16px) — default.'),
   },
   {
     value: 'medium',
-    label: 'Medium',
-    description: 'Medium bar and % label (18px).',
+    label: msg('Medium'),
+    description: msg('Medium bar and % label (18px).'),
   },
   {
     value: 'large',
-    label: 'Large',
-    description: 'Large bar and % label (20px).',
+    label: msg('Large'),
+    description: msg('Large bar and % label (20px).'),
   },
   {
     value: 'xlarge',
-    label: 'Extra large',
-    description: 'Extra large bar and % label (24px).',
+    label: msg('Extra large'),
+    description: msg('Extra large bar and % label (24px).'),
   },
 ];
 
@@ -629,13 +633,13 @@ export const PORTFOLIO_TOOLS_LEVEL_TABLE_GROUP_BY_OPTIONS: {
 }[] = [
   {
     value: 'category',
-    label: 'Category',
-    description: 'Sort items by category (Backend, Frontend, DevOps…), then by name.',
+    label: msg('Category'),
+    description: msg('Sort items by category (Backend, Frontend, DevOps…), then by name.'),
   },
   {
     value: 'level',
-    label: 'Level',
-    description: 'Sort items by proficiency (Expert → Beginner), then by name.',
+    label: msg('Level'),
+    description: msg('Sort items by proficiency (Expert → Beginner), then by name.'),
   },
 ];
 
@@ -736,89 +740,89 @@ export const PORTFOLIO_TOOLS_SUBTITLE_PRESET_OPTIONS: {
   value: PortfolioToolsSubtitlePreset;
   label: string;
 }[] = [
-  { value: 'none', label: 'None' },
-  { value: 'custom', label: 'Custom' },
+  { value: 'none', label: msg('None') },
+  { value: 'custom', label: msg('Custom') },
 ];
 
 export const PORTFOLIO_TOOLS_TILE_SIZE_OPTIONS: {
   value: PortfolioToolsTileSize;
   label: string;
 }[] = [
-  { value: 'sm', label: 'Compact' },
-  { value: 'md', label: 'Standard' },
-  { value: 'lg', label: 'Large' },
-  { value: 'xl', label: 'Extra large' },
+  { value: 'sm', label: msg('Compact') },
+  { value: 'md', label: msg('Standard') },
+  { value: 'lg', label: msg('Large') },
+  { value: 'xl', label: msg('Extra large') },
 ];
 
 export const PORTFOLIO_TOOLS_CARD_GAP_OPTIONS: {
   value: PortfolioToolsCardGap;
   label: string;
 }[] = [
-  { value: 'tight', label: 'Tight' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-  { value: 'xlarge', label: 'Extra large' },
+  { value: 'tight', label: msg('Tight') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Large') },
+  { value: 'xlarge', label: msg('Extra large') },
 ];
 
 export const PORTFOLIO_TOOLS_LEVEL_PROGRESS_ROW_GAP_OPTIONS: {
   value: PortfolioToolsLevelProgressRowGap;
   label: string;
 }[] = [
-  { value: 'tight', label: 'Tight' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'large', label: 'Large' },
-  { value: 'xlarge', label: 'Extra large' },
+  { value: 'tight', label: msg('Tight') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Large') },
+  { value: 'xlarge', label: msg('Extra large') },
 ];
 
 export const PORTFOLIO_TOOLS_LEVEL_PROGRESS_COLUMNS_OPTIONS: {
   value: '1' | '2';
   label: string;
 }[] = [
-  { value: '1', label: '1 per row' },
-  { value: '2', label: '2 per row (large screen)' },
+  { value: '1', label: msg('1 per row') },
+  { value: '2', label: msg('2 per row (large screen)') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_ROW_CELL_STYLE_OPTIONS: {
   value: PortfolioToolsBrandRowCellStyle;
   label: string;
 }[] = [
-  { value: 'dividers', label: 'Dividers (lines)' },
-  { value: 'frames', label: 'Individual frames' },
-  { value: 'none', label: 'None (no lines)' },
+  { value: 'dividers', label: msg('Dividers (lines)') },
+  { value: 'frames', label: msg('Individual frames') },
+  { value: 'none', label: msg('None (no lines)') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_FLOAT_GRID_MODE_OPTIONS: {
   value: PortfolioToolsBrandFloatGridMode;
   label: string;
 }[] = [
-  { value: 'fluid', label: 'Fluide (auto-fill)' },
-  { value: 'fixed', label: 'Colonnes fixes' },
+  { value: 'fluid', label: msg('Fluide (auto-fill)') },
+  { value: 'fixed', label: msg('Colonnes fixes') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_FLOAT_TILE_DENSITY_OPTIONS: {
   value: PortfolioToolsBrandFloatTileDensity;
   label: string;
 }[] = [
-  { value: 'compact', label: 'Compact' },
-  { value: 'comfortable', label: 'Confortable' },
-  { value: 'spacious', label: 'Aéré' },
+  { value: 'compact', label: msg('Compact') },
+  { value: 'comfortable', label: msg('Confortable') },
+  { value: 'spacious', label: msg('Aéré') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_FLOAT_COLUMNS_OPTIONS: {
   value: '2' | '3' | '4';
   label: string;
 }[] = [
-  { value: '2', label: '2 par ligne' },
-  { value: '3', label: '3 par ligne' },
-  { value: '4', label: '4 par ligne (écran large)' },
+  { value: '2', label: msg('2 par ligne') },
+  { value: '3', label: msg('3 par ligne') },
+  { value: '4', label: msg('4 par ligne (écran large)') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_FLOAT_CARD_STYLE_OPTIONS: {
   value: PortfolioToolsBrandFloatCardStyle;
   label: string;
 }[] = [
-  { value: 'framed', label: 'Avec cadre' },
-  { value: 'plain', label: 'Sans cadre' },
+  { value: 'framed', label: msg('Avec cadre') },
+  { value: 'plain', label: msg('Sans cadre') },
 ];
 
 export const PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS: {
@@ -828,13 +832,13 @@ export const PORTFOLIO_TOOLS_LEVEL_INDICATOR_CARD_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'framed',
-    label: 'Framed',
-    description: 'Card background and border around each item.',
+    label: msg('Framed'),
+    description: msg('Card background and border around each item.'),
   },
   {
     value: 'plain',
-    label: 'Plain',
-    description: 'No card frame — logo, ring, and text sit directly on the section.',
+    label: msg('Plain'),
+    description: msg('No card frame — logo, ring, and text sit directly on the section.'),
   },
 ];
 
@@ -845,13 +849,13 @@ export const PORTFOLIO_TOOLS_LEVEL_BENTO_GRID_MODE_OPTIONS: {
 }[] = [
   {
     value: 'asymmetric',
-    label: 'Asymmetric',
-    description: 'Wider category cards when they contain more skills.',
+    label: msg('Asymmetric'),
+    description: msg('Wider category cards when they contain more skills.'),
   },
   {
     value: 'equal',
-    label: 'Equal columns',
-    description: 'Same width for every category card.',
+    label: msg('Equal columns'),
+    description: msg('Same width for every category card.'),
   },
 ];
 
@@ -862,23 +866,23 @@ export const PORTFOLIO_TOOLS_LEVEL_INDICATOR_DISPLAY_STYLE_OPTIONS: {
 }[] = [
   {
     value: 'text',
-    label: 'Text label',
-    description: 'Beginner, Intermediate, Advanced, Expert — colored text.',
+    label: msg('Text label'),
+    description: msg('Beginner, Intermediate, Advanced, Expert — colored text.'),
   },
   {
     value: 'stars',
-    label: 'Stars',
-    description: '5-star rating — filled stars use the level accent color.',
+    label: msg('Stars'),
+    description: msg('5-star rating — filled stars use the level accent color.'),
   },
   {
     value: 'dots',
-    label: 'Glowing dots',
-    description: '5 dots — filled dots use semantic level colors with a soft glow.',
+    label: msg('Glowing dots'),
+    description: msg('5 dots — filled dots use semantic level colors with a soft glow.'),
   },
   {
     value: 'progress-bar',
-    label: 'Progress bar',
-    description: 'Horizontal bar with optional % — no level text.',
+    label: msg('Progress bar'),
+    description: msg('Horizontal bar with optional % — no level text.'),
   },
 ];
 
@@ -986,37 +990,37 @@ export const PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS: {
   value: '1' | '2' | '3' | '4';
   label: string;
 }[] = [
-  { value: '1', label: '1 per row' },
-  { value: '2', label: '2 per row (large screen)' },
-  { value: '3', label: '3 per row (large screen)' },
-  { value: '4', label: '4 per row (large screen)' },
+  { value: '1', label: msg('1 per row') },
+  { value: '2', label: msg('2 per row (large screen)') },
+  { value: '3', label: msg('3 per row (large screen)') },
+  { value: '4', label: msg('4 per row (large screen)') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_CARDS_ICON_PLACEMENT_OPTIONS: {
   value: PortfolioToolsBrandCardsIconPlacement;
   label: string;
 }[] = [
-  { value: 'top', label: 'Above text' },
-  { value: 'left', label: 'Left (horizontal panel)' },
+  { value: 'top', label: msg('Above text') },
+  { value: 'left', label: msg('Left (horizontal panel)') },
 ];
 
 export const PORTFOLIO_TOOLS_BRAND_DIRECTORY_LEVEL_STYLE_OPTIONS: {
   value: PortfolioToolsBrandDirectoryLevelStyle;
   label: string;
 }[] = [
-  { value: 'tag', label: 'Tag' },
-  { value: 'percentage', label: 'Pourcentage' },
-  { value: 'stat', label: 'Statistique' },
-  { value: 'dots', label: 'Points' },
+  { value: 'tag', label: msg('Tag') },
+  { value: 'percentage', label: msg('Pourcentage') },
+  { value: 'stat', label: msg('Statistique') },
+  { value: 'dots', label: msg('Points') },
 ];
 
 export const PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS: {
   value: PortfolioToolsContentAlignment;
   label: string;
 }[] = [
-  { value: 'left', label: 'Left' },
-  { value: 'center', label: 'Center' },
-  { value: 'right', label: 'Right' },
+  { value: 'left', label: msg('Left') },
+  { value: 'center', label: msg('Center') },
+  { value: 'right', label: msg('Right') },
 ];
 
 const DEFAULT_TOOLS_TITLE = 'Workflow & Tools';
@@ -1032,6 +1036,7 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   contentAlignment: 'center',
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
@@ -1662,6 +1667,7 @@ export function mergeToolsPresentation(
     headerDesign: pick(record.headerDesign, TOOLS_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,
@@ -2266,4 +2272,19 @@ function pickToolsDesign(value: unknown, fallback: PortfolioToolsDesign): Portfo
 
 function pick<T extends string>(value: unknown, allowed: readonly T[], fallback: T): T {
   return typeof value === 'string' && (allowed as readonly string[]).includes(value) ? (value as T) : fallback;
+}
+
+/** What picking a Tools design changes: the design, plus that design's own defaults for the few
+ *  designs that need them. Shared by the Tools panel and the design picker's live previews. */
+export function toolsDesignSettingsPatch(
+  tools: Pick<PortfolioToolsSectionSettings, 'iconBackgroundOptIn'>,
+  design: PortfolioToolsDesign
+): Partial<PortfolioToolsSectionSettings> {
+  if (design === 'brand-float' && tools.iconBackgroundOptIn !== false) {
+    return { design, iconBackgroundEnabled: true };
+  }
+  if (design === 'level-bento-categories') return { ...toolsLevelBentoCategoriesDesignDefaults(), design };
+  if (design === 'level-star-cards') return { ...toolsLevelStarCardsDesignDefaults(), design };
+  if (design === 'level-svg-rings') return { ...toolsLevelSvgRingsDesignDefaults(), design };
+  return { design };
 }

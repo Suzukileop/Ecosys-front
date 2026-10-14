@@ -41,6 +41,7 @@ import {
   type PortfolioListMarkerStyle,
   type PortfolioListMarkerWeight,
 } from '@/components/portfolio/portfolio-list-marker';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioGlobalTitleAlignment = 'section' | 'left' | 'center' | 'right';
 
@@ -257,6 +258,12 @@ export type PortfolioGlobalSettings = {
   splitContentBottomExtraPx: number;
   /** Master switch for every animation on the public portfolio (Global → Animations). */
   motionEnabled: boolean;
+  /**
+   * Animation switch for section headers only (Global → Animations). Off = every Header design
+   * renders static; the rest of the page keeps animating. Ignored (already static) when
+   * {@link motionEnabled} is off.
+   */
+  headerMotionEnabled: boolean;
   motionProfile: PortfolioGlobalMotionProfile;
   /** Timing overrides for the active motion profile (delay / duration / stagger / distance). */
   motionTiming: PortfolioMotionTiming;
@@ -418,7 +425,7 @@ const DEFAULT_GLOBAL_TITLE_ORIENTATION_TARGETS: PortfolioGlobalTitleOrientationT
   tools: false,
 };
 
-const DEFAULT_CONTENT_SECTION_ORDER: PortfolioNavSectionKey[] = [
+export const DEFAULT_CONTENT_SECTION_ORDER: PortfolioNavSectionKey[] = [
   'stack',
   'info',
   'work',
@@ -541,6 +548,7 @@ export const DEFAULT_GLOBAL_SETTINGS: PortfolioGlobalSettings = {
   splitContentBottomSpacing: 'compact',
   splitContentBottomExtraPx: 0,
   motionEnabled: true,
+  headerMotionEnabled: true,
   motionProfile: DEFAULT_MOTION_PROFILE,
   motionTiming: { ...DEFAULT_MOTION_TIMING },
   taskListBulletStyle: 'disc',
@@ -567,18 +575,18 @@ export const PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS: {
 }[] = [
   {
     value: 'standard',
-    label: 'Standard',
-    description: 'Caps the column at ~1760px (centered) — roomy editorial width.',
+    label: msg('Standard'),
+    description: msg('Content column up to 1280px, centred — a calm reading width.'),
   },
   {
     value: 'wide',
-    label: 'Wide',
-    description: 'Caps at ~1920px — almost edge-to-edge on large monitors.',
+    label: msg('Wide'),
+    description: msg('Content column up to 1536px — more room on large screens.'),
   },
   {
     value: 'full',
-    label: 'Full',
-    description: 'No max width — only Side margins control the edges.',
+    label: msg('Full'),
+    description: msg('Uses the whole screen — only the side margins frame the content.'),
   },
 ];
 
@@ -587,10 +595,11 @@ export const PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'No left/right margins — edge to edge.' },
-  { value: 'wide', label: 'Wider', description: 'Slightly less margin — content a bit wider.' },
-  { value: 'medium', label: 'Medium', description: 'Default Editorial Warm side margins.' },
-  { value: 'narrow', label: 'Narrower', description: 'Slightly more margin — content a bit tighter.' },
+  // Stored values predate these labels: 'wide' = small margin (wider content), 'narrow' = large.
+  { value: 'none', label: msg('None'), description: msg('Edge to edge — text touches the screen edges.') },
+  { value: 'wide', label: msg('Small'), description: msg('A thin margin on each side.') },
+  { value: 'medium', label: msg('Medium'), description: msg('The default side margins.') },
+  { value: 'narrow', label: msg('Large'), description: msg('A wide margin on each side — a tighter column.') },
 ];
 
 export const PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS: {
@@ -598,10 +607,10 @@ export const PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Small', description: 'Tightest padding above every section.' },
-  { value: 'standard', label: 'Medium', description: 'Default padding above every section.' },
-  { value: 'comfortable', label: 'Large', description: 'More breathing room above every section.' },
-  { value: 'spacious', label: 'Extra large', description: 'Maximum padding above every section.' },
+  { value: 'compact', label: msg('Small'), description: msg('Tightest padding above every section.') },
+  { value: 'standard', label: msg('Medium'), description: msg('Default padding above every section.') },
+  { value: 'comfortable', label: msg('Large'), description: msg('More breathing room above every section.') },
+  { value: 'spacious', label: msg('Extra large'), description: msg('Maximum padding above every section.') },
 ];
 
 export const PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS: {
@@ -609,10 +618,10 @@ export const PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Small', description: 'Tightest padding below every section.' },
-  { value: 'standard', label: 'Medium', description: 'Default padding below every section.' },
-  { value: 'comfortable', label: 'Large', description: 'More breathing room below every section.' },
-  { value: 'spacious', label: 'Extra large', description: 'Maximum padding below every section.' },
+  { value: 'compact', label: msg('Small'), description: msg('Tightest padding below every section.') },
+  { value: 'standard', label: msg('Medium'), description: msg('Default padding below every section.') },
+  { value: 'comfortable', label: msg('Large'), description: msg('More breathing room below every section.') },
+  { value: 'spacious', label: msg('Extra large'), description: msg('Maximum padding below every section.') },
 ];
 
 const APP_FONT_FAMILY = 'var(--font-app)';
@@ -628,43 +637,43 @@ const PORTFOLIO_GLOBAL_HEADER_FONT_OPTIONS: {
 }[] = [
   {
     value: 'roboto',
-    label: 'Roboto',
-    description: 'Police du site — UI nette et très lisible, SemiBold réel (600).',
+    label: msg('Roboto'),
+    description: msg('Police du site — UI nette et très lisible, SemiBold réel (600).'),
     fontFamily: APP_FONT_FAMILY,
     previewText: 'Projects',
   },
   {
     value: 'sans',
-    label: 'Montserrat',
-    description: 'Modern geometric sans — clean and bold.',
+    label: msg('Montserrat'),
+    description: msg('Modern geometric sans — clean and bold.'),
     fontFamily: "'Montserrat', sans-serif",
     previewText: 'PROJECTS',
   },
   {
     value: 'serif',
-    label: 'Playfair',
-    description: 'Editorial serif — magazine feel.',
+    label: msg('Playfair'),
+    description: msg('Editorial serif — magazine feel.'),
     fontFamily: "'Playfair Display', serif",
     previewText: 'Projects',
   },
   {
     value: 'display',
-    label: 'Bebas Neue',
-    description: 'Poster display caps — strong impact.',
+    label: msg('Bebas Neue'),
+    description: msg('Poster display caps — strong impact.'),
     fontFamily: "'Bebas Neue', sans-serif",
     previewText: 'PROJECTS',
   },
   {
     value: 'condensed',
-    label: 'Oswald',
-    description: 'Condensed sans — tight and athletic.',
+    label: msg('Oswald'),
+    description: msg('Condensed sans — tight and athletic.'),
     fontFamily: "'Oswald', sans-serif",
     previewText: 'PROJECTS',
   },
   {
     value: 'geometric',
-    label: 'Raleway',
-    description: 'Elegant geometric — refined headlines.',
+    label: msg('Raleway'),
+    description: msg('Elegant geometric — refined headlines.'),
     fontFamily: "'Raleway', sans-serif",
     previewText: 'Projects',
   },
@@ -873,9 +882,9 @@ export const PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'cover', label: 'Cover', description: 'Fill the area — may crop the image.' },
-  { value: 'contain', label: 'Contain', description: 'Fit the whole image — may leave gaps.' },
-  { value: 'fill', label: 'Stretch', description: 'Stretch to every edge, ignoring aspect ratio.' },
+  { value: 'cover', label: msg('Cover'), description: msg('Fill the area — may crop the image.') },
+  { value: 'contain', label: msg('Contain'), description: msg('Fit the whole image — may leave gaps.') },
+  { value: 'fill', label: msg('Stretch'), description: msg('Stretch to every edge, ignoring aspect ratio.') },
 ];
 
 export const PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS: {
@@ -883,15 +892,15 @@ export const PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'center', label: 'Center', description: 'Anchor the image in the middle.' },
-  { value: 'top', label: 'Top', description: 'Pin to the top edge.' },
-  { value: 'bottom', label: 'Bottom', description: 'Pin to the bottom edge.' },
-  { value: 'left', label: 'Left', description: 'Pin to the left edge.' },
-  { value: 'right', label: 'Right', description: 'Pin to the right edge.' },
-  { value: 'top-left', label: 'Top left', description: 'Pin to the top-left corner.' },
-  { value: 'top-right', label: 'Top right', description: 'Pin to the top-right corner.' },
-  { value: 'bottom-left', label: 'Bottom left', description: 'Pin to the bottom-left corner.' },
-  { value: 'bottom-right', label: 'Bottom right', description: 'Pin to the bottom-right corner.' },
+  { value: 'center', label: msg('Center'), description: msg('Anchor the image in the middle.') },
+  { value: 'top', label: msg('Top'), description: msg('Pin to the top edge.') },
+  { value: 'bottom', label: msg('Bottom'), description: msg('Pin to the bottom edge.') },
+  { value: 'left', label: msg('Left'), description: msg('Pin to the left edge.') },
+  { value: 'right', label: msg('Right'), description: msg('Pin to the right edge.') },
+  { value: 'top-left', label: msg('Top left'), description: msg('Pin to the top-left corner.') },
+  { value: 'top-right', label: msg('Top right'), description: msg('Pin to the top-right corner.') },
+  { value: 'bottom-left', label: msg('Bottom left'), description: msg('Pin to the bottom-left corner.') },
+  { value: 'bottom-right', label: msg('Bottom right'), description: msg('Pin to the bottom-right corner.') },
 ];
 
 function sanitizeBackgroundImageUrl(value: unknown): string {
@@ -951,7 +960,7 @@ function sanitizeOpacityPercent(value: unknown, fallback: number): number {
   return Math.min(100, Math.max(0, Math.round(value)));
 }
 
-function backgroundImagePositionCss(position: PortfolioGlobalBackgroundImagePosition): string {
+export function backgroundImagePositionCss(position: PortfolioGlobalBackgroundImagePosition): string {
   switch (position) {
     case 'top':
       return 'center top';
@@ -974,7 +983,7 @@ function backgroundImagePositionCss(position: PortfolioGlobalBackgroundImagePosi
   }
 }
 
-function backgroundImageSizeCss(size: PortfolioGlobalBackgroundImageSize): string {
+export function backgroundImageSizeCss(size: PortfolioGlobalBackgroundImageSize): string {
   switch (size) {
     case 'contain':
       return 'contain';
@@ -1028,12 +1037,13 @@ export function globalFixedBackgroundImageStyle(
 export function globalContentWidthClass(width: PortfolioGlobalContentWidth): string {
   switch (width) {
     case 'wide':
-      return 'max-w-[120rem]';
+      return 'max-w-[96rem]';
     case 'full':
       return 'max-w-none';
     default:
-      // Standard: near full on large monitors (was 90rem / 1440px — left huge side voids).
-      return 'max-w-[110rem]';
+      // Standard: a centred reading column. (The old 110rem / 120rem caps only kicked in above
+      // ~1760px, so the three options looked identical on almost every screen.)
+      return 'max-w-[80rem]';
   }
 }
 
@@ -1756,6 +1766,10 @@ export function mergeGlobalSettings(base: PortfolioGlobalSettings, patch: unknow
     ),
     motionEnabled:
       typeof record.motionEnabled === 'boolean' ? record.motionEnabled : (base.motionEnabled ?? true),
+    headerMotionEnabled:
+      typeof record.headerMotionEnabled === 'boolean'
+        ? record.headerMotionEnabled
+        : (base.headerMotionEnabled ?? true),
     motionProfile: resolveMotionProfileFromStorage(
       record,
       mergeMotionProfile(base.motionProfile, record.motionProfile)

@@ -10,6 +10,7 @@ import {
   FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_TITLE_TEXT = "Let's build a space\nthat feels alive.";
 const DEFAULT_CTA_LABEL = 'Get in touch';
@@ -34,6 +35,7 @@ export function FooterHeaderHeroHeader({
   ctaHref?: string;
 }) {
   const presentation = presentationProp ?? DEFAULT_FOOTER_PRESENTATION;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'footer-hero');
   const titleText = (presentation.headerHeroTitleText || DEFAULT_TITLE_TEXT).trim() || DEFAULT_TITLE_TEXT;
   const ctaLabel = (presentation.headerHeroCtaLabel || DEFAULT_CTA_LABEL).trim();
   const ink = footerHeaderPaletteTokenColor(presentation.headerHeroTitleColor ?? 'texteFort');
@@ -51,18 +53,20 @@ export function FooterHeaderHeroHeader({
       data-footer-header="hero"
     >
       <div className="pf-footer-header-hero-stage flex flex-col items-center">
-        <h2
-          className="m-0 max-w-[46rem] select-none font-sans font-black tracking-tighter"
-          style={{ color: ink, fontSize: 'clamp(2.5rem, 9vw, 7.5rem)', lineHeight: 0.95 }}
-        >
-          {lines.map((line, index) => (
-            <span key={`${line}-${index}`} className="block overflow-hidden">
-              <span className="pf-footer-header-hero-line block">{line}</span>
-            </span>
-          ))}
-        </h2>
+        {show('title') ? (
+          <h2
+            className="m-0 max-w-[46rem] select-none font-sans font-black tracking-tighter"
+            style={{ color: ink, fontSize: 'clamp(2.5rem, 9vw, 7.5rem)', lineHeight: 0.95 }}
+          >
+            {lines.map((line, index) => (
+              <span key={`${line}-${index}`} className="block overflow-hidden">
+                <span className="pf-footer-header-hero-line block">{line}</span>
+              </span>
+            ))}
+          </h2>
+        ) : null}
 
-        {ctaLabel ? (
+        {show('cta') && ctaLabel ? (
           <a
             href={ctaHref || '#footer'}
             data-pf-no-color-transition=""

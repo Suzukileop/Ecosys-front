@@ -23,6 +23,7 @@ import {
 import { PortfolioListMarker } from '@/components/portfolio/PortfolioListMarker';
 import { resolveTaskListMarker } from '@/components/portfolio/portfolio-list-marker';
 import { mediaImageResponsive } from '@/lib/media-image-url';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Portraits and photos in this section are user uploads; serve a derivative, not the original. */
 const ABOUT_MEDIA_WIDTHS = [256, 384, 640, 828] as const;
@@ -211,6 +212,7 @@ function AboutUsSplitOverlapDesign({
   presentation: PortfolioAboutUsPresentationSettings;
   sectionTitle: string;
 }) {
+  const t = useT();
   const title = aboutUs.title?.trim() ?? '';
   const description = aboutUs.description?.trim() ?? '';
   const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
@@ -220,7 +222,7 @@ function AboutUsSplitOverlapDesign({
   const founderFunction = aboutUs.founder?.function?.trim() ?? '';
   const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
   const eyebrow = sectionTitle.trim();
-  const ctaLabel = presentation.ctaLabel.trim() || 'Contact';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
   const accent = presentation.accentColor;
   const widthPercent = Math.min(100, Math.max(50, presentation.contentWidthPercent || 100));
   const hasImages = images.length > 0;
@@ -343,6 +345,7 @@ function AboutUsSplitMediaLeftDesign({
   presentation: PortfolioAboutUsPresentationSettings;
   sectionTitle: string;
 }) {
+  const t = useT();
   const title = aboutUs.title?.trim() ?? '';
   const description = aboutUs.description?.trim() ?? '';
   const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
@@ -352,7 +355,7 @@ function AboutUsSplitMediaLeftDesign({
   const founderFunction = aboutUs.founder?.function?.trim() ?? '';
   const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
   const eyebrow = sectionTitle.trim();
-  const ctaLabel = presentation.ctaLabel.trim() || 'Contact';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
   const accent = presentation.accentColor;
   const widthPercent = Math.min(100, Math.max(50, presentation.contentWidthPercent || 100));
   const hasImages = images.length > 0;
@@ -452,10 +455,11 @@ function AboutUsSplitMediaLeftDesign({
 }
 
 function AboutUsFounderStars({ rating, dark }: { rating: number; dark: boolean }) {
+  const t = useT();
   const value = Math.max(0, Math.min(5, rating));
   const chrome = aboutUsChrome(dark);
   return (
-    <div className="flex shrink-0 items-center gap-0.5" aria-label={`${value.toFixed(1)} out of 5 stars`}>
+    <div className="flex shrink-0 items-center gap-0.5" aria-label={t('{toFixed} out of 5 stars', { toFixed: value.toFixed(1) })}>
       {Array.from({ length: 5 }, (_, index) => {
         const fill = Math.max(0, Math.min(1, value - index));
         return (
@@ -669,6 +673,7 @@ function AboutUsSplitFounderDesign({
   sectionTitle: string;
   founderRating: number;
 }) {
+  const t = useT();
   const title = aboutUs.title?.trim() ?? '';
   const description = aboutUs.description?.trim() ?? '';
   const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
@@ -677,7 +682,7 @@ function AboutUsSplitFounderDesign({
   const founderFunction = aboutUs.founder?.function?.trim() ?? '';
   const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
   const eyebrow = sectionTitle.trim();
-  const ctaLabel = presentation.ctaLabel.trim() || 'Contact';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
   const accent = presentation.accentColor;
   const widthPercent = Math.min(100, Math.max(50, presentation.contentWidthPercent || 100));
   const hasImages = images.length > 0;
@@ -792,6 +797,7 @@ function AboutUsSplitCardDesign({
   sectionTitle: string;
   founderRating: number;
 }) {
+  const t = useT();
   const title = aboutUs.title?.trim() ?? '';
   const description = aboutUs.description?.trim() ?? '';
   const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
@@ -801,7 +807,7 @@ function AboutUsSplitCardDesign({
   const founderFunction = aboutUs.founder?.function?.trim() ?? '';
   const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
   const eyebrow = sectionTitle.trim();
-  const ctaLabel = presentation.ctaLabel.trim() || 'Contact';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
   const accent = presentation.accentColor;
   const widthPercent = Math.min(100, Math.max(50, presentation.contentWidthPercent || 100));
   const src = images[0];
@@ -1078,6 +1084,7 @@ function AboutUsSplitQuoteDesign({
   sectionSubtitle: string;
   founderRating: number;
 }) {
+  const t = useT();
   const title = aboutUs.title?.trim() ?? '';
   const description = aboutUs.description?.trim() ?? '';
   const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
@@ -1090,7 +1097,7 @@ function AboutUsSplitQuoteDesign({
     sectionSubtitle.trim() && sectionSubtitle.trim() !== DEFAULT_ABOUT_US_SUBTITLE
       ? sectionSubtitle.trim()
       : '';
-  const ctaLabel = presentation.ctaLabel.trim() || 'Contact';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
   const accent = presentation.accentColor;
   const widthPercent = Math.min(100, Math.max(50, presentation.contentWidthPercent || 100));
   const images = filledImages(aboutUs.imageUrls);

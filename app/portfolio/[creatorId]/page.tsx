@@ -4,12 +4,13 @@ import { notFound, permanentRedirect } from 'next/navigation';
 import type { Metadata } from 'next';
 import { PublicCreatorPortfolioPage } from '@/components/portfolio/PublicCreatorPortfolioPage';
 import { PublicCreatorPortfolioSkeleton } from '@/components/portfolio/PublicCreatorPortfolioSkeleton';
-import { formatLocationLabel } from '@/lib/geolocation';
+import { formatPlaceLabel } from '@/lib/geolocation';
 import {
   buildCreatorPortfolioPath,
   looksLikeUuid,
 } from '@/lib/portfolio-url';
 import { isPortfolioStudioEmbedParam, withPortfolioStudioEmbed } from '@/lib/portfolio-studio-preview';
+import { readDesignPreviewTarget, type DesignPreviewTarget } from '@/lib/portfolio-design-preview';
 import {
   normalizeCreatorProfile,
   serverMarketplaceFetch,
@@ -77,9 +78,12 @@ export async function generateMetadata({
 async function CreatorPortfolioBody({
   creatorId,
   studioEmbed = false,
+  designPreview = null,
 }: {
   creatorId: string;
   studioEmbed?: boolean;
+  /** A studio design picker card (`?previewSection=&previewDesign=`) — only honoured inside the embed. */
+  designPreview?: DesignPreviewTarget | null;
 }) {
   const refreshToken = (await cookies()).get('refresh_token')?.value;
   const isAuthenticated = Boolean(refreshToken);
@@ -93,7 +97,8 @@ async function CreatorPortfolioBody({
     permanentRedirect(studioEmbed ? withPortfolioStudioEmbed(dest) : dest);
   }
 
-  const locationLabel = formatLocationLabel(profile.locationCity, profile.locationCountry);
+  /* null when nothing is set — formatLocationLabel would hand the page the literal "Location not set". */
+  const locationLabel = formatPlaceLabel(profile.locationCity, profile.locationCountry, profile.nationality);
 
   return (
     <PublicCreatorPortfolioPage
@@ -103,6 +108,7 @@ async function CreatorPortfolioBody({
       locationLabel={locationLabel}
       portfolioPosts={profile.portfolioPosts}
       studioEmbed={studioEmbed}
+      designPreview={studioEmbed ? designPreview : null}
     />
   );
 }
@@ -112,10 +118,10 @@ export default async function CreatorPortfolioPage({
   searchParams,
 }: {
   params: Promise<{ creatorId: string }>;
-  searchParams: Promise<{ embed?: string }>;
+  searchParams: Promise<{ embed?: string; previewSection?: string; previewDesign?: string }>;
 }) {
   const { creatorId } = await params;
-  const { embed } = await searchParams;
+  const { embed, previewSection, previewDesign } = await searchParams;
   const cookieStore = await cookies();
   const initialDesign =
     designFromCookie(cookieStore, creatorId) ?? DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN;
@@ -129,6 +135,7 @@ export default async function CreatorPortfolioPage({
       <CreatorPortfolioBody
         creatorId={creatorId}
         studioEmbed={isPortfolioStudioEmbedParam(embed)}
+        designPreview={readDesignPreviewTarget(previewSection, previewDesign)}
       />
     </Suspense>
   );

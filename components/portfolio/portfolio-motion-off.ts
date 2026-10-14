@@ -81,3 +81,19 @@ export const PortfolioMotionOffContext = createContext(false);
 export function usePortfolioMotionOff(): boolean {
   return useContext(PortfolioMotionOffContext);
 }
+
+/**
+ * Global → Animations → "Header animations". Provided by the page next to
+ * {@link PortfolioMotionOffContext}; true when only the section headers must stay static.
+ */
+export const PortfolioHeaderMotionOffContext = createContext(false);
+
+/**
+ * What every Header design reads instead of {@link usePortfolioMotionOff}: static when the whole
+ * page is static OR when the header-only switch is off.
+ */
+export function usePortfolioHeaderMotionOff(): boolean {
+  const pageOff = useContext(PortfolioMotionOffContext);
+  const headerOff = useContext(PortfolioHeaderMotionOffContext);
+  return pageOff || headerOff;
+}

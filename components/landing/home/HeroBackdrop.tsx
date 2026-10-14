@@ -3,17 +3,24 @@
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
 
-/** `frame` nudges each photo so the subject sits just below the hero title. */
+/**
+ * Professional, student, freelancer — each on the right of the frame, the left kept dark for the
+ * copy. 2560px exports of Unsplash photos (free Unsplash License): 7AgqAZbogOQ by Alex Hudson,
+ * 8OZh33HlFq4 by Daniel Maraventano, sgzFhiSUoII by Akram Huseyn.
+ */
 const SLIDES = [
-  { src: '/landing/v4/hero-pro-v8.jpg', frame: 'object-[68%_top] sm:object-[50%_0%]' },
-  { src: '/landing/v4/hero-graduate-v6.jpg', frame: 'object-[68%_top] sm:object-[50%_0%]' },
-  { src: '/landing/v4/hero-laptop.jpg', frame: 'object-[68%_top] sm:object-[50%_35%]' },
+  { src: '/landing/hero/hero-pro.jpg', frame: 'object-[62%_center] md:object-center' },
+  { src: '/landing/hero/hero-student.jpg', frame: 'object-[72%_center] md:object-center' },
+  { src: '/landing/hero/hero-freelance.jpg', frame: 'object-[75%_center] md:object-center' },
 ] as const;
 
 const INTERVAL_MS = 5000;
 const TRANSITION = 'opacity 1.8s cubic-bezier(0.4, 0, 0.2, 1), transform 7s ease-out';
 
-/** Hero background that cross-fades between the audiences Skraft serves. */
+/**
+ * Full-bleed hero background that cross-fades between the audiences Skraft serves; the hero lays
+ * its own scrims on top. With reduced motion it stays on the first photo.
+ */
 export function HeroBackdrop() {
   const [{ active, previous }, setSlides] = useState<{ active: number; previous: number | null }>({
     active: 0,
@@ -21,6 +28,7 @@ export function HeroBackdrop() {
   });
 
   useEffect(() => {
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const timer = window.setInterval(() => {
       setSlides(({ active: current }) => ({ active: (current + 1) % SLIDES.length, previous: current }));
     }, INTERVAL_MS);
@@ -28,7 +36,7 @@ export function HeroBackdrop() {
   }, []);
 
   return (
-    <div aria-hidden className="pointer-events-none absolute inset-x-0 bottom-0 top-[28%] overflow-hidden [mask-image:linear-gradient(to_bottom,transparent,black_22%)] sm:top-[27%]">
+    <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {SLIDES.map(({ src, frame }, i) => {
         const isActive = i === active;
         /* The outgoing slide stays opaque underneath, so the fade never dips into the black background. */
@@ -42,7 +50,7 @@ export function HeroBackdrop() {
             priority={i === 0}
             sizes="100vw"
             style={{ transition: isActive || isPrevious ? TRANSITION : 'none' }}
-            className={`object-cover contrast-[1.08] motion-reduce:!transition-none ${frame} ${
+            className={`object-cover motion-reduce:!transition-none ${frame} ${
               isActive
                 ? 'z-[2] scale-100 opacity-100'
                 : isPrevious

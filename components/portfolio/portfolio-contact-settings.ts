@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
@@ -49,6 +50,7 @@ import {
   type PortfolioContactHeaderTitleSize,
   type PortfolioContactHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-contact-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 /**
  * Global type-size control for every Contact design — same standardized-shared-value
@@ -77,14 +79,14 @@ export const PORTFOLIO_CONTACT_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across every Contact design.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across every Contact design.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -440,6 +442,8 @@ export type PortfolioContactPresentationSettings = PortfolioSectionBackgroundSet
   headerDesign: PortfolioContactHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioContactHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioContactHeaderMarginBottom;
@@ -692,6 +696,7 @@ export const DEFAULT_CONTACT_PRESENTATION: PortfolioContactPresentationSettings 
   headerAlignment: 'left',
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
@@ -878,105 +883,105 @@ export const PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'editorial',
-    label: 'Editorial',
-    description: 'One panel — 2-column grid with hairline dividers.',
+    label: msg('Editorial'),
+    description: msg('One panel — 2-column grid with hairline dividers.'),
   },
   {
     value: 'directory',
-    label: 'Directory',
+    label: msg('Directory'),
     description:
-      'Centered title + large social chips left; message form on the right (Minimal underline by default).',
+      msg('Centered title + large social chips left; message form on the right (Minimal underline by default).'),
   },
   {
     value: 'tiles',
-    label: 'Tiles',
+    label: msg('Tiles'),
     description:
-      'Each link / contact in its own bordered tile — Step inquiry form by default.',
+      msg('Each link / contact in its own bordered tile — Step inquiry form by default.'),
   },
   {
     value: 'inquiry',
-    label: 'Inquiry split',
-    description: 'Copy + illustration left, message form card right.',
+    label: msg('Inquiry split'),
+    description: msg('Copy + illustration left, message form card right.'),
   },
   {
     value: 'inquiry-panel',
-    label: 'Inquiry panel',
-    description: 'Headline + channel rows left, form card with accent frame right.',
+    label: msg('Inquiry panel'),
+    description: msg('Headline + channel rows left, form card with accent frame right.'),
   },
   {
     value: 'desk',
-    label: 'Contact desk',
-    description: 'Channel cards on top, two-column form with topic chips below.',
+    label: msg('Contact desk'),
+    description: msg('Channel cards on top, two-column form with topic chips below.'),
   },
   {
     value: 'info-panel',
-    label: 'Info panel',
-    description: 'Contact details left, accent form card right — framed shell.',
+    label: msg('Info panel'),
+    description: msg('Contact details left, accent form card right — framed shell.'),
   },
   {
     value: 'channel-cards',
-    label: 'Contact cards',
-    description: 'Centered heading with Phone, Email and Address cards in a row.',
+    label: msg('Contact cards'),
+    description: msg('Centered heading with Phone, Email and Address cards in a row.'),
   },
   {
     value: 'swiss-editorial',
-    label: 'Swiss editorial',
+    label: msg('Swiss editorial'),
     description:
-      'Ivory frame, serif headline + form, contact band, and follow-me footer — cobalt accent.',
+      msg('Ivory frame, serif headline + form, contact band, and follow-me footer — cobalt accent.'),
   },
   {
     value: 'editorial-focus',
-    label: 'Editorial focus',
+    label: msg('Editorial focus'),
     description:
-      'Monumental headline left, offset info right — headline reveals on scroll, each link brightens on its own hover.',
+      msg('Monumental headline left, offset info right — headline reveals on scroll, each link brightens on its own hover.'),
   },
   {
     value: 'split-grid',
-    label: 'Split grid',
+    label: msg('Split grid'),
     description:
-      'Broken split screen — compact metadata left, giant magnetic email and socials right, curtain text reveal.',
+      msg('Broken split screen — compact metadata left, giant magnetic email and socials right, curtain text reveal.'),
   },
   {
     value: 'liquid-distortion',
-    label: 'Liquid distortion',
+    label: msg('Liquid distortion'),
     description:
-      'Corner-anchored contacts over a faint monumental watermark — organic stretch on hover, radical dim-to-focus.',
+      msg('Corner-anchored contacts over a faint monumental watermark — organic stretch on hover, radical dim-to-focus.'),
   },
   {
     value: 'sequential-reveal',
-    label: 'Sequential reveal',
+    label: msg('Sequential reveal'),
     description:
-      'Monumental title, clip-path image reveal, then a borderless floating-label form with a magnetic submit.',
+      msg('Monumental title, clip-path image reveal, then a borderless floating-label form with a magnetic submit.'),
   },
   {
     value: 'studio-overlap',
-    label: 'Studio overlap',
+    label: msg('Studio overlap'),
     description:
-      'Asymmetric split — headline and contact blocks left, full-bleed portrait right with an overlapping label. Light/dark aware.',
+      msg('Asymmetric split — headline and contact blocks left, full-bleed portrait right with an overlapping label. Light/dark aware.'),
   },
   {
     value: 'borderless-grid',
-    label: 'Borderless grid',
+    label: msg('Borderless grid'),
     description:
-      'Stacked monumental headlines left, icon-free raw data right — address, phone, email each larger than the last.',
+      msg('Stacked monumental headlines left, icon-free raw data right — address, phone, email each larger than the last.'),
   },
   {
     value: 'broken-grid',
-    label: 'Broken grid',
+    label: msg('Broken grid'),
     description:
-      'CONTACT top left, email monumental bottom right, a floating circular portrait drifting between them with mouse parallax.',
+      msg('CONTACT top left, email monumental bottom right, a floating circular portrait drifting between them with mouse parallax.'),
   },
   {
     value: 'numbered-narrative',
-    label: 'Numbered narrative',
+    label: msg('Numbered narrative'),
     description:
-      'Narrative numbered form left, circular avatar and labeled contact/social metadata right — magnetic hover throughout.',
+      msg('Narrative numbered form left, circular avatar and labeled contact/social metadata right — magnetic hover throughout.'),
   },
   {
     value: 'magnetic-overlap',
-    label: 'Magnetic overlap',
+    label: msg('Magnetic overlap'),
     description:
-      'Eyebrow, headline and giant email overlapping a wide image, magnetic arrow button, pill contact badges below.',
+      msg('Eyebrow, headline and giant email overlapping a wide image, magnetic arrow button, pill contact badges below.'),
   },
 ];
 
@@ -2027,6 +2032,7 @@ export function mergeContactPresentation(
       typeof record.headerAnimationEnabled === 'boolean'
         ? record.headerAnimationEnabled
         : (base.headerAnimationEnabled ?? true),
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'],

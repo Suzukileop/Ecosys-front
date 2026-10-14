@@ -6,6 +6,8 @@ import { isMessagePinned, togglePinnedMessage } from '@/lib/discussion-pins';
 import { getAttachmentDownloadUrl } from '@/lib/messaging';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import type { DirectMessage } from '@/types/messaging';
+import { X_MENU_ITEM, X_MENU_ITEM_DANGER, X_MENU_PANEL } from '@/components/messaging/messaging-x';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type MessageActionsMenuProps = {
   message: DirectMessage;
@@ -34,6 +36,7 @@ export function MessageActionsMenu({
   onTransfer,
   onDelete,
 }: MessageActionsMenuProps) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const [openUpward, setOpenUpward] = useState(false);
   const [downloading, setDownloading] = useState(false);
@@ -75,32 +78,39 @@ export function MessageActionsMenu({
         setOpen(false);
       }
     };
+    const onKeyDown = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false);
+    };
     document.addEventListener('mousedown', onPointerDown);
-    return () => document.removeEventListener('mousedown', onPointerDown);
+    document.addEventListener('keydown', onKeyDown);
+    return () => {
+      document.removeEventListener('mousedown', onPointerDown);
+      document.removeEventListener('keydown', onKeyDown);
+    };
   }, [open]);
 
-  const triggerClass = `flex h-7 w-7 shrink-0 items-center justify-center rounded-full transition-colors duration-300 ${
+  /* 32px disc beside the bubble, with an invisible 40px hit area (`before:`) so it is a fair touch
+     target without taking more of the bubble's width. */
+  const triggerClass = `relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 before:absolute before:-inset-1 before:content-[''] hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] ${
     open ? 'text-[var(--msg-ink)]' : 'text-[var(--msg-ink-faint)] hover:text-[var(--msg-ink)]'
   }`;
 
-  /* Menu rows are type on the panel: the hover wash is the only thing that moves. */
-  const menuItemClass =
-    'msg-micro flex w-full items-center px-4 py-2.5 text-left text-[var(--msg-ink-soft)] transition-colors duration-200 hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)] disabled:opacity-40';
+  const menuItemClass = X_MENU_ITEM;
 
   const handleCopy = async () => {
     const text =
       message.content?.trim() ||
       (message.attachments?.length ? (message.attachments[0]?.fileName ?? 'Attachment') : '');
     if (!text) {
-      pushFlashFeedback({ variant: 'error', title: 'Nothing to copy' });
+      pushFlashFeedback({ variant: 'error', title: t('Nothing to copy') });
       setOpen(false);
       return;
     }
     try {
       await navigator.clipboard.writeText(text);
-      pushFlashFeedback({ variant: 'success', title: 'Copied', description: 'Message copied to clipboard.' });
+      pushFlashFeedback({ variant: 'success', title: t('Copied'), description: t('Message copied to clipboard.') });
     } catch {
-      pushFlashFeedback({ variant: 'error', title: 'Copy failed' });
+      pushFlashFeedback({ variant: 'error', title: t('Copy failed') });
     }
     setOpen(false);
   };
@@ -134,15 +144,15 @@ export function MessageActionsMenu({
       }
       pushFlashFeedback({
         variant: 'success',
-        title: 'Download started',
+        title: t('Download started'),
         description: attachments.length > 1 ? `${attachments.length} files` : attachments[0]?.fileName,
       });
       setOpen(false);
     } catch (e) {
       pushFlashFeedback({
         variant: 'error',
-        title: 'Download failed',
-        description: getApiErrorMessage(e, 'Unable to download media.'),
+        title: t('Download failed'),
+        description: getApiErrorMessage(e, t('Unable to download media.')),
       });
     } finally {
       setDownloading(false);
@@ -156,7 +166,7 @@ export function MessageActionsMenu({
         type="button"
         onClick={() => setOpen((value) => !value)}
         className={triggerClass}
-        aria-label="Message options"
+        aria-label={t('Message options')}
         aria-expanded={open}
         aria-haspopup="menu"
       >
@@ -166,15 +176,15 @@ export function MessageActionsMenu({
         <div
           ref={menuRef}
           role="menu"
-          className={`absolute z-30 min-w-[10.5rem] overflow-hidden rounded-[var(--cw-radius)] border border-[var(--msg-hairline-strong)] bg-[var(--msg-panel)] py-1.5 shadow-[0_18px_40px_-28px_rgba(0,0,0,0.45)] ${
+          className={`absolute z-30 min-w-[11rem] ${X_MENU_PANEL} ${
             openUpward ? 'bottom-full mb-1' : 'top-full mt-1'
           } ${mine ? 'left-0' : 'right-0'}`}
         >
           <button type="button" role="menuitem" className={menuItemClass} onClick={handleTransfer}>
-            Transfer
+            {t('Forward')}
           </button>
           <button type="button" role="menuitem" className={menuItemClass} onClick={() => void handleCopy()}>
-            Copy
+            {t('Copy')}
           </button>
           {hasAttachments ? (
             <button
@@ -184,20 +194,20 @@ export function MessageActionsMenu({
               disabled={downloading}
               onClick={() => void handleDownload()}
             >
-              {downloading ? 'Downloading…' : attachments.length > 1 ? 'Download media' : 'Download'}
+              {downloading ? t('Downloading…') : attachments.length > 1 ? t('Download media') : t('Download')}
             </button>
           ) : null}
           <button type="button" role="menuitem" className={menuItemClass} onClick={handlePin}>
-            {pinned ? 'Unpin' : 'Pin'}
+            {pinned ? t('Unpin') : t('Pin')}
           </button>
           {mine && onDelete ? (
             <button
               type="button"
               role="menuitem"
-              className={`${menuItemClass} text-red-600 hover:bg-red-50 dark:text-red-400 dark:hover:bg-red-950/40`}
+              className={X_MENU_ITEM_DANGER}
               onClick={handleDelete}
             >
-              Delete
+              {t('Delete')}
             </button>
           ) : null}
         </div>

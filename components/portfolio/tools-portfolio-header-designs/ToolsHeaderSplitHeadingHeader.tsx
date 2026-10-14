@@ -8,7 +8,8 @@ import {
   type PortfolioToolsHeaderTitleSize,
   type PortfolioToolsHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-tools-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_LABEL_TEXT = 'Tools';
 const DEFAULT_TITLE_TEXT = 'Daily workflow';
@@ -62,9 +63,12 @@ export function ToolsHeaderSplitHeadingHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_TOOLS_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
-  const title = (presentation.headerSplitHeadingTitleText || DEFAULT_TITLE_TEXT).trim();
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'split-heading');
+  const showTitle = show('title');
+  const showLabel = show('label');
+  const title = showTitle ? (presentation.headerSplitHeadingTitleText || DEFAULT_TITLE_TEXT).trim() : '';
   const label = (presentation.headerSplitHeadingLabelText || DEFAULT_LABEL_TEXT).trim();
   const ink = toolsHeaderPaletteTokenColor(presentation.headerSplitHeadingTitleColor ?? 'principal');
   const muted = toolsHeaderPaletteTokenColor(presentation.headerSplitHeadingLabelColor ?? 'secondaire');
@@ -149,7 +153,7 @@ export function ToolsHeaderSplitHeadingHeader({
       observer.disconnect();
       timers.forEach((t) => clearTimeout(t));
     };
-  }, [animationEnabled, title, label]);
+  }, [animationEnabled, title, label, showLabel]);
 
   // ========== ANIMATION: Scroll — label slides right + fades fast ==========
   useEffect(() => {
@@ -205,7 +209,7 @@ export function ToolsHeaderSplitHeadingHeader({
       window.removeEventListener('resize', updateBounds);
       labelEl.style.willChange = '';
     };
-  }, [animationEnabled]);
+  }, [animationEnabled, showLabel]);
 
   const initialOpacity = animationEnabled ? 0 : 1;
   const initialTitleTransform = animationEnabled ? 'translateY(100%)' : 'translateY(0)';
@@ -239,18 +243,20 @@ export function ToolsHeaderSplitHeadingHeader({
           </div>
         ) : null}
 
-        <span
-          ref={labelRef}
-          className={`whitespace-nowrap uppercase ${LABEL_SIZE_CLASS[presentation.headerSplitHeadingLabelSize ?? 'md']} ${LABEL_WEIGHT_CLASS[presentation.headerSplitHeadingLabelWeight ?? 'regular']}`}
-          style={{
-            color: muted,
-            letterSpacing: '0.14em',
-            opacity: initialOpacity,
-            transform: initialLabelTransform,
-          }}
-        >
-          {label}
-        </span>
+        {showLabel ? (
+          <span
+            ref={labelRef}
+            className={`whitespace-nowrap uppercase ${LABEL_SIZE_CLASS[presentation.headerSplitHeadingLabelSize ?? 'md']} ${LABEL_WEIGHT_CLASS[presentation.headerSplitHeadingLabelWeight ?? 'regular']}`}
+            style={{
+              color: muted,
+              letterSpacing: '0.14em',
+              opacity: initialOpacity,
+              transform: initialLabelTransform,
+            }}
+          >
+            {label}
+          </span>
+        ) : null}
       </div>
 
       {trailing ? <div className="mt-6">{trailing}</div> : null}

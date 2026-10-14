@@ -24,6 +24,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -172,6 +173,7 @@ function DispatchSubmitButton({
   accentContrast: string;
   pending: boolean;
 }) {
+  const t = useT();
   const wrapRef = useRef<HTMLDivElement>(null);
   const btnRef = useRef<HTMLButtonElement>(null);
   const arrowRef = useRef<HTMLSpanElement>(null);
@@ -227,7 +229,7 @@ function DispatchSubmitButton({
         ref={btnRef}
         type="submit"
         disabled={pending}
-        aria-label="Send my email address"
+        aria-label={t('Send my email address')}
         onMouseEnter={() => sweep({ x: 3, y: -3 }, 'power3.out')}
         onMouseLeave={() => sweep({ x: 0, y: 0 }, 'elastic.out(1, 0.55)')}
         data-pf-no-color-transition=""
@@ -294,6 +296,7 @@ export function FooterDesignDispatch({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignDispatchProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
   const wordmarkContainerRef = useRef<HTMLDivElement>(null);
   const wordmarkTextRef = useRef<HTMLSpanElement>(null);
@@ -408,11 +411,11 @@ export function FooterDesignDispatch({
     event.preventDefault();
     const address = value.trim();
     if (!/^\S+@\S+\.\S+$/.test(address)) {
-      setStatus({ kind: 'error', text: 'Enter a valid email address.' });
+      setStatus({ kind: 'error', text: t('Enter a valid email address.') });
       return;
     }
     if (!creatorId.trim()) {
-      setStatus({ kind: 'error', text: 'Unable to send right now.' });
+      setStatus({ kind: 'error', text: t('Unable to send right now.') });
       return;
     }
     setStatus(null);
@@ -422,19 +425,19 @@ export function FooterDesignDispatch({
         name: address.split('@')[0],
         email: address,
         subject: 'New contact request from your portfolio',
-        message: `${address} left their email address in your portfolio footer and would like to hear from you.`,
+        message: t('{address} left their email address in your portfolio footer and would like to hear from you.', { address }),
       });
       setValue('');
-      setStatus({ kind: 'ok', text: 'Thank you — your address is on its way.' });
+      setStatus({ kind: 'ok', text: t('Thank you — your address is on its way.') });
       pushFlashFeedback({
         variant: 'success',
-        title: 'Address sent',
-        description: 'Your email address was delivered to the creator.',
+        title: t('Address sent'),
+        description: t('Your email address was delivered to the creator.'),
       });
     } catch (err) {
-      const message = getApiErrorMessage(err, 'Unable to send your address. Please try again.');
+      const message = getApiErrorMessage(err, t('Unable to send your address. Please try again.'));
       setStatus({ kind: 'error', text: message });
-      pushFlashFeedback({ variant: 'error', title: 'Not sent', description: message });
+      pushFlashFeedback({ variant: 'error', title: t('Not sent'), description: message });
     } finally {
       setPending(false);
     }
@@ -533,14 +536,14 @@ export function FooterDesignDispatch({
                 style={{ backgroundColor: wellFill, color: ink }}
               >
                 <label htmlFor="pf-dispatch-email" className="sr-only">
-                  Your email address
+                  {t('Your email address')}
                 </label>
                 <input
                   id="pf-dispatch-email"
                   type="email"
                   inputMode="email"
                   autoComplete="email"
-                  placeholder="Your email address"
+                  placeholder={t('Your email address')}
                   value={value}
                   onChange={(event) => {
                     setValue(event.target.value);
@@ -563,7 +566,7 @@ export function FooterDesignDispatch({
             </p>
 
             {links.length > 0 ? (
-              <ul className="flex flex-wrap items-center gap-2" aria-label="Social links">
+              <ul className="flex flex-wrap items-center gap-2" aria-label={t('Social links')}>
                 {links.map((link) => (
                   <li key={link.id}>
                     <a
@@ -605,7 +608,7 @@ export function FooterDesignDispatch({
           <div className="flex flex-col gap-10 lg:contents">
             {navLinks.length > 0 ? (
               <nav
-                aria-label="Footer"
+                aria-label={t('Footer')}
                 className={`pf-dispatch-reveal flex flex-col gap-3 lg:gap-0 ${
                   splitNav ? 'lg:col-span-2 lg:grid lg:grid-cols-2' : ''
                 }`}

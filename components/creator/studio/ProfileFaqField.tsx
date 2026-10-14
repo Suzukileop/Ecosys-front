@@ -11,6 +11,7 @@ import {
   profileSectionEmptyClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export const MAX_FAQ = 8;
 
@@ -34,10 +35,11 @@ export function ProfileFaqField({
   readOnly = false,
   values = [],
 }: ProfileFaqFieldProps) {
+  const t = useT();
   if (readOnly) {
     const filled = values.filter((item) => item.question.trim() && item.answer.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>No questions added.</p>;
+      return <p className={profileSectionEmptyClass}>{t('No questions added.')}</p>;
     }
     return (
       <div className="space-y-3">
@@ -63,7 +65,7 @@ export function ProfileFaqField({
       <ProfileSectionItemCount count={fields.length} limit={MAX_FAQ} unit="FAQ items" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No questions added.</p>
+        <p className={profileSectionEmptyClass}>{t('No questions added.')}</p>
       ) : (
         fields.map((field, index) => (
           <div
@@ -71,14 +73,14 @@ export function ProfileFaqField({
             className="space-y-4 rounded-xl border border-neutral-200 p-5 dark:border-neutral-800"
           >
             <div className="flex items-center justify-between gap-2">
-              <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">FAQ {index + 1}</p>
+              <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">{t('FAQ')} {index + 1}</p>
               <div className="flex items-center gap-1">
                 <button
                   type="button"
                   disabled={index === 0}
                   onClick={() => move(index, index - 1)}
                   className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                  aria-label="Move up"
+                  aria-label={t('Move up')}
                 >
                   ↑
                 </button>
@@ -87,7 +89,7 @@ export function ProfileFaqField({
                   disabled={index === fields.length - 1}
                   onClick={() => move(index, index + 1)}
                   className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                  aria-label="Move down"
+                  aria-label={t('Move down')}
                 >
                   ↓
                 </button>
@@ -96,14 +98,14 @@ export function ProfileFaqField({
                   onClick={() => remove(index)}
                   className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                 >
-                  Remove
+                  {t('Remove')}
                 </button>
               </div>
             </div>
 
             <div>
               <label htmlFor={`faq-q-${field.id}`} className={profileFormLabelClass}>
-                Question
+                {t('Question')}
               </label>
               <input
                 id={`faq-q-${field.id}`}
@@ -115,7 +117,7 @@ export function ProfileFaqField({
 
             <div>
               <label htmlFor={`faq-a-${field.id}`} className={profileFormLabelClass}>
-                Answer
+                {t('Answer')}
               </label>
               <textarea
                 id={`faq-a-${field.id}`}
@@ -134,7 +136,7 @@ export function ProfileFaqField({
           onClick={() => append(createEmptyFaqItem(fields.length))}
           className="rounded-lg border border-dashed border-neutral-300 px-5 py-2.5 text-[15px] font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
         >
-          Add FAQ item
+          {t('Add FAQ item')}
         </button>
       ) : null}
     </div>

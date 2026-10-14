@@ -21,6 +21,7 @@ import {
   type PortfolioElementTextStyle,
 } from '@/components/portfolio/portfolio-element-text-style';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function StyleToggleRow({
   label,
@@ -166,6 +167,7 @@ export function PortfolioElementStyleFields({
   /** When false, hide the dark color picker (palette mode). Default true. */
   showDarkColor?: boolean;
 }) {
+  const t = useT();
   const showDark = showDarkColor !== false;
   const sizePresets = ELEMENT_TEXT_SIZE_PRESET_PX[textRole];
   const resolvedSizePx = resolveElementTextSizePx(style.size, style.sizePx, textRole);
@@ -184,7 +186,7 @@ export function PortfolioElementStyleFields({
 
       {!hideTargetPicker ? (
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Element</p>
+          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{t('Element')}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {targets.map((target) => {
               const active = activeTarget === target.value;
@@ -209,7 +211,7 @@ export function PortfolioElementStyleFields({
       ) : null}
 
       <StyleColorField
-        label={showDark ? 'Color (light)' : 'Color'}
+        label={showDark ? t('Color (light)') : t('Color')}
         value={style.color}
         onChange={(color) => onStyleChange({ color })}
         render={renderColorField}
@@ -217,7 +219,7 @@ export function PortfolioElementStyleFields({
 
       {showDark ? (
         <StyleColorField
-          label="Color (dark)"
+          label={t('Color (dark)')}
           value={style.colorDark || style.color}
           onChange={(colorDark) => onStyleChange({ colorDark })}
           render={renderDarkColorField ?? renderColorField}
@@ -226,7 +228,7 @@ export function PortfolioElementStyleFields({
 
       {hideFontPicker ? null : (
         <StyleOptionGrid
-          label="Font"
+          label={t('Font')}
           options={PORTFOLIO_ELEMENT_FONT_OPTIONS}
           value={style.font}
           onChange={(font) => onStyleChange({ font })}
@@ -234,7 +236,7 @@ export function PortfolioElementStyleFields({
       )}
 
       <StyleOptionGrid
-        label="Size"
+        label={t('Size')}
         options={PORTFOLIO_ELEMENT_TEXT_SIZE_OPTIONS}
         value={sizeGridValue}
         onChange={(size) =>
@@ -246,20 +248,20 @@ export function PortfolioElementStyleFields({
       />
       {style.size === 'custom' ? (
         <p className="text-xs font-medium text-amber-700">
-          Mode manuel actif — choisis un preset ci-dessus pour quitter Manual.
+          {t('Mode manuel actif — choisis un preset ci-dessus pour quitter Manual.')}
         </p>
       ) : null}
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Manual size (px)
+            {t('Manual size (px)')}
           </p>
           <span className="tabular-nums text-sm font-semibold text-neutral-700">
-            {resolvedSizePx}px
+            {t('{resolvedSizePx}px', { resolvedSizePx })}
           </span>
         </div>
         <p className="mt-1 text-sm text-neutral-500">
-          Taille exacte du texte en pixels — titre et description réglables indépendamment.
+          {t('Taille exacte du texte en pixels — titre et description réglables indépendamment.')}
         </p>
         <input
           type="range"
@@ -272,16 +274,16 @@ export function PortfolioElementStyleFields({
             onStyleChange({ size: 'custom', sizePx: px });
           }}
           className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-          aria-label="Manual text size in pixels"
+          aria-label={t('Manual text size in pixels')}
         />
         <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-          <span>{ELEMENT_TEXT_SIZE_PX_MIN}px</span>
-          <span>{ELEMENT_TEXT_SIZE_PX_MAX}px</span>
+          <span>{t('{ELEMENTTEXTSIZEPXMIN}px', { ELEMENTTEXTSIZEPXMIN: ELEMENT_TEXT_SIZE_PX_MIN })}</span>
+          <span>{t('{ELEMENTTEXTSIZEPXMAX}px', { ELEMENTTEXTSIZEPXMAX: ELEMENT_TEXT_SIZE_PX_MAX })}</span>
         </div>
       </div>
 
       <StyleOptionGrid
-        label="Weight"
+        label={t('Weight')}
         options={PORTFOLIO_ELEMENT_TEXT_WEIGHT_OPTIONS}
         value={weightGridValue}
         onChange={(weight) =>
@@ -294,19 +296,19 @@ export function PortfolioElementStyleFields({
       />
       {weightValue === 'custom' ? (
         <p className="text-xs font-medium text-amber-700">
-          Mode manuel actif — choisis un preset ci-dessus pour quitter Manual.
+          {t('Mode manuel actif — choisis un preset ci-dessus pour quitter Manual.')}
         </p>
       ) : null}
       <div>
         <div className="flex items-center justify-between gap-3">
           <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-            Manual weight
+            {t('Manual weight')}
           </p>
           <span className="tabular-nums text-sm font-semibold text-neutral-700">
             {resolvedWeightAmount}
           </span>
         </div>
-        <p className="mt-1 text-sm text-neutral-500">Graisse exacte du texte (100–900).</p>
+        <p className="mt-1 text-sm text-neutral-500">{t('Graisse exacte du texte (100–900).')}</p>
         <input
           type="range"
           min={ELEMENT_TEXT_WEIGHT_AMOUNT_MIN}
@@ -322,19 +324,19 @@ export function PortfolioElementStyleFields({
             });
           }}
           className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
-          aria-label="Manual text weight"
+          aria-label={t('Manual text weight')}
         />
         <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
-          <span>Fin</span>
-          <span>Épais</span>
+          <span>{t('Fin')}</span>
+          <span>{t('Épais')}</span>
         </div>
       </div>
 
       <div className="space-y-2">
-        <StyleToggleRow label="Italic" checked={style.italic} onChange={(italic) => onStyleChange({ italic })} />
+        <StyleToggleRow label={t('Italic')} checked={style.italic} onChange={(italic) => onStyleChange({ italic })} />
         {!hideUppercase ? (
           <StyleToggleRow
-            label="Uppercase"
+            label={t('Uppercase')}
             checked={style.uppercase}
             onChange={(uppercase) => onStyleChange({ uppercase })}
           />
@@ -344,14 +346,14 @@ export function PortfolioElementStyleFields({
       {showDecoration ? (
         <div className="space-y-4">
           <StyleOptionGrid
-            label="Decoration"
+            label={t('Decoration')}
             options={PORTFOLIO_ELEMENT_TEXT_DECORATION_OPTIONS}
             value={style.decoration}
             onChange={(decoration) => onStyleChange({ decoration })}
           />
           {style.decoration === 'highlight' ? (
             <StyleColorField
-              label="Highlight color"
+              label={t('Highlight color')}
               value={style.highlightColor}
               onChange={(highlightColor) => onStyleChange({ highlightColor })}
               render={renderColorField}

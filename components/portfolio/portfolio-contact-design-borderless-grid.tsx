@@ -17,6 +17,7 @@ import {
   prefersReducedMotion,
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_TITLE = 'Get in touch.';
 
@@ -79,6 +80,7 @@ export function ContactDesignBorderlessGrid({
   contentGutter?: PortfolioContentGutter;
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
 
@@ -251,7 +253,7 @@ export function ContactDesignBorderlessGrid({
                 data-item
                 data-pf-no-color-transition=""
                 className="flex flex-wrap items-center gap-x-8 gap-y-4 md:justify-end"
-                aria-label="Social"
+                aria-label={t('Social')}
               >
                 {links.map((link) => (
                   <a

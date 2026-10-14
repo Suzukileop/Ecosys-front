@@ -4,6 +4,8 @@ import type { ReactNode } from 'react';
 import Link from 'next/link';
 import { AvatarImage } from '@/components/ui/PersonAvatar';
 import { useAuth } from '@/context/AuthContext';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type Shortcut = { label: string; icon: ReactNode };
 
@@ -20,7 +22,7 @@ const iconProps = {
 
 const SHORTCUTS: Shortcut[] = [
   {
-    label: 'Media',
+    label: msg('Media'),
     icon: (
       <svg {...iconProps}>
         <rect x="3.5" y="4.5" width="17" height="15" rx="2.5" />
@@ -30,7 +32,7 @@ const SHORTCUTS: Shortcut[] = [
     ),
   },
   {
-    label: 'Project',
+    label: msg('Project'),
     icon: (
       <svg {...iconProps}>
         <rect x="3.5" y="7" width="17" height="12.5" rx="2.5" />
@@ -39,7 +41,7 @@ const SHORTCUTS: Shortcut[] = [
     ),
   },
   {
-    label: 'Tools',
+    label: msg('Tools'),
     icon: (
       <svg {...iconProps}>
         <path d="m8.5 8.5-4 3.5 4 3.5M15.5 8.5l4 3.5-4 3.5M13.2 5.5l-2.4 13" />
@@ -47,7 +49,7 @@ const SHORTCUTS: Shortcut[] = [
     ),
   },
   {
-    label: 'Estimate',
+    label: msg('Estimate'),
     icon: (
       <svg {...iconProps}>
         <path d="M20 12.6 12.6 20a1.6 1.6 0 0 1-2.2 0l-6.4-6.4V4h9.6l6.4 6.4a1.6 1.6 0 0 1 0 2.2Z" />
@@ -57,8 +59,15 @@ const SHORTCUTS: Shortcut[] = [
   },
 ];
 
+/** Tool shortcut: 36px pill, icon 18 + label 14/20 medium in secondary ink — the field is the hero. */
 const shortcutClass =
-  'inline-flex h-10 min-w-10 items-center justify-center gap-2 rounded-full px-2.5 text-[14px] sm:h-9 sm:justify-start sm:px-3 font-medium text-neutral-600 transition-colors hover:bg-black/[0.04] hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:text-neutral-300 dark:hover:bg-white/[0.06] dark:hover:text-white dark:focus-visible:ring-white/30';
+  'gn-shortcut inline-flex h-9 items-center gap-2 rounded-full px-3 text-[14px] font-medium leading-5 text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+
+/** The one filled button on the page, 36px, 14/20 semibold. Its colours are tokens: brand orange
+ *  (#FF5722, #E64A19 on hover) as a fallback; the `.news-theme` X palette makes it solid
+ *  ink — black on light, white on dark. */
+const primaryButtonClass =
+  'gn-primary inline-flex h-9 shrink-0 items-center rounded-full bg-[color:var(--gn-primary,var(--gn-accent-fill))] px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-primary-ink,#ffffff)] transition-colors hover:bg-[color:var(--gn-primary-hover,#E64A19)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /** Inline "start a post" entry point at the top of the News feed. */
 export function NewsComposer({
@@ -74,6 +83,7 @@ export function NewsComposer({
   /** Inline pill (avatar + label) meant to sit next to a section title. */
   compact?: boolean;
 }) {
+  const t = useT();
   const { user } = useAuth();
   const firstName = user?.fullName?.trim().split(/\s+/)[0] || '';
   const initial = (user?.fullName?.trim() || user?.username || '?').slice(0, 1).toUpperCase();
@@ -81,9 +91,10 @@ export function NewsComposer({
   const avatar = (
     <AvatarImage
       src={user?.avatarUrl}
-      className="h-11 w-11 shrink-0 rounded-full object-cover"
+      className="h-10 w-10 shrink-0 rounded-full object-cover"
+      displayWidth={40}
       fallback={
-        <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-neutral-200 text-[14px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
           {initial}
         </span>
       }
@@ -92,16 +103,13 @@ export function NewsComposer({
 
   if (!canPublish) {
     return (
-      <div className="gn-card flex items-center gap-4 px-5 py-4 sm:px-6">
+      <div className="gn-card flex items-center gap-3 p-4">
         {avatar}
-        <p className="min-w-0 flex-1 text-[15px] text-neutral-500 dark:text-neutral-400">
-          Want to share your work here?
+        <p className="min-w-0 flex-1 text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+          {t('Want to share your work here?')}
         </p>
-        <Link
-          href="/profile"
-          className="shrink-0 rounded-full bg-[#111111] px-4 py-2 text-[14px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
-        >
-          Become a creator
+        <Link href="/profile" className={primaryButtonClass}>
+          {t('Become a creator')}
         </Link>
       </div>
     );
@@ -109,7 +117,7 @@ export function NewsComposer({
 
   const prompt = firstName
     ? `Share a project or a work update, ${firstName}…`
-    : 'Share a project or a work update…';
+    : t('Share a project or a work update…');
 
   if (compact) {
     return (
@@ -140,42 +148,38 @@ export function NewsComposer({
     );
   }
 
+  /*
+   * Composer — one card. Row 1: 40px avatar + a 44px field (15/20, secondary ink placeholder); the
+   * field is the hero, as on every major feed. Row 2 (from sm): the tool shortcuts start on the
+   * field's left edge (52px = avatar + gap) and Publish closes the row. Phones keep row 1 only — the
+   * field opens the full composer, which has every tool, so the second row was 52px of repetition.
+   */
   return (
-    <div className="gn-card">
-      <div className="flex items-center gap-3.5 px-5 pt-5 sm:px-6">
+    <section className="gn-card p-4" aria-label={t('Create a post')}>
+      <div className="flex items-center gap-3">
         {avatar}
         <button
           type="button"
           onClick={onCompose}
-          className="gn-inset h-11 min-w-0 flex-1 truncate rounded-full px-5 text-left text-[15px] text-neutral-500 transition-colors hover:bg-[#F2F2F2] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:border-white/[0.1] dark:bg-white/[0.06] dark:text-neutral-400 dark:hover:bg-white/[0.09] dark:focus-visible:ring-white/30"
+          className="gn-field-input h-11 min-w-0 flex-1 truncate rounded-lg bg-[color:var(--gn-inset)] px-4 text-left text-[15px] leading-5 text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
         >
-          <span className="sm:hidden">Share your work…</span>
+          <span className="sm:hidden">{t('Share your work…')}</span>
           <span className="hidden sm:inline">{prompt}</span>
         </button>
       </div>
-      <div className="mt-2 flex items-center gap-2 px-3 py-2.5 sm:px-4">
-        <div className="flex min-w-0 flex-1 items-center gap-0.5 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
+      <div className="mt-3 hidden items-center gap-2 pl-[52px] sm:flex">
+        <div className="-ml-3 flex min-w-0 flex-1 items-center gap-1 overflow-x-auto [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
           {SHORTCUTS.map((s) => (
-            <button
-              key={s.label}
-              type="button"
-              onClick={onCompose}
-              aria-label={s.label}
-              className={shortcutClass}
-            >
+            <button key={s.label} type="button" onClick={onCompose} className={shortcutClass}>
               {s.icon}
-              <span className="hidden sm:inline">{s.label}</span>
+              <span>{t(s.label)}</span>
             </button>
           ))}
         </div>
-        <button
-          type="button"
-          onClick={onCompose}
-          className="shrink-0 rounded-full bg-[#111111] px-5 py-2 text-[14px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#111111]"
-        >
-          Publish
+        <button type="button" onClick={onCompose} className={primaryButtonClass}>
+          {t('Publish')}
         </button>
       </div>
-    </div>
+    </section>
   );
 }

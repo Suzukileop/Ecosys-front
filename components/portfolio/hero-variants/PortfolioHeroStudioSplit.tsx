@@ -16,6 +16,7 @@ import {
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { isPortfolioMotionOff, motionTimeout } from '@/components/portfolio/portfolio-motion-off';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FALLBACK_BIO =
   'We craft distinctive digital products and brand systems for ambitious teams — clear strategy, sharp design, and experiences that feel inevitable.';
@@ -33,6 +34,7 @@ const FALLBACK_BIO =
  * - Scroll: Media scales up to full viewport, texts/band fade out → immersive transition
  */
 export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -50,11 +52,11 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
 
   const displayName = useMemo(() => {
     const raw = (data.fullName || data.nameLead || 'Lorem Ipsum').trim();
-    return raw || 'Lorem Ipsum';
+    return raw || t('Lorem Ipsum');
   }, [data.fullName, data.nameLead]);
 
   const eyebrow =
-    data.presentation.heroStudioSplitEyebrow?.trim() || 'Portfolio';
+    data.presentation.heroStudioSplitEyebrow?.trim() || t('Portfolio');
 
   const availability = resolveHeroAvailabilityValue(
     data.isAvailable,
@@ -343,7 +345,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
                 }}
                 data-gsap-entry="title"
               >
-                Hi, I&apos;m {displayName}
+                {t('Hi, I\'m {displayName}', { displayName })}
               </h1>
               <p
                 className="m-0 mt-4 font-sans font-medium tracking-[-0.015em]"
@@ -400,7 +402,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
                   className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.14em] transition hover:brightness-110"
                   style={{ backgroundColor: onBand, color: principal }}
                 >
-                  Let&apos;s talk
+                  {t('Let\'s talk')}
                 </a>
                 <a
                   href={secondaryHref}
@@ -408,7 +410,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
                   className="inline-flex h-12 items-center justify-center rounded-full border px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.14em] transition hover:opacity-85"
                   style={{ borderColor: onBand, color: onBand, backgroundColor: 'transparent' }}
                 >
-                  View my work
+                  {t('View my work')}
                 </a>
               </div>
 
@@ -482,7 +484,7 @@ export function PortfolioHeroStudioSplit({ data }: { data: PortfolioHeroData }) 
                 style={{ color: muted }}
                 aria-hidden
               >
-                Media
+                {t('Media')}
               </div>
             )}
           </div>

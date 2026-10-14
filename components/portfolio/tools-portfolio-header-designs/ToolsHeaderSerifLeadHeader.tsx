@@ -10,7 +10,8 @@ import {
   type PortfolioToolsHeaderTitleSize,
   type PortfolioToolsHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-tools-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 /** Label is a small uppercase kicker — sizes stay compact at every step. */
 const LABEL_SIZE: Record<PortfolioToolsHeaderTitleSize, string> = {
@@ -111,12 +112,16 @@ export function ToolsHeaderSerifLeadHeader({
   const align = presentation.headerDesignAlignment ?? 'left';
   const centered = align === 'center';
   const alignRight = align === 'right';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'serif-lead');
+  const showLabel = show('label');
+  const showTitle = show('title');
+  const showSubtitle = show('subtitle');
   const title = (presentation.headerSerifLeadTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSerifLeadLabelText || DEFAULT_LABEL_TEXT).trim();
-  const lines = splitSerifLeadLines(title);
-  const subtitleText = presentation.headerSerifLeadSubtitleText?.trim() || subtitle?.trim() || '';
+  const lines = showTitle ? splitSerifLeadLines(title) : [];
+  const subtitleText = showSubtitle ? presentation.headerSerifLeadSubtitleText?.trim() || subtitle?.trim() || '' : '';
 
   const labelTone = toolsHeaderPaletteTokenColor(presentation.headerSerifLeadLabelColor ?? 'texteFort');
   const titleTone = toolsHeaderPaletteTokenColor(presentation.headerSerifLeadTitleColor ?? 'texteFort');
@@ -137,7 +142,7 @@ export function ToolsHeaderSerifLeadHeader({
     const header = headerRef.current;
     const labelEl = labelRef.current;
     const leadBlock = leadRef.current;
-    if (!header || !labelEl) return;
+    if (!header) return;
     if (prefersReducedMotion() || !animationEnabled) return;
 
     gsap.registerPlugin(ScrollTrigger);
@@ -157,7 +162,7 @@ export function ToolsHeaderSerifLeadHeader({
     const lineEls = lineRefs.current.filter((node): node is HTMLSpanElement => Boolean(node));
 
     const ctx = gsap.context(() => {
-      gsap.set(labelEl, { opacity: 0 });
+      if (labelEl) gsap.set(labelEl, { opacity: 0 });
       if (lineEls.length) gsap.set(lineEls, { yPercent: 110 });
       if (leadBlock) gsap.set(leadBlock, { x: 0, opacity: 1 });
 
@@ -169,7 +174,7 @@ export function ToolsHeaderSerifLeadHeader({
         defaults: { overwrite: true },
         scrollTrigger: { trigger: header, scroller, start: 'top 85%', once: true },
       });
-      intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
+      if (labelEl) intro.to(labelEl, { opacity: 1, duration: 0.7, ease: 'power2.out' });
       if (lineEls.length) {
         intro.to(lineEls, { yPercent: 0, duration: 0.95, ease: 'power3.out', stagger: 0.14 }, 0.12);
       }
@@ -184,7 +189,7 @@ export function ToolsHeaderSerifLeadHeader({
           invalidateOnRefresh: true,
         },
       });
-      fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
+      if (labelEl) fade.fromTo(labelEl, { y: 0 }, { y: -26, ease: 'none' }, 0);
       if (leadBlock) {
         const slideX = centered ? 0 : alignRight ? 16 : -16;
         fade.fromTo(leadBlock, { x: 0, opacity: 1 }, { x: 0, opacity: 1, duration: 0.22, ease: 'none' }, 0);
@@ -196,7 +201,7 @@ export function ToolsHeaderSerifLeadHeader({
       window.clearTimeout(refreshId);
       ctx.revert();
     };
-  }, [animationEnabled, title, label, centered, alignRight]);
+  }, [animationEnabled, title, label, centered, alignRight, showLabel, showTitle]);
 
   const textAlignClass = centered ? 'text-center' : alignRight ? 'text-right' : 'text-left';
   const itemsAlignClass = centered ? 'items-center' : alignRight ? 'items-end' : 'items-start';
@@ -211,17 +216,19 @@ export function ToolsHeaderSerifLeadHeader({
     >
       <div className={`flex flex-col gap-3 ${itemsAlignClass}`}>
         <div className="min-w-0">
-          <p
-            ref={labelRef}
-            className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
-            style={{
-              color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
-              fontSize: labelFontSize,
-              fontWeight: labelFontWeight,
-            }}
-          >
-            {label}
-          </p>
+          {showLabel ? (
+            <p
+              ref={labelRef}
+              className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
+              style={{
+                color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
+                fontSize: labelFontSize,
+                fontWeight: labelFontWeight,
+              }}
+            >
+              {label}
+            </p>
+          ) : null}
           {lines.length > 0 ? (
             <h2
               ref={leadRef}

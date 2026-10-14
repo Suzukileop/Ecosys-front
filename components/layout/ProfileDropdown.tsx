@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { useTheme } from '@/components/landing/ThemeProvider';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProfileDropdownProps = {
   open: boolean;
@@ -62,6 +63,7 @@ const menuItemClass =
 const menuIconClass = 'h-[1.05rem] w-[1.05rem] shrink-0';
 
 export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
+  const t = useT();
   const ref = useRef<HTMLDivElement>(null);
   const { user, logout } = useAuth();
   const { theme, setTheme } = useTheme();
@@ -126,20 +128,20 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             <circle cx="12" cy="8" r="3.75" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M4.75 20a7.25 7.25 0 0114.5 0" />
           </svg>
-          My Profile
+          {t('My Profile')}
         </Link>
         <Link href="/settings?section=saved" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
           <svg className={menuIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 4.5h10.5a.75.75 0 01.75.75v14.4a.35.35 0 01-.56.28L12 16l-5.44 3.93A.35.35 0 016 19.65V5.25a.75.75 0 01.75-.75z" />
           </svg>
-          Saved posts
+          {t('Saved posts')}
         </Link>
         <Link href="/settings" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
           <svg className={menuIconClass} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.75}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
             <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
           </svg>
-          Settings &amp; privacy
+          {t('Settings & privacy')}
         </Link>
         {/* Inherited from the bar's old three-dot menu, which is gone. */}
         <button type="button" onClick={onClose} tabIndex={tab} className={menuItemClass} role="menuitem">
@@ -148,7 +150,7 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             <path strokeLinecap="round" strokeLinejoin="round" d="M9.75 9.5a2.25 2.25 0 113 2.122V13" />
             <path strokeLinecap="round" d="M12 16.25h.01" />
           </svg>
-          Help
+          {t('Help')}
         </button>
       </div>
 
@@ -156,7 +158,7 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
 
       <div className="px-4 py-3.5">
         <p className="mb-2.5 text-[0.6rem] font-medium uppercase tracking-[0.24em] text-[#222222] dark:text-neutral-300">
-          Appearance
+          {t('Appearance')}
         </p>
         {/* A hairline segmented control rather than a filled toggle: the selected half is marked by
             a thin outline and full contrast, which survives on glass where a shadowed pill does not. */}
@@ -173,7 +175,7 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             }`}
           >
             <SunIcon className="h-3.5 w-3.5 shrink-0" />
-            Light
+            {t('Light')}
           </button>
           <button
             type="button"
@@ -187,7 +189,7 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
             }`}
           >
             <MoonIcon className="h-3.5 w-3.5 shrink-0" />
-            Dark
+            {t('Dark')}
           </button>
         </div>
       </div>
@@ -205,7 +207,7 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
           className={`${menuItemClass} justify-start`}
           role="menuitem"
         >
-          Log out
+          {t('Log out')}
         </button>
       </div>
     </div>

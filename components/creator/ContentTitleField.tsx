@@ -2,6 +2,7 @@
 
 import { forwardRef, useEffect, useId, useImperativeHandle, useRef, useState } from 'react';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentTitleFieldProps = {
   id: string;
@@ -39,6 +40,7 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
     },
     ref
   ) {
+    const t = useT();
     const pickerId = useId();
     const rootRef = useRef<HTMLDivElement>(null);
     const textareaRef = useRef<HTMLTextAreaElement>(null);
@@ -102,7 +104,13 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
           maxLength={maxLength}
           className={`w-full resize-none border-0 bg-transparent px-0 focus:outline-none focus:ring-0 ${
             isCompose
-              ? 'min-h-[6.5rem] py-2 text-[20px] font-normal leading-[1.45] text-[#111111] caret-[#FF5722] [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500'
+              ? `min-h-[6.5rem] py-2 font-normal text-[#111111] caret-[#FF5722] [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${
+                  // A short thought reads big (20px); past a couple of lines the text drops to reading
+                  // size (16/24), as X does — 20px paragraphs fill the dialog after three sentences.
+                  value.length > 160 || value.split('\n').length > 4
+                    ? 'text-[16px] leading-6'
+                    : 'text-[20px] leading-[1.45]'
+                }`
               : `py-0.5 text-base font-medium text-neutral-900 placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${
                   emojiVisible ? 'pr-10' : ''
                 }`
@@ -112,8 +120,8 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
           <>
             <button
               type="button"
-              title="Insert emoji"
-              aria-label="Insert emoji"
+              title={t('Insert emoji')}
+              aria-label={t('Insert emoji')}
               aria-expanded={open}
               aria-controls={pickerId}
               onClick={() => setOpen((o) => !o)}

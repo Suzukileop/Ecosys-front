@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 /**
  * Header — a second, independent header slot for the FAQ section, copied
  * 1:1 from the Portfolio/Work section's "Header" mechanism (one shared,
@@ -119,23 +120,23 @@ export const PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS: {
 }[] = [
   {
     value: 'editorial',
-    label: 'Editorial',
-    description: 'Kicker + masked line-reveal title + subtitle — premium GSAP entrance.',
+    label: msg('Editorial'),
+    description: msg('Kicker + masked line-reveal title + subtitle — premium GSAP entrance.'),
   },
   {
     value: 'signal',
-    label: 'Signal',
-    description: 'Pulsing "live" status pill with a question count, asymmetric title + side-note subtitle.',
+    label: msg('Signal'),
+    description: msg('Pulsing "live" status pill with a question count, asymmetric title + side-note subtitle.'),
   },
   {
     value: 'query',
-    label: 'Query',
-    description: 'Vertical rotated label, giant faint "?" watermark drifting behind the title on scroll.',
+    label: msg('Query'),
+    description: msg('Vertical rotated label, giant faint "?" watermark drifting behind the title on scroll.'),
   },
   {
     value: 'dialogue',
-    label: 'Dialogue',
-    description: 'Title words alternate bold/light for a conversational rhythm, floating question-count badge.',
+    label: msg('Dialogue'),
+    description: msg('Title words alternate bold/light for a conversational rhythm, floating question-count badge.'),
   },
 ];
 

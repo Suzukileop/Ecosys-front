@@ -14,6 +14,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsLedgerSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const LEDGER_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /** Back-out easing — the "spring/magnetic" overshoot used for active-state and FLIP motion. */
@@ -428,13 +429,14 @@ function LedgerRow({
   onClose: () => void;
   rule: string;
 }) {
+  const t = useT();
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
   const ink = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted =
     presentation.elementStyles?.cardDescription?.color ||
     presentation.subtitleColor ||
     presentation.titleColor;
-  const title = item.title?.trim() || 'Untitled';
+  const title = item.title?.trim() || t('Untitled');
   const role = workRoleLabel(item);
   const description = item.description?.trim() || '';
   const tools = workToolLabels(item);
@@ -445,7 +447,7 @@ function LedgerRow({
   const showDescription = settings.showDescription !== false && Boolean(description);
   const showStack = settings.showStack !== false && tools.length > 0;
   const showConsult = settings.showConsult !== false && Boolean(href);
-  const consultLabel = settings.consultLabel?.trim() || 'Consult this project';
+  const consultLabel = settings.consultLabel?.trim() || t('Consult this project');
   const hasDetails = showDescription || showStack || showConsult;
   const expandMode = settings.expandMode ?? 'hover';
   const interactive = expandMode !== 'always' && hasDetails;
@@ -603,7 +605,7 @@ function LedgerRow({
                       staggerMs={LEDGER_STACK_STAGGER_MS}
                       className="text-[10px] font-medium uppercase tracking-[0.16em] sm:text-[11px]"
                       style={{ color: muted, opacity: 0.62 }}
-                      ariaLabel="Stack"
+                      ariaLabel={t('Stack')}
                     />
                   ) : null}
 
@@ -647,6 +649,7 @@ export function ProjectsLedgerGallery({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const settings = mergeProjectsLedgerSettings(
     DEFAULT_PROJECTS_LEDGER_SETTINGS,
@@ -860,7 +863,7 @@ export function ProjectsLedgerGallery({
   if (items.length === 0) {
     return (
       <p className="text-sm opacity-60" style={{ color: presentation.subtitleColor }}>
-        No projects yet.
+        {t('No projects yet.')}
       </p>
     );
   }

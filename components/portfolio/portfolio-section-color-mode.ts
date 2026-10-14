@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 /**
  * Per-section light/dark override — independent of Global → Theme's site-wide
  * `colorMode`. 'auto' (default) follows the Global toggle; 'light'/'dark' pins
@@ -9,9 +10,9 @@ export const PORTFOLIO_SECTION_COLOR_MODE_OPTIONS: {
   value: PortfolioSectionColorMode;
   label: string;
 }[] = [
-  { value: 'auto', label: 'Auto' },
-  { value: 'light', label: 'Light' },
-  { value: 'dark', label: 'Dark' },
+  { value: 'auto', label: msg('Auto') },
+  { value: 'light', label: msg('Light') },
+  { value: 'dark', label: msg('Dark') },
 ];
 
 export function mergeSectionColorMode(

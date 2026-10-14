@@ -1,6 +1,7 @@
 'use client';
 
 import { useEffect, useRef } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type EmojiPickerProps = {
   onSelect: (emoji: string) => void;
@@ -37,6 +38,7 @@ const DARK_VARS: Record<string, string> = {
  * skin tones and "Frequently used". Twemoji graphics are CC-BY 4.0 (Twitter, Inc.).
  */
 export function EmojiPicker({ onSelect, autoFocus = true, className = '' }: EmojiPickerProps) {
+  const t = useT();
   const hostRef = useRef<HTMLDivElement>(null);
   const onSelectRef = useRef(onSelect);
 
@@ -95,23 +97,23 @@ export function EmojiPicker({ onSelect, autoFocus = true, className = '' }: Emoj
     <div className={className}>
       <div ref={hostRef} className="min-h-[380px]" />
       <p className="border-t border-black/[0.06] px-3 py-1.5 text-[11px] text-neutral-400 dark:border-white/[0.08] dark:text-neutral-500">
-        Emoji graphics by{' '}
+        {t('Emoji graphics by')}{' '}
         <a
           href="https://github.com/jdecked/twemoji"
           target="_blank"
           rel="noreferrer"
           className="underline-offset-2 hover:text-neutral-600 hover:underline dark:hover:text-neutral-300"
         >
-          Twemoji
+          {t('Twemoji')}
         </a>{' '}
-        © Twitter, Inc. and contributors ·{' '}
+        {t('© Twitter, Inc. and contributors ·')}{' '}
         <a
           href={TWEMOJI_LICENSE_URL}
           target="_blank"
           rel="noreferrer"
           className="underline-offset-2 hover:text-neutral-600 hover:underline dark:hover:text-neutral-300"
         >
-          CC-BY 4.0
+          {t('CC-BY 4.0')}
         </a>
       </p>
     </div>

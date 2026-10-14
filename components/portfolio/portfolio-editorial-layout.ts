@@ -10,7 +10,7 @@ export const DEFAULT_CONTENT_GUTTER: PortfolioContentGutter = 'medium';
 const GUTTER_PADDING_X: Record<PortfolioContentGutter, string> = {
   none: 'px-0',
   /** Least inset — content hugs the edges (still phone-safe). */
-  wide: 'px-4 sm:px-5 lg:px-8 xl:px-10 2xl:px-12',
+  wide: 'px-4 lg:px-6 2xl:px-8',
   /** Default Editorial Warm — modest side padding, not a large empty frame. */
   medium: 'px-4 sm:px-6 md:px-8 lg:px-10 xl:px-12 2xl:px-16',
   /** More inset — tighter content column. */
@@ -19,7 +19,7 @@ const GUTTER_PADDING_X: Record<PortfolioContentGutter, string> = {
 
 const GUTTER_LAYER_INSET: Record<PortfolioContentGutter, string> = {
   none: 'left-0 right-0',
-  wide: 'left-4 right-4 sm:left-5 sm:right-5 lg:left-8 lg:right-8 xl:left-10 xl:right-10 2xl:left-12 2xl:right-12',
+  wide: 'left-4 right-4 lg:left-6 lg:right-6 2xl:left-8 2xl:right-8',
   medium:
     'left-4 right-4 sm:left-6 sm:right-6 md:left-8 md:right-8 lg:left-10 lg:right-10 xl:left-12 xl:right-12 2xl:left-16 2xl:right-16',
   narrow:
@@ -34,21 +34,21 @@ const GUTTER_LAYER_INSET: Record<PortfolioContentGutter, string> = {
  */
 const GUTTER_NEGATIVE_X: Record<PortfolioContentGutter, string> = {
   none: 'mx-0',
-  wide: '-mx-4 sm:-mx-5 lg:-mx-8 xl:-mx-10 2xl:-mx-12',
+  wide: '-mx-4 lg:-mx-6 2xl:-mx-8',
   medium: '-mx-4 sm:-mx-6 md:-mx-8 lg:-mx-10 xl:-mx-12 2xl:-mx-16',
   narrow: '-mx-5 sm:-mx-8 md:-mx-12 lg:-mx-16 xl:-mx-24 2xl:-mx-32',
 };
 
 const GUTTER_INSET_LEFT: Record<PortfolioContentGutter, string> = {
   none: 'left-0',
-  wide: 'left-4 sm:left-5 lg:left-8 xl:left-10 2xl:left-12',
+  wide: 'left-4 lg:left-6 2xl:left-8',
   medium: 'left-4 sm:left-6 md:left-8 lg:left-10 xl:left-12 2xl:left-16',
   narrow: 'left-5 sm:left-8 md:left-12 lg:left-16 xl:left-24 2xl:left-32',
 };
 
 const GUTTER_INSET_RIGHT: Record<PortfolioContentGutter, string> = {
   none: 'right-0',
-  wide: 'right-4 sm:right-5 lg:right-8 xl:right-10 2xl:right-12',
+  wide: 'right-4 lg:right-6 2xl:right-8',
   medium: 'right-4 sm:right-6 md:right-8 lg:right-10 xl:right-12 2xl:right-16',
   narrow: 'right-5 sm:right-8 md:right-12 lg:right-16 xl:right-24 2xl:right-32',
 };

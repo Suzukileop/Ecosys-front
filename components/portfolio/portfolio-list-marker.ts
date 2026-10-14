@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 /**
  * Shared list / task bullet markers — Experience, Services, FAQ, and Global defaults.
  * Style vocabulary matches About → Why me (plus Services `dot` / `dash`).
@@ -62,29 +63,29 @@ const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
   description: string;
   preview: string;
 }[] = [
-  { value: 'number', label: 'Chiffres', description: '01, 02, 03… numérotation.', preview: '01' },
-  { value: 'roman', label: 'Romains', description: 'I, II, III… chiffres romains.', preview: 'IV' },
-  { value: 'disc', label: 'Disque', description: 'Puce ronde pleine.', preview: '●' },
-  { value: 'dot', label: 'Point doux', description: 'Point avec halo soft.', preview: '◦' },
-  { value: 'dash', label: 'Tiret', description: 'Trait horizontal court.', preview: '—' },
-  { value: 'bar-dot', label: 'Barre + point', description: 'Rectangle vertical avec point.', preview: '▮' },
-  { value: 'bullseye', label: 'Cible', description: 'Cercles concentriques.', preview: '◎' },
-  { value: 'square', label: 'Carré', description: 'Case vide.', preview: '☐' },
-  { value: 'check-square', label: 'Case cochée', description: 'Carré avec coche.', preview: '☑' },
-  { value: 'check-circle', label: 'Coche ronde', description: 'Cercle avec coche.', preview: '☑️' },
+  { value: 'number', label: msg('Chiffres'), description: msg('01, 02, 03… numérotation.'), preview: '01' },
+  { value: 'roman', label: msg('Romains'), description: msg('I, II, III… chiffres romains.'), preview: 'IV' },
+  { value: 'disc', label: msg('Disque'), description: msg('Puce ronde pleine.'), preview: '●' },
+  { value: 'dot', label: msg('Point doux'), description: msg('Point avec halo soft.'), preview: '◦' },
+  { value: 'dash', label: msg('Tiret'), description: msg('Trait horizontal court.'), preview: '—' },
+  { value: 'bar-dot', label: msg('Barre + point'), description: msg('Rectangle vertical avec point.'), preview: '▮' },
+  { value: 'bullseye', label: msg('Cible'), description: msg('Cercles concentriques.'), preview: '◎' },
+  { value: 'square', label: msg('Carré'), description: msg('Case vide.'), preview: '☐' },
+  { value: 'check-square', label: msg('Case cochée'), description: msg('Carré avec coche.'), preview: '☑' },
+  { value: 'check-circle', label: msg('Coche ronde'), description: msg('Cercle avec coche.'), preview: '☑️' },
   {
     value: 'check-circle-fill',
-    label: 'Coche ronde pleine',
-    description: 'Disque plein avec coche.',
+    label: msg('Coche ronde pleine'),
+    description: msg('Disque plein avec coche.'),
     preview: '✅',
   },
-  { value: 'x-square', label: 'Case ×', description: 'Carré avec croix.', preview: '☒' },
-  { value: 'check', label: 'Coche', description: 'Checkmark seul.', preview: '✓' },
-  { value: 'arrow', label: 'Flèche', description: 'Flèche →.', preview: '→' },
-  { value: 'chevron', label: 'Chevron', description: 'Chevron ›.', preview: '›' },
-  { value: 'chevron-double', label: 'Double chevron', description: 'Double chevron ».', preview: '»' },
-  { value: 'triangle', label: 'Triangle', description: 'Pointe ▶.', preview: '▶' },
-  { value: 'none', label: 'Aucun', description: 'Texte seul — pas de puce.', preview: '—' },
+  { value: 'x-square', label: msg('Case ×'), description: msg('Carré avec croix.'), preview: '☒' },
+  { value: 'check', label: msg('Coche'), description: msg('Checkmark seul.'), preview: '✓' },
+  { value: 'arrow', label: msg('Flèche'), description: msg('Flèche →.'), preview: '→' },
+  { value: 'chevron', label: msg('Chevron'), description: msg('Chevron ›.'), preview: '›' },
+  { value: 'chevron-double', label: msg('Double chevron'), description: msg('Double chevron ».'), preview: '»' },
+  { value: 'triangle', label: msg('Triangle'), description: msg('Pointe ▶.'), preview: '▶' },
+  { value: 'none', label: msg('Aucun'), description: msg('Texte seul — pas de puce.'), preview: '—' },
 ];
 
 const LIST_MARKER_STYLE_VALUES = PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.map(

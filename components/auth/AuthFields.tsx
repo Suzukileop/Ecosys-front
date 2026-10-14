@@ -3,9 +3,10 @@
 import { useState, type InputHTMLAttributes, type ReactNode } from 'react';
 import type { UseFormRegisterReturn } from 'react-hook-form';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FIELD =
-  'block h-12 w-full rounded-lg border bg-white px-4 text-[15px] text-[#111111] outline-none transition-[border-color,box-shadow] placeholder:text-neutral-400 dark:bg-[#111111] dark:text-white dark:placeholder:text-neutral-500';
+  'block h-12 w-full rounded-xl border bg-white px-4 text-[15px] text-[#111111] outline-none transition-[border-color,box-shadow] placeholder:text-neutral-400 dark:bg-[#111111] dark:text-white dark:placeholder:text-neutral-500';
 const FIELD_OK =
   'border-black/[0.12] hover:border-black/25 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:border-white/[0.14] dark:hover:border-white/25 dark:focus:border-[#FF5722]';
 const FIELD_ERROR =
@@ -68,6 +69,7 @@ export function AuthPasswordField({
   placeholder = '••••••••',
   children,
 }: AuthPasswordFieldProps) {
+  const t = useT();
   const [visible, setVisible] = useState(false);
   return (
     <div>
@@ -87,11 +89,11 @@ export function AuthPasswordField({
         <button
           type="button"
           onClick={() => setVisible((v) => !v)}
-          aria-label={visible ? 'Hide password' : 'Show password'}
+          aria-label={visible ? t('Hide password') : t('Show password')}
           aria-pressed={visible}
           className="absolute right-2 top-1/2 inline-flex h-8 -translate-y-1/2 items-center rounded-md px-2.5 text-[13px] font-medium text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
         >
-          {visible ? 'Hide' : 'Show'}
+          {visible ? t('Hide') : t('Show')}
         </button>
       </div>
       {children}
@@ -113,7 +115,7 @@ export function AuthSubmitButton({
     <button
       type="submit"
       disabled={busy}
-      className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#111111]"
+      className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-[15px] font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#111111]"
     >
       {busy ? (
         <>
@@ -140,6 +142,7 @@ export function AuthSubmitButton({
 }
 
 export function AuthErrorBanner({ message, onDismiss }: { message: string; onDismiss: () => void }) {
+  const t = useT();
   return (
     <div
       role="alert"
@@ -149,7 +152,7 @@ export function AuthErrorBanner({ message, onDismiss }: { message: string; onDis
       <button
         type="button"
         onClick={onDismiss}
-        aria-label="Dismiss"
+        aria-label={t('Dismiss')}
         className="-mr-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded opacity-70 transition-opacity hover:opacity-100"
       >
         <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.25} strokeLinecap="round" aria-hidden>

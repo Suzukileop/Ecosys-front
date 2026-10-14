@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type GlobalSettingsSubSection = 'theme' | 'background' | 'order';
 
 export const GLOBAL_SETTINGS_SUB_SECTIONS: {
@@ -7,17 +8,17 @@ export const GLOBAL_SETTINGS_SUB_SECTIONS: {
 }[] = [
   {
     id: 'theme',
-    label: 'Foundations',
-    description: 'Color palette, layout width, plus owner shortcuts.',
+    label: msg('Foundations'),
+    description: msg('Color palette, layout width, plus owner shortcuts.'),
   },
   {
     id: 'background',
-    label: 'Page background',
-    description: 'Solid color or fixed wallpaper behind every section.',
+    label: msg('Page background'),
+    description: msg('Solid color or fixed wallpaper behind every section.'),
   },
   {
     id: 'order',
-    label: 'Section order',
-    description: 'Reorder middle sections. Hero stays first, Footer last.',
+    label: msg('Section order'),
+    description: msg('Reorder middle sections. Hero stays first, Footer last.'),
   },
 ];

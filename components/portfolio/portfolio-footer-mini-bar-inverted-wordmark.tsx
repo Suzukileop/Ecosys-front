@@ -9,6 +9,7 @@ import {
   prefersReducedMotion,
   type FooterMiniBarVariantProps,
 } from '@/components/portfolio/portfolio-footer-mini-bar-shared';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_CREDIT = 'Designed & built with care.';
 
@@ -23,17 +24,19 @@ const DEFAULT_CREDIT = 'Designed & built with care.';
  */
 export function FooterMiniBarInvertedWordmark({
   creatorName,
+  showCopyright = true,
   colorMode,
   copyrightText,
   creditLabel,
   contentGutter = DEFAULT_CONTENT_GUTTER,
   backgroundStyle,
 }: FooterMiniBarVariantProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const barInk = isLight ? 'rgba(10,10,10,0.85)' : 'rgba(250,250,247,0.85)';
   const barInkStrong = isLight ? '#0a0a0a' : '#fafaf7';
 
-  const text = copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName);
+  const text = showCopyright ? copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName) : '';
   const credit = creditLabel?.trim() || DEFAULT_CREDIT;
 
   const handleBackToTop = () => {
@@ -47,9 +50,11 @@ export function FooterMiniBarInvertedWordmark({
       className={`relative flex w-full flex-col items-center gap-2 py-3.5 sm:flex-row sm:justify-between sm:gap-4 ${portfolioEditorialGutterX(contentGutter)}`}
       style={backgroundStyle}
     >
-      <p className="text-[0.65rem] font-medium uppercase tracking-[0.14em]" style={{ color: barInk }}>
-        {text}
-      </p>
+      {text ? (
+        <p className="text-[0.65rem] font-medium uppercase tracking-[0.14em]" style={{ color: barInk }}>
+          {text}
+        </p>
+      ) : null}
       <p
         className="text-[0.65rem] font-medium uppercase tracking-[0.14em] sm:absolute sm:left-1/2 sm:-translate-x-1/2"
         style={{ color: barInk }}
@@ -63,7 +68,7 @@ export function FooterMiniBarInvertedWordmark({
         className="w-fit text-[0.65rem] font-semibold uppercase tracking-[0.14em] opacity-85 transition-opacity duration-500 ease-out hover:opacity-100"
         style={{ color: barInkStrong }}
       >
-        Back to top ↑
+        {t('Back to top ↑')}
       </button>
     </div>
   );

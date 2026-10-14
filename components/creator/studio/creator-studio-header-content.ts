@@ -1,13 +1,14 @@
+import { msg } from '@/lib/i18n/config';
 export type CreatorStudioHeaderContentStyle = 'DEFAULT' | 'COMPACT' | 'CENTERED' | 'GRID';
 
 const CREATOR_STUDIO_HEADER_CONTENT_STYLES: {
   id: CreatorStudioHeaderContentStyle;
   label: string;
 }[] = [
-  { id: 'DEFAULT', label: 'Default' },
-  { id: 'COMPACT', label: 'Compact' },
-  { id: 'CENTERED', label: 'Centered' },
-  { id: 'GRID', label: 'Grid stats' },
+  { id: 'DEFAULT', label: msg('Default') },
+  { id: 'COMPACT', label: msg('Compact') },
+  { id: 'CENTERED', label: msg('Centered') },
+  { id: 'GRID', label: msg('Grid stats') },
 ];
 
 const STYLE_SET = new Set<string>(CREATOR_STUDIO_HEADER_CONTENT_STYLES.map((s) => s.id));

@@ -3,7 +3,7 @@
 import { useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { CreatorsCatalog } from '@/components/marketplace/CreatorsCatalog';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ProvidersCatalogSkeleton } from '@/components/marketplace/ProvidersCatalogSkeleton';
 import { useAuth } from '@/context/AuthContext';
 
 /** Service providers directory — visible to all authenticated members. */
@@ -19,11 +19,7 @@ export function ServiceProviderCatalogGate() {
   }, [authLoading, user, router]);
 
   if (authLoading || !user) {
-    return (
-      <div className="flex min-h-[50vh] items-center justify-center px-4 py-20">
-        <LoadingSpinner size="lg" />
-      </div>
-    );
+    return <ProvidersCatalogSkeleton />;
   }
 
   return <CreatorsCatalog />;

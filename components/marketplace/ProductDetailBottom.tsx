@@ -16,7 +16,8 @@ type ProductDetailBottomProps = {
   middle?: ReactNode;
 };
 
-const SECTION_DIVIDER = 'border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:pt-20';
+/** Sections are separated by space alone — no rule between them (News design). */
+const SECTION_DIVIDER = '';
 
 export function ProductDetailBottom({
   product,
@@ -34,14 +35,14 @@ export function ProductDetailBottom({
   }
 
   return (
-    <div className="space-y-16 md:space-y-20">
+    <div className="space-y-10 md:space-y-14">
       <ProductDetailCharacteristics product={product} reviewCount={reviewCount} />
 
-      {middle ? <div className={`space-y-16 md:space-y-20 ${SECTION_DIVIDER}`}>{middle}</div> : null}
+      {middle ? <div className={`space-y-10 md:space-y-14 ${SECTION_DIVIDER}`}>{middle}</div> : null}
 
       <section className={SECTION_DIVIDER}>
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_340px] xl:grid-cols-[minmax(0,1fr)_380px]">
-          <div className="min-w-0 space-y-6">
+        <div className="flex flex-col gap-10 md:gap-14">
+          <div className="min-w-0 space-y-2 sm:space-y-3">
             <ProductReviewsList
               productId={product.id}
               loginRedirect={loginRedirect}
@@ -50,7 +51,7 @@ export function ProductDetailBottom({
               initialAverageRating={product.averageRating}
             />
             {!isOwner && (
-              <div className="rounded-lg border border-black/[0.06] bg-white p-6 dark:border-white/[0.08] dark:bg-[#111111]">
+              <div className="bg-[color:var(--gn-surface)] p-5 empty:hidden sm:p-6">
                 <ProductReviewComposer productId={product.id} onSubmitted={handleReviewSubmitted} />
               </div>
             )}

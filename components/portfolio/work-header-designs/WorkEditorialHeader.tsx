@@ -13,7 +13,9 @@ import {
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
 } from '@/components/portfolio/portfolio-work-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -71,10 +73,15 @@ export function WorkEditorialHeader({
   presentation?: PortfolioWorkPresentationSettings;
   trailing?: ReactNode;
 }) {
+  const t = useT();
   const presentation = presentationProp ?? DEFAULT_WORK_PRESENTATION;
   const centered = presentation.headerAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
+  const showLabel = show('label');
+  const showTitle = show('title');
+  const showSubtitle = show('subtitle');
   const title = sectionTitle.trim();
   const subtitle = sectionSubtitle?.trim() || '';
   const titleInk = workTitleColorStyle(presentation.titleColor).color as string;
@@ -157,7 +164,7 @@ export function WorkEditorialHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, title, subtitle]);
+  }, [animationEnabled, title, subtitle, showLabel, showTitle, showSubtitle]);
 
   return (
     <header
@@ -167,21 +174,25 @@ export function WorkEditorialHeader({
     >
       <div className={`pf-work-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
         <div className="min-w-0 max-w-3xl">
-          <p
-            className="pf-work-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
-            style={{ color: kickerInk }}
-          >
-            Portfolio
-          </p>
-          <h2
-            className={`mb-0 mt-3 ${workHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={workTitleColorStyle(presentation.titleColor)}
-          >
-            <span className="pf-work-editorial-title-mask block overflow-hidden">
-              <span className="pf-work-editorial-title-line block">{title}</span>
-            </span>
-          </h2>
-          {subtitle ? (
+          {showLabel ? (
+            <p
+              className="pf-work-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
+              style={{ color: kickerInk }}
+            >
+              {t('Portfolio')}
+            </p>
+          ) : null}
+          {showTitle ? (
+            <h2
+              className={`mb-0 mt-3 ${workHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
+              style={workTitleColorStyle(presentation.titleColor)}
+            >
+              <span className="pf-work-editorial-title-mask block overflow-hidden">
+                <span className="pf-work-editorial-title-line block">{title}</span>
+              </span>
+            </h2>
+          ) : null}
+          {showSubtitle && subtitle ? (
             <p
               className={`pf-work-editorial-sub mb-0 mt-6 max-w-xl ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
               style={workSubtitleColorStyle(presentation.subtitleColor)}

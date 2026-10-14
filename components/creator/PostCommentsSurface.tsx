@@ -1,9 +1,10 @@
 'use client';
 
-import { useEffect, useSyncExternalStore, type ReactNode } from 'react';
+import { useEffect, useRef, useSyncExternalStore, type ReactNode } from 'react';
 import { createPortal } from 'react-dom';
 import { AnimatePresence, motion, useDragControls } from 'framer-motion';
 import { STUDIO_FLOAT_IN_STYLE } from '@/components/portfolio/PortfolioStudioKit';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const MOBILE_QUERY = '(max-width: 639px)';
 
@@ -21,9 +22,15 @@ function useIsMobile() {
   );
 }
 
-/** Class overrides that make a `CommentThread` panel blend into its host surface. */
+/**
+ * Class overrides that make a `CommentThread` panel blend into its host surface. Inline, the thread
+ * has no height cap: it grows with the page (a scroll box inside a scrolling feed traps the wheel /
+ * the finger) and starts as a preview of a few comments ("Show all N comments").
+ */
 export const COMMENTS_INLINE_CLASS =
-  '!h-auto !min-h-0 !max-h-[520px] !rounded-none !border-0 !bg-transparent !shadow-none';
+  '!h-auto !min-h-0 !rounded-none !border-0 !bg-transparent !shadow-none';
+/** How many top-level comments the inline preview shows before "Show all N comments". */
+export const COMMENTS_INLINE_PREVIEW = 3;
 export const COMMENTS_SHEET_CLASS = '!h-full !min-h-0 !rounded-none !border-0 !bg-transparent !shadow-none';
 
 /**
@@ -42,9 +49,25 @@ export function PostCommentsSurface({
   /** Extra classes for the inline wrapper (the host page's own styling hook). */
   inlineClassName?: string;
 }) {
+  const t = useT();
   const isMobile = useIsMobile();
   const dragControls = useDragControls();
   const sheetOpen = open && isMobile;
+  const inlineRef = useRef<HTMLDivElement>(null);
+
+  /* Opened inline below a tall post, the thread can start off-screen: bring its top into view. */
+  useEffect(() => {
+    if (!open || isMobile) return;
+    const node = inlineRef.current;
+    if (!node) return;
+    const id = window.requestAnimationFrame(() => {
+      const rect = node.getBoundingClientRect();
+      if (rect.top > window.innerHeight - 160) {
+        node.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    });
+    return () => window.cancelAnimationFrame(id);
+  }, [open, isMobile]);
 
   useEffect(() => {
     if (!sheetOpen) return;
@@ -62,10 +85,7 @@ export function PostCommentsSurface({
 
   if (!isMobile) {
     return open ? (
-      <div
-        className={`border-t border-black/[0.06] px-3 pb-3 dark:border-white/[0.08] ${inlineClassName}`}
-        style={STUDIO_FLOAT_IN_STYLE}
-      >
+      <div ref={inlineRef} className={`px-3 pb-3 ${inlineClassName}`} style={STUDIO_FLOAT_IN_STYLE}>
         {children('inline')}
       </div>
     ) : null;
@@ -74,10 +94,10 @@ export function PostCommentsSurface({
   return createPortal(
     <AnimatePresence>
       {sheetOpen ? (
-        <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label="Comments">
+        <div className="fixed inset-0 z-[70]" role="dialog" aria-modal="true" aria-label={t('Comments')}>
           <motion.button
             type="button"
-            aria-label="Close comments"
+            aria-label={t('Close comments')}
             onClick={onClose}
             className="absolute inset-0 bg-black/45"
             initial={{ opacity: 0 }}

@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import {
@@ -29,6 +30,7 @@ import {
   type PortfolioGalleryHeaderTitleSize,
   type PortfolioGalleryHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-gallery-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioGalleryDesign =
   | 'framed-grid'
@@ -102,14 +104,14 @@ export const PORTFOLIO_GALLERY_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across the Gallery.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across the Gallery.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -220,6 +222,8 @@ export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSet
   headerDesign: PortfolioGalleryHeaderDesign;
   /** Master switch for the header's GSAP entrance/scroll motion (respects prefers-reduced-motion regardless). */
   headerAnimationEnabled: boolean;
+  /** Header elements the owner hid, as `<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioGalleryHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioGalleryHeaderMarginBottom;
@@ -345,13 +349,13 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'framed-grid', label: 'Framed grid', description: 'Irregular masonry columns with scroll parallax and a hover-only title.' },
-  { value: 'floating-canvas', label: 'Floating canvas', description: 'Dispersed cards at irregular sizes, floating at their own speeds, each titled on its bottom edge.' },
-  { value: 'caption-carousel', label: 'Caption cards', description: 'Image-and-title cards, horizontal scroll with arrows.' },
-  { value: 'cinema-strip', label: 'Cinema strip', description: 'Wide horizontal scroll with navigation arrows.' },
-  { value: 'hero-mosaic', label: 'Hero mosaic', description: 'Featured image with a mosaic that adapts to the media count; cursor depth and focus on hover.' },
-  { value: 'tall-row', label: 'Tall + row', description: 'A taller first image on the left, three shorter ones on the right.' },
-  { value: 'editorial-split', label: 'Editorial split', description: 'Alternating wide and compact compositions.' },
+  { value: 'framed-grid', label: msg('Framed grid'), description: msg('Irregular masonry columns with scroll parallax and a hover-only title.') },
+  { value: 'floating-canvas', label: msg('Floating canvas'), description: msg('Dispersed cards at irregular sizes, floating at their own speeds, each titled on its bottom edge.') },
+  { value: 'caption-carousel', label: msg('Caption cards'), description: msg('Image-and-title cards, horizontal scroll with arrows.') },
+  { value: 'cinema-strip', label: msg('Cinema strip'), description: msg('Wide horizontal scroll with navigation arrows.') },
+  { value: 'hero-mosaic', label: msg('Hero mosaic'), description: msg('Featured image with a mosaic that adapts to the media count; cursor depth and focus on hover.') },
+  { value: 'tall-row', label: msg('Tall + row'), description: msg('A taller first image on the left, three shorter ones on the right.') },
+  { value: 'editorial-split', label: msg('Editorial split'), description: msg('Alternating wide and compact compositions.') },
 ];
 
 const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
@@ -361,10 +365,10 @@ export const PORTFOLIO_GALLERY_FRAMED_GRID_PARALLAX_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'off', label: 'Off', description: 'Columns scroll together, no depth effect.' },
-  { value: 'subtle', label: 'Subtle', description: 'A light drift between columns.' },
-  { value: 'medium', label: 'Medium', description: 'A clear, organic sense of depth.' },
-  { value: 'strong', label: 'Strong', description: 'A dramatic, cinematic drift.' },
+  { value: 'off', label: msg('Off'), description: msg('Columns scroll together, no depth effect.') },
+  { value: 'subtle', label: msg('Subtle'), description: msg('A light drift between columns.') },
+  { value: 'medium', label: msg('Medium'), description: msg('A clear, organic sense of depth.') },
+  { value: 'strong', label: msg('Strong'), description: msg('A dramatic, cinematic drift.') },
 ];
 
 export const PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS: {
@@ -372,24 +376,24 @@ export const PORTFOLIO_GALLERY_FRAMED_GRID_TITLE_STYLE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'serif', label: 'Luxe serif', description: 'A massive, elegant serif on hover.' },
-  { value: 'mono', label: 'Technical mono', description: 'A tracked-out monospace on hover.' },
+  { value: 'serif', label: msg('Luxe serif'), description: msg('A massive, elegant serif on hover.') },
+  { value: 'mono', label: msg('Technical mono'), description: msg('A tracked-out monospace on hover.') },
 ];
 
 export const PORTFOLIO_GALLERY_TITLE_PRESET_OPTIONS = [
-  { value: 'none', label: 'None', description: 'Hide the gallery section title.' },
-  { value: 'gallery', label: 'Gallery', description: 'Simple English title.' },
-  { value: 'selected-work', label: 'Selected work', description: 'A selection of work.' },
-  { value: 'visual-journal', label: 'Visual journal', description: 'A more editorial heading.' },
-  { value: 'custom', label: 'Custom', description: 'Enter your own title.' },
+  { value: 'none', label: msg('None'), description: msg('Hide the gallery section title.') },
+  { value: 'gallery', label: msg('Gallery'), description: msg('Simple English title.') },
+  { value: 'selected-work', label: msg('Selected work'), description: msg('A selection of work.') },
+  { value: 'visual-journal', label: msg('Visual journal'), description: msg('A more editorial heading.') },
+  { value: 'custom', label: msg('Custom'), description: msg('Enter your own title.') },
 ] as const;
 
 export const PORTFOLIO_GALLERY_SUBTITLE_PRESET_OPTIONS = [
-  { value: 'default', label: 'Default', description: 'Images, films, and chosen moments.' },
-  { value: 'selection', label: 'Selection', description: 'A selection of recent work.' },
-  { value: 'journal', label: 'Journal', description: 'Fragments of projects and visual research.' },
-  { value: 'minimal', label: 'None', description: 'Hide the subtitle.' },
-  { value: 'custom', label: 'Custom', description: 'Enter your own text.' },
+  { value: 'default', label: msg('Default'), description: msg('Images, films, and chosen moments.') },
+  { value: 'selection', label: msg('Selection'), description: msg('A selection of recent work.') },
+  { value: 'journal', label: msg('Journal'), description: msg('Fragments of projects and visual research.') },
+  { value: 'minimal', label: msg('None'), description: msg('Hide the subtitle.') },
+  { value: 'custom', label: msg('Custom'), description: msg('Enter your own text.') },
 ] as const;
 
 const GALLERY_SECTION_LAYOUTS = ['stacked', 'aside-left', 'aside-right', 'over-thumbs'] as const;
@@ -461,6 +465,7 @@ export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings 
   captionCardWidthPx: 320,
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',
@@ -567,36 +572,36 @@ export const PORTFOLIO_GALLERY_FLOATING_CANVAS_LANE_OPTIONS: {
   value: PortfolioGalleryFloatingCanvasLanes;
   label: string;
 }[] = [
-  { value: '2', label: '2 lanes' },
-  { value: '3', label: '3 lanes' },
+  { value: '2', label: msg('2 lanes') },
+  { value: '3', label: msg('3 lanes') },
 ];
 
 export const PORTFOLIO_GALLERY_FLOATING_CANVAS_DISPERSION_OPTIONS: {
   value: PortfolioGalleryFloatingCanvasDispersion;
   label: string;
 }[] = [
-  { value: 'aligned', label: 'Aligned' },
-  { value: 'subtle', label: 'Subtle' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'wild', label: 'Wild' },
+  { value: 'aligned', label: msg('Aligned') },
+  { value: 'subtle', label: msg('Subtle') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'wild', label: msg('Wild') },
 ];
 
 export const PORTFOLIO_GALLERY_FLOATING_CANVAS_PARALLAX_OPTIONS: {
   value: PortfolioGalleryFloatingCanvasParallax;
   label: string;
 }[] = [
-  { value: 'off', label: 'Off' },
-  { value: 'subtle', label: 'Subtle' },
-  { value: 'medium', label: 'Medium' },
-  { value: 'strong', label: 'Strong' },
+  { value: 'off', label: msg('Off') },
+  { value: 'subtle', label: msg('Subtle') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'strong', label: msg('Strong') },
 ];
 
 export const PORTFOLIO_GALLERY_FLOATING_CANVAS_BADGE_OPTIONS: {
   value: PortfolioGalleryFloatingCanvasBadge;
   label: string;
 }[] = [
-  { value: 'dark', label: 'Smoked' },
-  { value: 'frost', label: 'Frosted' },
+  { value: 'dark', label: msg('Smoked') },
+  { value: 'frost', label: msg('Frosted') },
 ];
 
 export function galleryDesignUsesCarouselNav(design: PortfolioGalleryDesign): boolean {
@@ -723,6 +728,7 @@ export function mergeGalleryPresentation(
     headerDesign: pickString(record.headerDesign, GALLERY_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
     // The header motion switch was removed from the UI — always on (reduced-motion is still honoured).
     headerAnimationEnabled: true,
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pickString(
       record.headerDesignAlignment,
       ['left', 'center', 'right'] as const,

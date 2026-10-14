@@ -1,5 +1,6 @@
 'use client';
 
+import { tr } from '@/lib/i18n/active';
 import { useEffect, useRef, useState, type ReactNode, type RefObject } from 'react';
 import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
 import {
@@ -12,6 +13,7 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { portfolioInlineInputClass } from '@/components/portfolio/portfolio-section-shared';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
 import { MAX_SERVICES } from '@/components/creator/studio/ProfileServicesField';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type PortfolioServiceItem = {
   id: string;
@@ -45,7 +47,7 @@ function isFreePrice(cents: number | null | undefined): boolean {
 
 function formatPrice(cents: number | null | undefined): string {
   if (cents == null || Number.isNaN(cents)) return '';
-  if (cents === 0) return 'Free';
+  if (cents === 0) return tr('Free');
   return `${(cents / 100).toFixed(2)} €`;
 }
 
@@ -116,7 +118,7 @@ function isServiceEmpty(draft: PortfolioServiceDraft): boolean {
 function TaskBullet() {
   return (
     <span
-      className="mt-[0.3rem] inline-flex h-3 w-3 shrink-0 items-center justify-center text-[#EA580C]"
+      className="mt-[0.3rem] inline-flex h-3 w-3 shrink-0 items-center justify-center text-[#0F1419] dark:text-[#E7E9EA]"
       aria-hidden
     >
       <svg viewBox="0 0 12 12" className="h-full w-full" fill="currentColor">
@@ -143,13 +145,13 @@ function IconButton({
 }) {
   const toneClass =
     tone === 'confirm'
-      ? 'border-emerald-300 bg-emerald-50 text-emerald-700 hover:border-emerald-400 hover:bg-emerald-100 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300'
+      ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
       : tone === 'cancel'
         ? 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400'
         : tone === 'danger'
           ? 'border-neutral-200 bg-white text-neutral-500 hover:border-red-300 hover:bg-red-50 hover:text-red-600 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400 dark:hover:border-red-500/40 dark:hover:bg-red-500/10 dark:hover:text-red-400'
           : active
-            ? 'border-[#F97316]/40 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/30 dark:bg-[#F97316]/10 dark:text-[#FB923C]'
+            ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
             : 'border-neutral-200 bg-white text-neutral-500 hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400';
 
   return (
@@ -175,6 +177,7 @@ function ServiceTasksEditor({
   onChange: (next: Array<{ value: string }>) => void;
   disabled?: boolean;
 }) {
+  const t = useT();
   return (
     <div className="space-y-2">
       {tasks.map((task, taskIndex) => (
@@ -199,7 +202,7 @@ function ServiceTasksEditor({
             onClick={() => onChange(tasks.filter((_, index) => index !== taskIndex))}
             className="shrink-0 text-xs font-semibold text-red-600 hover:text-red-700 disabled:opacity-50 dark:text-red-400"
           >
-            Remove
+            {t('Remove')}
           </button>
         </div>
       ))}
@@ -207,9 +210,9 @@ function ServiceTasksEditor({
         type="button"
         disabled={disabled || tasks.length >= MAX_TASKS_PER_SERVICE}
         onClick={() => onChange([...tasks, { value: '' }])}
-        className="text-sm font-semibold text-[#EA580C] hover:text-[#C2410C] disabled:opacity-40"
+        className="text-sm font-semibold text-[#0F1419] hover:underline disabled:opacity-40 dark:text-[#E7E9EA]"
       >
-        + Add task
+        {t('+ Add task')}
       </button>
     </div>
   );
@@ -247,6 +250,7 @@ export function PortfolioServicesReadOnly({
   onGlobalHasChangesChange?: (hasChanges: boolean) => void;
   onRegisterGlobalConfirm?: (confirm: (() => Promise<void>) | null) => void;
 }) {
+  const t = useT();
   void _sectionRootRef;
   const canEdit = Boolean(onItemSave);
   const canDelete = Boolean(onRemoveItem);
@@ -430,7 +434,7 @@ export function PortfolioServicesReadOnly({
           className="mb-6"
         />
         <p className="text-center text-sm italic text-neutral-500 dark:text-neutral-400">
-          No services yet. Click Add service to create one.
+          {t('No services yet. Click Add service to create one.')}
         </p>
       </div>
     );
@@ -479,7 +483,7 @@ export function PortfolioServicesReadOnly({
                   {pendingDeleteIndex === index ? (
                     <>
                       <IconButton
-                        label="Confirm delete service"
+                        label={t('Confirm delete service')}
                         tone="confirm"
                         disabled={fieldSaving}
                         onClick={() => {
@@ -498,7 +502,7 @@ export function PortfolioServicesReadOnly({
                         )}
                       </IconButton>
                       <IconButton
-                        label="Cancel"
+                        label={t('Cancel')}
                         tone="cancel"
                         disabled={fieldSaving}
                         onClick={() => setPendingDeleteIndex(null)}
@@ -510,7 +514,7 @@ export function PortfolioServicesReadOnly({
                     <>
                       {canEdit ? (
                         <IconButton
-                          label="Edit service"
+                          label={t('Edit service')}
                           disabled={fieldSaving}
                           onClick={() => startEdit(index)}
                         >
@@ -519,7 +523,7 @@ export function PortfolioServicesReadOnly({
                       ) : null}
                       {canDelete ? (
                         <IconButton
-                          label="Delete service"
+                          label={t('Delete service')}
                           tone="danger"
                           disabled={fieldSaving}
                           onClick={() => {
@@ -549,10 +553,10 @@ export function PortfolioServicesReadOnly({
                         titleTrimmed
                           ? canConfirm
                             ? isNewComposer
-                              ? 'Confirm new service'
-                              : 'Confirm service'
-                            : 'No changes'
-                          : 'Discard empty service'
+                              ? t('Confirm new service')
+                              : t('Confirm service')
+                            : t('No changes')
+                          : t('Discard empty service')
                       }
                       tone={canConfirm ? 'confirm' : 'neutral'}
                       disabled={fieldSaving || (Boolean(titleTrimmed) && !canConfirm)}
@@ -565,7 +569,7 @@ export function PortfolioServicesReadOnly({
                       )}
                     </IconButton>
                     <IconButton
-                      label="Cancel"
+                      label={t('Cancel')}
                       tone="cancel"
                       disabled={fieldSaving}
                       onClick={() => void cancelEdit()}
@@ -590,7 +594,7 @@ export function PortfolioServicesReadOnly({
                         }
                         if (canConfirm) void confirmEdit();
                       }}
-                      placeholder="Service title"
+                      placeholder={t('Service title')}
                       className={`${portfolioInlineInputClass} w-full min-w-0 flex-1 text-base font-bold`}
                       autoFocus={editingIndex === index}
                       disabled={fieldSaving}
@@ -602,7 +606,7 @@ export function PortfolioServicesReadOnly({
                       }`}
                     >
                       {item.title.trim() || (
-                        <span className="italic text-neutral-400">Untitled service</span>
+                        <span className="italic text-neutral-400">{t('Untitled service')}</span>
                       )}
                     </p>
                   )}
@@ -616,13 +620,13 @@ export function PortfolioServicesReadOnly({
                       value={draft.description}
                       onChange={(event) => updateDraft(index, { description: event.target.value })}
                       rows={3}
-                      placeholder="Describe what’s included…"
+                      placeholder={t('Describe what’s included…')}
                       className={`${portfolioInlineInputClass} resize-y font-medium leading-relaxed`}
                       disabled={fieldSaving}
                     />
                     <div>
                       <p className="mb-2 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                        Tasks
+                        {t('Tasks')}
                       </p>
                       <ServiceTasksEditor
                         tasks={draft.tasks}
@@ -633,7 +637,7 @@ export function PortfolioServicesReadOnly({
                     <div className="grid gap-3 sm:grid-cols-2">
                       <div>
                         <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                          Base price (€)
+                          {t('Base price (€)')}
                         </p>
                         <div className="flex items-center gap-2">
                           <input
@@ -646,7 +650,7 @@ export function PortfolioServicesReadOnly({
                                 basePriceCents: centsFromEurosInput(event.target.value),
                               })
                             }
-                            placeholder={isFreePrice(draft.basePriceCents) ? 'Free' : 'e.g. 50'}
+                            placeholder={isFreePrice(draft.basePriceCents) ? t('Free') : t('e.g. 50')}
                             className={`${portfolioInlineInputClass} min-w-0 flex-1`}
                             disabled={fieldSaving || isFreePrice(draft.basePriceCents)}
                           />
@@ -660,23 +664,23 @@ export function PortfolioServicesReadOnly({
                             }
                             className={`shrink-0 rounded-lg border px-3 py-2 text-xs font-bold uppercase tracking-[0.08em] transition disabled:opacity-50 ${
                               isFreePrice(draft.basePriceCents)
-                                ? 'border-[#F97316]/50 bg-[#FFF7ED] text-[#EA580C] dark:border-[#F97316]/40 dark:bg-[#F97316]/15 dark:text-[#FB923C]'
+                                ? 'border-[#0F1419] bg-[#0F1419] text-white dark:border-[#EFF3F4] dark:bg-[#EFF3F4] dark:text-[#0F1419]'
                                 : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300 hover:bg-neutral-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-300'
                             }`}
                           >
-                            Free
+                            {t('Free')}
                           </button>
                         </div>
                       </div>
                       <div>
                         <p className="mb-1.5 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                          Typical deadline
+                          {t('Typical deadline')}
                         </p>
                         <input
                           type="text"
                           value={draft.deadline}
                           onChange={(event) => updateDraft(index, { deadline: event.target.value })}
-                          placeholder="e.g. 3–5 days"
+                          placeholder={t('e.g. 3–5 days')}
                           className={portfolioInlineInputClass}
                           disabled={fieldSaving}
                         />
@@ -690,7 +694,7 @@ export function PortfolioServicesReadOnly({
                         {display.description.trim()}
                       </p>
                     ) : (
-                      <p className="text-sm italic text-neutral-400">No description</p>
+                      <p className="text-sm italic text-neutral-400">{t('No description')}</p>
                     )}
 
                     {taskValues.length > 0 ? (
@@ -713,12 +717,12 @@ export function PortfolioServicesReadOnly({
                       <div>
                         {!isFreePrice(display.basePriceCents) && priceDisplay ? (
                           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                            From
+                            {t('From')}
                           </p>
                         ) : null}
                         {isFreePrice(display.basePriceCents) ? (
-                          <p className="text-lg font-extrabold tracking-[-0.02em] text-[#EA580C] dark:text-[#FB923C]">
-                            Free
+                          <p className="text-lg font-extrabold tracking-[-0.02em] text-[#0F1419] dark:text-[#E7E9EA]">
+                            {t('Free')}
                           </p>
                         ) : priceDisplay ? (
                           <p className="text-lg font-extrabold tracking-[-0.02em] text-neutral-950 dark:text-white">
@@ -726,14 +730,14 @@ export function PortfolioServicesReadOnly({
                           </p>
                         ) : (
                           <p className="text-sm font-medium italic text-neutral-400">
-                            Price on request
+                            {t('Price on request')}
                           </p>
                         )}
                       </div>
                       {display.deadline.trim() ? (
                         <div className="text-right">
                           <p className="text-[10px] font-semibold uppercase tracking-[0.14em] text-neutral-500">
-                            Deadline
+                            {t('Deadline')}
                           </p>
                           <p className="text-sm font-semibold text-neutral-800 dark:text-neutral-200">
                             {display.deadline.trim()}

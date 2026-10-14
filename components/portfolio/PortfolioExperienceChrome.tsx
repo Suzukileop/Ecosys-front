@@ -1,6 +1,7 @@
 'use client';
 import { getHttpUrlFieldError, toAbsoluteHttpUrl, type ProfileMediaBlockForm } from '@/components/creator/studio/profile-form-schema';
 import type { ExperienceEmploymentType } from '@/types/profile';
+import { msg } from '@/lib/i18n/config';
 
 export const MAX_EXPERIENCE_ENTRIES = 7;
 
@@ -64,11 +65,11 @@ export const EXPERIENCE_MEDIA_ACCEPT =
   'image/jpeg,image/png,image/webp,video/mp4,video/webm,video/quicktime,.jpg,.jpeg,.png,.webp,.mp4,.webm,.mov';
 
 export const EMPLOYMENT_OPTIONS: { value: PortfolioExperienceEmploymentType; label: string }[] = [
-  { value: 'FREELANCE', label: 'Freelance' },
-  { value: 'CONTRACT', label: 'Contract' },
-  { value: 'FULL_TIME', label: 'Full-time' },
-  { value: 'PART_TIME', label: 'Part-time' },
-  { value: 'INTERNSHIP', label: 'Internship' },
+  { value: 'FREELANCE', label: msg('Freelance') },
+  { value: 'CONTRACT', label: msg('Contract') },
+  { value: 'FULL_TIME', label: msg('Full-time') },
+  { value: 'PART_TIME', label: msg('Part-time') },
+  { value: 'INTERNSHIP', label: msg('Internship') },
 ];
 
 export function toDraft(block: PortfolioExperienceBlock): PortfolioExperienceBlockDraft {

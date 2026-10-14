@@ -16,7 +16,7 @@ import {
   type PortfolioFaqHeaderEditorialTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
 import { createFaqHeaderLayoutResolver } from '@/components/portfolio/portfolio-faq-header-layout';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -77,13 +77,16 @@ export function FaqHeaderEditorialHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
   const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;
   const kickerInk = `color-mix(in srgb, ${titleInk} 38%, transparent)`;
-  const kickerText = createFaqHeaderLayoutResolver(presentation, 'editorial').text('kicker');
+  const layout = createFaqHeaderLayoutResolver(presentation, 'editorial');
+  const kickerText = layout.text('kicker');
+  const showTitle = layout.isVisible('title');
+  const showSubtitle = layout.isVisible('subtitle');
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -185,7 +188,7 @@ export function FaqHeaderEditorialHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, titleText, subtitleText]);
+  }, [animationEnabled, titleText, subtitleText, kickerText, showTitle, showSubtitle]);
 
   return (
     <header
@@ -203,15 +206,17 @@ export function FaqHeaderEditorialHeader({
               {kickerText}
             </p>
           ) : null}
-          <h2
-            className={`mb-0 ${faqHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-            style={faqTitleColorStyle(presentation.titleColor)}
-          >
-            <span className="pf-faq-header-editorial-title-mask block overflow-hidden">
-              <span className="pf-faq-header-editorial-title-line block">{titleText}</span>
-            </span>
-          </h2>
-          {subtitleText ? (
+          {showTitle ? (
+            <h2
+              className={`mb-0 ${faqHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
+              style={faqTitleColorStyle(presentation.titleColor)}
+            >
+              <span className="pf-faq-header-editorial-title-mask block overflow-hidden">
+                <span className="pf-faq-header-editorial-title-line block">{titleText}</span>
+              </span>
+            </h2>
+          ) : null}
+          {showSubtitle && subtitleText ? (
             <p
               className={`pf-faq-header-editorial-sub mb-0 mt-6 max-w-xl ${faqHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
               style={faqSubtitleColorStyle(presentation.subtitleColor)}

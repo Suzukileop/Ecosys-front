@@ -19,6 +19,7 @@ import {
   StudioRemoveButton,
   StudioUnderline,
 } from '@/components/portfolio/PortfolioStudioKit';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorToolPick = {
   value: string;
@@ -51,6 +52,7 @@ function ToolChip({
   onRemove?: () => void;
   readOnly?: boolean;
 }) {
+  const t = useT();
   return (
     <span className="inline-flex items-center gap-2 rounded-full bg-amber-500/15 py-1.5 pl-1.5 pr-2.5 text-xs font-medium text-neutral-900 dark:bg-amber-500/20 dark:text-neutral-50">
       <CreatorToolLogo label={item.value} iconUrl={item.iconUrl} size={22} />
@@ -60,9 +62,9 @@ function ToolChip({
           type="button"
           onClick={onRemove}
           className="rounded-full px-1 text-xs font-semibold text-neutral-500 transition hover:text-red-600 dark:text-neutral-400 dark:hover:text-red-400"
-          aria-label={`Remove ${item.value}`}
+          aria-label={t('Remove {value}', { value: item.value })}
         >
-          ×
+          {t('×')}
         </button>
       ) : null}
     </span>
@@ -89,6 +91,7 @@ export function CreatorToolsPicker({
   emptyLabel = 'No tools selected yet.',
   variant = 'default',
 }: CreatorToolsPickerProps) {
+  const t = useT();
   const [customDraft, setCustomDraft] = useState('');
   const [customIconUrl, setCustomIconUrl] = useState<string | null>(null);
   const [uploadingIcon, setUploadingIcon] = useState(false);
@@ -130,7 +133,7 @@ export function CreatorToolsPicker({
       const uploaded = await uploadContentMedia(file);
       setCustomIconUrl(uploaded);
     } catch (e) {
-      setUploadError(getApiErrorMessage(e, 'Unable to upload logo.'));
+      setUploadError(getApiErrorMessage(e, t('Unable to upload logo.')));
     } finally {
       setUploadingIcon(false);
     }
@@ -150,7 +153,7 @@ export function CreatorToolsPicker({
                 <CreatorToolLogo label={item.value} iconUrl={item.iconUrl} size={22} />
                 <span className={`min-w-0 flex-1 truncate ${STUDIO_VALUE_CLASS}`}>{item.value}</span>
                 <StudioRemoveButton
-                  label={`Remove ${item.value}`}
+                  label={t('Remove {value}', { value: item.value })}
                   onClick={() =>
                     syncSelectedValues(selectedValues.filter((entry) => entry.value !== item.value))
                   }
@@ -174,8 +177,8 @@ export function CreatorToolsPicker({
                 type="button"
                 disabled={uploadingIcon || atCap}
                 onClick={() => iconInputRef.current?.click()}
-                title={customIconUrl ? 'Replace logo' : 'Upload logo'}
-                aria-label={customIconUrl ? 'Replace logo' : 'Upload logo'}
+                title={customIconUrl ? t('Replace logo') : t('Upload logo')}
+                aria-label={customIconUrl ? t('Replace logo') : t('Upload logo')}
                 className="relative inline-flex h-8 w-8 shrink-0 items-center justify-center overflow-hidden rounded-full border border-dashed border-neutral-300 transition-colors duration-200 hover:border-neutral-900 disabled:opacity-40 dark:border-white/25 dark:hover:border-white"
               >
                 {uploadingIcon ? (
@@ -193,7 +196,7 @@ export function CreatorToolsPicker({
                   type="text"
                   value={customDraft}
                   disabled={atCap}
-                  aria-label="Tool name"
+                  aria-label={t('Tool name')}
                   onChange={(event) => setCustomDraft(event.target.value)}
                   onKeyDown={(event) => {
                     if (event.key === 'Enter') {
@@ -201,21 +204,19 @@ export function CreatorToolsPicker({
                       addCustomTool();
                     }
                   }}
-                  placeholder={atCap ? `Limit reached (${max})` : 'Tool name — press Enter'}
+                  placeholder={atCap ? t('Limit reached ({max})', { max }) : t('Tool name — press Enter')}
                   className={`${STUDIO_BARE_INPUT_CLASS} ${STUDIO_VALUE_CLASS}`}
                 />
               </StudioUnderline>
               <span className={`shrink-0 tabular-nums ${STUDIO_SECONDARY_CLASS}`}>
                 {selectedValues.length}/{max}
               </span>
-              <StudioInfoTip label="About tools">
-                Add up to {max} tools. Type a name and press Enter. A logo is detected automatically from
-                the name; otherwise the first letter is shown. Click the circle to upload your own logo
-                (JPG, PNG or WebP).
+              <StudioInfoTip label={t('About tools')}>
+                {t('Add up to {max} tools. Type a name and press Enter. A logo is detected automatically from the name; otherwise the first letter is shown. Click the circle to upload your own logo (JPG, PNG or WebP).', { max })}
               </StudioInfoTip>
               <StudioIconAction
                 icon="add"
-                label="Add tool"
+                label={t('Add tool')}
                 onClick={addCustomTool}
                 disabled={!customDraft.trim() || atCap}
               />
@@ -226,13 +227,13 @@ export function CreatorToolsPicker({
                   uploadError
                 ) : customIconUrl ? (
                   <>
-                    Custom logo ·{' '}
+                    {t('Custom logo ·')}{' '}
                     <button
                       type="button"
                       onClick={() => setCustomIconUrl(null)}
                       className="underline-offset-4 transition-colors hover:text-[#FF5722] hover:underline"
                     >
-                      Remove
+                      {t('Remove')}
                     </button>
                   </>
                 ) : (
@@ -280,11 +281,10 @@ export function CreatorToolsPicker({
       {allowCustom ? (
         <div className="space-y-2">
           <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-500 dark:text-neutral-400">
-            Ajouter un outil
+            {t('Ajouter un outil')}
           </p>
           <p className="text-xs text-neutral-500 dark:text-neutral-400">
-            Nom + logo optionnel ({selectedValues.length}/{max}). Sans logo, la première lettre
-            s’affiche.
+            {t('Nom + logo optionnel ({selectedValuesLength}/{max}). Sans logo, la première lettre s’affiche.', { selectedValuesLength: selectedValues.length, max })}
           </p>
           <div className="flex items-center gap-2">
             <input
@@ -298,8 +298,8 @@ export function CreatorToolsPicker({
               type="button"
               disabled={uploadingIcon || selectedValues.length >= max}
               onClick={() => iconInputRef.current?.click()}
-              title="Upload logo"
-              aria-label="Upload logo"
+              title={t('Upload logo')}
+              aria-label={t('Upload logo')}
               className="relative inline-flex h-10 w-10 shrink-0 items-center justify-center overflow-hidden rounded-full bg-neutral-100/80 transition hover:bg-neutral-200/80 disabled:opacity-40 dark:bg-white/[0.06] dark:hover:bg-white/[0.1]"
             >
               {uploadingIcon ? (
@@ -320,7 +320,7 @@ export function CreatorToolsPicker({
                   addCustomTool();
                 }
               }}
-              placeholder="Nom de l’outil…"
+              placeholder={t('Nom de l’outil…')}
               className="min-w-0 flex-1 rounded-full bg-neutral-100/80 px-3.5 py-2 text-sm font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:bg-neutral-100 focus:ring-2 focus:ring-[#F97316]/25 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-neutral-500 dark:focus:bg-white/[0.08]"
             />
             <button
@@ -329,7 +329,7 @@ export function CreatorToolsPicker({
               disabled={!customDraft.trim() || selectedValues.length >= max}
               className="shrink-0 rounded-full bg-amber-500/20 px-3.5 py-2 text-sm font-semibold text-amber-800 transition hover:bg-amber-500/30 disabled:opacity-40 dark:text-amber-300"
             >
-              Add
+              {t('Add')}
             </button>
           </div>
           {customIconUrl ? (
@@ -338,17 +338,15 @@ export function CreatorToolsPicker({
               onClick={() => setCustomIconUrl(null)}
               className="text-xs font-medium text-neutral-500 hover:text-neutral-700 dark:text-neutral-400"
             >
-              Remove logo
+              {t('Remove logo')}
             </button>
           ) : draftAutoIcon ? (
             <p className="text-[11px] text-emerald-700 dark:text-emerald-400">
-              Logo auto détecté : {draftAutoIcon.matchedName}. Tu peux quand même uploader un logo
-              custom.
+              {t('Logo auto détecté : {matchedName}. Tu peux quand même uploader un logo custom.', { matchedName: draftAutoIcon.matchedName })}
             </p>
           ) : (
             <p className="text-[11px] text-neutral-400">
-              Optionnel : touche le cercle pour ajouter un logo. Sinon détection auto par nom, ou
-              première lettre.
+              {t('Optionnel : touche le cercle pour ajouter un logo. Sinon détection auto par nom, ou première lettre.')}
             </p>
           )}
           {uploadError ? <p className="text-xs text-red-600 dark:text-red-400">{uploadError}</p> : null}

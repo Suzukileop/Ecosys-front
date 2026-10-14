@@ -1,12 +1,12 @@
 'use client';
 
+import { localeTag, tr } from '@/lib/i18n/active';
 import { useCallback, useEffect, useState } from 'react';
 import Link from 'next/link';
-import { ContentPostFeedMediaFrame } from '@/components/creator/ContentPostFeedMediaFrame';
-import { contentMediaKind } from '@/components/creator/creator-content-media';
-import { ContentPostImageCollage } from '@/components/creator/ContentPostImageCollage';
-import { EmbeddedOriginal, postGallery } from '@/components/home/NewsFeedPostParts';
-import { MediaImage } from '@/components/ui/MediaImage';
+import { EmbeddedOriginal, PostMedia, PostTextBlock, postHasMedia } from '@/components/home/NewsFeedPostParts';
+import { AvatarImage } from '@/components/ui/PersonAvatar';
+import { DIALOG_PRIMARY_BUTTON, DIALOG_SECONDARY_BUTTON } from '@/components/creator/ContentPostDialogShell';
+import type { PublicContentFeedItem } from '@/types/marketplace';
 import {
   ContentPostLightbox,
   type ContentPostLightboxPost,
@@ -22,6 +22,7 @@ import { ContentPostOverflowMenu } from '@/components/creator/studio/ContentPost
 import { CommentThread } from '@/components/marketplace/CommentThread';
 import {
   COMMENTS_INLINE_CLASS,
+  COMMENTS_INLINE_PREVIEW,
   COMMENTS_SHEET_CLASS,
   PostCommentsSurface,
 } from '@/components/creator/PostCommentsSurface';
@@ -48,6 +49,7 @@ import type {
   CreatorContentCreateBody,
   CreatorContentItemDto,
 } from '@/types/creator-content';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorContentPostCardProps = {
   post: CreatorContentItemDto;
@@ -79,7 +81,6 @@ function toLightboxPost(
     moodEmoji: post.moodEmoji,
     taggedUsers: post.taggedUsers,
     priceInfo: post.priceInfo,
-    toolsUsed: post.toolsUsed ?? [],
     tags: post.tags ?? [],
     isPublic: post.isPublic,
     commentsEnabled: post.commentsEnabled,
@@ -98,12 +99,12 @@ function toLightboxPost(
 function formatPostTime(iso: string): string {
   const date = new Date(iso);
   const seconds = Math.max(0, Math.round((Date.now() - date.getTime()) / 1000));
-  if (seconds < 60) return 'now';
-  if (seconds < 3600) return `${Math.floor(seconds / 60)}m`;
-  if (seconds < 86400) return `${Math.floor(seconds / 3600)}h`;
-  if (seconds < 7 * 86400) return `${Math.floor(seconds / 86400)}d`;
+  if (seconds < 60) return tr('now');
+  if (seconds < 3600) return tr('{count}m', { count: Math.floor(seconds / 60) });
+  if (seconds < 86400) return tr('{count}h', { count: Math.floor(seconds / 3600) });
+  if (seconds < 7 * 86400) return tr('{count}d', { count: Math.floor(seconds / 86400) });
   const sameYear = date.getFullYear() === new Date().getFullYear();
-  return date.toLocaleDateString('en-US', {
+  return date.toLocaleDateString(localeTag(), {
     month: 'short',
     day: 'numeric',
     ...(sameYear ? {} : { year: 'numeric' }),
@@ -122,16 +123,11 @@ function isDetailsDraftUnchanged(post: CreatorContentItemDto, draft: ContentDeta
 
   const draftTags = normalizeList(draft.tags);
   const originalTags = normalizeList(original.tags);
-  const draftTools = normalizeList(draft.toolsUsed);
-  const originalTools = normalizeList(original.toolsUsed);
 
   const sameTags =
     draftTags.length === originalTags.length && draftTags.every((t, i) => t === originalTags[i]);
-  const sameTools =
-    draftTools.length === originalTools.length &&
-    draftTools.every((t, i) => t === originalTools[i]);
 
-  return sameTitle && sameDescription && samePrice && sameTags && sameTools;
+  return sameTitle && sameDescription && samePrice && sameTags;
 }
 
 function buildUpdateBody(
@@ -156,7 +152,6 @@ function buildUpdateBody(
     moodEmoji: post.moodEmoji ?? null,
     taggedUserIds: post.taggedUsers?.map((u) => u.id) ?? [],
     priceInfo: draft.priceInfo.trim() || null,
-    toolsUsed: normalizeList(draft.toolsUsed).slice(0, 10),
     tags: normalizeList(draft.tags).slice(0, 10),
     isPublic: post.isPublic,
     commentsEnabled: post.commentsEnabled ?? true,
@@ -174,12 +169,12 @@ export function CreatorContentPostCard({
   className = '',
   authorId,
 }: CreatorContentPostCardProps) {
+  const t = useT();
   const { user } = useAuth();
   const { appRole } = useCreatorAppRole();
   const [post, setPost] = useState(postProp);
   const [commentsOpen, setCommentsOpen] = useState(false);
   const closeComments = useCallback(() => setCommentsOpen(false), []);
-  const [infoOpen, setInfoOpen] = useState(false);
   const [commentCount, setCommentCount] = useState<number | undefined>(undefined);
   const [visibilityBusy, setVisibilityBusy] = useState(false);
   const [commentsBusy, setCommentsBusy] = useState(false);
@@ -247,11 +242,11 @@ export function CreatorContentPostCard({
 
     const body = buildUpdateBody(post, editDraft);
     if (!body) {
-      const message = 'Write something or keep the media before saving.';
+      const message = t('Write something or keep the media before saving.');
       onError(message);
       pushFlashFeedback({
         variant: 'error',
-        title: 'Update failed',
+        title: t('Update failed'),
         description: message,
       });
       return;
@@ -267,15 +262,15 @@ export function CreatorContentPostCard({
       setEditDraft(null);
       pushFlashFeedback({
         variant: 'success',
-        title: 'Content updated',
+        title: t('Content updated'),
       });
       onChanged();
     } catch (e) {
-      const message = getApiErrorMessage(e, 'Unable to save changes.');
+      const message = getApiErrorMessage(e, t('Unable to save changes.'));
       onError(message);
       pushFlashFeedback({
         variant: 'error',
-        title: 'Update failed',
+        title: t('Update failed'),
         description: message,
       });
     } finally {
@@ -296,7 +291,7 @@ export function CreatorContentPostCard({
       }
     } catch (e) {
       setCommentsEnabled(previous);
-      onError(getApiErrorMessage(e, 'Impossible de modifier les commentaires.'));
+      onError(getApiErrorMessage(e, t('Impossible de modifier les commentaires.')));
     } finally {
       setCommentsBusy(false);
     }
@@ -312,7 +307,7 @@ export function CreatorContentPostCard({
       setPost((current) => ({ ...current, isPublic: next }));
     } catch (e) {
       setIsPublic(previous);
-      onError(getApiErrorMessage(e, 'Unable to update visibility.'));
+      onError(getApiErrorMessage(e, t('Unable to update visibility.')));
     } finally {
       setVisibilityBusy(false);
     }
@@ -324,7 +319,7 @@ export function CreatorContentPostCard({
       await action();
       onChanged();
     } catch (e) {
-      onError(getApiErrorMessage(e, 'Action failed.'));
+      onError(getApiErrorMessage(e, t('Action failed.')));
     }
   };
 
@@ -392,24 +387,27 @@ export function CreatorContentPostCard({
     fullName: creatorName,
     avatarUrl: user?.avatarUrl ?? null,
   });
+  // The News card's text / media parts read a feed item; the studio post is the same shape plus its
+  // author, who is the signed-in owner.
+  const feedView: PublicContentFeedItem = {
+    ...post,
+    creator: { id: user?.id ?? 'local', fullName: creatorName, avatarUrl: user?.avatarUrl ?? null, appRole },
+  };
 
   const specialtyLine =
     specialite?.trim() || specialties?.map((s) => s.trim()).find(Boolean) || null;
   const moodLine = [
-    post.moodLabel?.trim() ? `Feeling ${post.moodLabel.trim()}${post.moodEmoji ? ` ${post.moodEmoji}` : ''}` : null,
-    post.taggedUsers?.length ? `with ${post.taggedUsers.map((u) => u.fullName).join(', ')}` : null,
+    post.moodLabel?.trim() ? `${t('Feeling {mood}', { mood: t(post.moodLabel.trim()) })}${post.moodEmoji ? ` ${post.moodEmoji}` : ''}` : null,
+    post.taggedUsers?.length ? t('with {names}', { names: post.taggedUsers.map((u) => u.fullName).join(', ') }) : null,
   ]
     .filter(Boolean)
     .join(' · ');
   const title = post.title?.trim() || '';
-  const tags = normalizeList(post.tags ?? []);
-  const tools = (post.toolsUsed ?? []).map((t) => t.trim()).filter(Boolean);
-  const priceLabel = post.priceInfo?.trim() || '';
   const profileHref = user?.id ? `/providers/${user.id}` : '/profile?tab=profile';
   const showPinned = post.pinned && (bucket === 'active' || bucket === 'pinned');
   const canComment = bucket !== 'trash' && commentsEnabled;
-  const mediaKind = post.mediaUrl ? contentMediaKind(post.mediaUrl, null, post.mediaType) : null;
-  const playableMedia = !editing && (mediaKind === 'video' || mediaKind === 'audio');
+  const isRepost = Boolean(post.repostOf);
+  const hasMedia = !isRepost && postHasMedia(post);
   const discussHref =
     authorId && authorId !== user?.id && bucket !== 'archived' && bucket !== 'trash'
       ? `/messages?user=${encodeURIComponent(authorId)}`
@@ -417,269 +415,153 @@ export function CreatorContentPostCard({
   const messageHref = discussHref && !user ? `/login?redirect=${encodeURIComponent(discussHref)}` : discussHref;
 
   const statusLabel =
-    bucket === 'archived' ? 'Archived' : bucket === 'trash' ? 'In trash' : !isPublic ? 'Private' : null;
-  const hasInfo = !editing && Boolean(priceLabel || tools.length > 0);
-  const hasTextBlock = Boolean(statusLabel || showPinned || title || tags.length > 0 || hasInfo);
-  const showRail = bucket !== 'trash' && !editing;
-  const mediaSpacing = editing ? 'mt-6' : hasTextBlock ? 'mt-3' : 'mt-4';
+    bucket === 'archived' ? t('Archived') : bucket === 'trash' ? t('In trash') : !isPublic ? t('Private') : null;
+  const showBar = bucket !== 'trash' && !editing;
+  const openViewer = (index: number) => {
+    if (editing) return;
+    setLightboxIndex(index);
+    setLightboxOpen(true);
+  };
+  const openViewerAtVideo = (time: number) => {
+    if (editing) return;
+    setLightboxVideoTime(time);
+    setLightboxOpen(true);
+  };
+  const metaDot = <span aria-hidden className="mx-1.5 text-[color:var(--gn-ink3)]">·</span>;
 
+  /* Same anatomy as the News card (NewsFeedPostCard): header, text + media, action bar. The owner's
+     state (pinned, private, archived, in trash) is a quiet word in the meta line, not a chip row. */
   return (
-    <article
-      className={`overflow-hidden !bg-[#FFFFFF] dark:!bg-[#111111] sm:rounded-xl ${className}`}
-    >
-      <header className="flex items-center gap-3.5 px-6 pt-6 sm:px-7 sm:pt-7">
+    <article className={`gn-post overflow-hidden bg-[#FFFFFF] dark:bg-[#111111] sm:rounded-xl ${className}`}>
+      <header className="flex items-center gap-3 px-4 pt-4">
         <Link
           href={profileHref}
           className={`inline-flex shrink-0 ${creatorPostAvatarRingClass(appRole)}`}
           aria-label={creatorName}
         >
-          <MediaImage
+          <AvatarImage
             src={user?.avatarUrl}
-            width={44}
-            referrerPolicy="no-referrer"
+            className="h-10 w-10 rounded-full object-cover"
+            displayWidth={40}
             fallback={
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-[14px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
                 {creatorName.trim().slice(0, 1).toUpperCase() || '?'}
               </span>
             }
-            className="h-11 w-11 rounded-full bg-neutral-200 object-cover dark:bg-neutral-800"
           />
         </Link>
         <div className="min-w-0 flex-1">
           <Link
             href={profileHref}
-            className="block truncate text-base font-semibold leading-tight text-[#111111] hover:underline dark:text-white"
+            className="block truncate text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] hover:underline"
           >
             {creatorName}
           </Link>
-          <p className="mt-1.5 truncate text-[14px] leading-tight text-neutral-500 dark:text-neutral-400">
-            {moodLine || specialtyLine || 'Creator'}
-            <span aria-hidden className="mx-1.5 text-neutral-300 dark:text-neutral-600">·</span>
-            <time dateTime={post.createdAt} title={new Date(post.createdAt).toLocaleString()}>
+          <p className="mt-0.5 flex min-w-0 items-center text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
+            {isRepost ? (
+              <span className="inline-flex shrink-0 items-center gap-1 font-medium text-[color:var(--gn-ink)]">
+                <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="m17 2 4 4-4 4" />
+                  <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
+                  <path d="m7 22-4-4 4-4" />
+                  <path d="M21 13v1a4 4 0 0 1-4 4H3" />
+                </svg>
+                {t('Reposted')}
+              </span>
+            ) : (
+              <span className="truncate">{moodLine || (specialtyLine ? t(specialtyLine) : t('Creator'))}</span>
+            )}
+            {metaDot}
+            <time dateTime={post.createdAt} title={new Date(post.createdAt).toLocaleString()} className="shrink-0">
               {formatPostTime(post.createdAt)}
             </time>
+            {showPinned ? (
+              <>
+                {metaDot}
+                <span className="inline-flex shrink-0 items-center gap-1 font-medium text-[color:var(--gn-ink)]">
+                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7" />
+                  </svg>
+                  {t('Pinned')}
+                </span>
+              </>
+            ) : null}
+            {statusLabel ? (
+              <>
+                {metaDot}
+                <span className="shrink-0">{statusLabel}</span>
+              </>
+            ) : null}
           </p>
         </div>
         <div className="-mr-2 shrink-0">{cardControls}</div>
       </header>
 
-      <div className="flex flex-col pb-4 pl-6 pr-6 sm:pb-6 sm:pl-7 sm:pr-7">
-      <div className="min-w-0 flex-1">
-      {editing && editDraft ? (
-        <div className="pt-6">
-          <ContentPostDetailsBlock
-            post={post}
-            bucket={bucket}
-            variant="sidebar"
-            editing
-            draft={editDraft}
-            onDraftChange={setEditDraft}
-            disabled={editSaving}
-          />
-          <div className="mt-6 flex items-center justify-end gap-2">
-            <button
-              type="button"
-              onClick={cancelEdit}
-              disabled={editSaving}
-              className="rounded-lg px-4 py-2 text-[15px] font-medium text-neutral-600 transition-colors hover:text-[#111111] disabled:opacity-40 dark:text-neutral-300 dark:hover:text-white"
-            >
-              Cancel
-            </button>
-            <button
-              type="button"
-              onClick={() => void saveEdit()}
-              disabled={editSaving}
-              className="rounded-lg bg-[#111111] px-5 py-2 text-[15px] font-medium text-white transition-opacity hover:opacity-85 disabled:opacity-40 dark:bg-white dark:text-[#111111]"
-            >
-              {editSaving ? 'Saving…' : 'Save'}
-            </button>
-          </div>
-        </div>
-      ) : hasTextBlock ? (
-        <div className="pt-4">
-          {statusLabel || showPinned ? (
-            <div className="mb-4 flex flex-wrap items-center gap-2">
-              {showPinned ? (
-                <span className="inline-flex items-center gap-1.5 rounded-full border border-black/[0.08] px-3 py-1 text-[13px] font-medium text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300">
-                  <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
-                    <path strokeLinecap="round" strokeLinejoin="round" d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7" />
-                  </svg>
-                  Pinned
-                </span>
-              ) : null}
-              {statusLabel ? (
-                <span className="rounded-full border border-black/[0.08] px-3 py-1 text-[13px] text-neutral-500 dark:border-white/[0.1] dark:text-neutral-400">
-                  {statusLabel}
-                </span>
-              ) : null}
-            </div>
-          ) : null}
-
-          {title ? <ContentPostClampedTitle title={title} lines={post.mediaUrl ? 2 : 10} /> : null}
-
-          {tags.length > 0 || hasInfo ? (
-            <div className="mt-4 flex items-start justify-between gap-4">
-              <p className="flex min-w-0 flex-wrap gap-2">
-                {tags.map((tag) => (
-                  <span
-                    key={tag}
-                    className="rounded-full border border-black/[0.1] px-3 py-1 text-[13.5px] leading-tight text-[#111111] dark:border-white/[0.14] dark:text-neutral-200"
-                  >
-                    {tag}
-                  </span>
-                ))}
-              </p>
-              {hasInfo ? (
-                <button
-                  type="button"
-                  onClick={() => setInfoOpen((open) => !open)}
-                  aria-expanded={infoOpen}
-                  aria-controls={`post-info-${post.id}`}
-                  className="-my-1 inline-flex shrink-0 items-center gap-1 rounded-full px-2 py-1 text-[13.5px] font-medium text-neutral-500 transition-colors hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white"
-                >
-                  {infoOpen ? 'Less info' : 'More info'}
-                  <svg
-                    className={`h-3.5 w-3.5 transition-transform duration-300 ${infoOpen ? 'rotate-180' : ''}`}
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
-                    strokeWidth={2}
-                    aria-hidden
-                  >
-                    <path strokeLinecap="round" strokeLinejoin="round" d="m6 9 6 6 6-6" />
-                  </svg>
+      <div className={`flex flex-col px-4 ${showBar ? '' : 'pb-4 sm:pb-6'}`}>
+        <div className="min-w-0 flex-1">
+          {editing && editDraft ? (
+            <div className="pt-4">
+              <ContentPostDetailsBlock
+                post={post}
+                bucket={bucket}
+                variant="sidebar"
+                editing
+                draft={editDraft}
+                onDraftChange={setEditDraft}
+                disabled={editSaving}
+              />
+              <div className="mt-5 flex items-center justify-end gap-2">
+                <button type="button" onClick={cancelEdit} disabled={editSaving} className={DIALOG_SECONDARY_BUTTON}>
+                  {t('Cancel')}
                 </button>
-              ) : null}
-            </div>
-          ) : null}
-
-          {hasInfo ? (
-            <div
-              id={`post-info-${post.id}`}
-              className={`grid transition-[grid-template-rows,opacity] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                infoOpen ? 'grid-rows-[1fr] opacity-100' : 'grid-rows-[0fr] opacity-0'
-              }`}
-            >
-              <div className="overflow-hidden">
-                <dl className="grid grid-cols-2 gap-6 pt-4">
-                  {priceLabel ? (
-                    <div className="min-w-0">
-                      <dt className="text-[13.5px] text-neutral-500 dark:text-neutral-400">Estimated cost</dt>
-                      <dd className="mt-1 truncate text-[1.0625rem] font-semibold tabular-nums text-[#111111] dark:text-white">
-                        {priceLabel}
-                      </dd>
-                    </div>
-                  ) : null}
-                  {tools.length > 0 ? (
-                    <div className="col-start-2 min-w-0 text-right">
-                      <dt className="text-[13.5px] text-neutral-500 dark:text-neutral-400">Made with</dt>
-                      <dd className="mt-1 text-[1.0625rem] font-semibold text-[#111111] dark:text-white">
-                        {tools.join(', ')}
-                      </dd>
-                    </div>
-                  ) : null}
-                </dl>
+                <button type="button" onClick={() => void saveEdit()} disabled={editSaving} className={DIALOG_PRIMARY_BUTTON}>
+                  {editSaving ? t('Saving…') : t('Save')}
+                </button>
               </div>
             </div>
+          ) : isRepost ? (
+            title ? (
+              <div className="pt-3">
+                <ContentPostClampedTitle title={title} lines={6} editorial />
+              </div>
+            ) : null
+          ) : (
+            <PostTextBlock
+              post={feedView}
+              titleLines={hasMedia ? 2 : 10}
+              hidePrice={hasMedia}
+              headline={hasMedia}
+              editorial
+            />
+          )}
+
+          {post.repostOf ? (
+            <EmbeddedOriginal original={post.repostOf} onOpen={openViewer} onExpandVideo={openViewerAtVideo} />
+          ) : hasMedia ? (
+            <PostMedia
+              post={feedView}
+              priceLabel={editing ? '' : (post.priceInfo ?? '')}
+              bleed
+              spacing="mt-3"
+              onOpen={openViewer}
+              onExpandVideo={openViewerAtVideo}
+            />
+          ) : null}
+
+          {!editing && messageHref ? (
+            <div className="pt-4">
+              <Link href={messageHref} className={`${DIALOG_SECONDARY_BUTTON} w-full`}>
+                {post.priceInfo?.trim() ? t('Ask for a quote') : `Message ${creatorName.trim().split(/\s+/)[0] || 'creator'}`}
+              </Link>
+            </div>
           ) : null}
         </div>
-      ) : null}
-
-      {post.repostOf ? (
-        <EmbeddedOriginal
-          original={post.repostOf}
-          onOpen={() => {
-            setLightboxIndex(0);
-            setLightboxOpen(true);
-          }}
-          onExpandVideo={(time) => {
-            setLightboxVideoTime(time);
-            setLightboxOpen(true);
-          }}
-        />
-      ) : postGallery(post) ? (
-        <div className={`${mediaSpacing} -mx-6 overflow-hidden sm:mx-0 sm:rounded-xl`}>
-          <ContentPostImageCollage
-            urls={postGallery(post)!}
-            onOpen={(index) => {
-              if (editing) return;
-              setLightboxIndex(index);
-              setLightboxOpen(true);
-            }}
-          />
-        </div>
-      ) : post.mediaUrl && playableMedia ? (
-        <div className={`${mediaSpacing} -mx-6 overflow-hidden !bg-white dark:!bg-[#111111] sm:mx-0 sm:rounded-xl`}>
-          <ContentPostFeedMediaFrame
-            mediaUrl={post.mediaUrl}
-            mediaType={post.mediaType}
-            layout="feed"
-            fit="social"
-            title={title || null}
-            onExpand={(time) => {
-              setLightboxVideoTime(time);
-              setLightboxOpen(true);
-            }}
-          />
-        </div>
-      ) : post.mediaUrl ? (
-      <div
-        role="button"
-        tabIndex={0}
-        aria-label="Open media fullscreen"
-        onClick={() => {
-          if (!editing) setLightboxOpen(true);
-        }}
-        onKeyDown={(e) => {
-          if (editing) return;
-          if (e.key === 'Enter' || e.key === ' ') {
-            e.preventDefault();
-            setLightboxOpen(true);
-          }
-        }}
-        className={`${mediaSpacing} -mx-6 overflow-hidden !bg-white dark:!bg-[#111111] sm:mx-0 sm:rounded-xl ${
-          editing ? 'cursor-default' : 'cursor-pointer'
-        }`}
-      >
-        <div className="pointer-events-none w-full">
-          <ContentPostFeedMediaFrame mediaUrl={post.mediaUrl} mediaType={post.mediaType} layout="feed" fit="social" />
-        </div>
-      </div>
-      ) : null}
-
-      {!editing && messageHref ? (
-        <div className="pt-5">
-          <Link
-            href={messageHref}
-            className="flex w-full items-center justify-center gap-2.5 rounded-lg border border-black/[0.1] py-3 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/20 hover:bg-black/[0.02] dark:border-white/[0.14] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
-          >
-            <svg
-              className="h-[18px] w-[18px]"
-              viewBox="0 0 24 24"
-              fill="none"
-              stroke="currentColor"
-              strokeWidth={1.6}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              aria-hidden
-            >
-              <path d="M20.5 11.6c0 4.2-3.8 7.6-8.5 7.6a9.6 9.6 0 0 1-3.6-.7L3.5 20l1.4-3.6a7.1 7.1 0 0 1-1.4-4.8C3.5 7.4 7.3 4 12 4s8.5 3.4 8.5 7.6Z" />
-              <path d="M8.6 11.7h.01M12 11.7h.01M15.4 11.7h.01" />
-            </svg>
-            {priceLabel ? 'Ask for a quote' : `Message ${creatorName.trim().split(/\s+/)[0] || 'creator'}`}
-          </Link>
-        </div>
-      ) : null}
-
       </div>
 
-      {showRail ? (
-        <aside
-          className="mt-4 flex shrink-0"
-          aria-label="Post actions"
-        >
+      {showBar ? (
+        <footer className="px-2 pb-1.5 pt-1.5">
           <ContentPostSocialBar
-            variant="rail"
+            variant="feed"
             postId={post.id}
             initialLikes={post.likes}
             createdAt={post.createdAt}
@@ -692,11 +574,14 @@ export function CreatorContentPostCard({
             shareUrl={`/marketplace/content/${encodeURIComponent(post.id)}`}
             shareTitle={title || undefined}
           />
-        </aside>
+        </footer>
       ) : null}
-      </div>
 
-      <PostCommentsSurface open={commentsOpen && canComment && !editing} onClose={closeComments}>
+      <PostCommentsSurface
+        open={commentsOpen && canComment && !editing}
+        onClose={closeComments}
+        inlineClassName="gn-comments"
+      >
         {(mode) => (
           <CommentThread
             variant="panel"
@@ -709,6 +594,7 @@ export function CreatorContentPostCard({
             onClose={closeComments}
             onCountChange={setCommentCount}
             className={mode === 'sheet' ? COMMENTS_SHEET_CLASS : COMMENTS_INLINE_CLASS}
+            previewCount={mode === 'inline' ? COMMENTS_INLINE_PREVIEW : undefined}
           />
         )}
       </PostCommentsSurface>

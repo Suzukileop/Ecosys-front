@@ -1,9 +1,10 @@
 import { Suspense } from 'react';
 import type { Metadata } from 'next';
 import { CvGeneratorPage } from '@/components/portfolio/cv/CvGeneratorPage';
+import { msg } from '@/lib/i18n/config';
 
 export const metadata: Metadata = {
-  title: 'CV — Skraft',
+  title: msg('CV — Skraft'),
   robots: { index: false, follow: false },
 };
 

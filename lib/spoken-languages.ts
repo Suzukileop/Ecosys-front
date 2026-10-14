@@ -1,4 +1,5 @@
 import type { ProfileStrengthToolLevel } from '@/types/profile';
+import { msg } from '@/lib/i18n/config';
 
 export const SPOKEN_LANGUAGE_PRESETS = [
   'Français',
@@ -27,10 +28,10 @@ export const DEFAULT_LANGUAGE_PROFICIENCY_LEVELS: Array<{
   label: string;
   sortOrder: number;
 }> = [
-  { code: 'beginner', label: 'Beginner', sortOrder: 1 },
-  { code: 'intermediate', label: 'Intermediate', sortOrder: 2 },
-  { code: 'advanced', label: 'Advanced', sortOrder: 3 },
-  { code: 'expert', label: 'Expert', sortOrder: 4 },
+  { code: 'beginner', label: msg('Beginner'), sortOrder: 1 },
+  { code: 'intermediate', label: msg('Intermediate'), sortOrder: 2 },
+  { code: 'advanced', label: msg('Advanced'), sortOrder: 3 },
+  { code: 'expert', label: msg('Expert'), sortOrder: 4 },
 ];
 
 const LEVEL_LABELS: Record<SpokenLanguageLevel, string> = {

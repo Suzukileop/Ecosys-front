@@ -10,13 +10,15 @@ type MessageStatusIndicatorProps = {
   tone?: 'default' | 'onBrand';
 };
 
+/* Receipts drawn at 1.6 — at the old hairline weight (1 unit on a 14px glyph) a check rendered
+   under a device pixel and read as a smudge on most phones. */
 function SingleCheck({ className }: { className?: string }) {
   return (
     <svg className={className} viewBox="0 0 16 16" fill="none" aria-hidden>
       <path
         d="M3.25 8.25L6.75 11.75L12.75 4.75"
         stroke="currentColor"
-        strokeWidth="1"
+        strokeWidth="1.6"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
@@ -30,14 +32,14 @@ function DoubleCheck({ className }: { className?: string }) {
       <path
         d="M1.25 6.25L4.25 9.25L8.5 3.5"
         stroke="currentColor"
-        strokeWidth="1"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />
       <path
         d="M6.25 6.25L9.25 9.25L18.25 1.25"
         stroke="currentColor"
-        strokeWidth="1"
+        strokeWidth="1.5"
         strokeLinecap="round"
         strokeLinejoin="round"
       />

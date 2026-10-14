@@ -11,6 +11,7 @@ import {
   profileSectionSubheadingClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type AboutStringListFieldName =
   | 'aboutStrengths'
@@ -38,6 +39,7 @@ export function AboutStringListField({
   readOnly = false,
   values = [],
 }: AboutStringListFieldProps) {
+  const t = useT();
   const { fields, append, remove, move } = useFieldArray({
     control,
     name: name as 'aboutStrengths' | 'aboutSystemsTools' | 'aboutInterests',
@@ -46,7 +48,7 @@ export function AboutStringListField({
   if (readOnly) {
     const filled = values.filter((item) => item.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>Not set</p>;
+      return <p className={profileSectionEmptyClass}>{t('Not set')}</p>;
     }
     return (
       <ul className="space-y-2">
@@ -75,7 +77,7 @@ export function AboutStringListField({
       <ProfileSectionItemCount count={fields.length} limit={maxItems} unit="items" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No items added yet.</p>
+        <p className={profileSectionEmptyClass}>{t('No items added yet.')}</p>
       ) : (
         <div className="space-y-2">
           {fields.map((field, index) => (
@@ -95,7 +97,7 @@ export function AboutStringListField({
                   disabled={index === 0}
                   onClick={() => move(index, index - 1)}
                   className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                  aria-label="Move up"
+                  aria-label={t('Move up')}
                 >
                   ↑
                 </button>
@@ -104,7 +106,7 @@ export function AboutStringListField({
                   disabled={index === fields.length - 1}
                   onClick={() => move(index, index + 1)}
                   className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                  aria-label="Move down"
+                  aria-label={t('Move down')}
                 >
                   ↓
                 </button>
@@ -113,7 +115,7 @@ export function AboutStringListField({
                   onClick={() => remove(index)}
                   className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                 >
-                  Remove
+                  {t('Remove')}
                 </button>
               </div>
             </div>
@@ -127,7 +129,7 @@ export function AboutStringListField({
         onClick={() => append({ value: '' })}
         className="inline-flex items-center rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
       >
-        Add item
+        {t('Add item')}
       </button>
     </div>
   );

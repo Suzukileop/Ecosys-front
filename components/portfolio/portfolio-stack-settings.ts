@@ -22,6 +22,7 @@ import {
   type PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
 import { mergeLevelIndicatorDisplayStyle, LEVEL_STAR_CARDS_COLUMNS_PER_ROW, toolsSubtitleColorStyle, toolsTitleColorStyle, type PortfolioToolsContentAlignment, type PortfolioToolsHeaderAlignment } from '@/components/portfolio/portfolio-tools-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type {
   PortfolioStackAsideTitlePlacement,
@@ -50,10 +51,10 @@ export const PORTFOLIO_STACK_TAGS_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'compact', label: 'Compact', description: 'Petits tags — rendu dense.' },
-  { value: 'medium', label: 'Medium', description: 'Taille équilibrée (défaut).' },
-  { value: 'large', label: 'Large', description: 'Tags plus lisibles sur grand écran.' },
-  { value: 'xlarge', label: 'Extra large', description: 'Maximum — pastilles XXL.' },
+  { value: 'compact', label: msg('Compact'), description: msg('Petits tags — rendu dense.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Taille équilibrée (défaut).') },
+  { value: 'large', label: msg('Large'), description: msg('Tags plus lisibles sur grand écran.') },
+  { value: 'xlarge', label: msg('Extra large'), description: msg('Maximum — pastilles XXL.') },
 ];
 
 export function resolveStackTagsSize(
@@ -151,73 +152,73 @@ export const PORTFOLIO_STACK_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'workflow-rail',
-    label: 'Core stack rail',
-    description: 'Logo in a rounded tile, name below — one centered horizontal row.',
+    label: msg('Core stack rail'),
+    description: msg('Logo in a rounded tile, name below — one centered horizontal row.'),
   },
   {
     value: 'stack-tags',
-    label: 'Core stack tags',
-    description: 'Accent kicker and wrapped name chips on a dark surface — no logos.',
+    label: msg('Core stack tags'),
+    description: msg('Accent kicker and wrapped name chips on a dark surface — no logos.'),
   },
   {
     value: 'brand-cards',
-    label: 'Brand cards',
+    label: msg('Brand cards'),
     description:
-      'Card grid — logo left by default, 2 per row, name, description, and level.',
+      msg('Card grid — logo left by default, 2 per row, name, description, and level.'),
   },
   {
     value: 'brand-index',
-    label: 'Brand index',
+    label: msg('Brand index'),
     description:
-      'Portfolio index rows — logo left, name, category center, description right, hairline dividers.',
+      msg('Portfolio index rows — logo left, name, category center, description right, hairline dividers.'),
   },
   {
     value: 'brand-row',
-    label: 'Brand row',
+    label: msg('Brand row'),
     description:
-      'Compact horizontal grid — logo and name per cell, vertical dividers, no arrows.',
+      msg('Compact horizontal grid — logo and name per cell, vertical dividers, no arrows.'),
   },
   {
     value: 'level-progress-rows',
-    label: 'Level progress rows',
+    label: msg('Level progress rows'),
     description:
-      'Editorial list — logo, name, % and progress bar (logo color). Gap, alignment, and 1–2 columns.',
+      msg('Editorial list — logo, name, % and progress bar (logo color). Gap, alignment, and 1–2 columns.'),
   },
   {
     value: 'level-category-rows',
-    label: 'Level category rows',
+    label: msg('Level category rows'),
     description:
-      'Editorial list — logo, name + category, thin bar and % on the right (like a skills résumé).',
+      msg('Editorial list — logo, name + category, thin bar and % on the right (like a skills résumé).'),
   },
   {
     value: 'level-table-rows',
-    label: 'Level table rows',
+    label: msg('Level table rows'),
     description:
-      'Table without header — logo + name, category, colored level label, and % (no experience column).',
+      msg('Table without header — logo + name, category, colored level label, and % (no experience column).'),
   },
   {
     value: 'level-circular-cards',
-    label: 'Level circular cards',
+    label: msg('Level circular cards'),
     description:
-      'Card grid — circular ring around the logo (no inner square), name and % below.',
+      msg('Card grid — circular ring around the logo (no inner square), name and % below.'),
   },
   {
     value: 'level-star-cards',
-    label: 'Level star cards',
+    label: msg('Level star cards'),
     description:
-      'Horizontal framed cards — skill name on the left, 5-star rating on the right (no logos).',
+      msg('Horizontal framed cards — skill name on the left, 5-star rating on the right (no logos).'),
   },
   {
     value: 'level-svg-rings',
-    label: 'Level SVG rings',
+    label: msg('Level SVG rings'),
     description:
-      'Card grid — circular SVG progress ring with the tool name centered inside (no logo, no %).',
+      msg('Card grid — circular SVG progress ring with the tool name centered inside (no logo, no %).'),
   },
   {
     value: 'level-bento-categories',
-    label: 'Level bento categories',
+    label: msg('Level bento categories'),
     description:
-      'Bento grid — one card per category, logo + name + colored level label per row.',
+      msg('Bento grid — one card per category, logo + name + colored level label per row.'),
   },
 ];
 
@@ -228,18 +229,18 @@ export const PORTFOLIO_STACK_SECTION_LAYOUT_OPTIONS: {
 }[] = [
   {
     value: 'stacked',
-    label: 'Stacked',
-    description: 'Titre au-dessus de la liste (disposition classique).',
+    label: msg('Stacked'),
+    description: msg('Titre au-dessus de la liste (disposition classique).'),
   },
   {
     value: 'aside-left',
-    label: 'Title left',
-    description: 'Écran coupé en deux — titre centré à gauche, liste à droite.',
+    label: msg('Title left'),
+    description: msg('Écran coupé en deux — titre centré à gauche, liste à droite.'),
   },
   {
     value: 'aside-right',
-    label: 'Title right',
-    description: 'Écran coupé en deux — liste à gauche, titre centré à droite.',
+    label: msg('Title right'),
+    description: msg('Écran coupé en deux — liste à gauche, titre centré à droite.'),
   },
 ];
 
@@ -273,13 +274,13 @@ export const PORTFOLIO_STACK_ASIDE_TITLE_PLACEMENT_OPTIONS: {
 }[] = [
   {
     value: 'top',
-    label: 'Top',
-    description: 'Titre aligné en haut, face au début de la liste.',
+    label: msg('Top'),
+    description: msg('Titre aligné en haut, face au début de la liste.'),
   },
   {
     value: 'center',
-    label: 'Centered with list',
-    description: 'Titre centré verticalement par rapport à la hauteur de la liste à côté.',
+    label: msg('Centered with list'),
+    description: msg('Titre centré verticalement par rapport à la hauteur de la liste à côté.'),
   },
 ];
 
@@ -602,9 +603,9 @@ export function stackLevelProgressRowsDesignDefaults(): Partial<PortfolioStackSe
 }
 
 export const PORTFOLIO_STACK_TITLE_PRESET_OPTIONS = [
-  { value: 'core-stack' as const, label: 'Core Stack', description: 'Default for rail & tags.' },
-  { value: 'tech-stack' as const, label: 'Tech Stack', description: 'Default for brand cards.' },
-  { value: 'custom' as const, label: 'Custom', description: 'Your own title.' },
+  { value: 'core-stack' as const, label: msg('Core Stack'), description: msg('Default for rail & tags.') },
+  { value: 'tech-stack' as const, label: msg('Tech Stack'), description: msg('Default for brand cards.') },
+  { value: 'custom' as const, label: msg('Custom'), description: msg('Your own title.') },
 ];
 
 export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
@@ -612,6 +613,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   design: 'workflow-rail',
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'md',

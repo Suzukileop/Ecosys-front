@@ -1,12 +1,13 @@
+import './x-search.css';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { GlobalSearchResultsView } from '@/components/search/GlobalSearchResultsView';
 
 export default function DashboardSearchPage() {
   return (
     <DashboardHomeShell fullWidth>
-      <div className="mx-auto w-full max-w-[1280px] px-4 sm:px-0">
-        <GlobalSearchResultsView />
-      </div>
+      {/* The view lays itself on the navbar's frame (gutters, 1240px cap, sticky rail) like News and
+          Providers, inside the News token scope. */}
+      <GlobalSearchResultsView />
     </DashboardHomeShell>
   );
 }

@@ -17,6 +17,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsCarouselSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const CAROUSEL_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 /** A hair of overshoot on the index snap — reads as inertia settling, not a hard stop. */
@@ -520,9 +521,10 @@ function CarouselStackStrip({
   ink: string;
   rule: string;
 }) {
+  const t = useT();
   if (tools.length === 0) return null;
   return (
-    <ul className="flex flex-wrap items-center gap-x-0 gap-y-1.5" aria-label="Stack">
+    <ul className="flex flex-wrap items-center gap-x-0 gap-y-1.5" aria-label={t('Stack')}>
       {tools.map((tool, index) => (
         <li key={tool} className="flex items-center">
           {index > 0 ? (
@@ -558,6 +560,7 @@ function CarouselQuietNav({
   canNext: boolean;
   color: string;
 }) {
+  const t = useT();
   const buttonClass =
     'group/nav inline-flex items-center gap-2 bg-transparent text-[11px] font-semibold uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-55 focus:outline-none focus-visible:opacity-55 disabled:pointer-events-none disabled:opacity-25 sm:text-[12px]';
 
@@ -573,7 +576,7 @@ function CarouselQuietNav({
         disabled={!canPrev}
         className={buttonClass}
         style={{ color }}
-        aria-label="Previous project"
+        aria-label={t('Previous project')}
         data-pf-no-color-transition=""
       >
         <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden>
@@ -585,7 +588,7 @@ function CarouselQuietNav({
             strokeLinejoin="round"
           />
         </svg>
-        Prev
+        {t('Prev')}
       </button>
       <button
         type="button"
@@ -593,10 +596,10 @@ function CarouselQuietNav({
         disabled={!canNext}
         className={buttonClass}
         style={{ color }}
-        aria-label="Next project"
+        aria-label={t('Next project')}
         data-pf-no-color-transition=""
       >
-        Next
+        {t('Next')}
         <svg viewBox="0 0 16 16" className="h-3 w-3" fill="none" aria-hidden>
           <path
             d="M5.5 3.5 10 8l-4.5 4.5"
@@ -630,6 +633,7 @@ function CarouselSlide({
   presentation: PortfolioWorkPresentationSettings;
   settings: PortfolioWorkProjectsCarouselSettings;
 }) {
+  const t = useT();
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const borderColor = presentation.cardBorderColor || muted;
   const stackInk = presentation.elementStyles?.toolsList?.color || muted;
@@ -716,7 +720,7 @@ function CarouselSlide({
         {mediaUrl ? (
           <Image
             src={mediaUrl}
-            alt={title || 'Project'}
+            alt={title || t('Project')}
             fill
             draggable={false}
             sizes="(max-width: 640px) 90vw, (max-width: 1024px) 50vw, 40vw"
@@ -727,7 +731,7 @@ function CarouselSlide({
             className="flex h-full w-full items-center justify-center px-6 text-center text-sm"
             style={{ color: muted }}
           >
-            Add a thumbnail in Information → Portfolio
+            {t('Add a thumbnail in Information → Portfolio')}
           </div>
         )}
         <span
@@ -802,7 +806,7 @@ function CarouselSlide({
           rel="noopener noreferrer"
           draggable={false}
           className={wrapClass}
-          aria-label={title || 'Project'}
+          aria-label={title || t('Project')}
           onMouseEnter={onEnter}
           onMouseLeave={onLeave}
           onFocus={onEnter}
@@ -817,7 +821,7 @@ function CarouselSlide({
         href={href}
         draggable={false}
         className={wrapClass}
-        aria-label={title || 'Project'}
+        aria-label={title || t('Project')}
         onMouseEnter={onEnter}
         onMouseLeave={onLeave}
         onFocus={onEnter}
@@ -845,6 +849,7 @@ export function ProjectsCarouselSection({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const settings = mergeProjectsCarouselSettings(
     DEFAULT_PROJECTS_CAROUSEL_SETTINGS,
     presentation.projectsCarousel
@@ -917,7 +922,7 @@ export function ProjectsCarouselSection({
         }`}
         style={{ touchAction: 'pan-y' }}
         aria-roledescription="carousel"
-        aria-label={title?.trim() || 'Selected work'}
+        aria-label={title?.trim() || t('Selected work')}
         tabIndex={canNav ? 0 : undefined}
         onKeyDown={canNav ? onKeyDown : undefined}
         data-dragging={dragging ? '1' : undefined}

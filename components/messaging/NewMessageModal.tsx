@@ -1,36 +1,52 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { Avatar } from '@/components/ui/Avatar';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { createOrGetConversation, searchMessagingUsers } from '@/lib/messaging';
 import type { ConversationSummary, MessagingUserSummary } from '@/types/messaging';
+import { ContentPostDialogShell } from '@/components/creator/ContentPostDialogShell';
+import {
+  X_EMPTY,
+  X_KICKER,
+  X_KICKER_MARK,
+  X_LIST_ROW,
+  X_ROW_NAME,
+  X_SEARCH_ICON,
+  X_SEARCH_PILL,
+} from '@/components/messaging/messaging-x';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type NewMessageModalProps = {
   open: boolean;
   currentUserId?: string | null;
+  /** People to offer before anything is typed (recent conversation partners). */
+  suggestions?: MessagingUserSummary[];
   onClose: () => void;
   onStarted: (conversation: ConversationSummary) => void;
 };
 
-export function NewMessageModal({ open, currentUserId = null, onClose, onStarted }: NewMessageModalProps) {
+/**
+ * "New message" — the portalled sheet (a bottom sheet on phones, a centred card from sm). It opens
+ * on the people you already write to under a "Recent" kicker, so the common case is one tap; typing
+ * two letters switches to a search of everyone. Rows are 56px, the fill tone under the pointer.
+ * Outside the messages token scope, so colours are the literal X values (messaging-x).
+ */
+export function NewMessageModal({
+  open,
+  currentUserId = null,
+  suggestions = [],
+  onClose,
+  onStarted,
+}: NewMessageModalProps) {
+  const t = useT();
   const [search, setSearch] = useState('');
   const [results, setResults] = useState<MessagingUserSummary[]>([]);
   const [searchLoading, setSearchLoading] = useState(false);
   const [startingId, setStartingId] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const previousOverflow = document.body.style.overflow;
-    document.body.style.overflow = 'hidden';
-    return () => {
-      document.body.style.overflow = previousOverflow;
-    };
-  }, [open]);
 
   useEffect(() => {
     if (!open) return;
@@ -48,7 +64,7 @@ export function NewMessageModal({ open, currentUserId = null, onClose, onStarted
           }
         } catch (e) {
           if (!cancelled) {
-            setError(getApiErrorMessage(e, 'Unable to search users.'));
+            setError(getApiErrorMessage(e, t('Unable to search users.')));
             setResults([]);
           }
         } finally {
@@ -61,7 +77,7 @@ export function NewMessageModal({ open, currentUserId = null, onClose, onStarted
       cancelled = true;
       window.clearTimeout(timer);
     };
-  }, [search, open, currentUserId]);
+  }, [search, open, currentUserId, t]);
 
   const startConversation = async (user: MessagingUserSummary) => {
     setStartingId(user.id);
@@ -71,111 +87,106 @@ export function NewMessageModal({ open, currentUserId = null, onClose, onStarted
       onStarted(conversation);
       onClose();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to start conversation.'));
+      setError(getApiErrorMessage(e, t('Unable to start conversation.')));
     } finally {
       setStartingId(null);
     }
   };
 
-  if (!open || typeof document === 'undefined') return null;
-
   const queryTooShort = search.trim().length < 2;
   const showEmpty = !searchLoading && !queryTooShort && results.length === 0;
+  const recent = suggestions.filter((user) => user.id && user.id !== currentUserId);
 
-  return createPortal(
-    <div className="fixed inset-0 z-[80] flex items-end justify-center sm:items-center sm:p-4" role="presentation">
+  const personRow = (user: MessagingUserSummary) => (
+    <li key={user.id}>
       <button
         type="button"
-        className="absolute inset-0 bg-black/40 dark:bg-black/60"
-        aria-label="Close"
-        onClick={onClose}
-      />
-      <div
-        role="dialog"
-        aria-modal="true"
-        aria-labelledby="new-message-title"
-        className="relative z-10 flex max-h-[min(90vh,560px)] w-full max-w-md flex-col overflow-hidden rounded-t-[16px] border border-[var(--msg-border)] bg-[var(--msg-card)] sm:rounded-[var(--msg-radius)]"
+        role="option"
+        aria-selected={startingId === user.id}
+        disabled={startingId != null}
+        onClick={() => void startConversation(user)}
+        className={X_LIST_ROW}
       >
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-[var(--msg-border)] px-4 py-3">
-          <h2 id="new-message-title" className="text-base font-semibold text-[var(--msg-text)]">
-            New message
-          </h2>
-          <button
-            type="button"
-            onClick={onClose}
-            className="inline-flex h-11 w-11 items-center justify-center rounded-[10px] text-[var(--msg-muted)] transition hover:bg-[var(--msg-bg)] hover:text-[var(--msg-text)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-brand)]/40"
-            aria-label="Close"
-          >
-            <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-        </div>
+        <Avatar avatarUrl={user.avatarUrl} name={user.fullName} size="md" tone="muted" />
+        <span className={`min-w-0 flex-1 ${X_ROW_NAME}`}>{user.fullName}</span>
+        {startingId === user.id ? <LoadingSpinner size="sm" /> : null}
+      </button>
+    </li>
+  );
 
-        <div className="shrink-0 px-4 py-3">
+  return (
+    <ContentPostDialogShell open={open} title={t('New message')} onClose={onClose}>
+      <div className="news-mono">
+        <div className="sticky top-0 z-[1] bg-white px-5 pb-2 pt-1 dark:bg-black">
           <label htmlFor="new-message-search" className="sr-only">
-            Search for a contact
+            {t('Search for a contact')}
           </label>
-          <input
-            id="new-message-search"
-            type="search"
-            value={search}
-            autoFocus
-            onChange={(e) => {
-              const value = e.target.value;
-              setSearch(value);
-              if (value.trim().length < 2) {
-                setResults([]);
-                setSearchLoading(false);
-              }
-            }}
-            placeholder="Search for a contact…"
-            className="h-11 w-full rounded-[10px] border border-neutral-200 bg-neutral-100 px-3 text-sm text-neutral-900 outline-none placeholder:text-neutral-500 focus:border-neutral-400 focus:ring-2 focus:ring-neutral-400/20 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-400"
-          />
+          <div className="relative">
+            <svg className={X_SEARCH_ICON} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
+              <circle cx="11" cy="11" r="7" />
+              <path strokeLinecap="round" d="M20 20l-4.2-4.2" />
+            </svg>
+            <input
+              id="new-message-search"
+              type="search"
+              value={search}
+              autoFocus
+              enterKeyHint="search"
+              autoComplete="off"
+              onChange={(e) => {
+                const value = e.target.value;
+                setSearch(value);
+                if (value.trim().length < 2) {
+                  setResults([]);
+                  setSearchLoading(false);
+                }
+              }}
+              placeholder={t('Search people')}
+              className={X_SEARCH_PILL}
+            />
+          </div>
         </div>
 
         {error ? (
-          <div className="px-4 pb-2">
+          <div className="px-5 pb-2">
             <ErrorAlert message={error} onDismiss={() => setError(null)} />
           </div>
         ) : null}
 
-        <div className="min-h-0 flex-1 overflow-y-auto px-2 pb-4">
+        <div className="min-h-[240px] pb-4">
           {searchLoading ? (
             <div className="flex justify-center py-10">
               <LoadingSpinner />
             </div>
           ) : queryTooShort ? (
-            <p className="px-3 py-8 text-center text-sm text-[var(--msg-muted)]">
-              Enter at least 2 characters to search.
-            </p>
+            recent.length > 0 ? (
+              <>
+                <p className={X_KICKER}>
+                  <span aria-hidden className={X_KICKER_MARK} />
+                  {t('Recent')}
+                </p>
+                <ul role="listbox" aria-label={t('Recent contacts')}>
+                  {recent.map(personRow)}
+                </ul>
+              </>
+            ) : (
+              <p className={X_EMPTY}>{t('Type at least 2 characters to find someone.')}</p>
+            )
           ) : showEmpty ? (
-            <p className="px-3 py-8 text-center text-sm text-[var(--msg-muted)]">No results.</p>
+            <p className={X_EMPTY}>{t('No one matches “{trim}”.', { trim: search.trim() })}</p>
           ) : (
-            <ul className="space-y-0.5" role="listbox" aria-label="Results">
-              {results.map((user) => (
-                <li key={user.id}>
-                  <button
-                    type="button"
-                    role="option"
-                    aria-selected={startingId === user.id}
-                    disabled={startingId != null}
-                    onClick={() => void startConversation(user)}
-                    className="flex min-h-11 w-full items-center gap-3 rounded-[10px] px-3 py-2.5 text-left transition hover:bg-[var(--msg-bg)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-brand)]/40 disabled:opacity-60"
-                  >
-                    <Avatar avatarUrl={user.avatarUrl} name={user.fullName} size="sm" tone="muted" />
-                    <span className="min-w-0 flex-1 truncate text-sm font-medium text-[var(--msg-text)]">
-                      {user.fullName}
-                    </span>
-                    {startingId === user.id ? <LoadingSpinner size="sm" /> : null}
-                  </button>
-                </li>
-              ))}
-            </ul>
+            <>
+              <p className={X_KICKER}>
+                <span aria-hidden className={X_KICKER_MARK} />
+                {t('People')}
+              </p>
+              <ul role="listbox" aria-label={t('Results')}>
+                {results.map(personRow)}
+              </ul>
+            </>
           )}
         </div>
       </div>
-    </div>,
-    document.body
+    </ContentPostDialogShell>
   );
 }

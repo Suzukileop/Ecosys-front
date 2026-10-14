@@ -1,4 +1,5 @@
 import type { ProfileSectionId } from '@/components/creator/studio/profile-section-nav';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioPresenceKind = 'portfolio' | 'storefront' | 'business';
 
@@ -27,15 +28,16 @@ type PortfolioPresenceOption = {
 export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
   {
     id: 'portfolio',
-    title: 'Portfolio',
-    teaser: 'Launch a custom page in minutes',
+    title: msg('Portfolio'),
+    teaser: msg('Launch a custom page in minutes'),
     description:
-      'Your work, experience, tools and contact details on one page you can send anywhere.',
+      msg('Your work, experience, tools and contact details on one page you can send anywhere.'),
     image: '/landing/hero/presence-portfolio-v11.jpg',
-    imageAlt: 'Professional in a navy blazer with arms crossed and a wristwatch, face out of frame',
+    imageAlt: msg('Professional in a navy blazer with arms crossed and a wristwatch, face out of frame'),
     sections: [
       'about',
       'aboutPage',
+      'aboutUs',
       'experience',
       'strengths',
       'tools',
@@ -48,22 +50,22 @@ export const PORTFOLIO_PRESENCE_OPTIONS: readonly PortfolioPresenceOption[] = [
   },
   {
     id: 'storefront',
-    title: 'Storefront',
-    teaser: 'Sell products and services simply',
+    title: msg('Storefront'),
+    teaser: msg('Sell products and services simply'),
     description:
-      'Products and services with pricing, plus the pages a buyer reads before they commit.',
+      msg('Products and services with pricing, plus the pages a buyer reads before they commit.'),
     image: '/landing/hero/presence-storefront-v8.jpg',
-    imageAlt: 'Refined boutique with tailored suits, a watch vitrine and perfume shelves',
+    imageAlt: msg('Refined boutique with tailored suits, a watch vitrine and perfume shelves'),
     sections: ['about', 'aboutPage', 'aboutUs', 'services', 'products', 'faq', 'links', 'contact'],
   },
   {
     id: 'business',
-    title: 'Business presence',
-    teaser: 'A clear brand for your company',
+    title: msg('Business presence'),
+    teaser: msg('A clear brand for your company'),
     description:
-      'Team, about and gallery sections, for a brand that speaks for more than one person.',
+      msg('Team, about and gallery sections, for a brand that speaks for more than one person.'),
     image: '/landing/hero/presence-business-v11.jpg',
-    imageAlt: 'Hands working on a laptop spreadsheet at a bright desk, seen from above',
+    imageAlt: msg('Hands working on a laptop spreadsheet at a bright desk, seen from above'),
     sections: [
       'about',
       'aboutPage',
@@ -100,6 +102,9 @@ export function normalizePortfolioPresenceKind(value: unknown): PortfolioPresenc
   return null;
 }
 
+/** About us (company story, founder, tasks) is offered to every presence: a freelancer or a
+ *  solo portfolio can present their studio too. It still only renders once it has content. */
 export function portfolioPresenceShowsAboutUs(kind: string | null | undefined): boolean {
-  return kind === 'business' || kind === 'storefront';
+  void kind;
+  return true;
 }

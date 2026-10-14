@@ -8,7 +8,7 @@ import {
   type PortfolioFaqHeaderTitleSize,
   type PortfolioFaqHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 // Three short, punchy default lines — that's what makes the mast stack
 // dramatically. Each line is its own field (not one string split on
@@ -53,7 +53,7 @@ export function FaqHeaderMastheadHeader({
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = faqHeaderPaletteTokenColor(presentation.headerMastheadHeadlineColor ?? 'principal');
   const headlineWeight = HEADLINE_WEIGHT[presentation.headerMastheadHeadlineWeight ?? 'regular'];

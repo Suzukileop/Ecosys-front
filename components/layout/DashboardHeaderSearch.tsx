@@ -1,9 +1,27 @@
 'use client';
 
-import { Suspense, useEffect, useState } from 'react';
+import { Suspense, useCallback, useEffect, useRef, useState, useSyncExternalStore } from 'react';
 import { usePathname, useSearchParams } from 'next/navigation';
-import { ACCENT_ORANGE, APP_FIELD, APP_FIELD_HOVER } from '@/components/landing/landingBrand';
 import { GlobalSearchModal } from '@/components/layout/GlobalSearchModal';
+import { useT } from '@/lib/i18n/I18nProvider';
+
+/**
+ * Window event that opens the search overlay from anywhere (the empty /search page uses it), so a page
+ * can offer "Search" without owning the overlay's state.
+ */
+export const OPEN_GLOBAL_SEARCH_EVENT = 'skraft:open-search';
+
+const subscribeNoop = () => () => {};
+
+/** "⌘K" on Apple platforms, "Ctrl K" elsewhere; nothing on the server render. */
+function useShortcutLabel(): string | null {
+  const t = useT();
+  return useSyncExternalStore(
+    subscribeNoop,
+    () => (/Mac|iPhone|iPad|iPod/i.test(navigator.platform || navigator.userAgent) ? '⌘K' : t('Ctrl K')),
+    () => null
+  );
+}
 
 /**
  * Magnifier drawn to the same construction as the bar's chat and bell: one 24-unit box,
@@ -43,11 +61,8 @@ function HeaderSearchButton({
   iconOnly?: boolean;
   fluid?: boolean;
 }) {
-  const pathname = usePathname();
-  const onLegacyGround =
-    pathname.startsWith('/messages') || pathname.startsWith('/settings');
-  /** News draws no outlines: here the field is a soft tonal fill instead of a bordered white box. */
-  const onFeed = pathname.startsWith('/feed');
+  const t = useT();
+  const shortcut = useShortcutLabel();
   /*
    * `iconOnly` is the bar's form: a bare 36px disc with no plate at rest, so search sits in the
    * right-hand cluster as one control among equals instead of a wide filled pill that outweighs
@@ -59,16 +74,16 @@ function HeaderSearchButton({
       <button
         type="button"
         onClick={onClick}
-        aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
-        title={hasQuery ? label : 'Search'}
-        className="group/search relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] dark:text-neutral-300 transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400"
+        aria-label={hasQuery ? t('Search: {label}', { label }) : t('Open search')}
+        title={hasQuery ? label : t('Search')}
+        /* 40px target; the live-query dot is ink, like every other mark in the bar (no accent hue). */
+        className="group/search relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0F1419] transition-colors duration-150 hover:bg-[#EFF3F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:hover:bg-[#2A2D32] dark:focus-visible:ring-[#E7E9EA]/45"
       >
         <SearchIcon className="h-[1.3rem] w-[1.3rem]" />
         {hasQuery ? (
           <span
             aria-hidden
-            style={{ backgroundColor: ACCENT_ORANGE }}
-            className="absolute right-1.5 top-1.5 block h-1.5 w-1.5 rounded-full"
+            className="absolute right-2 top-2 block h-1.5 w-1.5 rounded-full bg-[#0F1419] dark:bg-[#E7E9EA]"
           />
         ) : null}
       </button>
@@ -81,44 +96,49 @@ function HeaderSearchButton({
         type="button"
         onClick={onClick}
         /*
-         * `fluid` is the bar's form: a `rounded-lg` grey slab rather than a pill. It is bounded
-         * and pushed to the right by its wrapper rather than filling the row — the links need the
-         * left of the bar to themselves, and a field stretched across half the width was taking
-         * attention the navigation should hold.
+         * The News search pill, as a button that opens the overlay: rounded-full on the card tone
+         * (#F7F9F9 / #16181C — the same pill as the News and Providers rails), the fill tone one step
+         * darker under the pointer, and focused from the keyboard a 2px ink ring inside the edge. The
+         * old field was a `rounded-lg` slab, the only square-cornered search on a site of pills.
+         *
+         * `fluid` is the bar's form: it fills its wrapper (the row on phones, a bounded 256 / 384px
+         * slot pushed right from lg). Phones get the full 40px height as a touch target.
          */
-        className={`flex h-10 items-center gap-2 py-0 pl-10 pr-4 text-left text-sm transition focus:outline-none ${
-          onFeed
-            ? '!border-transparent !bg-[#f5f5f6] hover:!bg-[#ececee] dark:!bg-white/[0.08] dark:hover:!bg-white/[0.12]'
-            : onLegacyGround
-              ? 'bg-[#EDEDED] hover:bg-[#E4E4E4]'
-              : `${APP_FIELD} ${APP_FIELD_HOVER}`
-        } focus:ring-2 focus:ring-[#FF5722]/20 dark:bg-white/[0.06] dark:hover:bg-white/[0.09] ${
+        className={`flex h-10 items-center gap-2 rounded-full py-0 pl-10 pr-3 text-left text-[15px] transition-[background-color,box-shadow] duration-150 bg-[#F7F9F9] hover:bg-[#EFF3F4] focus:outline-none focus-visible:bg-white focus-visible:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#16181C] dark:hover:bg-[#2A2D32] dark:focus-visible:bg-black dark:focus-visible:shadow-[inset_0_0_0_2px_#E7E9EA] ${
           fluid
-            ? 'w-full rounded-lg'
+            ? 'w-full'
             : compact
-              ? 'h-9 w-9 justify-center rounded-full p-0 sm:w-36 sm:justify-start sm:pl-9 sm:pr-4'
-              : 'h-9 w-36 rounded-full sm:w-48 md:w-56 lg:w-64'
+              ? 'w-10 justify-center p-0 sm:w-36 sm:justify-start sm:pl-9 sm:pr-4'
+              : 'w-36 sm:w-48 md:w-56 lg:w-64'
         }`}
-        aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
+        aria-label={hasQuery ? t('Search: {label}', { label }) : t('Open search')}
+        aria-haspopup="dialog"
       >
         <SearchIcon
-          className={`pointer-events-none absolute top-1/2 h-[1.1rem] w-[1.1rem] -translate-y-1/2 text-[#222222] dark:text-neutral-300 ${
-            fluid ? 'left-3.5' : 'left-3'
-          }`}
+          className={`pointer-events-none absolute top-1/2 h-[1.1rem] w-[1.1rem] -translate-y-1/2 ${
+            hasQuery ? 'text-[#0F1419] dark:text-[#E7E9EA]' : 'text-[#536471] dark:text-[#8B98A5]'
+          } ${fluid ? 'left-4' : 'left-3'}`}
         />
         {/*
-         * The resting label is the same ink as everything else, not a faded placeholder. A
-         * placeholder greyed to 50% is the convention, but the convention exists to say "this is
-         * not your text yet" — here the field is a button, there is no text to be yet, and all the
-         * grey did was make the largest control in the bar the hardest thing in it to read.
+         * Resting, the label is the secondary ink of a placeholder (#536471 / #8B98A5 — both pass AA on
+         * the pill); with a live query (on /search) it is the query itself, in ink.
          */}
         <span
           className={`min-w-0 flex-1 truncate ${
             compact && !fluid ? 'hidden sm:inline' : ''
-          } ${hasQuery ? 'font-medium' : ''} text-[#222222] dark:text-neutral-300`}
+          } ${hasQuery ? 'font-medium text-[#0F1419] dark:text-[#E7E9EA]' : 'text-[#536471] dark:text-[#8B98A5]'}`}
         >
           {label}
         </span>
+        {/* The shortcut, named where there is a keyboard and room for it (from lg). */}
+        {shortcut && fluid ? (
+          <kbd
+            aria-hidden
+            className="hidden shrink-0 rounded-md bg-white px-1.5 py-0.5 font-sans text-[11px] font-semibold leading-4 text-[#536471] dark:bg-black dark:text-[#8B98A5] lg:inline"
+          >
+            {shortcut}
+          </kbd>
+        ) : null}
       </button>
     </div>
   );
@@ -135,13 +155,14 @@ function SidebarSearchButton({
   onClick: () => void;
   collapsed: boolean;
 }) {
+  const t = useT();
   if (collapsed) {
     return (
       <button
         type="button"
         onClick={onClick}
-        title="Search"
-        aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
+        title={t('Search')}
+        aria-label={hasQuery ? t('Search: {label}', { label }) : t('Open search')}
         className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-neutral-500 transition hover:bg-neutral-200 hover:text-neutral-800 dark:text-neutral-400 dark:hover:bg-neutral-800 dark:hover:text-neutral-200"
       >
         <SearchIcon className="h-5 w-5" />
@@ -153,7 +174,7 @@ function SidebarSearchButton({
     <button
       type="button"
       onClick={onClick}
-      aria-label={hasQuery ? `Search: ${label}` : 'Open search'}
+      aria-label={hasQuery ? t('Search: {label}', { label }) : t('Open search')}
       /* A rule, not a box. The old filled slab was the heaviest object in the rail and it sat
          directly above a nav that has just lost every one of its rectangles. */
       className="group/search relative flex w-full items-center gap-2.5 border-b border-neutral-200/80 pb-2.5 text-left text-sm transition-colors duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-neutral-400 focus:outline-none focus-visible:border-neutral-900 dark:border-white/10 dark:hover:border-white/30 dark:focus-visible:border-white"
@@ -169,7 +190,7 @@ function SidebarSearchButton({
         {label}
       </span>
       <kbd className="shrink-0 font-mono text-[0.6rem] font-light tracking-[0.1em] text-[#222222] dark:text-neutral-300">
-        ⌘K
+        {t('⌘K')}
       </kbd>
       {/* Focus/hover accent drawn from the left, matching the nav's sliding marker. */}
       <span
@@ -214,17 +235,36 @@ function DashboardHeaderSearchContent({
   iconOnly?: boolean;
   fluid?: boolean;
 }) {
+  const t = useT();
   const pathname = usePathname();
   const searchParams = useSearchParams();
   const [open, setOpen] = useState(false);
+  /* Where focus was when the overlay opened (the field, usually) — it goes back there on close. */
+  const returnFocusRef = useRef<HTMLElement | null>(null);
 
   const currentQuery = pathname.startsWith('/search')
     ? (searchParams.get('q') ?? '').trim()
     : '';
   const hasQuery = currentQuery.length > 0;
-  const displayText = hasQuery ? currentQuery : 'Search anything...';
+  const displayText = hasQuery ? currentQuery : t('Search Skraft');
 
-  useGlobalSearchShortcut(() => setOpen(true));
+  const openSearch = useCallback(() => {
+    returnFocusRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+    setOpen(true);
+  }, []);
+  const closeSearch = useCallback(() => {
+    setOpen(false);
+    const target = returnFocusRef.current;
+    returnFocusRef.current = null;
+    if (target?.isConnected) window.requestAnimationFrame(() => target.focus({ preventScroll: true }));
+  }, []);
+
+  useGlobalSearchShortcut(openSearch);
+
+  useEffect(() => {
+    window.addEventListener(OPEN_GLOBAL_SEARCH_EVENT, openSearch);
+    return () => window.removeEventListener(OPEN_GLOBAL_SEARCH_EVENT, openSearch);
+  }, [openSearch]);
 
   return (
     <>
@@ -232,20 +272,22 @@ function DashboardHeaderSearchContent({
         <SidebarSearchButton
           label={displayText}
           hasQuery={hasQuery}
-          onClick={() => setOpen(true)}
+          onClick={openSearch}
           collapsed={collapsed}
         />
       ) : (
         <HeaderSearchButton
           label={displayText}
           hasQuery={hasQuery}
-          onClick={() => setOpen(true)}
+          onClick={openSearch}
           compact={compact}
           iconOnly={iconOnly}
           fluid={fluid}
         />
       )}
-      <GlobalSearchModal open={open} onClose={() => setOpen(false)} />
+      {/* On /search the overlay opens on the current query, selected, so it can be refined or
+          replaced in one gesture. */}
+      <GlobalSearchModal open={open} onClose={closeSearch} initialQuery={currentQuery} />
     </>
   );
 }
@@ -263,11 +305,12 @@ export function DashboardHeaderSearch({
   iconOnly?: boolean;
   fluid?: boolean;
 }) {
+  const t = useT();
   const fallback =
     variant === 'sidebar' ? (
-      <SidebarSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} collapsed={collapsed} />
+      <SidebarSearchButton label={t('Search Skraft')} hasQuery={false} onClick={() => {}} collapsed={collapsed} />
     ) : (
-      <HeaderSearchButton label="Search anything..." hasQuery={false} onClick={() => {}} compact={compact} iconOnly={iconOnly} fluid={fluid} />
+      <HeaderSearchButton label={t('Search Skraft')} hasQuery={false} onClick={() => {}} compact={compact} iconOnly={iconOnly} fluid={fluid} />
     );
 
   return (

@@ -1,11 +1,13 @@
 'use client';
 
+import { localeTag, trPlural } from '@/lib/i18n/active';
 import type { ReactNode } from 'react';
 import { CreatorProductDeleteZone } from '@/components/creator/CreatorProductDeleteZone';
 import { ProductReviewsList } from '@/components/marketplace/ProductReviewsList';
-import { formatPrice, isFreeProduct, PRODUCT_TYPE_LABELS } from '@/lib/marketplace-api';
+import { formatPrice, isFreeProduct, productTypeName } from '@/lib/marketplace-api';
 import { DEFAULT_PHYSICAL_STOCK, getStockStatus, STOCK_TONE_DOT } from '@/lib/product-stock';
 import type { DeliveryMode, MarketplaceProductDetail } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorProductDetailBottomProps = {
   product: MarketplaceProductDetail;
@@ -25,7 +27,7 @@ const DELIVERY_LABELS: Record<DeliveryMode, string> = {
 };
 
 function formatProductDate(value: string): string {
-  return new Date(value).toLocaleDateString('en-US', { year: 'numeric', month: 'short', day: 'numeric' });
+  return new Date(value).toLocaleDateString(localeTag(), { year: 'numeric', month: 'short', day: 'numeric' });
 }
 
 function countPhotos(product: MarketplaceProductDetail): number {
@@ -44,6 +46,7 @@ export function CreatorProductDetailBottom({
   onDeleted,
   middle,
 }: CreatorProductDetailBottomProps) {
+  const t = useT();
   const isPhysical = product.type === 'PHYSICAL';
   const free = isFreeProduct(product.priceCents);
   const stock = getStockStatus(product);
@@ -51,16 +54,14 @@ export function CreatorProductDetailBottom({
   const views = product.views ?? 0;
   const revenue = free
     ? '—'
-    : new Intl.NumberFormat('en-US', {
+    : new Intl.NumberFormat(localeTag(), {
         style: 'currency',
         currency: product.currency || 'EUR',
         minimumFractionDigits: 2,
       }).format((product.priceCents * sales) / 100);
   const conversion = views > 0 ? `${((sales / views) * 100).toFixed(1)}%` : '—';
-  const conversionHint = `${sales.toLocaleString()} ${sales === 1 ? 'sale' : 'sales'} from ${views.toLocaleString()} ${
-    views === 1 ? 'view' : 'views'
-  }`;
-  const reviewsLabel = reviewCount === 1 ? '1 review' : `${reviewCount.toLocaleString()} reviews`;
+  const conversionHint = `${trPlural(sales, '{count} sale', '{count} sales', { count: t.number(sales) })} · ${trPlural(views, '{count} view', '{count} views', { count: t.number(views) })}`;
+  const reviewsLabel = t.plural(reviewCount, '{count} review', '{count} reviews', { count: t.number(reviewCount) });
   const lastUpdated = product.updatedAt ?? product.createdAt;
 
   let title: string;
@@ -70,93 +71,91 @@ export function CreatorProductDetailBottom({
   if (isPhysical) {
     const photos = countPhotos(product);
     title = 'Inventory & sales';
-    rows = [{ label: 'Type', value: 'Material product' }];
+    rows = [{ label: t('Type'), value: 'Material product' }];
     if (stock.quantity != null) {
       const singleUnit = stock.quantity === DEFAULT_PHYSICAL_STOCK;
       rows.push(
         {
-          label: 'Availability',
+          label: t('Availability'),
           value: (
             <span className="inline-flex items-center gap-2">
               <span className={`h-2 w-2 rounded-full ${STOCK_TONE_DOT[singleUnit ? 'ok' : stock.tone]}`} aria-hidden />
-              {singleUnit ? 'In stock' : stock.label}
+              {singleUnit ? t('In stock') : stock.label}
             </span>
           ),
         },
-        { label: 'Units in stock', value: stock.quantity.toLocaleString() },
+        { label: t('Units in stock'), value: stock.quantity.toLocaleString() },
         {
-          label: 'Stock value',
+          label: t('Stock value'),
           value:
             free || stock.quantity <= 0 ? '—' : formatPrice(product.priceCents * stock.quantity, product.currency),
         }
       );
     }
-    rows.push({ label: 'Photos', value: photos === 1 ? '1 photo' : `${photos} photos` });
+    rows.push({ label: t('Photos'), value: photos === 1 ? '1 photo' : `${photos} photos` });
     tiles = [
-      { label: 'Units sold', value: sales.toLocaleString() },
-      { label: 'Revenue', value: revenue },
-      { label: 'Conversion', value: conversion, hint: conversionHint },
-      { label: 'Customer reviews', value: reviewsLabel },
-      { label: 'Listed on', value: formatProductDate(product.createdAt) },
-      { label: 'Last update', value: formatProductDate(lastUpdated) },
+      { label: t('Units sold'), value: sales.toLocaleString() },
+      { label: t('Revenue'), value: revenue },
+      { label: t('Conversion'), value: conversion, hint: conversionHint },
     ];
   } else {
     title = 'Characteristics';
-    rows = [{ label: 'Type', value: PRODUCT_TYPE_LABELS[product.type] ?? product.type }];
+    rows = [{ label: t('Type'), value: productTypeName(product.type, product.typeLabel) }];
     if (product.deliveryMode) {
-      rows.push({ label: 'Delivery', value: DELIVERY_LABELS[product.deliveryMode] ?? product.deliveryMode });
+      rows.push({ label: t('Delivery'), value: DELIVERY_LABELS[product.deliveryMode] ?? product.deliveryMode });
     }
-    if (product.fileFormat) rows.push({ label: 'Format', value: product.fileFormat });
-    if (product.fileSizeMb != null) rows.push({ label: 'File size', value: `${product.fileSizeMb} MB` });
-    if (product.language) rows.push({ label: 'Language', value: product.language });
-    if (product.version) rows.push({ label: 'Version', value: product.version });
-    rows.push({ label: 'Availability', value: 'Unlimited copies' });
+    if (product.fileFormat) rows.push({ label: t('Format'), value: product.fileFormat });
+    if (product.fileSizeMb != null) rows.push({ label: t('File size'), value: `${product.fileSizeMb} MB` });
+    if (product.language) rows.push({ label: t('Language'), value: product.language });
+    if (product.version) rows.push({ label: t('Version'), value: product.version });
+    rows.push({ label: t('Availability'), value: 'Unlimited copies' });
     tiles = [
-      { label: 'Sales', value: sales.toLocaleString() },
-      { label: 'Revenue', value: revenue },
-      { label: 'Customer reviews', value: reviewsLabel },
-      { label: 'Views', value: views.toLocaleString() },
-      { label: 'Listed on', value: formatProductDate(product.createdAt) },
-      { label: 'Last update', value: formatProductDate(lastUpdated) },
+      { label: t('Sales'), value: sales.toLocaleString() },
+      { label: t('Revenue'), value: revenue },
+      { label: t('Conversion'), value: conversion, hint: conversionHint },
     ];
   }
 
-  return (
-    <div className="space-y-16 md:space-y-20">
-      <section>
-        <h2 className="text-xl font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">{title}</h2>
-        <div className="mt-5 overflow-hidden rounded-lg border border-black/[0.06] bg-white dark:border-white/[0.08] dark:bg-[#111111]">
-          <div className="flex flex-col lg:flex-row">
-            <dl className="w-full shrink-0 divide-y divide-black/[0.06] px-6 py-1 dark:divide-white/[0.08] lg:max-w-sm lg:border-r lg:border-black/[0.06] lg:dark:border-white/[0.08]">
-              {rows.map((row) => (
-                <div key={row.label} className="flex items-center justify-between gap-4 py-4 text-[15px]">
-                  <dt className="text-neutral-500 dark:text-neutral-400">{row.label}</dt>
-                  <dd className="text-right font-medium text-[#111111] tabular-nums dark:text-white">{row.value}</dd>
-                </div>
-              ))}
-            </dl>
+  /* Facts both formats share, after their own: reviews, then the dates (the panel shows views). */
+  rows.push({ label: t('Customer reviews'), value: reviewsLabel });
+  rows.push({ label: t('Listed on'), value: formatProductDate(product.createdAt) });
+  if (lastUpdated !== product.createdAt) rows.push({ label: t('Last update'), value: formatProductDate(lastUpdated) });
 
-            <dl className="grid min-w-0 flex-1 grid-cols-2 gap-px border-t border-black/[0.06] bg-black/[0.06] dark:border-white/[0.08] dark:bg-white/[0.08] sm:grid-cols-3 lg:border-t-0">
-              {tiles.map((tile) => (
-                <div key={tile.label} className="bg-white px-6 py-5 dark:bg-[#111111]">
-                  <dt className="text-sm text-neutral-500 dark:text-neutral-400">{tile.label}</dt>
-                  <dd className="mt-2 text-xl font-semibold tracking-[-0.01em] text-[#111111] tabular-nums dark:text-white">
-                    {tile.value}
-                  </dd>
-                  {tile.hint ? (
-                    <dd className="mt-1 text-[13px] text-neutral-400 dark:text-neutral-500">{tile.hint}</dd>
-                  ) : null}
-                </div>
-              ))}
-            </dl>
-          </div>
-        </div>
+  return (
+    <div className="space-y-12 md:space-y-16">
+      <section>
+        <h2 className="text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]">{title}</h2>
+        {/* Figures first (what moved), then the facts — News blocks on the card tone, 8px apart. */}
+        <dl className="mt-4 grid grid-cols-1 gap-2 sm:grid-cols-3">
+          {tiles.map((tile) => (
+            <div key={tile.label} className="bg-[color:var(--gn-surface)] px-5 py-4">
+              <dt className="gn-kicker">{t(tile.label)}</dt>
+              <dd className="mt-1.5 text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)] tabular-nums">
+                {tile.value}
+              </dd>
+              {tile.hint ? <dd className="mt-1 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">{t(tile.hint)}</dd> : null}
+            </div>
+          ))}
+        </dl>
+        {/* The facts: the public page's Details block — two columns of rows from sm, a hairline
+            under each but the last of its column. */}
+        <dl className="mt-2 grid bg-[color:var(--gn-surface)] px-5 sm:grid-cols-2 sm:gap-x-10 sm:px-6">
+          {rows.map((row) => (
+            <div
+              key={row.label}
+              className="flex items-center justify-between gap-4 py-3.5 text-[15px] leading-5 shadow-[inset_0_-1px_0_var(--gn-line)] last:shadow-none sm:[&:nth-last-child(2):nth-child(odd)]:shadow-none"
+            >
+              <dt className="text-[color:var(--gn-ink2)]">{t(row.label)}</dt>
+              <dd className="text-right font-semibold text-[color:var(--gn-ink)] tabular-nums">{row.value}</dd>
+            </div>
+          ))}
+        </dl>
       </section>
 
       {middle}
 
-      <section className="border-t border-black/[0.06] pt-16 dark:border-white/[0.08] md:pt-20">
-        <div className="grid items-start gap-10 lg:grid-cols-[minmax(0,1fr)_300px] xl:grid-cols-[minmax(0,1fr)_320px]">
+      <section>
+        <div className="flex flex-col gap-10 md:gap-14">
           {product.isPublished ? (
             <ProductReviewsList
               productId={product.id}
@@ -166,16 +165,16 @@ export function CreatorProductDetailBottom({
             />
           ) : (
             <section>
-              <h2 className="text-xl font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">Customer reviews</h2>
-              <div className="mt-5 rounded-lg border border-dashed border-black/[0.12] px-6 py-12 text-center dark:border-white/[0.14]">
-                <p className="text-base font-medium text-[#111111] dark:text-white">No reviews yet</p>
-                <p className="mt-2 text-[15px] text-neutral-500 dark:text-neutral-400">
-                  Customer reviews appear here once the product is published.
+              <h2 className="text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]">{t('Customer reviews')}</h2>
+              <div className="mt-4 bg-[color:var(--gn-surface)] px-6 py-12 text-center">
+                <p className="text-[17px] font-bold text-[color:var(--gn-ink)]">{t('No reviews yet')}</p>
+                <p className="mt-1.5 text-[14px] text-[color:var(--gn-ink2)]">
+                  {t('Customer reviews appear here once the product is published.')}
                 </p>
               </div>
             </section>
           )}
-          <div className="lg:pt-12">
+          <div>
             <CreatorProductDeleteZone productId={product.id} productTitle={product.title} onDeleted={onDeleted} />
           </div>
         </div>

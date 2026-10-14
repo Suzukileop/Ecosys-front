@@ -5,16 +5,16 @@ import { ContentMediaPreview, contentMediaKind } from '@/components/creator/crea
 import { ProductVideoPlayer } from '@/components/marketplace/ProductVideoPlayer';
 
 /** Air below highlight titles — matches ProductDetailBottom section gaps. */
-const productHighlightTitleGapClass = 'mb-16 sm:mb-20';
+const productHighlightTitleGapClass = 'mb-6 sm:mb-10';
 
 export const PRODUCT_DEMO_SECTION_TITLE = 'See it in action';
 
 export function ProductHighlightTitle({ children }: { children: ReactNode }) {
   return (
     <h2
-      className={`product-why-title ${productHighlightTitleGapClass} text-center text-2xl font-bold tracking-tight sm:text-3xl md:text-4xl`}
+      className={`product-why-title ${productHighlightTitleGapClass} px-4 text-center text-[24px] font-extrabold leading-8 tracking-[-0.02em] sm:text-[28px] sm:leading-9`}
     >
-      <span className="text-[#FF5722]">{children}</span>
+      <span className="text-[#0F1419] dark:text-[#E7E9EA]">{children}</span>
     </h2>
   );
 }
@@ -22,7 +22,7 @@ export function ProductHighlightTitle({ children }: { children: ReactNode }) {
 function HighlightLineIcon({ variant }: { variant: 'star' | 'play' }) {
   return (
     <span
-      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#FF5722]/10 text-[#FF5722] dark:bg-[#FF5722]/15"
+      className="mt-0.5 flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[#EFF3F4] text-[#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA]"
       aria-hidden
     >
       {variant === 'play' ? (
@@ -63,7 +63,7 @@ export function ProductHighlightLines({
           style={{ animationDelay: `${120 + index * 70}ms` }}
         >
           <HighlightLineIcon variant={icon} />
-          <p className="min-w-0 flex-1 text-left text-base leading-relaxed text-neutral-700 sm:text-lg dark:text-neutral-300">
+          <p className="min-w-0 flex-1 pt-2 text-left text-[15px] leading-[22px] text-[#0F1419] sm:text-[17px] sm:leading-6 dark:text-[#E7E9EA]">
             {line}
           </p>
         </li>

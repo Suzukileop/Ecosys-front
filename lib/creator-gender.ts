@@ -1,4 +1,6 @@
-export const CREATOR_GENDER_VALUES = ['Male', 'Female'] as const;
+import { msg } from '@/lib/i18n/config';
+
+export const CREATOR_GENDER_VALUES = [msg('Male'), msg('Female')] as const;
 
 type CreatorGender = (typeof CREATOR_GENDER_VALUES)[number];
 

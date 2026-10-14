@@ -76,6 +76,7 @@ import {
   type PortfolioFaqHeaderAccentCountAlignment,
   type PortfolioFaqHeaderBillboardWordStyle,
 } from '@/components/portfolio/portfolio-faq-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 export {
   type PortfolioFaqHeaderDesign,
@@ -128,10 +129,10 @@ export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'principal', label: 'Principal', description: 'Primary accent token.' },
-  { value: 'secondaire', label: 'Secondary', description: 'Secondary accent token (previous default).' },
-  { value: 'neutre', label: 'Neutral', description: 'Neutral surface token.' },
-  { value: 'texteMuted', label: 'Muted', description: 'Muted text token, softened.' },
+  { value: 'principal', label: msg('Principal'), description: msg('Primary accent token.') },
+  { value: 'secondaire', label: msg('Secondary'), description: msg('Secondary accent token (previous default).') },
+  { value: 'neutre', label: msg('Neutral'), description: msg('Neutral surface token.') },
+  { value: 'texteMuted', label: msg('Muted'), description: msg('Muted text token, softened.') },
 ];
 
 export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS: {
@@ -139,10 +140,10 @@ export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'sm', label: 'S', description: 'Light rounding.' },
-  { value: 'md', label: 'M', description: 'Default rounding.' },
-  { value: 'lg', label: 'L', description: 'Generous rounding.' },
-  { value: 'xl', label: 'XL', description: 'Very rounded.' },
+  { value: 'sm', label: 'S', description: msg('Light rounding.') },
+  { value: 'md', label: 'M', description: msg('Default rounding.') },
+  { value: 'lg', label: 'L', description: msg('Generous rounding.') },
+  { value: 'xl', label: 'XL', description: msg('Very rounded.') },
 ];
 
 export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS: {
@@ -150,9 +151,9 @@ export const PORTFOLIO_FAQ_BENTO_DUAL_CARD_BORDER_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'none', label: 'None', description: 'No border.' },
-  { value: 'soft', label: 'Soft', description: 'Thin hairline, blended into the card color (default).' },
-  { value: 'solid', label: 'Solid', description: 'Crisper, more visible line.' },
+  { value: 'none', label: msg('None'), description: msg('No border.') },
+  { value: 'soft', label: msg('Soft'), description: msg('Thin hairline, blended into the card color (default).') },
+  { value: 'solid', label: msg('Solid'), description: msg('Crisper, more visible line.') },
 ];
 
 const PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_TOKENS: PortfolioFaqBentoDualCardColorToken[] = [
@@ -641,14 +642,14 @@ export const PORTFOLIO_FAQ_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across every FAQ design.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across every FAQ design.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -697,48 +698,48 @@ export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'kinetic-split',
-    label: 'Kinetic split',
-    description: 'Boxless, monochrome: fixed title left, questions right — hover sharpens one, fades the rest.',
+    label: msg('Kinetic split'),
+    description: msg('Boxless, monochrome: fixed title left, questions right — hover sharpens one, fades the rest.'),
   },
   {
     value: 'floating-gallery',
-    label: 'Floating gallery',
-    description: 'Boxless, monochrome: a cursor-borne shape and a frosted glass panel replace every card.',
+    label: msg('Floating gallery'),
+    description: msg('Boxless, monochrome: a cursor-borne shape and a frosted glass panel replace every card.'),
   },
   {
     value: 'editorial-masonry',
-    label: 'Editorial masonry',
-    description: 'Paper-white, boxless: an asymmetric offset two-column grid — hover isolates one question, blurs the rest.',
+    label: msg('Editorial masonry'),
+    description: msg('Paper-white, boxless: an asymmetric offset two-column grid — hover isolates one question, blurs the rest.'),
   },
   {
     value: 'prism-cards',
-    label: 'Prism cards',
-    description: 'Big white accordion cards — the open card liquid-fades to a violet-electric fill from the click point.',
+    label: msg('Prism cards'),
+    description: msg('Big white accordion cards — the open card liquid-fades to a violet-electric fill from the click point.'),
   },
   {
     value: 'star-scroll',
-    label: 'Star scroll',
-    description: 'Giant title left, an 8-point star right that spins with page scroll — bars melt into the stage until hovered.',
+    label: msg('Star scroll'),
+    description: msg('Giant title left, an 8-point star right that spins with page scroll — bars melt into the stage until hovered.'),
   },
   {
     value: 'tri-grid',
-    label: 'Tri grid',
-    description: 'Iconless, borderless: three parallax columns (center offset and slower) — hover isolates one block, blurs the rest.',
+    label: msg('Tri grid'),
+    description: msg('Iconless, borderless: three parallax columns (center offset and slower) — hover isolates one block, blurs the rest.'),
   },
   {
     value: 'split-index',
-    label: 'Split index',
-    description: 'Giant title, a narrow index rail beside a hairline-divided list with filled 01/02/03 badges.',
+    label: msg('Split index'),
+    description: msg('Giant title, a narrow index rail beside a hairline-divided list with filled 01/02/03 badges.'),
   },
   {
     value: 'centered-focus',
-    label: 'Centered focus',
-    description: 'Borderless, centered list resting at low opacity — hover snaps one question into focus and a soft zoom.',
+    label: msg('Centered focus'),
+    description: msg('Borderless, centered list resting at low opacity — hover snaps one question into focus and a soft zoom.'),
   },
   {
     value: 'bento-dual',
-    label: 'Bento dual',
-    description: 'Vivid bento cards that flip on hover — the question slides away as a contrasting answer panel rises in.',
+    label: msg('Bento dual'),
+    description: msg('Vivid bento cards that flip on hover — the question slides away as a contrasting answer panel rises in.'),
   },
 ];
 

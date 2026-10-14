@@ -16,6 +16,7 @@ import {
   aboutBannerScrollParent,
   aboutBannerWatchEnter,
 } from '@/components/portfolio/portfolio-about-scroll-utils';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type LanguageDisplayItem = {
   name: string;
@@ -321,6 +322,7 @@ export function AboutIndexEditorialLayout({
   cardBorder: string;
   className?: string;
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const reduceMotion = Boolean(useReducedMotion());
   useIndexGsapReveal(rootRef, reduceMotion);
@@ -354,7 +356,7 @@ export function AboutIndexEditorialLayout({
 
   return (
     <div ref={rootRef} className={`pf-about-index relative w-full${className ? ` ${className}` : ''}`}>
-      <IndexRow indexNumber={sectionIndex++} label="Profile" bodyColor={bodyColor}>
+      <IndexRow indexNumber={sectionIndex++} label={t('Profile')} bodyColor={bodyColor}>
         <div className="space-y-6">
           <div>
             <h2 className={`font-light tracking-tight ${headingClass}`} style={{ color: subtitleColor }}>
@@ -385,7 +387,7 @@ export function AboutIndexEditorialLayout({
       {showSkillsSection ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label="Skills" bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Skills')} bodyColor={bodyColor}>
             <div className="space-y-8">
               {showSkillsBlock ? (
                 <div className="space-y-3">
@@ -393,7 +395,7 @@ export function AboutIndexEditorialLayout({
                     className="text-sm font-semibold uppercase tracking-[0.18em]"
                     style={{ color: bodyColor, opacity: 0.5 }}
                   >
-                    Core skills
+                    {t('Core skills')}
                   </p>
                   <KeywordRow
                     items={visibleSkills}
@@ -409,7 +411,7 @@ export function AboutIndexEditorialLayout({
                     className="text-sm font-semibold uppercase tracking-[0.18em]"
                     style={{ color: bodyColor, opacity: 0.5 }}
                   >
-                    Strengths
+                    {t('Strengths')}
                   </p>
                   <KeywordRow
                     items={visibleStrengths}
@@ -427,7 +429,7 @@ export function AboutIndexEditorialLayout({
       {showLanguagesBlock ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label="Languages" bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Languages')} bodyColor={bodyColor}>
             <div className="flex flex-wrap items-baseline gap-x-12 gap-y-8">
               {languageItems.map((lang) => (
                 <LanguageBlock
@@ -447,7 +449,7 @@ export function AboutIndexEditorialLayout({
       {showIndexSection ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label="Index" bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Index')} bodyColor={bodyColor}>
             <div>
               {showEducationBlock
                 ? visibleEducation.map((entry) => (
@@ -478,12 +480,12 @@ export function AboutIndexEditorialLayout({
       {showInterestsBlock ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label="Notes" bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Notes')} bodyColor={bodyColor}>
             <p
               className="pf-about-index-reveal max-w-2xl font-serif text-xl italic leading-relaxed sm:text-2xl"
               style={{ color: bodyColor, opacity: 0.85 }}
             >
-              Also into {joinWithAnd(visibleInterests)}.
+              {t('Also into {joinWithAnd}.', { joinWithAnd: joinWithAnd(visibleInterests) })}
             </p>
           </IndexRow>
         </>

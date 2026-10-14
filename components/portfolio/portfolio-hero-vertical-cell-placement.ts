@@ -1,3 +1,4 @@
+import { msg } from '@/lib/i18n/config';
 export type HeroVerticalCellPlacement =
   | 'top-left'
   | 'top-center'
@@ -18,15 +19,15 @@ const HERO_VERTICAL_CELL_PLACEMENT_OPTIONS: {
   row: 'top' | 'center' | 'bottom';
   col: 'left' | 'center' | 'right';
 }[] = [
-  { value: 'top-left', label: 'Top left', row: 'top', col: 'left' },
-  { value: 'top-center', label: 'Top center', row: 'top', col: 'center' },
-  { value: 'top-right', label: 'Top right', row: 'top', col: 'right' },
-  { value: 'center-left', label: 'Center left', row: 'center', col: 'left' },
-  { value: 'center', label: 'Center', row: 'center', col: 'center' },
-  { value: 'center-right', label: 'Center right', row: 'center', col: 'right' },
-  { value: 'bottom-left', label: 'Bottom left', row: 'bottom', col: 'left' },
-  { value: 'bottom-center', label: 'Bottom center', row: 'bottom', col: 'center' },
-  { value: 'bottom-right', label: 'Bottom right', row: 'bottom', col: 'right' },
+  { value: 'top-left', label: msg('Top left'), row: 'top', col: 'left' },
+  { value: 'top-center', label: msg('Top center'), row: 'top', col: 'center' },
+  { value: 'top-right', label: msg('Top right'), row: 'top', col: 'right' },
+  { value: 'center-left', label: msg('Center left'), row: 'center', col: 'left' },
+  { value: 'center', label: msg('Center'), row: 'center', col: 'center' },
+  { value: 'center-right', label: msg('Center right'), row: 'center', col: 'right' },
+  { value: 'bottom-left', label: msg('Bottom left'), row: 'bottom', col: 'left' },
+  { value: 'bottom-center', label: msg('Bottom center'), row: 'bottom', col: 'center' },
+  { value: 'bottom-right', label: msg('Bottom right'), row: 'bottom', col: 'right' },
 ];
 
 const X_FOR_COL: Record<'left' | 'center' | 'right', number> = {

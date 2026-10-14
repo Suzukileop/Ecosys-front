@@ -6,6 +6,7 @@ import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import { ContentPostAudioPlayer, ContentPostVideoPlayer } from '@/components/creator/ContentPostMediaPlayer';
 import { SocialAudioPlayer, SocialVideoPlayer } from '@/components/creator/ContentPostSocialPlayers';
 import type { ContentMediaType } from '@/types/creator-content';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Feed frames top out around the post card width; the optimizer picks the closest rung. */
 const FRAME_WIDTHS = [384, 640, 828, 1080, 1200] as const;
@@ -33,18 +34,25 @@ function clampAspect(width: number, height: number) {
 const SOCIAL_MIN_ASPECT_IMAGE = 1;
 const SOCIAL_MIN_ASPECT_VIDEO = 1;
 const SOCIAL_MAX_ASPECT = 1.91;
+/**
+ * Inside a quoted original (a repost's tinted box, `letterbox="transparent"`) the frame hugs wide
+ * media instead: clamping a 2.4:1 screenshot to 1.91:1 left empty bands above and below it inside
+ * the box. Only truly extreme panoramas are still capped.
+ */
+const SOCIAL_MAX_ASPECT_HUG = 4;
 
 function frameHeightForWidth(
   containerWidth: number,
   mediaWidth: number,
   mediaHeight: number,
   social = false,
-  video = false
+  video = false,
+  maxAspect = SOCIAL_MAX_ASPECT
 ) {
   if (social) {
     const ratio = mediaWidth > 0 && mediaHeight > 0 ? mediaWidth / mediaHeight : 1;
     const minAspect = video ? SOCIAL_MIN_ASPECT_VIDEO : SOCIAL_MIN_ASPECT_IMAGE;
-    const aspect = Math.min(SOCIAL_MAX_ASPECT, Math.max(minAspect, ratio));
+    const aspect = Math.min(maxAspect, Math.max(minAspect, ratio));
     return Math.round(containerWidth / aspect);
   }
   const aspect = clampAspect(mediaWidth, mediaHeight);
@@ -73,6 +81,13 @@ type ContentPostFeedMediaFrameProps = {
    * Reserved for the first card of a feed — every other one costs more than it saves.
    */
   priority?: boolean;
+  /**
+   * What the bands around an image that is narrower or shorter than its frame are painted with
+   * (`social` fit). `card` is the page's own surface; `transparent` lets the container behind show
+   * through — for a frame sitting inside a tinted box, where a card-coloured band would read as the
+   * media escaping the box.
+   */
+  letterbox?: 'card' | 'transparent';
 };
 
 export function ContentPostFeedMediaFrame({
@@ -85,7 +100,9 @@ export function ContentPostFeedMediaFrame({
   title,
   onExpand,
   priority = false,
+  letterbox = 'card',
 }: ContentPostFeedMediaFrameProps) {
+  const t = useT();
   const containerRef = useRef<HTMLDivElement>(null);
   const kind = contentMediaKind(mediaUrl, fileName, mediaType);
   const [frameHeight, setFrameHeight] = useState(DEFAULT_FRAME_HEIGHT);
@@ -94,8 +111,9 @@ export function ContentPostFeedMediaFrame({
   const updateFrame = useCallback((mediaWidth: number, mediaHeight: number) => {
     const width = containerRef.current?.clientWidth ?? 0;
     if (width <= 0) return;
-    setFrameHeight(frameHeightForWidth(width, mediaWidth, mediaHeight, fit === 'social', kind === 'video'));
-  }, [fit, kind]);
+    const maxAspect = letterbox === 'transparent' ? SOCIAL_MAX_ASPECT_HUG : SOCIAL_MAX_ASPECT;
+    setFrameHeight(frameHeightForWidth(width, mediaWidth, mediaHeight, fit === 'social', kind === 'video', maxAspect));
+  }, [fit, kind, letterbox]);
 
   /*
    * Only audio and PDF need a height up front. Image and video frames learn theirs from the
@@ -149,7 +167,9 @@ export function ContentPostFeedMediaFrame({
         fit === 'social'
           ? kind === 'video'
             ? 'bg-black'
-            : 'bg-white dark:bg-[#111111]'
+            : letterbox === 'transparent'
+              ? 'bg-transparent'
+              : 'bg-white dark:bg-[#111111]'
           : 'bg-neutral-100 dark:bg-neutral-950'
       } ${
         fillParent ? 'h-full min-h-0' : ''
@@ -181,7 +201,7 @@ export function ContentPostFeedMediaFrame({
                 📄
               </span>
               <p className="text-sm font-semibold text-neutral-800 dark:text-white/90">
-                {fileName ?? (locale === 'fr' ? 'Document PDF' : 'PDF document')}
+                {fileName ?? (locale === 'fr' ? t('Document PDF') : t('PDF document'))}
               </p>
               <a
                 href={mediaUrl}
@@ -189,7 +209,7 @@ export function ContentPostFeedMediaFrame({
                 rel="noreferrer"
                 className="text-sm font-semibold text-orange-600 hover:text-orange-500 dark:text-orange-400 dark:hover:text-orange-300"
               >
-                {locale === 'fr' ? 'Ouvrir le PDF' : 'Open PDF'}
+                {locale === 'fr' ? t('Ouvrir le PDF') : t('Open PDF')}
               </a>
             </div>
           ) : (

@@ -4,6 +4,7 @@ import { useEffect, useRef, useState } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { useDashboardNavItems, isNavActive } from '@/components/layout/dashboard/useDashboardNavItems';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * The main navigation, sitting immediately after the wordmark on the left of the bar.
@@ -32,10 +33,14 @@ const LINK_CLS =
  *
  * No opacity step, no muted-to-full ramp, no plate. The hover changes nothing here.
  */
-const IDLE_CLS = 'text-[#222222] dark:text-neutral-300';
-const ACTIVE_CLS = 'text-[#0A0A0A] dark:text-white';
+const IDLE_CLS = 'text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]';
+const ACTIVE_CLS = 'text-[#0F1419] dark:text-[#E7E9EA]';
 
 /**
+ * Where you are: the label steps up to full ink and a 2px brand-orange rule sits under it. (Orange
+ * came back here on purpose, 2026-10: the owner chose to spend the accent on exactly three states —
+ * the active tab, focus, a primary CTA's hover. Earlier note kept below for the reasoning against.)
+ *
  * Where you are, said without colour.
  *
  * The accent used to carry this — the active entry was simply orange. It is gone: the bar is the
@@ -54,7 +59,7 @@ function NavLabel({ active, children }: { active: boolean; children: React.React
       {active ? (
         <span
           aria-hidden
-          className="pointer-events-none absolute -bottom-1 left-0 right-0 block h-px bg-current"
+          className="pointer-events-none absolute -bottom-1.5 left-0 right-0 block h-0.5 rounded-full bg-[#0F1419] dark:bg-[#E7E9EA]"
         />
       ) : null}
     </span>
@@ -90,6 +95,7 @@ function NavbarGroup({
   active: boolean;
   items: { href: string; label: string }[];
 }) {
+  const t = useT();
   const pathname = usePathname();
   const [open, setOpen] = useState(false);
   const rootRef = useRef<HTMLDivElement | null>(null);
@@ -156,7 +162,7 @@ function NavbarGroup({
                   : 'text-[#222222] dark:text-neutral-300'
               }`}
             >
-              {child.label}
+              {t(child.label)}
             </Link>
           );
         })}
@@ -166,21 +172,22 @@ function NavbarGroup({
 }
 
 export function DashboardNavbarLinks() {
+  const t = useT();
   const items = useDashboardNavItems();
   if (items.length === 0) return null;
 
   return (
     <nav
-      aria-label="Main navigation"
+      aria-label={t('Main navigation')}
       className="hidden shrink-0 items-center gap-8 lg:flex xl:gap-10"
     >
       {items.map(({ item, children, active, target, key }) =>
         children.length > 0 ? (
           <NavbarGroup
             key={key}
-            label={item.label}
+            label={t(item.label)}
             active={active}
-            items={children.map((child) => ({ href: child.href, label: child.label }))}
+            items={children.map((child) => ({ href: child.href, label: t(child.label) }))}
           />
         ) : (
           <Link
@@ -191,7 +198,7 @@ export function DashboardNavbarLinks() {
             aria-current={active ? 'page' : undefined}
             className={`${LINK_CLS} ${active ? ACTIVE_CLS : IDLE_CLS}`}
           >
-            <NavLabel active={active}>{item.label}</NavLabel>
+            <NavLabel active={active}>{t(item.label)}</NavLabel>
           </Link>
         )
       )}

@@ -6,13 +6,15 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { ErrorAlert } from '@/components/ui/ErrorAlert';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import type { ReportReason } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const REPORT_REASONS: { value: ReportReason; label: string }[] = [
-  { value: 'SPAM', label: 'Spam' },
-  { value: 'HARASSMENT', label: 'Harassment' },
-  { value: 'INAPPROPRIATE', label: 'Inappropriate content' },
-  { value: 'COPYRIGHT', label: 'Copyright violation' },
-  { value: 'OTHER', label: 'Other' },
+  { value: 'SPAM', label: msg('Spam') },
+  { value: 'HARASSMENT', label: msg('Harassment') },
+  { value: 'INAPPROPRIATE', label: msg('Inappropriate content') },
+  { value: 'COPYRIGHT', label: msg('Copyright violation') },
+  { value: 'OTHER', label: msg('Other') },
 ];
 
 type CommentReportModalProps = {
@@ -23,6 +25,7 @@ type CommentReportModalProps = {
 };
 
 export function CommentReportModal({ commentId, open, onClose, onReported }: CommentReportModalProps) {
+  const t = useT();
   const [reason, setReason] = useState<ReportReason>('SPAM');
   const [details, setDetails] = useState('');
   const [submitting, setSubmitting] = useState(false);
@@ -45,7 +48,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
         setReason('SPAM');
       }, 1200);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to send the report.'));
+      setError(getApiErrorMessage(e, t('Unable to send the report.')));
     } finally {
       setSubmitting(false);
     }
@@ -56,7 +59,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
       <button
         type="button"
         className="absolute inset-0 bg-black/50"
-        aria-label="Close"
+        aria-label={t('Close')}
         onClick={onClose}
       />
       <div
@@ -66,10 +69,10 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
         className="relative w-full max-w-md rounded-2xl border border-neutral-200 bg-white p-5 shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
       >
         <h2 id="report-comment-title" className="text-lg font-bold text-neutral-900 dark:text-white">
-          Report this comment
+          {t('Report this comment')}
         </h2>
         <p className="mt-1 text-sm text-neutral-500">
-          Our team will review your report.
+          {t('Our team will review your report.')}
         </p>
 
         {error && (
@@ -80,13 +83,13 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
 
         {success ? (
           <p className="mt-4 text-sm font-medium text-green-700 dark:text-green-400">
-            Report sent. Thank you.
+            {t('Report sent. Thank you.')}
           </p>
         ) : (
           <div className="mt-4 space-y-3">
             <div>
               <label htmlFor="report-reason" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Reason
+                {t('Reason')}
               </label>
               <select
                 id="report-reason"
@@ -96,14 +99,14 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
               >
                 {REPORT_REASONS.map((item) => (
                   <option key={item.value} value={item.value}>
-                    {item.label}
+                    {t(item.label)}
                   </option>
                 ))}
               </select>
             </div>
             <div>
               <label htmlFor="report-details" className="block text-sm font-medium text-neutral-700 dark:text-neutral-300">
-                Details (optional)
+                {t('Details (optional)')}
               </label>
               <textarea
                 id="report-details"
@@ -111,7 +114,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
                 value={details}
                 onChange={(e) => setDetails(e.target.value)}
                 className="mt-1 w-full rounded-xl border border-neutral-200 px-3 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
-                placeholder="Describe the issue…"
+                placeholder={t('Describe the issue…')}
               />
             </div>
           </div>
@@ -124,7 +127,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
             disabled={submitting}
             className="rounded-xl border border-neutral-200 px-4 py-2 text-sm font-medium text-neutral-700 hover:bg-neutral-50 dark:border-neutral-700 dark:text-neutral-300"
           >
-            Cancel
+            {t('Cancel')}
           </button>
           {!success && (
             <button
@@ -133,7 +136,7 @@ export function CommentReportModal({ commentId, open, onClose, onReported }: Com
               disabled={submitting}
               className="inline-flex items-center rounded-xl bg-[#111111] px-4 py-2 text-sm font-semibold text-white transition-opacity hover:opacity-85 disabled:opacity-40 dark:bg-white dark:text-[#111111]"
             >
-              {submitting ? <LoadingSpinner size="sm" /> : 'Send report'}
+              {submitting ? <LoadingSpinner size="sm" /> : t('Send report')}
             </button>
           )}
         </div>

@@ -8,7 +8,7 @@ import {
   type PortfolioFaqHeaderTitleSize,
   type PortfolioFaqHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-faq-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const DEFAULT_LABEL_TEXT = 'FAQ';
 const DEFAULT_TITLE_TEXT = 'Common questions';
@@ -62,7 +62,7 @@ export function FaqHeaderSplitHeadingHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FAQ_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const title = (presentation.headerSplitHeadingTitleText || DEFAULT_TITLE_TEXT).trim();
   const label = (presentation.headerSplitHeadingLabelText || DEFAULT_LABEL_TEXT).trim();

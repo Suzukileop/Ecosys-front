@@ -18,6 +18,7 @@ import {
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
 import { measurePortfolioNavClearanceForScroll } from '@/components/portfolio/portfolio-nav-top-clearance';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger, ScrollToPlugin);
@@ -112,6 +113,7 @@ function splitWorkDuoTitle(firstName: string, specialty: string): string[] {
  * and right Selected work duo with See all flush to the last card.
  */
 export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -121,7 +123,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
 
   const firstName = useMemo(() => {
     const raw = (data.fullName || data.nameLead || '').trim();
-    return raw.split(/\s+/)[0] || 'Name';
+    return raw.split(/\s+/)[0] || t('Name');
   }, [data.fullName, data.nameLead]);
 
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -373,7 +375,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                 className="inline-flex h-12 items-center justify-center rounded-xl px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.12em] transition hover:brightness-110"
                 style={{ backgroundColor: principal, color: fond }}
               >
-                Let&apos;s talk
+                {t('Let\'s talk')}
               </a>
               <a
                 href={secondaryHref}
@@ -381,7 +383,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                 className="inline-flex h-12 items-center justify-center rounded-xl border-2 px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.12em] transition hover:opacity-85"
                 style={{ borderColor: principal, color: principal, backgroundColor: 'transparent' }}
               >
-                View projects
+                {t('View projects')}
               </a>
             </div>
 
@@ -400,7 +402,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                 className="mb-0 ml-0 mr-0 mt-2 font-sans text-[0.7rem] font-semibold uppercase tracking-[0.16em]"
                 style={{ color: muted }}
               >
-                Years of experience
+                {t('Years of experience')}
               </p>
             </div>
           </div>
@@ -413,7 +415,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                 className="inline-flex items-center font-sans text-[0.72rem] font-semibold uppercase tracking-[0.14em] transition hover:opacity-70"
                 style={{ color: muted }}
               >
-                See all&nbsp;—
+                {t('See all —')}
               </a>
             </div>
 
@@ -428,7 +430,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                       }
                       className="pf-work-duo-card relative block aspect-[3/4] h-full w-full overflow-hidden rounded-[1.75rem] lg:aspect-auto lg:min-h-[22rem] lg:rounded-[2rem]"
                       style={{ backgroundColor: neutre }}
-                      aria-label={work.title || 'View project'}
+                      aria-label={work.title || t('View project')}
                       data-pf-no-color-transition=""
                     >
                       <span
@@ -441,7 +443,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                         >
                           <Image
                             src={work.imageUrl}
-                            alt={work.title || 'Selected work'}
+                            alt={work.title || t('Selected work')}
                             fill
                             sizes="(max-width: 639px) 100vw, 28vw"
                             className="object-cover object-center"

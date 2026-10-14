@@ -1,10 +1,20 @@
+import { msg } from '@/lib/i18n/config';
+import { localeTag, tr, trPlural } from '@/lib/i18n/active';
 import api from '@/lib/api';
 import { normalizeSpringPage } from '@/lib/pagination';
 import type { NotificationDto, PagedResponse, SpringPageRaw } from '@/types/profile';
 import { SIGNED_IN_HOME } from '@/lib/routes';
+import { computeHeaderBadgeCount, createHeaderBadgeStore } from '@/lib/header-badge';
 
-const BADGE_BASELINE_KEY = 'notification_badge_baseline';
 export const NOTIFICATION_BADGE_DISMISS_EVENT = 'notification-badge-dismiss';
+
+export const notificationBadgeStore = createHeaderBadgeStore(
+  'notification_badge_baseline',
+  NOTIFICATION_BADGE_DISMISS_EVENT
+);
+
+/** A comment on one of the viewer's posts: `refId` is the post, `refSecondaryId` the comment. */
+export const MARKETPLACE_NEW_COMMENT_TYPE = 'MARKETPLACE_NEW_COMMENT';
 
 /**
  * Profile visits stay as individual rows (no same-day aggregation).
@@ -23,9 +33,9 @@ export type NotificationFilter = 'all' | 'unread';
 type NotificationTimeGroup = 'nouveau' | 'aujourdhui' | 'plus_tot';
 
 export const NOTIFICATION_GROUP_LABELS: Record<NotificationTimeGroup, string> = {
-  nouveau: 'New',
-  aujourdhui: 'Today',
-  plus_tot: 'Earlier',
+  nouveau: msg('New'),
+  aujourdhui: msg('Today'),
+  plus_tot: msg('Earlier'),
 };
 
 export async function fetchNotifications(
@@ -51,25 +61,17 @@ export async function markAllNotificationsRead(): Promise<void> {
   await api.put('/api/notifications/read-all');
 }
 
-export function getNotificationBadgeBaseline(): number {
-  if (typeof window === 'undefined') return 0;
-  const raw = sessionStorage.getItem(BADGE_BASELINE_KEY);
-  const n = raw != null ? Number(raw) : 0;
-  return Number.isFinite(n) ? n : 0;
+export function getNotificationBadgeBaseline(userId?: string | null): number {
+  return notificationBadgeStore.read(userId);
 }
 
 /** Masque le badge sans marquer les notifications comme lues (style Facebook). */
-export function dismissNotificationBadge(currentUnread: number): void {
-  if (typeof window === 'undefined') return;
-  sessionStorage.setItem(BADGE_BASELINE_KEY, String(currentUnread));
-  window.dispatchEvent(
-    new CustomEvent(NOTIFICATION_BADGE_DISMISS_EVENT, { detail: currentUnread }),
-  );
+export function dismissNotificationBadge(currentUnread: number, userId?: string | null): void {
+  notificationBadgeStore.write(currentUnread, userId);
 }
 
-export function computeNotificationBadgeCount(unreadTotal: number, baseline?: number): number {
-  const base = baseline ?? getNotificationBadgeBaseline();
-  return Math.max(0, unreadTotal - base);
+export function computeNotificationBadgeCount(unreadTotal: number, baseline: number): number {
+  return computeHeaderBadgeCount(unreadTotal, baseline);
 }
 
 export function filterNotifications(
@@ -128,16 +130,16 @@ export function formatNotificationTimestamp(iso: string, nowMs = Date.now()): st
 
   const diffMs = Math.max(0, nowMs - date.getTime());
   const diffMin = Math.floor(diffMs / 60_000);
-  if (diffMin < 1) return 'Just now';
-  if (diffMin < 60) return `${diffMin} min ago`;
+  if (diffMin < 1) return tr('Just now');
+  if (diffMin < 60) return tr('{count} min ago', { count: diffMin });
 
   const diffH = Math.floor(diffMin / 60);
-  if (diffH < 24) return `${diffH}h ago`;
+  if (diffH < 24) return tr('{count}h ago', { count: diffH });
 
   const diffD = Math.floor(diffH / 24);
-  if (diffD < 7) return diffD === 1 ? '1 day ago' : `${diffD} days ago`;
+  if (diffD < 7) return trPlural(diffD, '{count} day ago', '{count} days ago');
 
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(localeTag(), { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 type ResolveNotificationHrefOptions = {
@@ -182,6 +184,11 @@ export function resolveNotificationHref(
       return '/messages?filter=temporary';
     case FOLLOWER_NEW_PRODUCT_TYPE:
       return `/marketplace/products/${encodeURIComponent(refId)}`;
+    case MARKETPLACE_NEW_COMMENT_TYPE:
+      /* The feed opens that post with its comments unfolded and the comment highlighted. */
+      return refSecondaryId
+        ? `/feed?post=${encodeURIComponent(refId)}&comment=${encodeURIComponent(refSecondaryId)}`
+        : `/feed?post=${encodeURIComponent(refId)}`;
     case FOLLOWER_NEW_CONTENT_TYPE:
       return refSecondaryId
         ? `/providers/${encodeURIComponent(refSecondaryId)}?tab=content&post=${encodeURIComponent(refId)}`
@@ -238,13 +245,14 @@ export function resolveNotificationNavigation(
 }
 
 const NOTIFICATION_TITLES_EN: Record<string, string> = {
-  CONVERSATION_GUEST_INVITE: 'Temporary conversation invite',
-  CREATOR_PROFILE_VISIT: 'Profile visit',
-  CREATOR_PROFILE_VISIT_GROUP: 'Profile visits',
-  CREATOR_NEW_FOLLOWER: 'New follower',
-  FOLLOWER_NEW_PRODUCT: 'New product',
-  FOLLOWER_NEW_CONTENT: 'New content',
-  FOLLOWER_NEW_SERVICE: 'New service',
+  CONVERSATION_GUEST_INVITE: msg('Temporary conversation invite'),
+  CREATOR_PROFILE_VISIT: msg('Profile visit'),
+  CREATOR_PROFILE_VISIT_GROUP: msg('Profile visits'),
+  CREATOR_NEW_FOLLOWER: msg('New follower'),
+  FOLLOWER_NEW_PRODUCT: msg('New product'),
+  FOLLOWER_NEW_CONTENT: msg('New content'),
+  FOLLOWER_NEW_SERVICE: msg('New service'),
+  MARKETPLACE_NEW_COMMENT: msg('New comment'),
 };
 
 export function extractVisitorNameFromVisitMessage(message: string | null | undefined): string | null {
@@ -267,44 +275,46 @@ export function extractFollowerNameFromFollowMessage(message: string | null | un
 
 /** English labels for stored notifications (legacy French rows included). */
 export function formatNotificationDisplay(n: NotificationDto): { title: string; message: string | null } {
-  const title = NOTIFICATION_TITLES_EN[n.type] ?? n.title;
+  const title = tr(NOTIFICATION_TITLES_EN[n.type] ?? n.title);
   const raw = n.message?.trim() ?? null;
 
   switch (n.type) {
     case CREATOR_PROFILE_VISIT_TYPE: {
       const name = n.actorFullName?.trim() || extractVisitorNameFromVisitMessage(raw);
       if (name) {
-        return { title, message: `${name} visited your profile.` };
+        return { title, message: tr('{name} visited your profile.', { name }) };
       }
-      return { title, message: raw ?? 'Someone visited your profile.' };
+      return { title, message: tr('Someone visited your profile.') };
     }
 
-    case CREATOR_PROFILE_VISIT_GROUP_TYPE:
-      return { title, message: raw };
+    case CREATOR_PROFILE_VISIT_GROUP_TYPE: {
+      const name = n.actorFullName?.trim() || extractVisitorNameFromVisitMessage(raw);
+      return { title, message: name ? tr('{name} visited your profile.', { name }) : raw };
+    }
 
     case CREATOR_NEW_FOLLOWER_TYPE: {
       const name = n.actorFullName?.trim() || extractFollowerNameFromFollowMessage(raw);
       if (name) {
-        return { title, message: `${name} started following you.` };
+        return { title, message: tr('{name} started following you.', { name }) };
       }
-      return { title, message: raw ?? 'Someone started following you.' };
+      return { title, message: tr('Someone started following you.') };
     }
 
     case FOLLOWER_NEW_PRODUCT_TYPE:
       return {
-        title: 'New product',
+        title: tr('New product'),
         message: formatFollowerPublishMessage(raw, n.actorFullName, 'product', 'published'),
       };
 
     case FOLLOWER_NEW_CONTENT_TYPE:
       return {
-        title: 'New content',
+        title: tr('New content'),
         message: formatFollowerPublishMessage(raw, n.actorFullName, 'content', 'shared'),
       };
 
     case FOLLOWER_NEW_SERVICE_TYPE:
       return {
-        title: 'New service',
+        title: tr('New service'),
         message: formatFollowerPublishMessage(raw, n.actorFullName, 'service', 'added'),
       };
 
@@ -328,7 +338,7 @@ function formatFollowerPublishMessage(
   const actor =
     actorFullName?.trim() ||
     actorFromRaw ||
-    'A creator you follow';
+    tr('A creator you follow');
 
   const afterColon = raw?.includes(':') ? raw.slice(raw.indexOf(':') + 1).trim() : null;
   const legacyItem =
@@ -336,8 +346,12 @@ function formatFollowerPublishMessage(
     null;
   const item = (afterColon || legacyItem || '').trim();
 
-  if (item && !/^(a new (product|service|post|content)|untitled)$/i.test(item)) {
-    return `${actor} ${verb} a new ${kind}: ${item}`;
-  }
-  return `${actor} ${verb} a new ${kind}.`;
+  const withItem = item && !/^(a new (product|service|post|content)|untitled)$/i.test(item);
+  const sentence = {
+    product: withItem ? msg('{actor} published a new product: {item}') : msg('{actor} published a new product.'),
+    content: withItem ? msg('{actor} shared a new post: {item}') : msg('{actor} shared a new post.'),
+    service: withItem ? msg('{actor} added a new service: {item}') : msg('{actor} added a new service.'),
+  }[kind];
+  void verb;
+  return tr(sentence, { actor, item });
 }

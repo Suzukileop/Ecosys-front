@@ -5,6 +5,7 @@ import {
   HEADER_SIZE_STEPS,
   HEADER_WEIGHT_STEPS,
   HeaderBlock,
+  HeaderElementToggles,
   HeaderMarqueeWords,
   HeaderOptionGrid,
   HeaderStyleTargetsEditor,
@@ -16,6 +17,8 @@ import {
   type HeaderTextSize,
   type HeaderTextWeight,
 } from '@/components/portfolio/portfolio-header-style-controls';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 /**
  * The whole Header tab body for the eight shared header designs, described once. A section only
@@ -23,9 +26,9 @@ import {
  */
 
 const MARGIN_BOTTOM_OPTIONS = [
-  { value: 'sm' as const, label: 'Small' },
-  { value: 'md' as const, label: 'Medium' },
-  { value: 'lg' as const, label: 'Large' },
+  { value: 'sm' as const, label: msg('Small') },
+  { value: 'md' as const, label: msg('Medium') },
+  { value: 'lg' as const, label: msg('Large') },
   { value: 'xl' as const, label: 'XL' },
 ];
 
@@ -41,6 +44,7 @@ export function HeaderSharedControls({
   settings: object;
   onPatch: (patch: HeaderPatch) => void;
 }) {
+  const t = useT();
   const record = settings as Record<string, unknown>;
   const titleSize = (record.headerTitleSize as HeaderTextSize | undefined) ?? 'md';
   const titleWeight = (record.headerTitleWeight as HeaderTextWeight | undefined) ?? 'regular';
@@ -48,11 +52,11 @@ export function HeaderSharedControls({
     <div className="pf-exp-centered-config space-y-8 border-t border-neutral-200/70 pt-9">
       {hideAlignment ? null : (
         <HeaderOptionGrid
-          label="Header alignment"
+          label={t('Header alignment')}
           options={[
-            { value: 'left' as const, label: 'Left' },
-            { value: 'center' as const, label: 'Center' },
-            { value: 'right' as const, label: 'Right' },
+            { value: 'left' as const, label: t('Left') },
+            { value: 'center' as const, label: t('Center') },
+            { value: 'right' as const, label: t('Right') },
           ]}
           value={(record.headerDesignAlignment as 'left' | 'center' | 'right' | undefined) ?? 'left'}
           onChange={(headerDesignAlignment) => onPatch({ headerDesignAlignment })}
@@ -60,7 +64,7 @@ export function HeaderSharedControls({
         />
       )}
       <HeaderOptionGrid
-        label="Bottom spacing"
+        label={t('Bottom spacing')}
         options={MARGIN_BOTTOM_OPTIONS}
         value={(record.headerMarginBottom as 'sm' | 'md' | 'lg' | 'xl' | undefined) ?? 'md'}
         onChange={(headerMarginBottom) => onPatch({ headerMarginBottom })}
@@ -69,14 +73,14 @@ export function HeaderSharedControls({
       {hideTitleControls ? null : (
         <>
           <HeaderSteppedSlider
-            label="Title size"
+            label={t('Title size')}
             steps={HEADER_SIZE_STEPS}
             value={titleSize}
             currentName={HEADER_SIZE_STEPS.find((step) => step.value === titleSize)?.name ?? ''}
             onChange={(headerTitleSize) => onPatch({ headerTitleSize })}
           />
           <HeaderSteppedSlider
-            label="Title weight"
+            label={t('Title weight')}
             steps={HEADER_WEIGHT_STEPS}
             value={titleWeight}
             currentName={HEADER_WEIGHT_STEPS.find((step) => step.value === titleWeight)?.tick ?? ''}
@@ -121,29 +125,37 @@ export function HeaderDesignFields({
   accentAlignmentOptions: OptionList<'left' | 'center' | 'right'>;
   billboardStyleOptions: OptionList<'outline' | 'fill' | 'simple'>;
   /** Designs a section has beyond the shared eight (Info: chapter / cover). Return null for the shared ones. */
-  extra?: (design: string, shared: (opts?: SharedOptions) => ReactNode) => ReactNode;
+  extra?: (design: string, shared: (opts?: SharedOptions) => ReactNode, toggles: ReactNode) => ReactNode;
 }) {
+  const t = useT();
   const record = settings as Record<string, unknown>;
   const design = (record.headerDesign as string | undefined) ?? 'editorial';
   const text = (key: string) => (typeof record[key] === 'string' ? (record[key] as string) : '');
   const set = (key: string) => (value: string) => onPatch({ [key]: value });
   const colorProps = { colorOptions, resolveColor };
+  /** Show / hide each element of the chosen design — sits right under that design's texts. */
+  const toggles = (
+    <HeaderBlock>
+      <HeaderElementToggles design={design} settings={settings} onPatch={onPatch} />
+    </HeaderBlock>
+  );
   const shared = (opts?: SharedOptions) => (
     <HeaderSharedControls settings={settings} onPatch={onPatch} {...opts} />
   );
 
-  const customised = extra?.(design, shared);
+  const customised = extra?.(design, shared, toggles);
   if (customised) return <>{customised}</>;
 
   if (design === 'index') {
     return (
       <>
         <div className="space-y-6">
-          <HeaderTextField label="Rule label" value={text('headerIndexLabelText')} placeholder={copy.index.rule} onChange={set('headerIndexLabelText')} />
-          <HeaderTextField label="Title" value={text('headerIndexTitleText')} placeholder={copy.index.title} onChange={set('headerIndexTitleText')} />
-          <HeaderTextField label="Subtitle" value={text('headerIndexSubtitleText')} placeholder={copy.index.subtitle} onChange={set('headerIndexSubtitleText')} multiline />
-          <HeaderTextField label="Count label" value={text('headerIndexCountLabelText')} placeholder={copy.index.count} onChange={set('headerIndexCountLabelText')} />
+          <HeaderTextField label={t('Rule label')} value={text('headerIndexLabelText')} placeholder={copy.index.rule} onChange={set('headerIndexLabelText')} />
+          <HeaderTextField label={t('Title')} value={text('headerIndexTitleText')} placeholder={copy.index.title} onChange={set('headerIndexTitleText')} />
+          <HeaderTextField label={t('Subtitle')} value={text('headerIndexSubtitleText')} placeholder={copy.index.subtitle} onChange={set('headerIndexSubtitleText')} multiline />
+          <HeaderTextField label={t('Count label')} value={text('headerIndexCountLabelText')} placeholder={copy.index.count} onChange={set('headerIndexCountLabelText')} />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderTextStyleEditor settings={settings} onPatch={onPatch} prefix="headerIndex" {...colorProps} />
         </HeaderBlock>
@@ -151,8 +163,8 @@ export function HeaderDesignFields({
           <HeaderStyleTargetsEditor
             settings={settings}
             onPatch={onPatch}
-            title="Counter"
-            targets={[{ id: 'numeral', label: 'Numeral', color: { key: 'headerIndexNumberColor', fallback: 'principal' } }]}
+            title={t('Counter')}
+            targets={[{ id: 'numeral', label: t('Numeral'), color: { key: 'headerIndexNumberColor', fallback: 'principal' } }]}
             {...colorProps}
           />
         </HeaderBlock>
@@ -170,6 +182,7 @@ export function HeaderDesignFields({
           keys={['headerMarqueeWord1Text', 'headerMarqueeWord2Text', 'headerMarqueeWord3Text', 'headerMarqueeWord4Text']}
           placeholders={copy.marquee}
         />
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={settings}
@@ -177,7 +190,7 @@ export function HeaderDesignFields({
             targets={[
               {
                 id: 'words',
-                label: 'Words',
+                label: t('Words'),
                 color: { key: 'headerMarqueeWordColor', fallback: 'principal' },
                 size: { key: 'headerMarqueeSize', fallback: 'md' },
               },
@@ -195,19 +208,20 @@ export function HeaderDesignFields({
     return (
       <>
         <div className="space-y-6">
-          <HeaderTextField label="Badge text" value={text('headerAccentCountBadgeText')} placeholder={copy.accent.badge} onChange={set('headerAccentCountBadgeText')} />
-          <HeaderTextField label="Lead text" value={text('headerAccentCountLeadText')} placeholder={copy.accent.lead} onChange={set('headerAccentCountLeadText')} multiline />
+          <HeaderTextField label={t('Badge text')} value={text('headerAccentCountBadgeText')} placeholder={copy.accent.badge} onChange={set('headerAccentCountBadgeText')} />
+          <HeaderTextField label={t('Lead text')} value={text('headerAccentCountLeadText')} placeholder={copy.accent.lead} onChange={set('headerAccentCountLeadText')} multiline />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={settings}
             onPatch={onPatch}
             initialId="lead"
             targets={[
-              { id: 'badge', label: 'Badge', color: { key: 'headerAccentCountBadgeColor', fallback: 'principal' } },
+              { id: 'badge', label: t('Badge'), color: { key: 'headerAccentCountBadgeColor', fallback: 'principal' } },
               {
                 id: 'lead',
-                label: 'Lead',
+                label: t('Lead'),
                 color: { key: 'headerAccentCountLeadColor', fallback: 'secondaire' },
                 weight: { key: 'headerAccentCountWeight', fallback: 'regular' },
               },
@@ -218,14 +232,14 @@ export function HeaderDesignFields({
         <HeaderBlock>
           <div className="pf-exp-centered-config space-y-8">
             <HeaderSteppedSlider
-              label="Size (badge and lead)"
+              label={t('Size (badge and lead)')}
               steps={HEADER_SIZE_STEPS}
               value={size}
               currentName={HEADER_SIZE_STEPS.find((step) => step.value === size)?.name ?? ''}
               onChange={(headerAccentCountSize) => onPatch({ headerAccentCountSize })}
             />
             <HeaderOptionGrid
-              label="Alignment"
+              label={t('Alignment')}
               options={accentAlignmentOptions}
               value={(record.headerAccentCountAlignment as 'left' | 'center' | 'right' | undefined) ?? 'left'}
               onChange={(headerAccentCountAlignment) => onPatch({ headerAccentCountAlignment })}
@@ -242,10 +256,11 @@ export function HeaderDesignFields({
     return (
       <>
         <div className="space-y-6">
-          <HeaderTextField label="Label" value={text('headerSerifLeadLabelText')} placeholder={copy.serif.label} onChange={set('headerSerifLeadLabelText')} />
-          <HeaderTextField label="Title" value={text('headerSerifLeadTitleText')} placeholder={copy.serif.title} onChange={set('headerSerifLeadTitleText')} multiline />
-          <HeaderTextField label="Subtitle" value={text('headerSerifLeadSubtitleText')} placeholder={copy.serif.subtitle} onChange={set('headerSerifLeadSubtitleText')} multiline />
+          <HeaderTextField label={t('Label')} value={text('headerSerifLeadLabelText')} placeholder={copy.serif.label} onChange={set('headerSerifLeadLabelText')} />
+          <HeaderTextField label={t('Title')} value={text('headerSerifLeadTitleText')} placeholder={copy.serif.title} onChange={set('headerSerifLeadTitleText')} multiline />
+          <HeaderTextField label={t('Subtitle')} value={text('headerSerifLeadSubtitleText')} placeholder={copy.serif.subtitle} onChange={set('headerSerifLeadSubtitleText')} multiline />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderTextStyleEditor settings={settings} onPatch={onPatch} prefix="headerSerifLead" {...colorProps} />
         </HeaderBlock>
@@ -258,26 +273,27 @@ export function HeaderDesignFields({
     return (
       <>
         <div className="space-y-6">
-          <HeaderTextField label="Big background word" value={text('headerBillboardBigWord')} placeholder={copy.billboard.word} onChange={set('headerBillboardBigWord')} />
-          <HeaderTextField label="Title" value={text('headerBillboardTitleText')} placeholder={copy.billboard.title} onChange={set('headerBillboardTitleText')} />
-          <HeaderTextField label="Count line" value={text('headerBillboardCountText')} placeholder={copy.billboard.count} onChange={set('headerBillboardCountText')} />
+          <HeaderTextField label={t('Big background word')} value={text('headerBillboardBigWord')} placeholder={copy.billboard.word} onChange={set('headerBillboardBigWord')} />
+          <HeaderTextField label={t('Title')} value={text('headerBillboardTitleText')} placeholder={copy.billboard.title} onChange={set('headerBillboardTitleText')} />
+          <HeaderTextField label={t('Count line')} value={text('headerBillboardCountText')} placeholder={copy.billboard.count} onChange={set('headerBillboardCountText')} />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={settings}
             onPatch={onPatch}
             initialId="title"
             targets={[
-              { id: 'word', label: 'Big word', color: { key: 'headerBillboardWordColor', fallback: 'principal' } },
-              { id: 'title', label: 'Title', color: { key: 'headerBillboardTitleColor', fallback: 'principal' } },
-              { id: 'count', label: 'Count line', color: { key: 'headerBillboardMetaColor', fallback: 'secondaire' } },
+              { id: 'word', label: t('Big word'), color: { key: 'headerBillboardWordColor', fallback: 'principal' } },
+              { id: 'title', label: t('Title'), color: { key: 'headerBillboardTitleColor', fallback: 'principal' } },
+              { id: 'count', label: t('Count line'), color: { key: 'headerBillboardMetaColor', fallback: 'secondaire' } },
             ]}
             {...colorProps}
           />
         </HeaderBlock>
         <HeaderBlock>
           <HeaderOptionGrid
-            label="Big word style"
+            label={t('Big word style')}
             options={billboardStyleOptions}
             value={(record.headerBillboardWordStyle as 'outline' | 'fill' | 'simple' | undefined) ?? 'outline'}
             onChange={(headerBillboardWordStyle) => onPatch({ headerBillboardWordStyle })}
@@ -293,19 +309,20 @@ export function HeaderDesignFields({
     return (
       <>
         <div className="space-y-6">
-          <HeaderTextField label="Line 1" value={text('headerMastheadLine1Text')} placeholder={copy.masthead[0]} onChange={set('headerMastheadLine1Text')} />
-          <HeaderTextField label="Line 2" value={text('headerMastheadLine2Text')} placeholder={copy.masthead[1]} onChange={set('headerMastheadLine2Text')} />
-          <HeaderTextField label="Line 3" value={text('headerMastheadLine3Text')} placeholder={copy.masthead[2]} onChange={set('headerMastheadLine3Text')} />
+          <HeaderTextField label={t('Line 1')} value={text('headerMastheadLine1Text')} placeholder={copy.masthead[0]} onChange={set('headerMastheadLine1Text')} />
+          <HeaderTextField label={t('Line 2')} value={text('headerMastheadLine2Text')} placeholder={copy.masthead[1]} onChange={set('headerMastheadLine2Text')} />
+          <HeaderTextField label={t('Line 3')} value={text('headerMastheadLine3Text')} placeholder={copy.masthead[2]} onChange={set('headerMastheadLine3Text')} />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={settings}
             onPatch={onPatch}
-            title="Headline style"
+            title={t('Headline style')}
             targets={[
               {
                 id: 'headline',
-                label: 'Headline',
+                label: t('Headline'),
                 color: { key: 'headerMastheadHeadlineColor', fallback: 'principal' },
                 size: { key: 'headerMastheadHeadlineSize', fallback: 'md' },
                 weight: { key: 'headerMastheadHeadlineWeight', fallback: 'regular' },
@@ -323,9 +340,10 @@ export function HeaderDesignFields({
     return (
       <>
         <div className="space-y-6">
-          <HeaderTextField label="Title" value={text('headerSplitHeadingTitleText')} placeholder={copy.split.title} onChange={set('headerSplitHeadingTitleText')} />
-          <HeaderTextField label="Label" value={text('headerSplitHeadingLabelText')} placeholder={copy.split.label} onChange={set('headerSplitHeadingLabelText')} />
+          <HeaderTextField label={t('Title')} value={text('headerSplitHeadingTitleText')} placeholder={copy.split.title} onChange={set('headerSplitHeadingTitleText')} />
+          <HeaderTextField label={t('Label')} value={text('headerSplitHeadingLabelText')} placeholder={copy.split.label} onChange={set('headerSplitHeadingLabelText')} />
         </div>
+        {toggles}
         <HeaderBlock>
           <HeaderStyleTargetsEditor
             settings={settings}
@@ -334,14 +352,14 @@ export function HeaderDesignFields({
             targets={[
               {
                 id: 'title',
-                label: 'Title',
+                label: t('Title'),
                 color: { key: 'headerSplitHeadingTitleColor', fallback: 'principal' },
                 size: { key: 'headerSplitHeadingTitleSize', fallback: 'md' },
                 weight: { key: 'headerSplitHeadingTitleWeight', fallback: 'regular' },
               },
               {
                 id: 'label',
-                label: 'Label',
+                label: t('Label'),
                 color: { key: 'headerSplitHeadingLabelColor', fallback: 'secondaire' },
                 size: { key: 'headerSplitHeadingLabelSize', fallback: 'md' },
                 weight: { key: 'headerSplitHeadingLabelWeight', fallback: 'regular' },
@@ -359,10 +377,11 @@ export function HeaderDesignFields({
   return (
     <>
       <div className="space-y-6">
-        <HeaderTextField label="Label" value={text('headerEditorialLabelText')} placeholder={copy.editorial.label} onChange={set('headerEditorialLabelText')} />
-        <HeaderTextField label="Title" value={text('headerEditorialTitleText')} placeholder={copy.editorial.title} onChange={set('headerEditorialTitleText')} />
-        <HeaderTextField label="Subtitle" value={text('headerEditorialSubtitleText')} placeholder={copy.editorial.subtitle} onChange={set('headerEditorialSubtitleText')} multiline />
+        <HeaderTextField label={t('Label')} value={text('headerEditorialLabelText')} placeholder={copy.editorial.label} onChange={set('headerEditorialLabelText')} />
+        <HeaderTextField label={t('Title')} value={text('headerEditorialTitleText')} placeholder={copy.editorial.title} onChange={set('headerEditorialTitleText')} />
+        <HeaderTextField label={t('Subtitle')} value={text('headerEditorialSubtitleText')} placeholder={copy.editorial.subtitle} onChange={set('headerEditorialSubtitleText')} multiline />
       </div>
+      {toggles}
       <HeaderBlock>
         <HeaderTextStyleEditor settings={settings} onPatch={onPatch} prefix="headerEditorial" {...colorProps} />
       </HeaderBlock>

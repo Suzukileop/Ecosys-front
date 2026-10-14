@@ -1,13 +1,12 @@
 /**
- * A day boundary is a structural mark, not a label: micro-caps at the section's
- * faint ink, flanked by two short hairlines. Nothing here competes with a message.
+ * A day boundary: a centred 12px medium label in secondary ink ("Today", "Mon, Sep 29"), on a soft
+ * pill one tone off its column so it reads as a chapter mark in the thread rather than one more grey
+ * timestamp among the bubbles' own. No rules (no hairlines), no small caps.
  */
 export function DateSeparator({ label }: { label: string }) {
   return (
-    <div className="flex items-center justify-center gap-4 py-7" role="separator" aria-label={label}>
-      <span className="h-px w-10 max-w-[15%] shrink bg-[var(--msg-hairline-strong)]" aria-hidden />
-      <span className="msg-micro shrink-0 text-[var(--msg-ink-faint)]">{label}</span>
-      <span className="h-px w-10 max-w-[15%] shrink bg-[var(--msg-hairline-strong)]" aria-hidden />
+    <div className="flex items-center justify-center pb-1 pt-7" role="separator" aria-label={label}>
+      <span className="rounded-full bg-[color:var(--xm-chip)] px-3 py-1 text-[12px] font-medium leading-4 text-[color:var(--gn-ink2)]">{label}</span>
     </div>
   );
 }

@@ -8,7 +8,7 @@
  * - Service providers: `/providers` (directory), `/providers/[id]` (profile), `/providers/[id]/shop`.
  * - Public portfolio: `/portfolio/[slug]`.
  * - Signed-in workspace (route group `(app)`, no URL prefix): `/feed`, `/studio`, `/profile`,
- *   `/my-products`, `/my-services`, `/purchases`, `/messages`, `/notifications`, `/search`,
+ *   `/my-products`, `/my-services`, `/messages`, `/notifications`, `/search`,
  *   `/settings`, `/cv`.
  * - Back office: `/admin/users`, `/admin/reports`.
  */
@@ -22,7 +22,6 @@ export const ROUTES = {
   profile: '/profile',
   myProducts: '/my-products',
   myServices: '/my-services',
-  purchases: '/purchases',
   messages: '/messages',
   notifications: '/notifications',
   search: '/search',
@@ -46,7 +45,6 @@ export const PROTECTED_ROUTE_PREFIXES = [
   ROUTES.profile,
   ROUTES.myProducts,
   ROUTES.myServices,
-  ROUTES.purchases,
   ROUTES.messages,
   ROUTES.notifications,
   ROUTES.search,
@@ -58,6 +56,33 @@ export const PROTECTED_ROUTE_PREFIXES = [
 /** `pathname` is `base` itself or a sub-path of it (`/feed` matches `/feed/x`, not `/feedback`). */
 export function isPathWithin(pathname: string, base: string): boolean {
   return pathname === base || pathname.startsWith(`${base}/`);
+}
+
+/**
+ * Routes drawn on the News design system's ground: neutral-100 page under white cards in light,
+ * zinc-950 under zinc-900 cards in dark (DashboardShell + the header surface follow it).
+ */
+export function isNewsGroundPath(pathname: string): boolean {
+  return (
+    isPathWithin(pathname, ROUTES.feed) ||
+    isPathWithin(pathname, ROUTES.profile) ||
+    // My Portfolio: the studio workspace and its live preview chrome.
+    isPathWithin(pathname, ROUTES.studio) ||
+    // My Services, Explore products (the marketplace hub) and My Products (list + consult page).
+    isPathWithin(pathname, ROUTES.myServices) ||
+    pathname === ROUTES.marketplace ||
+    pathname === `${ROUTES.marketplace}/` ||
+    pathname === ROUTES.myProducts ||
+    pathname === `${ROUTES.myProducts}/` ||
+    /^\/my-products\/[^/]+\/?$/.test(pathname) ||
+    // The providers directory itself.
+    pathname === ROUTES.providers ||
+    pathname === `${ROUTES.providers}/` ||
+    // Public creator profile and shop, product / content detail pages, the product edit workspace.
+    /^\/providers\/[^/]+(\/shop)?\/?$/.test(pathname) ||
+    /^\/marketplace\/(products|content)\/[^/]+\/?$/.test(pathname) ||
+    /^\/my-products\/[^/]+\/edit\/?$/.test(pathname)
+  );
 }
 
 export function isProtectedPath(pathname: string): boolean {

@@ -1,0 +1,132 @@
+/*
+ * Search — the navbar overlay (GlobalSearchModal) and the /search results page
+ * (GlobalSearchResultsView), in the News language: X black / white, no accent hue, no hairlines.
+ *
+ * Kept out of app/globals.css on purpose (other sections are rolled out there in parallel); every rule
+ * is scoped under one of this section's roots:
+ *   .x-search          the results page root (also carries `news-theme news-feed news-mono`)
+ *   .x-search-overlay  the portalled overlay root (re-opens the same token scope, since a portal
+ *                      leaves the page's)
+ *   .x-search-sheet    the portalled Filters bottom sheet's content
+ *
+ * The `--gn-*` tokens come from the News scope; the one value this section adds is the page ground,
+ * because inside `.news-theme` the `bg-white` / `bg-[#FFFFFF]` utilities are remapped to the card tone
+ * and cannot paint a white surface any more.
+ */
+
+.x-search,
+.x-search-overlay,
+.x-search-sheet {
+  --xs-ground: #ffffff;
+}
+.dark .x-search,
+.dark .x-search-overlay,
+.dark .x-search-sheet {
+  --xs-ground: #000000;
+}
+
+/* The caret follows the ink, never the brand orange; the browser's own clear cross is replaced by
+   the field's 40px clear button. */
+.x-search input,
+.x-search-overlay input {
+  caret-color: var(--gn-ink);
+}
+.x-search-overlay input[type='search']::-webkit-search-cancel-button,
+.x-search-overlay input[type='search']::-webkit-search-decoration {
+  -webkit-appearance: none;
+  appearance: none;
+}
+
+/* Overlay entrance: the veil fades (the shared `gsm-veil-in` keyframes), the panel rises 8px. On
+   phones the panel is the whole screen, so it only fades — a full-screen slide reads as navigation. */
+@keyframes xs-panel-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+@keyframes xs-fade-in {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.x-search-overlay .xs-veil {
+  animation: gsm-veil-in 0.3s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+.x-search-overlay .xs-panel {
+  animation: xs-fade-in 0.18s ease-out both;
+}
+@media (min-width: 640px) {
+  .x-search-overlay .xs-panel {
+    animation: xs-panel-in 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+  }
+}
+
+/* Loading placeholders: one quiet breathing tone, no shimmer sweep. */
+@keyframes xs-breathe {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.x-search .xs-skeleton,
+.x-search-overlay .xs-skeleton {
+  animation: xs-breathe 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .x-search-overlay .xs-veil,
+  .x-search-overlay .xs-panel,
+  .x-search .xs-skeleton,
+  .x-search-overlay .xs-skeleton {
+    animation: none;
+  }
+}
+
+/* The All tab's product / post previews on phones: one swipeable row of cards (the next card peeks
+   at the edge), so six of each do not become twelve full-screen blocks. From sm they are a grid. */
+.x-search .xs-swipe {
+  display: flex;
+  gap: 0.5rem;
+  overflow-x: auto;
+  padding: 0 1.25rem;
+  scroll-padding: 0 1.25rem;
+  scroll-snap-type: x mandatory;
+  scrollbar-width: none;
+  overscroll-behavior-x: contain;
+}
+.x-search .xs-swipe::-webkit-scrollbar {
+  display: none;
+}
+.x-search .xs-swipe > * {
+  flex: 0 0 82%;
+  min-width: 0;
+  scroll-snap-align: start;
+}
+@media (min-width: 640px) {
+  .x-search .xs-swipe {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.25rem;
+    overflow: visible;
+    padding: 0;
+  }
+  .x-search .xs-swipe > * {
+    flex: none;
+  }
+}
+@media (min-width: 1280px) {
+  .x-search .xs-swipe:not(.xs-swipe--pairs) {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+}

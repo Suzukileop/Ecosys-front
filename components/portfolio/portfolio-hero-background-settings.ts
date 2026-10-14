@@ -8,6 +8,7 @@ import {
   type PortfolioServicesCardDividerShape,
   type PortfolioServicesCardSplitAxis,
 } from '@/components/portfolio/portfolio-services-card-background-settings';
+import { msg } from '@/lib/i18n/config';
 
 /**
  * 'transparent' = paint strictly nothing (global color + pattern show through).
@@ -96,8 +97,8 @@ const PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'solid', label: 'Solid', description: 'Single flat color across the area.' },
-  { value: 'gradient', label: 'Gradient', description: 'Blend two colors — linear or radial.' },
+  { value: 'solid', label: msg('Solid'), description: msg('Single flat color across the area.') },
+  { value: 'gradient', label: msg('Gradient'), description: msg('Blend two colors — linear or radial.') },
 ];
 
 export const PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS: {
@@ -107,24 +108,24 @@ export const PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS: {
 }[] = [
   {
     value: 'transparent',
-    label: 'None',
-    description: 'Nothing painted — Global page color and pattern show through.',
+    label: msg('None'),
+    description: msg('Nothing painted — Global page color and pattern show through.'),
   },
   {
     value: 'none',
-    label: 'Global wallpaper',
-    description: 'No hero fill — repaints the Global color / shows the fixed image underneath.',
+    label: msg('Global wallpaper'),
+    description: msg('No hero fill — repaints the Global color / shows the fixed image underneath.'),
   },
   ...PORTFOLIO_HERO_BACKGROUND_FILL_OPTIONS,
   {
     value: 'split',
-    label: 'Split X / Y',
-    description: 'Two color zones separated by a geometric line — like card fills.',
+    label: msg('Split X / Y'),
+    description: msg('Two color zones separated by a geometric line — like card fills.'),
   },
   {
     value: 'image',
-    label: 'Image',
-    description: 'Section image — overrides the Global wallpaper for Hero only.',
+    label: msg('Image'),
+    description: msg('Section image — overrides the Global wallpaper for Hero only.'),
   },
 ];
 
@@ -133,8 +134,8 @@ export const PORTFOLIO_HERO_BACKGROUND_SPLIT_AXIS_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'y', label: 'Horizontal', description: 'Top zone / bottom zone.' },
-  { value: 'x', label: 'Vertical', description: 'Left zone / right zone.' },
+  { value: 'y', label: msg('Horizontal'), description: msg('Top zone / bottom zone.') },
+  { value: 'x', label: msg('Vertical'), description: msg('Left zone / right zone.') },
 ];
 
 export const PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS: {
@@ -142,8 +143,8 @@ export const PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'linear', label: 'Linear', description: 'Directional fade — angle controls rotation.' },
-  { value: 'radial', label: 'Radial', description: 'Circular glow from the center outward.' },
+  { value: 'linear', label: msg('Linear'), description: msg('Directional fade — angle controls rotation.') },
+  { value: 'radial', label: msg('Radial'), description: msg('Circular glow from the center outward.') },
 ];
 
 function clampPercent(value: number): number {

@@ -123,6 +123,7 @@ import {
   type PortfolioNavColorBindings,
   type PortfolioNavPalette,
 } from '@/components/portfolio/portfolio-nav-palette-settings';
+import { msg } from '@/lib/i18n/config';
 
 export type PortfolioSettingsSectionId =
   | 'theme'
@@ -275,14 +276,14 @@ export const PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS: {
 }[] = [
   {
     value: 'principal',
-    label: 'Principal',
+    label: msg('Principal'),
     description:
-      'Pilule active en couleur principale (texte contrasté) · Contact / e-mail en principal.',
+      msg('Pilule active en couleur principale (texte contrasté) · Contact / e-mail en principal.'),
   },
   {
     value: 'texteFort',
-    label: 'Texte fort',
-    description: 'Texte fort partout — aucune trace de la couleur principale sur le menu.',
+    label: msg('Texte fort'),
+    description: msg('Texte fort partout — aucune trace de la couleur principale sur le menu.'),
   },
 ];
 
@@ -305,7 +306,7 @@ export type PortfolioNavEditorialBarContactChannelSettings = {
 
 export const DEFAULT_EDITORIAL_BAR_PHONE_CONTACT: PortfolioNavEditorialBarContactChannelSettings =
   {
-    label: "Let's Talk",
+    label: msg("Let's Talk"),
     display: 'button',
     icon: 'arrow-up-right',
     iconPosition: 'right',
@@ -314,7 +315,7 @@ export const DEFAULT_EDITORIAL_BAR_PHONE_CONTACT: PortfolioNavEditorialBarContac
 
 export const DEFAULT_EDITORIAL_BAR_MAIL_CONTACT: PortfolioNavEditorialBarContactChannelSettings =
   {
-    label: "Let's talk",
+    label: msg("Let's talk"),
     display: 'button',
     icon: 'arrow-up-right',
     iconPosition: 'right',
@@ -388,12 +389,12 @@ export const PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'frameless', label: 'No frame', description: 'Text or icon alone, no fill or border.' },
-  { value: 'bottom-line', label: 'Underline', description: 'Subtle underline beneath the label.' },
-  { value: 'square', label: 'Square', description: 'Sharp corners.' },
-  { value: 'rounded', label: 'Rounded', description: 'Slightly rounded corners.' },
-  { value: 'soft', label: 'Soft', description: 'Large corner radius.' },
-  { value: 'pill', label: 'Pill', description: 'Fully rounded edges — a circle in icon mode.' },
+  { value: 'frameless', label: msg('No frame'), description: msg('Text or icon alone, no fill or border.') },
+  { value: 'bottom-line', label: msg('Underline'), description: msg('Subtle underline beneath the label.') },
+  { value: 'square', label: msg('Square'), description: msg('Sharp corners.') },
+  { value: 'rounded', label: msg('Rounded'), description: msg('Slightly rounded corners.') },
+  { value: 'soft', label: msg('Soft'), description: msg('Large corner radius.') },
+  { value: 'pill', label: msg('Pill'), description: msg('Fully rounded edges — a circle in icon mode.') },
 ];
 
 export function normalizePortfolioNavContactButtonIconPosition(
@@ -418,9 +419,9 @@ export const PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'left', label: 'Left', description: 'Icon before the label.' },
-  { value: 'right', label: 'Right', description: 'Icon after the label.' },
-  { value: 'none', label: 'No icon', description: 'Label only.' },
+  { value: 'left', label: msg('Left'), description: msg('Icon before the label.') },
+  { value: 'right', label: msg('Right'), description: msg('Icon after the label.') },
+  { value: 'none', label: msg('No icon'), description: msg('Label only.') },
 ];
 
 function normalizePortfolioNavContactButtonShape(
@@ -592,20 +593,20 @@ const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_OPTIONS: {
 }[] = [
   {
     value: 'sans',
-    label: 'Sans',
-    description: 'Linéaire, lisible en petit.',
+    label: msg('Sans'),
+    description: msg('Linéaire, lisible en petit.'),
     fontFamily: 'ui-sans-serif, system-ui, sans-serif',
   },
   {
     value: 'serif',
-    label: 'Serif',
-    description: 'Empattements élégants.',
+    label: msg('Serif'),
+    description: msg('Empattements élégants.'),
     fontFamily: "'Playfair Display', Georgia, serif",
   },
   {
     value: 'display',
-    label: 'Display',
-    description: 'Affiche impactante.',
+    label: msg('Display'),
+    description: msg('Affiche impactante.'),
     fontFamily: "'Bebas Neue', Impact, sans-serif",
   },
 ];
@@ -616,10 +617,10 @@ const PORTFOLIO_NAV_CUSTOM_EXTRA_FONT_WEIGHT_OPTIONS: {
   description: string;
   cssWeight: number;
 }[] = [
-  { value: 'normal', label: 'Regular', description: 'Poids normal.', cssWeight: 400 },
-  { value: 'medium', label: 'Medium', description: 'Légèrement plus fort.', cssWeight: 500 },
-  { value: 'semibold', label: 'Semibold', description: 'Accent clair.', cssWeight: 600 },
-  { value: 'bold', label: 'Bold', description: 'Plus marqué.', cssWeight: 700 },
+  { value: 'normal', label: msg('Regular'), description: msg('Poids normal.'), cssWeight: 400 },
+  { value: 'medium', label: msg('Medium'), description: msg('Légèrement plus fort.'), cssWeight: 500 },
+  { value: 'semibold', label: msg('Semibold'), description: msg('Accent clair.'), cssWeight: 600 },
+  { value: 'bold', label: msg('Bold'), description: msg('Plus marqué.'), cssWeight: 700 },
 ];
 
 export function normalizePortfolioNavExtrasPlacement(
@@ -767,18 +768,18 @@ const PORTFOLIO_NAV_CONTACT_CTA_ICON_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'phone', label: 'Téléphone', description: 'Combiné classique.' },
-  { value: 'smartphone', label: 'Mobile', description: 'Smartphone vertical.' },
-  { value: 'phone-call', label: 'Sonnerie', description: 'Combiné avec ondes.' },
-  { value: 'mail', label: 'E-mail', description: 'Enveloppe.' },
-  { value: 'chat', label: 'Message', description: 'Bulle de discussion.' },
-  { value: 'at', label: '@', description: 'Symbole arobase.' },
-  { value: 'calendar', label: 'Agenda', description: 'Prise de rendez-vous.' },
-  { value: 'send', label: 'Envoyer', description: 'Avion en papier.' },
-  { value: 'arrow-up-right', label: 'Flèche ↗', description: 'Diagonale haut-droite.' },
-  { value: 'arrow-right', label: 'Flèche →', description: 'Vers la droite.' },
-  { value: 'arrow-up', label: 'Flèche ↑', description: 'Vers le haut.' },
-  { value: 'user', label: 'Profil', description: 'Silhouette utilisateur.' },
+  { value: 'phone', label: msg('Téléphone'), description: msg('Combiné classique.') },
+  { value: 'smartphone', label: msg('Mobile'), description: msg('Smartphone vertical.') },
+  { value: 'phone-call', label: msg('Sonnerie'), description: msg('Combiné avec ondes.') },
+  { value: 'mail', label: msg('E-mail'), description: msg('Enveloppe.') },
+  { value: 'chat', label: msg('Message'), description: msg('Bulle de discussion.') },
+  { value: 'at', label: '@', description: msg('Symbole arobase.') },
+  { value: 'calendar', label: msg('Agenda'), description: msg('Prise de rendez-vous.') },
+  { value: 'send', label: msg('Envoyer'), description: msg('Avion en papier.') },
+  { value: 'arrow-up-right', label: msg('Flèche ↗'), description: msg('Diagonale haut-droite.') },
+  { value: 'arrow-right', label: msg('Flèche →'), description: msg('Vers la droite.') },
+  { value: 'arrow-up', label: msg('Flèche ↑'), description: msg('Vers le haut.') },
+  { value: 'user', label: msg('Profil'), description: msg('Silhouette utilisateur.') },
 ];
 
 const PORTFOLIO_NAV_CONTACT_CTA_DIRECTION_ICONS: PortfolioNavContactCtaIcon[] = [
@@ -1171,6 +1172,8 @@ export type PortfolioNavSettings = {
   customExtraPaddingY: number;
   itemLabels: PortfolioNavItemLabels;
   itemIcons: PortfolioNavItemIcons;
+  /** Sections left out of the menu — still on the page, reached by scrolling (scroll mode only). */
+  hiddenNavItems?: PortfolioNavSectionKey[];
   /** Dropdown groups — each groups 2+ section links under a custom label. */
   navMenuGroups: PortfolioNavMenuGroup[];
   /** Semantic color tokens for the navigation (same system as the Hero palette). */
@@ -1250,78 +1253,78 @@ export type PortfolioSettingsSectionMeta = {
 export const PORTFOLIO_SETTINGS_SECTIONS: PortfolioSettingsSectionMeta[] = [
   {
     id: 'theme',
-    label: 'Global',
-    description: 'Theme palette, page background, section order, title alignment, and layout width.',
+    label: msg('Global'),
+    description: msg('Theme palette, page background, section order, title alignment, and layout width.'),
   },
   {
     id: 'navigation',
-    label: 'Navigation',
-    description: 'Floating section menu — placement, bar design, icons vs text, and visibility.',
+    label: msg('Navigation'),
+    description: msg('Floating section menu — placement, bar design, icons vs text, and visibility.'),
   },
   {
     id: 'hero',
-    label: 'Hero',
-    description: 'Opening section — headline, pitch, tools, and primary contact button.',
+    label: msg('Hero'),
+    description: msg('Opening section — headline, pitch, tools, and primary contact button.'),
   },
   {
     id: 'stack',
-    label: 'Stack',
-    description: 'Tech stack — workflow rail with logo tiles and labels.',
+    label: msg('Stack'),
+    description: msg('Tech stack — workflow rail with logo tiles and labels.'),
   },
   {
     id: 'info',
-    label: 'Info',
-    description: 'About me — titre, bio, education, skills and more.',
+    label: msg('Info'),
+    description: msg('About me — titre, bio, education, skills and more.'),
   },
   {
     id: 'work',
-    label: 'Portfolio',
-    description: 'Featured projects shown as large editorial work cards.',
+    label: msg('Portfolio'),
+    description: msg('Featured projects shown as large editorial work cards.'),
   },
   {
     id: 'tools',
-    label: 'Tools',
-    description: 'Workflow & tools — logo tiles and labels.',
+    label: msg('Tools'),
+    description: msg('Workflow & tools — logo tiles and labels.'),
   },
   {
     id: 'services',
-    label: 'Services',
-    description: 'Services & pricing section — cards, CTA Commander, and typography.',
+    label: msg('Services'),
+    description: msg('Services & pricing section — cards, CTA Commander, and typography.'),
   },
   {
     id: 'aboutUs',
-    label: 'About us',
-    description: 'Company story, tasks, images, quote, and founder.',
+    label: msg('About us'),
+    description: msg('Company story, tasks, images, quote, and founder.'),
   },
   {
     id: 'experience',
-    label: 'Experience',
-    description: 'Career timeline, years summary, and role entries.',
+    label: msg('Experience'),
+    description: msg('Career timeline, years summary, and role entries.'),
   },
   {
     id: 'team',
-    label: 'Team',
-    description: 'Members, roles, portraits, and social links.',
+    label: msg('Team'),
+    description: msg('Members, roles, portraits, and social links.'),
   },
   {
     id: 'gallery',
-    label: 'Gallery',
-    description: 'Images and videos displayed in five advanced layouts.',
+    label: msg('Gallery'),
+    description: msg('Images and videos displayed in five advanced layouts.'),
   },
   {
     id: 'faq',
     label: 'FAQ',
-    description: 'Accordion with common questions and answers.',
+    description: msg('Accordion with common questions and answers.'),
   },
   {
     id: 'contact',
-    label: 'Contact',
-    description: 'Email, phone, social links, and project CTA.',
+    label: msg('Contact'),
+    description: msg('Email, phone, social links, and project CTA.'),
   },
   {
     id: 'footer',
-    label: 'Footer',
-    description: 'Copyright, marketplace link, and quick contact links.',
+    label: msg('Footer'),
+    description: msg('Copyright, marketplace link, and quick contact links.'),
   },
 ];
 
@@ -1425,6 +1428,7 @@ export function createDefaultPortfolioSettings(): PortfolioSettings {
       floatingPillShowLogo: false,
       floatingPillShowContact: true,
       splitNavLeftSectionKeys: [],
+      hiddenNavItems: [],
       linkIconBackgroundColor: '#ffffff',
       linkIconColor: '#404040',
       linkIconBorderColor: '#e5e5e5',
@@ -2208,6 +2212,10 @@ function mergeNavSettings(base: PortfolioNavSettings, patch: unknown): Portfolio
     ),
     itemLabels: mergeNavItemLabels(base.itemLabels, patch.itemLabels),
     itemIcons: mergeNavItemIcons(base.itemIcons, patch.itemIcons),
+    hiddenNavItems:
+      patch.hiddenNavItems !== undefined
+        ? normalizeSplitNavLeftSectionKeys(patch.hiddenNavItems)
+        : base.hiddenNavItems ?? [],
     navMenuGroups:
       patch.navMenuGroups !== undefined
         ? normalizePortfolioNavMenuGroups(patch.navMenuGroups)

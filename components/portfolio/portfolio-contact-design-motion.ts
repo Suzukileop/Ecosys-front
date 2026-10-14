@@ -107,20 +107,23 @@ export type ContactLightDarkTokens = {
   placeholderBg: string;
 };
 
-/** The one shared light/dark recipe every premium Contact design in this family uses —
- *  pure white/black canvas, synced text tones. Driven by settings.global.colorMode (see
- *  contact-studio-overlap-design memory for why this, not prefers-color-scheme or a CSS
- *  `.dark` class, is the correct mechanism in this codebase). */
+/** The one shared light/dark recipe every premium Contact design in this family uses. Driven by
+ *  settings.global.colorMode (see contact-studio-overlap-design memory for why this, not
+ *  prefers-color-scheme or a CSS `.dark` class, is the correct mechanism in this codebase).
+ *  The tones come from the site palette (its CSS vars already switch with the colour mode), so
+ *  Contact reads in the same inks as every other section instead of pure white / pure black;
+ *  the plain values are only fallbacks outside a themed page. */
 export function contactLightDarkTokens(colorMode: 'light' | 'dark'): ContactLightDarkTokens {
   const isLight = colorMode === 'light';
+  const ink = `var(--pf-palette-texte-fort, ${isLight ? '#0a0a0a' : '#ffffff'})`;
   return {
     isLight,
-    bg: isLight ? '#ffffff' : '#000000',
-    ink: isLight ? '#0a0a0a' : '#ffffff',
-    muted: isLight ? '#8f8f8f' : '#7d7d7d',
-    faint: isLight ? 'rgba(10,10,10,0.35)' : 'rgba(255,255,255,0.35)',
-    border: isLight ? 'rgba(10,10,10,0.12)' : 'rgba(255,255,255,0.14)',
-    placeholderBg: isLight ? '#ececec' : '#141414',
+    bg: `var(--pf-palette-fond, ${isLight ? '#ffffff' : '#000000'})`,
+    ink,
+    muted: `var(--pf-palette-texte-muted, ${isLight ? '#8f8f8f' : '#7d7d7d'})`,
+    faint: `color-mix(in srgb, ${ink} 35%, transparent)`,
+    border: `color-mix(in srgb, ${ink} 13%, transparent)`,
+    placeholderBg: `var(--pf-palette-neutre, ${isLight ? '#ececec' : '#141414'})`,
   };
 }
 

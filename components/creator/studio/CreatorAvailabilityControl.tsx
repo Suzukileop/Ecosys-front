@@ -1,6 +1,7 @@
 'use client';
 
 import { resolveAvailabilityStatusLabel } from '@/lib/availability-status';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorAvailabilityControlProps = {
   isAvailable: boolean;
@@ -17,7 +18,8 @@ export function CreatorAvailabilityBadge({
   isAvailable: boolean;
   availabilityLabel?: string | null;
 }) {
-  const label = resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? 'Unavailable';
+  const t = useT();
+  const label = resolveAvailabilityStatusLabel(isAvailable, availabilityLabel) ?? t('Unavailable');
   return (
     <span
       className={`inline-flex items-center gap-1.5 rounded-lg px-3 py-1 text-sm font-semibold ${
@@ -42,6 +44,7 @@ export function CreatorAvailabilityControl({
   disabled = false,
   compact = false,
 }: CreatorAvailabilityControlProps) {
+  const t = useT();
   return (
     <div
       className={`flex items-center justify-between gap-4 rounded-2xl border border-neutral-200 bg-white px-5 py-4 dark:border-neutral-800 dark:bg-neutral-900 ${
@@ -49,9 +52,9 @@ export function CreatorAvailabilityControl({
       }`}
     >
       <div className="min-w-0">
-        <p className="text-base font-semibold text-neutral-900 dark:text-white">Availability status</p>
+        <p className="text-base font-semibold text-neutral-900 dark:text-white">{t('Availability status')}</p>
         <p className="mt-0.5 text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-          Let clients know if you are open to new work right now.
+          {t('Let clients know if you are open to new work right now.')}
         </p>
       </div>
       <div className="flex shrink-0 items-center gap-3">
@@ -60,7 +63,7 @@ export function CreatorAvailabilityControl({
           type="button"
           role="switch"
           aria-checked={isAvailable}
-          aria-label={isAvailable ? 'Mark as unavailable' : 'Mark as available'}
+          aria-label={isAvailable ? t('Mark as unavailable') : t('Mark as available')}
           disabled={disabled}
           onClick={() => onChange(!isAvailable)}
           className={`relative h-7 w-12 rounded-full transition-colors disabled:cursor-not-allowed disabled:opacity-60 ${

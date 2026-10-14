@@ -19,6 +19,7 @@ import {
   profileSectionSubheadingClass,
 } from '@/components/creator/studio/profile-section-ui';
 import { ProfileSectionItemCount } from '@/components/creator/studio/ProfileSectionLimitUpgradeHint';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type AboutSkillsFieldProps = {
   control: Control<ProfileFormValues>;
@@ -40,10 +41,11 @@ export function AboutSkillsField({
   readOnly = false,
   values = [],
 }: AboutSkillsFieldProps) {
+  const t = useT();
   if (readOnly) {
     const filled = values.filter((item) => item.title.trim());
     if (filled.length === 0) {
-      return <p className={profileSectionEmptyClass}>Not set</p>;
+      return <p className={profileSectionEmptyClass}>{t('Not set')}</p>;
     }
     return (
       <ul className="space-y-3">
@@ -52,10 +54,10 @@ export function AboutSkillsField({
             key={item.id}
             className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-4 dark:border-neutral-700/40 dark:bg-[#141414]"
           >
-            <p className="text-[15px] font-bold text-neutral-900 dark:text-white">{item.title}</p>
+            <p className="text-[15px] font-bold text-neutral-900 dark:text-white">{t(item.title)}</p>
             {item.description.trim() ? (
               <p className="mt-1 text-sm text-neutral-600 dark:text-neutral-400">
-                {item.description}
+                {t(item.description)}
               </p>
             ) : null}
           </li>
@@ -67,16 +69,16 @@ export function AboutSkillsField({
   return (
     <div className="space-y-4">
       <div>
-        <p className={profileSectionSubheadingClass}>Skills</p>
+        <p className={profileSectionSubheadingClass}>{t('Skills')}</p>
         <p className={`mt-1 ${profileSectionMutedTextClass}`}>
-          Add skills with a title and an optional short description.
+          {t('Add skills with a title and an optional short description.')}
         </p>
       </div>
 
       <ProfileSectionItemCount count={fields.length} limit={MAX_ABOUT_SKILLS} unit="skills" />
 
       {fields.length === 0 ? (
-        <p className={profileSectionEmptyClass}>No skills added yet.</p>
+        <p className={profileSectionEmptyClass}>{t('No skills added yet.')}</p>
       ) : (
         <div className="space-y-4">
           {fields.map((field, index) => (
@@ -86,7 +88,7 @@ export function AboutSkillsField({
             >
               <div className="flex items-center justify-between gap-2">
                 <p className="text-base font-semibold text-neutral-800 dark:text-neutral-100">
-                  Skill {index + 1}
+                  {t('Skill')} {index + 1}
                 </p>
                 <div className="flex items-center gap-1">
                   <button
@@ -94,7 +96,7 @@ export function AboutSkillsField({
                     disabled={index === 0}
                     onClick={() => move(index, index - 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move up"
+                    aria-label={t('Move up')}
                   >
                     ↑
                   </button>
@@ -103,7 +105,7 @@ export function AboutSkillsField({
                     disabled={index === fields.length - 1}
                     onClick={() => move(index, index + 1)}
                     className="rounded-lg border border-neutral-200 px-2.5 py-1.5 text-sm disabled:opacity-40 dark:border-neutral-700"
-                    aria-label="Move down"
+                    aria-label={t('Move down')}
                   >
                     ↓
                   </button>
@@ -112,24 +114,24 @@ export function AboutSkillsField({
                     onClick={() => remove(index)}
                     className="rounded-lg border border-red-200 px-2.5 py-1.5 text-sm text-red-700 dark:border-red-500/30 dark:text-red-400"
                   >
-                    Remove
+                    {t('Remove')}
                   </button>
                 </div>
               </div>
               <div>
-                <label className={profileFormLabelClass}>Title</label>
+                <label className={profileFormLabelClass}>{t('Title')}</label>
                 <input
                   type="text"
                   {...register(`aboutSkills.${index}.title`)}
-                  placeholder="e.g. Web application development"
+                  placeholder={t('e.g. Web application development')}
                   className={profileFormInputClass}
                 />
               </div>
               <div>
-                <label className={profileFormLabelClass}>Description (optional)</label>
+                <label className={profileFormLabelClass}>{t('Description (optional)')}</label>
                 <textarea
                   {...register(`aboutSkills.${index}.description`)}
-                  placeholder="Short context or detail"
+                  placeholder={t('Short context or detail')}
                   rows={2}
                   className={profileFormInputClass}
                 />
@@ -145,7 +147,7 @@ export function AboutSkillsField({
         onClick={() => append(createEmptyAboutSkillEntry(fields.length))}
         className="rounded-full border border-neutral-200 px-4 py-2 text-sm font-semibold text-neutral-700 hover:bg-neutral-50 disabled:opacity-50 dark:border-neutral-700 dark:text-neutral-200 dark:hover:bg-neutral-900"
       >
-        Add skill
+        {t('Add skill')}
       </button>
     </div>
   );

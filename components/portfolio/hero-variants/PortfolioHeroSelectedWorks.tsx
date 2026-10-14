@@ -12,6 +12,7 @@ import {
   resolveHeroPaletteColor,
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 // Register GSAP plugins at module level
 if (typeof window !== 'undefined') {
@@ -50,6 +51,7 @@ function selectedWorksScrollParent(el: HTMLElement | null): HTMLElement | undefi
  * - Scroll: subtle horizontal parallax on card row
  */
 export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -61,7 +63,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
   /** First name only — first word of the profile name. */
   const firstName = useMemo(() => {
     const raw = (data.fullName || data.nameLead || '').trim();
-    return raw.split(/\s+/)[0] || 'Name';
+    return raw.split(/\s+/)[0] || t('Name');
   }, [data.fullName, data.nameLead]);
 
   const specialty = resolveHeroSpecialtyValue(data.specialite);
@@ -367,7 +369,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
                 className={`pf-sw-see-all inline-flex items-center gap-1.5 ${linkClass}`}
                 style={{ color: muted }}
               >
-                See all
+                {t('See all')}
                 <span aria-hidden>→</span>
               </a>
             </div>
@@ -398,7 +400,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
                       /* GEOMETRY: Consistent border-radius */
                       borderRadius: '0.85rem',
                     }}
-                    aria-label={work.title || 'View project'}
+                    aria-label={work.title || t('View project')}
                   >
                     {/* 
                      * HOVER EFFECT: Image container with grayscale + zoom
@@ -408,7 +410,7 @@ export function PortfolioHeroSelectedWorks({ data }: { data: PortfolioHeroData }
                     <div className="pf-sw-card-image absolute inset-0 overflow-hidden rounded-xl">
                       <Image
                         src={work.imageUrl}
-                        alt={work.title || 'Selected work'}
+                        alt={work.title || t('Selected work')}
                         fill
                         sizes={
                           works.length === 1

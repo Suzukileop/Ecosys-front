@@ -1,6 +1,8 @@
 'use client';
 
+import type { ReactNode } from 'react';
 import { DateSeparator } from '@/components/messaging/conversation/DateSeparator';
+import { LinkifiedText } from '@/components/messaging/conversation/LinkifiedText';
 import { MessageCard } from '@/components/messaging/conversation/MessageCard';
 import { MessageIdentity } from '@/components/messaging/conversation/MessageIdentity';
 import { buildMessageTimeline } from '@/components/messaging/conversation/timeline-utils';
@@ -11,6 +13,7 @@ import { MessageProductPreview } from '@/components/messaging/conversation/Messa
 import { isGuestSessionTrace } from '@/lib/guest-session-trace';
 import { extractProductLink } from '@/lib/marketplace-api';
 import type { DirectMessage } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type MessageTimelineProps = {
   messages: DirectMessage[];
@@ -21,6 +24,8 @@ type MessageTimelineProps = {
   onTransfer: (message: DirectMessage) => void;
   onDelete?: (message: DirectMessage) => void;
   emptyLabel: string;
+  /** Replaces the one-line empty label (a new conversation's intro). */
+  emptyState?: ReactNode;
   loading?: boolean;
   highlightedMessageId?: string | null;
 };
@@ -34,9 +39,11 @@ export function MessageTimeline({
   onTransfer,
   onDelete,
   emptyLabel,
+  emptyState,
   loading = false,
   highlightedMessageId = null,
 }: MessageTimelineProps) {
+  const t = useT();
   const timeline = buildMessageTimeline(messages);
 
   // Keep inbox switches fluid: no centered spinner while history loads.
@@ -46,25 +53,28 @@ export function MessageTimeline({
 
   if (messages.length === 0) {
     return (
-      <p className="py-20 text-center text-sm font-light text-[var(--msg-ink-faint)]">{emptyLabel}</p>
+      emptyState ?? <p className="px-6 py-20 text-center text-[15px] leading-5 text-[var(--msg-ink-faint)]">{emptyLabel}</p>
     );
   }
 
+  /*
+   * Runs: consecutive messages from the same sender within 5 minutes read as one block (X DM) —
+   * tight 2px gaps, the avatar and the time only on the last bubble of the run.
+   */
+  const RUN_GAP_MS = 5 * 60 * 1000;
+  const sameRun = (a: DirectMessage, b: DirectMessage | undefined) => {
+    if (!b || b.messageType === 'SYSTEM' || a.messageType === 'SYSTEM') return false;
+    if (a.senderId !== b.senderId) return false;
+    const gap = new Date(b.sentAt).getTime() - new Date(a.sentAt).getTime();
+    return Number.isFinite(gap) && gap >= 0 && gap < RUN_GAP_MS;
+  };
+
   return (
-    <div className="relative px-1 py-4 sm:px-2">
-      {/*
-        * The thread spine. It used to be the accent at 35%, which made a coloured line run the
-        * full height of the conversation and compete with the words next to it. At hairline
-        * weight it still organises the column and is never the thing you look at.
-        */}
-      <div
-        className="pointer-events-none absolute bottom-10 left-[calc(2.5rem+0.5rem)] top-10 hidden w-px bg-[var(--msg-hairline)] sm:left-[calc(2.75rem+0.5rem)] sm:block"
-        aria-hidden
-      />
-      <div className="space-y-0">
-        {timeline.map((item) => {
+    <div className="relative px-0 py-4 sm:px-1">
+      <div>
+        {timeline.map((item, index) => {
           if (item.kind === 'date') {
-            return <DateSeparator key={item.key} label={item.label} />;
+            return <DateSeparator key={item.key} label={t(item.label)} />;
           }
 
           const m = item.message;
@@ -72,20 +82,21 @@ export function MessageTimeline({
           if (isSystem) {
             const guestTrace = isGuestSessionTrace(m.content);
             return (
-              /*
-               * A system line is the room speaking, not a participant. It is set in the same
-               * micro-caps as the date rules so it reads as part of the thread's scaffolding,
-               * and the pill the guest trace used to sit in is gone — it was a box drawn
-               * around one sentence.
-               */
-              <p key={m.id} className="msg-micro py-4 text-center text-[var(--msg-ink-faint)]">
-                <span className={guestTrace ? 'inline-block max-w-[80%] leading-[1.8]' : undefined}>
+              /* The room speaking, not a participant: centred meta line, no pill. */
+              <p key={m.id} className="msg-micro py-3 text-center text-[var(--msg-ink-faint)]">
+                <span className={guestTrace ? 'inline-block max-w-[80%] leading-[1.5]' : undefined}>
                   {m.content}
                 </span>
               </p>
             );
           }
 
+          const nextItem = timeline[index + 1];
+          const prevItem = timeline[index - 1];
+          const next = nextItem?.kind === 'message' ? nextItem.message : undefined;
+          const prev = prevItem?.kind === 'message' ? prevItem.message : undefined;
+          const continuesRun = sameRun(m, next);
+          const continuesPrev = prev ? sameRun(prev, m) : false;
           const mine = currentUserId != null && m.senderId === currentUserId;
           const status = getOutgoingStatus(m);
           const visualAttachments = (m.attachments ?? []).filter(attachmentIsVisualMedia);
@@ -98,19 +109,27 @@ export function MessageTimeline({
             <div
               key={m.id}
               data-message-id={m.id}
-              className={`relative flex items-start gap-3 py-3.5 sm:gap-3.5 ${
+              className={`relative flex items-end gap-2 ${continuesPrev ? 'pt-0.5' : 'pt-3'} ${
                 m.clientPending ? 'opacity-90' : m.clientFailed ? 'opacity-60' : 'opacity-100'
               }`}
             >
               {!mine ? (
-                <MessageIdentity
-                  name={m.senderName || 'Member'}
-                  avatarUrl={resolveAvatarUrl(m)}
-                />
+                continuesRun ? (
+                  <span aria-hidden className="w-8 shrink-0" />
+                ) : (
+                  <div className="mb-[22px] shrink-0">
+                    <MessageIdentity
+                      name={m.senderName || 'Member'}
+                      avatarUrl={resolveAvatarUrl(m)}
+                    />
+                  </div>
+                )
               ) : null}
-              <div className={`min-w-0 ${mine ? 'ml-auto' : ''} max-w-[min(100%,520px)]`}>
+              <div className={`min-w-0 ${mine ? 'ml-auto' : ''} max-w-[88%] sm:max-w-[min(100%,560px)]`}>
                 <MessageCard
                   mine={mine}
+                  showMeta={!continuesRun}
+                  groupedWithNext={continuesRun}
                   sentAt={m.sentAt}
                   status={status}
                   highlighted={highlightedMessageId === m.id}
@@ -156,10 +175,10 @@ export function MessageTimeline({
                           />
                         </div>
                       ))}
-                      {hasCaption ? caption : null}
+                      {hasCaption && caption ? <LinkifiedText text={caption} /> : null}
                     </>
                   ) : visualAttachments.length === 0 && !productLink ? (
-                    'Message'
+                    t('Message')
                   ) : null}
                 </MessageCard>
               </div>

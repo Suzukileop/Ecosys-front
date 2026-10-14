@@ -1,6 +1,12 @@
 'use client';
 
 import { useState, type CSSProperties, type ReactNode } from 'react';
+import {
+  HEADER_ELEMENT_OPTIONS,
+  headerElementVisibility,
+  toggleHeaderElement,
+} from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Controls shared by the Header tab of the portfolio sections (Tools today; Services carries its own
@@ -11,7 +17,7 @@ import { useState, type CSSProperties, type ReactNode } from 'react';
 export type HeaderPaletteToken = 'principal' | 'secondaire' | 'texteFort';
 export type HeaderTextSize = 'sm' | 'md' | 'lg' | 'xl';
 export type HeaderTextWeight = 'light' | 'regular' | 'semibold' | 'bold';
-export type HeaderPatch = Record<string, string | boolean | number>;
+export type HeaderPatch = Record<string, string | boolean | number | string[]>;
 
 /** Chosen option: a light border and a faint tint instead of a solid fill — reads the same in light and dark. */
 const PILL_ACTIVE =
@@ -87,6 +93,7 @@ export function HeaderOptionGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const cols = columns ?? Math.min(Math.max(options.length, 1), 4);
   return (
     <div>
@@ -110,7 +117,7 @@ export function HeaderOptionGrid<T extends string>({
                 active ? PILL_ACTIVE : PILL_IDLE
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -209,6 +216,7 @@ export function HeaderColorRow({
   resolveColor: (token: HeaderPaletteToken) => string;
   onChange: (value: HeaderPaletteToken) => void;
 }) {
+  const t = useT();
   return (
     <div>
       <div className="pf-exp-centered-slider-head">
@@ -231,8 +239,8 @@ export function HeaderColorRow({
               type="button"
               role="radio"
               aria-checked={active}
-              aria-label={option.label}
-              title={option.label}
+              aria-label={t(option.label)}
+              title={t(option.label)}
               onClick={() => onChange(option.value)}
               className={`flex h-10 w-full items-center justify-center rounded-lg transition ${
                 active ? PILL_ACTIVE : PILL_IDLE
@@ -281,6 +289,7 @@ export function HeaderStyleTargetsEditor({
   colorOptions: readonly { value: HeaderPaletteToken; label: string }[];
   resolveColor: (token: HeaderPaletteToken) => string;
 }) {
+  const t = useT();
   const [targetId, setTargetId] = useState(initialId ?? targets[0]!.id);
   const target = targets.find((item) => item.id === targetId) ?? targets[0]!;
   const record = settings as Record<string, unknown>;
@@ -310,7 +319,7 @@ export function HeaderStyleTargetsEditor({
             }}
             className="text-xs font-medium text-neutral-400 underline-offset-2 transition hover:text-neutral-700 hover:underline"
           >
-            Reset
+            {t('Reset')}
           </button>
         ) : null}
       </div>
@@ -318,7 +327,7 @@ export function HeaderStyleTargetsEditor({
       {targets.length > 1 ? (
         <div
           role="radiogroup"
-          aria-label="Text to style"
+          aria-label={t('Text to style')}
           className="grid gap-2"
           style={{ gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` }}
         >
@@ -343,7 +352,7 @@ export function HeaderStyleTargetsEditor({
                 >
                   {on ? <span className="h-2 w-2 rounded-full bg-current" /> : null}
                 </span>
-                <span className="truncate">{item.label}</span>
+                <span className="truncate">{t(item.label)}</span>
               </button>
             );
           })}
@@ -361,7 +370,7 @@ export function HeaderStyleTargetsEditor({
 
       {target.size && size ? (
         <HeaderSteppedSlider
-          label="Size"
+          label={t('Size')}
           steps={HEADER_SIZE_STEPS}
           value={size}
           currentName={HEADER_SIZE_STEPS.find((step) => step.value === size)?.name ?? ''}
@@ -371,7 +380,7 @@ export function HeaderStyleTargetsEditor({
 
       {target.weight && weight ? (
         <HeaderSteppedSlider
-          label="Weight"
+          label={t('Weight')}
           steps={HEADER_WEIGHT_STEPS}
           value={weight}
           currentName={HEADER_WEIGHT_STEPS.find((step) => step.value === weight)?.tick ?? ''}
@@ -432,6 +441,7 @@ export function HeaderMarqueeWords({
   keys: readonly [string, string, string, string];
   placeholders: readonly [string, string, string, string];
 }) {
+  const t = useT();
   const record = settings as Record<string, unknown>;
   const text = (key: string) => (typeof record[key] === 'string' ? (record[key] as string) : '');
   const lastFilled = keys.reduce((last, key, index) => (text(key).trim() ? index : last), -1);
@@ -449,7 +459,7 @@ export function HeaderMarqueeWords({
                 <button
                   type="button"
                   aria-label={`Remove word ${index + 1}`}
-                  title="Remove word"
+                  title={t('Remove word')}
                   onClick={() => {
                     onPatch({ [key]: '' });
                     setCount(count - 1);
@@ -484,10 +494,66 @@ export function HeaderMarqueeWords({
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
               <path d="M12 5v14M5 12h14" />
             </svg>
-            Add word
+            {t('Add word')}
           </button>
         </div>
       ) : null}
+    </div>
+  );
+}
+
+/**
+ * "Visible elements": one switch per element of the chosen Header design (its label, title, counter…).
+ * Reads and writes the section's `headerHiddenElements`, so a hidden element is simply not rendered.
+ */
+export function HeaderElementToggles({
+  design,
+  settings,
+  onPatch,
+}: {
+  design: string;
+  settings: object;
+  onPatch: (patch: HeaderPatch) => void;
+}) {
+  const t = useT();
+  const options = HEADER_ELEMENT_OPTIONS[design];
+  if (!options || options.length === 0) return null;
+  const hidden = (settings as Record<string, unknown>).headerHiddenElements as string[] | undefined;
+  const show = headerElementVisibility(hidden, design);
+
+  return (
+    <div>
+      <HeaderGroupLabel>{t('Visible elements')}</HeaderGroupLabel>
+      <ul className="mt-3 space-y-3">
+        {options.map((option) => {
+          const visible = show(option.key);
+          return (
+            <li key={option.key} className="flex items-center justify-between gap-4">
+              <span className="min-w-0 truncate text-sm font-medium text-neutral-900">{t(option.label)}</span>
+              <button
+                type="button"
+                role="switch"
+                aria-checked={visible}
+                aria-label={t('Show {label}', { label: option.label })}
+                onClick={() =>
+                  onPatch({ headerHiddenElements: toggleHeaderElement(hidden, design, option.key, !visible) })
+                }
+                className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+                style={{
+                  backgroundColor: visible
+                    ? 'var(--pf-palette-texte-fort,#171717)'
+                    : 'color-mix(in srgb, var(--pf-palette-texte-fort,#171717) 20%, transparent)',
+                }}
+              >
+                <span
+                  className="absolute top-0.5 h-4 w-4 rounded-full transition-[left] duration-200 ease-[cubic-bezier(0.34,1.4,0.64,1)]"
+                  style={{ left: visible ? '1.125rem' : '0.125rem', backgroundColor: 'var(--pf-palette-fond,#ffffff)' }}
+                />
+              </button>
+            </li>
+          );
+        })}
+      </ul>
     </div>
   );
 }

@@ -14,6 +14,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -86,6 +87,7 @@ export function FooterDesignHeroColumns({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignHeroColumnsProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
   const imageParallaxRef = useRef<HTMLDivElement>(null);
 
@@ -204,7 +206,7 @@ export function FooterDesignHeroColumns({
                   {avatarUrl?.trim() ? (
                     <img
                       src={avatarUrl}
-                      alt={creatorName ? `Portrait of ${creatorName}` : 'Portrait'}
+                      alt={creatorName ? t('Portrait of {creatorName}', { creatorName }) : t('Portrait')}
                       className="h-full w-full object-cover object-center"
                     />
                   ) : (
@@ -233,7 +235,7 @@ export function FooterDesignHeroColumns({
               {navHeading}
             </p>
           ) : null}
-          <nav aria-label="Footer" className="flex flex-col gap-1">
+          <nav aria-label={t('Footer')} className="flex flex-col gap-1">
             {navLinks.map((link) => (
               <a
                 key={link.id}

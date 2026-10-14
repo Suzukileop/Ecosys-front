@@ -8,6 +8,7 @@ import { useAuth } from '@/context/AuthContext';
 import { recordShare } from '@/lib/marketplace-api';
 import { createOrGetConversation, listConversations, searchMessagingUsers, sendTextMessage } from '@/lib/messaging';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const subscribeNoop = () => () => {};
 
@@ -63,6 +64,7 @@ function ExternalTarget({ label, onClick, children }: { label: string; onClick: 
 const ICON = 'h-[22px] w-[22px]';
 
 export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareTitle }: ContentPostShareDialogProps) {
+  const t = useT();
   const { user } = useAuth();
   const mounted = useSyncExternalStore(subscribeNoop, () => true, () => false);
   const [wasOpen, setWasOpen] = useState(open);
@@ -204,7 +206,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
       if (copiedTimer.current) window.clearTimeout(copiedTimer.current);
       copiedTimer.current = window.setTimeout(() => setCopied(false), 2000);
     } catch {
-      pushFlashFeedback({ variant: 'error', title: 'Unable to copy the link' });
+      pushFlashFeedback({ variant: 'error', title: t('Unable to copy the link') });
     }
   };
 
@@ -255,12 +257,12 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
     const sent = outcomes.length - failed;
     if (sent > 0) track('message');
     if (failed === 0) {
-      pushFlashFeedback({ variant: 'success', title: sent === 1 ? 'Sent' : `Sent to ${sent} people` });
+      pushFlashFeedback({ variant: 'success', title: sent === 1 ? t('Sent') : t('Sent to {sent} people', { sent }) });
       onClose();
     } else {
       pushFlashFeedback({
         variant: 'error',
-        title: sent > 0 ? `Sent to ${sent}, ${failed} failed` : 'Unable to send the post',
+        title: sent > 0 ? t('Sent to {sent}, {failed} failed', { sent, failed }) : t('Unable to send the post'),
       });
     }
   };
@@ -277,23 +279,23 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
       <button
         type="button"
         className="fixed inset-0 h-[100dvh] w-full cursor-default bg-black/40 dark:bg-black/60"
-        aria-label="Close"
+        aria-label={t('Close')}
         onClick={handleClose}
       />
 
       <div
         role="dialog"
         aria-modal="true"
-        aria-label="Share post"
+        aria-label={t('Share post')}
         className="relative z-[211] flex max-h-[88dvh] w-full flex-col overflow-hidden rounded-t-2xl border border-black/[0.08] bg-white shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)] dark:border-white/[0.1] dark:bg-[#0A0A0A] sm:max-w-[480px] sm:rounded-2xl"
         onClick={(e) => e.stopPropagation()}
       >
         <div className="flex shrink-0 items-center justify-between px-5 pb-3 pt-4">
-          <h2 className="text-[17px] font-bold text-[#111111] dark:text-white">Share</h2>
+          <h2 className="text-[17px] font-bold text-[#111111] dark:text-white">{t('Share')}</h2>
           <button
             type="button"
             onClick={handleClose}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition hover:bg-black/[0.06] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -304,7 +306,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
 
         <div className="min-h-0 flex-1 overflow-y-auto overscroll-contain">
           <section className="px-5 pb-5">
-            <p className="mb-3 text-[13px] font-semibold text-neutral-500 dark:text-neutral-400">Send to</p>
+            <p className="mb-3 text-[13px] font-semibold text-neutral-500 dark:text-neutral-400">{t('Send to')}</p>
             {user ? (
               <>
                 <label className="flex items-center gap-2.5 rounded-full bg-neutral-100 px-4 py-2.5 transition focus-within:bg-white focus-within:shadow-[0_0_0_1.5px_#111111] dark:bg-white/[0.07] dark:focus-within:bg-transparent dark:focus-within:shadow-[0_0_0_1.5px_rgba(255,255,255,0.8)]">
@@ -316,8 +318,8 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                     type="search"
                     value={query}
                     onChange={(e) => setQuery(e.target.value)}
-                    placeholder="Search people"
-                    aria-label="Search people"
+                    placeholder={t('Search people')}
+                    aria-label={t('Search people')}
                     className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-500 dark:text-white"
                   />
                 </label>
@@ -383,7 +385,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                     </div>
                   ) : (
                     <p className="py-8 text-center text-[14px] text-neutral-500 dark:text-neutral-400">
-                      {isSearch ? 'No one found.' : 'Search for someone to send this post to.'}
+                      {isSearch ? t('No one found.') : t('Search for someone to send this post to.')}
                     </p>
                   )}
                 </div>
@@ -400,8 +402,8 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                         }
                       }}
                       maxLength={500}
-                      placeholder="Add a message…"
-                      aria-label="Message"
+                      placeholder={t('Add a message…')}
+                      aria-label={t('Message')}
                       className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-500 dark:text-white"
                     />
                     <button
@@ -413,7 +415,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                       {sending ? (
                         <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
                       ) : null}
-                      {selected.size > 1 ? `Send (${selected.size})` : 'Send'}
+                      {selected.size > 1 ? `Send (${selected.size})` : t('Send')}
                     </button>
                   </div>
                 ) : null}
@@ -421,15 +423,15 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
             ) : (
               <p className="rounded-2xl bg-neutral-100 px-4 py-4 text-[14px] text-neutral-600 dark:bg-white/[0.06] dark:text-neutral-300">
                 <Link href="/login" className="font-semibold text-[#111111] hover:underline dark:text-white">
-                  Log in
+                  {t('Log in')}
                 </Link>{' '}
-                to send this post to someone in a private message.
+                {t('to send this post to someone in a private message.')}
               </p>
             )}
           </section>
 
           <section className="border-t border-black/[0.08] py-5 dark:border-white/[0.08]">
-            <p className="mb-3 px-5 text-[13px] font-semibold text-neutral-500 dark:text-neutral-400">Share to</p>
+            <p className="mb-3 px-5 text-[13px] font-semibold text-neutral-500 dark:text-neutral-400">{t('Share to')}</p>
             <div className="flex gap-1 overflow-x-auto px-3 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden">
               <ExternalTarget label="WhatsApp" onClick={() => openExternal('whatsapp')}>
                 <svg className={`${ICON} text-[#25D366]`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -446,24 +448,24 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                   <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
                 </svg>
               </ExternalTarget>
-              <ExternalTarget label="Facebook" onClick={() => openExternal('facebook')}>
+              <ExternalTarget label={t('Facebook')} onClick={() => openExternal('facebook')}>
                 <svg className={`${ICON} text-[#1877F2]`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.47h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.47h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
                 </svg>
               </ExternalTarget>
-              <ExternalTarget label="Telegram" onClick={() => openExternal('telegram')}>
+              <ExternalTarget label={t('Telegram')} onClick={() => openExternal('telegram')}>
                 <svg className={`${ICON} text-[#26A5E4]`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                   <path d="M11.944 0A12 12 0 000 12a12 12 0 0012 12 12 12 0 0012-12A12 12 0 0012 0a12 12 0 00-.056 0zm4.962 7.224c.1-.002.321.023.465.14a.506.506 0 01.171.325c.016.093.036.306.02.472-.18 1.898-.962 6.502-1.36 8.627-.168.9-.499 1.201-.82 1.23-.696.065-1.225-.46-1.9-.902-1.056-.693-1.653-1.124-2.678-1.8-1.185-.78-.417-1.21.258-1.91.177-.184 3.247-2.977 3.307-3.23.007-.032.014-.15-.056-.212s-.174-.041-.249-.024c-.106.024-1.793 1.14-5.061 3.345-.48.33-.913.49-1.302.48-.428-.008-1.252-.241-1.865-.44-.752-.245-1.349-.374-1.297-.789.027-.216.325-.437.893-.663 3.498-1.524 5.83-2.529 6.998-3.014 3.332-1.386 4.025-1.627 4.476-1.635z" />
                 </svg>
               </ExternalTarget>
-              <ExternalTarget label="Email" onClick={shareByEmail}>
+              <ExternalTarget label={t('Email')} onClick={shareByEmail}>
                 <svg className={`${ICON} text-[#111111] dark:text-white`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} aria-hidden>
                   <rect x="3" y="5" width="18" height="14" rx="2.5" />
                   <path strokeLinecap="round" strokeLinejoin="round" d="M3.5 7l8.5 6 8.5-6" />
                 </svg>
               </ExternalTarget>
               {canUseNativeShare ? (
-                <ExternalTarget label="More" onClick={() => void shareNative()}>
+                <ExternalTarget label={t('More')} onClick={() => void shareNative()}>
                   <svg className={`${ICON} text-[#111111] dark:text-white`} viewBox="0 0 24 24" fill="currentColor" aria-hidden>
                     <circle cx="5" cy="12" r="1.8" />
                     <circle cx="12" cy="12" r="1.8" />
@@ -496,7 +498,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                     <path strokeLinecap="round" strokeLinejoin="round" d="M5 12.5l4.5 4.5L19 7.5" />
                   </svg>
                 ) : null}
-                {copied ? 'Copied' : 'Copy link'}
+                {copied ? t('Copied') : t('Copy link')}
               </button>
             </div>
           </section>

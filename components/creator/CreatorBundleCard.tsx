@@ -3,6 +3,7 @@
 import { formatPrice } from '@/lib/marketplace-api';
 import { BundlePurchaseButton } from '@/components/marketplace/BundlePurchaseButton';
 import type { MarketplaceBundleSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorBundleCardProps = {
   bundle: MarketplaceBundleSummary;
@@ -15,6 +16,7 @@ export function CreatorBundleCard({
   isAuthenticated,
   loginRedirect,
 }: CreatorBundleCardProps) {
+  const t = useT();
   return (
     <article className="flex flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white p-5 transition-colors duration-300 hover:border-black/[0.12] dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.16]">
       <div className="flex items-start justify-between gap-3">
@@ -31,13 +33,13 @@ export function CreatorBundleCard({
             aria-hidden
             className={`h-1.5 w-1.5 rounded-full ${bundle.isPublished ? 'bg-emerald-500' : 'bg-amber-500'}`}
           />
-          {bundle.isPublished ? 'Published' : 'Draft'}
+          {bundle.isPublished ? t('Published') : t('Draft')}
         </span>
       </div>
 
       <div className="mt-4 flex flex-wrap items-center gap-3">
         <span className="rounded-full border border-black/[0.08] px-2.5 py-0.5 text-[13px] text-neutral-600 dark:border-white/[0.1] dark:text-neutral-300">
-          {bundle.productCount} products
+          {t('{productCount} products', { productCount: bundle.productCount })}
         </span>
         <p className="text-base font-semibold text-[#111111] dark:text-white">
           {formatPrice(bundle.priceCents, bundle.currency)}

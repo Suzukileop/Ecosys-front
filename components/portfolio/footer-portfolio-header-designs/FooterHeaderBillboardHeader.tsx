@@ -8,6 +8,7 @@ import {
   footerHeaderPaletteTokenColor,
   type PortfolioFooterHeaderBillboardWordStyle,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_BIG_WORD = 'TALK';
 const REFERENCE_PX = 100;
@@ -115,6 +116,7 @@ export function FooterHeaderBillboardHeader({
   itemCount?: number;
 }) {
   const presentation = presentationProp ?? DEFAULT_FOOTER_PRESENTATION;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'footer-billboard');
   const bigWord = (presentation.headerBillboardBigWord || DEFAULT_BIG_WORD).trim();
   const wordTone = footerHeaderPaletteTokenColor(presentation.headerBillboardWordColor ?? 'principal');
 
@@ -128,9 +130,11 @@ export function FooterHeaderBillboardHeader({
       }}
       data-footer-header="billboard"
     >
-      <div>
-        <FooterHeaderBillboardBigWord text={bigWord} tone={wordTone} wordStyle={presentation.headerBillboardWordStyle ?? 'outline'} />
-      </div>
+      {show('word') ? (
+        <div>
+          <FooterHeaderBillboardBigWord text={bigWord} tone={wordTone} wordStyle={presentation.headerBillboardWordStyle ?? 'outline'} />
+        </div>
+      ) : null}
 
       {trailing ? <div className="mt-8">{trailing}</div> : null}
     </div>

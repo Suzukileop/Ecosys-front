@@ -11,6 +11,7 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const LABEL_OPACITY = 0.4;
 
@@ -91,6 +92,7 @@ export function FooterDesignLanding({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignLandingProps) {
+  const t = useT();
   const isLight = colorMode === 'light';
   const ink = isLight ? '#000000' : '#ffffff';
   const identityBorder = isLight ? 'rgba(0,0,0,0.14)' : 'rgba(255,255,255,0.16)';
@@ -124,7 +126,7 @@ export function FooterDesignLanding({
         }
         const rawLabel = link.label?.trim() ?? '';
         const label =
-          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? 'Website' : rawLabel || hostname || url;
+          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? t('Website') : rawLabel || hostname || url;
         return { ...link, label };
       })
     : [];
@@ -194,7 +196,7 @@ export function FooterDesignLanding({
             ) : null}
 
             {visibleLinks.length > 0 ? (
-              <nav className="flex flex-wrap items-center gap-6 sm:gap-7" aria-label="Social">
+              <nav className="flex flex-wrap items-center gap-6 sm:gap-7" aria-label={t('Social')}>
                 {visibleLinks.map((link) => (
                   <a
                     key={link.id}

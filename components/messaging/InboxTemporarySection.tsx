@@ -1,7 +1,9 @@
 'use client';
 
+import { InboxSectionKicker } from '@/components/messaging/InboxPanel';
 import { TemporaryInboxList } from '@/components/messaging/TemporaryInboxList';
 import type { TemporaryInboxEntry } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type InboxTemporarySectionProps = {
   entries: TemporaryInboxEntry[];
@@ -17,6 +19,7 @@ type InboxTemporarySectionProps = {
   emptyMessage?: string;
 };
 
+/** The "Temporary" filter's list: the section kicker, then the temporary entries (or one quiet line). */
 export function InboxTemporarySection({
   entries,
   actingInviteId,
@@ -30,35 +33,33 @@ export function InboxTemporarySection({
   embedded = false,
   emptyMessage,
 }: InboxTemporarySectionProps) {
+  const t = useT();
   if (entries.length === 0 && embedded) {
     return null;
   }
 
   return (
-    <div className={embedded ? 'shrink-0 px-2 pb-2' : 'min-h-0 flex-1 overflow-y-auto px-2 pb-2'}>
-      <div className="p-2">
-        <p className="px-2 pb-2 pt-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-          Temporary access
-        </p>
+    /* The inbox's own scroll area scrolls this list — no nested scroller. */
+    <section className="shrink-0 pb-2" aria-label={t('Temporary access')}>
+      <InboxSectionKicker>{t('Temporary access · {entriesLength}', { entriesLength: entries.length })}</InboxSectionKicker>
 
-        {entries.length === 0 ? (
-          <p className="px-2 py-6 text-center text-sm text-gray-500 dark:text-neutral-400">
-            {emptyMessage ?? 'No temporary guest access, invites, or activity yet.'}
-          </p>
-        ) : (
-          <TemporaryInboxList
-            entries={entries}
-            actingInviteId={actingInviteId}
-            actingCancelId={actingCancelId}
-            dismissingEntryKey={dismissingEntryKey}
-            onAcceptInvite={onAcceptInvite}
-            onDeclineInvite={onDeclineInvite}
-            onCancelInvite={onCancelInvite}
-            onOpenConversation={onOpenConversation}
-            onDismissEntry={onDismissEntry}
-          />
-        )}
-      </div>
-    </div>
+      {entries.length === 0 ? (
+        <p className="px-5 py-10 text-center text-[15px] leading-5 text-[color:var(--gn-ink2)] lg:px-6">
+          {emptyMessage ?? t('No temporary guest access, invites, or activity yet.')}
+        </p>
+      ) : (
+        <TemporaryInboxList
+          entries={entries}
+          actingInviteId={actingInviteId}
+          actingCancelId={actingCancelId}
+          dismissingEntryKey={dismissingEntryKey}
+          onAcceptInvite={onAcceptInvite}
+          onDeclineInvite={onDeclineInvite}
+          onCancelInvite={onCancelInvite}
+          onOpenConversation={onOpenConversation}
+          onDismissEntry={onDismissEntry}
+        />
+      )}
+    </section>
   );
 }

@@ -26,6 +26,7 @@ import {
   mergeProjectsSpecSettings,
 } from '@/components/portfolio/portfolio-work-settings';
 import { aboutBannerScrollParent } from '@/components/portfolio/portfolio-about-scroll-utils';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -428,8 +429,9 @@ function SpecThumbnail({
 }
 
 function SpecStack({ tools, ink }: { tools: string[]; ink: string }) {
+  const t = useT();
   return (
-    <ul className="flex flex-wrap items-baseline" aria-label="Stack">
+    <ul className="flex flex-wrap items-baseline" aria-label={t('Stack')}>
       {tools.map((tool, toolIndex) => (
         <li
           key={tool}
@@ -577,6 +579,7 @@ function SpecSheet({
   /** Desktop-only asymmetric left offset — single-column mode only. */
   applyShift?: boolean;
 }) {
+  const t = useT();
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
   const ink = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted =
@@ -597,7 +600,7 @@ function SpecSheet({
   const stackInk = presentation.elementStyles?.toolsList?.color || muted;
   const tagSurface = presentation.cardBorderColor || rule;
 
-  const title = item.title?.trim() || 'Untitled';
+  const title = item.title?.trim() || t('Untitled');
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
   const description = item.description?.trim() || '';
@@ -612,7 +615,7 @@ function SpecSheet({
   const showDescription = settings.showDescription !== false && Boolean(description);
   const showStack = settings.showStack !== false && tools.length > 0;
   const showConsult = settings.showConsult !== false && Boolean(href);
-  const consultLabel = settings.consultLabel?.trim() || 'Consult this project';
+  const consultLabel = settings.consultLabel?.trim() || t('Consult this project');
   const consultDesign = settings.consultDesign ?? 'bracket';
   const sheetFrame = settings.sheetFrame ?? 'none';
   const framed = sheetFrame !== 'none';
@@ -881,6 +884,7 @@ export function ProjectsSpecGallery({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const settings = mergeProjectsSpecSettings(
     DEFAULT_PROJECTS_SPEC_SETTINGS,
     presentation.projectsSpec
@@ -898,7 +902,7 @@ export function ProjectsSpecGallery({
       <section
         ref={rootRef}
         className={`pf-work-spec grid w-full grid-cols-1 lg:grid-cols-2 ${gridGapClass}`}
-        aria-label="Project specifications"
+        aria-label={t('Project specifications')}
         data-pf-no-color-transition=""
       >
         <style>{SPEC_MOTION_CSS}</style>
@@ -922,7 +926,7 @@ export function ProjectsSpecGallery({
     <section
       ref={rootRef}
       className="pf-work-spec w-full"
-      aria-label="Project specifications"
+      aria-label={t('Project specifications')}
       data-pf-no-color-transition=""
     >
       <style>{SPEC_MOTION_CSS}</style>

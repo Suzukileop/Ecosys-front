@@ -1,6 +1,11 @@
 ﻿'use client';
 
 import { useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { createPortal } from 'react-dom';
 import { useRouter } from 'next/navigation';
 import {
@@ -13,8 +18,8 @@ import { PortfolioNavContactCtaGlyph } from '@/components/portfolio/portfolio-na
 import type { PortfolioNavMenuGroup } from '@/components/portfolio/portfolio-nav-menu-groups';
 import { type PortfolioNavChromeLink } from '@/components/portfolio/portfolio-nav-extras';
 import type { PortfolioFooterSectionLinkOption } from '@/components/portfolio/portfolio-footer-design-layout';
-import { PORTFOLIO_SETTINGS_SECTIONS, PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS, PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS, portfolioNavContactButtonShellPresentation, DEFAULT_EDITORIAL_BAR_MAIL_CONTACT, DEFAULT_EDITORIAL_BAR_PHONE_CONTACT, mergeEditorialBarContactChannelSettings, portfolioNavContactCtaIconOptionsForEditorialChannel, clampPortfolioNavCustomExtraLogoSizePx, type PortfolioNavSettings, type PortfolioNavContactButtonDisplay, type PortfolioNavContactButtonShape, type PortfolioNavContactCtaIcon, type PortfolioNavEditorialBarContactChannelSettings, type PortfolioSettings, type PortfolioSettingsSectionId, type PortfolioSettingsSectionMeta, PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS } from '@/components/portfolio/portfolio-settings-types';
-import { PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS, PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS, normalizePortfolioNavFloatingPillMenuMode, PORTFOLIO_NAV_DISPLAY_OPTIONS, PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS, resolvePortfolioNavVisibilityMode, PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS, PORTFOLIO_NAV_BAR_SURFACE_OPTIONS, PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS, PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS, PORTFOLIO_NAV_MODE_OPTIONS, PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS, PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS, PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS, type PortfolioNavActiveStyle } from '@/components/portfolio/portfolio-nav-settings';
+import { createDefaultPortfolioSettings, PORTFOLIO_SETTINGS_SECTIONS, PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS, PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS, portfolioNavContactButtonShellPresentation, DEFAULT_EDITORIAL_BAR_MAIL_CONTACT, DEFAULT_EDITORIAL_BAR_PHONE_CONTACT, mergeEditorialBarContactChannelSettings, portfolioNavContactCtaIconOptionsForEditorialChannel, clampPortfolioNavCustomExtraLogoSizePx, type PortfolioNavSettings, type PortfolioNavContactButtonDisplay, type PortfolioNavContactButtonShape, type PortfolioNavContactCtaIcon, type PortfolioNavEditorialBarContactChannelSettings, type PortfolioSettings, type PortfolioSettingsSectionId, type PortfolioSettingsSectionMeta, PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS } from '@/components/portfolio/portfolio-settings-types';
+import { PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS, PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS, normalizePortfolioNavFloatingPillMenuMode, PORTFOLIO_NAV_DISPLAY_OPTIONS, PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS, resolvePortfolioNavVisibilityMode, PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS, PORTFOLIO_NAV_BAR_SURFACE_OPTIONS, PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS, PORTFOLIO_NAV_ITEM_GAP_OPTIONS, PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS, PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS, PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS, type PortfolioNavActiveStyle } from '@/components/portfolio/portfolio-nav-settings';
 import {
   PORTFOLIO_NAV_IN_BAR_BRAND_LABEL,
   PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS,
@@ -22,11 +27,25 @@ import {
   type PortfolioNavLayoutDesign,
 } from '@/components/portfolio/portfolio-nav-layout-design';
 import { PortfolioNavIcon } from '@/components/portfolio/portfolio-nav-icons';
+import {
+  NpCollapsibleSection,
+  NpIllustrationPages,
+  NpIllustrationPhoneBar,
+  NpIllustrationPhoneDrawer,
+  NpIllustrationTopBar,
+  NpLinksPreview,
+  NpOptionCard,
+  NpOptionCardGroup,
+  NpPanelShell,
+  NpSegmentedControl,
+  NpStepSlider,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
 import { DEFAULT_HERO_PALETTE, LIGHT_HERO_PALETTE, INDIGO_DARK_HERO_PALETTE, INDIGO_LIGHT_HERO_PALETTE, VERDANT_DARK_HERO_PALETTE, VERDANT_LIGHT_HERO_PALETTE, VIVE_DARK_HERO_PALETTE, VIVE_LIGHT_HERO_PALETTE, SAFRAN_DARK_HERO_PALETTE, SAFRAN_LIGHT_HERO_PALETTE, CITRON_DARK_HERO_PALETTE, CITRON_LIGHT_HERO_PALETTE, ROUGE_DARK_HERO_PALETTE, ROUGE_LIGHT_HERO_PALETTE, ECARLATE_DARK_HERO_PALETTE, ECARLATE_LIGHT_HERO_PALETTE, ARDOISE_DARK_HERO_PALETTE, ARDOISE_LIGHT_HERO_PALETTE, PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS, resolveHeroPaletteColor, type PortfolioHeroPalette } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
   resolveActivePortfolioPalette,
   inferPaletteFamily,
-  portfolioPaletteCssVars,
   type PortfolioColorMode,
 } from '@/components/portfolio/portfolio-color-mode';
 import { applyNavPaletteToSettings, DEFAULT_NAV_COLOR_BINDINGS, DEFAULT_NAV_PALETTE, mergeNavColorBindings, mergeNavPalette } from '@/components/portfolio/portfolio-nav-palette-settings';
@@ -103,7 +122,13 @@ import {
   type FooterSubSection,
 } from '@/components/portfolio/portfolio-footer-settings-panel';
 import { PORTFOLIO_UPGRADE_PATH } from '@/components/portfolio/portfolio-pricing-upgrade-panel';
-import { portfolioPresenceShowsAboutUs } from '@/components/portfolio/portfolio-presence';
+import { useTheme } from '@/components/landing/ThemeProvider';
+import {
+  getVisiblePortfolioSettingsSections,
+  PortfolioStudioSectionList,
+  readStoredPortfolioSettingsSection,
+  storePortfolioSettingsSection,
+} from '@/components/portfolio/PortfolioStudioSectionList';
 import {
   GLOBAL_SETTINGS_SUB_SECTIONS,
   type GlobalSettingsSubSection,
@@ -111,25 +136,24 @@ import {
 
 /** Short, one-word tab labels — GLOBAL_SETTINGS_SUB_SECTIONS.label stays full-length for search. */
 const GLOBAL_SETTINGS_TAB_LABELS: Record<GlobalSettingsSubSection, string> = {
-  theme: 'Foundations',
-  background: 'Background',
-  order: 'Order section',
+  theme: msg('Foundations'),
+  background: msg('Background'),
+  order: msg('Section order'),
 };
 import {
   searchPortfolioSettings,
   type PortfolioSettingsSearchEntry,
 } from '@/components/portfolio/portfolio-settings-search';
-import { type PortfolioBuiltinThemeId, type PortfolioThemeId } from '@/components/portfolio/portfolio-themes';
-import { type PortfolioCustomTheme } from '@/components/portfolio/portfolio-custom-themes';
-import { PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS, PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS, PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS, PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS, PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS, type PortfolioGlobalSectionTitleTopSpacing, moveSectionInOrder, type PortfolioGlobalSettings, type PortfolioGlobalSettingsPatch } from '@/components/portfolio/portfolio-global-settings';
+import { PORTFOLIO_GLOBAL_CONTENT_GUTTER_OPTIONS, PORTFOLIO_GLOBAL_CONTENT_WIDTH_OPTIONS, PORTFOLIO_GLOBAL_SECTION_TOP_SPACING_OPTIONS, PORTFOLIO_GLOBAL_SECTION_BOTTOM_SPACING_OPTIONS, type PortfolioGlobalSectionTitleTopSpacing, backgroundImagePositionCss, backgroundImageSizeCss, DEFAULT_CONTENT_SECTION_ORDER, MAX_PORTFOLIO_BACKGROUND_IMAGES, type PortfolioGlobalSettings, type PortfolioGlobalSettingsPatch } from '@/components/portfolio/portfolio-global-settings';
 import { resolvePortfolioContentSectionOrder } from '@/components/portfolio/portfolio-services-block-settings';
 import type { PortfolioServicesSectionOrganization } from '@/components/portfolio/portfolio-services-settings';
-import { PortfolioBackgroundImageUpload } from '@/components/portfolio/portfolio-background-image-upload';
+import { PortfolioBackgroundImageUpload, PortfolioBackgroundLibrary } from '@/components/portfolio/portfolio-background-image-upload';
 import { PortfolioBackgroundLibraryProvider } from '@/components/portfolio/portfolio-background-library-context';
 import { PortfolioGlobalMotionProvider } from '@/components/portfolio/portfolio-header-design-lock';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const MODAL_OPACITY_STORAGE_KEY = 'portfolio-settings-modal-opacity';
-const MODAL_SECTION_STORAGE_KEY = 'portfolio-settings-active-section';
 
 type PanelSubSections = {
   theme?: GlobalSettingsSubSection;
@@ -158,6 +182,7 @@ function PortfolioSettingsSearchBar({
   onSelect: (entry: PortfolioSettingsSearchEntry) => void;
   appearance?: 'pill' | 'underline';
 }) {
+  const t = useT();
   const listId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
   const [query, setQuery] = useState('');
@@ -187,7 +212,7 @@ function PortfolioSettingsSearchBar({
   return (
     <div ref={rootRef} className="relative w-full">
       <label htmlFor="portfolio-settings-search" className="sr-only">
-        Search settings
+        {t('Search settings')}
       </label>
       <div className="relative">
         <svg
@@ -208,7 +233,7 @@ function PortfolioSettingsSearchBar({
           type="search"
           value={query}
           autoComplete="off"
-          placeholder="Search settings..."
+          placeholder={t('Search settings...')}
           role="combobox"
           aria-expanded={open && suggestions.length > 0}
           aria-controls={listId}
@@ -262,7 +287,7 @@ function PortfolioSettingsSearchBar({
           className="absolute left-0 right-0 z-30 mt-1.5 max-h-72 overflow-y-auto rounded-2xl border border-neutral-200 bg-white py-1 shadow-xl"
         >
           {suggestions.length === 0 ? (
-            <li className="px-3.5 py-3 text-sm text-neutral-500">No matching settings</li>
+            <li className="px-3.5 py-3 text-sm text-neutral-500">{t('No matching settings')}</li>
           ) : (
             suggestions.map((item, index) => {
               const active = index === highlight;
@@ -279,7 +304,7 @@ function PortfolioSettingsSearchBar({
                       active ? 'bg-neutral-100' : 'hover:bg-neutral-50'
                     }`}
                   >
-                    <span className="text-sm font-semibold text-neutral-950">{item.label}</span>
+                    <span className="text-sm font-semibold text-neutral-950">{t(item.label)}</span>
                     <span className="text-xs text-neutral-500">{item.path}</span>
                   </button>
                 </li>
@@ -292,149 +317,27 @@ function PortfolioSettingsSearchBar({
   );
 }
 
-function DockSectionDropdown({
-  sections,
-  activeId,
-  onSelect,
-  onUpgrade,
-  persistStatus = 'idle',
-}: {
-  sections: PortfolioSettingsSectionMeta[];
-  activeId: PortfolioSettingsSectionId;
-  onSelect: (sectionId: PortfolioSettingsSectionId) => void;
-  onUpgrade: () => void;
-  persistStatus?: 'idle' | 'saving' | 'saved' | 'error';
-}) {
-  const [open, setOpen] = useState(false);
-  const rootRef = useRef<HTMLDivElement>(null);
-  const active = sections.find((section) => section.id === activeId) ?? sections[0];
-
-  useEffect(() => {
-    if (!open) return;
-    const onPointerDown = (event: MouseEvent) => {
-      if (!rootRef.current?.contains(event.target as Node)) setOpen(false);
-    };
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false);
-    };
-    document.addEventListener('mousedown', onPointerDown);
-    document.addEventListener('keydown', onKey);
-    return () => {
-      document.removeEventListener('mousedown', onPointerDown);
-      document.removeEventListener('keydown', onKey);
-    };
-  }, [open]);
-
+/** The save state as one small dot after the open section's name (pulses while saving). */
+function DockSaveDot({ persistStatus }: { persistStatus: 'idle' | 'saving' | 'saved' | 'error' }) {
+  const t = useT();
   return (
-    <div ref={rootRef} className="relative min-w-0">
-      <nav className="flex h-9 min-w-0 items-center gap-2" aria-label="Settings location">
-        <span className="shrink-0 text-[13px] font-medium leading-none tracking-tight text-[color:var(--pf-palette-texte-fort)] opacity-50">
-          Settings
-        </span>
-        <span className="shrink-0 opacity-40 text-[color:var(--pf-palette-texte-fort)]" aria-hidden>
-          /
-        </span>
-        <button
-          type="button"
-          aria-haspopup="listbox"
-          aria-expanded={open}
-          aria-label="Settings section"
-          onClick={() => setOpen((current) => !current)}
-          className="flex min-w-0 items-center gap-1.5 py-0 text-left"
-        >
-          <span className="min-w-0 truncate text-[13px] font-medium leading-none tracking-tight text-[color:var(--pf-palette-texte-fort)]">
-            {active?.label ?? 'Section'}
-          </span>
-          <span
-            className={`h-1.5 w-1.5 shrink-0 rounded-full ${
-              persistStatus === 'saving' ? 'pf-dock-save-dot-saving' : ''
-            }`}
-            style={{
-              backgroundColor:
-                persistStatus === 'error'
-                  ? '#f87171'
-                  : persistStatus === 'saving'
-                    ? '#34d399'
-                    : persistStatus === 'saved'
-                      ? 'color-mix(in srgb, #34d399 40%, transparent)'
-                      : 'color-mix(in srgb, var(--pf-palette-texte-fort) 40%, transparent)',
-            }}
-            title={
-              persistStatus === 'saving'
-                ? 'Saving'
-                : persistStatus === 'saved'
-                  ? 'Saved'
-                  : persistStatus === 'error'
-                    ? 'Not saved'
-                    : 'Synced'
-            }
-            aria-hidden
-          />
-          <svg
-            className={`h-3 w-3 shrink-0 text-[color:var(--pf-palette-texte-muted)] transition-transform duration-200 ${
-              open ? 'rotate-180 text-[color:var(--pf-palette-texte-fort)]' : ''
-            }`}
-            viewBox="0 0 24 24"
-            fill="none"
-            stroke="currentColor"
-            strokeWidth={1.5}
-            aria-hidden
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" d="M6 9l6 6 6-6" />
-          </svg>
-        </button>
-      </nav>
-      {open ? (
-        <ul
-          role="listbox"
-          aria-label="Settings sections"
-          className="absolute left-0 right-0 top-[calc(100%+10px)] z-40 max-h-72 overflow-y-auto py-1"
-          style={{
-            backgroundColor: 'var(--pf-palette-fond)',
-            boxShadow: '0 16px 40px color-mix(in srgb, var(--pf-palette-texte-fort) 12%, transparent)',
-          }}
-        >
-          {sections.map((section) => {
-            const selected = section.id === activeId;
-            return (
-              <li key={section.id} role="presentation">
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  onClick={() => {
-                    onSelect(section.id);
-                    setOpen(false);
-                  }}
-                  className={`flex w-full items-center justify-between px-3 py-2 text-left text-[13px] transition ${
-                    selected
-                      ? 'text-[color:var(--pf-palette-texte-fort)]'
-                      : 'text-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-palette-neutre)] hover:text-[color:var(--pf-palette-texte-fort)]'
-                  }`}
-                >
-                  <span>{section.label}</span>
-                  {selected ? (
-                    <span className="h-1 w-1 rounded-full bg-[color:var(--pf-palette-principal)]" aria-hidden />
-                  ) : null}
-                </button>
-              </li>
-            );
-          })}
-          <li className="mt-1 border-t border-[color:var(--pf-palette-bordure)] pt-1" role="presentation">
-            <button
-              type="button"
-              onClick={() => {
-                setOpen(false);
-                onUpgrade();
-              }}
-              className="flex w-full px-3 py-2 text-left text-[13px] font-medium text-red-400 transition hover:bg-red-500/10"
-            >
-              Upgrade
-            </button>
-          </li>
-        </ul>
-      ) : null}
-    </div>
+    <span
+      className={`h-1.5 w-1.5 shrink-0 rounded-full ${persistStatus === 'saving' ? 'pf-dock-save-dot-saving' : ''}`}
+      style={{
+        backgroundColor:
+          persistStatus === 'error'
+            ? '#f87171'
+            : persistStatus === 'saving'
+              ? '#34d399'
+              : persistStatus === 'saved'
+                ? 'color-mix(in srgb, #34d399 40%, transparent)'
+                : 'color-mix(in srgb, var(--pf-palette-texte-fort) 40%, transparent)',
+      }}
+      title={
+        persistStatus === 'saving' ? t('Saving') : persistStatus === 'saved' ? t('Saved') : persistStatus === 'error' ? t('Not saved') : t('Synced')
+      }
+      aria-hidden
+    />
   );
 }
 
@@ -447,22 +350,6 @@ function readStoredModalOpacity(): number {
   return Math.min(100, Math.max(35, value));
 }
 
-function isPortfolioSettingsSectionId(value: string): value is PortfolioSettingsSectionId {
-  return PORTFOLIO_SETTINGS_SECTIONS.some((section) => section.id === value);
-}
-
-function readStoredActiveSection(): PortfolioSettingsSectionId {
-  if (typeof window === 'undefined') return 'theme';
-  const stored = window.sessionStorage.getItem(MODAL_SECTION_STORAGE_KEY);
-  // Legacy: Infos / Why choose me / About settings nav removed.
-  if (stored === 'about' || stored === 'infos' || stored === 'whyChooseMe') return 'hero';
-  if (stored === 'info') return 'info';
-  // Legacy: Skills settings nav was replaced by Tools.
-  if (stored === 'skills') return 'tools';
-  if (stored && isPortfolioSettingsSectionId(stored)) return stored;
-  return 'theme';
-}
-
 function ModalPreviewTransparencyControl({
   value,
   onChange,
@@ -470,6 +357,7 @@ function ModalPreviewTransparencyControl({
   value: number;
   onChange: (value: number) => void;
 }) {
+  const t = useT();
   return (
     <div className="hidden items-center gap-2.5 rounded-full border border-neutral-200/90 bg-neutral-50/80 px-3 py-1.5 sm:flex">
       <input
@@ -480,7 +368,7 @@ function ModalPreviewTransparencyControl({
         value={value}
         onChange={(event) => onChange(Number(event.target.value))}
         className="h-1 w-20 cursor-pointer accent-neutral-700 sm:w-24"
-        aria-label="Settings panel transparency"
+        aria-label={t('Settings panel transparency')}
       />
       <span className="min-w-[2.25rem] text-right text-xs font-semibold tabular-nums text-neutral-600">
         {value}%
@@ -502,6 +390,7 @@ function ModalHistoryControls({
   onRedo: () => void;
   tone?: 'light' | 'dark' | 'palette';
 }) {
+  const t = useT();
   const dark = tone === 'dark';
   const palette = tone === 'palette';
   const buttonClass = palette
@@ -515,8 +404,8 @@ function ModalHistoryControls({
         type="button"
         onClick={onUndo}
         disabled={!canUndo}
-        title="Undo (Ctrl+Z)"
-        aria-label="Undo"
+        title={t('Undo (Ctrl+Z)')}
+        aria-label={t('Undo')}
         className={buttonClass}
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -528,8 +417,8 @@ function ModalHistoryControls({
         type="button"
         onClick={onRedo}
         disabled={!canRedo}
-        title="Redo (Ctrl+Y)"
-        aria-label="Redo"
+        title={t('Redo (Ctrl+Y)')}
+        aria-label={t('Redo')}
         className={buttonClass}
       >
         <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -548,6 +437,7 @@ function ModalPeekPreviewButton({
   onClick: () => void;
   className?: string;
 }) {
+  const t = useT();
   return (
     <button
       type="button"
@@ -558,7 +448,7 @@ function ModalPeekPreviewButton({
         <path strokeLinecap="round" strokeLinejoin="round" d="M2 12s3.5-7 10-7 10 7 10 7-3.5 7-10 7-10-7-10-7z" />
         <circle cx="12" cy="12" r="3" />
       </svg>
-      Preview
+      {t('Preview')}
     </button>
   );
 }
@@ -639,85 +529,213 @@ function TextField({
   );
 }
 
+/** Moves `key` to `targetIndex` (the index it should end up at) — the drag-and-drop counterpart of moveSectionInOrder. */
+function moveSectionToIndex(order: PortfolioNavSectionKey[], key: PortfolioNavSectionKey, targetIndex: number) {
+  const from = order.indexOf(key);
+  if (from === -1 || from === targetIndex) return order;
+  const next = order.filter((item) => item !== key);
+  next.splice(Math.max(0, Math.min(next.length, targetIndex)), 0, key);
+  return next;
+}
+
+/**
+ * Global → Section order: one quiet list, one 44px row per section (no cards). Drag a row by its grip,
+ * or use the arrows (also Alt+↑ / Alt+↓ on a focused row); the eye shows or hides the section on the
+ * page. Hero and Footer are fixed: they sit at the ends as muted rows. A moved row flashes briefly so
+ * the eye can follow where it landed.
+ */
 function GlobalSectionOrderBlock({
   sectionOrder,
   servicesSectionOrganization,
   onChange,
+  sectionEnabled,
+  onSectionEnabledChange,
+  hiddenFromMenu = [],
 }: {
+  /** Sections on the page but left out of the menu (Navigation → Labels). */
+  hiddenFromMenu?: PortfolioNavSectionKey[];
   sectionOrder: PortfolioNavSectionKey[];
   servicesSectionOrganization: PortfolioServicesSectionOrganization;
   onChange: (sectionOrder: PortfolioNavSectionKey[]) => void;
+  sectionEnabled?: Partial<Record<PortfolioNavSectionKey, boolean>>;
+  onSectionEnabledChange?: (key: PortfolioNavSectionKey, enabled: boolean) => void;
 }) {
-  const orderedSections = resolvePortfolioContentSectionOrder(sectionOrder, servicesSectionOrganization);
+  const t = useT();
+  const savedOrder = resolvePortfolioContentSectionOrder(sectionOrder, servicesSectionOrganization);
+  const defaultOrder = resolvePortfolioContentSectionOrder(DEFAULT_CONTENT_SECTION_ORDER, servicesSectionOrganization);
+  const [dragKey, setDragKey] = useState<PortfolioNavSectionKey | null>(null);
+  const [draftOrder, setDraftOrder] = useState<PortfolioNavSectionKey[] | null>(null);
+  const [flashKey, setFlashKey] = useState<PortfolioNavSectionKey | null>(null);
+  const flashTimer = useRef<number | null>(null);
+  const orderedSections = draftOrder ?? savedOrder;
+  const isDefaultOrder = savedOrder.join('|') === defaultOrder.join('|');
   const sectionLabels = Object.fromEntries(
     PORTFOLIO_NAV_SECTION_META.map((section) => [section.key, section.title])
   ) as Record<PortfolioNavSectionKey, string>;
 
+  useEffect(() => () => {
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+  }, []);
+
+  const commit = (next: PortfolioNavSectionKey[], moved: PortfolioNavSectionKey) => {
+    if (next.join('|') !== savedOrder.join('|')) onChange(next);
+    setFlashKey(moved);
+    if (flashTimer.current) window.clearTimeout(flashTimer.current);
+    flashTimer.current = window.setTimeout(() => setFlashKey(null), 900);
+  };
+
+  const move = (key: PortfolioNavSectionKey, direction: 'up' | 'down') => {
+    const index = orderedSections.indexOf(key);
+    const target = direction === 'up' ? index - 1 : index + 1;
+    if (target < 0 || target >= orderedSections.length) return;
+    commit(moveSectionToIndex(orderedSections, key, target), key);
+  };
+
+  const fixedRow = (label: string, hint: string) => (
+    <li className="flex h-11 items-center gap-3 px-3 text-[color:var(--pf-palette-texte-muted)]">
+      <LockIcon className="h-4 w-4 shrink-0 opacity-70" />
+      <span className="min-w-0 flex-1 truncate text-[14px] font-medium">{label}</span>
+      <span className="shrink-0 text-[12px]">{hint}</span>
+    </li>
+  );
+
+  const iconButton =
+    'inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition-colors hover:bg-[color:var(--pf-palette-neutre)] hover:text-[color:var(--pf-palette-texte-fort)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] disabled:pointer-events-none disabled:opacity-25';
+
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Section display order</p>
-      <p className="mt-2 text-sm text-neutral-500">
-        Hero stays at the top and Footer at the bottom. Reorder the content sections in between.
-      </p>
-      <div className="mt-3 space-y-2">
-        <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-200/70 text-neutral-500">
-            <LockIcon className="h-4 w-4" />
+      <div className="flex items-start justify-between gap-3">
+        <p className="text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
+          {t('Drag to reorder the sections between Hero and Footer. The eye shows or hides a section on the page.')}
+          <span className="mt-1 block text-[12px]">
+            {t('Keyboard: focus a section, then Alt + ↑ / ↓ to move it.')}
           </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-neutral-700">Hero</span>
-            <span className="mt-0.5 block text-xs text-neutral-500">Always first</span>
-          </span>
-        </div>
+        </p>
+        {!isDefaultOrder ? (
+          <button
+            type="button"
+            onClick={() => onChange([...defaultOrder])}
+            className="shrink-0 text-[13px] font-semibold text-[color:var(--pf-palette-texte-muted)] underline-offset-4 hover:text-[color:var(--pf-palette-texte-fort)] hover:underline"
+          >
+            {t('Reset')}
+          </button>
+        ) : null}
+      </div>
+
+      <ul
+        aria-label={t('Section display order')}
+        className="mt-4 divide-y divide-[color:var(--pf-palette-bordure)] rounded-2xl shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]"
+      >
+        {fixedRow(t('Hero'), t('Always first'))}
 
         {orderedSections.map((sectionKey, index) => {
-          const label = sectionLabels[sectionKey] ?? sectionKey;
-          const canMoveUp = index > 0;
-          const canMoveDown = index < orderedSections.length - 1;
-
+          const label = t(sectionLabels[sectionKey] ?? sectionKey);
+          const enabled = sectionEnabled?.[sectionKey] ?? true;
+          const dragging = dragKey === sectionKey;
           return (
-            <div
+            <li
               key={sectionKey}
-              className="flex items-center gap-3 rounded-xl border border-neutral-200/80 bg-white px-4 py-3"
+              draggable
+              tabIndex={0}
+              aria-label={label}
+              onDragStart={(event) => {
+                event.dataTransfer.effectAllowed = 'move';
+                event.dataTransfer.setData('text/plain', sectionKey);
+                setDragKey(sectionKey);
+                setDraftOrder(orderedSections);
+              }}
+              onDragOver={(event) => {
+                if (!dragKey) return;
+                event.preventDefault();
+                if (dragKey !== sectionKey) setDraftOrder((current) => moveSectionToIndex(current ?? savedOrder, dragKey, index));
+              }}
+              onDrop={(event) => event.preventDefault()}
+              onDragEnd={() => {
+                if (dragKey && draftOrder) commit(draftOrder, dragKey);
+                setDragKey(null);
+                setDraftOrder(null);
+              }}
+              onKeyDown={(event) => {
+                if (!event.altKey || (event.key !== 'ArrowUp' && event.key !== 'ArrowDown')) return;
+                event.preventDefault();
+                move(sectionKey, event.key === 'ArrowUp' ? 'up' : 'down');
+              }}
+              className={`group/row flex h-11 items-center gap-2 px-1.5 transition-colors duration-300 first:rounded-t-2xl last:rounded-b-2xl focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
+                dragging ? 'bg-[color:var(--pf-surface)] opacity-60' : flashKey === sectionKey ? 'bg-[color:var(--pf-surface)]' : 'hover:bg-[color:var(--pf-surface)]'
+              }`}
             >
-              <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-100 text-xs font-bold tabular-nums text-neutral-500">
-                {index + 1}
+              <span
+                aria-hidden
+                className="flex h-8 w-6 shrink-0 cursor-grab items-center justify-center text-[color:var(--pf-palette-texte-muted)] active:cursor-grabbing"
+              >
+                <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor" aria-hidden>
+                  <circle cx="9" cy="6" r="1.6" />
+                  <circle cx="15" cy="6" r="1.6" />
+                  <circle cx="9" cy="12" r="1.6" />
+                  <circle cx="15" cy="12" r="1.6" />
+                  <circle cx="9" cy="18" r="1.6" />
+                  <circle cx="15" cy="18" r="1.6" />
+                </svg>
               </span>
-              <span className="min-w-0 flex-1 text-sm font-semibold text-neutral-900">{label}</span>
-              <div className="flex shrink-0 items-center gap-1">
-                <button
-                  type="button"
-                  onClick={() => onChange(moveSectionInOrder(orderedSections, sectionKey, 'up'))}
-                  disabled={!canMoveUp}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35"
-                  aria-label={`Move ${label} up`}
-                >
+              <span
+                className={`min-w-0 flex-1 truncate text-[14px] font-medium ${
+                  enabled ? 'text-[color:var(--pf-palette-texte-fort)]' : 'text-[color:var(--pf-palette-texte-muted)]'
+                }`}
+              >
+                {label}
+                {!enabled ? (
+                  <span className="ms-2 text-[12px] font-normal">{t('Hidden')}</span>
+                ) : hiddenFromMenu.includes(sectionKey) ? (
+                  <span className="ms-2 text-[12px] font-normal text-[color:var(--pf-palette-texte-muted)]">
+                    {t('Not in menu')}
+                  </span>
+                ) : null}
+              </span>
+              <span className="flex shrink-0 items-center opacity-100 transition-opacity sm:opacity-0 sm:group-hover/row:opacity-100 sm:group-focus-within/row:opacity-100">
+                <button type="button" className={iconButton} disabled={index === 0} onClick={() => move(sectionKey, 'up')} aria-label={t('Move {label} up', { label })} title={t('Move up')}>
                   <ChevronUpIcon className="h-4 w-4" />
                 </button>
                 <button
                   type="button"
-                  onClick={() => onChange(moveSectionInOrder(orderedSections, sectionKey, 'down'))}
-                  disabled={!canMoveDown}
-                  className="inline-flex h-11 w-11 items-center justify-center rounded-lg border border-neutral-200 text-neutral-600 transition hover:border-neutral-300 hover:bg-neutral-50 disabled:cursor-not-allowed disabled:opacity-35"
-                  aria-label={`Move ${label} down`}
+                  className={iconButton}
+                  disabled={index === orderedSections.length - 1}
+                  onClick={() => move(sectionKey, 'down')}
+                  aria-label={t('Move {label} down', { label })}
+                  title={t('Move down')}
                 >
                   <ChevronDownIcon className="h-4 w-4" />
                 </button>
-              </div>
-            </div>
+              </span>
+              {onSectionEnabledChange ? (
+                <button
+                  type="button"
+                  className={iconButton}
+                  aria-pressed={!enabled}
+                  onClick={() => onSectionEnabledChange(sectionKey, !enabled)}
+                  aria-label={enabled ? t('Hide {label}', { label }) : t('Show {label}', { label })}
+                  title={enabled ? t('Hide on the page') : t('Show on the page')}
+                >
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    {enabled ? (
+                      <>
+                        <path d="M2.5 12S6 5.5 12 5.5 21.5 12 21.5 12 18 18.5 12 18.5 2.5 12 2.5 12Z" />
+                        <circle cx="12" cy="12" r="3" />
+                      </>
+                    ) : (
+                      <>
+                        <path d="M10.6 5.6A9.8 9.8 0 0 1 12 5.5c6 0 9.5 6.5 9.5 6.5a17 17 0 0 1-2.6 3.4M6.6 6.6C3.9 8.4 2.5 12 2.5 12S6 18.5 12 18.5a9 9 0 0 0 4.9-1.4" />
+                        <path d="M9.9 9.9a3 3 0 0 0 4.2 4.2M3 3l18 18" />
+                      </>
+                    )}
+                  </svg>
+                </button>
+              ) : null}
+            </li>
           );
         })}
 
-        <div className="flex items-center gap-3 rounded-xl border border-dashed border-neutral-200 bg-neutral-50/60 px-4 py-3">
-          <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-neutral-200/70 text-neutral-500">
-            <LockIcon className="h-4 w-4" />
-          </span>
-          <span className="min-w-0 flex-1">
-            <span className="block text-sm font-semibold text-neutral-700">Footer</span>
-            <span className="mt-0.5 block text-xs text-neutral-500">Always last</span>
-          </span>
-        </div>
-      </div>
+        {fixedRow(t('Footer'), t('Always last'))}
+      </ul>
     </div>
   );
 }
@@ -759,6 +777,104 @@ function GlobalBlockLabel({ children }: { children: ReactNode }) {
   return <p className="pf-stack-block-label">{children}</p>;
 }
 
+/** English names for the palette tokens (their ids stay French: principal, texteFort, …). */
+const PALETTE_TOKEN_DISPLAY_LABELS: Record<string, string> = {
+  principal: 'Primary',
+  secondaire: 'Secondary',
+  texteFort: 'Strong text',
+  texteMuted: 'Muted text',
+  texteFaint: 'Faint text',
+  neutre: 'Neutral',
+  fond: 'Background',
+  bordure: 'Border',
+};
+
+/**
+ * Foundations' one segmented control (the site's chips in a tray): a pill track in the card tone,
+ * the chosen option a solid ink pill. Used for Color mode and the section spacing tiers.
+ */
+function FoundationSegment<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string; title?: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const t = useT();
+  return (
+    <div
+      role="radiogroup"
+      aria-label={label}
+      className="grid gap-1 rounded-full bg-[color:var(--pf-surface)] p-1"
+      style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
+    >
+      {options.map((option) => {
+        const active = option.value === value;
+        return (
+          <button
+            key={option.value}
+            type="button"
+            role="radio"
+            aria-checked={active}
+            title={t(option.title)}
+            onClick={() => onChange(option.value)}
+            className={`h-8 rounded-full px-2 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
+              active
+                ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+                : 'text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]'
+            }`}
+          >
+            {t(option.label)}
+          </button>
+        );
+      })}
+    </div>
+  );
+}
+
+/** One labelled row of a Foundations group: the name on the left, its control on the right. */
+function FoundationRow({ label, children }: { label: string; children: ReactNode }) {
+  return (
+    <div className="grid grid-cols-[minmax(0,6.5rem)_minmax(0,1fr)] items-center gap-3">
+      <span className="text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
+      {children}
+    </div>
+  );
+}
+
+/** Compact colour token: a round swatch (the native picker), the token's name, its hex. */
+function FoundationTokenSwatch({
+  label,
+  value,
+  onChange,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+}) {
+  return (
+    <label className="group flex min-w-0 cursor-pointer items-center gap-2.5 rounded-xl px-2 py-1.5 transition-colors hover:bg-[color:var(--pf-surface)]">
+      <span className="pf-swatch-ring relative h-8 w-8 shrink-0 overflow-hidden rounded-full">
+        <input
+          type="color"
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
+          aria-label={label}
+          className="pf-token-swatch-input absolute -inset-1 h-[calc(100%+0.5rem)] w-[calc(100%+0.5rem)] cursor-pointer"
+        />
+      </span>
+      <span className="min-w-0">
+        <span className="block truncate text-[13px] font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
+        <span className="block font-mono text-[11px] uppercase text-[color:var(--pf-palette-texte-muted)]">{value}</span>
+      </span>
+    </label>
+  );
+}
+
 /** Uniform section wrapper: divider + 32px breathing room before the label, 12px between
  *  the label and its content — applied before every Level-3 section, not ad hoc per block. */
 function GlobalSection({
@@ -781,18 +897,6 @@ function GlobalSection({
   );
 }
 
-function GlobalResetTokensButton({ onClick }: { onClick: () => void }) {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      className="pf-stack-block-label shrink-0 underline decoration-dotted underline-offset-2 transition hover:text-neutral-200"
-    >
-      Reset
-    </button>
-  );
-}
-
 function GlobalSegmentGrid<T extends string | number>({
   label,
   options,
@@ -808,6 +912,7 @@ function GlobalSegmentGrid<T extends string | number>({
   columns?: number;
   hideDescription?: boolean;
 }) {
+  const t = useT();
   const count = options.length;
   const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
   const compact = cols === count && count >= 2 && count <= 5;
@@ -834,7 +939,7 @@ function GlobalSegmentGrid<T extends string | number>({
               data-active={active ? 'true' : 'false'}
               className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
             >
-              <span>{option.label}</span>
+              <span>{t(option.label)}</span>
             </button>
           );
         })}
@@ -880,16 +985,18 @@ function GlobalPreviewCard({
 /** Circular check badge, top-right corner — the one "selected" treatment used by every
  *  picker card in Settings (Site color palette, Design/Header grids, preview cards, …). */
 function PfSelectedBadge() {
+  /* Inside the card's corner (it used to hang off it and get clipped), and the check drawn in the
+     panel's background colour so it reads on the ink disc in both modes (white on #E7E9EA did not). */
   return (
     <span
       aria-hidden
-      className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
+      className="absolute right-2 top-2 flex h-[18px] w-[18px] items-center justify-center rounded-full"
       style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
     >
       <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
         <path
           d="M4 10.5l3.5 3.5L16 6"
-          stroke="white"
+          stroke="var(--pf-palette-fond, #ffffff)"
           strokeWidth={2.5}
           strokeLinecap="round"
           strokeLinejoin="round"
@@ -913,6 +1020,7 @@ function GlobalPreviewCardGridBody<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const cols = columns ?? Math.min(options.length, 4);
   return (
     <div
@@ -927,7 +1035,7 @@ function GlobalPreviewCardGridBody<T extends string>({
           <GlobalPreviewCard
             key={option.value}
             active={active}
-            label={option.label}
+            label={t(option.label)}
             onClick={() => onChange(option.value)}
           >
             <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
@@ -1063,6 +1171,14 @@ const GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_SECTION_B
   })
 );
 
+/** S · M · L · XL — the four spacing tiers, short enough for one segmented row (full name in the tooltip). */
+const SPACING_TIER_SHORT: Record<string, string> = {
+  compact: 'S',
+  standard: 'M',
+  comfortable: 'L',
+  spacious: 'XL',
+};
+
 /** Exaggerated (not to-scale) heights for the live preview box — bigger canvas than the card glyphs. */
 const GLOBAL_SECTION_SPACING_LIVE_PX: Record<PortfolioGlobalSectionTitleTopSpacing, number> = {
   compact: 10,
@@ -1070,63 +1186,6 @@ const GLOBAL_SECTION_SPACING_LIVE_PX: Record<PortfolioGlobalSectionTitleTopSpaci
   comfortable: 34,
   spacious: 58,
 };
-
-/** Compact "Manual" switch — same pill as GlobalSwitchRow, used inline next to a card-grid title. */
-function GlobalManualToggle({
-  checked,
-  onChange,
-}: {
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      aria-label="Manual"
-      onClick={() => onChange(!checked)}
-      className="flex shrink-0 items-center gap-2"
-    >
-      <span className="text-[11px] font-medium uppercase tracking-[0.05em] text-neutral-500">Manual</span>
-      <GlobalSwitchTrack checked={checked} />
-    </button>
-  );
-}
-
-/** Continuous drag across the same 4 tiers as the card grid — snaps to a value on release. */
-function GlobalSpacingTierSlider({
-  options,
-  value,
-  onChange,
-}: {
-  options: { value: PortfolioGlobalSectionTitleTopSpacing; label: string }[];
-  value: PortfolioGlobalSectionTitleTopSpacing;
-  onChange: (value: PortfolioGlobalSectionTitleTopSpacing) => void;
-}) {
-  const index = Math.max(0, options.findIndex((option) => option.value === value));
-  const percent = options.length > 1 ? (index / (options.length - 1)) * 100 : 0;
-  return (
-    <div>
-      <div className="mb-2 flex items-baseline justify-end">
-        <span className="pf-stack-slider-value">{options[index]?.label}</span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={options.length - 1}
-        step={1}
-        value={index}
-        onChange={(event) => onChange(options[Number(event.target.value)].value)}
-        aria-label="Padding amount"
-        className="pf-stack-slider-input"
-        style={{
-          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
-        }}
-      />
-    </div>
-  );
-}
 
 /** Shared live preview — one "Section content" block, gaps above/below animate as either slider moves. */
 function GlobalSectionSpacingPreview({
@@ -1136,15 +1195,16 @@ function GlobalSectionSpacingPreview({
   topSpacing: PortfolioGlobalSectionTitleTopSpacing;
   bottomSpacing: PortfolioGlobalSectionTitleTopSpacing;
 }) {
+  const t = useT();
   return (
-    <div className="pf-fade-in overflow-hidden rounded-2xl border border-neutral-200/80 bg-neutral-50/60 px-4">
+    <div className="overflow-hidden rounded-2xl bg-[color:var(--pf-surface)] px-4">
       <div
         aria-hidden
         className="transition-[height] duration-200 ease-out"
         style={{ height: GLOBAL_SECTION_SPACING_LIVE_PX[topSpacing] }}
       />
-      <div className="rounded-lg border border-dashed border-neutral-300 bg-white px-3 py-2 text-center text-xs font-medium text-neutral-500">
-        Section content
+      <div className="rounded-lg border border-dashed border-[color:var(--pf-palette-texte-faint)] px-3 py-2 text-center text-xs font-medium text-[color:var(--pf-palette-texte-muted)]">
+        {t('Section content')}
       </div>
       <div
         aria-hidden
@@ -1273,113 +1333,149 @@ const PORTFOLIO_NAV_BAR_SURFACE_PREVIEW_OPTIONS = PORTFOLIO_NAV_BAR_SURFACE_OPTI
   glyph: navBarSurfaceGlyph(option.value),
 }));
 
-/** Hamburger glyph with an optional avatar circle / word chip beside it — preview for Brand next to menu. */
-function navMobileBrandGlyph(mode: 'none' | 'avatar' | 'word') {
-  return (active: boolean) => {
-    const accentClass = active ? 'pf-stack-mini-accent' : 'pf-stack-mini-mute';
-    return (
-      <>
-        {mode === 'avatar' ? <circle className={accentClass} cx="18" cy="17" r="4" /> : null}
-        {mode === 'word' ? <rect className={accentClass} x="12" y="14" width="13" height="6" rx="2" /> : null}
-        <rect className="pf-stack-mini-mute" x="38" y="12.4" width="14" height="1.6" rx="0.8" />
-        <rect className="pf-stack-mini-mute" x="38" y="16.2" width="14" height="1.6" rx="0.8" />
-        <rect className="pf-stack-mini-mute" x="38" y="20" width="14" height="1.6" rx="0.8" />
-      </>
-    );
-  };
-}
+type BackgroundInsetKey =
+  | 'backgroundImageInsetTop'
+  | 'backgroundImageInsetRight'
+  | 'backgroundImageInsetBottom'
+  | 'backgroundImageInsetLeft';
 
-const PORTFOLIO_NAV_MOBILE_BRAND_PREVIEW_OPTIONS = PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS.map((option) => ({
-  value: option.value,
-  label: option.label,
-  glyph: navMobileBrandGlyph(option.value),
-}));
+const BACKGROUND_INSET_MAX = 240;
 
-/** Frame + "photo" rect sized/positioned per fit mode — preview for Cover/Contain/Stretch. */
-function globalImageSizeGlyph(mode: 'cover' | 'contain' | 'fill') {
-  return () => {
-    const frameX = 14;
-    const frameY = 6;
-    const frameW = 36;
-    const frameH = 22;
-    const photo = (x: number, y: number, w: number, h: number) => (
-      <>
-        <rect x={x} y={y} width={w} height={h} className="pf-stack-mini-mute" />
-        <circle cx={x + w * 0.24} cy={y + h * 0.3} r={Math.min(w, h) * 0.13} className="pf-stack-mini-ink" />
-        <path
-          d={`M${x} ${y + h} L${x + w * 0.38} ${y + h * 0.42} L${x + w * 0.6} ${y + h * 0.68} L${x + w * 0.8} ${y + h * 0.36} L${x + w} ${y + h} Z`}
-          className="pf-stack-mini-ink"
-        />
-      </>
-    );
-    return (
-      <>
-        {mode === 'cover' ? (
-          <>
-            <clipPath id="gbl-bg-size-cover-clip">
-              <rect x={frameX} y={frameY} width={frameW} height={frameH} rx={3} />
-            </clipPath>
-            <g clipPath="url(#gbl-bg-size-cover-clip)">
-              {photo(frameX - 6, frameY - 4, frameW + 12, frameH + 10)}
-            </g>
-          </>
-        ) : mode === 'contain' ? (
-          photo(frameX + 6, frameY + 4, frameW - 12, frameH - 8)
-        ) : (
-          photo(frameX, frameY, frameW, frameH)
-        )}
-        <rect
-          x={frameX}
-          y={frameY}
-          width={frameW}
-          height={frameH}
-          rx={3}
-          className="pf-stack-mini-ring"
-          strokeWidth={1.2}
-        />
-      </>
-    );
-  };
-}
+type BackgroundFocus = PortfolioGlobalSettings['backgroundImagePosition'];
 
-const GLOBAL_BACKGROUND_IMAGE_SIZE_PREVIEW_OPTIONS = PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS.map(
-  (option) => ({
-    value: option.value,
-    label: option.label,
-    glyph: globalImageSizeGlyph(option.value),
-  })
-);
+const BACKGROUND_FOCUS_GRID: BackgroundFocus[] = [
+  'top-left', 'top', 'top-right',
+  'left', 'center', 'right',
+  'bottom-left', 'bottom', 'bottom-right',
+];
 
-function GlobalInsetField({
-  side,
-  value,
-  onChange,
+const BACKGROUND_FOCUS_LABELS: Record<BackgroundFocus, string> = {
+  'top-left': msg('Top left'),
+  top: msg('Top center'),
+  'top-right': msg('Top right'),
+  left: msg('Center left'),
+  center: msg('Center'),
+  right: msg('Center right'),
+  'bottom-left': msg('Bottom left'),
+  bottom: msg('Bottom center'),
+  'bottom-right': msg('Bottom right'),
+};
+
+/**
+ * What the page background looks like, at a glance: the page color, the image with its fit,
+ * opacity and margins (scaled from a 1440×900 viewport), and a faint page skeleton on top. With
+ * Fill or Fit, the 3×3 grid sets the focal point — the part of the image that stays in view.
+ */
+function GlobalBackgroundPreview({
+  global,
+  onFocusChange,
 }: {
-  side: 'Top' | 'Right' | 'Bottom' | 'Left';
-  value: number;
-  onChange: (value: number) => void;
+  global: PortfolioGlobalSettings;
+  onFocusChange: (position: BackgroundFocus) => void;
 }) {
+  const t = useT();
+  const url = global.backgroundImageUrl.trim();
+  const canFocus = Boolean(url) && global.backgroundImageSize !== 'fill';
+  const inset = (value: number, axis: number) =>
+    `${(Math.min(BACKGROUND_INSET_MAX, Math.max(0, value || 0)) / axis) * 100}%`;
+
   return (
-    <input
-      type="number"
-      min={0}
-      max={240}
-      step={4}
-      value={value}
-      aria-label={`${side} inset`}
-      title={`${side} inset`}
-      onChange={(event) => {
-        const next = Number(event.target.value);
-        onChange(Number.isFinite(next) ? Math.min(240, Math.max(0, Math.round(next))) : 0);
-      }}
-      className="w-16 rounded-lg border border-neutral-200 bg-white px-2 py-1.5 text-center text-sm tabular-nums text-neutral-900 focus:border-orange-300 focus:outline-none focus:ring-2 focus:ring-orange-200"
-    />
+    <div className="relative aspect-[16/10] overflow-hidden rounded-xl bg-[color:var(--pf-palette-fond)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
+      {url ? (
+        <div
+          aria-hidden
+          className="absolute transition-opacity duration-200"
+          style={{
+            top: inset(global.backgroundImageInsetTop, 900),
+            right: inset(global.backgroundImageInsetRight, 1440),
+            bottom: inset(global.backgroundImageInsetBottom, 900),
+            left: inset(global.backgroundImageInsetLeft, 1440),
+            backgroundImage: `url(${JSON.stringify(url)})`,
+            backgroundSize: backgroundImageSizeCss(global.backgroundImageSize),
+            backgroundPosition: backgroundImagePositionCss(global.backgroundImagePosition),
+            backgroundRepeat: 'no-repeat',
+            opacity: Math.min(100, Math.max(0, global.backgroundOpacity)) / 100,
+          }}
+        />
+      ) : (
+        <span className="absolute inset-0 flex items-center justify-center px-6 text-center text-[13px] text-[color:var(--pf-palette-texte-muted)]">
+          {t('Pick or add an image below.')}
+        </span>
+      )}
+
+      {/* A page in miniature, so the image reads as a background and not as a photo. */}
+      <span aria-hidden className="pointer-events-none absolute inset-x-[7%] top-[8%] flex items-center justify-between">
+        <span className="h-1.5 w-[14%] rounded-full bg-[color:var(--pf-palette-texte-fort)] opacity-80" />
+        <span className="h-1.5 w-[22%] rounded-full bg-[color:var(--pf-palette-texte-fort)] opacity-40" />
+      </span>
+      <span aria-hidden className="pointer-events-none absolute inset-x-[7%] top-[36%] flex flex-col gap-2">
+        <span className="h-3 w-[58%] rounded-full bg-[color:var(--pf-palette-texte-fort)] opacity-85" />
+        <span className="h-1.5 w-[40%] rounded-full bg-[color:var(--pf-palette-texte-fort)] opacity-40" />
+      </span>
+
+      {canFocus ? (
+        <div role="radiogroup" aria-label={t('Focal point')} className="group/focus absolute inset-0 grid grid-cols-3 grid-rows-3">
+          {BACKGROUND_FOCUS_GRID.map((position) => {
+            const active = global.backgroundImagePosition === position;
+            return (
+              <button
+                key={position}
+                type="button"
+                role="radio"
+                aria-checked={active}
+                aria-label={t(BACKGROUND_FOCUS_LABELS[position])}
+                title={t(BACKGROUND_FOCUS_LABELS[position])}
+                onClick={() => onFocusChange(position)}
+                className="flex items-center justify-center focus-visible:outline-none"
+              >
+                <span
+                  className={`rounded-full transition-all duration-150 ${
+                    active
+                      ? 'h-3 w-3 bg-white shadow-[0_0_0_2px_rgba(0,0,0,0.55)]'
+                      : 'h-1.5 w-1.5 bg-white/80 opacity-0 shadow-[0_0_0_1px_rgba(0,0,0,0.45)] group-hover/focus:opacity-100 group-focus-within/focus:opacity-100'
+                  }`}
+                />
+              </button>
+            );
+          })}
+        </div>
+      ) : null}
+    </div>
   );
 }
 
-/** Mini schema: each numeric field sits on the side of a dashed frame it controls, so the
- *  field's position — not a text label — communicates which edge it insets. */
-function GlobalInsetsSchema({
+/** One compact px field in the panel's tokens (a number the user types, clamped 0–240). */
+function GlobalPxField({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
+  return (
+    <label className="flex min-w-0 flex-col gap-1">
+      <span className="text-[11px] font-medium text-[color:var(--pf-palette-texte-muted)]">{label}</span>
+      <span className="relative">
+        <input
+          type="number"
+          inputMode="numeric"
+          min={0}
+          max={BACKGROUND_INSET_MAX}
+          step={4}
+          value={value}
+          onChange={(event) => {
+            const next = Number(event.target.value);
+            onChange(Number.isFinite(next) ? Math.min(BACKGROUND_INSET_MAX, Math.max(0, Math.round(next))) : 0);
+          }}
+          className="h-9 w-full rounded-lg bg-[color:var(--pf-surface)] pe-7 ps-2.5 text-[13px] tabular-nums text-[color:var(--pf-palette-texte-fort)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] outline-none transition-shadow [appearance:textfield] focus:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)] [&::-webkit-inner-spin-button]:appearance-none [&::-webkit-outer-spin-button]:appearance-none"
+        />
+        <span aria-hidden className="pointer-events-none absolute end-2.5 top-1/2 -translate-y-1/2 text-[11px] text-[color:var(--pf-palette-texte-muted)]">
+          px
+        </span>
+      </span>
+    </label>
+  );
+}
+
+/**
+ * Margins between the image and the screen edges: one value for all four sides by default (what
+ * almost everyone wants); the link button splits it into Top / Right / Bottom / Left.
+ */
+function GlobalBackgroundMargins({
   top,
   right,
   bottom,
@@ -1390,32 +1486,50 @@ function GlobalInsetsSchema({
   right: number;
   bottom: number;
   left: number;
-  onChange: (key: 'backgroundImageInsetTop' | 'backgroundImageInsetRight' | 'backgroundImageInsetBottom' | 'backgroundImageInsetLeft', value: number) => void;
+  onChange: (patch: Partial<Record<BackgroundInsetKey, number>>) => void;
 }) {
+  const t = useT();
+  const [linked, setLinked] = useState(top === right && right === bottom && bottom === left);
+  const all = (value: number) => ({
+    backgroundImageInsetTop: value,
+    backgroundImageInsetRight: value,
+    backgroundImageInsetBottom: value,
+    backgroundImageInsetLeft: value,
+  });
+
   return (
-    <div className="grid grid-cols-3 grid-rows-3 items-center justify-items-center gap-2 py-1">
-      <div aria-hidden />
-      <GlobalInsetField side="Top" value={top} onChange={(value) => onChange('backgroundImageInsetTop', value)} />
-      <div aria-hidden />
-
-      <GlobalInsetField side="Left" value={left} onChange={(value) => onChange('backgroundImageInsetLeft', value)} />
-      <div
-        aria-hidden
-        className="flex h-14 w-14 items-center justify-center rounded-lg border border-dashed border-neutral-300"
-      >
-        <span className="text-[8px] font-semibold uppercase tracking-[0.1em] text-neutral-400">
-          Image
-        </span>
+    <div className="space-y-2">
+      <div className="flex items-center justify-between gap-3">
+        <span className="text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)]">{t('Margins')}</span>
+        <button
+          type="button"
+          aria-pressed={!linked}
+          onClick={() => {
+            if (!linked) onChange(all(top));
+            setLinked(!linked);
+          }}
+          className="inline-flex h-7 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold text-[color:var(--pf-palette-texte-muted)] transition-colors hover:bg-[color:var(--pf-surface)] hover:text-[color:var(--pf-palette-texte-fort)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
+        >
+          <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+            {linked ? (
+              <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7l-1.7 1.7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7l1.7-1.7" />
+            ) : (
+              <path d="M10 13a5 5 0 0 0 7.5.5l3-3a5 5 0 0 0-7-7M14 11a5 5 0 0 0-7.5-.5l-3 3a5 5 0 0 0 7 7M3 3l18 18" />
+            )}
+          </svg>
+          {linked ? t('Same on all sides') : t('Per side')}
+        </button>
       </div>
-      <GlobalInsetField side="Right" value={right} onChange={(value) => onChange('backgroundImageInsetRight', value)} />
-
-      <div aria-hidden />
-      <GlobalInsetField
-        side="Bottom"
-        value={bottom}
-        onChange={(value) => onChange('backgroundImageInsetBottom', value)}
-      />
-      <div aria-hidden />
+      {linked ? (
+        <GlobalPxField label={t('All sides')} value={top} onChange={(value) => onChange(all(value))} />
+      ) : (
+        <div className="grid grid-cols-4 gap-2">
+          <GlobalPxField label={t('Top')} value={top} onChange={(value) => onChange({ backgroundImageInsetTop: value })} />
+          <GlobalPxField label={t('Right')} value={right} onChange={(value) => onChange({ backgroundImageInsetRight: value })} />
+          <GlobalPxField label={t('Bottom')} value={bottom} onChange={(value) => onChange({ backgroundImageInsetBottom: value })} />
+          <GlobalPxField label={t('Left')} value={left} onChange={(value) => onChange({ backgroundImageInsetLeft: value })} />
+        </div>
+      )}
     </div>
   );
 }
@@ -1441,6 +1555,7 @@ function GlobalSwitchTrack({ checked }: { checked: boolean }) {
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. */
 function GlobalInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -1448,7 +1563,7 @@ function GlobalInfoTooltip({ text }: { text: string }) {
       <button
         type="button"
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
@@ -1479,6 +1594,7 @@ function GlobalSwitchRow({
   description,
   info,
   checked,
+  disabled = false,
   onChange,
 }: {
   label: string;
@@ -1486,10 +1602,12 @@ function GlobalSwitchRow({
   /** Non-obvious info shown as a hover/focus tooltip instead of a permanent description line. */
   info?: string;
   checked: boolean;
+  /** Dims the row and ignores clicks (e.g. a sub-switch whose parent switch is off). */
+  disabled?: boolean;
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex w-full flex-col gap-1">
+    <div className={`flex w-full flex-col gap-1 ${disabled ? 'pointer-events-none opacity-50' : ''}`}>
       <div className="flex items-center justify-between gap-4">
         <div className="flex min-w-0 items-center gap-1.5">
           <span
@@ -1505,6 +1623,7 @@ function GlobalSwitchRow({
           role="switch"
           aria-checked={checked}
           aria-label={label}
+          disabled={disabled}
           onClick={() => onChange(!checked)}
           className="shrink-0"
         >
@@ -1515,35 +1634,6 @@ function GlobalSwitchRow({
         <span className="text-sm leading-relaxed text-neutral-500">{description}</span>
       ) : null}
     </div>
-  );
-}
-
-/** Single merged shape — native color input fills the whole swatch, hex shows on hover —
- *  instead of a separate swatch + hex chip + text input stacked on top of each other. */
-function GlobalTokenSwatch({
-  label,
-  value,
-  onChange,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-}) {
-  return (
-    <label className="group block cursor-pointer">
-      <span className="pf-stack-option-title pf-stack-option-label">{label}</span>
-      <span className="pf-swatch-ring relative block h-11 w-full overflow-hidden rounded-xl">
-        <input
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="pf-token-swatch-input h-full w-full cursor-pointer"
-        />
-        <span className="pointer-events-none absolute inset-0 flex items-center justify-center bg-black/0 text-[11px] font-semibold uppercase tracking-[0.08em] text-transparent opacity-0 mix-blend-difference transition group-hover:bg-black/10 group-hover:text-white group-hover:opacity-100">
-          {value}
-        </span>
-      </span>
-    </label>
   );
 }
 
@@ -1594,61 +1684,62 @@ function GlobalNumberSlider({
 const PALETTE_FAMILY_OPTIONS = [
   {
     id: 'indigo' as const,
-    label: 'Indigo',
+    label: msg('Indigo'),
     dark: INDIGO_DARK_HERO_PALETTE,
     light: INDIGO_LIGHT_HERO_PALETTE,
   },
   {
     id: 'classic' as const,
-    label: 'Classic',
+    label: msg('Classic'),
     dark: DEFAULT_HERO_PALETTE,
     light: LIGHT_HERO_PALETTE,
   },
   {
     id: 'verdant' as const,
-    label: 'Verdant',
+    label: msg('Verdant'),
     dark: VERDANT_DARK_HERO_PALETTE,
     light: VERDANT_LIGHT_HERO_PALETTE,
   },
   {
     id: 'vive' as const,
-    label: 'Vive',
+    label: msg('Vivid'),
     dark: VIVE_DARK_HERO_PALETTE,
     light: VIVE_LIGHT_HERO_PALETTE,
   },
   {
     id: 'safran' as const,
-    label: 'Safran',
+    label: msg('Saffron'),
     dark: SAFRAN_DARK_HERO_PALETTE,
     light: SAFRAN_LIGHT_HERO_PALETTE,
   },
   {
     id: 'citron' as const,
-    label: 'Citron',
+    label: msg('Lemon'),
     dark: CITRON_DARK_HERO_PALETTE,
     light: CITRON_LIGHT_HERO_PALETTE,
   },
   {
     id: 'rouge' as const,
-    label: 'Rouge',
+    label: msg('Red'),
     dark: ROUGE_DARK_HERO_PALETTE,
     light: ROUGE_LIGHT_HERO_PALETTE,
   },
   {
     id: 'ecarlate' as const,
-    label: 'Écarlate',
+    label: msg('Scarlet'),
     dark: ECARLATE_DARK_HERO_PALETTE,
     light: ECARLATE_LIGHT_HERO_PALETTE,
   },
   {
     id: 'ardoise' as const,
-    label: 'Ardoise',
+    label: msg('Slate'),
     dark: ARDOISE_DARK_HERO_PALETTE,
     light: ARDOISE_LIGHT_HERO_PALETTE,
   },
 ] as const;
 
 function GlobalSettingsPanel({
+  settings,
   global,
   servicesSectionOrganization,
   onGlobalChange,
@@ -1657,13 +1748,12 @@ function GlobalSettingsPanel({
   onGlobalPalettePairChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  sectionEnabled,
+  onSectionEnabledChange,
 }: {
-  themeId: PortfolioThemeId;
-  customThemes: PortfolioCustomTheme[];
   settings: PortfolioSettings;
   global: PortfolioGlobalSettings;
   servicesSectionOrganization: PortfolioServicesSectionOrganization;
-  onThemeChange: (themeId: PortfolioThemeId) => void;
   onGlobalChange: (patch: PortfolioGlobalSettingsPatch) => void;
   onColorModeChange: (mode: PortfolioColorMode) => void;
   onGlobalPaletteChange: (patch: Partial<PortfolioHeroPalette>) => void;
@@ -1672,14 +1762,12 @@ function GlobalSettingsPanel({
     paletteLight?: PortfolioHeroPalette,
     family?: 'indigo' | 'classic' | 'verdant' | 'vive' | 'safran' | 'citron' | 'rouge' | 'ecarlate' | 'ardoise' | 'custom'
   ) => void;
-  onSaveCustomTheme: (themeId: string, name?: string) => boolean;
-  onRenameCustomTheme: (themeId: string, name: string) => boolean;
-  onDuplicateTheme: (themeId: PortfolioThemeId) => void;
-  onResetBuiltinTheme: (themeId: PortfolioBuiltinThemeId) => void;
-  onDeleteCustomTheme: (themeId: string) => void;
   subSection?: GlobalSettingsSubSection;
   onSubSectionChange?: (value: GlobalSettingsSubSection) => void;
+  sectionEnabled?: Partial<Record<PortfolioNavSectionKey, boolean>>;
+  onSectionEnabledChange?: (key: PortfolioNavSectionKey, enabled: boolean) => void;
 }) {
+  const t = useT();
   const [uncontrolledSubSection, setUncontrolledSubSection] =
     useState<GlobalSettingsSubSection>('theme');
   const subSection = controlledSubSection ?? uncontrolledSubSection;
@@ -1705,10 +1793,6 @@ function GlobalSettingsPanel({
     onGlobalPalettePairChange(preset.dark, preset.light, preset.id);
   };
 
-  // Display-mode only — cards vs. slider for Section spacing. Never saved; the underlying
-  // sectionTitleTopSpacing/BottomSpacing value is unaffected by which UI picks it.
-  const [topPaddingManual, setTopPaddingManual] = useState(false);
-  const [bottomPaddingManual, setBottomPaddingManual] = useState(false);
 
   return (
     <div className="space-y-6">
@@ -1720,13 +1804,13 @@ function GlobalSettingsPanel({
               key={section.id}
               type="button"
               onClick={() => setSubSection(section.id)}
-              className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
+              className={`h-8 rounded-full px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
                 active
-                  ? 'bg-neutral-900 text-white'
-                  : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                  ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+                  : 'bg-[color:var(--pf-surface)] text-[color:var(--pf-palette-texte-fort)] hover:bg-[color:var(--pf-palette-neutre)]'
               }`}
             >
-              {GLOBAL_SETTINGS_TAB_LABELS[section.id]}
+              {t(GLOBAL_SETTINGS_TAB_LABELS[section.id])}
             </button>
           );
         })}
@@ -1734,14 +1818,21 @@ function GlobalSettingsPanel({
 
       {subSection === 'theme' ? (
         <div>
-          <GlobalSwitchRow
-            label="Light mode"
-            checked={activeMode === 'light'}
-            onChange={(light) => onColorModeChange(light ? 'light' : 'dark')}
-          />
+          {/* Both modes shown at once: an on/off "Light mode" switch hid what "off" meant. */}
+          <FoundationRow label={t('Color mode')}>
+            <FoundationSegment
+              label={t('Color mode')}
+              options={[
+                { value: 'dark', label: t('Dark') },
+                { value: 'light', label: t('Light') },
+              ]}
+              value={activeMode}
+              onChange={(mode) => onColorModeChange(mode)}
+            />
+          </FoundationRow>
 
-          <GlobalSection label="Site color palette">
-            <div className="grid gap-3 sm:grid-cols-2">
+          <GlobalSection label={t('Site color palette')}>
+            <div className="grid grid-cols-2 gap-2">
               {PALETTE_FAMILY_OPTIONS.map((family) => {
                 const active = activeFamily === family.id;
                 return (
@@ -1752,26 +1843,33 @@ function GlobalSettingsPanel({
                     onClick={() =>
                       onGlobalPalettePairChange(family.dark, family.light, family.id)
                     }
-                    className={`relative rounded-2xl bg-white px-4 py-3 text-left transition ${
+                    className={`flex flex-col gap-2.5 rounded-2xl p-3 text-left transition-[box-shadow,background-color] focus-visible:outline-none ${
                       active
-                        ? 'border-2 border-[color:var(--pf-palette-principal,#f97316)]'
-                        : 'border border-neutral-200/80 hover:border-neutral-300'
+                        ? 'shadow-[inset_0_0_0_2px_var(--pf-palette-texte-fort)]'
+                        : 'shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] hover:bg-[color:var(--pf-surface)] focus-visible:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)]'
                     }`}
                   >
-                    {active ? <PfSelectedBadge /> : null}
-                    <span className="text-sm font-semibold text-neutral-950">{family.label}</span>
-                    <span className="mt-2 flex gap-1.5">
+                    <span className="flex items-center justify-between gap-2">
+                      <span className="truncate text-[14px] font-semibold text-[color:var(--pf-palette-texte-fort)]">
+                        {t(family.label)}
+                      </span>
+                      {active ? (
+                        <svg viewBox="0 0 24 24" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-fort)]" fill="none" stroke="currentColor" strokeWidth={2.6} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                          <path d="m5 12.5 4.5 4.5L19 7.5" />
+                        </svg>
+                      ) : null}
+                    </span>
+                    {/* The palette as one ribbon (its 8 tokens in order) — read at a glance. */}
+                    <span className="flex h-3 overflow-hidden rounded-full shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--pf-palette-texte-fort)_12%,transparent)]">
                       {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
                         <span
                           key={token.value}
-                          className="h-4 w-4 rounded-full border border-neutral-200"
+                          className="h-full flex-1"
                           style={{
                             backgroundColor:
-                              activeMode === 'light'
-                                ? family.light[token.value]
-                                : family.dark[token.value],
+                              activeMode === 'light' ? family.light[token.value] : family.dark[token.value],
                           }}
-                          title={token.label}
+                          title={PALETTE_TOKEN_DISPLAY_LABELS[token.value] ?? token.label}
                         />
                       ))}
                     </span>
@@ -1780,38 +1878,66 @@ function GlobalSettingsPanel({
               })}
             </div>
 
+            {/* Advanced: the palette's 8 colours, one by one — folded unless the palette is custom. */}
+            <details
+              className="group/tokens rounded-2xl shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]"
+              open={activeFamily === 'custom' ? true : undefined}
+            >
+              <summary className="flex h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-3.5 text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)] transition-colors hover:bg-[color:var(--pf-surface)] [&::-webkit-details-marker]:hidden">
+                <span>
+                  {t('Customize colors')}
+                  <span className="ml-2 text-[12px] font-normal text-[color:var(--pf-palette-texte-muted)]">
+                    {activeMode === 'light' ? t('Light mode') : t('Dark mode')}
+                  </span>
+                </span>
+                <span className="flex items-center gap-3">
+                  {activeFamily === 'custom' ? (
+                    <span
+                      role="button"
+                      tabIndex={0}
+                      onClick={(event) => {
+                        event.preventDefault();
+                        handleResetPaletteTokens();
+                      }}
+                      onKeyDown={(event) => {
+                        if (event.key === 'Enter' || event.key === ' ') {
+                          event.preventDefault();
+                          handleResetPaletteTokens();
+                        }
+                      }}
+                      className="text-[13px] font-semibold text-[color:var(--pf-palette-texte-muted)] underline-offset-4 hover:text-[color:var(--pf-palette-texte-fort)] hover:underline"
+                    >
+                      {t('Reset')}
+                    </span>
+                  ) : null}
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[color:var(--pf-palette-texte-muted)] transition-transform duration-200 group-open/tokens:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </span>
+              </summary>
+              <div className="grid grid-cols-2 gap-1 px-1.5 pb-2">
+                {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
+                  <FoundationTokenSwatch
+                    key={token.value}
+                    label={PALETTE_TOKEN_DISPLAY_LABELS[token.value] ?? token.label}
+                    value={resolveHeroPaletteColor(activePalette, token.value)}
+                    onChange={(color) => onGlobalPaletteChange({ [token.value]: color })}
+                  />
+                ))}
+              </div>
+            </details>
           </GlobalSection>
 
-          <GlobalSection
-            label="Active mode tokens"
-            action={
-              activeFamily === 'custom' ? (
-                <GlobalResetTokensButton onClick={handleResetPaletteTokens} />
-              ) : null
-            }
-          >
-            <div className="grid gap-4 sm:grid-cols-2">
-              {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((token) => (
-                <GlobalTokenSwatch
-                  key={token.value}
-                  label={token.label}
-                  value={resolveHeroPaletteColor(activePalette, token.value)}
-                  onChange={(color) => onGlobalPaletteChange({ [token.value]: color })}
-                />
-              ))}
-            </div>
-          </GlobalSection>
-
-          <GlobalSection label="Layout & width">
+          <GlobalSection label={t('Layout & width')}>
             <GlobalPreviewCardGrid
-              label="Content width"
+              label={t('Content width')}
               options={GLOBAL_CONTENT_WIDTH_PREVIEW_OPTIONS}
               value={global.contentWidth}
               onChange={(contentWidth) => onGlobalChange({ contentWidth })}
               columns={3}
             />
             <GlobalPreviewCardGrid
-              label="Side margins"
+              label={t('Side margins')}
               options={GLOBAL_CONTENT_GUTTER_PREVIEW_OPTIONS}
               value={global.contentGutter}
               onChange={(contentGutter) => onGlobalChange({ contentGutter })}
@@ -1819,76 +1945,57 @@ function GlobalSettingsPanel({
             />
           </GlobalSection>
 
-          <GlobalSection label="Section spacing">
-            {topPaddingManual || bottomPaddingManual ? (
-              <GlobalSectionSpacingPreview
-                topSpacing={global.sectionTitleTopSpacing}
-                bottomSpacing={global.sectionTitleBottomSpacing}
+          <GlobalSection label={t('Section spacing')}>
+            <GlobalSectionSpacingPreview
+              topSpacing={global.sectionTitleTopSpacing}
+              bottomSpacing={global.sectionTitleBottomSpacing}
+            />
+            <FoundationRow label={t('Top')}>
+              <FoundationSegment
+                label={t('Top padding')}
+                options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: SPACING_TIER_SHORT[option.value] ?? option.label,
+                  title: option.label,
+                }))}
+                value={global.sectionTitleTopSpacing}
+                onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
               />
-            ) : null}
-
-            <div>
-              <div className="flex items-center justify-between gap-3 pf-stack-option-label">
-                <p className="pf-stack-block-label !mb-0">Top padding</p>
-                <GlobalManualToggle checked={topPaddingManual} onChange={setTopPaddingManual} />
-              </div>
-              <div key={topPaddingManual ? 'manual' : 'cards'} className="pf-fade-in">
-                {topPaddingManual ? (
-                  <GlobalSpacingTierSlider
-                    options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS}
-                    value={global.sectionTitleTopSpacing}
-                    onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
-                  />
-                ) : (
-                  <GlobalPreviewCardGridBody
-                    label="Top padding"
-                    options={GLOBAL_SECTION_TOP_SPACING_PREVIEW_OPTIONS}
-                    value={global.sectionTitleTopSpacing}
-                    onChange={(sectionTitleTopSpacing) => onGlobalChange({ sectionTitleTopSpacing })}
-                    columns={4}
-                  />
-                )}
-              </div>
-            </div>
-
-            <div>
-              <div className="flex items-center justify-between gap-3 pf-stack-option-label">
-                <p className="pf-stack-block-label !mb-0">Bottom padding</p>
-                <GlobalManualToggle checked={bottomPaddingManual} onChange={setBottomPaddingManual} />
-              </div>
-              <div key={bottomPaddingManual ? 'manual' : 'cards'} className="pf-fade-in">
-                {bottomPaddingManual ? (
-                  <GlobalSpacingTierSlider
-                    options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS}
-                    value={global.sectionTitleBottomSpacing}
-                    onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
-                  />
-                ) : (
-                  <GlobalPreviewCardGridBody
-                    label="Bottom padding"
-                    options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS}
-                    value={global.sectionTitleBottomSpacing}
-                    onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
-                    columns={4}
-                  />
-                )}
-              </div>
-            </div>
+            </FoundationRow>
+            <FoundationRow label={t('Bottom')}>
+              <FoundationSegment
+                label={t('Bottom padding')}
+                options={GLOBAL_SECTION_BOTTOM_SPACING_PREVIEW_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: SPACING_TIER_SHORT[option.value] ?? option.label,
+                  title: option.label,
+                }))}
+                value={global.sectionTitleBottomSpacing}
+                onChange={(sectionTitleBottomSpacing) => onGlobalChange({ sectionTitleBottomSpacing })}
+              />
+            </FoundationRow>
           </GlobalSection>
 
-          <GlobalSection label="Animations">
+          <GlobalSection label={t('Animations')}>
             <GlobalSwitchRow
-              label="Motion effects"
-              description="Entrance reveals, scroll and hover animations on every section. Turn off for a fully static page."
+              label={t('Motion effects')}
+              description={t('Entrance reveals, scroll and hover animations on every section. Turn off for a fully static page.')}
               checked={global.motionEnabled ?? true}
               onChange={(motionEnabled) => onGlobalChange({ motionEnabled })}
             />
+            <GlobalSwitchRow
+              label={t('Header animations')}
+              description={t('Entrance reveals and scroll effects on the section headers only. Turn off to keep every header static while the rest of the page still animates.')}
+              checked={(global.motionEnabled ?? true) && (global.headerMotionEnabled ?? true)}
+              disabled={global.motionEnabled === false}
+              onChange={(headerMotionEnabled) => onGlobalChange({ headerMotionEnabled })}
+            />
           </GlobalSection>
 
-          <GlobalSection label="Preferences">
+          <GlobalSection label={t('Preferences')}>
             <GlobalSwitchRow
-              label="Settings keyboard shortcut"
-              description="Ctrl+, (⌘ on Mac) — owner only."
+              label={t('Settings keyboard shortcut')}
+              description={t('Ctrl+, (⌘ on Mac) — owner only.')}
               checked={global.settingsShortcutEnabled ?? true}
               onChange={(settingsShortcutEnabled) => onGlobalChange({ settingsShortcutEnabled })}
             />
@@ -1897,60 +2004,102 @@ function GlobalSettingsPanel({
       ) : null}
 
       {subSection === 'background' ? (
-        <div className="space-y-4">
+        <div>
           <GlobalSwitchRow
-            label="Enable page background"
-            info="Sits behind every section — a section's own image fill still shows on top there."
+            label={t('Page background')}
+            description={
+              global.backgroundEnabled
+                ? undefined
+                : t('An image fixed behind every section. A section’s own image fill still shows on top.')
+            }
+            info={global.backgroundEnabled ? t('An image fixed behind every section. A section’s own image fill still shows on top.') : undefined}
             checked={global.backgroundEnabled}
             onChange={(backgroundEnabled) => onGlobalChange({ backgroundEnabled })}
           />
 
           {global.backgroundEnabled ? (
-            <div className="space-y-4">
-              <PortfolioBackgroundImageUpload
-                url={global.backgroundImageUrl}
-                onChange={(backgroundImageUrl) => onGlobalChange({ backgroundImageUrl })}
-                library={global.backgroundImageLibrary}
-                onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
-              />
-
-              <GlobalPreviewCardGrid
-                label="Image size"
-                options={GLOBAL_BACKGROUND_IMAGE_SIZE_PREVIEW_OPTIONS}
-                value={global.backgroundImageSize}
-                onChange={(backgroundImageSize) => onGlobalChange({ backgroundImageSize })}
-                columns={3}
-              />
-
-              <div>
-                <GlobalBlockLabel>Insets from edges</GlobalBlockLabel>
-                <GlobalInsetsSchema
-                  top={global.backgroundImageInsetTop}
-                  right={global.backgroundImageInsetRight}
-                  bottom={global.backgroundImageInsetBottom}
-                  left={global.backgroundImageInsetLeft}
-                  onChange={(key, value) => onGlobalChange({ [key]: value })}
+            <>
+              <GlobalSection
+                label={t('Image')}
+                action={
+                  <span className="text-[11px] font-semibold tabular-nums text-[color:var(--pf-palette-texte-muted)]">
+                    {global.backgroundImageLibrary.length}/{MAX_PORTFOLIO_BACKGROUND_IMAGES}
+                  </span>
+                }
+              >
+                <GlobalBackgroundPreview
+                  global={global}
+                  onFocusChange={(backgroundImagePosition) => onGlobalChange({ backgroundImagePosition })}
                 />
-              </div>
+                {global.backgroundImageUrl.trim() && global.backgroundImageSize !== 'fill' ? (
+                  <p className="-mt-2 text-[12px] text-[color:var(--pf-palette-texte-muted)]">
+                    {t('Click the preview to choose the part of the image that stays in view.')}
+                  </p>
+                ) : null}
+                <PortfolioBackgroundLibrary
+                  url={global.backgroundImageUrl}
+                  onChange={(backgroundImageUrl) => onGlobalChange({ backgroundImageUrl })}
+                  library={global.backgroundImageLibrary}
+                  onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
+                />
+              </GlobalSection>
 
-              <GlobalNumberSlider
-                label="Opacity"
-                value={global.backgroundOpacity}
-                min={0}
-                max={100}
-                unit="%"
-                onChange={(backgroundOpacity) => onGlobalChange({ backgroundOpacity })}
-              />
-            </div>
+              <GlobalSection label={t('Appearance')}>
+                <FoundationRow label={t('Fit')}>
+                  <FoundationSegment
+                    label={t('Image fit')}
+                    options={[
+                      { value: 'cover', label: t('Fill screen'), title: t('Fills the screen — may crop the image.') },
+                      { value: 'contain', label: t('Whole image'), title: t('Shows the whole image — may leave empty space.') },
+                      { value: 'fill', label: t('Stretch'), title: t('Ignores the image’s proportions — it may look distorted.') },
+                    ]}
+                    value={global.backgroundImageSize}
+                    onChange={(backgroundImageSize) => onGlobalChange({ backgroundImageSize })}
+                  />
+                </FoundationRow>
+                <GlobalNumberSlider
+                  label={t('Opacity')}
+                  value={global.backgroundOpacity}
+                  min={0}
+                  max={100}
+                  unit="%"
+                  onChange={(backgroundOpacity) => onGlobalChange({ backgroundOpacity })}
+                />
+              </GlobalSection>
+
+              {/* Rarely needed: folded, like Foundations' "Customize colors". */}
+              <details className="group/advanced mt-6 rounded-2xl shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
+                <summary className="flex h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-3.5 text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)] transition-colors hover:bg-[color:var(--pf-surface)] [&::-webkit-details-marker]:hidden">
+                  {t('Advanced')}
+                  <svg viewBox="0 0 24 24" className="h-4 w-4 text-[color:var(--pf-palette-texte-muted)] transition-transform duration-200 group-open/advanced:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                    <path d="M6 9l6 6 6-6" />
+                  </svg>
+                </summary>
+                <div className="space-y-5 px-3.5 pb-4 pt-1">
+                  <GlobalBackgroundMargins
+                    top={global.backgroundImageInsetTop}
+                    right={global.backgroundImageInsetRight}
+                    bottom={global.backgroundImageInsetBottom}
+                    left={global.backgroundImageInsetLeft}
+                    onChange={(patch) => onGlobalChange(patch)}
+                  />
+                </div>
+              </details>
+            </>
           ) : null}
         </div>
       ) : null}
 
       {subSection === 'order' ? (
         <GlobalSectionOrderBlock
+          hiddenFromMenu={
+            (settings.navigation.navMode ?? 'default') === 'pages' ? [] : settings.navigation.hiddenNavItems ?? []
+          }
           sectionOrder={global.sectionOrder}
           servicesSectionOrganization={servicesSectionOrganization}
           onChange={(sectionOrder) => onGlobalChange({ sectionOrder })}
+          sectionEnabled={sectionEnabled}
+          onSectionEnabledChange={onSectionEnabledChange}
         />
       ) : null}
 
@@ -1971,6 +2120,7 @@ function OptionGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
@@ -1998,8 +2148,8 @@ function OptionGrid<T extends string>({
                   : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
               }`}
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              <p className="text-sm font-semibold text-neutral-950">{t(option.label)}</p>
+              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{t(option.description)}</p>
             </button>
           );
         })}
@@ -2008,13 +2158,46 @@ function OptionGrid<T extends string>({
   );
 }
 
+/** The panel's one text field: card tone, hairline, a heavier ring on focus — readable in both modes. */
+const PF_TEXT_INPUT =
+  'h-10 w-full rounded-xl bg-[color:var(--pf-surface)] px-3 text-[14px] text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] outline-none transition-shadow focus:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)]';
+
+/** A pill the user toggles (suggestions, sections of a dropdown): ink when on, hairline when off. */
+function pfChipClass(active: boolean, disabled = false) {
+  if (disabled) {
+    return 'inline-flex h-8 items-center rounded-full px-3 text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)] opacity-40 shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] cursor-not-allowed';
+  }
+  return `inline-flex h-8 items-center rounded-full px-3 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
+    active
+      ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+      : 'text-[color:var(--pf-palette-texte-fort)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] hover:bg-[color:var(--pf-surface)]'
+  }`;
+}
+
+/** Layouts that come with their own extra settings (shown under Design → Layout options). */
+const NAV_LAYOUTS_WITH_OPTIONS: ReadonlySet<string> = new Set([
+  'editorial-bar',
+  'floating-pill',
+  'center-logo-split',
+  'case-overlay',
+  'duten-panel',
+  'half-panel-left',
+]);
+
+/**
+ * One menu item as a 52px row of the Labels list: its icon and the name visitors read. Opening it
+ * shows the name field with a few suggestions, then the icons as a plain grid (the name of each icon
+ * in its tooltip — 9px captions under every glyph were unreadable).
+ */
 function NavItemCustomizer({
   sectionKey,
   title,
   label,
   icon,
   expanded,
+  hiddenFromMenu,
   onToggleExpanded,
+  onToggleHidden,
   onLabelChange,
   onIconChange,
 }: {
@@ -2023,34 +2206,56 @@ function NavItemCustomizer({
   label: string;
   icon: PortfolioNavIconVariant;
   expanded: boolean;
+  hiddenFromMenu: boolean;
   onToggleExpanded: () => void;
+  /** Absent in pages mode, where every section needs its link. */
+  onToggleHidden?: () => void;
   onLabelChange: (label: string) => void;
   onIconChange: (icon: PortfolioNavIconVariant) => void;
 }) {
+  const t = useT();
   const labelPresets = PORTFOLIO_NAV_LABEL_PRESETS[sectionKey];
   const iconOptions = PORTFOLIO_NAV_ICON_OPTIONS[sectionKey];
-  const presetValues = new Set(labelPresets.map((preset) => preset.value));
-  const usesCustomLabel = label.trim().length > 0 && !presetValues.has(label);
+  const shown = label.trim() || title;
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/50">
+    <li className="relative">
       <button
         type="button"
         onClick={onToggleExpanded}
         aria-expanded={expanded}
-        className="flex w-full items-center gap-3 px-4 py-3 text-left"
+        className={`flex h-[52px] w-full items-center gap-3 px-3 text-start transition-colors hover:bg-[color:var(--pf-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
+          onToggleHidden ? 'pe-12' : ''
+        }`}
       >
-        <span className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg border border-neutral-200/80 bg-white text-neutral-800">
+        <span
+          className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-[color:var(--pf-surface)] text-[color:var(--pf-palette-texte-fort)] transition-opacity ${
+            hiddenFromMenu ? 'opacity-40' : ''
+          }`}
+        >
           <PortfolioNavIcon variant={icon} className="h-4 w-4" />
         </span>
         <span className="min-w-0 flex-1">
-          <span className="block truncate text-sm font-medium text-neutral-950">
-            {label || title}
+          <span
+            className={`block truncate text-[14px] font-medium ${
+              hiddenFromMenu
+                ? 'text-[color:var(--pf-palette-texte-muted)] line-through decoration-1'
+                : 'text-[color:var(--pf-palette-texte-fort)]'
+            }`}
+          >
+            {shown}
           </span>
+          {hiddenFromMenu ? (
+            <span className="block truncate text-[12px] text-[color:var(--pf-palette-texte-muted)]">
+              {t('Hidden from the menu — still on the page')}
+            </span>
+          ) : shown !== title ? (
+            <span className="block truncate text-[12px] text-[color:var(--pf-palette-texte-muted)]">{title}</span>
+          ) : null}
         </span>
         <svg
           viewBox="0 0 20 20"
-          className={`h-4 w-4 shrink-0 text-neutral-400 transition-transform ${expanded ? 'rotate-180' : ''}`}
+          className={`h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)] transition-transform ${expanded ? 'rotate-180' : ''}`}
           fill="none"
           stroke="currentColor"
           strokeWidth={2}
@@ -2059,67 +2264,74 @@ function NavItemCustomizer({
           <path d="M5 7.5L10 12.5L15 7.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
       </button>
+      {onToggleHidden ? (
+        <button
+          type="button"
+          onClick={onToggleHidden}
+          aria-pressed={!hiddenFromMenu}
+          aria-label={hiddenFromMenu ? t('Show in the menu') : t('Hide from the menu')}
+          title={hiddenFromMenu ? t('Show in the menu') : t('Hide from the menu')}
+          className={`absolute end-2 top-[10px] flex h-8 w-8 items-center justify-center rounded-lg transition-colors hover:bg-[color:var(--pf-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
+            hiddenFromMenu ? 'text-[color:var(--pf-palette-texte-muted)]' : 'text-[color:var(--pf-palette-texte-fort)]'
+          }`}
+        >
+          <svg viewBox="0 0 20 20" fill="none" stroke="currentColor" strokeWidth={1.6} className="h-[18px] w-[18px]" aria-hidden>
+            <path d="M4 6h12M4 10h12M4 14h7" strokeLinecap="round" />
+            {hiddenFromMenu ? <path d="M3 3l14 14" strokeLinecap="round" /> : null}
+          </svg>
+        </button>
+      ) : null}
 
       {expanded ? (
-        <div className="space-y-4 border-t border-neutral-200/80 px-4 pb-4 pt-4">
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Menu name
-            </p>
+        <div className="space-y-5 px-3 pb-4 pt-1">
+          <label className="block space-y-2">
+            <span className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">{t('Menu name')}</span>
             <input
               type="text"
               value={label}
               maxLength={32}
               onChange={(event) => onLabelChange(event.target.value)}
-              placeholder="e.g. Projects, Expertise…"
-              className="mt-2 w-full rounded-xl border border-neutral-200/80 bg-white px-3 py-2.5 text-sm font-medium text-neutral-900 shadow-sm outline-none transition focus:border-neutral-400 focus:ring-2 focus:ring-neutral-900/10"
+              placeholder={title}
+              className={PF_TEXT_INPUT}
             />
-            <p className="mt-1.5 text-[11px] text-neutral-500">
-              {usesCustomLabel ? 'Custom label active.' : 'Quick suggestions:'}
-            </p>
-            <div className="mt-2 flex flex-wrap gap-2">
-              {labelPresets.map((preset, presetIndex) => {
-                const active = label === preset.value;
-                return (
-                  <button
-                    key={`${sectionKey}-label-${presetIndex}-${preset.value}`}
-                    type="button"
-                    onClick={() => onLabelChange(preset.value)}
-                    className={`rounded-full px-3 py-1.5 text-xs font-semibold transition ${
-                      active
-                        ? 'bg-neutral-950 text-white'
-                        : 'border border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                    }`}
-                  >
-                    {preset.label}
-                  </button>
-                );
-              })}
+          </label>
+          {labelPresets.length > 0 ? (
+            <div className="flex flex-wrap gap-1.5" aria-label={t('Quick suggestions:')}>
+              {labelPresets.map((preset, presetIndex) => (
+                <button
+                  key={`${sectionKey}-label-${presetIndex}-${preset.value}`}
+                  type="button"
+                  aria-pressed={label === preset.value}
+                  onClick={() => onLabelChange(preset.value)}
+                  className={pfChipClass(label === preset.value)}
+                >
+                  {t(preset.label)}
+                </button>
+              ))}
             </div>
-          </div>
+          ) : null}
 
-          <div>
-            <p className="text-[10px] font-bold uppercase tracking-[0.16em] text-neutral-500">
-              Icon ({iconOptions.length} options)
-            </p>
-            <div className="mt-2 grid grid-cols-3 gap-2 sm:grid-cols-6">
+          <div className="space-y-2">
+            <span className="block text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">{t('Icon')}</span>
+            <div role="radiogroup" aria-label={t('Icon')} className="grid grid-cols-6 gap-1.5">
               {iconOptions.map((option) => {
                 const active = icon === option.value;
                 return (
                   <button
                     key={option.value}
                     type="button"
+                    role="radio"
+                    aria-checked={active}
+                    aria-label={t(option.label)}
+                    title={t(option.label)}
                     onClick={() => onIconChange(option.value)}
-                    className={`flex flex-col items-center gap-1.5 rounded-xl border px-1.5 py-2.5 transition ${
+                    className={`flex aspect-square items-center justify-center rounded-xl transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
                       active
-                        ? 'border-neutral-900 bg-white ring-2 ring-neutral-900/10'
-                        : 'border-neutral-200/80 bg-white hover:border-neutral-300'
+                        ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+                        : 'text-[color:var(--pf-palette-texte-fort)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] hover:bg-[color:var(--pf-surface)]'
                     }`}
                   >
-                    <PortfolioNavIcon variant={option.value} className="h-5 w-5 text-neutral-800" />
-                    <span className="text-center text-[9px] font-semibold leading-tight text-neutral-600">
-                      {option.label}
-                    </span>
+                    <PortfolioNavIcon variant={option.value} className="h-[18px] w-[18px]" />
                   </button>
                 );
               })}
@@ -2127,50 +2339,73 @@ function NavItemCustomizer({
           </div>
         </div>
       ) : null}
-    </div>
+    </li>
   );
 }
 
 function NavigationLabelsIconsPanel({
   itemLabels,
   itemIcons,
+  hiddenItems,
+  pagesMode,
   onChange,
 }: {
   itemLabels: PortfolioNavItemLabels;
   itemIcons: PortfolioNavItemIcons;
+  hiddenItems: PortfolioNavSectionKey[];
+  /** One page per section: every section needs its link, so nothing can be hidden. */
+  pagesMode: boolean;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
-  // All sections start collapsed; only one card is expanded at a time.
+  const t = useT();
+  // One item open at a time.
   const [openSection, setOpenSection] = useState<PortfolioNavSectionKey | null>(null);
 
   return (
-    <div className="space-y-4">
-      <p className="pf-stack-block-label pf-stack-option-label">Menu labels & icons</p>
-      <div className="space-y-2">
+    <div>
+      <p className="mb-3 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
+        {t('The name and icon of each section in the menu. Leave a name empty to keep the default.')}
+      </p>
+      {pagesMode ? (
+        <p className="mb-3 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
+          {t('In pages mode every section needs its menu link, so none can be hidden.')}
+        </p>
+      ) : null}
+      <ul className="divide-y divide-[color:var(--pf-palette-bordure)] overflow-hidden rounded-2xl shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
         {PORTFOLIO_NAV_SECTION_META.map((section) => (
           <NavItemCustomizer
             key={section.key}
             sectionKey={section.key}
-            title={section.title}
+            title={t(section.title)}
             label={itemLabels[section.key]}
             icon={itemIcons[section.key]}
             expanded={openSection === section.key}
-            onToggleExpanded={() =>
-              setOpenSection((current) => (current === section.key ? null : section.key))
+            hiddenFromMenu={!pagesMode && hiddenItems.includes(section.key)}
+            onToggleExpanded={() => setOpenSection((current) => (current === section.key ? null : section.key))}
+            onToggleHidden={
+              pagesMode
+                ? undefined
+                : () =>
+                    onChange({
+                      hiddenNavItems: hiddenItems.includes(section.key)
+                        ? hiddenItems.filter((key) => key !== section.key)
+                        : [...hiddenItems, section.key],
+                    })
             }
-            onLabelChange={(nextLabel) =>
-              onChange({ itemLabels: { ...itemLabels, [section.key]: nextLabel } })
-            }
-            onIconChange={(nextIcon) =>
-              onChange({ itemIcons: { ...itemIcons, [section.key]: nextIcon } })
-            }
+            onLabelChange={(nextLabel) => onChange({ itemLabels: { ...itemLabels, [section.key]: nextLabel } })}
+            onIconChange={(nextIcon) => onChange({ itemIcons: { ...itemIcons, [section.key]: nextIcon } })}
           />
         ))}
-      </div>
+      </ul>
     </div>
   );
 }
 
+/**
+ * Dropdown menus: a named entry in the bar that opens on two or more sections. Each group is a
+ * small card — its name, the sections as pills (a section already in another group is greyed),
+ * and a quiet remove. Rarely needed, so it comes after the item names.
+ */
 function NavLayoutDesignPreview({
   design,
   accent,
@@ -2182,6 +2417,7 @@ function NavLayoutDesignPreview({
   strongText: string;
   muted: string;
 }) {
+  const t = useT();
   if (design === 'classic') {
     return (
       <div className="flex justify-center">
@@ -2209,7 +2445,7 @@ function NavLayoutDesignPreview({
               ☀
             </span>
             <span className="rounded-full bg-neutral-900 px-2 py-0.5 text-[7px] font-medium text-white">
-              email
+              {t('email')}
             </span>
           </div>
         </div>
@@ -2222,13 +2458,13 @@ function NavLayoutDesignPreview({
       <div className="w-full overflow-hidden rounded-lg bg-neutral-900/90 px-2.5 py-2">
         <div className="grid w-full grid-cols-[1fr_auto_1fr] items-center gap-2">
           <div className="flex items-center justify-end gap-2 text-[8px] text-white/90">
-            <span>Home</span>
-            <span className="text-white/60">About</span>
+            <span>{t('Home')}</span>
+            <span className="text-white/60">{t('About')}</span>
           </div>
           <span className="text-[10px] font-bold text-white">{PORTFOLIO_NAV_IN_BAR_BRAND_LABEL}</span>
           <div className="flex items-center justify-start gap-2 text-[8px] text-white/90">
-            <span className="text-white/60">Work</span>
-            <span>Contact</span>
+            <span className="text-white/60">{t('Work')}</span>
+            <span>{t('Contact')}</span>
           </div>
         </div>
       </div>
@@ -2240,7 +2476,7 @@ function NavLayoutDesignPreview({
       <div className="w-full overflow-hidden rounded-xl border border-neutral-800 bg-neutral-950 px-3 py-2.5">
         <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2">
           <span className="text-[8px] font-semibold uppercase tracking-[0.14em]" style={{ color: accent }}>
-            Stack
+            {t('Stack')}
           </span>
           <span
             className="inline-flex h-5 w-5 items-center justify-center rounded-full text-[7px] font-bold text-white"
@@ -2249,7 +2485,7 @@ function NavLayoutDesignPreview({
             L
           </span>
           <span className="justify-self-end text-[8px] font-semibold uppercase tracking-[0.14em] text-white">
-            Menu
+            {t('Menu')}
           </span>
         </div>
       </div>
@@ -2261,9 +2497,9 @@ function NavLayoutDesignPreview({
       <div className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100 p-2">
         <div className="rounded-full border border-neutral-300/80 bg-neutral-50 px-3 py-1.5">
           <div className="flex items-center justify-between gap-2">
-            <span className="text-[7px] text-neutral-400">Stack</span>
-            <span className="text-[8px] font-bold text-neutral-900">Logo</span>
-            <span className="text-[7px] font-medium uppercase tracking-[0.12em] text-neutral-700">Menu</span>
+            <span className="text-[7px] text-neutral-400">{t('Stack')}</span>
+            <span className="text-[8px] font-bold text-neutral-900">{t('Logo')}</span>
+            <span className="text-[7px] font-medium uppercase tracking-[0.12em] text-neutral-700">{t('Menu')}</span>
           </div>
         </div>
       </div>
@@ -2274,16 +2510,16 @@ function NavLayoutDesignPreview({
     return (
       <div className="w-full overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
         <div className="grid grid-cols-2">
-          <div className="bg-neutral-300/40 p-2 text-[6px] text-neutral-500">Page</div>
+          <div className="bg-neutral-300/40 p-2 text-[6px] text-neutral-500">{t('Page')}</div>
           <div className="space-y-1.5 bg-[#C8C9B8] p-2">
             <div className="flex items-center justify-between">
-              <span className="text-[7px] font-bold text-neutral-900">Logo</span>
-              <span className="text-[7px] text-neutral-700">×</span>
+              <span className="text-[7px] font-bold text-neutral-900">{t('Logo')}</span>
+              <span className="text-[7px] text-neutral-700">{t('×')}</span>
             </div>
-            <p className="text-[6px] text-neutral-600">Discover Pages</p>
+            <p className="text-[6px] text-neutral-600">{t('Discover Pages')}</p>
             <div className="grid grid-cols-2 gap-1 text-[6px] text-neutral-800">
-              <span className="underline">Home</span>
-              <span>Work</span>
+              <span className="underline">{t('Home')}</span>
+              <span>{t('Work')}</span>
             </div>
           </div>
         </div>
@@ -2302,15 +2538,15 @@ function NavLayoutDesignPreview({
             className="border-b pb-px font-medium"
             style={{ color: accent, borderColor: accent }}
           >
-            Stack
+            {t('Stack')}
           </span>
-          <span style={{ color: muted }}>Tools</span>
+          <span style={{ color: muted }}>{t('Tools')}</span>
         </div>
         <span
           className="justify-self-end rounded border px-1.5 py-0.5 text-[9px]"
           style={{ color: strongText, borderColor: muted }}
         >
-          Call me
+          {t('Call me')}
         </span>
       </div>
     </div>
@@ -2320,11 +2556,12 @@ function NavLayoutDesignPreview({
 /** Single normal-case, medium-weight, muted label — the one typographic
  *  treatment for every section label in the Editorial bar / Social nav panels. */
 function NavFieldLabel({ children }: { children: ReactNode }) {
-  return <p className="text-sm font-medium text-neutral-500">{children}</p>;
+  return <p className="text-sm font-medium text-[color:var(--pf-palette-texte-muted)]">{children}</p>;
 }
 
 /** Closed-by-default disclosure for the fine-grained, rarely-touched controls. */
 function NavAdvancedOptionsDisclosure({ children }: { children: ReactNode }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   return (
     <div>
@@ -2332,7 +2569,7 @@ function NavAdvancedOptionsDisclosure({ children }: { children: ReactNode }) {
         type="button"
         onClick={() => setOpen((current) => !current)}
         aria-expanded={open}
-        className="flex items-center gap-1.5 text-sm font-medium text-neutral-500 transition hover:text-neutral-800"
+        className="flex items-center gap-1.5 text-sm font-medium text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)]"
       >
         <svg
           viewBox="0 0 20 20"
@@ -2344,7 +2581,7 @@ function NavAdvancedOptionsDisclosure({ children }: { children: ReactNode }) {
         >
           <path d="M7.5 4.5l5 5.5-5 5.5" strokeLinecap="round" strokeLinejoin="round" />
         </svg>
-        Advanced options
+        {t('Advanced options')}
       </button>
       {open ? <div className="mt-3 divide-y divide-neutral-200/70">{children}</div> : null}
     </div>
@@ -2362,10 +2599,11 @@ function NavTriZoneSocialLinkPicker({
   onChange: (ids: string[]) => void;
   maxLinks?: number;
 }) {
+  const t = useT();
   if (options.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        No links found — add some in Creator Studio &gt; Links first.
+      <p className="rounded-2xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3 text-sm text-[color:var(--pf-palette-texte-muted)]">
+        {t('No links found — add some in Creator Studio > Links first.')}
       </p>
     );
   }
@@ -2382,8 +2620,8 @@ function NavTriZoneSocialLinkPicker({
   return (
     <div className="space-y-3">
       <div className="flex items-center gap-1.5">
-        <NavFieldLabel>Links shown</NavFieldLabel>
-        <GlobalInfoTooltip text={`Up to ${maxLinks} — leave empty to auto-pick the first available.`} />
+        <NavFieldLabel>{t('Links shown')}</NavFieldLabel>
+        <GlobalInfoTooltip text={t('Up to {maxLinks} — leave empty to auto-pick the first available.', { maxLinks })} />
       </div>
       <div className="flex flex-wrap gap-2">
         {options.map((link) => {
@@ -2397,10 +2635,10 @@ function NavTriZoneSocialLinkPicker({
               disabled={disabled}
               className={`inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-sm transition ${
                 selected
-                  ? 'border-neutral-900 bg-neutral-900 text-white'
+                  ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
                   : disabled
-                    ? 'cursor-not-allowed border-neutral-200 bg-white text-neutral-300'
-                    : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                    ? 'cursor-not-allowed border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)]'
+                    : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
               }`}
             >
               <LinkBrandIcon
@@ -2409,7 +2647,7 @@ function NavTriZoneSocialLinkPicker({
                 iconUrl={link.iconUrl}
                 size="compact"
               />
-              <span>{link.label}</span>
+              <span>{t(link.label)}</span>
             </button>
           );
         })}
@@ -2418,9 +2656,9 @@ function NavTriZoneSocialLinkPicker({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+          className="text-sm text-[color:var(--pf-palette-texte-muted)] underline-offset-2 hover:text-[color:var(--pf-palette-texte-fort)] hover:underline"
         >
-          Reset (automatic display)
+          {t('Reset (automatic display)')}
         </button>
       ) : null}
     </div>
@@ -2432,12 +2670,13 @@ const NAV_CONTACT_BUTTON_DISPLAY_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'icon', label: 'Icon only', description: 'Compact circular icon, no visible label.' },
-  { value: 'button', label: 'Button with label', description: 'Icon plus text in a frame — more visible.' },
+  { value: 'icon', label: msg('Icon only'), description: msg('Compact circular icon, no visible label.') },
+  { value: 'button', label: msg('Button with label'), description: msg('Icon plus text in a frame — more visible.') },
 ];
 
 /** Actual rendered mini-button for a given frame style, used inside the "Button frame" picker. */
 function NavContactButtonShapePreview({ shape }: { shape: PortfolioNavContactButtonShape }) {
+  const t = useT();
   const isMinimal = shape === 'frameless' || shape === 'bottom-line';
   const frame = portfolioNavContactButtonShellPresentation(
     shape,
@@ -2455,7 +2694,7 @@ function NavContactButtonShapePreview({ shape }: { shape: PortfolioNavContactBut
       }`}
       style={frame.style}
     >
-      Label
+      {t('Label')}
     </span>
   );
 }
@@ -2467,9 +2706,10 @@ function NavContactButtonShapeGrid({
   value: PortfolioNavContactButtonShape;
   onChange: (value: PortfolioNavContactButtonShape) => void;
 }) {
+  const t = useT();
   return (
     <div>
-      <NavFieldLabel>Button frame</NavFieldLabel>
+      <NavFieldLabel>{t('Button frame')}</NavFieldLabel>
       <div className="mt-2 grid grid-cols-3 gap-1.5">
         {PORTFOLIO_NAV_CONTACT_BUTTON_SHAPE_OPTIONS.map((option) => {
           const active = option.value === value;
@@ -2477,14 +2717,14 @@ function NavContactButtonShapeGrid({
             <button
               key={option.value}
               type="button"
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               className={`flex flex-col items-center gap-1.5 rounded-xl px-2 py-2 transition ${
-                active ? 'bg-neutral-100 ring-1 ring-inset ring-neutral-900' : 'hover:bg-neutral-50'
+                active ? 'bg-[color:var(--pf-surface)] ring-1 ring-inset ring-[color:var(--pf-palette-texte-fort)]' : 'hover:bg-[color:var(--pf-surface)]'
               }`}
             >
               <NavContactButtonShapePreview shape={option.value} />
-              <span className="text-[11px] font-medium text-neutral-600">{option.label}</span>
+              <span className="text-[11px] font-medium text-[color:var(--pf-palette-texte-muted)]">{t(option.label)}</span>
             </button>
           );
         })}
@@ -2504,20 +2744,21 @@ function NavCaseOverlayLogoEditor({
   showColorModeToggleInNav?: boolean;
   onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
+  const t = useT();
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+    <div className="rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)] p-4">
       <div className="space-y-4">
         <PortfolioBackgroundImageUpload
-          label="Logo"
+          label={t('Logo')}
           url={navigation.customExtraLogoUrl ?? ''}
           onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-          helperText="PNG or SVG, transparent background preferred."
+          helperText={t('PNG or SVG, transparent background preferred.')}
         />
         <label className="block">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-            Logo size
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--pf-palette-texte-muted)]">
+            {t('Logo size')}
           </span>
           <input
             type="range"
@@ -2535,15 +2776,15 @@ function NavCaseOverlayLogoEditor({
             }
             className="mt-2 w-full"
           />
-          <p className="mt-1 text-xs text-neutral-500">
-            {navigation.customExtraLogoSizePx ?? 28}px
+          <p className="mt-1 text-xs text-[color:var(--pf-palette-texte-muted)]">
+            {navigation.customExtraLogoSizePx ?? 28}{t('px')}
           </p>
         </label>
       </div>
 
       <div className="pf-gs-section">
         <GlobalPreviewCardGrid
-          label="Menu / logo placement"
+          label={t('Menu / logo placement')}
           options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
           value={navigation.caseOverlayMenuSide ?? 'right'}
           onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
@@ -2553,7 +2794,7 @@ function NavCaseOverlayLogoEditor({
 
       <div className="pf-gs-section space-y-3">
         <GlobalPreviewCardGrid
-          label="Menu button"
+          label={t('Menu button')}
           options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
           value={menuTrigger}
           onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
@@ -2562,7 +2803,7 @@ function NavCaseOverlayLogoEditor({
 
         {menuTrigger === 'icon' ? (
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">{t('Menu icon')}</p>
             <div className="flex flex-wrap gap-2">
               {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
                 const active = (navigation.menuControlIcon ?? 'menu') === option.value;
@@ -2570,15 +2811,15 @@ function NavCaseOverlayLogoEditor({
                   <button
                     key={option.value}
                     type="button"
-                    title={option.description}
+                    title={t(option.description)}
                     onClick={() => onChange({ menuControlIcon: option.value })}
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       active
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
                     }`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -2589,7 +2830,7 @@ function NavCaseOverlayLogoEditor({
 
       <div className="pf-gs-section">
         <ToggleRow
-          label="Light/dark toggle in bar"
+          label={t('Light/dark toggle in bar')}
           checked={showColorModeToggleInNav}
           onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
@@ -2662,8 +2903,8 @@ function navMenuButtonGlyph(mode: 'text' | 'icon') {
 }
 
 const NAV_LINK_COLUMNS_PREVIEW_OPTIONS: { value: '2' | '1'; label: string; glyph: (active: boolean) => ReactNode }[] = [
-  { value: '2', label: '2 columns', glyph: navLinkColumnsGlyph(2) },
-  { value: '1', label: '1 column', glyph: navLinkColumnsGlyph(1) },
+  { value: '2', label: msg('2 columns'), glyph: navLinkColumnsGlyph(2) },
+  { value: '1', label: msg('1 column'), glyph: navLinkColumnsGlyph(1) },
 ];
 
 const NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS: {
@@ -2671,8 +2912,8 @@ const NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS: {
   label: string;
   glyph: (active: boolean) => ReactNode;
 }[] = [
-  { value: 'right', label: 'Menu right', glyph: navMenuLogoPlacementGlyph('right') },
-  { value: 'left', label: 'Menu left', glyph: navMenuLogoPlacementGlyph('left') },
+  { value: 'right', label: msg('Menu right'), glyph: navMenuLogoPlacementGlyph('right') },
+  { value: 'left', label: msg('Menu left'), glyph: navMenuLogoPlacementGlyph('left') },
 ];
 
 const NAV_MENU_BUTTON_PREVIEW_OPTIONS: {
@@ -2680,8 +2921,8 @@ const NAV_MENU_BUTTON_PREVIEW_OPTIONS: {
   label: string;
   glyph: (active: boolean) => ReactNode;
 }[] = [
-  { value: 'text', label: 'Text', glyph: navMenuButtonGlyph('text') },
-  { value: 'icon', label: 'Icon', glyph: navMenuButtonGlyph('icon') },
+  { value: 'text', label: msg('Text'), glyph: navMenuButtonGlyph('text') },
+  { value: 'icon', label: msg('Icon'), glyph: navMenuButtonGlyph('icon') },
 ];
 
 function NavDutenPanelEditor({
@@ -2697,6 +2938,7 @@ function NavDutenPanelEditor({
   showColorModeToggleInNav?: boolean;
   onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
+  const t = useT();
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
   const showContact = navigation.dutenPanelShowContact ?? false;
   const showSocial = navigation.dutenPanelShowSocial ?? false;
@@ -2705,22 +2947,22 @@ function NavDutenPanelEditor({
   const chipClass = (active: boolean) =>
     `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
       active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
     }`;
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+    <div className="rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)] p-4">
       <div className="space-y-4">
         <PortfolioBackgroundImageUpload
-          label="Logo"
+          label={t('Logo')}
           url={navigation.customExtraLogoUrl ?? ''}
           onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-          helperText="PNG or SVG, transparent background preferred."
+          helperText={t('PNG or SVG, transparent background preferred.')}
         />
         <label className="block">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-            Logo size
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--pf-palette-texte-muted)]">
+            {t('Logo size')}
           </span>
           <input
             type="range"
@@ -2738,15 +2980,15 @@ function NavDutenPanelEditor({
             }
             className="mt-2 w-full"
           />
-          <p className="mt-1 text-xs text-neutral-500">
-            {navigation.customExtraLogoSizePx ?? 32}px
+          <p className="mt-1 text-xs text-[color:var(--pf-palette-texte-muted)]">
+            {navigation.customExtraLogoSizePx ?? 32}{t('px')}
           </p>
         </label>
       </div>
 
       <div className="pf-gs-section">
         <GlobalPreviewCardGrid
-          label="Link columns"
+          label={t('Link columns')}
           options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
           value={String(navigation.dutenPanelColumns ?? 2)}
           onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
@@ -2756,7 +2998,7 @@ function NavDutenPanelEditor({
 
       <div className="pf-gs-section">
         <GlobalPreviewCardGrid
-          label="Menu / logo placement"
+          label={t('Menu / logo placement')}
           options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
           value={navigation.caseOverlayMenuSide ?? 'right'}
           onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
@@ -2766,7 +3008,7 @@ function NavDutenPanelEditor({
 
       <div className="pf-gs-section space-y-3">
         <GlobalPreviewCardGrid
-          label="Menu button"
+          label={t('Menu button')}
           options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
           value={menuTrigger}
           onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
@@ -2775,7 +3017,7 @@ function NavDutenPanelEditor({
 
         {menuTrigger === 'icon' ? (
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">{t('Menu icon')}</p>
             <div className="flex flex-wrap gap-2">
               {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
                 const active = (navigation.menuControlIcon ?? 'menu') === option.value;
@@ -2783,15 +3025,15 @@ function NavDutenPanelEditor({
                   <button
                     key={option.value}
                     type="button"
-                    title={option.description}
+                    title={t(option.description)}
                     onClick={() => onChange({ menuControlIcon: option.value })}
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       active
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
                     }`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -2802,17 +3044,17 @@ function NavDutenPanelEditor({
 
       <div className="pf-gs-section space-y-3">
         <ToggleRow
-          label="Display word below links"
+          label={t('Display word below links')}
           checked={showHeroWord}
           onChange={(next) => onChange({ dutenPanelShowHeroWord: next })}
         />
         {showHeroWord ? (
           <label className="block">
             <span className="mb-1 flex items-center gap-1.5">
-              <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-                Displayed text
+              <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--pf-palette-texte-muted)]">
+                {t('Displayed text')}
               </span>
-              <GlobalInfoTooltip text="Shown very large, up to 32 characters." />
+              <GlobalInfoTooltip text={t('Shown very large, up to 32 characters.')} />
             </span>
             <input
               type="text"
@@ -2822,15 +3064,15 @@ function NavDutenPanelEditor({
               }
               placeholder="VSIUX"
               maxLength={32}
-              className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+              className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)]"
             />
           </label>
         ) : null}
       </div>
 
       <div className="pf-gs-section space-y-2">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Open panel footer
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
+          {t('Open panel footer')}
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -2838,14 +3080,14 @@ function NavDutenPanelEditor({
             className={chipClass(showContact)}
             onClick={() => onChange({ dutenPanelShowContact: !showContact })}
           >
-            Contact
+            {t('Contact')}
           </button>
           <button
             type="button"
             className={chipClass(showSocial)}
             onClick={() => onChange({ dutenPanelShowSocial: !showSocial })}
           >
-            Social links
+            {t('Social links')}
           </button>
         </div>
         {showSocial ? (
@@ -2860,7 +3102,7 @@ function NavDutenPanelEditor({
 
       <div className="pf-gs-section">
         <ToggleRow
-          label="Light/dark toggle in panel"
+          label={t('Light/dark toggle in panel')}
           checked={showColorModeToggleInNav}
           onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
@@ -2882,6 +3124,7 @@ function NavHalfPanelEditor({
   showColorModeToggleInNav?: boolean;
   onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
+  const t = useT();
   const menuTrigger = navigation.caseOverlayMenuTrigger ?? 'text';
   const showContact = navigation.dutenPanelShowContact ?? false;
   const showSocial = navigation.dutenPanelShowSocial ?? false;
@@ -2889,22 +3132,22 @@ function NavHalfPanelEditor({
   const chipClass = (active: boolean) =>
     `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
       active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
     }`;
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+    <div className="rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)] p-4">
       <div className="space-y-4">
         <PortfolioBackgroundImageUpload
-          label="Logo"
+          label={t('Logo')}
           url={navigation.customExtraLogoUrl ?? ''}
           onChange={(customExtraLogoUrl) => onChange({ customExtraLogoUrl })}
-          helperText="PNG or SVG, transparent background preferred."
+          helperText={t('PNG or SVG, transparent background preferred.')}
         />
         <label className="block">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-            Logo size
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--pf-palette-texte-muted)]">
+            {t('Logo size')}
           </span>
           <input
             type="range"
@@ -2922,30 +3165,30 @@ function NavHalfPanelEditor({
             }
             className="mt-2 w-full"
           />
-          <p className="mt-1 text-xs text-neutral-500">
-            {navigation.customExtraLogoSizePx ?? 32}px
+          <p className="mt-1 text-xs text-[color:var(--pf-palette-texte-muted)]">
+            {navigation.customExtraLogoSizePx ?? 32}{t('px')}
           </p>
         </label>
       </div>
 
       <div className="pf-gs-section">
         <label className="block">
-          <span className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">
-            Title above the links
+          <span className="text-xs font-bold uppercase tracking-[0.14em] text-[color:var(--pf-palette-texte-muted)]">
+            {t('Title above the links')}
           </span>
           <input
             type="text"
             value={navigation.halfPanelDiscoverLabel ?? 'Discover Pages'}
             onChange={(event) => onChange({ halfPanelDiscoverLabel: event.target.value })}
-            placeholder="Discover Pages"
-            className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900"
+            placeholder={t('Discover Pages')}
+            className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)]"
           />
         </label>
       </div>
 
       <div className="pf-gs-section">
         <GlobalPreviewCardGrid
-          label="Link columns"
+          label={t('Link columns')}
           options={NAV_LINK_COLUMNS_PREVIEW_OPTIONS}
           value={String(navigation.dutenPanelColumns ?? 2)}
           onChange={(value) => onChange({ dutenPanelColumns: value === '1' ? 1 : 2 })}
@@ -2955,7 +3198,7 @@ function NavHalfPanelEditor({
 
       <div className="pf-gs-section">
         <GlobalPreviewCardGrid
-          label="Menu / logo placement"
+          label={t('Menu / logo placement')}
           options={NAV_MENU_LOGO_PLACEMENT_PREVIEW_OPTIONS}
           value={navigation.caseOverlayMenuSide ?? 'right'}
           onChange={(caseOverlayMenuSide) => onChange({ caseOverlayMenuSide })}
@@ -2965,7 +3208,7 @@ function NavHalfPanelEditor({
 
       <div className="pf-gs-section space-y-3">
         <GlobalPreviewCardGrid
-          label="Menu button"
+          label={t('Menu button')}
           options={NAV_MENU_BUTTON_PREVIEW_OPTIONS}
           value={menuTrigger}
           onChange={(caseOverlayMenuTrigger) => onChange({ caseOverlayMenuTrigger })}
@@ -2974,7 +3217,7 @@ function NavHalfPanelEditor({
 
         {menuTrigger === 'icon' ? (
           <div className="space-y-2">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Menu icon</p>
+            <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">{t('Menu icon')}</p>
             <div className="flex flex-wrap gap-2">
               {PORTFOLIO_NAV_MENU_CONTROL_ICON_OPTIONS.map((option) => {
                 const active = (navigation.menuControlIcon ?? 'menu') === option.value;
@@ -2982,15 +3225,15 @@ function NavHalfPanelEditor({
                   <button
                     key={option.value}
                     type="button"
-                    title={option.description}
+                    title={t(option.description)}
                     onClick={() => onChange({ menuControlIcon: option.value })}
                     className={`rounded-full border px-3 py-1.5 text-xs font-medium transition ${
                       active
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+                        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+                        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
                     }`}
                   >
-                    {option.label}
+                    {t(option.label)}
                   </button>
                 );
               })}
@@ -3000,8 +3243,8 @@ function NavHalfPanelEditor({
       </div>
 
       <div className="pf-gs-section space-y-2">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Open panel footer
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
+          {t('Open panel footer')}
         </p>
         <div className="flex flex-wrap gap-2">
           <button
@@ -3009,14 +3252,14 @@ function NavHalfPanelEditor({
             className={chipClass(showContact)}
             onClick={() => onChange({ dutenPanelShowContact: !showContact })}
           >
-            Contact
+            {t('Contact')}
           </button>
           <button
             type="button"
             className={chipClass(showSocial)}
             onClick={() => onChange({ dutenPanelShowSocial: !showSocial })}
           >
-            Social links
+            {t('Social links')}
           </button>
         </div>
         {showSocial ? (
@@ -3031,7 +3274,7 @@ function NavHalfPanelEditor({
 
       <div className="pf-gs-section">
         <ToggleRow
-          label="Light/dark toggle in panel"
+          label={t('Light/dark toggle in panel')}
           checked={showColorModeToggleInNav}
           onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
@@ -3047,23 +3290,24 @@ function NavFloatingPillVisibilityToggles({
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
+  const t = useT();
   const showLogo = navigation.floatingPillShowLogo ?? false;
   const showContact = navigation.floatingPillShowContact ?? true;
 
   const chipClass = (active: boolean) =>
     `rounded-full border px-3.5 py-1.5 text-sm font-medium transition ${
       active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
     }`;
 
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Show in pill
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
+          {t('Show in pill')}
         </p>
-        <GlobalInfoTooltip text="Logo is hidden by default — enable logo and/or contact." />
+        <GlobalInfoTooltip text={t('Logo is hidden by default — enable logo and/or contact.')} />
       </div>
       <div className="flex flex-wrap gap-2">
         <button
@@ -3076,7 +3320,7 @@ function NavFloatingPillVisibilityToggles({
             })
           }
         >
-          Logo
+          {t('Logo')}
         </button>
         <button
           type="button"
@@ -3088,7 +3332,7 @@ function NavFloatingPillVisibilityToggles({
             })
           }
         >
-          Contact
+          {t('Contact')}
         </button>
       </div>
     </div>
@@ -3106,13 +3350,14 @@ function NavFloatingPillMenuEditor({
   showColorModeToggleInNav?: boolean;
   onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
 }) {
+  const t = useT();
   const menuMode = normalizePortfolioNavFloatingPillMenuMode(navigation.contentMode);
 
   return (
-    <div className="rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+    <div className="rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)] p-4">
       <div>
         <OptionGrid
-          label="Menu style"
+          label={t('Menu style')}
           options={PORTFOLIO_NAV_FLOATING_PILL_MENU_MODE_OPTIONS}
           value={menuMode}
           onChange={(contentMode) => onChange({ contentMode })}
@@ -3126,7 +3371,7 @@ function NavFloatingPillMenuEditor({
 
       <div className="pf-gs-section">
         <ToggleRow
-          label="Light/dark toggle in pill"
+          label={t('Light/dark toggle in pill')}
           checked={showColorModeToggleInNav}
           onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
         />
@@ -3152,7 +3397,7 @@ function NavEditorialBarSlotEditor({
 /** Small, bold, uppercase, muted label — the "Label on top" half of the Social nav
  *  panel's vertical field pattern (label above, control filling the width below). */
 function NavStackedLabel({ children }: { children: ReactNode }) {
-  return <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-neutral-400">{children}</p>;
+  return <p className="text-[11px] font-bold uppercase tracking-[0.09em] text-[color:var(--pf-palette-texte-muted)]">{children}</p>;
 }
 
 /** Bandeau toggle — title + helper copy on the left, switch on the right, inside a
@@ -3170,10 +3415,10 @@ function NavToggleBand({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <div className="flex items-center justify-between gap-4 rounded-2xl bg-neutral-100/80 px-4 py-4">
+    <div className="flex items-center justify-between gap-4 rounded-2xl bg-[color:var(--pf-surface)] px-4 py-4">
       <div className="min-w-0">
-        <p className="text-sm font-semibold text-neutral-900">{title}</p>
-        <p className="mt-0.5 text-xs text-neutral-500">{description}</p>
+        <p className="text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{title}</p>
+        <p className="mt-0.5 text-xs text-[color:var(--pf-palette-texte-muted)]">{description}</p>
       </div>
       <button
         type="button"
@@ -3203,13 +3448,14 @@ function NavStackedSegment<T extends string>({
   value: T;
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-2">
       <NavStackedLabel>{label}</NavStackedLabel>
       <div
         role="radiogroup"
         aria-label={label}
-        className="grid gap-1 rounded-xl bg-neutral-100 p-1"
+        className="grid gap-1 rounded-xl bg-[color:var(--pf-surface)] p-1"
         style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
       >
         {options.map((option) => {
@@ -3220,14 +3466,14 @@ function NavStackedSegment<T extends string>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               style={option.sizePx ? { fontSize: `${option.sizePx}px` } : undefined}
               className={`rounded-lg px-2 py-2 text-center font-semibold leading-none transition ${
                 option.sizePx ? '' : 'text-sm'
-              } ${active ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-700'}`}
+              } ${active ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]' : 'text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]'}`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -3237,9 +3483,9 @@ function NavStackedSegment<T extends string>({
 }
 
 const NAV_ELEMENT_TAB_OPTIONS: { value: 'social' | 'phone' | 'mail'; label: string }[] = [
-  { value: 'social', label: 'Social links' },
-  { value: 'phone', label: 'Phone' },
-  { value: 'mail', label: 'Email' },
+  { value: 'social', label: msg('Social links') },
+  { value: 'phone', label: msg('Phone') },
+  { value: 'mail', label: msg('Email') },
 ];
 
 /** Top-level single-select switch for the Social nav panel — picking a tab swaps the
@@ -3252,13 +3498,14 @@ function NavElementTabs({
   value: 'social' | 'phone' | 'mail';
   onChange: (value: 'social' | 'phone' | 'mail') => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-2">
-      <NavStackedLabel>Navigation element</NavStackedLabel>
+      <NavStackedLabel>{t('Navigation element')}</NavStackedLabel>
       <div
         role="tablist"
-        aria-label="Navigation element"
-        className="grid grid-cols-3 gap-1 rounded-xl bg-neutral-100 p-1"
+        aria-label={t('Navigation element')}
+        className="grid grid-cols-3 gap-1 rounded-xl bg-[color:var(--pf-surface)] p-1"
       >
         {NAV_ELEMENT_TAB_OPTIONS.map((option) => {
           const active = option.value === value;
@@ -3270,10 +3517,10 @@ function NavElementTabs({
               aria-selected={active}
               onClick={() => onChange(option.value)}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition ${
-                active ? 'bg-white text-neutral-900 shadow-sm' : 'text-neutral-500 hover:text-neutral-700'
+                active ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]' : 'text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]'
               }`}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -3295,10 +3542,11 @@ function NavSocialLinksShownGrid({
   onChange: (ids: string[]) => void;
   maxLinks?: number;
 }) {
+  const t = useT();
   if (options.length === 0) {
     return (
-      <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        No links found — add some in Creator Studio &gt; Links first.
+      <p className="rounded-2xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3 text-sm text-[color:var(--pf-palette-texte-muted)]">
+        {t('No links found — add some in Creator Studio > Links first.')}
       </p>
     );
   }
@@ -3315,8 +3563,8 @@ function NavSocialLinksShownGrid({
   return (
     <div className="space-y-2">
       <div className="flex items-center gap-1.5">
-        <NavStackedLabel>Links shown</NavStackedLabel>
-        <GlobalInfoTooltip text={`Up to ${maxLinks} — leave empty to auto-pick the first available.`} />
+        <NavStackedLabel>{t('Links shown')}</NavStackedLabel>
+        <GlobalInfoTooltip text={t('Up to {maxLinks} — leave empty to auto-pick the first available.', { maxLinks })} />
       </div>
       <div className="flex flex-wrap items-center justify-center gap-1 py-1">
         {options.map((link) => {
@@ -3326,13 +3574,13 @@ function NavSocialLinksShownGrid({
             <button
               key={link.id}
               type="button"
-              title={link.label}
-              aria-label={link.label}
+              title={t(link.label)}
+              aria-label={t(link.label)}
               aria-pressed={selected}
               onClick={() => toggle(link.id)}
               disabled={disabled}
               className={`group relative flex h-12 w-12 shrink-0 items-center justify-center rounded-full transition-colors duration-150 ${
-                disabled ? 'cursor-not-allowed' : 'hover:bg-neutral-100'
+                disabled ? 'cursor-not-allowed' : 'hover:bg-[color:var(--pf-surface)]'
               }`}
             >
               <span
@@ -3343,11 +3591,11 @@ function NavSocialLinksShownGrid({
                 <LinkBrandIcon url={link.href} platform={link.platform} iconUrl={link.iconUrl} size="sm" />
               </span>
               {selected ? (
-                <span className="absolute bottom-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-neutral-900 ring-2 ring-white">
+                <span className="absolute bottom-0 right-0 flex h-3.5 w-3.5 items-center justify-center rounded-full bg-[color:var(--pf-palette-texte-fort)] ring-2 ring-[color:var(--pf-palette-fond)]">
                   <svg viewBox="0 0 10 10" width="6" height="6" fill="none" aria-hidden>
                     <path
                       d="M1.5 5.2l2.2 2.2L8.5 2.5"
-                      stroke="white"
+                      stroke="var(--pf-palette-fond)"
                       strokeWidth="1.6"
                       strokeLinecap="round"
                       strokeLinejoin="round"
@@ -3363,9 +3611,9 @@ function NavSocialLinksShownGrid({
         <button
           type="button"
           onClick={() => onChange([])}
-          className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+          className="text-sm text-[color:var(--pf-palette-texte-muted)] underline-offset-2 hover:text-[color:var(--pf-palette-texte-fort)] hover:underline"
         >
-          Reset (automatic display)
+          {t('Reset (automatic display)')}
         </button>
       ) : null}
     </div>
@@ -3409,13 +3657,14 @@ function NavSpacingPillControl({
   value: (typeof PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS)[number]['value'];
   onChange: (value: (typeof PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS)[number]['value']) => void;
 }) {
+  const t = useT();
   return (
     <div className="space-y-2">
-      <NavStackedLabel>Icon spacing</NavStackedLabel>
+      <NavStackedLabel>{t('Icon spacing')}</NavStackedLabel>
       <div
         role="radiogroup"
-        aria-label="Icon spacing"
-        className="flex items-stretch gap-1 rounded-full bg-neutral-100 p-1"
+        aria-label={t('Icon spacing')}
+        className="flex items-stretch gap-1 rounded-full bg-[color:var(--pf-surface)] p-1"
       >
         {PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS.map((option) => {
           const active = option.value === value;
@@ -3425,14 +3674,14 @@ function NavSpacingPillControl({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.label}
+              title={t(option.label)}
               onClick={() => onChange(option.value)}
               className={`flex flex-1 flex-col items-center justify-center gap-1.5 rounded-full py-2.5 transition ${
-                active ? 'bg-neutral-900 text-white' : 'text-neutral-400 hover:text-neutral-700'
+                active ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]' : 'text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]'
               }`}
             >
               <NavSpacingGlyph gapPx={NAV_SPACING_GLYPH_GAP_PX[option.value]} />
-              <span className="text-[10px] font-semibold leading-none">{option.label}</span>
+              <span className="text-[10px] font-semibold leading-none">{t(option.label)}</span>
             </button>
           );
         })}
@@ -3458,14 +3707,15 @@ function NavElementSocialTabPanel({
   options: PortfolioNavChromeLink[];
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
+  const t = useT();
   const showSocial = navigation.editorialBarShowSocial;
   const monochrome = navigation.triZoneSocialLinkMonochrome ?? false;
 
   return (
     <div className="space-y-6">
       <NavToggleBand
-        title="Show Social Links"
-        description="Display icons in the navigation bar."
+        title={t('Show Social Links')}
+        description={t('Display icons in the navigation bar.')}
         checked={showSocial}
         onChange={(next) =>
           onChange({
@@ -3482,7 +3732,7 @@ function NavElementSocialTabPanel({
             onChange={(triZoneSocialLinkIds) => onChange({ triZoneSocialLinkIds })}
           />
           <NavStackedSegment
-            label="Icon size"
+            label={t('Icon size')}
             options={PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_SIZE_OPTIONS}
             value={navigation.triZoneSocialLinkSize ?? 'sm'}
             onChange={(triZoneSocialLinkSize) => onChange({ triZoneSocialLinkSize })}
@@ -3494,8 +3744,8 @@ function NavElementSocialTabPanel({
           <NavAdvancedOptionsDisclosure>
             <div className="py-5 first:pt-0 last:pb-0">
               <GlobalSwitchRow
-                label="Black & white icons"
-                description="Ignore each platform's brand color and render icons in monochrome."
+                label={t('Black & white icons')}
+                description={t('Ignore each platform\'s brand color and render icons in monochrome.')}
                 checked={monochrome}
                 onChange={(triZoneSocialLinkMonochrome) => onChange({ triZoneSocialLinkMonochrome })}
               />
@@ -3519,6 +3769,7 @@ function NavElementContactTabPanel({
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
+  const t = useT();
   const showChannel = channel === 'phone' ? navigation.editorialBarShowPhone : navigation.editorialBarShowMail;
   const profile = mergeEditorialBarContactChannelSettings(
     channel === 'phone' ? navigation.editorialBarPhoneContact : navigation.editorialBarMailContact,
@@ -3536,11 +3787,11 @@ function NavElementContactTabPanel({
   return (
     <div className="space-y-6">
       <NavToggleBand
-        title={channel === 'phone' ? 'Show Phone Button' : 'Show Email Button'}
+        title={channel === 'phone' ? t('Show Phone Button') : t('Show Email Button')}
         description={
           channel === 'phone'
-            ? 'Display a call button in the navigation bar.'
-            : 'Display an email button in the navigation bar.'
+            ? t('Display a call button in the navigation bar.')
+            : t('Display an email button in the navigation bar.')
         }
         checked={showChannel}
         onChange={(next) => {
@@ -3555,18 +3806,18 @@ function NavElementContactTabPanel({
       {showChannel ? (
         <>
           <div>
-            <NavStackedLabel>Label</NavStackedLabel>
+            <NavStackedLabel>{t('Label')}</NavStackedLabel>
             <input
               type="text"
               value={profile.label}
               maxLength={32}
               onChange={(event) => patchProfile({ label: event.target.value.slice(0, 32) })}
-              className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm"
+              className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm"
             />
           </div>
 
           <NavStackedSegment
-            label="Display style"
+            label={t('Display style')}
             options={NAV_CONTACT_BUTTON_DISPLAY_OPTIONS}
             value={profile.display}
             onChange={(display) => patchProfile({ display })}
@@ -3574,7 +3825,7 @@ function NavElementContactTabPanel({
 
           {profile.display === 'icon' || (profile.display === 'button' && iconPosition !== 'none') ? (
             <div className="space-y-2">
-              <NavStackedLabel>Select icon</NavStackedLabel>
+              <NavStackedLabel>{t('Select icon')}</NavStackedLabel>
               <div className="flex flex-wrap gap-1.5">
                 {iconOptions.map((option) => {
                   const active = profile.icon === option.value;
@@ -3582,10 +3833,10 @@ function NavElementContactTabPanel({
                     <button
                       key={option.value}
                       type="button"
-                      title={option.description}
+                      title={t(option.description)}
                       onClick={() => patchProfile({ icon: option.value as PortfolioNavContactCtaIcon })}
                       className={`inline-flex h-9 w-9 items-center justify-center rounded-full transition ${
-                        active ? 'bg-neutral-900 text-white' : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
+                        active ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]' : 'bg-[color:var(--pf-surface)] text-[color:var(--pf-palette-texte-muted)] hover:bg-[color:var(--pf-surface)]'
                       }`}
                     >
                       <PortfolioNavContactCtaGlyph variant={option.value} className="h-4 w-4" />
@@ -3600,7 +3851,7 @@ function NavElementContactTabPanel({
             {profile.display === 'button' ? (
               <div className="py-5 first:pt-0 last:pb-0">
                 <NavStackedSegment
-                  label="Icon position"
+                  label={t('Icon position')}
                   options={PORTFOLIO_NAV_CONTACT_BUTTON_ICON_POSITION_OPTIONS}
                   value={iconPosition}
                   onChange={(nextIconPosition) => patchProfile({ iconPosition: nextIconPosition })}
@@ -3630,10 +3881,10 @@ function NavEditorialBarSocialElementsEditor({
   const [activeElement, setActiveElement] = useState<'social' | 'phone' | 'mail'>('social');
 
   return (
-    <div className="space-y-6 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+    <div className="space-y-6 rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)] p-4">
       <NavElementTabs value={activeElement} onChange={setActiveElement} />
 
-      <div className="space-y-6 border-t border-neutral-200/70 pt-6">
+      <div className="space-y-6 border-t border-[color:var(--pf-palette-bordure)] pt-6">
         {activeElement === 'social' ? (
           <NavElementSocialTabPanel navigation={navigation} options={options} onChange={onChange} />
         ) : (
@@ -3651,14 +3902,15 @@ function NavSplitLogoSectionEditor({
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
 }) {
+  const t = useT();
   const leftKeys = navigation.splitNavLeftSectionKeys ?? [];
   const autoSplit = leftKeys.length === 0;
 
   const modeButtonClass = (active: boolean) =>
     `rounded-full border px-2.5 py-1 text-xs font-medium transition ${
       active
-        ? 'border-neutral-900 bg-neutral-900 text-white'
-        : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
+        ? 'border-[color:var(--pf-palette-texte-fort)] bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
+        : 'border-[color:var(--pf-palette-bordure)] bg-transparent text-[color:var(--pf-palette-texte-muted)] hover:border-[color:var(--pf-palette-texte-muted)]'
     }`;
 
   const setSide = (sectionKey: PortfolioNavSectionKey, side: 'left' | 'right') => {
@@ -3681,25 +3933,25 @@ function NavSplitLogoSectionEditor({
   };
 
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/60 p-4">
+    <div className="space-y-4 rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)] p-4">
       <div className="flex items-center gap-1.5">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-          Left / right split
+        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
+          {t('Left / right split')}
         </p>
-        <GlobalInfoTooltip text="Auto splits 50/50 by section order." />
+        <GlobalInfoTooltip text={t('Auto splits 50/50 by section order.')} />
       </div>
 
       {autoSplit ? (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-500">
-          Automatic split active.
+        <p className="rounded-xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-muted)]">
+          {t('Automatic split active.')}
         </p>
       ) : (
         <button
           type="button"
           onClick={() => onChange({ splitNavLeftSectionKeys: [] })}
-          className="text-sm text-neutral-500 underline-offset-2 hover:text-neutral-800 hover:underline"
+          className="text-sm text-[color:var(--pf-palette-texte-muted)] underline-offset-2 hover:text-[color:var(--pf-palette-texte-fort)] hover:underline"
         >
-          Reset (automatic split)
+          {t('Reset (automatic split)')}
         </button>
       )}
 
@@ -3710,23 +3962,23 @@ function NavSplitLogoSectionEditor({
           return (
             <div
               key={section.key}
-              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-neutral-200/80 bg-white px-3 py-2"
+              className="flex flex-wrap items-center justify-between gap-2 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2"
             >
-              <span className="text-sm font-medium text-neutral-800">{label}</span>
+              <span className="text-sm font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
               <div className="flex gap-1.5">
                 <button
                   type="button"
                   className={modeButtonClass(!autoSplit && onLeft)}
                   onClick={() => setSide(section.key, 'left')}
                 >
-                  Left
+                  {t('Left')}
                 </button>
                 <button
                   type="button"
                   className={modeButtonClass(!autoSplit && !onLeft)}
                   onClick={() => setSide(section.key, 'right')}
                 >
-                  Right
+                  {t('Right')}
                 </button>
               </div>
             </div>
@@ -3752,6 +4004,8 @@ function NavLayoutDesignGrid({
   expanded: boolean;
   onExpandedChange: (expanded: boolean) => void;
 }) {
+  const t = useT();
+  const previewSource = usePortfolioDesignPreviewSource();
   const palette = mergeNavPalette(DEFAULT_NAV_PALETTE, navigation.navPalette);
   const accent = resolveHeroPaletteColor(palette, 'principal');
   const strongText = resolveHeroPaletteColor(palette, 'texteFort');
@@ -3761,21 +4015,41 @@ function NavLayoutDesignGrid({
   // first listed card.
   const selectedLabel =
     PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.find((option) => option.value === value)?.label ??
-    (value === 'classic' ? 'Classic' : PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS[0].label);
+    (value === 'classic' ? t('Classic') : PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS[0].label);
 
   if (expanded) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label pf-stack-option-label !mb-0">Layout</p>
+          <p className="pf-stack-block-label pf-stack-option-label !mb-0">{t('Layout')}</p>
           <button
             type="button"
             onClick={() => onExpandedChange(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every nav layout rendered for real, one per row. */
+          <div className="mt-4 flex flex-col gap-6">
+            {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-stack-design-card"
+                labelClassName="pf-stack-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'navigation', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  onExpandedChange(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid gap-4 sm:grid-cols-2">
           {PORTFOLIO_NAV_LAYOUT_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -3788,29 +4062,13 @@ function NavLayoutDesignGrid({
                   onChange(option.value);
                   onExpandedChange(false);
                 }}
-                className={`relative flex h-32 flex-col rounded-2xl border-2 bg-white p-4 text-left transition ${
-                  active ? '' : 'border-neutral-200/80 hover:border-neutral-300'
+                className={`relative flex h-32 flex-col rounded-2xl border-2 bg-transparent p-4 text-left transition ${
+                  active ? '' : 'border-[color:var(--pf-palette-bordure)] hover:border-[color:var(--pf-palette-texte-muted)]'
                 }`}
-                style={active ? { borderColor: 'var(--pf-palette-principal, #f97316)' } : undefined}
+                style={active ? { borderColor: 'var(--pf-palette-texte-fort)' } : undefined}
               >
-                {active ? (
-                  <span
-                    aria-hidden
-                    className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-                    style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-                  >
-                    <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-                      <path
-                        d="M4 10.5l3.5 3.5L16 6"
-                        stroke="white"
-                        strokeWidth={2.5}
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                      />
-                    </svg>
-                  </span>
-                ) : null}
-                <p className="shrink-0 text-sm font-semibold text-neutral-950">{option.label}</p>
+                {active ? <PfSelectedBadge /> : null}
+                <p className="shrink-0 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(option.label)}</p>
                 <div className="mt-2 flex min-h-0 flex-1 items-center justify-center overflow-hidden">
                   <NavLayoutDesignPreview
                     design={option.value}
@@ -3823,20 +4081,21 @@ function NavLayoutDesignGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
     <div>
-      <p className="pf-stack-block-label pf-stack-option-label">Layout</p>
+      <p className="pf-stack-block-label pf-stack-option-label">{t('Layout')}</p>
       <button
         type="button"
         onClick={() => onExpandedChange(true)}
-        aria-label="Change layout"
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 bg-white px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change layout')}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-64 shrink-0 origin-center scale-[0.5] items-center justify-center">
             <NavLayoutDesignPreview
               design={value}
@@ -3846,8 +4105,8 @@ function NavLayoutDesignGrid({
             />
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{selectedLabel}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{selectedLabel}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -3864,20 +4123,25 @@ function NavLayoutDesignGrid({
 type NavSettingsTab = 'general' | 'design' | 'labels';
 
 const NAV_SETTINGS_TABS: { id: NavSettingsTab; label: string }[] = [
-  { id: 'general', label: 'General' },
-  { id: 'design', label: 'Design' },
-  { id: 'labels', label: 'Labels' },
+  { id: 'general', label: msg('General') },
+  { id: 'design', label: msg('Design') },
+  { id: 'labels', label: msg('Labels') },
 ];
 
 function NavFloatingOnlyNote() {
+  const t = useT();
   return (
-    <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-      These options apply to the floating nav bar (Default navigation type). Switch the
-      navigation type in General to use them.
+    <p className="rounded-2xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3 text-sm text-[color:var(--pf-palette-texte-muted)]">
+      {t('These options apply to the floating nav bar (Default navigation type). Switch the navigation type in General to use them.')}
     </p>
   );
 }
 
+/**
+ * Dropdown menus: a named entry in the bar that opens on two or more sections. Each group is a
+ * small card — its name, the sections as pills (a section already in another group is greyed),
+ * and a quiet remove. Rarely needed, so it comes after the item names.
+ */
 function NavMenuGroupsEditor({
   groups,
   itemLabels,
@@ -3887,6 +4151,7 @@ function NavMenuGroupsEditor({
   itemLabels: PortfolioNavItemLabels;
   onChange: (groups: PortfolioNavMenuGroup[]) => void;
 }) {
+  const t = useT();
   const assignedElsewhere = (groupId: string, sectionKey: PortfolioNavSectionKey) =>
     groups.some((group) => group.id !== groupId && group.sectionKeys.includes(sectionKey));
 
@@ -3894,415 +4159,534 @@ function NavMenuGroupsEditor({
     onChange(
       groups.map((group) => {
         if (group.id !== groupId) {
-          return {
-            ...group,
-            sectionKeys: group.sectionKeys.filter((key) => key !== sectionKey),
-          };
+          return { ...group, sectionKeys: group.sectionKeys.filter((key) => key !== sectionKey) };
         }
         const has = group.sectionKeys.includes(sectionKey);
         return {
           ...group,
-          sectionKeys: has
-            ? group.sectionKeys.filter((key) => key !== sectionKey)
-            : [...group.sectionKeys, sectionKey],
+          sectionKeys: has ? group.sectionKeys.filter((key) => key !== sectionKey) : [...group.sectionKeys, sectionKey],
         };
       })
     );
   };
 
   return (
-    <div className="space-y-4">
-      <p className="pf-stack-block-label pf-stack-option-label">Menu groups (dropdown)</p>
+    <GlobalSection label={t('Dropdown menus')}>
+      <p className="-mt-1 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
+        {t('Gather several sections under one menu entry that opens on click.')}
+      </p>
 
-      {groups.length === 0 ? (
-        <p className="rounded-xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-          No groups yet. Add a group and choose at least 2 sections.
-        </p>
-      ) : (
-        <div className="space-y-3">
-          {groups.map((group) => (
-            <div key={group.id} className="space-y-3 rounded-xl border border-neutral-200 bg-white p-4">
-              <div className="flex flex-wrap items-center gap-3">
-                <label className="min-w-0 flex-1">
-                  <span className="pf-stack-block-label pf-stack-option-label">Menu label</span>
-                  <input
-                    type="text"
-                    value={group.label}
-                    maxLength={48}
-                    onChange={(event) =>
-                      onChange(
-                        groups.map((entry) =>
-                          entry.id === group.id
-                            ? { ...entry, label: event.target.value }
-                            : entry
-                        )
-                      )
-                    }
-                    placeholder="e.g. Portfolio, Resources…"
-                    className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 outline-none ring-orange-500/30 focus:border-orange-400 focus:ring-2"
-                  />
-                </label>
+      {groups.map((group) => (
+        <div key={group.id} className="space-y-3 rounded-2xl p-3 shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
+          <div className="flex items-center gap-2">
+            <input
+              type="text"
+              value={group.label}
+              maxLength={48}
+              aria-label={t('Menu label')}
+              onChange={(event) =>
+                onChange(groups.map((entry) => (entry.id === group.id ? { ...entry, label: event.target.value } : entry)))
+              }
+              placeholder={t('e.g. Portfolio, Resources…')}
+              className={PF_TEXT_INPUT}
+            />
+            <button
+              type="button"
+              onClick={() => onChange(groups.filter((entry) => entry.id !== group.id))}
+              aria-label={t('Remove')}
+              title={t('Remove')}
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-xl text-[color:var(--pf-palette-texte-muted)] transition-colors hover:bg-[color:var(--pf-surface)] hover:text-[color:var(--pf-palette-texte-fort)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 2h7a2 2 0 0 0 2-2l1-12M9 7V4.5h6V7" />
+              </svg>
+            </button>
+          </div>
+
+          <div className="flex flex-wrap gap-1.5">
+            {PORTFOLIO_NAV_SECTION_META.map((section) => {
+              const selected = group.sectionKeys.includes(section.key);
+              const disabled = !selected && assignedElsewhere(group.id, section.key);
+              return (
                 <button
+                  key={section.key}
                   type="button"
-                  onClick={() => onChange(groups.filter((entry) => entry.id !== group.id))}
-                  className="rounded-full px-3 py-1.5 text-sm text-red-600 hover:bg-red-50"
+                  disabled={disabled}
+                  aria-pressed={selected}
+                  title={disabled ? t('Already in another menu') : undefined}
+                  onClick={() => toggleSection(group.id, section.key)}
+                  className={pfChipClass(selected, disabled)}
                 >
-                  Remove
+                  {itemLabels[section.key]?.trim() || t(section.title)}
                 </button>
-              </div>
-
-              <div className="flex flex-wrap gap-2">
-                {PORTFOLIO_NAV_SECTION_META.map((section) => {
-                  const selected = group.sectionKeys.includes(section.key);
-                  const disabled = !selected && assignedElsewhere(group.id, section.key);
-                  const sectionLabel =
-                    itemLabels[section.key]?.trim() || section.title;
-                  return (
-                    <button
-                      key={section.key}
-                      type="button"
-                      disabled={disabled}
-                      onClick={() => toggleSection(group.id, section.key)}
-                      className={`rounded-full border px-3 py-1.5 text-sm transition ${
-                        selected
-                          ? 'border-neutral-900 bg-neutral-900 text-white'
-                          : disabled
-                            ? 'cursor-not-allowed border-neutral-200 bg-white text-neutral-300'
-                            : 'border-neutral-200 bg-white text-neutral-700 hover:border-neutral-300'
-                      }`}
-                    >
-                      {sectionLabel}
-                    </button>
-                  );
-                })}
-              </div>
-              {group.sectionKeys.length < 2 ? (
-                <p className="text-xs text-amber-700">Select at least 2 sections to enable this dropdown.</p>
-              ) : null}
-            </div>
-          ))}
+              );
+            })}
+          </div>
+          {group.sectionKeys.length < 2 ? (
+            <p className="text-[12px] text-[color:var(--pf-palette-texte-muted)]">
+              {t('Select at least 2 sections to enable this dropdown.')}
+            </p>
+          ) : null}
         </div>
-      )}
+      ))}
 
       <button
         type="button"
-        onClick={() =>
-          onChange([
-            ...groups,
-            {
-              id: crypto.randomUUID(),
-              label: 'Menu',
-              sectionKeys: [],
-            },
-          ])
-        }
+        onClick={() => onChange([...groups, { id: crypto.randomUUID(), label: t('Menu'), sectionKeys: [] }])}
         disabled={groups.length >= 8}
-        className="rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-medium text-neutral-700 transition hover:border-neutral-300 disabled:cursor-not-allowed disabled:opacity-50"
+        className="inline-flex h-10 w-full items-center justify-center gap-2 rounded-xl text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] transition-colors hover:bg-[color:var(--pf-surface)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] disabled:opacity-40"
       >
-        Add a group
+        <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
+          <path d="M12 5v14M5 12h14" />
+        </svg>
+        {t('Add a dropdown menu')}
+      </button>
+    </GlobalSection>
+  );
+}
+
+/** Shown on a tab whose settings only matter while the navigation is on — with the way back. */
+function NavDisabledNotice({ onEnable }: { onEnable: () => void }) {
+  const t = useT();
+  return (
+    <div className="rounded-2xl px-4 py-5 text-center shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
+      <p className="text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)]">{t('The navigation is hidden')}</p>
+      <p className="mt-1 text-[13px] text-[color:var(--pf-palette-texte-muted)]">
+        {t('Turn it on to choose its design and menu.')}
+      </p>
+      <button
+        type="button"
+        onClick={onEnable}
+        className="mt-4 inline-flex h-9 items-center rounded-full bg-[color:var(--pf-palette-texte-fort)] px-4 text-[13px] font-semibold text-[color:var(--pf-palette-fond)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
+      >
+        {t('Show navigation')}
       </button>
     </div>
   );
 }
 
+/** The General tab's settings: what "Reset" restores and what the header's status compares. */
+const NAV_GENERAL_KEYS = [
+  'enabled',
+  'navMode',
+  'displayMode',
+  'presence',
+  'hideWhenSingle',
+  'labelFontSize',
+  'itemGap',
+  'mobileLayout',
+  'mobileDrawerSide',
+  'mobileBrand',
+  'mobileBrandWord',
+] as const satisfies readonly (keyof PortfolioNavSettings)[];
+
+type NavGeneralSettings = Pick<PortfolioNavSettings, (typeof NAV_GENERAL_KEYS)[number]>;
+
+let navGeneralDefaultsCache: NavGeneralSettings | null = null;
+
+function navGeneralDefaults(): NavGeneralSettings {
+  if (!navGeneralDefaultsCache) {
+    const navigation = createDefaultPortfolioSettings().navigation;
+    navGeneralDefaultsCache = Object.fromEntries(
+      NAV_GENERAL_KEYS.map((key) => [key, navigation[key]])
+    ) as NavGeneralSettings;
+  }
+  return navGeneralDefaultsCache;
+}
+
+/** Rendered sizes (portfolioNavLabelFontSizeClass / portfolioNavItemGapClass) shown on the sliders. */
+const NAV_LABEL_FONT_PX: Record<PortfolioNavSettings['labelFontSize'], number> = { xs: 12, sm: 13, md: 15, lg: 16 };
+const NAV_ITEM_GAP_PX: Partial<Record<PortfolioNavSettings['itemGap'], number>> = { sm: 6, md: 12, lg: 24, xl: 40 };
+
+/** Short segment labels (one line in a 400px panel) and the sentence under the control. */
+const NAV_DISPLAY_COPY: Record<PortfolioNavSettings['displayMode'], { label: string; help: string }> = {
+  always: { label: msg('Always'), help: msg('The bar is visible as soon as the page opens.') },
+  'on-scroll': { label: msg('On scroll'), help: msg('The bar appears once the visitor starts scrolling.') },
+  'after-hero': { label: msg('After hero'), help: msg('The bar appears once the hero section is passed.') },
+};
+
+const NAV_VISIBILITY_HELP: Record<ReturnType<typeof resolvePortfolioNavVisibilityMode>, string> = {
+  full: msg('Stays pinned at the top, fully visible, while scrolling.'),
+  dim: msg('Labels fade at rest and sharpen again on hover.'),
+};
+
+/**
+ * Navigation settings, split by the question each tab answers:
+ *  - General: is there a navigation, which kind, when does it show, how it behaves on phones.
+ *  - Design: what it looks like — layout, the bar itself, the menu's text and active state.
+ *  - Labels: what the menu says — each item's name and icon first, dropdown groups after.
+ * Settings that cannot apply (a mode without the floating bar) are not shown; with the navigation
+ * off, General stays visible but dimmed and inert. `chrome` gives the panel its own header and
+ * footer (the studio dock); without it the host frames the tabs.
+ */
 function NavigationPanel({
   navigation,
   onChange,
   navSocialLinkOptions = [],
   showColorModeToggleInNav = false,
   onGlobalChange,
+  chrome,
 }: {
   navigation: PortfolioNavSettings;
   onChange: (patch: Partial<PortfolioNavSettings>) => void;
   navSocialLinkOptions?: PortfolioNavChromeLink[];
   showColorModeToggleInNav?: boolean;
   onGlobalChange?: (patch: PortfolioGlobalSettingsPatch) => void;
+  chrome?: NpPanelChrome;
 }) {
+  const t = useT();
   const [navTab, setNavTab] = useState<NavSettingsTab>('general');
   const [layoutGridOpen, setLayoutGridOpen] = useState(false);
   const navMode = navigation.navMode ?? 'default';
   const usesFloatingNavChrome = navMode === 'default' || navMode === 'pages';
+  /** Menu-panel layouts (fullscreen / docked / side panel) have their own type scale, presence
+   *  and phone menu — the bar-only settings below don't apply to them. */
+  const usesMenuPanelLayout = ['case-overlay', 'duten-panel', 'half-panel-left'].includes(
+    navigation.navLayoutDesign ?? 'classic'
+  );
+  /** Layouts whose links sit side by side in the bar. */
+  const navLinksSitInBar = usesFloatingNavChrome && !usesMenuPanelLayout;
+  const enable = () => onChange({ enabled: true });
+
+  const defaults = navGeneralDefaults();
+  const modified = NAV_GENERAL_KEYS.some((key) => (navigation[key] ?? defaults[key]) !== defaults[key]);
+  const displayMode = navigation.displayMode ?? 'always';
+  const visibility = resolvePortfolioNavVisibilityMode(navigation.presence);
+  const labelFontSize = navigation.labelFontSize ?? 'sm';
+  const mobileLayout = navigation.mobileLayout ?? 'brand-bar';
+  const mobileBrand = navigation.mobileBrand ?? 'none';
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        {NAV_SETTINGS_TABS.map((tab) => {
-          const selected = tab.id === navTab;
-          return (
-            <button
-              key={tab.id}
-              type="button"
-              onClick={() => setNavTab(tab.id)}
-              className={`rounded-full border px-3.5 py-1.5 text-sm transition ${
-                selected
-                  ? 'border-neutral-900 bg-neutral-900 font-semibold text-white'
-                  : 'border-neutral-200 bg-white text-neutral-600 hover:border-neutral-300'
-              }`}
-            >
-              {tab.label}
-            </button>
-          );
-        })}
-      </div>
-
+    <NpPanelShell
+      title={t('Navigation')}
+      modified={modified}
+      tabs={NAV_SETTINGS_TABS.map((tab) => ({ id: tab.id, label: t(tab.label) }))}
+      activeTab={navTab}
+      onTabChange={setNavTab}
+      onReset={() => onChange({ ...defaults })}
+      chrome={chrome}
+    >
       {navTab === 'general' ? (
-        <div>
-          <GlobalSwitchRow
-            label="Show navigation"
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={t('Show navigation')}
+            description={
+              navigation.enabled ? t('Menu bar at the top of the site') : t('Visitors scroll the page without a menu.')
+            }
             checked={navigation.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
 
-          {navigation.enabled ? (
-            <>
-              <GlobalSection label="Bar appearance">
-                <GlobalPreviewCardGrid
-                  label="Bar background"
-                  options={PORTFOLIO_NAV_BAR_SURFACE_PREVIEW_OPTIONS}
-                  value={navigation.navBarSurface ?? 'neutre'}
-                  onChange={(navBarSurface) => onChange({ navBarSurface })}
-                  columns={3}
+          <div
+            className="np-dimmable"
+            data-disabled={navigation.enabled ? 'false' : 'true'}
+            aria-disabled={!navigation.enabled}
+            inert={!navigation.enabled}
+          >
+            <NpCollapsibleSection title={t('Behavior')}>
+              <NpOptionCardGroup label={t('Navigation type')}>
+                <NpOptionCard
+                  selected={navMode === 'default'}
+                  title={t('Default')}
+                  subtitle={t('Fixed bar at the top')}
+                  illustration={<NpIllustrationTopBar />}
+                  onClick={() => onChange({ navMode: 'default' })}
                 />
-                <GlobalSegmentGrid
-                  label="Bar height"
-                  options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS}
-                  value={navigation.navBarHeight ?? 'md'}
-                  onChange={(navBarHeight) => onChange({ navBarHeight })}
-                  columns={3}
+                <NpOptionCard
+                  selected={navMode === 'pages'}
+                  title={t('Page')}
+                  subtitle={t('One page per section')}
+                  illustration={<NpIllustrationPages />}
+                  onClick={() => onChange({ navMode: 'pages' })}
                 />
-                <SectionColorModeControl
-                  value={navigation.colorModeOverride}
-                  onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-                />
-                <GlobalSwitchRow
-                  label="Light / dark toggle in bar"
-                  checked={showColorModeToggleInNav}
-                  onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
-                />
-              </GlobalSection>
+              </NpOptionCardGroup>
 
-              {usesFloatingNavChrome ? (
-                <GlobalSection label="Mobile">
-                  <GlobalSegmentGrid
-                    label="Mobile behavior"
-                    options={PORTFOLIO_NAV_MOBILE_LAYOUT_OPTIONS}
-                    value={navigation.mobileLayout ?? 'brand-bar'}
-                    onChange={(mobileLayout) => onChange({ mobileLayout })}
-                    columns={2}
-                  />
-                  {(navigation.mobileLayout ?? 'brand-bar') === 'drawer' ? (
-                    <>
-                      <GlobalPreviewCardGrid
-                        label="Brand next to menu"
-                        options={PORTFOLIO_NAV_MOBILE_BRAND_PREVIEW_OPTIONS}
-                        value={navigation.mobileBrand ?? 'none'}
-                        onChange={(mobileBrand) => onChange({ mobileBrand })}
-                        columns={3}
-                      />
-                      {(navigation.mobileBrand ?? 'none') === 'word' ? (
-                        <label className="block">
-                          <span className="pf-stack-block-label pf-stack-option-label">
-                            Brand text
-                          </span>
-                          <input
-                            type="text"
-                            value={navigation.mobileBrandWord ?? ''}
-                            onChange={(event) => onChange({ mobileBrandWord: event.target.value })}
-                            placeholder="First name or short name"
-                            className="w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
-                          />
-                        </label>
-                      ) : null}
-                      <GlobalSegmentGrid
-                        label="Drawer side"
-                        options={PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS}
-                        value={navigation.mobileDrawerSide ?? 'right'}
-                        onChange={(mobileDrawerSide) => onChange({ mobileDrawerSide })}
-                        columns={2}
-                      />
-                    </>
-                  ) : null}
-                </GlobalSection>
-              ) : null}
-            </>
-          ) : null}
-
-          <GlobalSection label="Behavior">
-            <GlobalSegmentGrid
-              label="Navigation type"
-              options={PORTFOLIO_NAV_MODE_OPTIONS}
-              value={navMode}
-              onChange={(nextMode) => onChange({ navMode: nextMode })}
-              columns={2}
-            />
-            <GlobalSegmentGrid
-              label="When to appear"
-              options={PORTFOLIO_NAV_DISPLAY_OPTIONS}
-              value={navigation.displayMode}
-              onChange={(displayMode) => onChange({ displayMode })}
-              columns={3}
-            />
-            {navigation.enabled && usesFloatingNavChrome ? (
-              <GlobalSegmentGrid
-                label="Bar visibility"
-                options={PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS}
-                value={resolvePortfolioNavVisibilityMode(navigation.presence)}
-                onChange={(presence) => onChange({ presence })}
-                columns={2}
+              <NpSegmentedControl
+                label={t('When to appear')}
+                options={PORTFOLIO_NAV_DISPLAY_OPTIONS.map((option) => ({
+                  value: option.value,
+                  label: t(NAV_DISPLAY_COPY[option.value].label),
+                }))}
+                value={displayMode}
+                onChange={(nextDisplayMode) => onChange({ displayMode: nextDisplayMode })}
+                help={t(NAV_DISPLAY_COPY[displayMode].help)}
               />
+
+              {navLinksSitInBar ? (
+                <NpSegmentedControl
+                  label={t('Bar visibility')}
+                  options={PORTFOLIO_NAV_VISIBILITY_MODE_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: t(option.label),
+                  }))}
+                  value={visibility}
+                  onChange={(presence) => onChange({ presence })}
+                  help={t(NAV_VISIBILITY_HELP[visibility])}
+                />
+              ) : null}
+
+              <NpToggleRow
+                title={t('Hide when only one section')}
+                description={t('Avoids a pointless menu on a simple page')}
+                checked={navigation.hideWhenSingle}
+                onChange={(hideWhenSingle) => onChange({ hideWhenSingle })}
+              />
+            </NpCollapsibleSection>
+
+            {navLinksSitInBar ? (
+              <NpCollapsibleSection title={t('Menu links')}>
+                <NpLinksPreview
+                  items={[t('Home'), t('Projects'), t('Contact')]}
+                  fontPx={NAV_LABEL_FONT_PX[labelFontSize]}
+                  gapPx={NAV_ITEM_GAP_PX[navigation.itemGap] ?? 0}
+                />
+                <NpStepSlider
+                  label={t('Text size')}
+                  options={PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: t(option.label),
+                    px: NAV_LABEL_FONT_PX[option.value],
+                  }))}
+                  value={labelFontSize}
+                  onChange={(nextSize) => onChange({ labelFontSize: nextSize })}
+                />
+                <NpStepSlider
+                  label={t('Space between links')}
+                  options={PORTFOLIO_NAV_ITEM_GAP_OPTIONS.map((option) => ({
+                    value: option.value,
+                    label: t(option.label),
+                    px: NAV_ITEM_GAP_PX[option.value] ?? 0,
+                  }))}
+                  value={navigation.itemGap}
+                  onChange={(itemGap) => onChange({ itemGap })}
+                />
+              </NpCollapsibleSection>
             ) : null}
-            <GlobalSwitchRow
-              label="Hide when only one section"
-              checked={navigation.hideWhenSingle}
-              onChange={(hideWhenSingle) => onChange({ hideWhenSingle })}
-            />
-          </GlobalSection>
 
-          {navigation.enabled ? (
-            <GlobalSection label="Style">
-              <GlobalPreviewCardGrid
-                label="Active indicator"
-                options={PORTFOLIO_NAV_ACTIVE_INDICATOR_PREVIEW_OPTIONS}
-                value={
-                  PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS.some(
-                    (option) => option.value === navigation.activeStyle
-                  )
-                    ? navigation.activeStyle
-                    : PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS[0].value
-                }
-                onChange={(activeStyle) => onChange({ activeStyle })}
-                columns={3}
-              />
-              {navigation.navLayoutDesign === 'editorial-bar' ? (
-                <GlobalSegmentGrid
-                  label="Button text color"
-                  options={PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS}
-                  value={navigation.editorialBarButtonInk ?? 'principal'}
-                  onChange={(editorialBarButtonInk) => {
-                    const bindings = mergeNavColorBindings(
-                      DEFAULT_NAV_COLOR_BINDINGS,
-                      navigation.navColorBindings
-                    );
-                    const nextBindings = {
-                      ...bindings,
-                      activeAccent: editorialBarButtonInk,
-                      contactText: editorialBarButtonInk,
-                      contactBorder: editorialBarButtonInk,
-                    };
-                    onChange({
-                      editorialBarButtonInk,
-                      navColorBindings: nextBindings,
-                      ...(navigation.useNavPalette !== false
-                        ? applyNavPaletteToSettings({
-                            ...navigation,
-                            navColorBindings: nextBindings,
-                          })
-                        : null),
-                    });
-                  }}
-                  columns={2}
-                />
-              ) : null}
-              <GlobalSegmentGrid
-                label="Text size"
-                options={PORTFOLIO_NAV_LABEL_FONT_SIZE_OPTIONS}
-                value={navigation.labelFontSize ?? 'md'}
-                onChange={(labelFontSize) => onChange({ labelFontSize })}
-                columns={4}
-              />
-            </GlobalSection>
-          ) : null}
+            {navLinksSitInBar ? (
+              <NpCollapsibleSection title={t('Mobile')}>
+                <NpOptionCardGroup label={t('Mobile behavior')}>
+                  <NpOptionCard
+                    selected={mobileLayout === 'brand-bar'}
+                    title={t('Full-width bar')}
+                    subtitle={t('Logo + compact menu')}
+                    illustration={<NpIllustrationPhoneBar />}
+                    onClick={() => onChange({ mobileLayout: 'brand-bar' })}
+                  />
+                  <NpOptionCard
+                    selected={mobileLayout === 'drawer'}
+                    title={t('Menu drawer')}
+                    subtitle={t('Side panel')}
+                    illustration={<NpIllustrationPhoneDrawer />}
+                    onClick={() => onChange({ mobileLayout: 'drawer' })}
+                  />
+                </NpOptionCardGroup>
 
+                {mobileLayout === 'drawer' ? (
+                  <>
+                    <NpSegmentedControl
+                      label={t('Drawer side')}
+                      options={PORTFOLIO_NAV_MOBILE_DRAWER_SIDE_OPTIONS.map((option) => ({
+                        value: option.value,
+                        label: t(option.label),
+                      }))}
+                      value={navigation.mobileDrawerSide ?? 'right'}
+                      onChange={(mobileDrawerSide) => onChange({ mobileDrawerSide })}
+                    />
+                    <NpSegmentedControl
+                      label={t('Brand next to menu')}
+                      options={PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS.map((option) => ({
+                        value: option.value,
+                        label: t(option.label),
+                      }))}
+                      value={mobileBrand}
+                      onChange={(nextBrand) => onChange({ mobileBrand: nextBrand })}
+                      help={t(
+                        PORTFOLIO_NAV_MOBILE_BRAND_OPTIONS.find((option) => option.value === mobileBrand)?.description ?? ''
+                      )}
+                    />
+                    {mobileBrand === 'word' ? (
+                      <label className="np-field block">
+                        <span className="np-field-label">{t('Brand text')}</span>
+                        <input
+                          type="text"
+                          value={navigation.mobileBrandWord ?? ''}
+                          onChange={(event) => onChange({ mobileBrandWord: event.target.value })}
+                          placeholder={t('First name or short name')}
+                          className="np-input"
+                        />
+                      </label>
+                    ) : null}
+                  </>
+                ) : null}
+              </NpCollapsibleSection>
+            ) : null}
+          </div>
         </div>
       ) : null}
 
-
       {navTab === 'design' ? (
-        <div className="space-y-6">
-          {usesFloatingNavChrome ? (
-            <NavLayoutDesignGrid
-              value={navigation.navLayoutDesign ?? 'classic'}
-              navigation={navigation}
-              expanded={layoutGridOpen}
-              onExpandedChange={setLayoutGridOpen}
-              onChange={(design) => {
-                onChange(portfolioNavLayoutDesignPatch(design, navigation));
-                if (design === 'floating-pill') {
-                  onGlobalChange?.({ showColorModeToggleInNav: true });
-                  onChange({ mobileLayout: 'brand-bar' });
-                }
-              }}
-            />
-          ) : (
-            <NavFloatingOnlyNote />
-          )}
-          {!layoutGridOpen ? (
-            <>
-              {navigation.navLayoutDesign === 'editorial-bar' ? (
-                <NavEditorialBarSlotEditor
-                  navigation={navigation}
-                  options={navSocialLinkOptions}
-                  onChange={onChange}
-                />
-              ) : null}
-              {navigation.navLayoutDesign === 'floating-pill' ? (
-                <NavFloatingPillMenuEditor
-                  navigation={navigation}
-                  onChange={onChange}
-                  showColorModeToggleInNav={showColorModeToggleInNav}
-                  onGlobalChange={onGlobalChange}
-                />
-              ) : null}
-              {navigation.navLayoutDesign === 'center-logo-split' ? (
-                <NavSplitLogoSectionEditor navigation={navigation} onChange={onChange} />
-              ) : null}
-              {navigation.navLayoutDesign === 'case-overlay' ? (
-                <NavCaseOverlayLogoEditor
-                  navigation={navigation}
-                  onChange={onChange}
-                  showColorModeToggleInNav={showColorModeToggleInNav}
-                  onGlobalChange={onGlobalChange}
-                />
-              ) : null}
-              {navigation.navLayoutDesign === 'duten-panel' ? (
-                <NavDutenPanelEditor
-                  navigation={navigation}
-                  options={navSocialLinkOptions}
-                  onChange={onChange}
-                  showColorModeToggleInNav={showColorModeToggleInNav}
-                  onGlobalChange={onGlobalChange}
-                />
-              ) : null}
-              {navigation.navLayoutDesign === 'half-panel-left' ? (
-                <NavHalfPanelEditor
-                  navigation={navigation}
-                  options={navSocialLinkOptions}
-                  onChange={onChange}
-                  showColorModeToggleInNav={showColorModeToggleInNav}
-                  onGlobalChange={onGlobalChange}
-                />
-              ) : null}
-            </>
-          ) : null}
-        </div>
+        navigation.enabled ? (
+          <div>
+            {usesFloatingNavChrome ? (
+              <NavLayoutDesignGrid
+                value={navigation.navLayoutDesign ?? 'classic'}
+                navigation={navigation}
+                expanded={layoutGridOpen}
+                onExpandedChange={setLayoutGridOpen}
+                onChange={(design) => {
+                  onChange(portfolioNavLayoutDesignPatch(design, navigation));
+                  if (design === 'floating-pill') {
+                    onGlobalChange?.({ showColorModeToggleInNav: true });
+                    onChange({ mobileLayout: 'brand-bar' });
+                  }
+                }}
+              />
+            ) : (
+              <NavFloatingOnlyNote />
+            )}
+
+            {!layoutGridOpen ? (
+              <>
+                <GlobalSection label={t('Bar')}>
+                  <GlobalPreviewCardGrid
+                    label={t('Bar background')}
+                    options={PORTFOLIO_NAV_BAR_SURFACE_PREVIEW_OPTIONS}
+                    value={navigation.navBarSurface ?? 'neutre'}
+                    onChange={(navBarSurface) => onChange({ navBarSurface })}
+                    columns={3}
+                  />
+                  <GlobalSegmentGrid
+                    label={t('Bar height')}
+                    options={PORTFOLIO_NAV_BAR_HEIGHT_OPTIONS}
+                    value={navigation.navBarHeight ?? 'md'}
+                    onChange={(navBarHeight) => onChange({ navBarHeight })}
+                    columns={3}
+                  />
+                  <SectionColorModeControl
+                    label={t('Color mode')}
+                    value={navigation.colorModeOverride}
+                    onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+                  />
+                  <GlobalSwitchRow
+                    label={t('Light / dark toggle in bar')}
+                    checked={showColorModeToggleInNav}
+                    onChange={(next) => onGlobalChange?.({ showColorModeToggleInNav: next })}
+                  />
+                </GlobalSection>
+
+                <GlobalSection label={t('Menu style')}>
+                  <GlobalPreviewCardGrid
+                    label={t('Active indicator')}
+                    options={PORTFOLIO_NAV_ACTIVE_INDICATOR_PREVIEW_OPTIONS}
+                    value={
+                      PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS.some((option) => option.value === navigation.activeStyle)
+                        ? navigation.activeStyle
+                        : PORTFOLIO_NAV_ACTIVE_INDICATOR_OPTIONS[0].value
+                    }
+                    onChange={(activeStyle) => onChange({ activeStyle })}
+                    columns={3}
+                  />
+                  {navigation.navLayoutDesign === 'editorial-bar' ? (
+                    <GlobalSegmentGrid
+                      label={t('Button text color')}
+                      options={PORTFOLIO_NAV_EDITORIAL_BAR_BUTTON_INK_OPTIONS}
+                      value={navigation.editorialBarButtonInk ?? 'principal'}
+                      onChange={(editorialBarButtonInk) => {
+                        const bindings = mergeNavColorBindings(DEFAULT_NAV_COLOR_BINDINGS, navigation.navColorBindings);
+                        const nextBindings = {
+                          ...bindings,
+                          activeAccent: editorialBarButtonInk,
+                          contactText: editorialBarButtonInk,
+                          contactBorder: editorialBarButtonInk,
+                        };
+                        onChange({
+                          editorialBarButtonInk,
+                          navColorBindings: nextBindings,
+                          ...(navigation.useNavPalette !== false
+                            ? applyNavPaletteToSettings({ ...navigation, navColorBindings: nextBindings })
+                            : null),
+                        });
+                      }}
+                      columns={2}
+                    />
+                  ) : null}
+                </GlobalSection>
+
+                {usesFloatingNavChrome && NAV_LAYOUTS_WITH_OPTIONS.has(navigation.navLayoutDesign ?? 'classic') ? (
+                  <GlobalSection label={t('Layout options')}>
+                    {navigation.navLayoutDesign === 'editorial-bar' ? (
+                      <NavEditorialBarSlotEditor navigation={navigation} options={navSocialLinkOptions} onChange={onChange} />
+                    ) : null}
+                    {navigation.navLayoutDesign === 'floating-pill' ? (
+                      <NavFloatingPillMenuEditor
+                        navigation={navigation}
+                        onChange={onChange}
+                        showColorModeToggleInNav={showColorModeToggleInNav}
+                        onGlobalChange={onGlobalChange}
+                      />
+                    ) : null}
+                    {navigation.navLayoutDesign === 'center-logo-split' ? (
+                      <NavSplitLogoSectionEditor navigation={navigation} onChange={onChange} />
+                    ) : null}
+                    {navigation.navLayoutDesign === 'case-overlay' ? (
+                      <NavCaseOverlayLogoEditor
+                        navigation={navigation}
+                        onChange={onChange}
+                        showColorModeToggleInNav={showColorModeToggleInNav}
+                        onGlobalChange={onGlobalChange}
+                      />
+                    ) : null}
+                    {navigation.navLayoutDesign === 'duten-panel' ? (
+                      <NavDutenPanelEditor
+                        navigation={navigation}
+                        options={navSocialLinkOptions}
+                        onChange={onChange}
+                        showColorModeToggleInNav={showColorModeToggleInNav}
+                        onGlobalChange={onGlobalChange}
+                      />
+                    ) : null}
+                    {navigation.navLayoutDesign === 'half-panel-left' ? (
+                      <NavHalfPanelEditor
+                        navigation={navigation}
+                        options={navSocialLinkOptions}
+                        onChange={onChange}
+                        showColorModeToggleInNav={showColorModeToggleInNav}
+                        onGlobalChange={onGlobalChange}
+                      />
+                    ) : null}
+                  </GlobalSection>
+                ) : null}
+              </>
+            ) : null}
+          </div>
+        ) : (
+          <NavDisabledNotice onEnable={enable} />
+        )
       ) : null}
 
       {navTab === 'labels' ? (
-        <div className="space-y-8">
-          <NavMenuGroupsEditor
-            groups={navigation.navMenuGroups ?? []}
-            itemLabels={navigation.itemLabels}
-            onChange={(navMenuGroups) => onChange({ navMenuGroups })}
-          />
-
-          <NavigationLabelsIconsPanel
-            itemLabels={navigation.itemLabels}
-            itemIcons={navigation.itemIcons}
-            onChange={onChange}
-          />
-        </div>
+        navigation.enabled ? (
+          <div>
+            <NavigationLabelsIconsPanel
+              itemLabels={navigation.itemLabels}
+              itemIcons={navigation.itemIcons}
+              hiddenItems={navigation.hiddenNavItems ?? []}
+              pagesMode={navMode === 'pages'}
+              onChange={onChange}
+            />
+            <NavMenuGroupsEditor
+              groups={navigation.navMenuGroups ?? []}
+              itemLabels={navigation.itemLabels}
+              onChange={(navMenuGroups) => onChange({ navMenuGroups })}
+            />
+          </div>
+        ) : (
+          <NavDisabledNotice onEnable={enable} />
+        )
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }
 
@@ -4310,17 +4694,11 @@ function SectionPanel({
   section,
   settings,
   onChange,
-  onThemeChange,
   onGlobalChange,
   onColorModeChange,
   onGlobalPaletteChange,
   onGlobalPalettePairChange,
   onNavigationChange,
-  onSaveCustomTheme,
-  onRenameCustomTheme,
-  onDuplicateTheme,
-  onResetBuiltinTheme,
-  onDeleteCustomTheme,
   availableTools,
   availableWorks,
   availableServices = [],
@@ -4329,6 +4707,7 @@ function SectionPanel({
   profileAvatarUrl = null,
   panelSubSections,
   onPanelSubSectionChange,
+  navigationChrome,
 }: {
   section: PortfolioSettingsSectionMeta;
   settings: PortfolioSettings;
@@ -4336,7 +4715,6 @@ function SectionPanel({
     sectionId: PortfolioSettingsContentKey,
     patch: Partial<PortfolioSettings[PortfolioSettingsContentKey]>
   ) => void;
-  onThemeChange: (themeId: PortfolioThemeId) => void;
   onGlobalChange: (patch: PortfolioGlobalSettingsPatch) => void;
   onColorModeChange: (mode: PortfolioColorMode) => void;
   onGlobalPaletteChange: (patch: Partial<PortfolioHeroPalette>) => void;
@@ -4346,11 +4724,6 @@ function SectionPanel({
     family?: 'indigo' | 'classic' | 'verdant' | 'vive' | 'safran' | 'citron' | 'rouge' | 'ecarlate' | 'ardoise' | 'custom'
   ) => void;
   onNavigationChange: (patch: Partial<PortfolioNavSettings>) => void;
-  onSaveCustomTheme: (themeId: string, name?: string) => boolean;
-  onRenameCustomTheme: (themeId: string, name: string) => boolean;
-  onDuplicateTheme: (themeId: PortfolioThemeId) => void;
-  onResetBuiltinTheme: (themeId: PortfolioBuiltinThemeId) => void;
-  onDeleteCustomTheme: (themeId: string) => void;
   availableTools: string[];
   availableWorks: { id: string; title: string; imageUrl: string }[];
   availableServices?: { id: string; title: string }[];
@@ -4362,29 +4735,30 @@ function SectionPanel({
     sectionId: K,
     value: NonNullable<PanelSubSections[K]>
   ) => void;
+  /** The Navigation panel's own header and footer, when the host lets it frame itself. */
+  navigationChrome?: NpPanelChrome;
 }) {
+  const t = useT();
   const sectionId = section.id;
 
   if (sectionId === 'theme') {
     return (
       <GlobalSettingsPanel
-        themeId={settings.themeId}
-        customThemes={settings.customThemes}
         settings={settings}
         global={settings.global}
         servicesSectionOrganization={settings.services.sectionOrganization}
-        onThemeChange={onThemeChange}
         onGlobalChange={onGlobalChange}
         onColorModeChange={onColorModeChange}
         onGlobalPaletteChange={onGlobalPaletteChange}
         onGlobalPalettePairChange={onGlobalPalettePairChange}
-        onSaveCustomTheme={onSaveCustomTheme}
-        onRenameCustomTheme={onRenameCustomTheme}
-        onDuplicateTheme={onDuplicateTheme}
-        onResetBuiltinTheme={onResetBuiltinTheme}
-        onDeleteCustomTheme={onDeleteCustomTheme}
         subSection={panelSubSections.theme ?? 'theme'}
         onSubSectionChange={(value) => onPanelSubSectionChange('theme', value)}
+        sectionEnabled={Object.fromEntries(
+          PORTFOLIO_NAV_SECTION_META.map(({ key }) => [key, (settings[key] as { enabled?: boolean }).enabled !== false])
+        )}
+        onSectionEnabledChange={(key, enabled) =>
+          onChange(key as PortfolioSettingsContentKey, { enabled } as Partial<PortfolioSettings[PortfolioSettingsContentKey]>)
+        }
       />
     );
   }
@@ -4397,6 +4771,7 @@ function SectionPanel({
         navSocialLinkOptions={navSocialLinkOptions}
         showColorModeToggleInNav={settings.global.showColorModeToggleInNav ?? false}
         onGlobalChange={onGlobalChange}
+        chrome={navigationChrome}
       />
     );
   }
@@ -4559,34 +4934,33 @@ function SectionPanel({
   return (
     <div className="space-y-5">
       <ToggleRow
-        label="Show section"
-        description={`Display the ${section.label.toLowerCase()} block on your public portfolio.`}
+        label={t('Show section')}
+        description={t('Display the {toLowerCase} block on your public portfolio.', { toLowerCase: section.label.toLowerCase() })}
         checked={copy.enabled}
         onChange={(enabled) => onChange(sectionId, { enabled })}
       />
 
       {'title' in copy ? (
         <TextField
-          label="Section title"
+          label={t('Section title')}
           value={copy.title}
           onChange={(title) => onChange(sectionId, { title })}
-          placeholder={section.label}
+          placeholder={t(section.label)}
         />
       ) : null}
 
       {'subtitle' in copy ? (
         <TextField
-          label="Section subtitle"
+          label={t('Section subtitle')}
           value={copy.subtitle}
           onChange={(subtitle) => onChange(sectionId, { subtitle })}
-          placeholder="Optional supporting line under the title"
+          placeholder={t('Optional supporting line under the title')}
           multiline
         />
       ) : null}
 
       <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-        Content for this section is edited in Creator Studio → Information. These settings control visibility and
-        presentation on the portfolio page.
+        {t('Content for this section is edited in Creator Studio → Information. These settings control visibility and presentation on the portfolio page.')}
       </p>
     </div>
   );
@@ -4603,7 +4977,6 @@ type PortfolioSettingsModalProps = {
     sectionId: PortfolioSettingsContentKey,
     patch: Partial<PortfolioSettings[PortfolioSettingsContentKey]>
   ) => void;
-  onThemeChange: (themeId: PortfolioThemeId) => void;
   onGlobalChange: (patch: PortfolioGlobalSettingsPatch) => void;
   onColorModeChange: (mode: PortfolioColorMode) => void;
   onGlobalPaletteChange: (patch: Partial<PortfolioHeroPalette>) => void;
@@ -4613,11 +4986,6 @@ type PortfolioSettingsModalProps = {
     family?: 'indigo' | 'classic' | 'verdant' | 'vive' | 'safran' | 'citron' | 'rouge' | 'ecarlate' | 'ardoise' | 'custom'
   ) => void;
   onNavigationChange: (patch: Partial<PortfolioNavSettings>) => void;
-  onSaveCustomTheme: (themeId: string, name?: string) => boolean;
-  onRenameCustomTheme: (themeId: string, name: string) => boolean;
-  onDuplicateTheme: (themeId: PortfolioThemeId) => void;
-  onResetBuiltinTheme: (themeId: PortfolioBuiltinThemeId) => void;
-  onDeleteCustomTheme: (themeId: string) => void;
   onReset: () => void;
   onUndo?: () => void;
   onRedo?: () => void;
@@ -4633,6 +5001,12 @@ type PortfolioSettingsModalProps = {
   profileAvatarUrl?: string | null;
   /** Live Preview: scroll the iframe to the matching portfolio section. */
   onPreviewSectionFocus?: (sectionId: PortfolioSettingsSectionId) => void;
+  /**
+   * Controlled open section (the live preview's three-pane studio owns it: its section list on the
+   * left, clicks in the preview). Without it the panel keeps its own.
+   */
+  activeSectionId?: PortfolioSettingsSectionId;
+  onActiveSectionChange?: (sectionId: PortfolioSettingsSectionId) => void;
 };
 
 export function PortfolioSettingsModal({
@@ -4642,17 +5016,11 @@ export function PortfolioSettingsModal({
   settings,
   persistStatus = 'idle',
   onChange,
-  onThemeChange,
   onGlobalChange,
   onColorModeChange,
   onGlobalPaletteChange,
   onGlobalPalettePairChange,
   onNavigationChange,
-  onSaveCustomTheme,
-  onRenameCustomTheme,
-  onDuplicateTheme,
-  onResetBuiltinTheme,
-  onDeleteCustomTheme,
   onReset,
   onUndo,
   onRedo,
@@ -4665,10 +5033,36 @@ export function PortfolioSettingsModal({
   sectionLinkOptions = [],
   profileAvatarUrl = null,
   onPreviewSectionFocus,
+  activeSectionId,
+  onActiveSectionChange,
 }: PortfolioSettingsModalProps) {
+  const t = useT();
   const router = useRouter();
+  const { theme: appTheme } = useTheme();
+  const appColorMode = appTheme === 'light' ? 'light' : 'dark';
   const [mounted, setMounted] = useState(variant === 'dock');
-  const [activeSection, setActiveSection] = useState<PortfolioSettingsSectionId>('theme');
+  const [ownActiveSection, setOwnActiveSection] = useState<PortfolioSettingsSectionId>('theme');
+  const activeSection = activeSectionId ?? ownActiveSection;
+  const setActiveSection = useCallback(
+    (sectionId: PortfolioSettingsSectionId) => {
+      if (onActiveSectionChange) onActiveSectionChange(sectionId);
+      else setOwnActiveSection(sectionId);
+    },
+    [onActiveSectionChange]
+  );
+  /*
+   * Below lg the dock is one screen at a time, Shopify's mobile editor: the section list first, then a
+   * section's settings with a way back. From lg the list is the studio's left pane, so this is unused.
+   */
+  const [dockShowsList, setDockShowsList] = useState(true);
+  const controlledSectionRef = useRef(activeSectionId);
+  useEffect(() => {
+    // A section opened from outside (the left pane, a click in the preview) goes straight to its settings.
+    if (activeSectionId !== undefined && controlledSectionRef.current !== activeSectionId) {
+      controlledSectionRef.current = activeSectionId;
+      setDockShowsList(false);
+    }
+  }, [activeSectionId]);
   const [panelSubSections, setPanelSubSections] = useState<PanelSubSections>({});
   const [panelOpacity, setPanelOpacity] = useState(100);
   /** Temporarily hide the settings panel to inspect the live portfolio. */
@@ -4677,7 +5071,9 @@ export function PortfolioSettingsModal({
   useEffect(() => {
     setMounted(true);
     setPanelOpacity(readStoredModalOpacity());
-    setActiveSection(readStoredActiveSection());
+    if (activeSectionId === undefined) setOwnActiveSection(readStoredPortfolioSettingsSection());
+    // Mount only: a controlled panel is seeded by its owner.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   useEffect(() => {
@@ -4687,7 +5083,7 @@ export function PortfolioSettingsModal({
 
   useEffect(() => {
     if (!mounted) return;
-    window.sessionStorage.setItem(MODAL_SECTION_STORAGE_KEY, activeSection);
+    storePortfolioSettingsSection(activeSection);
   }, [mounted, activeSection]);
 
   useEffect(() => {
@@ -4736,7 +5132,7 @@ export function PortfolioSettingsModal({
   const selectSection = useCallback((sectionId: PortfolioSettingsSectionId) => {
     setActiveSection(sectionId);
     onPreviewSectionFocus?.(sectionId);
-  }, [onPreviewSectionFocus]);
+  }, [onPreviewSectionFocus, setActiveSection]);
 
   const setPanelSubSection = useCallback(
     <K extends keyof PanelSubSections>(sectionId: K, value: NonNullable<PanelSubSections[K]>) => {
@@ -4798,30 +5194,17 @@ export function PortfolioSettingsModal({
     } else if (entry.sectionId === 'footer') {
       setPanelSubSections((prev) => ({ ...prev, footer: normalizeFooterSubSection(entry.subSection) }));
     }
-  }, [onPreviewSectionFocus]);
+  }, [onPreviewSectionFocus, setActiveSection]);
 
-  const visibleSettingsSections = useMemo(() => {
-    const filtered = PORTFOLIO_SETTINGS_SECTIONS.filter(
-      (section) =>
-        section.id !== 'aboutUs' || portfolioPresenceShowsAboutUs(settings.global.presenceKind)
-    );
-    // Keep this menu's order in sync with Global → Section display order: Global,
-    // Navigation and Hero always lead, then the reorderable content sections in the
-    // order the user picked, then Footer trails (falls through to the end — it's
-    // absent from the resolved content order).
-    const contentOrder = resolvePortfolioContentSectionOrder(settings.global.sectionOrder);
-    const contentRank = new Map(contentOrder.map((key, index) => [key as string, index]));
-    const leadingRank: Partial<Record<PortfolioSettingsSectionId, number>> = {
-      theme: -3,
-      navigation: -2,
-      hero: -1,
-    };
-    return [...filtered].sort((a, b) => {
-      const rankA = leadingRank[a.id] ?? contentRank.get(a.id) ?? Number.MAX_SAFE_INTEGER;
-      const rankB = leadingRank[b.id] ?? contentRank.get(b.id) ?? Number.MAX_SAFE_INTEGER;
-      return rankA - rankB;
-    });
-  }, [settings.global.presenceKind, settings.global.sectionOrder]);
+  // Global, Navigation and Hero lead, then the content sections in the page's order, then Footer.
+  const visibleSettingsSections = useMemo(
+    () =>
+      getVisiblePortfolioSettingsSections({
+        presenceKind: settings.global.presenceKind,
+        sectionOrder: settings.global.sectionOrder,
+      }),
+    [settings.global.presenceKind, settings.global.sectionOrder]
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -4858,7 +5241,9 @@ export function PortfolioSettingsModal({
     PORTFOLIO_SETTINGS_SECTIONS[0];
 
   const sectionPanel = (
-    <PortfolioGlobalMotionProvider value={settings.global.motionEnabled !== false}>
+    <PortfolioGlobalMotionProvider
+      value={settings.global.motionEnabled !== false && settings.global.headerMotionEnabled !== false}
+    >
     <PortfolioBackgroundLibraryProvider
       library={settings.global.backgroundImageLibrary ?? []}
       onLibraryChange={(backgroundImageLibrary) => onGlobalChange({ backgroundImageLibrary })}
@@ -4867,17 +5252,11 @@ export function PortfolioSettingsModal({
         section={activeMeta}
         settings={settings}
         onChange={onChange}
-        onThemeChange={onThemeChange}
         onGlobalChange={onGlobalChange}
         onColorModeChange={onColorModeChange}
         onGlobalPaletteChange={onGlobalPaletteChange}
         onGlobalPalettePairChange={onGlobalPalettePairChange}
         onNavigationChange={onNavigationChange}
-        onSaveCustomTheme={onSaveCustomTheme}
-        onRenameCustomTheme={onRenameCustomTheme}
-        onDuplicateTheme={onDuplicateTheme}
-        onResetBuiltinTheme={onResetBuiltinTheme}
-        onDeleteCustomTheme={onDeleteCustomTheme}
         availableTools={availableTools}
         availableWorks={availableWorks}
         availableServices={availableServices}
@@ -4886,45 +5265,86 @@ export function PortfolioSettingsModal({
         profileAvatarUrl={profileAvatarUrl}
         panelSubSections={panelSubSections}
         onPanelSubSectionChange={setPanelSubSection}
+        navigationChrome={
+          variant === 'dock'
+            ? {
+                onBack: () => setDockShowsList(true),
+                onClose: handleClose,
+                onUndo: () => onUndo?.(),
+                onRedo: () => onRedo?.(),
+                canUndo,
+                canRedo,
+                onDone: handleClose,
+              }
+            : undefined
+        }
       />
     </PortfolioBackgroundLibraryProvider>
     </PortfolioGlobalMotionProvider>
   );
 
   if (variant === 'dock') {
-    const dockPalette = resolveActivePortfolioPalette(settings.global);
+    /*
+     * The dock is the app's chrome, not part of the portfolio: it follows the app's light / dark theme
+     * and its black & white palette (globals.css sets the `--pf-palette-*` variables the panels read
+     * from `data-color-mode`), whatever palette and mode the portfolio itself uses.
+     *
+     * Navigation frames itself (title, status, history, tabs, reset · done): the dock's own header
+     * and footer step aside, except around the section list below lg.
+     */
+    const navigationFramesItself = activeMeta.id === 'navigation';
+    const dockChromeClass = navigationFramesItself ? (dockShowsList ? 'lg:hidden' : 'hidden') : '';
     return (
-      <div
-        className="portfolio-studio-dock flex h-full min-h-0 flex-col"
-        data-color-mode={(settings.global.colorMode ?? 'dark') === 'light' ? 'light' : 'dark'}
-        style={{
-          ...portfolioPaletteCssVars(dockPalette),
-          backgroundColor: dockPalette.fond,
-          color: dockPalette.texteFort,
-          borderColor: dockPalette.bordure,
-        }}
-      >
-        <div className="relative z-20 shrink-0 border-b px-5 py-2.5" style={{ borderColor: dockPalette.bordure }}>
-          <div className="flex items-center justify-between gap-3">
-            <div className="flex min-w-0 items-center">
+      <div className="portfolio-studio-dock flex h-full min-h-0 flex-col" data-color-mode={appColorMode}>
+        <div
+          className={`relative z-20 flex h-16 shrink-0 items-center border-b border-[color:var(--pf-palette-bordure)] px-5 ${dockChromeClass}`}
+        >
+          <div className="flex w-full items-center justify-between gap-3">
+            <div className="flex h-9 min-w-0 items-center">
               <h2 id="portfolio-settings-title" className="sr-only">
-                Settings
+                {t('Settings')}
               </h2>
-              <DockSectionDropdown
-                sections={visibleSettingsSections}
-                activeId={activeSection}
-                onSelect={selectSection}
-                onUpgrade={openUpgradePage}
-                persistStatus={persistStatus}
-              />
+              {/* From lg: the open section's name (the list is the studio's left pane). */}
+              <p className="hidden min-w-0 items-center gap-2 lg:flex">
+                <span className="truncate text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--pf-palette-texte-fort)]">
+                  {t(activeMeta.label)}
+                </span>
+                <DockSaveDot persistStatus={persistStatus} />
+              </p>
+              {/* Below lg: "Sections", or the open section with the way back to the list. */}
+              {dockShowsList ? (
+                <p className="flex min-w-0 items-center gap-2 lg:hidden">
+                  <span className="truncate text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--pf-palette-texte-fort)]">
+                    {t('Sections')}
+                  </span>
+                  <DockSaveDot persistStatus={persistStatus} />
+                </p>
+              ) : (
+                <div className="flex min-w-0 items-center gap-1.5 lg:hidden">
+                  <button
+                    type="button"
+                    onClick={() => setDockShowsList(true)}
+                    aria-label={t('All sections')}
+                    className="-ml-2 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-fort)] transition hover:bg-[color:var(--pf-palette-neutre)]"
+                  >
+                    <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                      <path d="M15 6l-6 6 6 6" />
+                    </svg>
+                  </button>
+                  <span className="truncate text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--pf-palette-texte-fort)]">
+                    {t(activeMeta.label)}
+                  </span>
+                  <DockSaveDot persistStatus={persistStatus} />
+                </div>
+              )}
               <p className="sr-only" aria-live="polite">
                 {persistStatus === 'saving'
-                  ? 'Saving'
+                  ? t('Saving')
                   : persistStatus === 'saved'
-                    ? 'Saved'
+                    ? t('Saved')
                     : persistStatus === 'error'
-                      ? 'Not saved — retrying'
-                      : 'Synced with your account'}
+                      ? t('Not saved — retrying')
+                      : t('Synced with your account')}
               </p>
             </div>
             <div className="flex shrink-0 items-center gap-1.5">
@@ -4939,34 +5359,75 @@ export function PortfolioSettingsModal({
           </div>
         </div>
 
-        <div
-          className="portfolio-studio-dock-surface min-h-0 flex-1 overflow-y-auto px-5 py-5"
-          style={{ backgroundColor: dockPalette.fond, color: dockPalette.texteFort }}
-        >
-          <div className="mb-8">
-            <PortfolioSettingsSearchBar appearance="underline" onSelect={handleSearchSelect} />
+        {navigationFramesItself ? (
+          <>
+            {dockShowsList ? (
+              <div className="min-h-0 flex-1 overflow-y-auto lg:hidden">
+                <PortfolioStudioSectionList
+                  sections={visibleSettingsSections}
+                  activeId={activeSection}
+                  tone="palette"
+                  variant="drill"
+                  onSelect={(sectionId) => {
+                    selectSection(sectionId);
+                    setDockShowsList(false);
+                  }}
+                />
+              </div>
+            ) : null}
+            <div
+              className={`portfolio-studio-dock-surface min-h-0 flex-1 flex-col ${dockShowsList ? 'hidden lg:flex' : 'flex'}`}
+            >
+              {sectionPanel}
+            </div>
+          </>
+        ) : (
+        <div className="portfolio-studio-dock-surface min-h-0 flex-1 overflow-y-auto px-5 py-5">
+          {dockShowsList ? (
+            <div className="-mx-5 -mt-3 lg:hidden">
+              <PortfolioStudioSectionList
+                sections={visibleSettingsSections}
+                activeId={activeSection}
+                tone="palette"
+                variant="drill"
+                onSelect={(sectionId) => {
+                  selectSection(sectionId);
+                  setDockShowsList(false);
+                }}
+              />
+            </div>
+          ) : null}
+          <div className={dockShowsList ? 'hidden lg:block' : ''}>
+            <div className="mb-8">
+              <PortfolioSettingsSearchBar
+                appearance="underline"
+                onSelect={(entry) => {
+                  handleSearchSelect(entry);
+                  setDockShowsList(false);
+                }}
+              />
+            </div>
+            {sectionPanel}
           </div>
-          {sectionPanel}
         </div>
+        )}
 
         <div
-          className="flex shrink-0 items-center justify-between gap-4 border-t px-5 py-3.5"
-          style={{ borderColor: dockPalette.bordure }}
+          className={`flex h-16 shrink-0 items-center justify-between gap-4 border-t border-[color:var(--pf-palette-bordure)] px-5 ${dockChromeClass}`}
         >
           <button
             type="button"
             onClick={onReset}
-            className="text-[10px] font-semibold uppercase tracking-[0.16em] transition hover:opacity-80"
-            style={{ color: dockPalette.texteMuted }}
+            className="rounded-full px-1 text-[14px] font-semibold text-[color:var(--pf-palette-texte-muted)] underline-offset-4 transition-colors hover:text-[color:var(--pf-palette-texte-fort)] hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
           >
-            Reset defaults
+            {t('Reset defaults')}
           </button>
           <button
             type="button"
             onClick={handleClose}
-            className="portfolio-studio-dock-done rounded-full transition duration-200 ease-out hover:scale-[1.04]"
+            className="portfolio-studio-dock-done rounded-full transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
           >
-            Done
+            {t('Done')}
           </button>
         </div>
       </div>
@@ -4983,19 +5444,19 @@ export function PortfolioSettingsModal({
       {peekPreview ? (
         <div className="pointer-events-none fixed inset-x-0 bottom-0 z-[210] flex justify-center p-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
           <div className="pointer-events-auto flex max-w-md items-center gap-3 rounded-full border border-neutral-200/90 bg-white/95 px-3 py-2 shadow-[0_12px_40px_rgba(0,0,0,0.14)] backdrop-blur-md">
-            <p className="pl-2 text-sm font-semibold text-neutral-800">Previewing portfolio</p>
+            <p className="pl-2 text-sm font-semibold text-neutral-800">{t('Previewing portfolio')}</p>
             <button
               type="button"
               onClick={() => setPeekPreview(false)}
               className="inline-flex min-h-11 items-center rounded-full bg-neutral-950 px-4 py-2.5 text-sm font-bold text-white"
             >
-              Back to settings
+              {t('Back to settings')}
             </button>
             <button
               type="button"
               onClick={handleClose}
               className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full text-neutral-500 hover:bg-neutral-100 hover:text-neutral-900"
-              aria-label="Close settings"
+              aria-label={t('Close settings')}
             >
               <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
@@ -5019,7 +5480,7 @@ export function PortfolioSettingsModal({
           backdropFilter: `blur(${backdropBlur}px)`,
           WebkitBackdropFilter: `blur(${backdropBlur}px)`,
         }}
-        aria-label="Close settings"
+        aria-label={t('Close settings')}
         onClick={handleClose}
         tabIndex={peekPreview ? -1 : undefined}
       />
@@ -5047,7 +5508,7 @@ export function PortfolioSettingsModal({
                 id="portfolio-settings-title"
                 className="text-lg font-extrabold tracking-tight text-neutral-950 sm:text-xl"
               >
-                Portfolio settings
+                {t('Portfolio settings')}
               </h2>
               <p
                 className={`mt-0.5 text-xs font-medium ${
@@ -5062,12 +5523,12 @@ export function PortfolioSettingsModal({
                 aria-live="polite"
               >
                 {persistStatus === 'saving'
-                  ? 'Saving to your account…'
+                  ? t('Saving to your account…')
                   : persistStatus === 'saved'
-                    ? 'Saved to your account'
+                    ? t('Saved to your account')
                     : persistStatus === 'error'
-                      ? 'Not saved — kept on this device, retrying…'
-                      : 'Synced with your account'}
+                      ? t('Not saved — kept on this device, retrying…')
+                      : t('Synced with your account')}
               </p>
             </div>
 
@@ -5086,7 +5547,7 @@ export function PortfolioSettingsModal({
                 type="button"
                 onClick={handleClose}
                 className="inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-neutral-500 transition hover:bg-neutral-100 hover:text-neutral-800"
-                aria-label="Close"
+                aria-label={t('Close')}
               >
                 <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
                   <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
@@ -5110,7 +5571,7 @@ export function PortfolioSettingsModal({
                   value={panelOpacity}
                   onChange={(event) => setPanelOpacity(Number(event.target.value))}
                   className="h-1 min-w-0 flex-1 cursor-pointer accent-neutral-700"
-                  aria-label="Settings panel transparency"
+                  aria-label={t('Settings panel transparency')}
                 />
                 <span className="text-xs font-semibold tabular-nums text-neutral-600">{panelOpacity}%</span>
               </div>
@@ -5123,7 +5584,7 @@ export function PortfolioSettingsModal({
             className={`border-b border-neutral-200/80 p-3 lg:border-b-0 lg:border-r lg:overflow-y-auto ${
               previewMode ? 'bg-neutral-50/35' : 'bg-neutral-50/50'
             }`}
-            aria-label="Portfolio sections"
+            aria-label={t('Portfolio sections')}
           >
             <ul className="grid max-h-40 grid-cols-2 gap-1 overflow-y-auto sm:max-h-48 sm:grid-cols-3 lg:flex lg:max-h-none lg:flex-col lg:overflow-visible">
               {visibleSettingsSections.map((section) => {
@@ -5139,7 +5600,7 @@ export function PortfolioSettingsModal({
                           : 'font-medium text-neutral-600 hover:bg-white/70 hover:text-neutral-900'
                       }`}
                     >
-                      {section.label}
+                      {t(section.label)}
                     </button>
                   </li>
                 );
@@ -5150,7 +5611,7 @@ export function PortfolioSettingsModal({
                   onClick={openUpgradePage}
                   className="flex min-h-11 w-full items-center justify-between rounded-xl bg-red-500/10 px-3 py-2.5 text-left text-sm font-semibold text-red-500 transition hover:bg-red-500/15"
                 >
-                  <span>Upgrade</span>
+                  <span>{t('Upgrade')}</span>
                   <span aria-hidden className="text-xs font-bold opacity-70">
                     ↗
                   </span>
@@ -5162,8 +5623,8 @@ export function PortfolioSettingsModal({
           <div className="min-h-0 overflow-y-auto px-4 py-4 sm:px-6 sm:py-6">
             {activeSection !== 'hero' && activeSection !== 'theme' ? (
               <div className="mb-6">
-                <h3 className="text-lg font-bold text-neutral-950">{activeMeta.label}</h3>
-                <p className="mt-1 text-sm leading-relaxed text-neutral-500">{activeMeta.description}</p>
+                <h3 className="text-lg font-bold text-neutral-950">{t(activeMeta.label)}</h3>
+                <p className="mt-1 text-sm leading-relaxed text-neutral-500">{t(activeMeta.description)}</p>
               </div>
             ) : null}
             {sectionPanel}
@@ -5176,7 +5637,7 @@ export function PortfolioSettingsModal({
             onClick={onReset}
             className="min-h-11 text-sm font-semibold text-neutral-500 transition hover:text-neutral-800"
           >
-            Reset defaults
+            {t('Reset defaults')}
           </button>
           <div className="flex items-center gap-2">
             <div className="lg:hidden">
@@ -5187,7 +5648,7 @@ export function PortfolioSettingsModal({
               onClick={handleClose}
               className="inline-flex min-h-11 items-center rounded-full bg-neutral-950 px-6 py-2.5 text-sm font-bold text-white transition hover:bg-neutral-800"
             >
-              Done
+              {t('Done')}
             </button>
           </div>
         </div>

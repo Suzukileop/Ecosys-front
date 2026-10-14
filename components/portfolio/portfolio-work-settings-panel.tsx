@@ -1,6 +1,12 @@
 'use client';
 
+import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
 import { useId, useState, type ReactNode } from 'react';
+import {
+  PortfolioDesignLivePreviewCard,
+  usePortfolioDesignPreviewSource,
+} from '@/components/portfolio/PortfolioDesignLivePreview';
+import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { PORTFOLIO_WORK_CARD_BORDER_OPTIONS, PORTFOLIO_WORK_CARD_RADIUS_OPTIONS, PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS, PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_MARKER_OPTIONS, workSectionDesignSettingsPatch, DEFAULT_PROJECTS_BOARD_SETTINGS, DEFAULT_PROJECTS_ACCORDION_SETTINGS, DEFAULT_PROJECTS_FRAMES_SETTINGS, DEFAULT_PROJECTS_INDEX_SETTINGS, PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS, DEFAULT_PROJECTS_GRID_SETTINGS, DEFAULT_PROJECTS_SPLIT_SETTINGS, DEFAULT_PROJECTS_CAROUSEL_SETTINGS, DEFAULT_PROJECTS_SHOWCASE_SETTINGS, DEFAULT_PROJECTS_LEDGER_SETTINGS, DEFAULT_PROJECTS_SPEC_SETTINGS, DEFAULT_PROJECTS_CASE_SETTINGS, DEFAULT_PROJECTS_PRESS_SETTINGS, PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS, DEFAULT_PROJECTS_DUOTONE_SETTINGS, PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS, PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS, PORTFOLIO_WORK_SPEC_FRAME_OPTIONS, PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS, PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS, PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS, PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS, PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS, PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS, PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS, PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS, PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS, PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS, PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS, PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS, DEFAULT_PROJECTS_CASCADE_SETTINGS, PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS, PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS, PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS, WORK_PALETTE_TOKEN_OPTIONS, WORK_BILLBOARD_WORD_STYLE_OPTIONS, WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS, workPaletteTokenColor, type PortfolioWorkBillboardWordStyle, type PortfolioWorkHeaderDesign, type PortfolioWorkHeaderTitleSize, type PortfolioWorkPaletteToken, type PortfolioWorkProjectsSpecConsultDesign, type PortfolioWorkSectionDesign, type PortfolioWorkSectionSettings } from '@/components/portfolio/portfolio-work-settings';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -22,6 +28,9 @@ import {
 } from '@/components/portfolio/portfolio-work-palette-settings';
 import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
+import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
 
 export type WorkSettingsSubSection =
   | 'general'
@@ -47,16 +56,16 @@ const WORK_SETTINGS_SUB_SECTIONS: {
 }[] = [
   {
     id: 'general',
-    label: 'General',
-    description: 'Content is edited in Creator Studio → Information — this tab only controls visibility & presentation.',
+    label: msg('General'),
+    description: msg('Content is edited in Creator Studio → Information — this tab only controls visibility & presentation.'),
   },
-  { id: 'header', label: 'Header', description: 'Title and subtitle presets, fonts, and colors.' },
   {
     id: 'design',
-    label: 'Design',
-    description: 'Named Portfolio layouts — projects board, accordion, frames, and more.',
+    label: msg('Design'),
+    description: msg('Named Portfolio layouts — projects board, accordion, frames, and more.'),
   },
-  { id: 'background', label: 'Background', description: 'Section fill, gradients, and opacity.' },
+  { id: 'header', label: msg('Header'), description: msg('Title and subtitle presets, fonts, and colors.') },
+  { id: 'background', label: msg('Background'), description: msg('Section fill, gradients, and opacity.') },
 ];
 
 /** Map legacy subsection ids (saved UI state / search) to the current 4-tab menu. */
@@ -77,7 +86,7 @@ export function normalizeWorkSettingsSubSection(value: string | undefined): Work
   ) {
     return 'design';
   }
-  return 'header';
+  return 'general';
 }
 
 const WORK_BACKGROUND_LABEL_SLOTS: Record<string, WorkColorSlot> = {
@@ -115,6 +124,7 @@ function WorkColorField({
   /** When palette is on, also show a hex picker that overrides the token until rebound. */
   allowManualHex?: boolean;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const paletteOn = work.useHeroPalette !== false;
   const isManualOverride =
@@ -144,11 +154,11 @@ function WorkColorField({
       <div className="space-y-2">
         <div className="flex items-start justify-between gap-3">
           {rows ? null : (<div className="min-w-0">
-            <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-            {description ? <p className="mt-1 text-sm text-neutral-500">{description}</p> : null}
+            <p className="pf-stack-block-label">{label}</p>
+            {description ? <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</p> : null}
           </div>)}
           <span
-            className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-neutral-200"
+            className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
             style={{ backgroundColor: isManualOverride ? value : resolved }}
             title={isManualOverride ? value : resolved}
             aria-hidden
@@ -163,32 +173,31 @@ function WorkColorField({
               )
             )
           }
-          className="w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-800 focus:border-neutral-400 focus:outline-none"
-          aria-label={`${label} palette token`}
+          className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+          aria-label={t('{label} palette token', { label })}
         >
           {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
             <option key={option.value} value={option.value}>
-              {option.label}
+              {t(option.label)}
             </option>
           ))}
         </select>
         {!allowManualHex ? (
-          <p className="text-xs text-neutral-500">
-            Bound to token · edit hex under{' '}
-            <span className="font-semibold text-neutral-700">Global → Theme</span>
+          <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+            {t('Bound to token · edit hex under')}{' '}
+            <span className="font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Global → Theme')}</span>
           </p>
         ) : (
-          <p className="text-xs text-neutral-500">
-            Token palette{isManualOverride ? ' · override manuel actif' : ''} · changez le token pour
-            resynchroniser.
+          <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+            {t('Token palette')}{isManualOverride ? t('· manual override on') : ''} {t('· change the token to resync.')}
           </p>
         )}
       </div>
 
       {allowManualHex ? (
         <WorkManualColorField
-          label="Couleur manuelle"
-          description="Hex indépendant du token. Changer le token ci-dessus annule l’override."
+          label={t('Manual colour')}
+          description={t('Hex independent of the token. Changing the token above cancels the override.')}
           value={value}
           onChange={(hex) => onChange(asWorkPatch(patchWorkColorFieldManual(work, slot, hex)))}
         />
@@ -213,14 +222,14 @@ function WorkManualColorField({
   return (
     <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
     <div>
-      {rows ? null : (<p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>)}
-      {description ? <p className="mt-1 text-sm text-neutral-500">{description}</p> : null}
+      {rows ? null : (<p className="pf-stack-block-label">{label}</p>)}
+      {description ? <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-neutral-200 bg-white p-1"
+          className="h-11 w-14 cursor-pointer rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
           aria-label={`${label} picker`}
         />
         <input
@@ -230,11 +239,11 @@ function WorkManualColorField({
             const next = event.target.value.trim();
             if (isValidProfileHexColor(next)) onChange(next);
           }}
-          className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 text-sm font-mono text-neutral-900"
+          className="w-28 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm font-mono text-[color:var(--pf-palette-texte-fort)]"
           aria-label={`${label} hex`}
         />
         <span
-          className="h-11 w-20 rounded-xl border border-neutral-200/80 shadow-inner"
+          className="h-11 w-20 rounded-xl border border-[color:var(--pf-palette-bordure)] shadow-inner"
           style={{ backgroundColor: value }}
           aria-hidden
         />
@@ -259,6 +268,7 @@ function WorkSwitchTrack({ checked }: { checked: boolean }) {
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. */
 function WorkInfoTooltip({ text }: { text: string }) {
+  const t = useT();
   const [open, setOpen] = useState(false);
   const tooltipId = useId();
   return (
@@ -266,12 +276,12 @@ function WorkInfoTooltip({ text }: { text: string }) {
       <button
         type="button"
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={`More info: ${text}`}
+        aria-label={t('More info: {text}', { text })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-neutral-400 transition hover:text-neutral-600 focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -293,7 +303,7 @@ function WorkInfoTooltip({ text }: { text: string }) {
 }
 
 function WorkSectionLabel({ children }: { children: ReactNode }) {
-  return <p className="text-xs font-bold uppercase tracking-[0.14em] text-neutral-500">{children}</p>;
+  return <p className="pf-stack-block-label">{children}</p>;
 }
 
 function WorkToggleRow({
@@ -311,10 +321,10 @@ function WorkToggleRow({
   const rows = useSettingsRows();
   if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-neutral-200/80 py-3.5 last:border-b-0">
+    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--pf-palette-bordure)] py-3.5 last:border-b-0">
       <div className="flex min-w-0 items-center gap-1.5">
         <span
-          className="min-w-0 cursor-pointer truncate text-sm font-medium text-neutral-950"
+          className="min-w-0 cursor-pointer truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]"
           onClick={() => onChange(!checked)}
         >
           {label}
@@ -350,6 +360,7 @@ function WorkOptionGrid<T extends string | number>({
   columns?: 1 | 2 | 3 | 4;
   icons?: Partial<Record<string, ReactNode>>;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const compact = columns === options.length && options.length >= 2 && options.length <= 5;
   return (
@@ -372,13 +383,13 @@ function WorkOptionGrid<T extends string | number>({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.description}
+              title={t(option.description)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-work-segment-btn flex items-center justify-center gap-1 px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
             >
               {icon ? <span className="pf-work-segment-icon">{icon}</span> : null}
-              <span>{option.label}</span>
+              <span>{t(option.label)}</span>
             </button>
           );
         })}
@@ -401,6 +412,7 @@ function WorkSlider<T extends string>({
   options: { value: T; label: string }[];
   onChange: (value: T) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const index = Math.max(
     0,
@@ -414,7 +426,7 @@ function WorkSlider<T extends string>({
     <div>
       {rows ? null : (<div className="pf-work-slider-row">
         <span className="pf-work-slider-label">{label}</span>
-        <span className="pf-work-slider-value">{current?.label}</span>
+        <span className="pf-work-slider-value">{t(current?.label)}</span>
       </div>)}
       <input
         type="range"
@@ -455,6 +467,7 @@ function WorkSizePill({
   value: PortfolioWorkHeaderTitleSize;
   onChange: (value: PortfolioWorkHeaderTitleSize) => void;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   return (
     <SettingRow label={label} value={String(value ?? '')}>
@@ -474,13 +487,13 @@ function WorkSizePill({
               type="button"
               role="radio"
               aria-checked={active}
-              title={option.label}
+              title={t(option.label)}
               onClick={() => onChange(option.value)}
               data-active={active ? 'true' : 'false'}
               className="pf-work-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
               style={{ fontSize: `${option.fontPx}px` }}
             >
-              {option.label}
+              {t(option.label)}
             </button>
           );
         })}
@@ -567,6 +580,7 @@ function WorkPreviewCardGrid<T extends string>({
   onChange: (value: T) => void;
   columns?: number;
 }) {
+  const t = useT();
   const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
@@ -583,7 +597,7 @@ function WorkPreviewCardGrid<T extends string>({
           <WorkPickerCard
             key={option.value}
             active={option.value === value}
-            label={option.label}
+            label={t(option.label)}
             onClick={() => onChange(option.value)}
             compact
           >
@@ -1073,22 +1087,23 @@ function WorkDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="pf-work-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={`Change ${label.toLowerCase()}`}
-        className="flex w-full items-center gap-3 rounded-2xl border border-neutral-200/80 px-3 py-2.5 text-left transition hover:border-neutral-300"
+        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-neutral-200/80 bg-white">
+        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
           <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
             {children}
           </span>
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-neutral-950">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-neutral-400" aria-hidden>
+        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
+        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
           <path
             d="M7.5 4.5l5 5.5-5 5.5"
             stroke="currentColor"
@@ -1110,24 +1125,46 @@ function WorkDesignChoiceGrid({
   value: PortfolioWorkSectionDesign;
   onChange: (value: PortfolioWorkSectionDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS[0];
+  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-work-block-label !mb-0">Section design</p>
+          <p className="pf-work-block-label !mb-0">{t('Section design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
+        {previewSource ? (
+          /* In the studio: every design rendered for real, one per row. */
+          <div className="mt-3 flex flex-col gap-3">
+            {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => (
+              <PortfolioDesignLivePreviewCard
+                key={option.value}
+                cardClassName="pf-work-design-card"
+                labelClassName="pf-work-card-label"
+                active={option.value === value}
+                label={t(option.label)}
+                src={withDesignPreview(previewSource.portfolioPath, { section: 'work', design: option.value })}
+                settings={previewSource.settings}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            ))}
+          </div>
+        ) : (
         <div className="mt-3 grid grid-cols-2 gap-4">
           {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => {
             const active = option.value === value;
@@ -1135,7 +1172,7 @@ function WorkDesignChoiceGrid({
               <WorkPickerCard
                 key={option.value}
                 active={active}
-                label={option.label}
+                label={t(option.label)}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
@@ -1146,12 +1183,13 @@ function WorkDesignChoiceGrid({
             );
           })}
         </div>
+        )}
       </div>
     );
   }
 
   return (
-    <WorkDesignSummaryRow label="Section design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <WorkDesignSummaryRow label={t('Section design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <WorkDesignWireframe design={value} />
     </WorkDesignSummaryRow>
   );
@@ -1159,6 +1197,7 @@ function WorkDesignChoiceGrid({
 
 /** Mini wireframes for the 5 "Header design" picker cards. */
 function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) {
+  const t = useT();
   switch (design) {
     case 'editorial':
       return (
@@ -1180,7 +1219,7 @@ function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) 
             opacity={0.14}
             className="pf-work-mini-ink"
           >
-            WORK
+            {t('WORK')}
           </text>
           <rect className="pf-work-mini-ink" x="18" y="30" width="84" height="10" rx="2" />
         </WorkMiniSlide>
@@ -1224,7 +1263,7 @@ function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) 
             opacity={0.1}
             className="pf-work-mini-ink"
           >
-            WORK
+            {t('WORK')}
           </text>
           <rect className="pf-work-mini-ink" x="18" y="30" width="60" height="8" rx="2" />
           <rect className="pf-work-mini-mute" x="18" y="42" width="40" height="3" rx="1.5" />
@@ -1260,6 +1299,7 @@ function WorkHeaderChoiceGrid({
   value: PortfolioWorkHeaderDesign;
   onChange: (value: PortfolioWorkHeaderDesign) => void;
 }) {
+  const t = useT();
   const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
@@ -1269,13 +1309,13 @@ function WorkHeaderChoiceGrid({
     return (
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="pf-work-block-label !mb-0">Header design</p>
+          <p className="pf-work-block-label !mb-0">{t('Header design')}</p>
           <button
             type="button"
             onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-neutral-500 hover:text-neutral-800"
+            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
           >
-            ← Back
+            {t('← Back')}
           </button>
         </div>
         <div className="mt-3 grid grid-cols-2 gap-4">
@@ -1285,7 +1325,7 @@ function WorkHeaderChoiceGrid({
               <PortfolioHeaderDesignOption key={option.value} design={option.value}>
                 <WorkPickerCard
                   active={active}
-                  label={option.label}
+                  label={t(option.label)}
                   onClick={() => {
                     onChange(option.value);
                     setShowGrid(false);
@@ -1302,24 +1342,24 @@ function WorkHeaderChoiceGrid({
   }
 
   return (
-    <WorkDesignSummaryRow label="Header design" name={selected.label} onOpen={() => setShowGrid(true)}>
+    <WorkDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
       <WorkHeaderWireframe design={value} />
     </WorkDesignSummaryRow>
   );
 }
 
 const WORK_HEADER_MARGIN_BOTTOM_OPTIONS = [
-  { value: 'sm' as const, label: 'Small' },
-  { value: 'md' as const, label: 'Medium' },
-  { value: 'lg' as const, label: 'Large' },
+  { value: 'sm' as const, label: msg('Small') },
+  { value: 'md' as const, label: msg('Medium') },
+  { value: 'lg' as const, label: msg('Large') },
   { value: 'xl' as const, label: 'XL' },
 ];
 
 const WORK_HEADER_TITLE_WEIGHT_OPTIONS = [
-  { value: 'light' as const, label: 'Light', description: 'Lighter than this design’s default.' },
-  { value: 'regular' as const, label: 'Regular', description: 'This design’s default weight.' },
-  { value: 'semibold' as const, label: 'Semibold', description: 'A step bolder.' },
-  { value: 'bold' as const, label: 'Bold', description: 'The boldest step.' },
+  { value: 'light' as const, label: msg('Light'), description: msg('Lighter than this design’s default.') },
+  { value: 'regular' as const, label: msg('Regular'), description: msg('This design’s default weight.') },
+  { value: 'semibold' as const, label: msg('Semibold'), description: msg('A step bolder.') },
+  { value: 'bold' as const, label: msg('Bold'), description: msg('The boldest step.') },
 ];
 
 /** Shared across every header design — bottom spacing, title size, and title weight.
@@ -1338,15 +1378,16 @@ function WorkHeaderSharedAdvancedControls({
   hideAlignment?: boolean;
   hideTitleControls?: boolean;
 }) {
+  const t = useT();
   return (
     <>
       {hideAlignment ? null : (
         <WorkOptionGrid
-          label="Header alignment"
+          label={t('Header alignment')}
           options={[
-            { value: 'left' as const, label: 'Left', description: 'Default editorial alignment.' },
-            { value: 'center' as const, label: 'Center', description: 'Centered title and subtitle.' },
-            { value: 'right' as const, label: 'Right', description: 'Right-aligned title and subtitle.' },
+            { value: 'left' as const, label: t('Left'), description: t('Default editorial alignment.') },
+            { value: 'center' as const, label: t('Center'), description: t('Centered title and subtitle.') },
+            { value: 'right' as const, label: t('Right'), description: t('Right-aligned title and subtitle.') },
           ]}
           value={work.headerAlignment}
           onChange={(headerAlignment) => onChange({ headerAlignment })}
@@ -1354,7 +1395,7 @@ function WorkHeaderSharedAdvancedControls({
         />
       )}
       <WorkSlider
-        label="Bottom spacing"
+        label={t('Bottom spacing')}
         options={WORK_HEADER_MARGIN_BOTTOM_OPTIONS}
         value={work.headerMarginBottom ?? 'md'}
         onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
@@ -1362,12 +1403,12 @@ function WorkHeaderSharedAdvancedControls({
       {hideTitleControls ? null : (
         <>
           <WorkSizePill
-            label="Title size"
+            label={t('Title size')}
             value={work.headerTitleSize ?? 'md'}
             onChange={(headerTitleSize) => onChange({ headerTitleSize })}
           />
           <WorkOptionGrid
-            label="Title weight"
+            label={t('Title weight')}
             options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
             value={work.headerTitleWeight ?? 'regular'}
             onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
@@ -1386,6 +1427,7 @@ function WorkLayoutDisplayOptions({
   work: PortfolioWorkSectionSettings;
   onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
 }) {
+  const t = useT();
   const design = work.sectionDesign ?? 'projects-board';
   // Press's own options (Eyebrow, Intro text, Thumbnail radius) live in the Design tab now,
   // alongside every other design's layout settings — nothing left to show here.
@@ -1393,13 +1435,12 @@ function WorkLayoutDisplayOptions({
   const layoutLabel =
     PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === design)?.label ?? '';
   return (
-    <div>
-      <WorkSectionLabel>{`Display options — ${layoutLabel}`}</WorkSectionLabel>
-      <div className="mt-4" key={design}>
+    <SettingsGroup label={t('{design} — what shows', { design: t(layoutLabel) })}>
+      <div key={design}>
       {design === 'projects-board' ? (
         <>
           <WorkToggleRow
-            label="Thumbnails"
+            label={t('Thumbnails')}
             info="Upload in Information → Portfolio"
             checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showThumbnail}
             onChange={(showThumbnail) =>
@@ -1413,7 +1454,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showRole}
             onChange={(showRole) =>
               onChange({
@@ -1426,7 +1467,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showCategory}
             onChange={(showCategory) =>
               onChange({
@@ -1439,7 +1480,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Case study link"
+            label={t('Case study link')}
             info="Text link at the bottom of the card, links to the project"
             checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover}
             onChange={(showConsultOnHover) =>
@@ -1453,9 +1494,9 @@ function WorkLayoutDisplayOptions({
           />
 
           {(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showConsultOnHover ? (
-            <div className="border-t border-neutral-200/80 pt-6">
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Case study link label
+            <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+              <p className="pf-stack-block-label">
+                {t('Case study link label')}
               </p>
               <input
                 type="text"
@@ -1468,8 +1509,8 @@ function WorkLayoutDisplayOptions({
                     },
                   })
                 }
-                placeholder="View project"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                placeholder={t('View project')}
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
               />
             </div>
           ) : null}
@@ -1478,7 +1519,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-accordion' ? (
         <>
           <WorkToggleRow
-            label="Tools under preview"
+            label={t('Tools under preview')}
             checked={(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showTools}
             onChange={(showTools) =>
               onChange({
@@ -1493,7 +1534,7 @@ function WorkLayoutDisplayOptions({
           {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showTools ? (
             <>
               <WorkToggleRow
-                label="Tools label"
+                label={t('Tools label')}
                 info="Heading above the chips — off by default"
                 checked={
                   (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
@@ -1512,8 +1553,8 @@ function WorkLayoutDisplayOptions({
               {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
                 .showToolsLabel === true ? (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Tools label
+                  <p className="pf-stack-block-label">
+                    {t('Tools label')}
                   </p>
                   <input
                     type="text"
@@ -1528,15 +1569,15 @@ function WorkLayoutDisplayOptions({
                         },
                       })
                     }
-                    placeholder="Tools I use"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                    placeholder={t('Tools I use')}
+                    className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                   />
                 </div>
               ) : null}
             </>
           ) : null}
           <WorkToggleRow
-            label="Description in panel"
+            label={t('Description in panel')}
             checked={
               (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showDescription
             }
@@ -1551,7 +1592,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             info="Left side, under the description"
             checked={
               (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
@@ -1568,7 +1609,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             info="Right side, under the description"
             checked={
               (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS)
@@ -1585,7 +1626,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Consult link"
+            label={t('Consult link')}
             info="Text link under the preview, not a hover overlay"
             checked={
               (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showConsult !==
@@ -1604,8 +1645,8 @@ function WorkLayoutDisplayOptions({
           {(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).showConsult !==
           false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Consult button label
+              <p className="pf-stack-block-label">
+                {t('Consult button label')}
               </p>
               <input
                 type="text"
@@ -1620,8 +1661,8 @@ function WorkLayoutDisplayOptions({
                     },
                   })
                 }
-                placeholder="Consult"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                placeholder={t('Consult')}
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
               />
             </div>
           ) : null}
@@ -1630,7 +1671,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-frames' ? (
         <>
           <WorkToggleRow
-            label="Image padding"
+            label={t('Image padding')}
             info="Off = flush to edge, on = small gap"
             checked={
               (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).imagePadding !== false
@@ -1646,7 +1687,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Alternate image sides"
+            label={t('Alternate image sides')}
             info="Even cards flip left ↔ right"
             checked={
               (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).alternateSides === true
@@ -1662,7 +1703,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             info="Above the title"
             checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showRole}
             onChange={(showRole) =>
@@ -1676,7 +1717,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             info="Same row as role, right-aligned"
             checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showCategory}
             onChange={(showCategory) =>
@@ -1690,7 +1731,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showDescription}
             onChange={(showDescription) =>
               onChange({
@@ -1703,7 +1744,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Stack"
+            label={t('Stack')}
             info="Plain text with separators, not pill tags"
             checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showStack}
             onChange={(showStack) =>
@@ -1717,7 +1758,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Consult link"
+            label={t('Consult link')}
             info="Text link under the stack"
             checked={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showConsult}
             onChange={(showConsult) =>
@@ -1732,8 +1773,8 @@ function WorkLayoutDisplayOptions({
 
           {(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).showConsult ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Consult button label
+              <p className="pf-stack-block-label">
+                {t('Consult button label')}
               </p>
               <input
                 type="text"
@@ -1746,8 +1787,8 @@ function WorkLayoutDisplayOptions({
                     },
                   })
                 }
-                placeholder="Consult"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                placeholder={t('Consult')}
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
               />
             </div>
           ) : null}
@@ -1756,7 +1797,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-index' ? (
         <>
           <WorkToggleRow
-            label="Index marker"
+            label={t('Index marker')}
             info="Number or bullet, left column"
             checked={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showNumber !== false}
             onChange={(showNumber) =>
@@ -1771,7 +1812,7 @@ function WorkLayoutDisplayOptions({
 
           {(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showNumber !== false ? (
             <WorkOptionGrid
-              label="Index marker style"
+              label={t('Index marker style')}
               options={PORTFOLIO_WORK_INDEX_MARKER_OPTIONS}
               value={
                 (work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).indexMarker ?? 'number'
@@ -1789,7 +1830,7 @@ function WorkLayoutDisplayOptions({
           ) : null}
 
           <WorkToggleRow
-            label="Stack"
+            label={t('Stack')}
             info="Chips directly under the title"
             checked={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showStack !== false}
             onChange={(showStack) =>
@@ -1803,7 +1844,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             info="Right column"
             checked={
               (work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).showDescription !== false
@@ -1822,7 +1863,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-grid' ? (
         <>
           <WorkToggleRow
-            label="Carousel navigation"
+            label={t('Carousel navigation')}
             info="Arrow-button slide when a row overflows"
             checked={
               (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).carouselEnabled === true
@@ -1838,7 +1879,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             checked={
               (work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).showDescription !== false
             }
@@ -1857,7 +1898,7 @@ function WorkLayoutDisplayOptions({
         <>
           {(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).imageSide !== 'center' ? (
             <WorkToggleRow
-              label="Alternate image sides"
+              label={t('Alternate image sides')}
               info="Even rows flip image ↔ title"
               checked={
                 (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).alternateSides === true
@@ -1874,7 +1915,7 @@ function WorkLayoutDisplayOptions({
           ) : null}
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             checked={
               (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).showDescription === true
             }
@@ -1892,7 +1933,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-carousel' ? (
         <>
           <WorkToggleRow
-            label="Hover reveal"
+            label={t('Hover reveal')}
             info="Survol : zoom + assombrit + affiche la description"
             checked={
               (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverReveal !== false
@@ -1908,7 +1949,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Focus blur"
+            label={t('Focus blur')}
             info="Floute les autres images au survol"
             checked={
               (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS)
@@ -1925,7 +1966,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Hover stack"
+            label={t('Hover stack')}
             info="Survol : stack sous l'image, sans bordure"
             checked={
               (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverStack !== false
@@ -1944,7 +1985,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-showcase' ? (
         <>
           <WorkToggleRow
-            label="Role on media"
+            label={t('Role on media')}
             info="Compact label overlaid on the image"
             checked={
               (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showRole !== false
@@ -1960,7 +2001,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             checked={
               (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showDescription !==
               false
@@ -1976,7 +2017,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             info="Label + value, under the description"
             checked={
               (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showCategory !==
@@ -1995,12 +2036,12 @@ function WorkLayoutDisplayOptions({
           {(work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).showCategory !==
           false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Category label
+              <p className="pf-stack-block-label">
+                {t('Category label')}
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).categoryLabel ||
                   'Category'
@@ -2021,7 +2062,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-ledger' ? (
         <>
           <WorkToggleRow
-            label="Count"
+            label={t('Count')}
             info="Compteur à droite du titre"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showCount !== false}
             onChange={(showCount) =>
@@ -2035,7 +2076,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Index"
+            label={t('Index')}
             info="01, 02… à gauche de chaque ligne"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showIndex !== false}
             onChange={(showIndex) =>
@@ -2049,7 +2090,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             info="Rôle/catégorie, aligné à droite (desktop)"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showRole !== false}
             onChange={(showRole) =>
@@ -2063,7 +2104,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             info="Dans le panneau déplié"
             checked={
               (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showDescription !== false
@@ -2079,7 +2120,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Stack"
+            label={t('Stack')}
             info="Mono uppercase, sous la description"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showStack !== false}
             onChange={(showStack) =>
@@ -2093,7 +2134,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Consult"
+            label={t('Consult')}
             info="Lien texte + flèche, sous les détails"
             checked={
               (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false
@@ -2110,17 +2151,17 @@ function WorkLayoutDisplayOptions({
 
           {(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Consult label
+              <p className="pf-stack-block-label">
+                {t('Consult label')}
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).consultLabel ||
                   'Consult this project'
                 }
-                placeholder="Consult this project"
+                placeholder={t('Consult this project')}
                 onChange={(event) =>
                   onChange({
                     projectsLedger: {
@@ -2137,7 +2178,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-spec' ? (
         <>
           <WorkToggleRow
-            label="Thumbnail"
+            label={t('Thumbnail')}
             info="Désactive auto « 2 par ligne »"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showThumbnail === true}
             onChange={(showThumbnail) =>
@@ -2152,7 +2193,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             info="À gauche, couleur CTA"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showCategory !== false}
             onChange={(showCategory) =>
@@ -2166,7 +2207,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             info="À droite du micro-header"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showRole !== false}
             onChange={(showRole) =>
@@ -2180,7 +2221,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Field labels"
+            label={t('Field labels')}
             info="Labels Summary / Stack / Link"
             checked={
               (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false
@@ -2196,7 +2237,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             info="Ligne Summary"
             checked={
               (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false
@@ -2214,17 +2255,17 @@ function WorkLayoutDisplayOptions({
           {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false &&
           (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Description label
+              <p className="pf-stack-block-label">
+                {t('Description label')}
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).descriptionLabel ||
                   'Summary'
                 }
-                placeholder="Summary"
+                placeholder={t('Summary')}
                 onChange={(event) =>
                   onChange({
                     projectsSpec: {
@@ -2238,7 +2279,7 @@ function WorkLayoutDisplayOptions({
           ) : null}
 
           <WorkToggleRow
-            label="Stack"
+            label={t('Stack')}
             info="Tags, comme Projects board"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false}
             onChange={(showStack) =>
@@ -2254,14 +2295,14 @@ function WorkLayoutDisplayOptions({
           {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false &&
           (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Stack label
+              <p className="pf-stack-block-label">
+                {t('Stack label')}
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).stackLabel || 'Stack'}
-                placeholder="Stack"
+                placeholder={t('Stack')}
                 onChange={(event) =>
                   onChange({
                     projectsSpec: {
@@ -2275,7 +2316,7 @@ function WorkLayoutDisplayOptions({
           ) : null}
 
           <WorkToggleRow
-            label="Consult"
+            label={t('Consult')}
             info="Plusieurs designs au choix, ci-dessous"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false}
             onChange={(showConsult) =>
@@ -2291,7 +2332,7 @@ function WorkLayoutDisplayOptions({
           {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false ? (
             <>
               <WorkPreviewCardGrid
-                label="Consult design"
+                label={t('Consult design')}
                 options={PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS.map((option) => ({
                   ...option,
                   glyph: workConsultDesignGlyph(option.value),
@@ -2312,17 +2353,17 @@ function WorkLayoutDisplayOptions({
               />
 
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Consult label
+                <p className="pf-stack-block-label">
+                  {t('Consult label')}
                 </p>
                 <input
                   type="text"
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={
                     (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).consultLabel ||
                     'Consult this project'
                   }
-                  placeholder="Consult this project"
+                  placeholder={t('Consult this project')}
                   onChange={(event) =>
                     onChange({
                       projectsSpec: {
@@ -2340,7 +2381,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-case' ? (
         <>
           <WorkToggleRow
-            label="Thumbnail"
+            label={t('Thumbnail')}
             info="~50% à gauche; désactivé = pleine largeur"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showThumbnail !== false}
             onChange={(showThumbnail) =>
@@ -2354,7 +2395,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             info="À gauche, couleur CTA"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showCategory !== false}
             onChange={(showCategory) =>
@@ -2368,7 +2409,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             info="À droite du micro-header"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showRole !== false}
             onChange={(showRole) =>
@@ -2382,7 +2423,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Field labels"
+            label={t('Field labels')}
             info="Labels Summary / Stack / Link"
             checked={
               (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false
@@ -2398,7 +2439,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             info="Ligne Summary"
             checked={
               (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false
@@ -2416,17 +2457,17 @@ function WorkLayoutDisplayOptions({
           {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false &&
           (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Description label
+              <p className="pf-stack-block-label">
+                {t('Description label')}
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).descriptionLabel ||
                   'Summary'
                 }
-                placeholder="Summary"
+                placeholder={t('Summary')}
                 onChange={(event) =>
                   onChange({
                     projectsCase: {
@@ -2440,7 +2481,7 @@ function WorkLayoutDisplayOptions({
           ) : null}
 
           <WorkToggleRow
-            label="Stack"
+            label={t('Stack')}
             info="Tags, comme Projects board"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false}
             onChange={(showStack) =>
@@ -2456,14 +2497,14 @@ function WorkLayoutDisplayOptions({
           {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false &&
           (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false ? (
             <div>
-              <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                Stack label
+              <p className="pf-stack-block-label">
+                {t('Stack label')}
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).stackLabel || 'Stack'}
-                placeholder="Stack"
+                placeholder={t('Stack')}
                 onChange={(event) =>
                   onChange({
                     projectsCase: {
@@ -2477,7 +2518,7 @@ function WorkLayoutDisplayOptions({
           ) : null}
 
           <WorkToggleRow
-            label="Consult"
+            label={t('Consult')}
             info="Plusieurs designs au choix, ci-dessous"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false}
             onChange={(showConsult) =>
@@ -2493,7 +2534,7 @@ function WorkLayoutDisplayOptions({
           {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false ? (
             <>
               <WorkPreviewCardGrid
-                label="Consult design"
+                label={t('Consult design')}
                 options={PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS.map((option) => ({
                   ...option,
                   glyph: workConsultDesignGlyph(option.value),
@@ -2514,17 +2555,17 @@ function WorkLayoutDisplayOptions({
               />
 
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Consult label
+                <p className="pf-stack-block-label">
+                  {t('Consult label')}
                 </p>
                 <input
                   type="text"
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={
                     (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).consultLabel ||
                     'Consult this project'
                   }
-                  placeholder="Consult this project"
+                  placeholder={t('Consult this project')}
                   onChange={(event) =>
                     onChange({
                       projectsCase: {
@@ -2539,16 +2580,16 @@ function WorkLayoutDisplayOptions({
               {(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !==
               false ? (
                 <div>
-                  <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                    Link label
+                  <p className="pf-stack-block-label">
+                    {t('Link label')}
                   </p>
                   <input
                     type="text"
-                    className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                    className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                     value={
                       (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).linkLabel || 'Link'
                     }
-                    placeholder="Link"
+                    placeholder={t('Link')}
                     onChange={(event) =>
                       onChange({
                         projectsCase: {
@@ -2567,7 +2608,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-duotone' ? (
         <>
           <WorkOptionGrid
-            label="Scroll mode"
+            label={t('Scroll mode')}
             options={PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS}
             value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).scrollMode}
             onChange={(scrollMode) =>
@@ -2582,7 +2623,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Intro screen"
+            label={t('Intro screen')}
             checked={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).showIntro}
             onChange={(showIntro) =>
               onChange({
@@ -2595,7 +2636,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkOptionGrid
-            label="Thumbnail effect"
+            label={t('Thumbnail effect')}
             options={PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS}
             value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).thumbnailEffect}
             onChange={(thumbnailEffect) =>
@@ -2610,7 +2651,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkOptionGrid
-            label="Thumbnail height"
+            label={t('Thumbnail height')}
             options={PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS}
             value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).thumbnailHeight}
             onChange={(thumbnailHeight) =>
@@ -2627,7 +2668,7 @@ function WorkLayoutDisplayOptions({
           {(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).scrollMode === 'slide' ? (
             <>
               <WorkOptionGrid
-                label="Frame color"
+                label={t('Frame color')}
                 options={PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS}
                 value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).frameColor}
                 onChange={(frameColor) =>
@@ -2642,7 +2683,7 @@ function WorkLayoutDisplayOptions({
               />
 
               <WorkOptionGrid
-                label="Frame radius"
+                label={t('Frame radius')}
                 options={PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS}
                 value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).frameRadius}
                 onChange={(frameRadius) =>
@@ -2657,7 +2698,7 @@ function WorkLayoutDisplayOptions({
               />
 
               <WorkOptionGrid
-                label="Slide navigation"
+                label={t('Slide navigation')}
                 options={PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS}
                 value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).slideNavStyle}
                 onChange={(slideNavStyle) =>
@@ -2672,7 +2713,7 @@ function WorkLayoutDisplayOptions({
               />
 
               <WorkToggleRow
-                label="Auto-advance"
+                label={t('Auto-advance')}
                 checked={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).autoAdvance}
                 onChange={(autoAdvance) =>
                   onChange({
@@ -2689,7 +2730,7 @@ function WorkLayoutDisplayOptions({
           {(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).scrollMode !== 'slide' ? (
             <>
               <WorkToggleRow
-                label="Swap sides"
+                label={t('Swap sides')}
                 checked={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).swapSides}
                 onChange={(swapSides) =>
                   onChange({
@@ -2702,7 +2743,7 @@ function WorkLayoutDisplayOptions({
               />
 
               <WorkOptionGrid
-                label="Vertical rhythm"
+                label={t('Vertical rhythm')}
                 options={PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS}
                 value={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).verticalGap}
                 onChange={(verticalGap) =>
@@ -2721,7 +2762,7 @@ function WorkLayoutDisplayOptions({
           {(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).scrollMode === 'scroll' ? (
             <>
               <WorkToggleRow
-                label="Alternate sides"
+                label={t('Alternate sides')}
                 checked={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).alternateSides}
                 onChange={(alternateSides) =>
                   onChange({
@@ -2734,7 +2775,7 @@ function WorkLayoutDisplayOptions({
               />
 
               <WorkToggleRow
-                label="Full-width title"
+                label={t('Full-width title')}
                 checked={(work.projectsDuotone ?? DEFAULT_PROJECTS_DUOTONE_SETTINGS).scrollFullWidthTitle}
                 onChange={(scrollFullWidthTitle) =>
                   onChange({
@@ -2752,7 +2793,7 @@ function WorkLayoutDisplayOptions({
       : design === 'projects-cascade' ? (
         <>
           <WorkToggleRow
-            label="Scroll cascade effect"
+            label={t('Scroll cascade effect')}
             info="Sticky cards that cover each other while scrolling — same as Experience > Cards. Disable for a simple stack."
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).stackEffect !== 'static'}
             onChange={(enabled) =>
@@ -2766,7 +2807,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Equal card height"
+            label={t('Equal card height')}
             info="Stretches every card to the height of the tallest one."
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).equalHeight}
             onChange={(equalHeight) =>
@@ -2780,7 +2821,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkOptionGrid
-            label="Card width"
+            label={t('Card width')}
             options={PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS}
             value={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).cardWidth}
             onChange={(cardWidth) =>
@@ -2795,7 +2836,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkOptionGrid
-            label="Vertical rhythm"
+            label={t('Vertical rhythm')}
             options={PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS}
             value={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).verticalGap}
             onChange={(verticalGap) =>
@@ -2810,7 +2851,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkOptionGrid
-            label="Thumbnail radius"
+            label={t('Thumbnail radius')}
             options={PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS}
             value={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).imageRadius}
             onChange={(imageRadius) =>
@@ -2825,7 +2866,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkOptionGrid
-            label="Thumbnail height"
+            label={t('Thumbnail height')}
             options={PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS}
             value={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).cardHeight}
             onChange={(cardHeight) =>
@@ -2840,7 +2881,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Category"
+            label={t('Category')}
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).showCategory}
             onChange={(showCategory) =>
               onChange({
@@ -2853,7 +2894,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Role"
+            label={t('Role')}
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).showRole}
             onChange={(showRole) =>
               onChange({
@@ -2866,7 +2907,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Description"
+            label={t('Description')}
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).showDescription}
             onChange={(showDescription) =>
               onChange({
@@ -2879,7 +2920,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Tags"
+            label={t('Tags')}
             info="Dash-separated list — the project's tags field."
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).showTags}
             onChange={(showTags) =>
@@ -2893,7 +2934,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Tools"
+            label={t('Tools')}
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).showTools}
             onChange={(showTools) =>
               onChange({
@@ -2906,7 +2947,7 @@ function WorkLayoutDisplayOptions({
           />
 
           <WorkToggleRow
-            label="Project link"
+            label={t('Project link')}
             checked={(work.projectsCascade ?? DEFAULT_PROJECTS_CASCADE_SETTINGS).showLink}
             onChange={(showLink) =>
               onChange({
@@ -2921,7 +2962,7 @@ function WorkLayoutDisplayOptions({
       )
       : null}
       </div>
-    </div>
+    </SettingsGroup>
   );
 }
 
@@ -2936,7 +2977,8 @@ export function WorkSettingsPanel({
   subSection?: WorkSettingsSubSection;
   onSubSectionChange?: (value: WorkSettingsSubSection) => void;
 }) {
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<WorkSettingsSubSection>('header');
+  const t = useT();
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<WorkSettingsSubSection>('general');
   const subSection = normalizeWorkSettingsSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: WorkSettingsSubSection) => {
     const next = normalizeWorkSettingsSubSection(value);
@@ -2945,66 +2987,48 @@ export function WorkSettingsPanel({
   };
   return (
     <div className="space-y-6">
-      <div className="flex flex-wrap gap-2">
-        {WORK_SETTINGS_SUB_SECTIONS.map((section) => (
-          <button
-            key={section.id}
-            type="button"
-            onClick={() => setSubSection(section.id)}
-            className={`rounded-full px-3.5 py-1.5 text-xs font-semibold transition ${
-              subSection === section.id
-                ? 'bg-neutral-900 text-white'
-                : 'bg-neutral-100 text-neutral-600 hover:bg-neutral-200'
-            }`}
-          >
-            {section.label}
-          </button>
-        ))}
-      </div>
+      <SettingsTabs tabs={WORK_SETTINGS_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
 
       {subSection === 'general' ? (
-        <div className="space-y-8">
-          <div>
-            <WorkSectionLabel>Visibility</WorkSectionLabel>
-            <div className="mt-4">
+        <div>
+          <SettingsSwitchRow
+            label={t('Show section')}
+            description={work.enabled ? undefined : t('Visitors go straight to the next section.')}
+            checked={work.enabled}
+            onChange={(enabled) => onChange({ enabled })}
+          />
+          {work.enabled ? (
+          <SettingsGroup label={t('Content shown')}>
+            <div>
               <WorkToggleRow
-                label="Portfolio section"
-                checked={work.enabled}
-                onChange={(enabled) => onChange({ enabled })}
-              />
-              <WorkToggleRow
-                label="Marketplace link"
+                label={t('Marketplace link')}
                 checked={work.showMarketplaceLink}
                 onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
               />
               <WorkToggleRow
-                label="Subtitle"
+                label={t('Subtitle')}
                 checked={work.subtitlePreset !== 'minimal'}
                 onChange={(show) => onChange({ subtitlePreset: show ? 'default' : 'minimal' })}
               />
               <WorkToggleRow
-                label="Project description"
+                label={t('Project description')}
                 checked={work.showCardDescription !== false}
                 onChange={(showCardDescription) => onChange({ showCardDescription })}
               />
               <WorkToggleRow
-                label="Tools"
+                label={t('Tools')}
                 checked={work.showCardTools !== false}
                 onChange={(showCardTools) => onChange({ showCardTools })}
               />
             </div>
-          </div>
-
-          <SectionColorModeControl
-            value={work.colorModeOverride}
-            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-          />
-
-          <WorkLayoutDisplayOptions work={work} onChange={onChange} />
+          </SettingsGroup>
+          ) : null}
         </div>
       ) : null}
 
-      {subSection === 'header' ? (
+      {subSection !== 'general' && !work.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {subSection === 'header' && work.enabled ? (
         <div className="space-y-6">
           <div>
             <WorkHeaderChoiceGrid
@@ -3013,23 +3037,28 @@ export function WorkSettingsPanel({
             />
 
             <WorkLayoutSettingsBand motionKey={work.headerDesign ?? 'editorial'}>
+              <HeaderElementToggles
+                design={work.headerDesign ?? 'editorial'}
+                settings={work}
+                onPatch={(patch) => onChange(patch as Partial<PortfolioWorkSectionSettings>)}
+              />
               {work.headerDesign === 'index' ? (
                 <>
                   <div>
-                    <WorkSectionLabel>Rule label</WorkSectionLabel>
+                    <WorkSectionLabel>{t('Rule label')}</WorkSectionLabel>
                     <div className="mt-3 space-y-4">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <p className="pf-stack-block-label">{t('Text')}</p>
                         <input
                           type="text"
                           value={work.indexLabelText}
                           onChange={(event) => onChange({ indexLabelText: event.target.value })}
-                          placeholder="Index"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Index')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                       <WorkPreviewCardGrid
-                        label="Color"
+                        label={t('Color')}
                         options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                           ...option,
                           glyph: workPaletteTokenGlyph(option.value),
@@ -3039,12 +3068,12 @@ export function WorkSettingsPanel({
                         columns={3}
                       />
                       <WorkSizePill
-                        label="Size"
+                        label={t('Size')}
                         value={work.indexLabelSize ?? 'md'}
                         onChange={(indexLabelSize) => onChange({ indexLabelSize })}
                       />
                       <WorkOptionGrid
-                        label="Weight"
+                        label={t('Weight')}
                         options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                         value={work.indexLabelWeight ?? 'regular'}
                         onChange={(indexLabelWeight) => onChange({ indexLabelWeight })}
@@ -3053,11 +3082,11 @@ export function WorkSettingsPanel({
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <WorkSectionLabel>Counter</WorkSectionLabel>
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Counter')}</WorkSectionLabel>
                     <div className="mt-3 space-y-4">
                       <WorkPreviewCardGrid
-                        label="Numeral color"
+                        label={t('Numeral color')}
                         options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                           ...option,
                           glyph: workPaletteTokenGlyph(option.value),
@@ -3067,33 +3096,33 @@ export function WorkSettingsPanel({
                         columns={3}
                       />
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Count label</p>
+                        <p className="pf-stack-block-label">{t('Count label')}</p>
                         <input
                           type="text"
                           value={work.indexCountLabelText}
                           onChange={(event) => onChange({ indexCountLabelText: event.target.value })}
-                          placeholder="Projects"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Projects')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <WorkSectionLabel>Title</WorkSectionLabel>
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Title')}</WorkSectionLabel>
                     <div className="mt-3 space-y-4">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <p className="pf-stack-block-label">{t('Text')}</p>
                         <input
                           type="text"
                           value={work.indexTitleText}
                           onChange={(event) => onChange({ indexTitleText: event.target.value })}
-                          placeholder="Selected work"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Selected work')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                       <WorkPreviewCardGrid
-                        label="Color"
+                        label={t('Color')}
                         options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                           ...option,
                           glyph: workPaletteTokenGlyph(option.value),
@@ -3103,12 +3132,12 @@ export function WorkSettingsPanel({
                         columns={3}
                       />
                       <WorkSizePill
-                        label="Size"
+                        label={t('Size')}
                         value={work.indexTitleSize ?? 'md'}
                         onChange={(indexTitleSize) => onChange({ indexTitleSize })}
                       />
                       <WorkOptionGrid
-                        label="Weight"
+                        label={t('Weight')}
                         options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                         value={work.indexTitleWeight ?? 'regular'}
                         onChange={(indexTitleWeight) => onChange({ indexTitleWeight })}
@@ -3117,21 +3146,21 @@ export function WorkSettingsPanel({
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <WorkSectionLabel>Subtitle</WorkSectionLabel>
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Subtitle')}</WorkSectionLabel>
                     <div className="mt-3 space-y-4">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Text</p>
+                        <p className="pf-stack-block-label">{t('Text')}</p>
                         <input
                           type="text"
                           value={work.indexSubtitleText}
                           onChange={(event) => onChange({ indexSubtitleText: event.target.value })}
-                          placeholder="Selected projects."
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Selected projects.')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                       <WorkPreviewCardGrid
-                        label="Color"
+                        label={t('Color')}
                         options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                           ...option,
                           glyph: workPaletteTokenGlyph(option.value),
@@ -3141,12 +3170,12 @@ export function WorkSettingsPanel({
                         columns={3}
                       />
                       <WorkSizePill
-                        label="Size"
+                        label={t('Size')}
                         value={work.indexSubtitleSize ?? 'md'}
                         onChange={(indexSubtitleSize) => onChange({ indexSubtitleSize })}
                       />
                       <WorkOptionGrid
-                        label="Weight"
+                        label={t('Weight')}
                         options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                         value={work.indexSubtitleWeight ?? 'regular'}
                         onChange={(indexSubtitleWeight) => onChange({ indexSubtitleWeight })}
@@ -3155,63 +3184,63 @@ export function WorkSettingsPanel({
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
                     <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} hideTitleControls />
                   </div>
                 </>
               ) : work.headerDesign === 'marquee' ? (
                 <>
                   <div>
-                    <WorkSectionLabel>Words</WorkSectionLabel>
+                    <WorkSectionLabel>{t('Words')}</WorkSectionLabel>
                     <div className="mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 1</p>
+                        <p className="pf-stack-block-label">{t('Word 1')}</p>
                         <input
                           type="text"
                           value={work.marqueeWord1Text}
                           onChange={(event) => onChange({ marqueeWord1Text: event.target.value })}
-                          placeholder="Selected"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Selected')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 2</p>
+                        <p className="pf-stack-block-label">{t('Word 2')}</p>
                         <input
                           type="text"
                           value={work.marqueeWord2Text}
                           onChange={(event) => onChange({ marqueeWord2Text: event.target.value })}
-                          placeholder="Work"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Work')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 3</p>
+                        <p className="pf-stack-block-label">{t('Word 3')}</p>
                         <input
                           type="text"
                           value={work.marqueeWord3Text}
                           onChange={(event) => onChange({ marqueeWord3Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Optional')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                       <div>
-                        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Word 4</p>
+                        <p className="pf-stack-block-label">{t('Word 4')}</p>
                         <input
                           type="text"
                           value={work.marqueeWord4Text}
                           onChange={(event) => onChange({ marqueeWord4Text: event.target.value })}
-                          placeholder="Optional"
-                          className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                          placeholder={t('Optional')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                         />
                       </div>
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
-                    <WorkSectionLabel>Style</WorkSectionLabel>
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Style')}</WorkSectionLabel>
                     <div className="mt-3 space-y-4">
                       <WorkPreviewCardGrid
-                        label="Word color"
+                        label={t('Word color')}
                         options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                           ...option,
                           glyph: workPaletteTokenGlyph(option.value),
@@ -3221,41 +3250,41 @@ export function WorkSettingsPanel({
                         columns={3}
                       />
                       <WorkSizePill
-                        label="Size"
+                        label={t('Size')}
                         value={work.marqueeSize ?? 'md'}
                         onChange={(marqueeSize) => onChange({ marqueeSize })}
                       />
                     </div>
                   </div>
 
-                  <div className="border-t border-neutral-200/70 pt-6">
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
                     <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} hideAlignment hideTitleControls />
                   </div>
                 </>
               ) : work.headerDesign === 'accent-count' ? (
                 <>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Badge text</p>
+                    <p className="pf-stack-block-label">{t('Badge text')}</p>
                     <input
                       type="text"
                       value={work.accentCountBadgeText}
                       onChange={(event) => onChange({ accentCountBadgeText: event.target.value })}
-                      placeholder="{count}+ projects"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('{count}+ projects')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Lead text</p>
+                    <p className="pf-stack-block-label">{t('Lead text')}</p>
                     <input
                       type="text"
                       value={work.accentCountLeadText}
                       onChange={(event) => onChange({ accentCountLeadText: event.target.value })}
-                      placeholder="A selection of recent work."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('A selection of recent work.')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <WorkPreviewCardGrid
-                    label="Badge color"
+                    label={t('Badge color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3265,7 +3294,7 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkPreviewCardGrid
-                    label="Lead color"
+                    label={t('Lead color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3275,19 +3304,19 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Size"
+                    label={t('Size')}
                     value={work.accentCountSize ?? 'md'}
                     onChange={(accentCountSize) => onChange({ accentCountSize })}
                   />
                   <WorkOptionGrid
-                    label="Lead weight"
+                    label={t('Lead weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.accentCountWeight ?? 'regular'}
                     onChange={(accentCountWeight) => onChange({ accentCountWeight })}
                     columns={4}
                   />
                   <WorkOptionGrid
-                    label="Alignment"
+                    label={t('Alignment')}
                     options={WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS}
                     value={work.accentCountAlignment ?? 'left'}
                     onChange={(accentCountAlignment) => onChange({ accentCountAlignment })}
@@ -3298,17 +3327,17 @@ export function WorkSettingsPanel({
               ) : work.headerDesign === 'serif-lead' ? (
                 <>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <p className="pf-stack-block-label">{t('Label')}</p>
                     <input
                       type="text"
                       value={work.serifLeadLabelText}
                       onChange={(event) => onChange({ serifLeadLabelText: event.target.value })}
-                      placeholder="Portfolio"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Portfolio')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <WorkPreviewCardGrid
-                    label="Label color"
+                    label={t('Label color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3318,29 +3347,29 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Label size"
+                    label={t('Label size')}
                     value={work.serifLeadLabelSize ?? 'md'}
                     onChange={(serifLeadLabelSize) => onChange({ serifLeadLabelSize })}
                   />
                   <WorkOptionGrid
-                    label="Label weight"
+                    label={t('Label weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.serifLeadLabelWeight ?? 'regular'}
                     onChange={(serifLeadLabelWeight) => onChange({ serifLeadLabelWeight })}
                     columns={4}
                   />
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <p className="pf-stack-block-label">{t('Title')}</p>
                     <input
                       type="text"
                       value={work.serifLeadTitleText}
                       onChange={(event) => onChange({ serifLeadTitleText: event.target.value })}
-                      placeholder="A curated collection of work, built with care."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('A curated collection of work, built with care.')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <WorkPreviewCardGrid
-                    label="Title color"
+                    label={t('Title color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3350,19 +3379,19 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Title size"
+                    label={t('Title size')}
                     value={work.serifLeadTitleSize ?? 'md'}
                     onChange={(serifLeadTitleSize) => onChange({ serifLeadTitleSize })}
                   />
                   <WorkOptionGrid
-                    label="Title weight"
+                    label={t('Title weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.serifLeadTitleWeight ?? 'regular'}
                     onChange={(serifLeadTitleWeight) => onChange({ serifLeadTitleWeight })}
                     columns={4}
                   />
                   <WorkPreviewCardGrid
-                    label="Subtitle color"
+                    label={t('Subtitle color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3372,12 +3401,12 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Subtitle size"
+                    label={t('Subtitle size')}
                     value={work.serifLeadSubtitleSize ?? 'md'}
                     onChange={(serifLeadSubtitleSize) => onChange({ serifLeadSubtitleSize })}
                   />
                   <WorkOptionGrid
-                    label="Subtitle weight"
+                    label={t('Subtitle weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.serifLeadSubtitleWeight ?? 'regular'}
                     onChange={(serifLeadSubtitleWeight) => onChange({ serifLeadSubtitleWeight })}
@@ -3388,37 +3417,37 @@ export function WorkSettingsPanel({
               ) : work.headerDesign === 'billboard' ? (
                 <>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Big background word</p>
+                    <p className="pf-stack-block-label">{t('Big background word')}</p>
                     <input
                       type="text"
                       value={work.billboardBigWord}
                       onChange={(event) => onChange({ billboardBigWord: event.target.value })}
                       placeholder="WORK"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Project count line</p>
+                    <p className="pf-stack-block-label">{t('Project count line')}</p>
                     <input
                       type="text"
                       value={work.billboardCountText}
                       onChange={(event) => onChange({ billboardCountText: event.target.value })}
-                      placeholder="{count} projects"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('{count} projects')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <p className="pf-stack-block-label">{t('Title')}</p>
                     <input
                       type="text"
                       value={work.billboardTitleText}
                       onChange={(event) => onChange({ billboardTitleText: event.target.value })}
-                      placeholder="Selected work"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Selected work')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <WorkPreviewCardGrid
-                    label="Big word style"
+                    label={t('Big word style')}
                     options={WORK_BILLBOARD_WORD_STYLE_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workBillboardWordStyleGlyph(option.value),
@@ -3428,7 +3457,7 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkPreviewCardGrid
-                    label="Big word color"
+                    label={t('Big word color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3438,7 +3467,7 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkPreviewCardGrid
-                    label="Title color"
+                    label={t('Title color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3448,7 +3477,7 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkPreviewCardGrid
-                    label="Count line color"
+                    label={t('Count line color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3462,37 +3491,37 @@ export function WorkSettingsPanel({
               ) : work.headerDesign === 'masthead' ? (
                 <>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 1</p>
+                    <p className="pf-stack-block-label">{t('Line 1')}</p>
                     <input
                       type="text"
                       value={work.mastheadLine1Text}
                       onChange={(event) => onChange({ mastheadLine1Text: event.target.value })}
-                      placeholder="Selected work."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Selected work.')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 2</p>
+                    <p className="pf-stack-block-label">{t('Line 2')}</p>
                     <input
                       type="text"
                       value={work.mastheadLine2Text}
                       onChange={(event) => onChange({ mastheadLine2Text: event.target.value })}
-                      placeholder="Crafted with intent."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Crafted with intent.')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Line 3</p>
+                    <p className="pf-stack-block-label">{t('Line 3')}</p>
                     <input
                       type="text"
                       value={work.mastheadLine3Text}
                       onChange={(event) => onChange({ mastheadLine3Text: event.target.value })}
-                      placeholder="Delivered with care."
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Delivered with care.')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <WorkPreviewCardGrid
-                    label="Headline color"
+                    label={t('Headline color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3502,12 +3531,12 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Headline size"
+                    label={t('Headline size')}
                     value={work.mastheadHeadlineSize ?? 'md'}
                     onChange={(mastheadHeadlineSize) => onChange({ mastheadHeadlineSize })}
                   />
                   <WorkOptionGrid
-                    label="Headline weight"
+                    label={t('Headline weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.mastheadHeadlineWeight ?? 'regular'}
                     onChange={(mastheadHeadlineWeight) => onChange({ mastheadHeadlineWeight })}
@@ -3518,27 +3547,27 @@ export function WorkSettingsPanel({
               ) : work.headerDesign === 'split-heading' ? (
                 <>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Title</p>
+                    <p className="pf-stack-block-label">{t('Title')}</p>
                     <input
                       type="text"
                       value={work.splitHeadingTitleText}
                       onChange={(event) => onChange({ splitHeadingTitleText: event.target.value })}
-                      placeholder="Selected work"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Selected work')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <div>
-                    <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">Label</p>
+                    <p className="pf-stack-block-label">{t('Label')}</p>
                     <input
                       type="text"
                       value={work.splitHeadingLabelText}
                       onChange={(event) => onChange({ splitHeadingLabelText: event.target.value })}
-                      placeholder="Portfolio"
-                      className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900"
+                      placeholder={t('Portfolio')}
+                      className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
                     />
                   </div>
                   <WorkPreviewCardGrid
-                    label="Title color"
+                    label={t('Title color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3548,19 +3577,19 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Title size"
+                    label={t('Title size')}
                     value={work.splitHeadingTitleSize ?? 'md'}
                     onChange={(splitHeadingTitleSize) => onChange({ splitHeadingTitleSize })}
                   />
                   <WorkOptionGrid
-                    label="Title weight"
+                    label={t('Title weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.splitHeadingTitleWeight ?? 'regular'}
                     onChange={(splitHeadingTitleWeight) => onChange({ splitHeadingTitleWeight })}
                     columns={4}
                   />
                   <WorkPreviewCardGrid
-                    label="Label color"
+                    label={t('Label color')}
                     options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
                       ...option,
                       glyph: workPaletteTokenGlyph(option.value),
@@ -3570,12 +3599,12 @@ export function WorkSettingsPanel({
                     columns={3}
                   />
                   <WorkSizePill
-                    label="Label size"
+                    label={t('Label size')}
                     value={work.splitHeadingLabelSize ?? 'md'}
                     onChange={(splitHeadingLabelSize) => onChange({ splitHeadingLabelSize })}
                   />
                   <WorkOptionGrid
-                    label="Label weight"
+                    label={t('Label weight')}
                     options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
                     value={work.splitHeadingLabelWeight ?? 'regular'}
                     onChange={(splitHeadingLabelWeight) => onChange({ splitHeadingLabelWeight })}
@@ -3593,7 +3622,7 @@ export function WorkSettingsPanel({
         </div>
       ) : null}
 
-      {subSection === 'design' ? (
+      {subSection === 'design' && work.enabled ? (
         <>
         <div className="space-y-6">
           <WorkDesignChoiceGrid
@@ -3601,18 +3630,23 @@ export function WorkSettingsPanel({
             onChange={(sectionDesign) => onChange(workSectionDesignSettingsPatch(sectionDesign))}
           />
 
+          <SettingsGroup label={t('Style')}>
+            <SectionColorModeControl
+              label={t('Color mode')}
+              value={work.colorModeOverride}
+              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+            />
+          </SettingsGroup>
+
+          <WorkLayoutDisplayOptions work={work} onChange={onChange} />
+
           <WorkLayoutSettingsBand motionKey={work.sectionDesign ?? 'projects-board'}>
-<SettingsRowsScope title="Layout options">
+<SettingsRowsScope title={t('Layout options')}>
           {(work.sectionDesign ?? 'projects-board') === 'projects-board' ? (
             <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Board options
-                </p>
-              </div>
 
               <WorkPreviewCardGrid
-                label="Cards per row (desktop)"
+                label={t('Cards per row (desktop)')}
                 options={PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS.map((option) => ({
                   value: String(option.value) as '1' | '2' | '3' | '4',
                   label: option.label,
@@ -3639,7 +3673,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkToggleRow
-                label="Thumbnail"
+                label={t('Thumbnail')}
                 info="Also available in General → Display options"
                 checked={(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showThumbnail}
                 onChange={(showThumbnail) =>
@@ -3655,7 +3689,7 @@ export function WorkSettingsPanel({
               {(work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).showThumbnail &&
               ((work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).columnsPerRow ?? 2) === 1 ? (
                 <WorkSlider
-                  label="Thumbnail size"
+                  label={t('Thumbnail size')}
                   options={PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS}
                   value={
                     (work.projectsBoard ?? DEFAULT_PROJECTS_BOARD_SETTINGS).thumbnailSize ?? 'standard'
@@ -3673,14 +3707,9 @@ export function WorkSettingsPanel({
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-accordion' ? (
             <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Accordion options
-                </p>
-              </div>
 
               <WorkOptionGrid
-                label="Title / subtitle alignment"
+                label={t('Title / subtitle alignment')}
                 options={PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS}
                 icons={WORK_ALIGNMENT_ICONS}
                 value={(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).headerAlign}
@@ -3696,7 +3725,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Preview placement"
+                label={t('Preview placement')}
                 options={PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS}
                 value={
                   (work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).previewSide ??
@@ -3716,17 +3745,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-frames' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Frames options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Horizontal cards — image + info. Stack shows as plain text with hairline
-                  separators (not tags). Content from Information → Portfolio.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Horizontal cards — image + info. Stack shows as plain text with hairline separators (not tags). Content from Information → Portfolio.')}
                 </p>
               </div>
 
               <WorkSlider
-                label="Thumbnail size"
+                label={t('Thumbnail size')}
                 options={PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS}
                 value={
                   (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).thumbnailSize ?? 'xl'
@@ -3742,7 +3767,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkPreviewCardGrid
-                label="Image placement"
+                label={t('Image placement')}
                 options={PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS.map((option) => ({
                   ...option,
                   glyph: option.value === 'left' ? workSideLeftGlyph() : workSideRightGlyph(),
@@ -3760,7 +3785,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Corner radius"
+                label={t('Corner radius')}
                 options={PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS}
                 value={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).radius ?? 'xl'}
                 onChange={(radius) =>
@@ -3775,7 +3800,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkSlider
-                label="Espacement vertical"
+                label={t('Vertical spacing')}
                 options={PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS}
                 value={(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).cardGap ?? 'tight'}
                 onChange={(cardGap) =>
@@ -3791,17 +3816,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-index' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Index options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Numbered rows with thin separators — narrow index, wide title + stack, description
-                  on the right. Content from Information → Portfolio.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Numbered rows with thin separators — narrow index, wide title + stack, description on the right. Content from Information → Portfolio.')}
                 </p>
               </div>
 
               <WorkSlider
-                label="Espacement des lignes"
+                label={t('Row spacing')}
                 options={PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS}
                 value={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).rowGap ?? 'md'}
                 onChange={(rowGap) =>
@@ -3817,16 +3838,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-grid' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Grid options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Thumbnail, title, and description only. Content from Information → Portfolio.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Thumbnail, title, and description only. Content from Information → Portfolio.')}
                 </p>
               </div>
 
               <WorkPreviewCardGrid
-                label="Columns on large screens"
+                label={t('Columns on large screens')}
                 options={PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS.map((option) => ({
                   value: String(option.value) as '2' | '3',
                   label: option.label,
@@ -3847,7 +3865,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Card border"
+                label={t('Card border')}
                 options={PORTFOLIO_WORK_CARD_BORDER_OPTIONS}
                 value={(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).cardBorder ?? 'none'}
                 onChange={(cardBorder) =>
@@ -3863,7 +3881,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Arrondi"
+                label={t('Rounding')}
                 options={PORTFOLIO_WORK_CARD_RADIUS_OPTIONS}
                 value={(work.projectsGrid ?? DEFAULT_PROJECTS_GRID_SETTINGS).cardRadius ?? 'none'}
                 onChange={(cardRadius) =>
@@ -3880,16 +3898,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-split' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Split options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Large thumbnail beside the title. Choose sides and optional row alternation.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Large thumbnail beside the title. Choose sides and optional row alternation.')}
                 </p>
               </div>
 
               <WorkOptionGrid
-                label="Image placement"
+                label={t('Image placement')}
                 options={PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS}
                 value={(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).imageSide ?? 'left'}
                 onChange={(imageSide) =>
@@ -3914,7 +3929,7 @@ export function WorkSettingsPanel({
               {(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).imageSide === 'center' ? (
                 <>
                   <WorkOptionGrid
-                    label="Title placement"
+                    label={t('Title placement')}
                     options={PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS}
                     value={(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).titleSide ?? 'left'}
                     onChange={(titleSide) =>
@@ -3928,7 +3943,7 @@ export function WorkSettingsPanel({
                     columns={2}
                   />
                   <WorkOptionGrid
-                    label="Title vertical"
+                    label={t('Title vertical')}
                     options={PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS}
                     value={
                       (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).titleVerticalAlign ??
@@ -3945,7 +3960,7 @@ export function WorkSettingsPanel({
                     columns={2}
                   />
                   <WorkOptionGrid
-                    label="Description placement"
+                    label={t('Description placement')}
                     options={PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS}
                     value={
                       (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).descriptionPlacement ??
@@ -3967,7 +3982,7 @@ export function WorkSettingsPanel({
                   {(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).descriptionPlacement ===
                   'opposite' ? (
                     <WorkOptionGrid
-                      label="Description vertical"
+                      label={t('Description vertical')}
                       options={PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS}
                       value={
                         (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS)
@@ -3988,7 +4003,7 @@ export function WorkSettingsPanel({
               ) : null}
 
               <WorkSlider
-                label="Thumbnail size"
+                label={t('Thumbnail size')}
                 options={PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS}
                 value={
                   (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).thumbnailSize ?? 'xl'
@@ -4004,7 +4019,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Thumbnail radius"
+                label={t('Thumbnail radius')}
                 options={PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS}
                 value={
                   (work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).thumbnailRadius ?? 'none'
@@ -4021,7 +4036,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkSlider
-                label="Row spacing"
+                label={t('Row spacing')}
                 options={PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS}
                 value={(work.projectsSplit ?? DEFAULT_PROJECTS_SPLIT_SETTINGS).rowGap ?? 'md'}
                 onChange={(rowGap) =>
@@ -4037,16 +4052,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-carousel' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Carousel options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Image-only horizontal carousel. Configure slide size, ratio, radius, and spacing.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Image-only horizontal carousel. Configure slide size, ratio, radius, and spacing.')}
                 </p>
               </div>
 
               <WorkSlider
-                label="Image size"
+                label={t('Image size')}
                 options={PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS}
                 value={
                   (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).imageSize ?? 'lg'
@@ -4062,7 +4074,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Aspect ratio"
+                label={t('Aspect ratio')}
                 options={PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS}
                 value={
                   (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).aspectRatio ??
@@ -4080,7 +4092,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Image radius"
+                label={t('Image radius')}
                 options={PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS}
                 value={
                   (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).imageRadius ?? 'none'
@@ -4097,7 +4109,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkSlider
-                label="Gap between images"
+                label={t('Gap between images')}
                 options={PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS}
                 value={(work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).gap ?? 'md'}
                 onChange={(gap) =>
@@ -4113,16 +4125,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-showcase' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Showcase options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Large media + details. Chevrons and three thumbnails switch the active project.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Large media + details. Chevrons and three thumbnails switch the active project.')}
                 </p>
               </div>
 
               <WorkPreviewCardGrid
-                label="Media placement"
+                label={t('Media placement')}
                 options={PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS.map((option) => ({
                   ...option,
                   glyph: option.value === 'left' ? workSideLeftGlyph() : workSideRightGlyph(),
@@ -4142,7 +4151,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Media radius"
+                label={t('Media radius')}
                 options={PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS}
                 value={
                   (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).mediaRadius ?? 'xl'
@@ -4161,16 +4170,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-ledger' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Ledger options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Index typographique (style Framer) — titres, rôles et détails. Aucune miniature.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Typographic index (Framer style) — titles, roles and details. No thumbnails.')}
                 </p>
               </div>
 
               <WorkOptionGrid
-                label="Reveal details"
+                label={t('Reveal details')}
                 options={PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS}
                 value={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).expandMode ?? 'hover'}
                 onChange={(expandMode) =>
@@ -4185,7 +4191,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkToggleRow
-                label="Striped rows"
+                label={t('Striped rows')}
                 info="Fond légèrement teinté une ligne sur deux, comme un vrai registre comptable."
                 checked={
                   (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).stripedRows === true
@@ -4203,17 +4209,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-spec' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Spec options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Fiche technique / datasheet — titre + grille label/valeur. Données seulement, sans
-                  miniature.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Datasheet — title + label/value grid. Data only, no thumbnail.')}
                 </p>
               </div>
 
               <WorkPreviewCardGrid
-                label="Colonnes (écran large)"
+                label={t('Columns (wide screen)')}
                 options={PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS.map((option) => ({
                   ...option,
                   glyph: workColumnsGlyph(option.value === '2' ? 2 : 1),
@@ -4239,14 +4241,13 @@ export function WorkSettingsPanel({
               />
 
               {(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showThumbnail === true ? (
-                <p className="rounded-2xl border border-dashed border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-500">
-                  Miniature activée : affichage forcé en <span className="font-semibold text-neutral-700">1 par ligne</span>,
-                  image à l’extérieur à gauche.
+                <p className="rounded-2xl border border-dashed border-[color:var(--pf-palette-bordure)] bg-transparent px-4 py-3 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Thumbnail on: display forced to')} <span className="font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('1 per row')}</span>{t(', image outside on the left.')}
                 </p>
               ) : null}
 
               <WorkOptionGrid
-                label="Encadrement"
+                label={t('Framing')}
                 options={PORTFOLIO_WORK_SPEC_FRAME_OPTIONS}
                 value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).sheetFrame ?? 'none'}
                 onChange={(sheetFrame) =>
@@ -4261,7 +4262,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkSlider
-                label="Espacement entre projets"
+                label={t('Spacing between projects')}
                 options={PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS}
                 value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).sheetGap ?? 'xl'}
                 onChange={(sheetGap) =>
@@ -4277,17 +4278,13 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-case' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Case options
-                </p>
-                <p className="mt-1 text-sm text-neutral-500">
-                  Grande miniature 50/50 à gauche + fiche Spec à droite. Réglage « Hauteur miniature »
-                  juste sous Show thumbnail.
+                <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Large 50/50 thumbnail on the left + Spec sheet on the right. “Thumbnail height” setting just under Show thumbnail.')}
                 </p>
               </div>
 
               <WorkSlider
-                label="Espacement entre projets"
+                label={t('Spacing between projects')}
                 options={PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS}
                 value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).sheetGap ?? 'xl'}
                 onChange={(sheetGap) =>
@@ -4301,7 +4298,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Encadrement"
+                label={t('Framing')}
                 options={PORTFOLIO_WORK_SPEC_FRAME_OPTIONS}
                 value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).sheetFrame ?? 'thin'}
                 onChange={(sheetFrame) =>
@@ -4316,7 +4313,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Hauteur miniature"
+                label={t('Thumbnail height')}
                 options={PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS}
                 value={
                     (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).thumbnailHeight ?? 'xl'
@@ -4335,7 +4332,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkToggleRow
-                label="Zig-zag layout"
+                label={t('Zig-zag layout')}
                 info="Alterne le côté image/texte à chaque ligne. Désactivé = image toujours à gauche."
                 checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).zigzagEnabled !== false}
                 onChange={(zigzagEnabled) =>
@@ -4351,14 +4348,14 @@ export function WorkSettingsPanel({
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-press' ? (
             <div className="space-y-4">
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Eyebrow
+                <p className="pf-stack-block-label">
+                  {t('Eyebrow')}
                 </p>
                 <input
                   type="text"
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).eyebrowText}
-                  placeholder="Project"
+                  placeholder={t('Project')}
                   onChange={(event) =>
                     onChange({
                       projectsPress: {
@@ -4368,13 +4365,13 @@ export function WorkSettingsPanel({
                     })
                   }
                 />
-                <p className="mt-1.5 text-xs text-neutral-400">
-                  Small left-column label, aligned with the first thumbnail. Large screens only.
+                <p className="mt-1.5 text-xs text-[color:var(--pf-palette-texte-muted)]">
+                  {t('Small left-column label, aligned with the first thumbnail. Large screens only.')}
                 </p>
               </div>
 
               <WorkToggleRow
-                label="Sticky"
+                label={t('Sticky')}
                 info="Pins the eyebrow in place while the row feed scrolls past it — large screens only."
                 checked={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).eyebrowSticky !== false}
                 onChange={(eyebrowSticky) =>
@@ -4388,7 +4385,7 @@ export function WorkSettingsPanel({
               />
 
               <WorkOptionGrid
-                label="Eyebrow size"
+                label={t('Eyebrow size')}
                 options={PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS}
                 value={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).eyebrowSize ?? 'md'}
                 onChange={(eyebrowSize) =>
@@ -4403,14 +4400,14 @@ export function WorkSettingsPanel({
               />
 
               <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
-                  Intro text
+                <p className="pf-stack-block-label">
+                  {t('Intro text')}
                 </p>
                 <textarea
                   rows={3}
-                  className="mt-2 w-full rounded-xl border border-neutral-200 bg-white px-3 py-2 text-sm text-neutral-900 outline-none focus:border-neutral-400"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).introText}
-                  placeholder="Optional left-column blurb, under the eyebrow."
+                  placeholder={t('Optional left-column blurb, under the eyebrow.')}
                   onChange={(event) =>
                     onChange({
                       projectsPress: {
@@ -4423,7 +4420,7 @@ export function WorkSettingsPanel({
               </div>
 
               <WorkOptionGrid
-                label="Thumbnail radius"
+                label={t('Thumbnail radius')}
                 options={PORTFOLIO_WORK_CARD_RADIUS_OPTIONS}
                 value={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).thumbnailRadius ?? 'md'}
                 onChange={(thumbnailRadius) =>
@@ -4444,7 +4441,7 @@ export function WorkSettingsPanel({
         </>
       ) : null}
 
-      {subSection === 'background' ? (
+      {subSection === 'background' && work.enabled ? (
         <div className="space-y-4">
           <SectionBackgroundSettingsFields
             settings={work}

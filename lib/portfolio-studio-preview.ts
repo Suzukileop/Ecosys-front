@@ -40,6 +40,18 @@ type PortfolioStudioPreviewMessage =
       source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;
       type: 'scroll-to-section';
       sectionId: string;
+    }
+  | {
+      /** Studio → page: while Settings is open, hovering a section outlines it and a click picks it. */
+      source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;
+      type: 'set-inspect';
+      enabled: boolean;
+    }
+  | {
+      /** Page → studio: the section clicked in the preview (a settings section id). */
+      source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;
+      type: 'select-section';
+      sectionId: string;
     };
 
 export function withPortfolioStudioEmbed(path: string): string {
@@ -66,7 +78,9 @@ export function isPortfolioStudioPreviewMessage(
     record.type === 'meta' ||
     record.type === 'apply-settings' ||
     record.type === 'color-mode-change' ||
-    record.type === 'scroll-to-section'
+    record.type === 'scroll-to-section' ||
+    record.type === 'set-inspect' ||
+    record.type === 'select-section'
   );
 }
 

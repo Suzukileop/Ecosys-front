@@ -2,6 +2,7 @@
 
 import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from 'react';
 import type { CurrencyOption } from '@/lib/currencies';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CurrencyPickerProps = {
   value: string;
@@ -11,6 +12,7 @@ type CurrencyPickerProps = {
 };
 
 export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerProps) {
+  const t = useT();
   const listId = useId();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -22,7 +24,7 @@ export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerP
   const filtered = useMemo(() => {
     const q = query.trim().toLowerCase();
     if (!q) return options;
-    return options.filter((o) => o.code.toLowerCase().includes(q) || o.name.toLowerCase().includes(q));
+    return options.filter((o) => o.code.toLowerCase().includes(q) || o.name.toLowerCase().includes(q) || t.currency(o.code, o.name).toLowerCase().includes(q));
   }, [options, query]);
 
   const openPicker = () => {
@@ -80,7 +82,7 @@ export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerP
         type="button"
         aria-haspopup="listbox"
         aria-expanded={open}
-        aria-label={`Currency: ${value}`}
+        aria-label={t('Currency: {value}', { value })}
         onClick={() => (open ? close() : openPicker())}
         className="flex h-full items-center gap-1.5 pl-3.5 pr-3 text-[14px] font-medium text-[#111111] outline-none dark:text-white"
       >
@@ -114,15 +116,22 @@ export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerP
                 setActiveIndex(0);
               }}
               onKeyDown={onSearchKeyDown}
-              placeholder="Search currency"
-              aria-label="Search currency"
+              placeholder={t('Search currency')}
+              aria-label={t('Search currency')}
               aria-controls={listId}
               className="h-11 min-w-0 flex-1 bg-transparent text-[14px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
             />
           </div>
-          <ul ref={listRef} id={listId} role="listbox" className="max-h-64 overflow-y-auto overscroll-contain py-1.5 [scrollbar-width:thin]">
+          {/* A quiet scrollbar: thin tinted thumb on a transparent track (the OS default drew a white
+              gutter with arrows in dark mode). Same treatment as the directory's filter lists. */}
+          <ul
+            ref={listRef}
+            id={listId}
+            role="listbox"
+            className="max-h-64 overflow-y-auto overscroll-contain py-1.5 [scrollbar-color:rgba(0,0,0,0.18)_transparent] [scrollbar-width:thin] dark:[scrollbar-color:rgba(255,255,255,0.16)_transparent] [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:rounded-full [&::-webkit-scrollbar-thumb]:bg-black/20 dark:[&::-webkit-scrollbar-thumb]:bg-white/15"
+          >
             {filtered.length === 0 ? (
-              <li className="px-4 py-6 text-center text-[13px] text-neutral-500 dark:text-neutral-400">No currency found</li>
+              <li className="px-4 py-6 text-center text-[13px] text-neutral-500 dark:text-neutral-400">{t('No currency found')}</li>
             ) : (
               filtered.map((option, index) => {
                 const selected = option.code === value;
@@ -142,7 +151,7 @@ export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerP
                     <span className="w-10 shrink-0 text-[13px] font-semibold tabular-nums text-[#111111] dark:text-white">
                       {option.code}
                     </span>
-                    <span className="min-w-0 flex-1 truncate text-[13px] text-neutral-500 dark:text-neutral-400">{option.name}</span>
+                    <span className="min-w-0 flex-1 truncate text-[13px] text-neutral-500 dark:text-neutral-400">{t.currency(option.code, option.name)}</span>
                     {selected ? (
                       <svg className="h-4 w-4 shrink-0 text-[#111111] dark:text-white" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.5} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                         <path d="m5 12 5 5 9-10" />

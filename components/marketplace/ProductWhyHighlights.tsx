@@ -6,6 +6,7 @@ import {
   ProductHighlightTitle,
 } from '@/components/marketplace/product-highlight-ui';
 import type { ProductWhyBlock } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductWhyHighlightsProps = {
   blocks: ProductWhyBlock[];
@@ -19,6 +20,7 @@ function isTextBlock(block: ProductWhyBlock): boolean {
 }
 
 export function ProductWhyHighlights({ blocks, className = '' }: ProductWhyHighlightsProps) {
+  const t = useT();
   const items = [...blocks]
     .sort((a, b) => a.sortOrder - b.sortOrder)
     .filter((block) => block.opinions.some((line) => line.trim()));
@@ -27,7 +29,7 @@ export function ProductWhyHighlights({ blocks, className = '' }: ProductWhyHighl
 
   return (
     <section className={className}>
-      <ProductHighlightTitle>Why this product?</ProductHighlightTitle>
+      <ProductHighlightTitle>{t('Why this product?')}</ProductHighlightTitle>
       <div className="space-y-14">
         {items.map((block) => {
           const lines = block.opinions.map((line) => line.trim()).filter(Boolean);

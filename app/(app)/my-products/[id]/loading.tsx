@@ -2,7 +2,7 @@ import { CreatorStudioProductViewSkeleton } from '@/components/creator/studio/Cr
 
 export default function CreatorProductViewLoading() {
   return (
-    <div className="px-4 py-8 sm:px-6">
+    <div className="px-4 pb-8 pt-4 sm:px-6 sm:pt-6">
       <CreatorStudioProductViewSkeleton />
     </div>
   );

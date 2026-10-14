@@ -1,36 +1,33 @@
 'use client';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type EmptyConversationProps = {
   onNewMessage?: () => void;
 };
 
-/** The resting state of the right panel: one line of type and the action that resolves it. */
+/**
+ * The resting state of the conversation column (desktop — phones show the inbox instead): one bold
+ * 24px line, one sentence, and the action that resolves it as the ink pill.
+ * Left-aligned in a narrow measure, like the head of a News card.
+ */
 export function EmptyConversation({ onNewMessage }: EmptyConversationProps) {
+  const t = useT();
   return (
-    <div className="flex h-full min-h-0 flex-col items-center justify-center px-6 py-16 text-center" role="status">
-      <div className="flex w-full max-w-sm flex-col items-center">
-        <span
-          aria-hidden
-          className="flex h-14 w-14 items-center justify-center rounded-full bg-[var(--msg-wash)] text-[var(--msg-ink-faint)]"
-        >
-          <svg className="h-6 w-6" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-            <path d="M4 5.5A1.5 1.5 0 0 1 5.5 4h13A1.5 1.5 0 0 1 20 5.5v9a1.5 1.5 0 0 1-1.5 1.5H9l-5 4V5.5Z" />
-          </svg>
-        </span>
-        <h2 className="mt-6 text-xl font-bold tracking-[-0.01em] text-[var(--msg-ink)]">No conversation selected</h2>
-        <p className="mt-2 text-[15px] leading-relaxed text-[var(--msg-ink-faint)]">
-          Pick a conversation on the left, or start a new one.
+    <div className="flex h-full min-h-0 flex-col items-center justify-center px-6 py-16" role="status">
+      <div className="flex w-full max-w-sm flex-col items-start text-left">
+        <h2 className="text-[24px] font-extrabold leading-8 tracking-[-0.02em] text-[color:var(--gn-ink)]">
+          {t('Select a conversation')}
+        </h2>
+        <p className="mt-2 text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+          {t('Pick one from your inbox, or start a new one with a provider or a client.')}
         </p>
         {onNewMessage ? (
           <button
             type="button"
             onClick={onNewMessage}
-            className="mt-7 inline-flex items-center gap-2 rounded-lg bg-[var(--msg-ink)] px-5 py-2.5 text-[15px] font-medium text-[var(--msg-panel)] transition-opacity duration-200 hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-coral)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--msg-panel)]"
+            className="mt-7 inline-flex h-11 items-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors duration-200 hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
-            <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" aria-hidden>
-              <path d="M12 5v14M5 12h14" />
-            </svg>
-            New message
+            {t('New message')}
           </button>
         ) : null}
       </div>

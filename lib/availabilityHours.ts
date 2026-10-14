@@ -1,3 +1,5 @@
+import { localeTag, tr } from '@/lib/i18n/active';
+
 export type DayPreset = 'weekdays' | 'mon_sat' | 'everyday' | 'custom';
 
 export type AvailabilitySchedule = {
@@ -32,13 +34,21 @@ function normalizeTime(raw: string): string {
   return `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}`;
 }
 
-function formatDayRange(days: boolean[]): string {
+/** Short weekday name, 0 = Monday: English for the stored value, the viewer's language on screen. */
+function dayLabel(index: number, localized: boolean): string {
+  if (!localized) return DAY_LABELS[index];
+  // 1 January 2024 was a Monday.
+  return new Date(2024, 0, 1 + index).toLocaleDateString(localeTag(), { weekday: 'short' });
+}
+
+function formatDayRange(days: boolean[], localized = false): string {
+  const label = (index: number) => dayLabel(index, localized);
   const active = days.map((on, i) => (on ? i : -1)).filter((i) => i >= 0);
-  if (active.length === 0) return 'No days selected';
-  if (active.length === 7) return 'Every day';
-  if (active.join(',') === '0,1,2,3,4') return 'Mon–Fri';
-  if (active.join(',') === '0,1,2,3,4,5') return 'Mon–Sat';
-  if (active.length === 1) return DAY_LABELS[active[0]];
+  if (active.length === 0) return localized ? tr('No days selected') : 'No days selected';
+  if (active.length === 7) return localized ? tr('Every day') : 'Every day';
+  if (active.join(',') === '0,1,2,3,4') return `${label(0)}–${label(4)}`;
+  if (active.join(',') === '0,1,2,3,4,5') return `${label(0)}–${label(5)}`;
+  if (active.length === 1) return label(active[0]);
   const ranges: string[] = [];
   let start = active[0];
   let prev = active[0];
@@ -47,11 +57,11 @@ function formatDayRange(days: boolean[]): string {
       prev = active[i];
       continue;
     }
-    ranges.push(start === prev ? DAY_LABELS[start] : `${DAY_LABELS[start]}–${DAY_LABELS[prev]}`);
+    ranges.push(start === prev ? label(start) : `${label(start)}–${label(prev)}`);
     start = active[i];
     prev = active[i];
   }
-  ranges.push(start === prev ? DAY_LABELS[start] : `${DAY_LABELS[start]}–${DAY_LABELS[prev]}`);
+  ranges.push(start === prev ? label(start) : `${label(start)}–${label(prev)}`);
   return ranges.join(', ');
 }
 
@@ -63,12 +73,12 @@ export function formatAvailabilityHours(schedule: AvailabilitySchedule, timezone
   return tz ? `${daysLabel} · ${start}–${end} (${tz})` : `${daysLabel} · ${start}–${end}`;
 }
 
-/** Days + hours as separate lines — no timezone (used by About profile frame). */
+/** Days + hours as separate lines, in the viewer's language — no timezone (used by About profile frame). */
 export function formatAvailabilityHoursLines(schedule: AvailabilitySchedule): string[] {
   const daysLabel =
     schedule.preset === 'custom'
-      ? formatDayRange(schedule.customDays)
-      : formatDayRange(PRESET_DAYS[schedule.preset]);
+      ? formatDayRange(schedule.customDays, true)
+      : formatDayRange(PRESET_DAYS[schedule.preset], true);
   const start = normalizeTime(schedule.start);
   const end = normalizeTime(schedule.end);
   return [daysLabel, `${start}–${end}`];

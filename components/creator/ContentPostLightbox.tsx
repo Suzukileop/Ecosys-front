@@ -1,5 +1,6 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import {
   useCallback,
   useEffect,
@@ -21,6 +22,7 @@ import { useAuth } from '@/context/AuthContext';
 import { mediaImageResponsive, mediaImageSrc } from '@/lib/media-image-url';
 import type { ContentPostBucket } from '@/types/creator-content';
 import type { PublicContentFeedItem } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type ContentPostLightboxPost = PublicContentFeedItem;
 
@@ -44,6 +46,7 @@ function ZoomableImage({
   /** When set (phones), a tap anywhere on the stage calls this instead of zooming or closing. */
   onTap?: () => void;
 }) {
+  const t = useT();
   const [zoom, setZoom] = useState(1);
   const [offset, setOffset] = useState({ x: 0, y: 0 });
   const [dragging, setDragging] = useState(false);
@@ -151,7 +154,7 @@ function ZoomableImage({
           type="button"
           onClick={() => applyZoom(zoom - ZOOM_STEP)}
           disabled={zoom <= MIN_ZOOM}
-          aria-label="Zoom out"
+          aria-label={t('Zoom out')}
           className={stageButtonClass}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -161,8 +164,8 @@ function ZoomableImage({
         <button
           type="button"
           onClick={() => applyZoom(1)}
-          aria-label="Reset zoom"
-          title="Reset zoom"
+          aria-label={t('Reset zoom')}
+          title={t('Reset zoom')}
           className="h-9 min-w-[3.75rem] rounded-full px-2 text-[13px] font-medium tabular-nums text-white/80 transition-colors hover:bg-white/10 hover:text-white"
         >
           {Math.round(zoom * 100)}%
@@ -171,7 +174,7 @@ function ZoomableImage({
           type="button"
           onClick={() => applyZoom(zoom + ZOOM_STEP)}
           disabled={zoom >= MAX_ZOOM}
-          aria-label="Zoom in"
+          aria-label={t('Zoom in')}
           className={stageButtonClass}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} aria-hidden>
@@ -183,8 +186,8 @@ function ZoomableImage({
           href={src}
           target="_blank"
           rel="noopener noreferrer"
-          aria-label="Open original"
-          title="Open original"
+          aria-label={t('Open original')}
+          title={t('Open original')}
           className={stageButtonClass}
         >
           <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -271,12 +274,13 @@ function LightboxTextArticle({
   post: ContentPostLightboxPost;
   onBackdropClick: () => void;
 }) {
+  const t = useT();
   const { heading: title, body: description } = splitTextPost(post.title, post.description);
   const tags = (post.tags ?? []).map((tag) => tag.trim().replace(/^#/, '')).filter(Boolean);
   const date = post.createdAt ? new Date(post.createdAt) : null;
   const dateLabel =
     date && !Number.isNaN(date.getTime())
-      ? date.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })
+      ? date.toLocaleDateString(localeTag(), { month: 'long', day: 'numeric', year: 'numeric' })
       : null;
   const words = `${title} ${description}`.split(/\s+/).filter(Boolean).length;
   const minutes = Math.max(1, Math.round(words / 220));
@@ -292,7 +296,7 @@ function LightboxTextArticle({
         <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-[14px] text-neutral-600 dark:text-neutral-300">
           {dateLabel ? <span>{dateLabel}</span> : null}
           <span aria-hidden className="text-neutral-300 dark:text-neutral-600">·</span>
-          <span>{minutes} min read</span>
+          <span>{t('{minutes} min read', { minutes })}</span>
         </div>
         <h2 className="mt-4 break-words text-[1.375rem] font-semibold leading-[1.3] tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[1.625rem]">
           {title}
@@ -350,6 +354,7 @@ function MobileCommentsSheet({
   onClose: () => void;
   children: ReactNode;
 }) {
+  const t = useT();
   const [shown, setShown] = useState(false);
 
   useEffect(() => {
@@ -367,14 +372,14 @@ function MobileCommentsSheet({
     <div className="absolute inset-0 z-30 flex flex-col justify-end lg:hidden">
       <button
         type="button"
-        aria-label="Close comments"
+        aria-label={t('Close comments')}
         onClick={onClose}
         className="absolute inset-0 bg-black/40"
         style={{ opacity: shown ? 1 : 0, transition: `opacity 260ms ${EASE}` }}
       />
       <div
         role="dialog"
-        aria-label="Comments"
+        aria-label={t('Comments')}
         className="relative flex h-[78dvh] flex-col overflow-hidden rounded-t-[22px] bg-white dark:bg-[#111111]"
         style={{ transform: shown ? 'translateY(0)' : 'translateY(100%)', transition: `transform 380ms ${EASE}` }}
       >
@@ -383,7 +388,7 @@ function MobileCommentsSheet({
         </div>
         <div className="flex shrink-0 items-center justify-between border-b border-black/[0.06] px-4 pb-3 pt-2 dark:border-white/[0.08]">
           <p className="text-[17px] font-semibold tracking-[-0.01em] text-[#111111] dark:text-white">
-            Comments
+            {t('Comments')}
             {count != null ? (
               <span className="ml-2 text-[15px] font-normal tabular-nums text-neutral-500 dark:text-neutral-400">{count}</span>
             ) : null}
@@ -391,7 +396,7 @@ function MobileCommentsSheet({
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close comments"
+            aria-label={t('Close comments')}
             className="-mr-1.5 inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-600 transition-colors hover:bg-black/[0.05] dark:text-neutral-300 dark:hover:bg-white/[0.08]"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
@@ -440,6 +445,7 @@ export function ContentPostLightbox({
   initialVideoTime,
   initialIndex = 0,
 }: ContentPostLightboxProps) {
+  const t = useT();
   const { isAuthenticated } = useAuth();
   const rootRef = useRef<HTMLDivElement>(null);
   const [mounted, setMounted] = useState(false);
@@ -576,7 +582,7 @@ export function ContentPostLightbox({
       ref={rootRef}
       role="dialog"
       aria-modal="true"
-      aria-label={post.title?.trim() || 'Post'}
+      aria-label={post.title?.trim() || t('Post')}
       className="fixed inset-0 z-[300] flex h-dvh flex-col bg-[#0B0B0B] lg:flex-row"
       style={{ opacity: shown ? 1 : 0, transition: `opacity 320ms ${EASE}` }}
     >
@@ -622,7 +628,7 @@ export function ContentPostLightbox({
                 key={direction}
                 type="button"
                 onClick={() => stepGallery(direction === 'next' ? 1 : -1)}
-                aria-label={direction === 'next' ? 'Next photo' : 'Previous photo'}
+                aria-label={direction === 'next' ? t('Next photo') : t('Previous photo')}
                 data-pf-no-color-transition
                 className={`absolute top-1/2 z-10 flex h-10 w-10 -translate-y-1/2 items-center justify-center rounded-full bg-black/50 text-white ring-1 ring-white/10 backdrop-blur-xl transition-colors hover:bg-black/70 sm:h-11 sm:w-11 ${
                   direction === 'next' ? 'right-3 sm:right-5' : 'left-3 sm:left-5'
@@ -641,7 +647,7 @@ export function ContentPostLightbox({
             <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path strokeLinecap="round" strokeLinejoin="round" d="M9 4h6l-1 6 3 3H7l3-3-1-6zM12 13v7" />
             </svg>
-            Pinned
+            {t('Pinned')}
           </span>
         ) : null}
 
@@ -650,7 +656,7 @@ export function ContentPostLightbox({
             <button
               type="button"
               onClick={toggleStage}
-              aria-label={stageFull ? 'Exit full screen' : 'Full screen'}
+              aria-label={stageFull ? t('Exit full screen') : t('Full screen')}
               className="flex h-9 w-9 items-center justify-center rounded-full bg-black/50 text-white ring-1 ring-white/10 backdrop-blur-xl transition-colors hover:bg-black/70 lg:hidden"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -670,8 +676,8 @@ export function ContentPostLightbox({
               if (document.fullscreenElement) void document.exitFullscreen();
               else void root.requestFullscreen();
             }}
-            aria-label="Toggle fullscreen"
-            title="Fullscreen"
+            aria-label={t('Toggle fullscreen')}
+            title={t('Fullscreen')}
             className="hidden h-10 w-10 items-center justify-center rounded-full bg-black/50 text-white/80 ring-1 ring-white/10 backdrop-blur-xl transition-colors hover:bg-black/70 hover:text-white sm:flex"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.8} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -681,15 +687,15 @@ export function ContentPostLightbox({
           <button
             type="button"
             onClick={handleClose}
-            aria-label="Close"
+            aria-label={t('Close')}
             className="flex h-9 w-9 items-center justify-center gap-2.5 rounded-full bg-black/50 text-[14px] font-medium text-white ring-1 ring-white/10 backdrop-blur-xl transition-colors hover:bg-black/70 sm:h-10 sm:w-auto sm:justify-start sm:pl-4 sm:pr-3"
           >
             <svg className="h-4 w-4 sm:hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
               <path d="M6 6l12 12M18 6L6 18" />
             </svg>
-            <span className="hidden sm:inline">Close</span>
+            <span className="hidden sm:inline">{t('Close')}</span>
             <kbd className="hidden rounded-md bg-white/10 px-1.5 py-0.5 font-sans text-[11px] font-medium text-white/60 sm:inline">
-              Esc
+              {t('Esc')}
             </kbd>
           </button>
         </div>
@@ -698,7 +704,7 @@ export function ContentPostLightbox({
       {stageExpandable ? (
         <div
           role="slider"
-          aria-label={stageFull ? 'Drag up to show details' : 'Drag down to view full screen'}
+          aria-label={stageFull ? t('Drag up to show details') : t('Drag down to view full screen')}
           aria-valuemin={0}
           aria-valuemax={1}
           aria-valuenow={stageFull ? 1 : 0}
@@ -790,7 +796,7 @@ export function ContentPostLightbox({
               >
                 <span className="flex items-center justify-between gap-3">
                   <span className="text-[15px] font-semibold text-[#111111] dark:text-white">
-                    Comments
+                    {t('Comments')}
                     {(commentCount ?? post.commentCount) != null ? (
                       <span className="ml-2 font-normal tabular-nums text-neutral-500 dark:text-neutral-400">
                         {commentCount ?? post.commentCount}
@@ -802,12 +808,12 @@ export function ContentPostLightbox({
                   </svg>
                 </span>
                 <span className="mt-2.5 flex h-10 items-center rounded-full border border-black/[0.08] px-4 text-[14px] text-neutral-500 dark:border-white/[0.1] dark:text-neutral-400">
-                  Add a comment…
+                  {t('Add a comment…')}
                 </span>
               </button>
             ) : (
               <p className="py-6 text-center text-[15px] text-neutral-500 dark:text-neutral-400">
-                Comments are turned off for this post.
+                {t('Comments are turned off for this post.')}
               </p>
             )}
           </div>
@@ -826,7 +832,7 @@ export function ContentPostLightbox({
           />
         ) : (
           <div className="order-4 flex flex-1 items-center justify-center border-t border-black/[0.06] px-4 text-[15px] lg:order-none lg:px-7 text-neutral-500 dark:border-white/[0.08] dark:text-neutral-400">
-            Comments are turned off for this post.
+            {t('Comments are turned off for this post.')}
           </div>
         )}
       </aside>
@@ -868,10 +874,11 @@ function formatThumbDate(value: string | null | undefined): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+  return date.toLocaleDateString(localeTag(), { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function PinnedBadge({ tone }: { tone: 'light' | 'dark' }) {
+  const t = useT();
   return (
     <span
       className={`absolute left-3 top-3 z-10 inline-flex h-7 w-7 items-center justify-center rounded-full ${
@@ -879,8 +886,8 @@ function PinnedBadge({ tone }: { tone: 'light' | 'dark' }) {
           ? 'bg-black/55 text-white backdrop-blur'
           : 'bg-[#111111] text-white dark:bg-white dark:text-[#111111]'
       }`}
-      aria-label="Pinned"
-      title="Pinned"
+      aria-label={t('Pinned')}
+      title={t('Pinned')}
     >
       <svg className="h-3 w-3" fill="currentColor" viewBox="0 0 20 20" aria-hidden>
         <path d="M10 2l1.5 4.5H16l-3.7 2.7 1.4 4.3L10 11.8 6.3 13.5l1.4-4.3L4 6.5h4.5L10 2z" />
@@ -890,7 +897,8 @@ function PinnedBadge({ tone }: { tone: 'light' | 'dark' }) {
 }
 
 export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThumbProps) {
-  const title = post.title?.trim() || 'Untitled';
+  const t = useT();
+  const title = post.title?.trim() || t('Untitled');
   const mediaUrl = post.mediaUrl?.trim() || '';
   const kind = mediaUrl ? contentMediaKind(mediaUrl, null, post.mediaType) : null;
 
@@ -902,7 +910,7 @@ export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThum
         type="button"
         onClick={onOpen}
         className="group relative flex aspect-[3/4] w-full cursor-pointer flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white p-5 text-left outline-none transition-colors duration-300 hover:border-black/[0.16] focus-visible:ring-2 focus-visible:ring-black/15 dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.2] dark:focus-visible:ring-white/25 sm:p-6"
-        aria-label={`Open ${title}`}
+        aria-label={t('Open {title}', { title })}
       >
         {post.pinned ? (
           <>
@@ -925,9 +933,9 @@ export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThum
           />
         </div>
         <div className="mt-4 flex items-center justify-between gap-3 border-t border-black/[0.06] pt-3 text-[13px] text-neutral-600 dark:border-white/[0.08] dark:text-neutral-300">
-          <span className="truncate">{dateLabel ?? 'Post'}</span>
+          <span className="truncate">{dateLabel ?? t('Post')}</span>
           <span className="inline-flex shrink-0 items-center gap-1 font-medium text-[#111111] dark:text-white">
-            Read
+            {t('Read')}
             <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
               →
             </span>
@@ -942,7 +950,7 @@ export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThum
       type="button"
       onClick={onOpen}
       className="group relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg bg-neutral-100 text-left outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:bg-neutral-900 dark:focus-visible:ring-white/25"
-      aria-label={`Open ${title}`}
+      aria-label={t('Open {title}', { title })}
     >
       {mediaUrl && kind === 'video' ? (
         // eslint-disable-next-line jsx-a11y/media-has-caption

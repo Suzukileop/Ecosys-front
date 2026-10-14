@@ -26,6 +26,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsFramesSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FRAMES_ENTRANCE_MS = 920;
 const FRAMES_ENTRANCE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -229,11 +230,12 @@ function useFramesGalleryMotion(itemsKey: string): {
 /** Tools as one quiet uppercase line, dot-separated — each word animates on hover without
  * shifting its neighbors (transform/opacity only), and scrolls sideways if it overflows. */
 function FramesStackList({ tools, ink }: { tools: string[]; ink: string }) {
+  const t = useT();
   if (tools.length === 0) return null;
   return (
     <ul
       className="m-0 flex list-none items-center gap-x-2.5 overflow-x-auto whitespace-nowrap p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
-      aria-label="Stack"
+      aria-label={t('Stack')}
     >
       {tools.map((tool, index) => (
         <li key={tool} className="flex shrink-0 items-center gap-x-2.5">
@@ -409,6 +411,7 @@ function FramesCard({
   imageOnRight: boolean;
   revealed: boolean;
 }) {
+  const t = useT();
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
   const description = item.description?.trim() || '';
@@ -490,7 +493,7 @@ function FramesCard({
       className="relative flex w-full items-center justify-center px-6 text-center text-sm leading-[1.8] max-md:mx-[calc(50%-50vw)] max-md:h-[48dvh] max-md:w-screen md:aspect-[16/11]"
       style={{ color: muted }}
     >
-      Add a thumbnail in Information → Portfolio
+      {t('Add a thumbnail in Information → Portfolio')}
     </div>
   );
 
@@ -530,7 +533,7 @@ function FramesCard({
     <FramesProjectLink
       ref={linkRef}
       href={href}
-      ariaLabel={item.title || 'Project'}
+      ariaLabel={item.title || t('Project')}
       className="group/frame block cursor-none focus:outline-none"
       onMouseEnter={handleEnter}
       onMouseLeave={dismissCursor}

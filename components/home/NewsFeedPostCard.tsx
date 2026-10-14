@@ -1,6 +1,6 @@
 'use client';
 
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState, useSyncExternalStore } from 'react';
 import Link from 'next/link';
 import { ContentPostActionsMenu, PostMenuIcons, type ContentPostActionItem } from '@/components/creator/ContentPostActionsMenu';
 import { ContentPostClampedTitle } from '@/components/creator/ContentPostClampedTitle';
@@ -14,6 +14,7 @@ import {
 import { CommentThread } from '@/components/marketplace/CommentThread';
 import {
   COMMENTS_INLINE_CLASS,
+  COMMENTS_INLINE_PREVIEW,
   COMMENTS_SHEET_CLASS,
   PostCommentsSurface,
 } from '@/components/creator/PostCommentsSurface';
@@ -25,6 +26,7 @@ import {
   formatPostTime,
   postHasMedia,
 } from '@/components/home/NewsFeedPostParts';
+import { SaveToCollectionDialog } from '@/components/home/SaveToCollectionDialog';
 import { AvatarImage } from '@/components/ui/PersonAvatar';
 import { getApiErrorMessage } from '@/lib/api-error';
 import {
@@ -38,8 +40,22 @@ import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import { useAuth } from '@/context/AuthContext';
 import { useCreatorAppRole } from '@/hooks/useCreatorAppRole';
 import type { PublicContentFeedItem } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const NEWS_LOGIN_REDIRECT = '/login?redirect=/feed';
+
+const PHONE_QUERY = '(max-width: 639px)';
+
+function subscribePhone(onChange: () => void) {
+  const media = window.matchMedia(PHONE_QUERY);
+  media.addEventListener('change', onChange);
+  return () => media.removeEventListener('change', onChange);
+}
+
+/** Phones read a shorter fold: long text-only posts open on 5 body lines instead of 9. */
+function useIsPhone() {
+  return useSyncExternalStore(subscribePhone, () => window.matchMedia(PHONE_QUERY).matches, () => false);
+}
 
 /** Why a card is no longer showing its post. */
 type Gone = 'hidden' | 'removed' | 'private' | 'unreposted' | null;
@@ -50,6 +66,9 @@ export function NewsFeedPostCard({
   className = '',
   priority = false,
   onReposted,
+  extraMenuItems,
+  autoOpenComments = false,
+  focusCommentId = null,
 }: {
   post: PublicContentFeedItem;
   className?: string;
@@ -57,10 +76,18 @@ export function NewsFeedPostCard({
   priority?: boolean;
   /** A repost the viewer just created from this card — the feed shows it at the top. */
   onReposted?: (repost: PublicContentFeedItem) => void;
+  /** Surface-specific menu entries, listed after "Add to collection" (e.g. a collection's "Remove"). */
+  extraMenuItems?: ContentPostActionItem[];
+  /** Opens with the comments unfolded (a notification deep link). */
+  autoOpenComments?: boolean;
+  /** Comment to scroll to and highlight once the thread has loaded. */
+  focusCommentId?: string | null;
 }) {
+  const t = useT();
   const { user, isAuthenticated, hasRole } = useAuth();
+  const isPhone = useIsPhone();
   const { appRole, ready: appRoleReady } = useCreatorAppRole();
-  const [commentsOpen, setCommentsOpen] = useState(false);
+  const [commentsOpen, setCommentsOpen] = useState(autoOpenComments);
   const closeComments = useCallback(() => setCommentsOpen(false), []);
   /**
    * The feed payload carries the count; `liveCommentCount` only holds a value once this card has
@@ -72,6 +99,7 @@ export function NewsFeedPostCard({
   const [lightboxIndex, setLightboxIndex] = useState(0);
   const [lightboxVideoTime, setLightboxVideoTime] = useState(0);
   const [reportOpen, setReportOpen] = useState(false);
+  const [collectionsOpen, setCollectionsOpen] = useState(false);
   const [gone, setGone] = useState<Gone>(null);
   const [commentsEnabledOverride, setCommentsEnabledOverride] = useState<boolean | null>(null);
 
@@ -100,6 +128,7 @@ export function NewsFeedPostCard({
     setCommentCount(undefined);
     setLightboxOpen(false);
     setReportOpen(false);
+    setCollectionsOpen(false);
     setGone(null);
     setCommentsEnabledOverride(null);
   }
@@ -144,17 +173,14 @@ export function NewsFeedPostCard({
   const specialtyLine =
     creator.specialite?.trim() || creator.specialties?.map((s) => s.trim()).find(Boolean) || null;
   const moodLine = [
-    post.moodLabel?.trim() ? `Feeling ${post.moodLabel.trim()}${post.moodEmoji ? ` ${post.moodEmoji}` : ''}` : null,
-    post.taggedUsers?.length ? `with ${post.taggedUsers.map((u) => u.fullName).join(', ')}` : null,
+    post.moodLabel?.trim() ? `${t('Feeling {mood}', { mood: t(post.moodLabel.trim()) })}${post.moodEmoji ? ` ${post.moodEmoji}` : ''}` : null,
+    post.taggedUsers?.length ? t('with {names}', { names: post.taggedUsers.map((u) => u.fullName).join(', ') }) : null,
   ]
     .filter(Boolean)
     .join(' · ');
   const note = post.title?.trim() || '';
   const hasMedia = postHasMedia(post);
-  const hasTextBlock = Boolean(
-    post.title?.trim() || (post.tags?.length ?? 0) > 0 || post.priceInfo?.trim()
-  );
-  const mediaSpacing = hasTextBlock ? 'mt-3' : 'mt-4';
+  const mediaSpacing = 'mt-3';
   const shareUrl = `/marketplace/content/${encodeURIComponent(content.id)}`;
   const shareTitle = (content.title?.trim() || note || undefined) as string | undefined;
 
@@ -174,24 +200,24 @@ export function NewsFeedPostCard({
       if (isAuthenticated) return true;
       pushFlashFeedback({
         variant: 'info',
-        title: `Sign in to ${what}`,
+        title: t('Sign in to {what}', { what }),
         actionHref: NEWS_LOGIN_REDIRECT,
-        actionLabel: 'Sign in',
+        actionLabel: t('Sign in'),
       });
       return false;
     },
-    [isAuthenticated]
+    [isAuthenticated, t]
   );
 
   const copyLink = useCallback(async () => {
     const href = new URL(shareUrl, window.location.origin).href;
     try {
       await navigator.clipboard.writeText(href);
-      pushFlashFeedback({ variant: 'success', title: 'Link copied' });
+      pushFlashFeedback({ variant: 'success', title: t('Link copied') });
     } catch {
-      pushFlashFeedback({ variant: 'error', title: 'Unable to copy the link' });
+      pushFlashFeedback({ variant: 'error', title: t('Unable to copy the link') });
     }
-  }, [shareUrl]);
+  }, [shareUrl, t]);
 
   const hidePost = useCallback(async () => {
     if (!requireSignIn('hide posts')) return;
@@ -200,9 +226,9 @@ export function NewsFeedPostCard({
       await hideContentPost(post.id);
     } catch (e) {
       setGone(null);
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to hide this post') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to hide this post')) });
     }
-  }, [post.id, requireSignIn]);
+  }, [post.id, requireSignIn, t]);
 
   const undoHide = useCallback(async () => {
     setGone(null);
@@ -210,9 +236,9 @@ export function NewsFeedPostCard({
       await unhideContentPost(post.id);
     } catch (e) {
       setGone('hidden');
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to restore this post') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to restore this post')) });
     }
-  }, [post.id]);
+  }, [post.id, t]);
 
   const toggleComments = useCallback(async () => {
     const next = !commentsEnabled;
@@ -220,55 +246,68 @@ export function NewsFeedPostCard({
     if (!next) setCommentsOpen(false);
     try {
       await updateContentCommentsEnabled(post.id, next);
-      pushFlashFeedback({ variant: 'success', title: next ? 'Comments turned on' : 'Comments turned off' });
+      pushFlashFeedback({ variant: 'success', title: next ? t('Comments turned on') : t('Comments turned off') });
     } catch (e) {
       setCommentsEnabledOverride(!next);
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to update comments') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to update comments')) });
     }
-  }, [commentsEnabled, post.id]);
+  }, [commentsEnabled, post.id, t]);
 
   const makePrivate = useCallback(async () => {
     try {
       await updateContentVisibility(post.id, false);
       setGone('private');
     } catch (e) {
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to make this post private') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to make this post private')) });
     }
-  }, [post.id]);
+  }, [post.id, t]);
 
   const trashPost = useCallback(async () => {
     try {
       await moveContentToTrash(post.id);
       setGone('removed');
     } catch (e) {
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to delete this post') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to delete this post')) });
     }
-  }, [post.id]);
+  }, [post.id, t]);
 
   const undoOwnRepost = useCallback(async () => {
     try {
       await undoRepostContent(content.id);
       setGone('unreposted');
     } catch (e) {
-      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, 'Unable to remove your repost') });
+      pushFlashFeedback({ variant: 'error', title: getApiErrorMessage(e, t('Unable to remove your repost')) });
     }
-  }, [content.id]);
+  }, [content.id, t]);
 
   const menuItems = useMemo<ContentPostActionItem[]>(() => {
     const copy: ContentPostActionItem = {
       id: 'copy',
-      label: 'Copy link',
+      label: t('Copy link'),
       icon: PostMenuIcons.link,
       onSelect: () => void copyLink(),
     };
+    const lead: ContentPostActionItem[] = [
+      copy,
+      {
+        id: 'collection',
+        label: t('Add to collection'),
+        description: t('Saves it and files it in a collection.'),
+        icon: PostMenuIcons.collection,
+        onSelect: () => {
+          if (requireSignIn('save posts')) setCollectionsOpen(true);
+        },
+      },
+      ...(extraMenuItems ?? []),
+    ];
     if (isOwnPost) {
       if (isRepost) {
         return [
-          copy,
+          ...lead,
           {
             id: 'unrepost',
-            label: 'Undo repost',
-            description: 'Removes it from your profile and the feed.',
+            label: t('Undo repost'),
+            description: t('Removes it from your profile and the feed.'),
             icon: PostMenuIcons.repost,
             tone: 'danger',
             separated: true,
@@ -277,23 +316,23 @@ export function NewsFeedPostCard({
         ];
       }
       return [
-        copy,
+        ...lead,
         {
           id: 'comments',
-          label: commentsEnabled ? 'Turn off comments' : 'Turn on comments',
+          label: commentsEnabled ? t('Turn off comments') : t('Turn on comments'),
           icon: PostMenuIcons.comments,
           onSelect: () => void toggleComments(),
         },
         {
           id: 'private',
-          label: 'Make private',
-          description: 'Only you will see it, from your studio.',
+          label: t('Make private'),
+          description: t('Only you will see it, from your studio.'),
           icon: PostMenuIcons.lock,
           onSelect: () => void makePrivate(),
         },
         {
           id: 'trash',
-          label: 'Move to trash',
+          label: t('Move to trash'),
           icon: PostMenuIcons.trash,
           tone: 'danger',
           separated: true,
@@ -302,18 +341,18 @@ export function NewsFeedPostCard({
       ];
     }
     return [
-      copy,
+      ...lead,
       {
         id: 'hide',
-        label: 'Not interested',
-        description: 'See fewer posts like this.',
+        label: t('Not interested'),
+        description: t('See fewer posts like this.'),
         icon: PostMenuIcons.hide,
         onSelect: () => void hidePost(),
       },
       {
         id: 'report',
-        label: 'Report post',
-        description: 'Spam, abuse, copyright…',
+        label: t('Report post'),
+        description: t('Spam, abuse, copyright…'),
         icon: PostMenuIcons.flag,
         tone: 'danger',
         separated: true,
@@ -325,6 +364,7 @@ export function NewsFeedPostCard({
   }, [
     commentsEnabled,
     copyLink,
+    extraMenuItems,
     hidePost,
     isOwnPost,
     isRepost,
@@ -338,15 +378,15 @@ export function NewsFeedPostCard({
   if (gone) {
     const message =
       gone === 'hidden'
-        ? 'Post hidden. We’ll show fewer like it.'
+        ? t('Post hidden. We’ll show fewer like it.')
         : gone === 'private'
-          ? 'Post is now private. Find it in your studio.'
+          ? t('Post is now private. Find it in your studio.')
           : gone === 'unreposted'
-            ? 'Repost removed.'
-            : 'Post moved to the trash.';
+            ? t('Repost removed.')
+            : t('Post moved to the trash.');
     return (
       <div
-        className={`flex items-center justify-between gap-4 bg-[#FFFFFF] px-4 py-4 text-[14px] text-neutral-600 dark:bg-[#111111] dark:text-neutral-300 sm:rounded-2xl sm:px-5 ${className}`}
+        className={`gn-card flex min-h-14 items-center justify-between gap-4 px-4 py-2 text-[14px] leading-5 text-[color:var(--gn-ink2)] ${className}`}
         role="status"
       >
         <span>{message}</span>
@@ -355,18 +395,18 @@ export function NewsFeedPostCard({
             <button
               type="button"
               onClick={() => void undoHide()}
-              className="rounded-full px-3 py-1.5 font-semibold text-[#111111] transition-colors hover:bg-black/[0.05] dark:text-white dark:hover:bg-white/[0.08]"
+              className="h-9 rounded-full px-3.5 font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)]"
             >
-              Undo
+              {t('Undo')}
             </button>
             <button
               type="button"
               onClick={() => {
                 if (requireSignIn('report posts')) setReportOpen(true);
               }}
-              className="rounded-full px-3 py-1.5 font-medium text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white"
+              className="h-9 rounded-full px-3.5 font-medium text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)]"
             >
-              Report
+              {t('Report')}
             </button>
           </span>
         ) : null}
@@ -377,9 +417,11 @@ export function NewsFeedPostCard({
 
   return (
     <article
-      className={`overflow-hidden bg-[#FFFFFF] dark:bg-[#111111] sm:rounded-2xl ${className}`}
+      className={`gn-post overflow-hidden bg-[#FFFFFF] dark:bg-[#111111] sm:rounded-xl ${className}`}
     >
-      <header className="flex items-center gap-3.5 px-4 pt-4 sm:px-5 sm:pt-5">
+      {/* Header — 40px avatar; name 15/20 semibold over meta 13/18, together exactly the avatar's
+          height so the row is optically centred. Hire + menu sit on the same centre line. */}
+      <header className="flex items-center gap-3 px-4 pt-4">
         <Link
           href={profileHref}
           className={`inline-flex shrink-0 ${creatorPostAvatarRingClass(normalizeCreatorAppRole(creator.appRole))}`}
@@ -387,9 +429,10 @@ export function NewsFeedPostCard({
         >
           <AvatarImage
             src={creator.avatarUrl}
-            className="h-11 w-11 rounded-full object-cover"
+            className="h-10 w-10 rounded-full object-cover"
+            displayWidth={40}
             fallback={
-              <span className="flex h-11 w-11 items-center justify-center rounded-full bg-neutral-200 text-sm font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
+              <span className="flex h-10 w-10 items-center justify-center rounded-full bg-neutral-200 text-[14px] font-semibold text-neutral-700 dark:bg-neutral-800 dark:text-neutral-200">
                 {creatorName.slice(0, 1).toUpperCase()}
               </span>
             }
@@ -398,25 +441,25 @@ export function NewsFeedPostCard({
         <div className="min-w-0 flex-1">
           <Link
             href={profileHref}
-            className="block truncate text-[15px] font-semibold leading-tight text-[#111111] hover:underline dark:text-white"
+            className="block truncate text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] hover:underline"
           >
             {creatorName}
           </Link>
-          <p className="mt-1 flex items-center truncate text-[13px] leading-tight text-neutral-500 dark:text-neutral-400">
+          <p className="mt-0.5 flex items-center truncate text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
             {isRepost ? (
-              <span className="inline-flex items-center gap-1 text-emerald-600 dark:text-emerald-400">
+              <span className="inline-flex shrink-0 items-center gap-1 font-medium text-[color:var(--gn-ink)]">
                 <svg className="h-3.5 w-3.5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                   <path d="m17 2 4 4-4 4" />
                   <path d="M3 11v-1a4 4 0 0 1 4-4h14" />
                   <path d="m7 22-4-4 4-4" />
                   <path d="M21 13v1a4 4 0 0 1-4 4H3" />
                 </svg>
-                Reposted
+                {t('Reposted')}
               </span>
             ) : (
-              <span className="truncate">{moodLine || specialtyLine || 'Creator'}</span>
+              <span className="truncate">{moodLine || (specialtyLine ? t(specialtyLine) : t('Creator'))}</span>
             )}
-            <span aria-hidden className="mx-1.5 text-neutral-300 dark:text-neutral-600">·</span>
+            <span aria-hidden className="mx-1.5 text-[color:var(--gn-ink3)]">·</span>
             <time dateTime={post.createdAt} title={new Date(post.createdAt).toLocaleString()} className="shrink-0">
               {formatPostTime(post.createdAt)}
             </time>
@@ -425,21 +468,21 @@ export function NewsFeedPostCard({
         {canHire ? (
           <Link
             href={profileHref}
-            className="gn-inset inline-flex h-8 shrink-0 items-center rounded-full px-3.5 text-[13px] font-semibold text-[#111111] transition-colors hover:text-[#FF5722] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 dark:text-white dark:hover:text-[#FF5722]"
+            className="inline-flex h-8 shrink-0 items-center rounded-full bg-[color:var(--gn-inset)] px-3.5 text-[13px] font-semibold leading-4 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-accent-fill)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
-            Hire
+            {t('Hire')}
           </Link>
         ) : null}
         <ContentPostActionsMenu items={menuItems} className="-mr-2 shrink-0" />
       </header>
 
-      <div className="flex flex-col px-4 pb-4 sm:px-5">
+      <div className="flex flex-col px-4">
         <div className="min-w-0 flex-1">
           {isRepost ? (
             <>
               {note ? (
-                <div className="pt-4">
-                  <ContentPostClampedTitle title={note} lines={6} />
+                <div className="pt-3">
+                  <ContentPostClampedTitle title={note} lines={6} editorial />
                 </div>
               ) : null}
               {original ? (
@@ -447,7 +490,6 @@ export function NewsFeedPostCard({
                   original={original}
                   onOpen={openViewer}
                   onExpandVideo={openViewerAtVideo}
-                  showTools={false}
                 />
               ) : (
                 <UnavailableOriginal />
@@ -455,10 +497,17 @@ export function NewsFeedPostCard({
             </>
           ) : (
             <>
-              <PostTextBlock post={post} titleLines={hasMedia ? 2 : 10} showTools={false} />
+              <PostTextBlock
+                post={post}
+                titleLines={hasMedia ? 2 : isPhone ? 6 : 10}
+                hidePrice={hasMedia}
+                headline={hasMedia}
+                editorial
+              />
               {hasMedia ? (
                 <PostMedia
                   post={post}
+                  priceLabel={post.priceInfo ?? ''}
                   bleed
                   spacing={mediaSpacing}
                   priority={priority}
@@ -470,9 +519,13 @@ export function NewsFeedPostCard({
           )}
         </div>
 
-        <aside className="mt-4 flex shrink-0" aria-label="Post actions">
+      </div>
+
+      {/* Action bar — equal-width cells, aligned to the card (8px inset so each 40px hit area's
+          hover disc lines up with the 16px text gutter). */}
+      <footer className="px-2 pb-1.5 pt-1.5">
           <ContentPostSocialBar
-            variant="rail"
+            variant="feed"
             postId={post.id}
             initialLikes={post.likes}
             initialCommentCount={post.commentCount}
@@ -492,9 +545,9 @@ export function NewsFeedPostCard({
             initialRepostCount={post.repostCount}
             initialViewerReposted={post.viewerReposted}
             onReposted={onReposted}
+            onAddToCollection={() => setCollectionsOpen(true)}
           />
-        </aside>
-      </div>
+      </footer>
 
       <PostCommentsSurface
         open={commentsOpen && commentsEnabled}
@@ -503,6 +556,7 @@ export function NewsFeedPostCard({
       >
         {(mode) => (
           <CommentThread
+            key={focusCommentId ?? 'thread'}
             variant="panel"
             targetType="POST"
             targetId={post.id}
@@ -513,6 +567,8 @@ export function NewsFeedPostCard({
             onClose={closeComments}
             onCountChange={setCommentCount}
             className={mode === 'sheet' ? COMMENTS_SHEET_CLASS : COMMENTS_INLINE_CLASS}
+            previewCount={mode === 'inline' ? COMMENTS_INLINE_PREVIEW : undefined}
+            focusCommentId={focusCommentId}
           />
         )}
       </PostCommentsSurface>
@@ -534,6 +590,9 @@ export function NewsFeedPostCard({
       />
 
       <ContentPostReportDialog open={reportOpen} postId={post.id} onClose={() => setReportOpen(false)} />
+      {collectionsOpen ? (
+        <SaveToCollectionDialog open postId={post.id} onClose={() => setCollectionsOpen(false)} />
+      ) : null}
     </article>
   );
 }

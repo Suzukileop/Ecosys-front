@@ -4,6 +4,7 @@ import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode }
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { FaqItem } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Floating Gallery — the second of two deliberately un-templated FAQ
@@ -31,6 +32,7 @@ export function FaqFloatingGalleryDesign({
    *  General tab's "Font size" control (`faqPremiumFontScale` in portfolio-faq-settings.ts). */
   fontSizeScale?: number;
 }) {
+  const t = useT();
   const listRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
@@ -183,11 +185,11 @@ export function FaqFloatingGalleryDesign({
             </button>
             <div className="pf-faq-gallery-glass">
               <div className="pf-faq-gallery-glass-head">
-                <span className="pf-faq-gallery-eyebrow">Answer / {String(index + 1).padStart(2, '0')}</span>
+                <span className="pf-faq-gallery-eyebrow">{t('Answer /')} {String(index + 1).padStart(2, '0')}</span>
                 <button
                   type="button"
                   className="pf-faq-gallery-close"
-                  aria-label="Close answer"
+                  aria-label={t('Close answer')}
                   onClick={(e) => {
                     e.stopPropagation();
                     closeRow(index);

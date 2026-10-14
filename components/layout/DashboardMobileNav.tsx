@@ -3,6 +3,7 @@
 import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useDashboardNavItems } from '@/components/layout/dashboard/useDashboardNavItems';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * The navigation below `lg`.
@@ -128,6 +129,7 @@ export function DashboardMobileNav({
   /** Messages / notifications, passed in so this component owns no data fetching of its own. */
   signals: Signal[];
 }) {
+  const t = useT();
   const items = useDashboardNavItems();
   /* One open group at a time. An accordion that lets every branch stand open turns a list you can
      read at a glance into a page you have to scroll, which is the thing this sheet replaced. */
@@ -155,7 +157,7 @@ export function DashboardMobileNav({
     <div
       role="dialog"
       aria-modal={open}
-      aria-label="Navigation"
+      aria-label={t('Navigation')}
       aria-hidden={!open}
       /*
        * `top-[var(--dash-header-h)]`, written by the header itself, is what keeps the bar in view
@@ -174,9 +176,9 @@ export function DashboardMobileNav({
         open ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-3 opacity-0'
       }`}
     >
-      <SheetBand label="Explore" open={open} index={row++} />
+      <SheetBand label={t('Explore')} open={open} index={row++} />
 
-      <nav aria-label="Main navigation" className="flex flex-col">
+      <nav aria-label={t('Main navigation')} className="flex flex-col">
         {items.map(({ item, children, active, target, key }) => {
           const index = row++;
           const isGroup = children.length > 0;
@@ -201,7 +203,7 @@ export function DashboardMobileNav({
                     tabIndex={open ? undefined : -1}
                     className={ROW_CLS}
                   >
-                    <RowLabel active={active}>{item.label}</RowLabel>
+                    <RowLabel active={active}>{t(item.label)}</RowLabel>
                     <Chevron expanded={isExpanded} />
                   </button>
                 ) : (
@@ -213,7 +215,7 @@ export function DashboardMobileNav({
                     aria-current={active ? 'page' : undefined}
                     className={ROW_CLS}
                   >
-                    <RowLabel active={active}>{item.label}</RowLabel>
+                    <RowLabel active={active}>{t(item.label)}</RowLabel>
                   </Link>
                 )}
               </div>
@@ -241,7 +243,7 @@ export function DashboardMobileNav({
                           className="group/row flex items-center px-4 py-3 text-left hover:bg-[rgba(34,34,34,0.07)] active:bg-[rgba(34,34,34,0.07)] dark:hover:bg-white/[0.07] dark:active:bg-white/[0.07] sm:px-6"
                         >
                           <span className="block pl-4 text-[0.95rem] leading-[1.2] text-neutral-500 dark:text-neutral-400">
-                            {child.label}
+                            {t(child.label)}
                           </span>
                         </Link>
                       ))}
@@ -256,7 +258,7 @@ export function DashboardMobileNav({
 
       {signals.length > 0 ? (
         <>
-          <SheetBand label="Activity" open={open} index={row++} />
+          <SheetBand label={t('Activity')} open={open} index={row++} />
           <div className="flex flex-col">
             {signals.map((signal) => {
               const index = row++;
@@ -277,7 +279,7 @@ export function DashboardMobileNav({
                     tabIndex={open ? undefined : -1}
                     className={ROW_CLS}
                   >
-                    <RowLabel active={false}>{signal.label}</RowLabel>
+                    <RowLabel active={false}>{t(signal.label)}</RowLabel>
                   </Link>
                 </div>
               );

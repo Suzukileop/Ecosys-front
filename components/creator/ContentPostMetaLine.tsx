@@ -1,6 +1,7 @@
 'use client';
 
 import type { TaggedUserRef } from '@/types/creator-content';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ContentPostMetaLineProps = {
   creatorName: string;
@@ -17,6 +18,7 @@ export function ContentPostMetaLine({
   taggedUsers,
   className = '',
 }: ContentPostMetaLineProps) {
+  const t = useT();
   const taggedNames = taggedUsers?.map((u) => u.fullName) ?? [];
   const hasMeta = Boolean(moodLabel) || taggedNames.length > 0;
   if (!hasMeta) return null;
@@ -27,14 +29,14 @@ export function ContentPostMetaLine({
       {moodLabel && (
         <>
           {' '}
-          is feeling <span className="font-medium">{moodLabel}</span>
+          {t('is feeling')} <span className="font-medium">{moodLabel}</span>
           {moodEmoji ? ` ${moodEmoji}` : ''}
         </>
       )}
       {taggedNames.length > 0 && (
         <>
           {moodLabel ? ' · ' : ' '}
-          with{' '}
+          {t('with')}{' '}
           <span className="font-medium text-orange-600 dark:text-orange-400">
             {taggedNames.join(', ')}
           </span>

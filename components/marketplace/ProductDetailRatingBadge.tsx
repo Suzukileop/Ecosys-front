@@ -4,6 +4,7 @@ import { useEffect, useState } from 'react';
 import { StarRating } from '@/components/marketplace/StarRating';
 import { getProductReviewSummary } from '@/lib/marketplace-api';
 import { subscribeRatingUpdated } from '@/lib/ratingBus';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type ProductDetailRatingBadgeProps = {
   productId: string;
@@ -16,6 +17,7 @@ export function ProductDetailRatingBadge({
   initialRating,
   initialReviewCount,
 }: ProductDetailRatingBadgeProps) {
+  const t = useT();
   const [rating, setRating] = useState<number | null>(initialRating);
   const [reviewCount, setReviewCount] = useState(initialReviewCount);
 
@@ -32,22 +34,17 @@ export function ProductDetailRatingBadge({
     });
   }, [productId]);
 
+  // No reviews yet: nothing to show here (the reviews section says so) — no row of empty stars.
+  if (reviewCount <= 0) return null;
+
   return (
-    <div className="flex flex-wrap items-center gap-3">
-      <StarRating rating={rating ?? 0} size="md" />
-      {reviewCount > 0 ? (
-        <p className="text-sm text-gray-600 dark:text-gray-400">
-          <span className="font-semibold text-gray-900 dark:text-white">
-            {rating?.toFixed(1)}
-          </span>
-          {' · '}
-          {reviewCount} customer review{reviewCount === 1 ? '' : 's'}
-        </p>
-      ) : (
-        <p className="text-sm text-gray-500 dark:text-gray-400">
-          No customer ratings yet
-        </p>
-      )}
+    <div className="flex flex-wrap items-center gap-2">
+      <StarRating rating={rating ?? 0} size="sm" />
+      <p className="text-[13px] leading-[18px] text-[#536471] dark:text-[#71767B]">
+        <span className="font-semibold text-[#0F1419] dark:text-[#E7E9EA]">{rating?.toFixed(1)}</span>
+        {' · '}
+        {reviewCount} {t('review')}{reviewCount === 1 ? '' : 's'}
+      </p>
     </div>
   );
 }

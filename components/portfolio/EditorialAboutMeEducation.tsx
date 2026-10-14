@@ -12,6 +12,7 @@ import {
   infoContentEducationMetaSizeClass,
   infoContentEducationTitleSizeClass,
 } from '@/components/portfolio/portfolio-info-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type TraitEducationColors = {
   titleColor: string;
@@ -115,6 +116,7 @@ function EducationSectionHeader({
   cardBorder: string;
   contentSize: PortfolioInfoPremiumFontSize;
 }) {
+  const t = useT();
   const sectionTitleClass = infoContentBlockTitleSizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
   return (
@@ -124,13 +126,13 @@ function EducationSectionHeader({
           className={`text-left font-bold tracking-tight ${sectionTitleClass}`}
           style={{ color: titleColor }}
         >
-          Education
+          {t('Education')}
         </h3>
         <p
           className={`font-semibold uppercase tracking-[0.22em] ${metaClass}`}
           style={{ color: bodyColor }}
         >
-          {String(count).padStart(2, '0')} — Academic path
+          {t('{padStart} — Academic path', { padStart: String(count).padStart(2, '0') })}
         </p>
       </div>
       <div className="mt-5 h-px w-full" style={{ backgroundColor: cardBorder }} aria-hidden />

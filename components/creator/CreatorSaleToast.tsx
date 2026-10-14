@@ -1,6 +1,7 @@
 'use client';
 
 import { AnimatePresence, motion } from 'framer-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type SaleToast = {
   id: number;
@@ -19,6 +20,7 @@ const DOT: Record<SaleToast['tone'], string> = {
 };
 
 export function CreatorSaleToast({ toast, onDismiss }: { toast: SaleToast | null; onDismiss: () => void }) {
+  const t = useT();
   return (
     <div className="pointer-events-none fixed inset-x-0 bottom-6 z-[61] flex justify-center px-4" role="status" aria-live="polite">
       <AnimatePresence>
@@ -43,16 +45,16 @@ export function CreatorSaleToast({ toast, onDismiss }: { toast: SaleToast | null
                 onClick={toast.onUndo}
                 className="shrink-0 rounded-lg px-3 py-2 text-[14px] font-semibold text-[#FF5722] transition hover:bg-white/[0.06] disabled:opacity-50"
               >
-                {toast.undoing ? 'Undoing…' : 'Undo'}
+                {toast.undoing ? t('Undoing…') : t('Undo')}
               </button>
             ) : null}
             <button
               type="button"
-              aria-label="Dismiss"
+              aria-label={t('Dismiss')}
               onClick={onDismiss}
               className="shrink-0 rounded-lg px-2 py-2 text-[15px] leading-none text-white/40 transition hover:bg-white/[0.06] hover:text-white"
             >
-              ×
+              {t('×')}
             </button>
           </motion.div>
         )}

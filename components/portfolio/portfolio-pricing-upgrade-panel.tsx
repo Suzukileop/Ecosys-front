@@ -2,10 +2,8 @@
 
 import { useRouter } from 'next/navigation';
 import { useState } from 'react';
-import {
-  brandCtaClass,
-  brandSolidBg,
-} from '@/components/landing/landingBrand';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type BillingCycle = 'monthly' | 'annual';
 
@@ -35,73 +33,73 @@ export const PORTFOLIO_UPGRADE_PATH = '/upgrade';
 const PLANS: PricingPlan[] = [
   {
     id: 'free',
-    name: 'FREE',
+    name: 'Free',
     priceMonthly: '€0',
     priceAnnualMonthly: '€0',
     periodMonthly: '/ month',
     periodAnnual: '/ month',
-    description: 'Test the tool and launch your first portfolio.',
+    description: msg('Test the tool and launch your first portfolio.'),
     features: [
-      { label: '2 templates of your choice' },
-      { label: 'Limit of 3 items per section' },
-      { label: 'Color palette customization' },
-      { label: 'Brand badge required', tone: 'warn' },
+      { label: msg('2 templates of your choice') },
+      { label: msg('Limit of 3 items per section') },
+      { label: msg('Color palette customization') },
+      { label: msg('Brand badge required'), tone: 'warn' },
     ],
-    cta: 'START FOR FREE',
+    cta: 'Start for free',
     nameTone: 'muted',
   },
   {
     id: 'pro',
-    name: 'PRO',
+    name: 'Pro',
     priceMonthly: '€3.99',
     priceAnnualMonthly: '€2.79',
     periodMonthly: '/ month',
     periodAnnual: '/ month',
-    description: 'Ideal for independent developers and content creators.',
+    description: msg('Ideal for independent developers and content creators.'),
     saving: 'Save 30% yearly',
     features: [
-      { label: 'No insertion limits', tone: 'emphasis' },
-      { label: 'Developer Mode enabled' },
-      { label: 'Access to all existing templates' },
-      { label: 'Create new templates' },
-      { label: 'Remove the brand logo' },
+      { label: msg('No insertion limits'), tone: 'emphasis' },
+      { label: msg('Developer Mode enabled') },
+      { label: msg('Access to all existing templates') },
+      { label: msg('Create new templates') },
+      { label: msg('Remove the brand logo') },
     ],
-    cta: 'CHOOSE PRO PLAN',
+    cta: 'Choose Pro',
     highlighted: true,
     nameTone: 'accent',
   },
   {
     id: 'entreprise',
-    name: 'ENTERPRISE',
+    name: 'Enterprise',
     priceMonthly: '€39.99',
     priceAnnualMonthly: '€31.99',
     periodMonthly: '/ month',
     periodAnnual: '/ month',
-    description: 'For agencies and teams that need custom hosting.',
+    description: msg('For agencies and teams that need custom hosting.'),
     saving: 'Save 20% yearly',
-    includesLabel: 'EVERYTHING IN PRO, PLUS:',
+    includesLabel: 'Everything in Pro, plus:',
     features: [
-      { label: 'Custom domain name' },
-      { label: 'Managed hosting and DNS setup' },
+      { label: msg('Custom domain name') },
+      { label: msg('Managed hosting and DNS setup') },
     ],
-    cta: 'CHOOSE ENTERPRISE',
+    cta: 'Choose Enterprise',
     nameTone: 'muted',
   },
   {
     id: 'premium',
-    name: 'PREMIUM',
+    name: 'Premium',
     priceMonthly: '€99.99',
     priceAnnualMonthly: '€79.99',
     periodMonthly: '/ month',
     periodAnnual: '/ month',
-    description: 'Maximum power: ideal for exporting your creations.',
+    description: msg('Maximum power: ideal for exporting your creations.'),
     saving: 'Save 20% yearly',
-    includesLabel: 'EVERYTHING IN ENTERPRISE, PLUS:',
+    includesLabel: 'Everything in Enterprise, plus:',
     features: [
-      { label: 'Source code export' },
-      { label: 'Code generation for your selected technology' },
+      { label: msg('Source code export') },
+      { label: msg('Code generation for your selected technology') },
     ],
-    cta: 'CHOOSE PREMIUM',
+    cta: 'Choose Premium',
     nameTone: 'muted',
   },
 ];
@@ -124,15 +122,16 @@ function BillingCycleToggle({
   value: BillingCycle;
   onChange: (cycle: BillingCycle) => void;
 }) {
+  const t = useT();
   return (
     <div
-      className="inline-flex items-center rounded-xl border border-neutral-200 bg-neutral-100 p-1 dark:border-neutral-700 dark:bg-neutral-900"
+      className="inline-flex items-center rounded-full bg-[#EFF3F4] p-1 dark:bg-[#202327]"
       role="group"
-      aria-label="Billing period"
+      aria-label={t('Billing period')}
     >
       {([
-        { id: 'monthly', label: 'Monthly' },
-        { id: 'annual', label: 'Annual' },
+        { id: 'monthly', label: t('Monthly') },
+        { id: 'annual', label: t('Annual') },
       ] as const).map((option) => {
         const active = value === option.id;
         return (
@@ -141,10 +140,10 @@ function BillingCycleToggle({
             type="button"
             onClick={() => onChange(option.id)}
             aria-pressed={active}
-            className={`relative min-h-9 rounded-lg px-5 text-sm font-semibold transition-all duration-300 ${
+            className={`relative min-h-10 rounded-full px-5 text-[15px] font-bold transition-colors duration-200 ${
               active
-                ? 'bg-black text-white dark:bg-white dark:text-black'
-                : 'text-neutral-500 hover:text-neutral-700 dark:text-neutral-400 dark:hover:text-neutral-200'
+                ? 'bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419]'
+                : 'text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]'
             }`}
           >
             {option.label}
@@ -184,14 +183,6 @@ function WarnIcon({ className }: { className?: string }) {
   );
 }
 
-function DiamondIcon({ className }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 12 12" fill="currentColor" aria-hidden className={className}>
-      <path d="M6 0.6 11.4 6 6 11.4 0.6 6 6 0.6Z" />
-    </svg>
-  );
-}
-
 function FeatureIcon({
   tone,
   accent,
@@ -200,22 +191,28 @@ function FeatureIcon({
   accent?: boolean;
 }) {
   if (tone === 'warn') {
-    return <WarnIcon className="mt-0.5 h-4 w-4 shrink-0 text-zinc-400 dark:text-zinc-500" />;
+    return <WarnIcon className="mt-0.5 h-4 w-4 shrink-0 text-[#8B98A5] dark:text-[#536471]" />;
   }
   return (
     <CheckIcon
       className={`mt-0.5 h-4 w-4 shrink-0 ${
-        accent ? 'text-[#F97316]' : 'text-zinc-400 dark:text-zinc-500'
+        accent ? 'text-[#0F1419] dark:text-[#E7E9EA]' : 'text-[#536471] dark:text-[#71767B]'
       }`}
     />
   );
 }
 
+const PRIMARY_BUTTON =
+  'bg-[#0F1419] text-white hover:bg-[#272C30] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
+const SECONDARY_BUTTON =
+  'border border-[#CFD9DE] text-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]';
+
 /**
- * Full-page Upgrade / Pricing — aligned with landing brand (orange / lp-*).
- * Theme follows the global landing ThemeProvider (html.dark).
+ * Full-page Upgrade / Pricing — X palette (black & white): flat #F7F9F9 / #16181C plan blocks on a
+ * white / black ground, square blocks and CTAs, one filled CTA (the recommended plan).
  */
 export function PricingUpgradePage({ backHref = '/profile' }: { backHref?: string }) {
+  const t = useT();
   const router = useRouter();
   const [selectedPlanId, setSelectedPlanId] = useState<string | null>(null);
   const [billingCycle, setBillingCycle] = useState<BillingCycle>('monthly');
@@ -229,119 +226,86 @@ export function PricingUpgradePage({ backHref = '/profile' }: { backHref?: strin
   };
 
   return (
-    <main className="min-h-screen transition-colors duration-300">
-      <section
-        className="relative isolate min-h-screen overflow-hidden"
-        aria-labelledby="portfolio-pricing-heading"
-      >
-        <div
-          className="pointer-events-none absolute inset-x-0 top-0 h-[28rem]"
-          style={{
-            backgroundImage: [
-              'radial-gradient(ellipse 90% 60% at 50% -10%, rgba(249,115,22,0.08), transparent 55%)',
-              'radial-gradient(ellipse 50% 40% at 80% 10%, rgba(113,113,122,0.05), transparent 50%)',
-            ].join(', '),
-          }}
-          aria-hidden
-        />
-        <div
-          className="pointer-events-none absolute inset-x-0 top-56 h-40 bg-gradient-to-b from-transparent to-[var(--lp-bg)]"
-          aria-hidden
-        />
-
-        <div className="relative mx-auto w-full max-w-[1400px] px-4 pb-16 pt-6 sm:px-6 sm:pb-20 sm:pt-8 lg:px-8">
-          <div className="mb-8 flex flex-wrap items-center justify-between gap-3">
+    <main className="min-h-screen bg-white text-[#0F1419] dark:bg-black dark:text-[#E7E9EA]">
+      <section className="relative min-h-screen" aria-labelledby="portfolio-pricing-heading">
+        <div className="mx-auto w-full max-w-[1280px] px-4 pb-16 pt-4 sm:px-6 sm:pb-20 sm:pt-6 lg:px-8">
+          <div className="mb-8 flex items-center">
             <button
               type="button"
               onClick={handleBack}
-              className="inline-flex min-h-10 items-center gap-2 rounded-full border border-black/10 bg-transparent px-4 text-sm font-medium lp-text transition hover:border-black/20 hover:bg-black/[0.03] dark:border-white/10 dark:hover:border-white/20 dark:hover:bg-white/[0.04]"
+              className="-ml-2 inline-flex h-10 items-center gap-2 rounded-full px-3 text-[15px] font-bold transition-colors hover:bg-[rgba(15,20,25,0.06)] dark:hover:bg-[rgba(231,233,234,0.1)]"
             >
               <span aria-hidden>←</span>
-              Back
+              {t('Back')}
             </button>
           </div>
 
           <div className="mx-auto max-w-3xl text-center">
             <h1
               id="portfolio-pricing-heading"
-              className="text-3xl font-bold tracking-tight lp-text sm:text-5xl"
+              className="text-[28px] font-extrabold leading-tight tracking-tight sm:text-[44px]"
             >
-              Plans tailored to your ambitions
+              {t('Plans tailored to your ambitions')}
             </h1>
-            <p className="mx-auto mt-4 max-w-xl text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 sm:text-base">
-              Boost your portfolio or get the source code for your interfaces in one click.
+            <p className="mx-auto mt-3 max-w-xl text-[15px] leading-5 text-[#536471] dark:text-[#71767B]">
+              {t('Boost your portfolio or get the source code for your interfaces in one click.')}
             </p>
           </div>
 
-          <div className="mt-10 flex justify-center">
+          <div className="mt-8 flex justify-center">
             <BillingCycleToggle value={billingCycle} onChange={setBillingCycle} />
           </div>
 
-          <div className="mx-auto mt-10 grid w-full max-w-[1400px] gap-8 sm:grid-cols-2 xl:grid-cols-4">
+          <div className="-mx-4 mt-8 grid gap-2 sm:mx-0 sm:mt-10 sm:grid-cols-2 sm:gap-6 xl:grid-cols-4">
             {PLANS.map((plan) => {
               const highlighted = plan.highlighted;
               const { price, period, saving } = resolvePlanPricing(plan, billingCycle);
               return (
                 <article
                   key={plan.id}
-                  className={`relative flex flex-col rounded-2xl border p-5 transition duration-300 sm:p-6 ${
-                    highlighted
-                      ? 'border-[#F97316] lp-bg-card shadow-[0_24px_48px_-24px_rgba(249,115,22,0.35)]'
-                      : 'border-[var(--lp-border)] lp-bg-card hover:border-[#F97316]/35'
-                  }`}
+                  className="relative flex flex-col bg-[#F7F9F9] p-5 sm:p-6 dark:bg-[#16181C]"
                 >
-                  {highlighted ? (
-                    <span
-                      className={`absolute -top-3 left-1/2 -translate-x-1/2 rounded-full px-3 py-1 text-[10px] font-bold tracking-wide text-white ${brandSolidBg}`}
-                    >
-                      MOST POPULAR
-                    </span>
-                  ) : null}
-
-                  <p
-                    className={`text-xs font-semibold tracking-[0.16em] ${
-                      plan.nameTone === 'accent' ? 'text-[#F97316]' : 'lp-muted'
-                    }`}
-                  >
-                    {plan.name}
-                  </p>
+                  <div className="flex items-center justify-between gap-3">
+                    <p className="text-[15px] font-bold">{plan.name}</p>
+                    {highlighted ? (
+                      <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[#536471] dark:text-[#71767B]">
+                        {t('Most popular')}
+                      </span>
+                    ) : null}
+                  </div>
 
                   <div className="mt-3 flex items-baseline gap-1.5">
-                    <span className="text-3xl font-bold tracking-tight lp-text transition-all duration-300 sm:text-[2rem]">
-                      {price}
-                    </span>
-                    <span className="text-sm lp-muted">{period}</span>
+                    <span className="text-[32px] font-extrabold leading-none tracking-tight">{price}</span>
+                    <span className="text-[13px] text-[#536471] dark:text-[#71767B]">{period}</span>
                   </div>
 
                   {saving ? (
-                    <span className="mt-2.5 inline-flex w-fit rounded-full lp-bg-surface px-2.5 py-1 text-[11px] font-semibold lp-muted">
+                    <span className="mt-3 inline-flex w-fit rounded-full bg-[rgba(15,20,25,0.06)] px-2.5 py-0.5 text-[13px] font-medium text-[#536471] dark:bg-[rgba(231,233,234,0.1)] dark:text-[#71767B]">
                       {saving}
                     </span>
                   ) : (
-                    <span className="mt-2.5 inline-flex h-[26px]" aria-hidden />
+                    <span className="mt-3 inline-flex h-[22px]" aria-hidden />
                   )}
 
-                  <p className="mt-4 text-sm leading-relaxed lp-muted">{plan.description}</p>
+                  <p className="mt-4 text-[15px] leading-5 text-[#536471] dark:text-[#71767B]">{plan.description}</p>
 
                   {plan.includesLabel ? (
-                    <p className="mt-5 text-[11px] font-semibold tracking-[0.08em] text-[#F97316]">
-                      {plan.includesLabel}
-                    </p>
+                    <p className="mt-5 text-[13px] font-bold">{plan.includesLabel}</p>
                   ) : (
                     <div className="mt-5" aria-hidden />
                   )}
 
                   <ul className="mt-3 flex flex-1 flex-col gap-2.5">
                     {plan.features.map((feature) => (
-                      <li key={feature.label} className="flex items-start gap-2.5 text-sm">
+                      <li key={feature.label} className="flex items-start gap-2.5 text-[15px] leading-5">
                         <FeatureIcon tone={feature.tone} accent={highlighted} />
                         <span
                           className={
                             feature.tone === 'emphasis'
-                              ? 'font-semibold lp-text'
+                              ? 'font-bold'
                               : feature.tone === 'warn'
-                                ? 'lp-muted'
-                                : 'text-neutral-700 dark:text-neutral-300'
+                                ? 'text-[#536471] dark:text-[#71767B]'
+                                : ''
                           }
                         >
                           {feature.label}
@@ -353,13 +317,12 @@ export function PricingUpgradePage({ backHref = '/profile' }: { backHref?: strin
                   <button
                     type="button"
                     onClick={() => setSelectedPlanId(plan.id)}
-                    className={`mt-6 min-h-11 w-full rounded-xl px-4 text-xs font-bold tracking-wide ${
-                      highlighted
-                        ? brandCtaClass
-                        : 'border border-black/10 bg-transparent lp-text transition hover:border-black/20 hover:bg-black/[0.03] dark:border-white/10 dark:hover:border-white/20 dark:hover:bg-white/[0.04]'
+                    aria-pressed={selectedPlanId === plan.id}
+                    className={`mt-6 min-h-11 w-full px-4 text-[15px] font-bold transition-colors ${
+                      highlighted ? PRIMARY_BUTTON : SECONDARY_BUTTON
                     } ${
                       selectedPlanId === plan.id
-                        ? 'ring-2 ring-[#FF6B00]/40 ring-offset-2 ring-offset-[var(--lp-bg)]'
+                        ? 'ring-2 ring-[#0F1419] ring-offset-2 ring-offset-[#F7F9F9] dark:ring-[#E7E9EA] dark:ring-offset-[#16181C]'
                         : ''
                     }`}
                   >
@@ -370,60 +333,33 @@ export function PricingUpgradePage({ backHref = '/profile' }: { backHref?: strin
             })}
           </div>
 
-          <div className="mx-auto mt-10 w-full max-w-[1400px]">
-            <div
-              className="relative flex flex-col items-stretch gap-6 overflow-hidden rounded-[1.25rem] border border-[var(--lp-border)] lp-bg-card px-7 py-7 backdrop-blur-sm sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-10 sm:py-8"
-              style={{
-                boxShadow:
-                  '0 0 0 1px rgba(255,107,53,0.1), 0 0 16px rgba(255,107,53,0.12), 0 12px 32px -16px rgba(255,107,53,0.18)',
-              }}
-            >
-              <div
-                className="pointer-events-none absolute inset-0 opacity-40 dark:opacity-25"
-                style={{
-                  background:
-                    'radial-gradient(ellipse 80% 120% at 0% 50%, rgba(255,107,53,0.07), transparent 55%), radial-gradient(ellipse 60% 100% at 100% 50%, rgba(255,107,53,0.04), transparent 50%)',
-                }}
-                aria-hidden
-              />
-              <div className="relative min-w-0 flex-1">
-                <h3 className="text-xl font-bold tracking-tight lp-text sm:text-2xl">
-                  Custom plan
-                </h3>
-                <p className="mt-2.5 flex flex-wrap items-center gap-x-2 gap-y-1.5 text-sm leading-relaxed text-zinc-500 dark:text-zinc-400 sm:text-[15px]">
-                  <span>From €200</span>
-                  <span className="text-[#FF6B35]" aria-hidden>
-                    •
-                  </span>
-                  <span>Turnaround under one week</span>
-                  <span className="text-[#FF6B35]" aria-hidden>
-                    •
-                  </span>
-                  <span>To discuss</span>
-                </p>
-              </div>
-              <a
-                href="mailto:leopardjuliocesar8@gmail.com?subject=Custom%20plan"
-                className="relative inline-flex min-h-12 shrink-0 items-center justify-center rounded-full bg-[#FF6B00] px-8 text-sm font-bold text-white transition-all hover:-translate-y-0.5 hover:bg-[#EA580C] sm:min-w-[12.5rem]"
-              >
-                Discuss the project →
-              </a>
+          <div className="-mx-4 mt-2 flex flex-col items-stretch gap-5 bg-[#F7F9F9] px-5 py-6 sm:mx-0 sm:mt-6 sm:flex-row sm:items-center sm:justify-between sm:gap-10 sm:px-8 sm:py-7 dark:bg-[#16181C]">
+            <div className="min-w-0 flex-1">
+              <h2 className="text-[20px] font-extrabold leading-6">{t('Custom plan')}</h2>
+              <p className="mt-1.5 flex flex-wrap items-center gap-x-1.5 gap-y-1 text-[15px] leading-5 text-[#536471] dark:text-[#71767B]">
+                <span>{t('From €200')}</span>
+                <span aria-hidden>·</span>
+                <span>{t('Turnaround under one week')}</span>
+                <span aria-hidden>·</span>
+                <span>{t('To discuss')}</span>
+              </p>
             </div>
+            <a
+              href="mailto:leopardjuliocesar8@gmail.com?subject=Custom%20plan"
+              className={`inline-flex min-h-11 shrink-0 items-center justify-center px-6 text-[15px] font-bold transition-colors sm:min-w-[12.5rem] ${SECONDARY_BUTTON}`}
+            >
+              {t('Discuss the project')}
+            </a>
           </div>
 
-          <div className="mx-auto mt-12 flex w-full max-w-[1400px] flex-col items-center justify-center gap-3 border-t border-black/5 pt-8 text-sm lp-muted dark:border-white/5 sm:flex-row sm:gap-0">
+          <ul className="mt-10 flex flex-wrap items-center justify-center gap-x-2 gap-y-1 text-[13px] text-[#536471] dark:text-[#71767B]">
             {TRUST_ITEMS.map((item, index) => (
-              <div
-                key={item}
-                className={`flex items-center gap-2 px-4 ${
-                  index > 0 ? 'sm:border-l sm:border-black/5 dark:sm:border-white/5' : ''
-                }`}
-              >
-                <DiamondIcon className="h-2.5 w-2.5 text-[#F97316]" />
+              <li key={item} className="flex items-center gap-2">
+                {index > 0 ? <span aria-hidden>·</span> : null}
                 <span>{item}</span>
-              </div>
+              </li>
             ))}
-          </div>
+          </ul>
         </div>
       </section>
     </main>

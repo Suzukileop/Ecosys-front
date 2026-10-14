@@ -5,7 +5,7 @@ import { useRouter } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { DashboardHomeShell } from '@/components/DashboardHomeShell';
 import { CreatorStudioServicesTab } from '@/components/creator/studio/CreatorStudioServicesTab';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { CreatorStudioServicesTabSkeleton } from '@/components/creator/studio/CreatorStudioSkeleton';
 import { SIGNED_IN_HOME } from '@/lib/routes';
 
 function MyServicesPageInner() {
@@ -18,13 +18,7 @@ function MyServicesPageInner() {
     }
   }, [isLoading, user, hasRole, router]);
 
-  if (isLoading || !user) {
-    return (
-      <div className="flex justify-center py-16">
-        <LoadingSpinner />
-      </div>
-    );
-  }
+  if (isLoading || !user) return <CreatorStudioServicesTabSkeleton withHeader />;
 
   if (!hasRole('ROLE_CREATOR')) return null;
 
@@ -33,17 +27,17 @@ function MyServicesPageInner() {
 
 export default function MarketplaceMyServicesPage() {
   return (
-    <DashboardHomeShell fullWidth fillViewport newsTheme>
-      <div className="mx-auto flex min-h-0 w-full max-w-[1328px] flex-1 flex-col overflow-hidden px-0 sm:px-6">
-        <Suspense
-          fallback={
-            <div className="flex justify-center py-16">
-              <LoadingSpinner />
-            </div>
-          }
-        >
-          <MyServicesPageInner />
-        </Suspense>
+    <DashboardHomeShell fullWidth fillViewport newsTheme newsGround>
+      {/* The page scrolls inside this full-width panel (the shell fills the viewport), so the wheel
+          works anywhere — over the side margins too, not only over the centred column. The column is
+          News / Providers' grid: the same gutters outside a 1240px max width, so its edges line up
+          with the top bar's (logo left, avatar right). `news-mono` gives it their rail boxes and type. */}
+      <div className="flex min-h-0 flex-1 flex-col overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] sm:px-8 md:px-12 lg:px-16 [&::-webkit-scrollbar]:hidden">
+        <div className="news-theme news-feed news-mono mx-auto flex w-full max-w-[1240px] flex-1 flex-col">
+          <Suspense fallback={<CreatorStudioServicesTabSkeleton withHeader />}>
+            <MyServicesPageInner />
+          </Suspense>
+        </div>
       </div>
     </DashboardHomeShell>
   );

@@ -9,6 +9,7 @@ import {
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
 import { ROUTES, isPathWithin } from '@/lib/routes';
+import { msg } from '@/lib/i18n/config';
 
 export type DashboardNavChild = {
   href: string;
@@ -48,7 +49,7 @@ export type DashboardNavItem = {
 export const dashboardNavItems: DashboardNavItem[] = [
   {
     href: ROUTES.feed,
-    label: 'News',
+    label: msg('News'),
     activeWhen: isFeedPath,
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
@@ -62,7 +63,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
   {
     href: ROUTES.studio,
-    label: 'My Portfolio',
+    label: msg('My Portfolio'),
     roles: ['ROLE_CREATOR'],
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>
@@ -76,7 +77,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
   {
     href: ROUTES.providers,
-    label: 'Providers',
+    label: msg('Providers'),
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_SERVICE_PROVIDER_MENU],
     activeWhen: (pathname, search = '') =>
       isServiceProvidersCatalogPath(pathname) || isMyServiceNavPath(pathname, search),
@@ -94,12 +95,12 @@ export const dashboardNavItems: DashboardNavItem[] = [
     children: [
       {
         href: ROUTES.providers,
-        label: 'Explore',
+        label: msg('Explore'),
         activeWhen: (pathname) => isServiceProvidersCatalogPath(pathname),
       },
       {
         href: ROUTES.myServices,
-        label: 'My Services',
+        label: msg('My Services'),
         roles: ['ROLE_CREATOR'],
         hiddenForAppRoles: [...APP_ROLES_WITHOUT_MY_SERVICES],
         activeWhen: (pathname, search = '') => isMyServiceNavPath(pathname, search),
@@ -117,7 +118,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
   {
     href: ROUTES.marketplace,
-    label: 'Products',
+    label: msg('Products'),
     hiddenForAppRoles: [...APP_ROLES_WITHOUT_PRODUCTS_MENU],
     activeWhen: (pathname, search = '') =>
       isMarketplaceHubPath(pathname) || isMyProductNavPath(pathname, search),
@@ -125,12 +126,12 @@ export const dashboardNavItems: DashboardNavItem[] = [
     children: [
       {
         href: ROUTES.marketplace,
-        label: 'Explore',
+        label: msg('Explore'),
         activeWhen: (pathname) => isMarketplaceHubPath(pathname),
       },
       {
         href: ROUTES.myProducts,
-        label: 'My Product',
+        label: msg('My Product'),
         roles: ['ROLE_CREATOR'],
         hiddenForAppRoles: [...APP_ROLES_WITHOUT_MY_PRODUCTS],
         activeWhen: (pathname, search = '') => isMyProductNavPath(pathname, search),
@@ -148,7 +149,7 @@ export const dashboardNavItems: DashboardNavItem[] = [
   },
   {
     href: ROUTES.adminUsers,
-    label: 'Admin',
+    label: msg('Admin'),
     roles: ['ROLE_ADMIN'],
     icon: (
       <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.25}>

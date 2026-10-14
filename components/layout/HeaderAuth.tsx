@@ -6,6 +6,7 @@ import { useAuth } from '@/context/AuthContext';
 import { Avatar } from '@/components/ui/Avatar';
 import { NotificationBell } from '@/components/NotificationBell';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 function AuthHeaderShell({
   children,
   collapsed,
@@ -34,6 +35,7 @@ function AuthHeaderShell({
 }
 
 export function HeaderAuth() {
+  const t = useT();
   const pathname = usePathname();
   const { user, logout, hasRole, isLoading } = useAuth();
   const collapseHeader = false;
@@ -73,7 +75,7 @@ export function HeaderAuth() {
         <div className="mx-auto flex max-w-6xl items-center justify-between px-4 py-3">
           <Link href="/" className="flex items-center gap-3">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              NP
+              {t('NP')}
             </div>
             <span className="font-semibold text-gray-900">Skraft</span>
           </Link>
@@ -89,13 +91,13 @@ export function HeaderAuth() {
         <div className="flex min-w-0 flex-1 flex-wrap items-center gap-x-4 gap-y-2">
           <Link href="/feed" className="flex shrink-0 items-center gap-2">
             <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-indigo-600 text-sm font-bold text-white">
-              NP
+              {t('NP')}
             </div>
             <span className="hidden font-semibold text-gray-900 sm:inline">Skraft</span>
           </Link>
           <nav
             className="flex max-w-full flex-wrap items-center gap-1 overflow-x-auto md:gap-2"
-            aria-label="Navigation connectée"
+            aria-label={t('Navigation connectée')}
           >
             {navLink('/feed', 'Accueil')}
             {navLink('/marketplace', 'Marketplace')}
@@ -125,7 +127,7 @@ export function HeaderAuth() {
                 d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
               />
             </svg>
-            <span className="hidden sm:inline">Déconnexion</span>
+            <span className="hidden sm:inline">{t('Déconnexion')}</span>
           </button>
         </div>
       </div>

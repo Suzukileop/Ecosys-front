@@ -1,4 +1,7 @@
+import { tr } from '@/lib/i18n/active';
+import { normalizeProductStatusLabels } from '@/lib/product-status-labels';
 import api from '@/lib/api';
+import { formatMoney } from '@/lib/money';
 import { UserFacingError } from '@/lib/api-error';
 import { parseAboutSkills } from '@/lib/about-skills';
 import { parseEmploymentType } from '@/lib/experience-employment';
@@ -66,7 +69,6 @@ function mapPublicContentFeedItem(raw: RawRecord): PublicContentFeedItem {
     moodEmoji: raw.moodEmoji != null ? String(raw.moodEmoji) : null,
     taggedUsers: mapTaggedUsers(raw.taggedUsers),
     priceInfo: raw.priceInfo != null ? String(raw.priceInfo) : null,
-    toolsUsed: Array.isArray(raw.toolsUsed) ? raw.toolsUsed.map((t) => String(t)) : [],
     tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t)) : [],
     isPublic: Boolean(raw.isPublic),
     commentsEnabled: raw.commentsEnabled !== false,
@@ -112,7 +114,6 @@ function mapContentItem(raw: RawRecord): MarketplaceContentItem {
     moodEmoji: raw.moodEmoji != null ? String(raw.moodEmoji) : null,
     taggedUsers: mapTaggedUsers(raw.taggedUsers),
     priceInfo: raw.priceInfo != null ? String(raw.priceInfo) : null,
-    toolsUsed: Array.isArray(raw.toolsUsed) ? raw.toolsUsed.map((t) => String(t)) : [],
     tags: Array.isArray(raw.tags) ? raw.tags.map((t) => String(t)) : [],
     creatorId: raw.creator != null && typeof raw.creator === 'object'
       ? String((raw.creator as RawRecord).id ?? '')
@@ -125,6 +126,18 @@ function mapContentItem(raw: RawRecord): MarketplaceContentItem {
           : raw.priceInfo != null && /^https?:\/\//i.test(String(raw.priceInfo))
             ? String(raw.priceInfo)
             : null,
+  };
+}
+
+/** Provider hourly rate: a positive cent amount with its currency, else both null. */
+function parseHourlyRate(raw: RawRecord): { hourlyRateCents: number | null; hourlyRateCurrency: string | null } {
+  const cents = Number(raw.hourlyRateCents);
+  if (raw.hourlyRateCents == null || !Number.isFinite(cents) || cents <= 0) {
+    return { hourlyRateCents: null, hourlyRateCurrency: null };
+  }
+  return {
+    hourlyRateCents: cents,
+    hourlyRateCurrency: raw.hourlyRateCurrency != null ? String(raw.hourlyRateCurrency) : null,
   };
 }
 
@@ -145,6 +158,7 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
     isVerified: Boolean(raw.isVerified),
     isAvailable: raw.isAvailable == null ? true : Boolean(raw.isAvailable),
     availabilityLabel: raw.availabilityLabel != null ? String(raw.availabilityLabel) : null,
+    ...parseHourlyRate(raw),
     portfolioCount: typeof raw.portfolioCount === 'number' ? raw.portfolioCount : Number(raw.portfolioCount ?? 0),
     productCount: typeof raw.productCount === 'number' ? raw.productCount : Number(raw.productCount ?? 0),
     serviceCount: typeof raw.serviceCount === 'number'
@@ -165,6 +179,14 @@ export function normalizeCreatorSummary(raw: RawRecord): MarketplaceCreatorSumma
         : null,
     distanceKm: raw.distanceKm != null ? Number(raw.distanceKm) : null,
     appRole: raw.appRole != null ? String(raw.appRole) : null,
+    shopName: raw.shopName != null ? String(raw.shopName).trim() || null : null,
+    shopSellingFocus: raw.shopSellingFocus != null ? String(raw.shopSellingFocus).trim() || null : null,
+    shopDescription: raw.shopDescription != null ? String(raw.shopDescription).trim() || null : null,
+    shopCoverUrl: resolveStorageMediaUrl(raw.shopCoverUrl != null ? String(raw.shopCoverUrl) : null) || null,
+    /* Active services — the provider card derives its "From" price from them. */
+    profileServices: Array.isArray(raw.profileServices)
+      ? raw.profileServices.map((item, index) => mapProfileServiceItem(item as RawRecord, index))
+      : [],
   };
 }
 
@@ -559,6 +581,7 @@ export function normalizeCreatorProfile(raw: RawRecord): MarketplaceCreatorPubli
     availabilityHours: raw.availabilityHours != null ? String(raw.availabilityHours) : null,
     isAvailable: raw.isAvailable == null ? true : Boolean(raw.isAvailable),
     availabilityLabel: raw.availabilityLabel != null ? String(raw.availabilityLabel) : null,
+    ...parseHourlyRate(raw),
     contactAddress: (() => {
       const legacy = raw.contactAddress != null ? String(raw.contactAddress) : null;
       const fromList = Array.isArray(raw.contactAddresses)
@@ -851,6 +874,16 @@ export async function listPublicContentFeed(
   };
 }
 
+/** One public post shaped like a feed card — what a notification deep link opens. Null when it is gone / private. */
+export async function getPublicContentFeedItem(id: string): Promise<PublicContentFeedItem | null> {
+  try {
+    const res = await api.get<Record<string, unknown>>(`/api/marketplace/contents/${encodeURIComponent(id)}`);
+    return mapPublicContentFeedItem(res.data);
+  } catch {
+    return null;
+  }
+}
+
 /** Public posts the signed-in viewer saved, most recently saved first. */
 export async function listSavedContent(params?: { page?: number; size?: number }): Promise<PublicContentFeedPage> {
   const res = await api.get<SpringPageRaw<Record<string, unknown>>>('/api/marketplace/contents/saved', {
@@ -1057,12 +1090,14 @@ function normalizeMarketplaceProduct(
 
   return {
     ...raw,
+    typeLabel: raw.type === 'OTHER' ? raw.typeLabel?.trim() || null : null,
     genre: raw.genre?.trim() || null,
     specialite: (legacy.specialite ?? legacy.niche)?.trim() || null,
     tags,
     isBestseller: Boolean(raw.isBestseller),
     bestsellerRank: raw.bestsellerRank ?? null,
     catalogueBestsellers: Array.isArray(raw.catalogueBestsellers) ? raw.catalogueBestsellers : [],
+    statusLabels: normalizeProductStatusLabels(raw.statusLabels),
     isPinned: Boolean(raw.isPinned),
     showOnProfile: raw.showOnProfile !== false,
     galleryImageUrls: Array.isArray((raw as MarketplaceProductDetail).galleryImageUrls)
@@ -1316,6 +1351,7 @@ function normalizePurchase(raw: OwnedProductRaw): MarketplacePurchase {
     productId: raw.productId,
     productTitle: raw.productTitle,
     productType: raw.productType,
+    productTypeLabel: raw.productType === 'OTHER' ? raw.productTypeLabel?.trim() || null : null,
     thumbnailUrl: raw.thumbnailUrl,
     purchasedAt: raw.purchasedAt,
     creatorId: raw.creatorId,
@@ -1782,12 +1818,8 @@ export function isFreeProduct(priceCents: number): boolean {
 }
 
 export function formatPrice(priceCents: number, currency = 'EUR'): string {
-  if (isFreeProduct(priceCents)) return 'Free';
-  return new Intl.NumberFormat('en-US', {
-    style: 'currency',
-    currency,
-    minimumFractionDigits: 2,
-  }).format(priceCents / 100);
+  if (isFreeProduct(priceCents)) return tr('Free');
+  return formatMoney(priceCents, currency);
 }
 
 export const PRODUCT_TYPE_LABELS: Record<string, string> = {
@@ -1804,3 +1836,120 @@ export const PRODUCT_TYPE_LABELS: Record<string, string> = {
   PHYSICAL: 'Material',
   OTHER: 'Other',
 };
+
+/** A product's type as buyers read it: the creator's own name for an "Other" product, else the label. */
+export function productTypeName(type: string, typeLabel?: string | null): string {
+  if (type === 'OTHER' && typeLabel?.trim()) return typeLabel.trim();
+  return PRODUCT_TYPE_LABELS[type] ?? type;
+}
+
+/* ------------------------------------------------------------------ */
+/* Saved collections (Settings > Saved posts)                          */
+/* ------------------------------------------------------------------ */
+
+export type SavedCollectionCover = { url: string; mediaType: 'FILE' | 'GIF' | null };
+
+export type SavedCollection = {
+  id: string;
+  name: string;
+  itemCount: number;
+  covers: SavedCollectionCover[];
+  updatedAt: string;
+};
+
+export type SavedCollectionsOverview = {
+  allSavedCount: number;
+  allSavedCovers: SavedCollectionCover[];
+  collections: SavedCollection[];
+};
+
+function mapCovers(raw: unknown): SavedCollectionCover[] {
+  if (!Array.isArray(raw)) return [];
+  return raw
+    .map((row) => {
+      const record = (row ?? {}) as { url?: unknown; mediaType?: unknown };
+      const url = typeof record.url === 'string' ? resolveStorageMediaUrl(record.url) : null;
+      if (!url) return null;
+      const mediaType = record.mediaType === 'GIF' ? 'GIF' : record.mediaType === 'FILE' ? 'FILE' : null;
+      return { url, mediaType } satisfies SavedCollectionCover;
+    })
+    .filter((cover): cover is SavedCollectionCover => cover !== null);
+}
+
+function mapSavedCollection(raw: Record<string, unknown>): SavedCollection {
+  return {
+    id: String(raw.id ?? ''),
+    name: String(raw.name ?? ''),
+    itemCount: Number(raw.itemCount ?? 0) || 0,
+    covers: mapCovers(raw.covers),
+    updatedAt: String(raw.updatedAt ?? ''),
+  };
+}
+
+export async function getSavedCollections(): Promise<SavedCollectionsOverview> {
+  const res = await api.get<Record<string, unknown>>('/api/marketplace/collections');
+  const data = res.data ?? {};
+  return {
+    allSavedCount: Number(data.allSavedCount ?? 0) || 0,
+    allSavedCovers: mapCovers(data.allSavedCovers),
+    collections: Array.isArray(data.collections)
+      ? (data.collections as Record<string, unknown>[]).map(mapSavedCollection)
+      : [],
+  };
+}
+
+/** Creates a collection; with `postId` the post is filed (and saved) in the same request. */
+export async function createSavedCollection(name: string, postId?: string): Promise<SavedCollection> {
+  const res = await api.post<Record<string, unknown>>('/api/marketplace/collections', {
+    name,
+    ...(postId ? { postId } : {}),
+  });
+  return mapSavedCollection(res.data);
+}
+
+export async function renameSavedCollection(collectionId: string, name: string): Promise<SavedCollection> {
+  const res = await api.patch<Record<string, unknown>>(
+    `/api/marketplace/collections/${encodeURIComponent(collectionId)}`,
+    { name }
+  );
+  return mapSavedCollection(res.data);
+}
+
+/** Deletes the collection only; its posts stay saved. */
+export async function deleteSavedCollection(collectionId: string): Promise<void> {
+  await api.delete(`/api/marketplace/collections/${encodeURIComponent(collectionId)}`);
+}
+
+export async function listSavedCollectionPosts(
+  collectionId: string,
+  params?: { page?: number; size?: number }
+): Promise<PublicContentFeedPage> {
+  const res = await api.get<SpringPageRaw<Record<string, unknown>>>(
+    `/api/marketplace/collections/${encodeURIComponent(collectionId)}/posts`,
+    { params: { page: params?.page ?? 0, size: params?.size ?? 10 } }
+  );
+  const pageData = normalizeSpringPage(res.data);
+  return {
+    ...pageData,
+    content: pageData.content.map((row) => mapPublicContentFeedItem(row)),
+  };
+}
+
+/** Files a post in a collection (saving it if it was not saved yet). */
+export async function addPostToSavedCollection(collectionId: string, postId: string): Promise<void> {
+  await api.put(
+    `/api/marketplace/collections/${encodeURIComponent(collectionId)}/posts/${encodeURIComponent(postId)}`
+  );
+}
+
+/** Takes a post out of a collection; it stays saved. */
+export async function removePostFromSavedCollection(collectionId: string, postId: string): Promise<void> {
+  await api.delete(
+    `/api/marketplace/collections/${encodeURIComponent(collectionId)}/posts/${encodeURIComponent(postId)}`
+  );
+}
+
+export async function getSavedCollectionIdsForPost(postId: string): Promise<string[]> {
+  const res = await api.get<unknown>(`/api/marketplace/collections/containing/${encodeURIComponent(postId)}`);
+  return Array.isArray(res.data) ? res.data.map(String) : [];
+}

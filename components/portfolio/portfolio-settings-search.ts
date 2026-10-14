@@ -293,7 +293,7 @@ const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
 
   // Hero
-  entry('hero', 'General', ['visibility', 'title', 'subtitle', 'flip', 'division', 'layout', 'écran', 'général'], 'general'),
+  entry('hero', 'Show section', ['visibility', 'general', 'général', 'hide', 'masquer', 'afficher'], 'banner'),
   entry(
     'hero',
     'Banner',
@@ -360,6 +360,7 @@ const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
   entry('work', 'General', ['visibility', 'marketplace', 'show portfolio'], 'general'),
   entry('work', 'Header', ['title', 'subtitle', 'fonts', 'colors'], 'header'),
+  entry('work', 'Color mode', ['color mode', 'dark', 'light', 'style', 'display options', 'thumbnails'], 'design'),
   entry(
     'work',
     'Design',
@@ -379,44 +380,51 @@ const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('stack', 'Taille des tags', ['taille', 'agrandir', 'compacte', 'moyenne', 'grande', 'tags'], 'general'),
   entry('stack', 'Palette', ['palette', 'color', 'couleur', 'tiles'], 'palette'),
   entry('stack', 'Background', ['fill', 'gradient', 'fond'], 'background'),
+  entry('stack', 'Color mode', ['color mode', 'dark', 'light', 'style', 'mode couleur'], 'design'),
 
   // Tools
   entry('tools', 'General', ['visibility', 'show tools', 'design', 'workflow rail', 'brand cards', 'brand index', 'brand row', 'brand float', 'titre', 'sous-titre', 'alignement'], 'general'),
   entry('tools', 'Alignement titre', ['alignement', 'gauche', 'centre', 'droite', 'titre', 'header'], 'general'),
   entry('tools', 'Sous-titre Tools', ['sous-titre', 'subtitle', 'aucun', 'personnalisé'], 'general'),
-  entry('tools', 'Brand cards', ['cards', 'description', 'use cases', 'niveau', 'level', 'landbook', 'framer'], 'general'),
-  entry('tools', 'Brand directory', ['directory', 'rows', 'list', 'webflow', 'framer', 'separators'], 'general'),
-  entry('tools', 'Brand index', ['index', 'portfolio', 'logo', 'caps', 'uppercase', 'separators'], 'general'),
-  entry('tools', 'Brand index pleine largeur', ['full width', 'pleine largeur', 'largeur', 'index'], 'general'),
-  entry('tools', 'Brand row', ['row', 'grid', 'horizontal', 'compact', 'react', 'strip'], 'general'),
-  entry('tools', 'Brand row cadres', ['frames', 'cadres', 'border', 'cellules', 'row'], 'general'),
-  entry('tools', 'Brand row sans traits', ['none', 'sans traits', 'no border', 'row'], 'general'),
-  entry('tools', 'Brand float', ['float', 'fluid', 'framer', 'landbook', 'glow', 'hover', 'tuiles'], 'general'),
-  entry('tools', 'Brand float grille', ['fluid', 'auto-fill', 'colonnes', 'densité', 'float'], 'general'),
-  entry('tools', 'Brand float sans cadre', ['plain', 'sans cadre', 'cadre', 'float'], 'general'),
-  entry('tools', 'Colonnes brand row', ['colonnes', '2 par ligne', '3 par ligne', 'row'], 'general'),
-  entry('tools', 'Alignement brand index', ['alignement', 'gauche', 'centre', 'droite', 'index'], 'general'),
-  entry('tools', 'Brand directory niveau', ['niveau', 'tag', 'pourcentage', 'statistique', 'points', 'directory'], 'general'),
-  entry('tools', 'Alignement brand directory', ['alignement', 'gauche', 'centre', 'droite', 'directory'], 'general'),
-  entry('tools', 'Brand cards icône', ['icon', 'placement', 'gauche', 'showcase', 'cards'], 'general'),
-  entry('tools', 'Colonnes brand grid', ['colonnes', '2 par ligne', '3 par ligne', 'cards', 'directory'], 'general'),
-  entry('tools', 'Level stat bars', ['stat', 'bars', 'segments', 'proficiency', 'level', 'grid'], 'general'),
-  entry('tools', 'Level progress rows', ['progress', 'bar', 'list', 'rows', 'level', 'landbook'], 'general'),
-  entry('tools', 'Espacement lignes progress rows', ['espacement', 'lignes', 'rows', 'spacing', 'progress'], 'general'),
-  entry('tools', 'Alignement liste progress rows', ['alignement', 'gauche', 'centre', 'droite', 'align'], 'general'),
-  entry('tools', 'Colonnes progress rows écran large', ['colonnes', '2 par ligne', 'grid', 'large'], 'general'),
+  entry('tools', 'Brand cards', ['cards', 'description', 'use cases', 'niveau', 'level', 'landbook', 'framer'], 'design'),
+  entry('tools', 'Brand directory', ['directory', 'rows', 'list', 'webflow', 'framer', 'separators'], 'design'),
+  entry('tools', 'Brand index', ['index', 'portfolio', 'logo', 'caps', 'uppercase', 'separators'], 'design'),
+  entry('tools', 'Brand index pleine largeur', ['full width', 'pleine largeur', 'largeur', 'index'], 'design'),
+  entry('tools', 'Brand row', ['row', 'grid', 'horizontal', 'compact', 'react', 'strip'], 'design'),
+  entry('tools', 'Brand row cadres', ['frames', 'cadres', 'border', 'cellules', 'row'], 'design'),
+  entry('tools', 'Brand row sans traits', ['none', 'sans traits', 'no border', 'row'], 'design'),
+  entry('tools', 'Brand float', ['float', 'fluid', 'framer', 'landbook', 'glow', 'hover', 'tuiles'], 'design'),
+  entry('tools', 'Brand float grille', ['fluid', 'auto-fill', 'colonnes', 'densité', 'float'], 'design'),
+  entry('tools', 'Brand float sans cadre', ['plain', 'sans cadre', 'cadre', 'float'], 'design'),
+  entry('tools', 'Colonnes brand row', ['colonnes', '2 par ligne', '3 par ligne', 'row'], 'design'),
+  entry('tools', 'Alignement brand index', ['alignement', 'gauche', 'centre', 'droite', 'index'], 'design'),
+  entry('tools', 'Brand directory niveau', ['niveau', 'tag', 'pourcentage', 'statistique', 'points', 'directory'], 'design'),
+  entry('tools', 'Alignement brand directory', ['alignement', 'gauche', 'centre', 'droite', 'directory'], 'design'),
+  entry('tools', 'Brand cards icône', ['icon', 'placement', 'gauche', 'showcase', 'cards'], 'design'),
+  entry('tools', 'Colonnes brand grid', ['colonnes', '2 par ligne', '3 par ligne', 'cards', 'directory'], 'design'),
+  entry('tools', 'Level stat bars', ['stat', 'bars', 'segments', 'proficiency', 'level', 'grid'], 'design'),
+  entry('tools', 'Level progress rows', ['progress', 'bar', 'list', 'rows', 'level', 'landbook'], 'design'),
+  entry('tools', 'Espacement lignes progress rows', ['espacement', 'lignes', 'rows', 'spacing', 'progress'], 'design'),
+  entry('tools', 'Alignement liste progress rows', ['alignement', 'gauche', 'centre', 'droite', 'align'], 'design'),
+  entry('tools', 'Colonnes progress rows écran large', ['colonnes', '2 par ligne', 'grid', 'large'], 'design'),
   entry('tools', 'Logos noir et blanc', ['grayscale', 'noir', 'blanc', 'monochrome', 'logo'], 'general'),
+  entry('tools', 'Color mode', ['color mode', 'dark', 'light', 'style'], 'design'),
   entry('tools', 'Palette', ['palette', 'color', 'couleur', 'tiles'], 'palette'),
   entry('tools', 'Background', ['fill', 'gradient', 'fond'], 'background'),
 
   // Services
   entry('services', 'General', ['visibility', 'defaults'], 'general'),
+  entry('services', 'List bullet', ['bullet', 'puce', 'tasks', 'checklist', 'marker'], 'design'),
+  entry('services', 'Price text', ['price', 'prix', 'on request', 'free', 'quote', 'devis'], 'design'),
+  entry('services', 'Order button', ['order', 'button', 'cta', 'commander', 'bouton'], 'design'),
+  entry('services', 'Color mode', ['color mode', 'dark', 'light', 'font size', 'text size', 'style'], 'design'),
   entry('services', 'Design', ['layout', 'style', 'design'], 'design'),
   entry('services', 'Background', ['fill', 'gradient', 'fond'], 'background'),
   entry('services', 'Header', ['title', 'subtitle', 'titre'], 'header'),
 
   entry('info', 'General', ['visibility', 'title', 'subtitle', 'about me', 'languages', 'level', 'étoiles', 'stars', 'niveau'], 'general'),
   entry('info', 'Header', ['title', 'subtitle', 'fonts', 'colors', 'header'], 'header'),
+  entry('info', 'Color mode', ['color mode', 'dark', 'light', 'font size', 'text size', 'style', 'mode couleur', 'taille'], 'design'),
   entry(
     'info',
     'Design',
@@ -456,6 +464,7 @@ const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   ),
 
   entry('aboutUs', 'General', ['visibility', 'about us', 'company', 'layout', 'title', 'subtitle', 'à propos', 'design', 'split', 'overlap', 'founder', 'liste', 'cadre', 'image gauche', 'media left', 'quote', 'citation', 'inverser', 'bordure', 'ombre', 'arrondi', 'fond', 'transparent', 'svg', 'illustration', 'globe', 'photo', 'image'], 'general'),
+  entry('aboutUs', 'Design', ['design', 'layout', 'split', 'overlap', 'founder', 'quote', 'image', 'color mode', 'style'], 'design'),
 
   // Experience
   entry(
@@ -633,6 +642,8 @@ const PORTFOLIO_SETTINGS_SEARCH_INDEX: PortfolioSettingsSearchEntry[] = [
   entry('footer', 'Design', ['layout', 'style', 'design'], 'design'),
   entry('footer', 'Background', ['fill', 'gradient', 'fond'], 'background'),
   entry('footer', 'Header', ['title', 'subtitle'], 'header'),
+  entry('footer', 'Mini bottom bar', ['mini bar', 'bottom bar', 'barre', 'copyright bar'], 'design'),
+  entry('footer', 'Color mode', ['color mode', 'dark', 'light', 'photo', 'text size', 'font size', 'style'], 'design'),
 ];
 
 function normalizeSearchText(value: string): string {

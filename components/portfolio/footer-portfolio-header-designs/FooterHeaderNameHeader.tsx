@@ -10,6 +10,7 @@ import {
   FOOTER_HEADER_PADDING_REM,
   footerHeaderPaletteTokenColor,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const REFERENCE_PX = 100;
 
@@ -78,13 +79,15 @@ export function FooterHeaderNameHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FOOTER_PRESENTATION;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'footer-name');
+  const showName = show('name');
   const centered = presentation.headerDesignAlignment === 'center';
   const name = title.trim() || 'Your name';
   const ink = footerHeaderPaletteTokenColor(presentation.headerNameColor ?? 'texteFort');
 
   const nameContainerRef = useRef<HTMLDivElement>(null);
   const nameTextRef = useRef<HTMLSpanElement>(null);
-  useFitWidthTextSize(nameContainerRef, nameTextRef, name);
+  useFitWidthTextSize(nameContainerRef, nameTextRef, showName ? name : '');
 
   const nameStyle: CSSProperties = { fontSize: 'clamp(2.75rem, 13vw, 12.5rem)' };
 
@@ -98,18 +101,20 @@ export function FooterHeaderNameHeader({
       }}
       data-footer-header="name"
     >
-      <div className="pf-footer-header-name-stage relative">
-        <div ref={nameContainerRef} className="relative w-full overflow-hidden">
-          <h2
-            className="select-none whitespace-nowrap font-serif font-semibold uppercase leading-[0.82] tracking-tight"
-            style={{ color: ink }}
-          >
-            <span ref={nameTextRef} className="pf-footer-header-name-line inline-block" style={nameStyle}>
-              {name}
-            </span>
-          </h2>
+      {showName ? (
+        <div className="pf-footer-header-name-stage relative">
+          <div ref={nameContainerRef} className="relative w-full overflow-hidden">
+            <h2
+              className="select-none whitespace-nowrap font-serif font-semibold uppercase leading-[0.82] tracking-tight"
+              style={{ color: ink }}
+            >
+              <span ref={nameTextRef} className="pf-footer-header-name-line inline-block" style={nameStyle}>
+                {name}
+              </span>
+            </h2>
+          </div>
         </div>
-      </div>
+      ) : null}
       {trailing ? <div className="mt-6">{trailing}</div> : null}
     </header>
   );

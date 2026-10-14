@@ -10,6 +10,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -183,6 +184,7 @@ export function FooterDesignHeadlineReveal({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignHeadlineRevealProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
 
   const isLight = colorMode === 'light';
@@ -256,7 +258,7 @@ export function FooterDesignHeadlineReveal({
             ) : null}
           </div>
 
-          <nav aria-label="Footer" className="flex flex-col gap-4">
+          <nav aria-label={t('Footer')} className="flex flex-col gap-4">
             {navLinks.map((link) => (
               <a
                 key={link.id}
@@ -306,7 +308,7 @@ export function FooterDesignHeadlineReveal({
               </p>
             ) : null}
             {links.length > 0 ? (
-              <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-2.5" aria-label="Social">
+              <div className="mt-2 flex flex-wrap items-baseline gap-x-1.5 gap-y-2.5" aria-label={t('Social')}>
                 {links.map((link, index) => (
                   <span key={link.id} className="inline-flex items-baseline gap-1.5">
                     {index > 0 ? (

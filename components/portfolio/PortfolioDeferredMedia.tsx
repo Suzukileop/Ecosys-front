@@ -1,12 +1,14 @@
 'use client';
 
 import { useEffect, useRef, useState, type CSSProperties } from 'react';
-import { mediaImageResponsive } from '@/lib/media-image-url';
+import { CRISP_QUALITY, mediaImageResponsive } from '@/lib/media-image-url';
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
 import { resolveStorageMediaUrl } from '@/lib/storage-media-url';
 
 /** Gallery/Team frames run from thumbnail to full-bleed; `sizes` tells the browser which to take. */
 const DEFERRED_MEDIA_WIDTHS = [384, 640, 828, 1080, 1920] as const;
+/** `crisp` media is large and on high-DPI screens: rungs up to 2× a full-width desktop frame. */
+const CRISP_MEDIA_WIDTHS = [640, 828, 1080, 1200, 1920, 2048, 3840] as const;
 
 /**
  * Gallery/Team media. Native img/video (not next/image fill): fill requires a
@@ -29,6 +31,7 @@ export function PortfolioDeferredMedia({
   showPlayBadge = false,
   fillParent = true,
   noColorTransition = false,
+  crisp = false,
 }: {
   src: string;
   alt: string;
@@ -45,6 +48,8 @@ export function PortfolioDeferredMedia({
   showPlayBadge?: boolean;
   fillParent?: boolean;
   noColorTransition?: boolean;
+  /** Resize from the stored original (one Lanczos pass) instead of the lossy backend renditions. */
+  crisp?: boolean;
 }) {
   const resolved = resolveStorageMediaUrl(src);
   const mountImmediately = eager || highPriority;
@@ -120,7 +125,11 @@ export function PortfolioDeferredMedia({
   const mediaClass = fillParent
     ? `absolute inset-0 h-full w-full ${className}`.trim()
     : `relative block h-auto w-full ${className}`.trim();
-  const responsiveImage = mediaImageResponsive(resolved, DEFERRED_MEDIA_WIDTHS);
+  // Crisp = resampled once from the original, at q90, with retina-sized rungs — never the soft
+  // q75 rendition chain.
+  const responsiveImage = crisp
+    ? mediaImageResponsive(resolved, CRISP_MEDIA_WIDTHS, true, CRISP_QUALITY)
+    : mediaImageResponsive(resolved, DEFERRED_MEDIA_WIDTHS, false);
 
   if (!resolved) {
     return (

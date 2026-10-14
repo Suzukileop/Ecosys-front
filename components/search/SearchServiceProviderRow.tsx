@@ -1,11 +1,12 @@
 'use client';
 
+import { localeTag, trPlural } from '@/lib/i18n/active';
 import { useMemo } from 'react';
 import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { usePresence } from '@/hooks/usePresence';
-import { buildCreatorPortfolioPath } from '@/lib/portfolio-url';
 import type { MarketplaceCreatorSummary } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function StarIcon({ className }: { className?: string }) {
   return (
@@ -15,18 +16,21 @@ function StarIcon({ className }: { className?: string }) {
   );
 }
 
-/** Compact provider line for the "All" tab — the full `CreatorCard` lives on the Service Provider tab. */
+/**
+ * Compact provider line (the All tab's people block when only Service providers are shown) — the full
+ * `CreatorCard` lives on the Service providers tab. Same row as SearchCreatorRow: 20px gutter on
+ * phones, the fill tone on hover, one outlined pill that opens the profile.
+ */
 export function SearchServiceProviderRow({ creator }: { creator: MarketplaceCreatorSummary }) {
+  const t = useT();
   const resolvedId = (creator.id ?? creator.userId ?? '').trim();
   const presenceUserId = (creator.userId ?? creator.id ?? '').trim();
   const presenceIds = useMemo(() => (presenceUserId ? [presenceUserId] : []), [presenceUserId]);
   const { isOnline } = usePresence(presenceIds);
   const online = Boolean(presenceUserId) && isOnline(presenceUserId);
-  const statusLabel = online ? 'Online' : 'Offline';
+  const statusLabel = online ? t('Online') : t('Offline');
 
   const profileHref = resolvedId ? `/providers/${resolvedId}` : null;
-  const servicesHref = resolvedId ? `/providers/${resolvedId}?tab=services` : null;
-  const portfolioHref = resolvedId ? buildCreatorPortfolioPath(resolvedId, creator.username) : null;
   const starCount = Math.max(0, creator.starCount ?? 0);
 
   const specialties = (creator.specialties ?? []).filter((item) => item.trim());
@@ -35,64 +39,49 @@ export function SearchServiceProviderRow({ creator }: { creator: MarketplaceCrea
   const name = creator.fullName ?? 'Provider';
 
   return (
-    <article className="flex flex-wrap items-center gap-5 border-b border-black/[0.06] py-6 last:border-b-0 dark:border-white/[0.06] sm:flex-nowrap sm:gap-10">
-      <div className="flex min-w-0 flex-1 items-center gap-5">
-        <div className="relative shrink-0" title={statusLabel}>
-          <Avatar name={name} avatarUrl={creator.avatarUrl} size="lg" tone="muted" />
+    <div className="flex min-h-[72px] items-center gap-3 px-5 py-3 transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] sm:gap-4 sm:px-6">
+      <div className="relative shrink-0" title={statusLabel}>
+        <Avatar name={name} avatarUrl={creator.avatarUrl} size="lg" tone="muted" />
+        {online ? (
           <span
             role="status"
             aria-label={statusLabel}
-            className={`absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-white dark:border-[#111111] ${
-              online ? 'bg-emerald-500' : 'bg-neutral-400 dark:bg-neutral-500'
-            }`}
+            className="absolute bottom-0 right-0 h-3 w-3 rounded-full border-2 border-[color:var(--gn-surface)] bg-[color:var(--gn-ink)]"
           />
-        </div>
-
-        <div className="min-w-0">
-          {profileHref ? (
-            <Link
-              href={profileHref}
-              className="block truncate text-lg font-semibold tracking-[-0.01em] text-black transition-colors hover:text-[#FF5722] dark:text-neutral-100"
-            >
-              {name}
-            </Link>
-          ) : (
-            <p className="truncate text-lg font-semibold tracking-[-0.01em] text-black dark:text-neutral-100">{name}</p>
-          )}
-          {expertise ? (
-            <p className="mt-1 line-clamp-1 text-[15px] text-neutral-600 dark:text-neutral-300">{expertise}</p>
-          ) : null}
-        </div>
+        ) : null}
       </div>
 
-      {starCount > 0 ? (
-        <span
-          className="inline-flex shrink-0 items-center gap-1.5 text-lg font-semibold tabular-nums text-[#111111] dark:text-white"
-          aria-label={`${starCount} trust ${starCount === 1 ? 'star' : 'stars'}`}
-        >
-          <StarIcon className="h-[18px] w-[18px] text-[#FF5722]" />
-          {starCount.toLocaleString('en-US')}
-        </span>
+      <div className="min-w-0 flex-1">
+        {profileHref ? (
+          <Link
+            href={profileHref}
+            className="block truncate text-[15px] font-bold leading-5 text-[color:var(--gn-ink)] underline-offset-2 hover:underline"
+          >
+            {name}
+          </Link>
+        ) : (
+          <p className="truncate text-[15px] font-bold leading-5 text-[color:var(--gn-ink)]">{name}</p>
+        )}
+        {expertise ? (
+          <p className="mt-0.5 line-clamp-1 text-[14px] leading-5 text-[color:var(--gn-ink2)]">{expertise}</p>
+        ) : null}
+        {starCount > 0 ? (
+          <p
+            className="mt-1 inline-flex items-center gap-1 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]"
+            aria-label={trPlural(starCount, '{count} trust star', '{count} trust stars')}
+          >
+            <StarIcon className="h-3.5 w-3.5 text-[color:var(--gn-ink)]" />
+            <span className="font-semibold tabular-nums text-[color:var(--gn-ink)]">{starCount.toLocaleString(localeTag())}</span>
+            {trPlural(starCount, 'star', 'stars')}
+          </p>
+        ) : null}
+      </div>
+
+      {profileHref ? (
+        <Link href={profileHref} className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471] sm:h-9">
+          {t('Portfolio')}
+        </Link>
       ) : null}
-
-      <div className="ml-auto flex w-full shrink-0 items-center gap-2 sm:w-auto">
-        {portfolioHref ? (
-          <Link
-            href={portfolioHref}
-            className="inline-flex flex-1 items-center justify-center rounded-lg border border-black/[0.12] px-5 py-2.5 text-[15px] font-medium text-[#0A0A0A] transition-colors hover:border-black/30 dark:border-white/[0.12] dark:text-neutral-100 dark:hover:border-white/30 sm:flex-none"
-          >
-            Portfolio
-          </Link>
-        ) : null}
-        {servicesHref ? (
-          <Link
-            href={servicesHref}
-            className="inline-flex flex-1 items-center justify-center rounded-lg bg-[#0A0A0A] px-5 py-2.5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 dark:bg-white dark:text-[#0A0A0A] sm:flex-none"
-          >
-            View service
-          </Link>
-        ) : null}
-      </div>
-    </article>
+    </div>
   );
 }

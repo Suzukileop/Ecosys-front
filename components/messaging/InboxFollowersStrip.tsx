@@ -4,6 +4,7 @@ import { useMemo } from 'react';
 import { Avatar } from '@/components/ui/Avatar';
 import { usePresence } from '@/hooks/usePresence';
 import type { CreatorProfileFollowerItem } from '@/lib/creator-profile-followers-api';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type InboxFollowersStripProps = {
   followers: CreatorProfileFollowerItem[];
@@ -15,10 +16,13 @@ type InboxFollowersStripProps = {
   maxVisible?: number;
 };
 
-const DEFAULT_MAX_VISIBLE = 6;
+const DEFAULT_MAX_VISIBLE = 8;
 
 /**
- * Bottom inbox strip — horizontal follower avatars (message shortcuts).
+ * A creator's audience as message shortcuts — a swipeable row of faces with their first names
+ * under them (Instagram's inbox row), introduced by the section's small-caps line. On phones it
+ * opens the scrolling list; on desktop it is the inbox column's sticky footer (InboxPanel decides).
+ * The online dot is the Providers card's green, ringed in the ground so it reads on any photo.
  */
 export function InboxFollowersStrip({
   followers,
@@ -28,6 +32,7 @@ export function InboxFollowersStrip({
   openingUserId = null,
   maxVisible = DEFAULT_MAX_VISIBLE,
 }: InboxFollowersStripProps) {
+  const t = useT();
   const visibleFollowers = useMemo(
     () => followers.slice(0, Math.max(1, maxVisible)),
     [followers, maxVisible]
@@ -41,69 +46,68 @@ export function InboxFollowersStrip({
   if (!loading && followers.length === 0) return null;
 
   return (
-    <div className="shrink-0 border-t border-[var(--msg-hairline)] px-6 py-5">
-      <div className="mb-4 flex items-baseline justify-between gap-2">
-        <h3 className="text-[15px] font-bold text-[var(--msg-ink)]">Audience</h3>
+    <section className="shrink-0 pb-3 pt-3 lg:pb-[calc(1rem+env(safe-area-inset-bottom))] lg:pt-4" aria-label={t('Audience')}>
+      <div className="flex items-center justify-between gap-2 px-5 lg:px-6">
+        <h2 className="text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)]">{t('Audience')}</h2>
         <button
           type="button"
           onClick={onSeeAll}
-          className="inline-flex items-center gap-1.5 text-[14px] font-medium text-[var(--msg-ink-faint)] transition-colors duration-200 hover:text-[var(--msg-coral)]"
+          className="-mr-3 inline-flex min-h-10 items-center rounded-full px-3 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
         >
-          See all
-          <span aria-hidden>&#8594;</span>
+          {t('See all')}
         </button>
       </div>
 
       {loading && followers.length === 0 ? (
-        <div className="flex gap-3 overflow-hidden py-1" aria-busy="true" aria-label="Loading audience">
-          {Array.from({ length: Math.min(4, maxVisible) }).map((_, index) => (
-            <span
-              key={`follower-skeleton-${index}`}
-              className="h-11 w-11 shrink-0 animate-pulse rounded-full bg-[var(--msg-wash)] ring-1 ring-[var(--msg-hairline)]"
-            />
+        <div className="flex gap-4 overflow-hidden px-5 pt-1 lg:px-6" aria-busy="true" aria-label={t('Loading audience')}>
+          {Array.from({ length: Math.min(5, maxVisible) }).map((_, index) => (
+            <span key={`follower-skeleton-${index}`} className="flex w-14 shrink-0 flex-col items-center gap-1.5">
+              <span className="xm-skeleton h-14 w-14 rounded-full" />
+              <span className="xm-skeleton h-2.5 w-10 rounded-full" />
+            </span>
           ))}
         </div>
       ) : (
-        <div
-          className="msg-scroll flex gap-3.5 overflow-x-auto pb-1"
-          role="list"
-          aria-label="Audience"
+        <ul
+          className="flex gap-4 overflow-x-auto scroll-px-5 px-5 pt-1 [scrollbar-width:none] lg:px-6 [&::-webkit-scrollbar]:hidden"
+          aria-label={t('Audience')}
         >
           {visibleFollowers.map((follower) => {
             const name = follower.followerFullName?.trim() || 'Contact';
+            const firstName = name.split(/\s+/)[0] || name;
             const busy = openingUserId === follower.followerUserId;
             const online = isOnline(follower.followerUserId);
-            const statusLabel = online ? 'Online' : 'Offline';
+            const statusLabel = online ? t('Online') : t('Offline');
             return (
-              <button
-                key={follower.id}
-                type="button"
-                role="listitem"
-                disabled={busy}
-                onClick={() => onOpenFollower(follower)}
-                title={`Message ${name} (${statusLabel})`}
-                aria-label={`Message ${name}, ${statusLabel}`}
-                className="group relative shrink-0 rounded-full focus-visible:outline-none disabled:opacity-50"
-              >
-                <span className="msg-portrait inline-flex overflow-hidden rounded-full ring-1 ring-[var(--msg-hairline)] group-hover:-translate-y-0.5 group-hover:ring-[var(--msg-hairline-strong)] group-focus-visible:ring-[var(--msg-ink)]">
-                  <Avatar
-                    avatarUrl={follower.followerAvatarUrl}
-                    name={name}
-                    size="lg"
-                    tone="muted"
-                  />
-                </span>
-                {online ? (
-                  <span
-                    className="absolute bottom-0.5 right-0.5 h-3 w-3 rounded-full border-2 border-[var(--msg-panel)] bg-[var(--msg-online)]"
-                    aria-hidden
-                  />
-                ) : null}
-              </button>
+              <li key={follower.id} className="shrink-0">
+                <button
+                  type="button"
+                  disabled={busy}
+                  onClick={() => onOpenFollower(follower)}
+                  title={t('Message {name} ({statusLabel})', { name, statusLabel })}
+                  aria-label={t('Message {name}, {statusLabel}', { name, statusLabel })}
+                  className="group flex w-14 flex-col items-center gap-1.5 rounded-xl focus-visible:outline-none disabled:opacity-50"
+                >
+                  <span className="relative">
+                    <span className="msg-portrait flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-2 ring-transparent transition-shadow group-focus-visible:ring-[color:var(--gn-ink)] [&>*]:!h-14 [&>*]:!w-14">
+                      <Avatar avatarUrl={follower.followerAvatarUrl} name={name} size="lg" tone="muted" />
+                    </span>
+                    {online ? (
+                      <span
+                        className="absolute bottom-0.5 right-0.5 h-3.5 w-3.5 rounded-full bg-[var(--msg-online)] ring-[3px] ring-[color:var(--msg-panel)]"
+                        aria-hidden
+                      />
+                    ) : null}
+                  </span>
+                  <span className="w-full truncate text-center text-[12px] leading-4 text-[color:var(--gn-ink2)] group-hover:text-[color:var(--gn-ink)]">
+                    {firstName}
+                  </span>
+                </button>
+              </li>
             );
           })}
-        </div>
+        </ul>
       )}
-    </div>
+    </section>
   );
 }

@@ -20,6 +20,7 @@ import {
   faUser,
 } from '@fortawesome/free-regular-svg-icons';
 import { normalizeCreatorAppRole, type CreatorAppRole } from '@/lib/creator-app-role';
+import { msg } from '@/lib/i18n/config';
 
 export type ProfileSectionId =
   | 'about'
@@ -48,83 +49,83 @@ type ProfileSection = {
 const PROFILE_SECTIONS: ProfileSection[] = [
   {
     id: 'about',
-    label: 'General Info',
-    description: 'Name, username, bio, specialty, languages, availability, and location.',
+    label: msg('General Info'),
+    description: msg('Name, username, bio, specialty, languages, availability, and location.'),
   },
   {
     id: 'aboutPage',
-    label: 'About',
-    description: 'Specialty, languages, education, skills, strengths, systems, and interests.',
+    label: msg('About'),
+    description: msg('Specialty, languages, education, skills, strengths, systems, and interests.'),
   },
   {
     id: 'aboutUs',
-    label: 'About us',
-    description: 'Company story, tasks, images, quote, and founder information.',
+    label: msg('About us'),
+    description: msg('Company story, tasks, images, quote, and founder information.'),
   },
   {
     id: 'myRole',
-    label: 'My Role',
-    description: 'Choose your role in the app to improve your experience.',
+    label: msg('My Role'),
+    description: msg('Choose your role in the app to improve your experience.'),
   },
   {
     id: 'experience',
-    label: 'Experience',
-    description: 'Highlight your background, years of experience, and proof points.',
+    label: msg('Experience'),
+    description: msg('Highlight your background, years of experience, and proof points.'),
   },
   {
     id: 'strengths',
-    label: 'Stack',
-    description: 'Technologies you work with — name, level, logo, and description (max 12).',
+    label: msg('Stack'),
+    description: msg('Technologies you work with — name, level, logo, and description (max 12).'),
   },
   {
     id: 'tools',
-    label: 'Tools',
-    description: 'List the software and skills you master with proficiency levels (max 12).',
+    label: msg('Tools'),
+    description: msg('List the software and skills you master with proficiency levels (max 12).'),
   },
   {
     id: 'services',
-    label: 'Services',
-    description: 'Describe what you offer, pricing hints, and typical deadlines.',
+    label: msg('Services'),
+    description: msg('Describe what you offer, pricing hints, and typical deadlines.'),
   },
   {
     id: 'products',
-    label: 'Products',
-    description: 'Select and order existing store products to feature on your portfolio.',
+    label: msg('Products'),
+    description: msg('Select and order existing store products to feature on your portfolio.'),
   },
   {
     id: 'portfolio',
-    label: 'Portfolio',
-    description: 'Choisissez jusqu’à 4 contenus publiés à mettre en avant sur votre portfolio.',
+    label: msg('Portfolio'),
+    description: msg('Choisissez jusqu’à 4 contenus publiés à mettre en avant sur votre portfolio.'),
   },
   {
     id: 'faq',
     label: 'FAQ',
-    description: 'Answer common questions from potential clients.',
+    description: msg('Answer common questions from potential clients.'),
   },
   {
     id: 'team',
-    label: 'Team',
-    description: 'Présentez les membres de votre équipe, leurs rôles et leurs contacts.',
+    label: msg('Team'),
+    description: msg('Présentez les membres de votre équipe, leurs rôles et leurs contacts.'),
   },
   {
     id: 'gallery',
-    label: 'Gallery',
-    description: 'Ajoutez des images et vidéos pour illustrer votre univers.',
+    label: msg('Gallery'),
+    description: msg('Ajoutez des images et vidéos pour illustrer votre univers.'),
   },
   {
     id: 'links',
-    label: 'Links',
-    description: 'Websites, social profiles, and CTAs. The first link becomes the primary button on your public profile.',
+    label: msg('Links'),
+    description: msg('Websites, social profiles, and CTAs. The first link becomes the primary button on your public profile.'),
   },
   {
     id: 'location',
-    label: 'Location',
-    description: 'City, country, and timezone shown on your public profile.',
+    label: msg('Location'),
+    description: msg('City, country, and timezone shown on your public profile.'),
   },
   {
     id: 'contact',
-    label: 'Contact',
-    description: 'Professional email, phone, and address — control what visitors can see.',
+    label: msg('Contact'),
+    description: msg('Professional email, phone, and address — control what visitors can see.'),
   },
 ];
 
@@ -133,6 +134,20 @@ export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
   ['about', 'aboutPage', 'aboutUs', 'myRole', 'experience', 'strengths', 'tools'],
   ['services', 'products', 'portfolio', 'faq', 'team', 'gallery', 'links'],
   ['contact'],
+];
+
+/**
+ * My Portfolio's rail: the same sections, grouped the way a visitor reads a portfolio — who you are,
+ * what you have done, what you show, how to reach you. Each group is a small-caps kicker in the
+ * "Sections" box; a section missing from the open format is dropped, and so is an emptied group.
+ * "My Role" is not a portfolio section (it is the account's role in the app, set from My Profile), so
+ * the portfolio rail never lists it, not even under "Show all sections".
+ */
+export const PORTFOLIO_RAIL_GROUPS: ReadonlyArray<{ title: string; sections: readonly ProfileSectionId[] }> = [
+  { title: msg('Profile'), sections: ['about', 'aboutPage', 'aboutUs'] },
+  { title: msg('Background'), sections: ['experience', 'strengths', 'tools'] },
+  { title: msg('Work'), sections: ['services', 'products', 'portfolio', 'team', 'gallery'] },
+  { title: msg('Contact'), sections: ['faq', 'links', 'contact'] },
 ];
 
 /** Store “Information” tab: only identity / contact sections. */
@@ -209,7 +224,9 @@ function NavIcon({
   inheritColor?: boolean;
   children: ReactNode;
 }) {
-  const isHighlighted = variant === 'header' || active;
+  /* `inheritColor` rails (My Portfolio, a provider's contact tabs) are ink-only: the glyph takes the
+     label's colour in every state, the active one included — no accent on the selection. */
+  const isHighlighted = !inheritColor && (variant === 'header' || active);
 
   if (variant === 'header') {
     return (
@@ -226,7 +243,7 @@ function NavIcon({
     <span
       className={`flex h-8 w-8 shrink-0 items-center justify-center transition-colors ${
         isHighlighted
-          ? 'text-[#FF5722]'
+          ? 'text-[#E2692F]'
           : inheritColor
             ? 'text-current'
             : 'text-neutral-600 dark:text-neutral-400'

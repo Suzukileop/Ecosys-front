@@ -16,6 +16,7 @@ import {
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -288,6 +289,7 @@ function SplitFormSubmit({
   bg: string;
   label: string;
 }) {
+  const t = useT();
   return (
     <button
       type="submit"
@@ -296,7 +298,7 @@ function SplitFormSubmit({
       className="inline-flex shrink-0 items-center justify-center px-7 py-3.5 text-xs font-semibold uppercase tracking-[0.18em] disabled:cursor-not-allowed disabled:opacity-50"
       style={{ backgroundColor: ink, color: bg, transition: MODE_TRANSITION }}
     >
-      {sent ? 'Message sent' : pending ? 'Sending…' : label}
+      {sent ? t('Message sent') : pending ? t('Sending…') : label}
     </button>
   );
 }
@@ -360,6 +362,7 @@ export function FooterDesignSplitForm({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignSplitFormProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
 
   const isLight = colorMode === 'light';
@@ -386,22 +389,22 @@ export function FooterDesignSplitForm({
   const onSubmit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!creatorId.trim()) {
-      setError('Unable to send — creator is missing.');
+      setError(t('Unable to send — creator is missing.'));
       return;
     }
     const nameValue = values.name.trim();
     const emailValue = values.email.trim();
     const messageValue = values.message.trim();
     if (!nameValue) {
-      setError('Enter your name.');
+      setError(t('Enter your name.'));
       return;
     }
     if (!/^\S+@\S+\.\S+$/.test(emailValue)) {
-      setError('Enter a valid email address.');
+      setError(t('Enter a valid email address.'));
       return;
     }
     if (messageValue.length < 10) {
-      setError('Message must be at least 10 characters.');
+      setError(t('Message must be at least 10 characters.'));
       return;
     }
     setError(null);
@@ -418,13 +421,13 @@ export function FooterDesignSplitForm({
       setProjectType('');
       pushFlashFeedback({
         variant: 'success',
-        title: 'Message sent',
-        description: 'Your message was delivered to the creator.',
+        title: t('Message sent'),
+        description: t('Your message was delivered to the creator.'),
       });
     } catch (err) {
-      const message = getApiErrorMessage(err, 'Unable to send your message. Please try again.');
+      const message = getApiErrorMessage(err, t('Unable to send your message. Please try again.'));
       setError(message);
-      pushFlashFeedback({ variant: 'error', title: 'Message not sent', description: message });
+      pushFlashFeedback({ variant: 'error', title: t('Message not sent'), description: message });
     } finally {
       setPending(false);
     }
@@ -433,7 +436,7 @@ export function FooterDesignSplitForm({
   const headlineLines = layout.text('headline')?.split('\n') ?? [];
   const resolvedDescription = layout.text('description');
   const projectQuestion = layout.text('projectQuestion');
-  const submitLabel = layout.text('submitLabel') ?? 'Send message';
+  const submitLabel = layout.text('submitLabel') ?? t('Send message');
   const contactHeading = layout.text('contactLabel');
   const navHeading = layout.text('navLabel');
   const visitHeading = layout.text('visitLabel');
@@ -466,7 +469,7 @@ export function FooterDesignSplitForm({
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
-                    alt={creatorName ? `Portrait of ${creatorName}` : 'Portrait'}
+                    alt={creatorName ? t('Portrait of {creatorName}', { creatorName }) : t('Portrait')}
                     className="h-full w-full object-cover"
                   />
                 ) : (
@@ -594,7 +597,7 @@ export function FooterDesignSplitForm({
               <div className="grid grid-cols-1 gap-8 sm:grid-cols-2">
                 <SplitFormField
                   id="footer-split-form-name"
-                  label="Name"
+                  label={t('Name')}
                   value={values.name}
                   onChange={handleField('name')}
                   required
@@ -604,7 +607,7 @@ export function FooterDesignSplitForm({
                 />
                 <SplitFormField
                   id="footer-split-form-email"
-                  label="Email"
+                  label={t('Email')}
                   type="email"
                   value={values.email}
                   onChange={handleField('email')}
@@ -617,7 +620,7 @@ export function FooterDesignSplitForm({
 
               <SplitFormField
                 id="footer-split-form-message"
-                label="Message"
+                label={t('Message')}
                 multiline
                 value={values.message}
                 onChange={handleField('message')}
@@ -673,7 +676,7 @@ export function FooterDesignSplitForm({
                 {navHeading}
               </p>
             ) : null}
-            <nav aria-label="Footer" className="flex flex-col gap-4">
+            <nav aria-label={t('Footer')} className="flex flex-col gap-4">
               {navLinks.map((link) => (
                 <a
                   key={link.id}

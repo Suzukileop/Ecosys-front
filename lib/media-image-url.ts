@@ -18,6 +18,8 @@ const ALLOWED_WIDTHS = [
 
 /** Must mirror `images.qualities` (default `[75]`): any other `q` is a 400. */
 const QUALITY = 75;
+/** Large cover media that is the point of its section — must be listed in next.config `images.qualities`. */
+export const CRISP_QUALITY = 90;
 
 /** Must mirror `images.remotePatterns` in next.config.mjs — an unlisted host is a 400. */
 const ALLOWED_REMOTE_HOSTS: readonly (string | RegExp)[] = [
@@ -123,12 +125,17 @@ export function storageWidthUrl(url: string | null | undefined, displayWidth: nu
  * Optimized URL for `url` rendered at `displayWidth` CSS pixels.
  * Returns `url` untouched when it cannot be optimized, so every call site stays safe.
  */
-export function mediaImageSrc(url: string | null | undefined, displayWidth: number): string {
+export function mediaImageSrc(
+  url: string | null | undefined,
+  displayWidth: number,
+  fromOriginal = false,
+  quality: number = QUALITY
+): string {
   const trimmed = url?.trim() ?? '';
   if (!trimmed || !isOptimizable(trimmed)) return trimmed;
   const snapped = snapWidth(displayWidth);
-  const upstream = storageWidthUrl(trimmed, snapped);
-  return `/_next/image?url=${encodeURIComponent(upstream)}&w=${snapped}&q=${QUALITY}`;
+  const upstream = fromOriginal ? trimmed : storageWidthUrl(trimmed, snapped);
+  return `/_next/image?url=${encodeURIComponent(upstream)}&w=${snapped}&q=${quality}`;
 }
 
 /**
@@ -150,14 +157,25 @@ export function mediaImageSrcSet(url: string | null | undefined, displayWidth: n
  */
 export function mediaImageResponsive(
   url: string | null | undefined,
-  widths: readonly number[]
+  widths: readonly number[],
+  /**
+   * Resize from the stored original instead of a backend rendition. The renditions are JPEG q78
+   * shrunk with a bilinear filter, and the optimizer then re-encodes them — two lossy generations
+   * that visibly soften a picture. Large hero/cover media that is the point of its section opts out
+   * of them: the optimizer resamples the original once (Lanczos) and the result stays crisp.
+   */
+  fromOriginal = false,
+  /** Encoder quality; `CRISP_QUALITY` for the same media that opts into `fromOriginal`. */
+  quality: number = QUALITY
 ): { src: string; srcSet?: string } {
   const trimmed = url?.trim() ?? '';
   const snapped = [...new Set(widths.map(snapWidth))].sort((a, b) => a - b);
   const fallbackWidth = snapped[snapped.length - 1] ?? 1080;
   if (!trimmed || !isOptimizable(trimmed)) return { src: trimmed };
   return {
-    src: mediaImageSrc(trimmed, fallbackWidth),
-    srcSet: snapped.map((width) => `${mediaImageSrc(trimmed, width)} ${width}w`).join(', '),
+    src: mediaImageSrc(trimmed, fallbackWidth, fromOriginal, quality),
+    srcSet: snapped
+      .map((width) => `${mediaImageSrc(trimmed, width, fromOriginal, quality)} ${width}w`)
+      .join(', '),
   };
 }

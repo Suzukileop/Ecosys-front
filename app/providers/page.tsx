@@ -1,16 +1,10 @@
 import { Suspense } from 'react';
 import { ServiceProviderCatalogGate } from '@/components/marketplace/ServiceProviderCatalogGate';
-import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { ProvidersCatalogSkeleton } from '@/components/marketplace/ProvidersCatalogSkeleton';
 
 export default function MarketplaceCreatorsPage() {
   return (
-    <Suspense
-      fallback={
-        <div className="flex min-h-[50vh] items-center justify-center px-4 py-20">
-          <LoadingSpinner size="lg" />
-        </div>
-      }
-    >
+    <Suspense fallback={<ProvidersCatalogSkeleton />}>
       <ServiceProviderCatalogGate />
     </Suspense>
   );

@@ -1,0 +1,165 @@
+/* ==========================================================================
+   Messages — the News editorial skin (`.x-messages`, on MessageLayout's root)
+   --------------------------------------------------------------------------
+   The messages shell already opens `.msg-mineral` (globals.css), whose `--msg-*` / `--cw-*` tokens
+   the X-ROLLOUT MESSAGES block re-points to the X palette. This file adds what the News page has
+   and Messages lacked, without touching globals.css:
+
+   - the News token set (`--gn-*`), declared here rather than by adding `.news-theme` to the shell:
+     `.news-theme` also carries a generated block that re-maps neutral / orange Tailwind utilities
+     and rounds / repaints every `<article>` inside it — fine for the feed, wrong for a chat whose
+     bubbles, pins and media use those utilities on purpose. With the tokens declared here, the
+     shell can carry `news-mono` alone and get Inter, `.gn-kicker` and `.gn-rail-box` for free.
+   - two corrections to the re-pointed `--msg-*` values (see below), and a handful of tokens of
+     its own (`--xm-*`) for things that change tone with the ground they sit on.
+
+   Every selector is scoped under `.x-messages` and is at least as specific as the globals.css
+   rule it overrides (`.dark .x-messages.msg-mineral` beats `.dark .msg-mineral`), so the result
+   does not depend on which stylesheet loads first.
+   ========================================================================== */
+
+.x-messages.msg-mineral {
+  /* News tokens, light ("Default") — the values of `html:not(.dark) .news-theme.news-mono`. */
+  --gn-surface: #f7f9f9;
+  --gn-inset: #ffffff;
+  --gn-field: #ffffff;
+  --gn-ink: #0f1419;
+  --gn-ink2: #536471;
+  --gn-ink3: #8b98a5;
+  --gn-line: #eff3f4;
+  --gn-hover: rgba(15, 20, 25, 0.06);
+  --gn-hover-strong: #eff3f4;
+  --gn-ring: rgba(15, 20, 25, 0.35);
+  --gn-primary: #0f1419;
+  --gn-primary-hover: #272c30;
+  --gn-primary-ink: #ffffff;
+
+  /*
+   * Bubbles. Mine: a soft filled grey with ink text (#EFF3F4) — not a solid black / white slab, which
+   * shouted louder than the conversation itself. Theirs: no fill, a 1px outline (#CFD9DE, the app's
+   * secondary-button line) — the two sides read apart by fill vs. outline as well as by side.
+   */
+  --msg-bubble-mine: #eff3f4;
+  --msg-bubble-mine-ink: #0f1419;
+  --msg-bubble-theirs: transparent;
+  --xm-bubble-line: #cfd9de;
+  /* The conversation column's frame (desktop). */
+  --xm-frame: #e1e8ed;
+  /* Presence: the Providers card's green dot, so "online" means the same thing on both pages. */
+  --msg-online: #00ba7c;
+
+  /*
+   * Tones that depend on the ground. On phones everything sits on the white page, so idle chips,
+   * the search pill and row hovers take the module tone; on desktop the inbox and details columns
+   * ARE the module tone (`.msg-surface-scope`), so the same controls step to white / a deeper grey.
+   */
+  --xm-chip: var(--gn-surface);
+  --xm-chip-active: var(--gn-hover-strong);
+  --xm-row-hover: var(--gn-surface);
+  --xm-row-selected: var(--gn-hover-strong);
+  --xm-skeleton: #eff3f4;
+}
+
+.dark .x-messages.msg-mineral {
+  /* News tokens, dark ("Lights out"). Secondary #8B98A5, not X's #71767B: the desktop columns are
+     #16181C, where #71767B falls to ~3.9:1 — under AA for the 13–15px meta lines. */
+  --gn-surface: #16181c;
+  --gn-inset: #202327;
+  --gn-field: #202327;
+  --gn-ink: #e7e9ea;
+  --gn-ink2: #8b98a5;
+  --gn-ink3: #536471;
+  --gn-line: #2f3336;
+  --gn-hover: rgba(231, 233, 234, 0.1);
+  --gn-hover-strong: #2a2d32;
+  --gn-ring: rgba(231, 233, 234, 0.4);
+  --gn-primary: #eff3f4;
+  --gn-primary-hover: #d7dbdc;
+  --gn-primary-ink: #0f1419;
+
+  /* The same AA correction for the section's own secondary inks (globals.css sets #71767B). */
+  --msg-ink-soft: #8b98a5;
+  --msg-ink-faint: #8b98a5;
+  --cw-text-secondary: #8b98a5;
+  --cw-text-muted: #8b98a5;
+
+  /* Mine: #2F3336 with light ink — the near-white bubble was the brightest thing on a black page.
+     Theirs: outlined in the same grey, no fill. */
+  --msg-bubble-mine: #2f3336;
+  --msg-bubble-mine-ink: #e7e9ea;
+  --msg-bubble-theirs: transparent;
+  --xm-bubble-line: #3e4144;
+  --xm-frame: #2f3336;
+  /* Restated (globals' `.dark .msg-mineral` sets it to ink at the same specificity as the light rule). */
+  --msg-online: #00ba7c;
+
+  --xm-chip: var(--gn-surface);
+  --xm-chip-active: #202327;
+  --xm-row-hover: #16181c;
+  --xm-row-selected: #202327;
+  --xm-skeleton: #202327;
+}
+
+/* Desktop columns on the module tone: controls that sat on the surface move to white (dark: the
+   field tone), and the row fills step one tone deeper so they still read on the column. */
+@media (min-width: 1024px) {
+  .x-messages.msg-mineral .msg-surface-scope {
+    --xm-chip: #ffffff;
+    --xm-chip-active: #e7ecf0;
+    --xm-row-hover: #eff3f4;
+    --xm-row-selected: #e7ecf0;
+    --xm-skeleton: #e7ecf0;
+  }
+  .dark .x-messages.msg-mineral .msg-surface-scope {
+    --xm-chip: #202327;
+    --xm-chip-active: #2a2d32;
+    --xm-row-hover: #1d1f23;
+    --xm-row-selected: #202327;
+    --xm-skeleton: #202327;
+  }
+}
+
+/* Typing indicator: three dots that rise in turn, inside a bubble in the other side's tone. */
+@keyframes xm-typing-dot {
+  0%,
+  60%,
+  100% {
+    transform: translateY(0);
+    opacity: 0.45;
+  }
+  30% {
+    transform: translateY(-3px);
+    opacity: 1;
+  }
+}
+.x-messages .xm-typing-dot {
+  animation: xm-typing-dot 1.2s ease-in-out infinite both;
+}
+.x-messages .xm-typing-dot:nth-child(2) {
+  animation-delay: 0.15s;
+}
+.x-messages .xm-typing-dot:nth-child(3) {
+  animation-delay: 0.3s;
+}
+
+/* Inbox skeleton rows: one soft pulse, the row's own geometry. */
+@keyframes xm-skeleton-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.55;
+  }
+}
+.x-messages .xm-skeleton {
+  background-color: var(--xm-skeleton);
+  animation: xm-skeleton-pulse 1.4s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .x-messages .xm-typing-dot,
+  .x-messages .xm-skeleton {
+    animation: none;
+  }
+}

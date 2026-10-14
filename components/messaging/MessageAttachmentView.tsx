@@ -1,5 +1,6 @@
 'use client';
 
+import { localeTag } from '@/lib/i18n/active';
 import { useEffect, useState } from 'react';
 import { createPortal } from 'react-dom';
 import { getApiErrorMessage } from '@/lib/api-error';
@@ -12,6 +13,7 @@ import {
 import { ChatShortVideoPlayer } from '@/components/messaging/ChatShortVideoPlayer';
 import { storageWidthUrl } from '@/lib/media-image-url';
 import type { MessageAttachment } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type MessageAttachmentViewProps = {
   conversationId: string;
@@ -55,6 +57,7 @@ function MediaLightbox({
   onDownload: () => void;
   downloading: boolean;
 }) {
+  const t = useT();
   const [mediaReady, setMediaReady] = useState(false);
 
   useEffect(() => {
@@ -83,14 +86,14 @@ function MediaLightbox({
     >
       <button
         type="button"
-        className="msg-media-backdrop-in absolute inset-0 bg-neutral-900/45 backdrop-blur-[3px] dark:bg-neutral-950/70"
-        aria-label="Close preview"
+        className="msg-media-backdrop-in absolute inset-0 bg-black/40 dark:bg-black/60"
+        aria-label={t('Close preview')}
         onClick={onClose}
       />
 
-      <div className="msg-media-panel-in relative z-10 flex max-h-[min(88vh,900px)] w-full max-w-[min(92vw,880px)] flex-col overflow-hidden rounded-[14px] bg-white shadow-[0_18px_50px_rgba(0,0,0,0.22)] dark:bg-neutral-950 dark:shadow-[0_18px_50px_rgba(0,0,0,0.55)]">
-        <div className="flex shrink-0 items-center justify-between gap-3 border-b border-neutral-200/80 px-3 py-2.5 dark:border-white/10">
-          <p className="min-w-0 truncate px-1 text-[13px] font-medium text-neutral-800 dark:text-white/90">
+      <div className="msg-media-panel-in relative z-10 flex max-h-[min(88vh,900px)] w-full max-w-[min(92vw,880px)] flex-col overflow-hidden rounded-2xl bg-white shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)] dark:bg-black dark:shadow-[0_0_0_1px_#2F3336]">
+        <div className="flex shrink-0 items-center justify-between gap-3 px-3 py-2">
+          <p className="min-w-0 truncate px-1 text-[15px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">
             {fileName}
           </p>
           <div className="flex shrink-0 items-center gap-1">
@@ -98,9 +101,9 @@ function MediaLightbox({
               type="button"
               onClick={onDownload}
               disabled={downloading}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 disabled:opacity-50 dark:text-white/90 dark:hover:bg-white/10 dark:focus-visible:ring-white/40"
-              aria-label={downloading ? 'Downloading' : 'Download'}
-              title="Download"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] disabled:opacity-50 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]"
+              aria-label={downloading ? t('Downloading') : t('Download')}
+              title={t('Download')}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path
@@ -113,9 +116,9 @@ function MediaLightbox({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-[8px] text-neutral-600 transition hover:bg-neutral-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 dark:text-white/90 dark:hover:bg-white/10 dark:focus-visible:ring-white/40"
-              aria-label="Close"
-              title="Close"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]"
+              aria-label={t('Close')}
+              title={t('Close')}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
@@ -124,7 +127,7 @@ function MediaLightbox({
           </div>
         </div>
 
-        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-neutral-50 dark:bg-neutral-900">
+        <div className="relative flex min-h-0 flex-1 items-center justify-center bg-[#F7F9F9] dark:bg-[#16181C]">
           {!mediaReady ? (
             <div
               className="absolute inset-6 animate-pulse rounded-[10px] bg-neutral-200/80 dark:bg-neutral-800/80"
@@ -171,6 +174,7 @@ function InlineMediaAttachment({
   embedded = false,
   sentAt,
 }: MessageAttachmentViewProps) {
+  const t = useT();
   const [previewUrl, setPreviewUrl] = useState<string | null>(attachment.localPreviewUrl ?? null);
   const [loading, setLoading] = useState(!attachment.localPreviewUrl);
   const [error, setError] = useState<string | null>(null);
@@ -207,7 +211,7 @@ function InlineMediaAttachment({
     if (isAttachmentLoadFailed(conversationId, attachment.id)) {
       if (!attachment.localPreviewUrl) {
         setLoading(false);
-        setError('Preview unavailable');
+        setError(t('Preview unavailable'));
       }
       return () => {
         cancelled = true;
@@ -231,7 +235,7 @@ function InlineMediaAttachment({
             markAttachmentLoadFailed(conversationId, attachment.id);
           }
           if (!attachment.localPreviewUrl) {
-            setError(getApiErrorMessage(e, 'Unable to load media.'));
+            setError(getApiErrorMessage(e, t('Unable to load media.')));
           }
         }
       } finally {
@@ -242,7 +246,7 @@ function InlineMediaAttachment({
     return () => {
       cancelled = true;
     };
-  }, [conversationId, attachment.id, attachment.localPreviewUrl, isOptimistic]);
+  }, [conversationId, attachment.id, attachment.localPreviewUrl, isOptimistic, t]);
 
   const openLightbox = () => {
     if (isOptimistic && attachment.id.startsWith('optimistic-')) return;
@@ -263,7 +267,7 @@ function InlineMediaAttachment({
       link.click();
       link.remove();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to download media.'));
+      setError(getApiErrorMessage(e, t('Unable to download media.')));
     } finally {
       setDownloading(false);
     }
@@ -272,7 +276,7 @@ function InlineMediaAttachment({
   if (loading) {
     return (
       <div
-        className={`relative overflow-hidden bg-neutral-100 dark:bg-neutral-800 ${
+        className={`relative overflow-hidden bg-[#F7F9F9] dark:bg-[#16181C] ${
           embedded ? 'aspect-[9/16] min-h-[200px] w-full max-w-[280px]' : 'mt-1 h-44 w-56 max-w-full rounded-2xl'
         }`}
       >
@@ -284,17 +288,17 @@ function InlineMediaAttachment({
   if (error || !previewUrl) {
     return (
       <div
-        className={`border border-dashed border-red-300 bg-red-50 px-3 py-4 text-xs text-red-600 dark:border-red-800 dark:bg-red-950/30 dark:text-red-400 ${
+        className={`bg-[#F7F9F9] px-4 py-6 text-center text-[13px] text-[#536471] dark:bg-[#16181C] dark:text-[#71767B] ${
           embedded ? 'w-full' : 'mt-1 rounded-2xl'
         }`}
       >
-        {error ?? 'Preview unavailable'}
+        {error ?? t('Preview unavailable')}
       </div>
     );
   }
 
   const timeLabel = sentAt
-    ? new Date(sentAt).toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit' })
+    ? new Date(sentAt).toLocaleTimeString(localeTag(), { hour: 'numeric', minute: '2-digit' })
     : null;
 
   return (
@@ -322,7 +326,7 @@ function InlineMediaAttachment({
               onClick={openLightbox}
               className={`absolute left-2 top-2 z-[2] rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${HOVER_CHROME}`}
             >
-              Expand
+              {t('Expand')}
             </button>
           </div>
         ) : (
@@ -386,6 +390,7 @@ function InlineMediaAttachment({
 }
 
 function FileAttachmentCard({ conversationId, attachment, mine = false }: MessageAttachmentViewProps) {
+  const t = useT();
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const isOptimistic = attachment.id.startsWith('optimistic-');
@@ -404,7 +409,7 @@ function FileAttachmentCard({ conversationId, attachment, mine = false }: Messag
       link.click();
       link.remove();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to download file.'));
+      setError(getApiErrorMessage(e, t('Unable to download file.')));
     } finally {
       setLoading(false);
     }
@@ -412,21 +417,22 @@ function FileAttachmentCard({ conversationId, attachment, mine = false }: Messag
 
   return (
     <div
-      className={`mt-2 flex items-center gap-3 rounded-xl border px-3 py-2.5 ${
-        mine
-          ? 'border-[var(--cw-accent)]/25 bg-[var(--cw-accent-soft)]'
-          : 'border-neutral-200 bg-neutral-50 dark:border-neutral-600 dark:bg-neutral-900/50'
+      className={`flex flex-wrap items-center gap-3 rounded-2xl px-3 py-2.5 text-current ${
+        mine ? 'bg-white/[0.14] dark:bg-black/[0.07]' : 'bg-white dark:bg-[#202327]'
       }`}
     >
-      <span className="text-2xl" aria-hidden>
-        📎
+      <span className="flex h-9 w-9 shrink-0 items-center justify-center" aria-hidden>
+        <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round">
+          <path d="M14 3H7a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2V8l-5-5Z" />
+          <path d="M14 3v5h5" />
+        </svg>
       </span>
       <div className="min-w-0 flex-1">
-        <p className="truncate text-sm font-medium text-[var(--cw-text-primary)]">
+        <p className="truncate text-[15px] font-bold leading-5">
           {attachment.fileName}
         </p>
-        <p className="text-[11px] text-[var(--cw-text-secondary)]">
-          {isOptimistic ? 'Sending…' : formatSize(attachment.sizeBytes)}
+        <p className="text-[13px] opacity-70">
+          {isOptimistic ? t('Sending…') : formatSize(attachment.sizeBytes)}
         </p>
       </div>
       {!isOptimistic ? (
@@ -434,14 +440,14 @@ function FileAttachmentCard({ conversationId, attachment, mine = false }: Messag
           type="button"
           onClick={() => void downloadFile()}
           disabled={loading}
-          className="shrink-0 rounded-lg bg-neutral-200 px-2 py-1 text-[11px] font-semibold text-neutral-800 hover:bg-neutral-300 dark:bg-neutral-700 dark:text-neutral-200"
+          className="inline-flex h-8 shrink-0 items-center rounded-full border border-current px-3 text-[13px] font-bold transition-opacity hover:opacity-80"
         >
-          {loading ? '…' : 'Download'}
+          {loading ? '…' : t('Download')}
         </button>
       ) : (
-        <span className="shrink-0 text-[11px] font-medium text-[var(--cw-text-secondary)]">…</span>
+        <span className="shrink-0 text-[13px] opacity-70">…</span>
       )}
-      {error ? <p className="mt-1 w-full text-[10px] text-red-500">{error}</p> : null}
+      {error ? <p className="w-full text-[13px] text-[#F4212E]">{error}</p> : null}
     </div>
   );
 }

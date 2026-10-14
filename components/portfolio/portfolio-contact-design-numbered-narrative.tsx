@@ -25,6 +25,7 @@ import {
   prefersReducedMotion,
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const DEFAULT_TITLE = "Let's start a project together";
 
@@ -186,6 +187,7 @@ export function ContactDesignNumberedNarrative({
   contentGutter?: PortfolioContentGutter;
   colorMode: 'light' | 'dark';
 }) {
+  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const avatarRef = useRef<HTMLDivElement>(null);
   const tokens = contactLightDarkTokens(colorMode);
@@ -197,7 +199,7 @@ export function ContactDesignNumberedNarrative({
   const trimmedLocation = locationLabel?.trim() || '';
   const displayName = heroImageAlt?.trim() || '';
   const portraitUrl = layout.isVisible('portrait') ? heroImageUrl : null;
-  const submitLabel = layout.text('submitLabel') ?? 'Send message';
+  const submitLabel = layout.text('submitLabel') ?? t('Send message');
   const contactHeading = layout.text('contactLabel');
   const businessHeading = layout.text('businessLabel');
   const socialsHeading = layout.text('socialsLabel');
@@ -213,7 +215,7 @@ export function ContactDesignNumberedNarrative({
 
   const onSubmit = async (values: NarrativeFormValues) => {
     if (!creatorId?.trim()) {
-      setSubmitError('Unable to send — creator is missing.');
+      setSubmitError(t('Unable to send — creator is missing.'));
       return;
     }
     setSubmitError(null);
@@ -224,12 +226,12 @@ export function ContactDesignNumberedNarrative({
         message: values.message.trim(),
       });
       setSubmitted(true);
-      pushFlashFeedback({ variant: 'success', title: 'Message sent', description: 'Your message was delivered to the creator.' });
+      pushFlashFeedback({ variant: 'success', title: t('Message sent'), description: t('Your message was delivered to the creator.') });
       reset(EMPTY_FORM);
     } catch (submitErr) {
-      const message = getApiErrorMessage(submitErr, 'Unable to send your message. Please try again.');
+      const message = getApiErrorMessage(submitErr, t('Unable to send your message. Please try again.'));
       setSubmitError(message);
-      pushFlashFeedback({ variant: 'error', title: 'Message not sent', description: message });
+      pushFlashFeedback({ variant: 'error', title: t('Message not sent'), description: message });
     }
   };
 
@@ -288,7 +290,7 @@ export function ContactDesignNumberedNarrative({
 
           {submitted ? (
             <p className="mb-6 text-sm font-medium" style={{ color: tokens.muted }} role="status">
-              Thanks — your message was sent.
+              {t('Thanks — your message was sent.')}
             </p>
           ) : null}
 
@@ -322,7 +324,7 @@ export function ContactDesignNumberedNarrative({
               style={{ color: tokens.ink }}
               data-pf-no-color-transition=""
             >
-              {isSubmitting ? 'Sending…' : submitLabel}
+              {isSubmitting ? t('Sending…') : submitLabel}
               <span aria-hidden>→</span>
             </button>
           </form>
@@ -341,7 +343,7 @@ export function ContactDesignNumberedNarrative({
               >
                 <Image
                   src={portraitUrl}
-                  alt={displayName ? `Portrait of ${displayName}` : 'Portrait'}
+                  alt={displayName ? t('Portrait of {displayName}', { displayName }) : t('Portrait')}
                   fill
                   sizes="8rem"
                   className="object-cover object-center"
@@ -405,7 +407,7 @@ export function ContactDesignNumberedNarrative({
                   {socialsHeading}
                 </p>
               ) : null}
-              <nav className="flex flex-wrap gap-x-8 gap-y-3 md:justify-end" aria-label="Social">
+              <nav className="flex flex-wrap gap-x-8 gap-y-3 md:justify-end" aria-label={t('Social')}>
                 {links.map((link) => (
                   <a
                     key={link.id}

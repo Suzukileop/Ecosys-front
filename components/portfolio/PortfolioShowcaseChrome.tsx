@@ -27,6 +27,7 @@ import {
   StudioUnderline,
 } from '@/components/portfolio/PortfolioStudioKit';
 import { toAbsoluteHttpUrl } from '@/components/creator/studio/profile-form-schema';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Max manual portfolio works (matches backend MAX_PORTFOLIO_WORKS). */
 export const MAX_PORTFOLIO_WORKS = 6;
@@ -156,7 +157,7 @@ function linkLabel(url: string): string {
 const GHOST_BUTTON_CLASS =
   'inline-flex h-9 items-center rounded-full px-4 text-[14px] font-medium text-neutral-600 transition-colors duration-200 hover:bg-black/[0.04] hover:text-black disabled:pointer-events-none disabled:opacity-40 dark:text-neutral-300 dark:hover:bg-white/[0.06] dark:hover:text-white';
 const PRIMARY_BUTTON_CLASS =
-  'inline-flex h-9 items-center gap-2 rounded-full bg-[#FF5722] px-5 text-[14px] font-semibold text-white transition-colors duration-200 hover:bg-[#E64A19] disabled:pointer-events-none disabled:opacity-40';
+  'inline-flex h-9 items-center gap-2 rounded-full bg-[#0F1419] px-5 text-[14px] font-bold text-white transition-colors duration-200 hover:bg-[#272C30] disabled:pointer-events-none disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 
 function WorkField({
   label,
@@ -192,12 +193,13 @@ function StackPicker({
   onChange: (next: string[]) => void;
   disabled?: boolean;
 }) {
+  const t = useT();
   const available = parseSpecialtyTags(options);
   const chosen = parseSpecialtyTags(selected);
 
   if (available.length === 0) {
     return (
-      <p className={`pb-3 ${STUDIO_SECONDARY_CLASS}`}>Add tags in Information → Stack first, then pick them here.</p>
+      <p className={`pb-3 ${STUDIO_SECONDARY_CLASS}`}>{t('Add tags in Information → Stack first, then pick them here.')}</p>
     );
   }
 
@@ -257,6 +259,7 @@ export function PortfolioShowcaseChrome({
   deleteMode?: boolean;
   onDeleteModeChange?: (active: boolean) => void;
 }) {
+  const t = useT();
   const composeOpen = composeOpenProp ?? pickerOpen ?? false;
   const onComposeOpenChange = onComposeOpenChangeProp ?? onPickerOpenChange;
   const composeStartedRef = useRef(false);
@@ -294,11 +297,11 @@ export function PortfolioShowcaseChrome({
       setProfileStack(parseSpecialtyTags(res.data.specialtyTags));
       onSelectionCountChange?.(nextWorks.length);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to load portfolio works.'));
+      setError(getApiErrorMessage(e, t('Unable to load portfolio works.')));
     } finally {
       setLoading(false);
     }
-  }, [onSelectionCountChange]);
+  }, [onSelectionCountChange, t]);
 
   useEffect(() => {
     void load();
@@ -335,13 +338,13 @@ export function PortfolioShowcaseChrome({
         onSelectionCountChange?.(saved.length);
         return saved;
       } catch (e) {
-        setError(getApiErrorMessage(e, 'Unable to save portfolio work.'));
+        setError(getApiErrorMessage(e, t('Unable to save portfolio work.')));
         throw e;
       } finally {
         setSaving(false);
       }
     },
-    [onSelectionCountChange]
+    [onSelectionCountChange, t]
   );
 
   // Parent "+" opens compose
@@ -410,7 +413,7 @@ export function PortfolioShowcaseChrome({
   const confirmEdit = async () => {
     if (!editingId || !draft || busy) return;
     if (!isDraftComplete(draft)) {
-      setError('Title and image are required.');
+      setError(t('Title and image are required.'));
       return;
     }
     const next = works.map((item) =>
@@ -439,7 +442,7 @@ export function PortfolioShowcaseChrome({
       onComposeOpenChange?.(false);
       pushFlashFeedback({
         variant: 'success',
-        title: saved.length > previousCount ? 'Portfolio work added' : 'Portfolio work updated',
+        title: saved.length > previousCount ? t('Portfolio work added') : t('Portfolio work updated'),
       });
     } catch {
       /* error already set */
@@ -452,7 +455,7 @@ export function PortfolioShowcaseChrome({
     try {
       await persist(next);
       setPendingDeleteId(null);
-      pushFlashFeedback({ variant: 'success', title: 'Portfolio work deleted' });
+      pushFlashFeedback({ variant: 'success', title: t('Portfolio work deleted') });
     } catch {
       /* error already set */
     }
@@ -480,7 +483,7 @@ export function PortfolioShowcaseChrome({
       const url = await uploadContentMedia(file);
       setDraft((current) => (current ? { ...current, imageUrl: url } : current));
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to upload image.'));
+      setError(getApiErrorMessage(e, t('Unable to upload image.')));
     } finally {
       setUploading(false);
     }
@@ -512,11 +515,11 @@ export function PortfolioShowcaseChrome({
 
   return (
     <div className="pb-10 pt-3">
-      <StudioSectionHeader label={`Works · ${String(filledWorks.length).padStart(2, '0')}`}>
+      <StudioSectionHeader label={t('Works · {padStart}', { padStart: String(filledWorks.length).padStart(2, '0') })}>
         <span className={STUDIO_SECONDARY_CLASS}>
-          {filledWorks.length} of {MAX_PORTFOLIO_WORKS}
+          {t('{filledWorksLength} of {MAXPORTFOLIOWORKS}', { filledWorksLength: filledWorks.length, MAXPORTFOLIOWORKS: MAX_PORTFOLIO_WORKS })}
         </span>
-        <StudioIconAction icon="add" label="Add work" onClick={requestAdd} disabled={busy || Boolean(editingId) || atLimit} />
+        <StudioIconAction icon="add" label={t('Add work')} onClick={requestAdd} disabled={busy || Boolean(editingId) || atLimit} />
       </StudioSectionHeader>
 
       {error ? (
@@ -529,9 +532,9 @@ export function PortfolioShowcaseChrome({
         <button
           type="button"
           onClick={requestAdd}
-          className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#FF5722]`}
+          className={`py-8 ${STUDIO_EMPTY_CLASS} transition-colors hover:text-[#0F1419] dark:hover:text-[#E7E9EA]`}
         >
-          No work yet — add your first project.
+          {t('No work yet — add your first project.')}
         </button>
       ) : (
         <div className="grid grid-cols-1 gap-x-10 gap-y-14 pt-2 sm:grid-cols-2">
@@ -580,11 +583,11 @@ export function PortfolioShowcaseChrome({
                           type="button"
                           disabled={busy}
                           onClick={() => fileInputRef.current?.click()}
-                          aria-label={coverUrl ? 'Replace cover image' : 'Upload cover image'}
+                          aria-label={coverUrl ? t('Replace cover image') : t('Upload cover image')}
                           className={`absolute inset-0 flex flex-col items-center justify-center gap-2 transition-colors duration-200 ${
                             coverUrl
                               ? 'bg-black/0 text-transparent hover:bg-black/45 hover:text-white focus-visible:bg-black/45 focus-visible:text-white'
-                              : 'm-0 rounded-xl border border-dashed border-neutral-300 text-neutral-500 hover:border-[#FF5722] hover:text-[#FF5722] dark:border-white/15 dark:text-neutral-400'
+                              : 'm-0 rounded-xl border border-dashed border-neutral-300 text-neutral-500 hover:border-[#0F1419] hover:text-[#0F1419] dark:hover:border-[#E7E9EA] dark:hover:text-[#E7E9EA] dark:border-white/15 dark:text-neutral-400'
                           }`}
                         >
                           {uploading ? (
@@ -593,10 +596,10 @@ export function PortfolioShowcaseChrome({
                             <>
                               <FontAwesomeIcon icon={faImage} className="h-5 w-5" />
                               <span className="text-[14px] font-medium">
-                                {coverUrl ? 'Replace cover' : 'Upload a cover image'}
+                                {coverUrl ? t('Replace cover') : t('Upload a cover image')}
                               </span>
                               {coverUrl ? null : (
-                                <span className="text-[13px] opacity-70">JPG, PNG or WebP</span>
+                                <span className="text-[13px] opacity-70">{t('JPG, PNG or WebP')}</span>
                               )}
                             </>
                           )}
@@ -608,14 +611,14 @@ export function PortfolioShowcaseChrome({
                       <>
                         <div className={`absolute left-3 top-3 z-10 inline-flex gap-1.5 ${cardActionVisibilityClass}`}>
                           <MediaAction
-                            label="Move earlier"
+                            label={t('Move earlier')}
                             disabled={busy || index === 0}
                             onClick={() => void moveWork(index, -1)}
                           >
                             <FontAwesomeIcon icon={faChevronLeft} className="h-3 w-3" fixedWidth />
                           </MediaAction>
                           <MediaAction
-                            label="Move later"
+                            label={t('Move later')}
                             disabled={busy || index >= displayWorks.length - 1}
                             onClick={() => void moveWork(index, 1)}
                           >
@@ -623,11 +626,11 @@ export function PortfolioShowcaseChrome({
                           </MediaAction>
                         </div>
                         <div className={`absolute right-3 top-3 z-10 inline-flex gap-1.5 ${cardActionVisibilityClass}`}>
-                          <MediaAction label="Edit work" disabled={busy} onClick={() => startEdit(work)}>
+                          <MediaAction label={t('Edit work')} disabled={busy} onClick={() => startEdit(work)}>
                             <FontAwesomeIcon icon={faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
                           </MediaAction>
                           <MediaAction
-                            label="Delete work"
+                            label={t('Delete work')}
                             danger
                             disabled={busy}
                             onClick={() => setPendingDeleteId(work.id)}
@@ -643,7 +646,7 @@ export function PortfolioShowcaseChrome({
                         style={STUDIO_FLOAT_IN_STYLE}
                         className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 p-6 text-center backdrop-blur-sm"
                       >
-                        <p className="text-[15px] font-semibold text-white">Delete this work?</p>
+                        <p className="text-[15px] font-semibold text-white">{t('Delete this work?')}</p>
                         <div className="flex items-center gap-2">
                           <button
                             type="button"
@@ -651,7 +654,7 @@ export function PortfolioShowcaseChrome({
                             onClick={() => setPendingDeleteId(null)}
                             className="inline-flex h-9 items-center rounded-full px-4 text-[14px] font-medium text-white/80 transition-colors hover:bg-white/10 hover:text-white disabled:opacity-40"
                           >
-                            Cancel
+                            {t('Cancel')}
                           </button>
                           <button
                             type="button"
@@ -660,7 +663,7 @@ export function PortfolioShowcaseChrome({
                             className="inline-flex h-9 items-center gap-2 rounded-full bg-red-500 px-5 text-[14px] font-semibold text-white transition-colors hover:bg-red-600 disabled:opacity-40"
                           >
                             {saving ? <LoadingSpinner size="sm" /> : null}
-                            Delete
+                            {t('Delete')}
                           </button>
                         </div>
                       </div>
@@ -671,14 +674,14 @@ export function PortfolioShowcaseChrome({
                 <div className={editing ? 'min-w-0' : 'flex flex-1 flex-col gap-2.5 pt-5'}>
                   {editing && draft ? (
                     <div className="grid gap-y-8">
-                      <WorkField label="Title">
+                      <WorkField label={t('Title')}>
                         <input
                           type="text"
                           value={draft.title}
                           onChange={(e) =>
                             setDraft((c) => (c ? { ...c, title: e.target.value } : c))
                           }
-                          placeholder="Project title"
+                          placeholder={t('Project title')}
                           className={workInputClass}
                           autoFocus
                           disabled={busy}
@@ -686,47 +689,47 @@ export function PortfolioShowcaseChrome({
                         />
                       </WorkField>
                       <div className="grid gap-x-8 gap-y-8 sm:grid-cols-2">
-                        <WorkField label="Role">
+                        <WorkField label={t('Role')}>
                           <input
                             type="text"
                             value={draft.role}
                             onChange={(e) =>
                               setDraft((c) => (c ? { ...c, role: e.target.value } : c))
                             }
-                            placeholder="e.g. Lead designer"
+                            placeholder={t('e.g. Lead designer')}
                             className={workInputClass}
                             disabled={busy}
                             maxLength={80}
                           />
                         </WorkField>
-                        <WorkField label="Category">
+                        <WorkField label={t('Category')}>
                           <input
                             type="text"
                             value={draft.category}
                             onChange={(e) =>
                               setDraft((c) => (c ? { ...c, category: e.target.value } : c))
                             }
-                            placeholder="e.g. Business, Lifestyle"
+                            placeholder={t('e.g. Business, Lifestyle')}
                             className={workInputClass}
                             disabled={busy}
                             maxLength={80}
                           />
                         </WorkField>
                       </div>
-                      <WorkField label="Description">
+                      <WorkField label={t('Description')}>
                         <textarea
                           value={draft.description}
                           onChange={(e) =>
                             setDraft((c) => (c ? { ...c, description: e.target.value } : c))
                           }
-                          placeholder="Short description"
+                          placeholder={t('Short description')}
                           rows={2}
                           className={`${workInputClass} resize-none`}
                           disabled={busy}
                           maxLength={2000}
                         />
                       </WorkField>
-                      <WorkField label="Stack" control={false}>
+                      <WorkField label={t('Stack')} control={false}>
                         <StackPicker
                           options={stackChoices}
                           selected={draft.stack}
@@ -734,7 +737,7 @@ export function PortfolioShowcaseChrome({
                           disabled={busy}
                         />
                       </WorkField>
-                      <WorkField label="Link">
+                      <WorkField label={t('Link')}>
                         <input
                           type="url"
                           value={draft.link}
@@ -750,11 +753,11 @@ export function PortfolioShowcaseChrome({
 
                       <div className="flex flex-wrap items-center justify-between gap-4">
                         <p className={STUDIO_SECONDARY_CLASS}>
-                          {isDraftComplete(draft) ? '' : 'A title and a cover image are required.'}
+                          {isDraftComplete(draft) ? '' : t('A title and a cover image are required.')}
                         </p>
                         <div className="flex items-center gap-2">
                           <button type="button" disabled={busy} onClick={cancelEdit} className={GHOST_BUTTON_CLASS}>
-                            Cancel
+                            {t('Cancel')}
                           </button>
                           <button
                             type="button"
@@ -763,7 +766,7 @@ export function PortfolioShowcaseChrome({
                             className={PRIMARY_BUTTON_CLASS}
                           >
                             {saving ? <LoadingSpinner size="sm" /> : null}
-                            {composing ? 'Add work' : 'Save work'}
+                            {composing ? t('Add work') : t('Save work')}
                           </button>
                         </div>
                       </div>
@@ -772,7 +775,7 @@ export function PortfolioShowcaseChrome({
                     <>
                       <div className="min-w-0">
                         <h3 className="truncate text-[17px] font-semibold text-black dark:text-neutral-100">
-                          {work.title || 'Untitled'}
+                          {work.title || t('Untitled')}
                         </h3>
                         {work.category || work.role ? (
                           <StudioSlashLine
@@ -811,7 +814,7 @@ export function PortfolioShowcaseChrome({
                               href={work.link}
                               target="_blank"
                               rel="noreferrer"
-                              className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-medium text-neutral-800 transition-colors duration-200 hover:text-[#FF5722] dark:text-neutral-200"
+                              className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-medium text-neutral-800 transition-colors duration-200 hover:text-[#0F1419] dark:hover:text-[#E7E9EA] dark:text-neutral-200"
                             >
                               {linkLabel(work.link)}
                               <FontAwesomeIcon icon={faArrowUpRightFromSquare} className="h-2.5 w-2.5 opacity-60" />

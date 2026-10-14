@@ -20,6 +20,7 @@ const REST_OPACITY = 0.4;
  */
 export function FooterMiniBarLanding({
   creatorName,
+  showCopyright = true,
   colorMode,
   copyrightText,
   contentGutter = DEFAULT_CONTENT_GUTTER,
@@ -29,7 +30,7 @@ export function FooterMiniBarLanding({
   const ink = isLight ? '#000000' : '#ffffff';
   const hairline = isLight ? 'rgba(0,0,0,0.12)' : 'rgba(255,255,255,0.14)';
 
-  const text = copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName);
+  const text = showCopyright ? copyrightText?.trim() || footerMiniBarCopyrightBase(creatorName) : '';
   if (!text) return null;
 
   return (

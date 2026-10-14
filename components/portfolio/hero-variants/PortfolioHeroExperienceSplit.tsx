@@ -17,6 +17,7 @@ import {
 } from '@/components/portfolio/portfolio-hero-palette-settings';
 import { DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL } from '@/components/portfolio/portfolio-hero-settings';
 import { portfolioHeroContentShellClass } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type Density = 'mobile' | 'tablet' | 'desktop';
 
@@ -62,6 +63,7 @@ function splitExperienceTitle(name: string): string[] {
  * Mobile   → single-column narrative, tap-friendly CTAs
  */
 export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData }) {
+  const t = useT();
   const palette = mergeHeroPalette(DEFAULT_HERO_PALETTE, data.presentation.palette);
   const fond = resolveHeroPaletteColor(palette, 'fond');
   const ink = resolveHeroPaletteColor(palette, 'texteFort');
@@ -107,7 +109,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
     const cleaned = data.description?.replace(/\s+/g, ' ').trim();
     return (
       cleaned ||
-      'Independent art director. I create clear, expressive, and lasting visual identities.'
+      t('Independent art director. I create clear, expressive, and lasting visual identities.')
     );
   }, [data.description]);
 
@@ -314,7 +316,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
           {avatarUrl ? (
             <Image
               src={avatarUrl}
-              alt={`Portrait of ${displayName}`}
+              alt={t('Portrait of {displayName}', { displayName })}
               fill
               sizes={sizes}
               className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
@@ -378,7 +380,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
             className="mb-0 ml-0 mr-0 mt-2.5 font-sans text-[0.72rem] font-semibold uppercase leading-none tracking-[0.16em]"
             style={{ color: ink }}
           >
-            Years of experience
+            {t('Years of experience')}
           </p>
         </div>
         <p
@@ -451,7 +453,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
           className={`${CTA_SHAPE} transition hover:brightness-110 ${stacked ? 'w-full' : ''}`}
           style={{ backgroundColor: ink, color: fond }}
         >
-          Let&apos;s talk
+          {t('Let\'s talk')}
           <span aria-hidden>↗</span>
         </a>
         <a
@@ -460,7 +462,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
           className={`${CTA_SHAPE} border transition hover:opacity-80 ${stacked ? 'w-full' : ''}`}
           style={{ borderColor: ink, color: ink, backgroundColor: 'transparent' }}
         >
-          View my work
+          {t('View my work')}
         </a>
       </div>
     );
@@ -611,7 +613,7 @@ export function PortfolioHeroExperienceSplit({ data }: { data: PortfolioHeroData
       className={`${CTA_SHAPE} w-full transition hover:brightness-110`}
       style={{ backgroundColor: ink, color: fond }}
     >
-      Let&apos;s talk
+      {t('Let\'s talk')}
       <span aria-hidden>↗</span>
     </a>
   );

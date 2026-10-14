@@ -1,29 +1,25 @@
 import { CONTAINER, PrimaryCta } from '@/components/landing/home/shared';
+import { Wordmark } from '@/components/landing/home/SiteNav';
+import { getT } from '@/lib/i18n/server';
 
-export function ClosingCta() {
+/** The brand slogan as the page's sign-off: the one heading allowed above the section scale, signed with the wordmark. */
+export async function ClosingCta() {
+  const t = await getT();
   return (
-    <section className="bg-white py-24 text-[#111111] sm:py-32 lg:py-44">
+    <section className="bg-white py-20 text-[#111111] sm:py-28 lg:py-36">
       <div className={CONTAINER}>
-        <figure>
-          <blockquote className="relative">
-            <span
-              aria-hidden
-              className="block h-[0.5em] text-[clamp(6rem,14vw,14rem)] font-semibold leading-[0.8] text-[#FF5722]"
-            >
-              &ldquo;
-            </span>
-            <p className="mt-6 max-w-[16ch] text-[clamp(3rem,9vw,9.5rem)] font-semibold leading-[0.92] tracking-[-0.06em] sm:mt-10">
-              The way you present yourself <span className="text-neutral-300">speaks before you do.</span>
-            </p>
-          </blockquote>
-          <figcaption className="mt-12 flex items-center gap-3 text-[13px] font-medium uppercase tracking-[0.16em] text-neutral-500 sm:mt-16">
-            <span aria-hidden className="h-px w-6 bg-black/20" />
-            Skraft
-          </figcaption>
-        </figure>
-        <PrimaryCta href="/register" className="mt-12 sm:mt-16">
-          Create your space
-        </PrimaryCta>
+        <span aria-hidden className="block h-[0.45em] text-[clamp(3.5rem,5vw,4.5rem)] font-medium leading-[0.85] text-[#FF5722]">
+          &ldquo;
+        </span>
+        <p className="mt-4 max-w-[22ch] text-[clamp(2.5rem,4.6vw,4rem)] font-medium leading-[1.05] tracking-[-0.035em]">
+          {t.rich('The way you present yourself {rest}', {
+            rest: <span className="text-neutral-300">{t('speaks before you do.')}</span>,
+          })}
+        </p>
+        <div className="mt-12 flex flex-col gap-6 border-t border-black/[0.08] pt-8 sm:mt-16 sm:flex-row sm:items-center sm:justify-between">
+          <Wordmark className="!text-[24px]" />
+          <PrimaryCta href="/register">{t('Create your space')}</PrimaryCta>
+        </div>
       </div>
     </section>
   );

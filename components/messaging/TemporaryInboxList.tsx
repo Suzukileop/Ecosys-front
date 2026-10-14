@@ -1,11 +1,11 @@
 'use client';
 
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faTrashCan } from '@fortawesome/free-solid-svg-icons';
 import { Avatar } from '@/components/ui/Avatar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { INBOX_PRIMARY_PILL_SM, INBOX_SECONDARY_PILL_SM } from '@/components/messaging/InboxPanel';
 import { formatGuestTraceTime } from '@/lib/guest-session-trace';
 import type { TemporaryInboxEntry } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type TemporaryInboxListProps = {
   entries: TemporaryInboxEntry[];
@@ -34,6 +34,11 @@ function entryLabel(entry: TemporaryInboxEntry): string {
   }
 }
 
+/**
+ * The temporary inbox, one entry per row on the inbox gutters: what happened (small caps), who and
+ * where (bold name, secondary line), when, then the entry's one or two answers as 40px News pills.
+ * Delete is a quiet 40px glyph at the row's corner that turns X red only under the pointer.
+ */
 export function TemporaryInboxList({
   entries,
   actingInviteId,
@@ -45,8 +50,9 @@ export function TemporaryInboxList({
   onOpenConversation,
   onDismissEntry,
 }: TemporaryInboxListProps) {
+  const t = useT();
   return (
-    <ul className="space-y-2 px-1" aria-label="Temporary inbox">
+    <ul className="flex flex-col" aria-label={t('Temporary inbox')}>
       {entries.map((entry) => {
         const inviteId = entry.inviteId ?? entry.id;
         const entryKey = `${entry.entryType}-${entry.id}`;
@@ -56,91 +62,85 @@ export function TemporaryInboxList({
           dismissingEntryKey === entryKey;
 
         return (
-          <li
-            key={entryKey}
-            className="rounded-2xl bg-white p-3 dark:bg-neutral-900"
-          >
+          <li key={entryKey} className="px-5 py-4 transition-colors hover:bg-[color:var(--xm-row-hover)] lg:px-6">
             <div className="flex items-start gap-3">
-              <Avatar avatarUrl={entry.avatarUrl} name={entry.headline} size="sm" tone="muted" />
+              <Avatar avatarUrl={entry.avatarUrl} name={entry.headline} size="lg" tone="muted" />
               <div className="min-w-0 flex-1">
                 <div className="flex items-start justify-between gap-2">
-                  <p className="text-[10px] font-bold uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-                    {entryLabel(entry)}
-                  </p>
+                  <p className="gn-kicker pt-0.5">{entryLabel(entry)}</p>
                   <button
                     type="button"
                     onClick={() => onDismissEntry(entry)}
                     disabled={busy}
-                    aria-label="Delete temporary entry"
-                    title="Delete"
-                    className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-lg text-neutral-400 transition hover:bg-neutral-100 hover:text-red-600 disabled:opacity-50 dark:hover:bg-neutral-800 dark:hover:text-red-400"
+                    aria-label={t('Delete temporary entry')}
+                    title={t('Delete')}
+                    className="-mr-2.5 -mt-2.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[rgba(244,33,46,0.1)] hover:text-[#F4212E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50"
                   >
                     {dismissingEntryKey === entryKey ? (
                       <LoadingSpinner size="sm" />
                     ) : (
-                      <FontAwesomeIcon icon={faTrashCan} className="h-3.5 w-3.5" />
+                      <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                        <path d="M4 7h16M10 11v6M14 11v6M5.5 7l1 12a2 2 0 0 0 2 1.8h7a2 2 0 0 0 2-1.8l1-12M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2" />
+                      </svg>
                     )}
                   </button>
                 </div>
-                <p className="mt-0.5 text-sm font-semibold text-gray-900 dark:text-white">
-                  {entry.headline}
-                </p>
-                <p className="mt-0.5 text-xs text-gray-600 dark:text-neutral-400">
+                <p className="text-[15px] font-bold leading-5 text-[color:var(--gn-ink)]">{entry.headline}</p>
+                <p className="mt-0.5 text-[15px] leading-5 text-[color:var(--gn-ink2)]">
                   {entry.subtitle ?? entry.conversationTitle}
                 </p>
-                <p className="mt-1 text-[11px] text-neutral-400 dark:text-neutral-500">
+                <p className="mt-1 text-[13px] leading-5 tabular-nums text-[color:var(--gn-ink2)]">
                   {formatGuestTraceTime(entry.occurredAt)}
                 </p>
+
+                {entry.entryType === 'INCOMING_INVITE' && (
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAcceptInvite(inviteId)}
+                      disabled={busy}
+                      className={`${INBOX_PRIMARY_PILL_SM} flex-1`}
+                    >
+                      {busy ? <LoadingSpinner size="sm" /> : t('Accept')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDeclineInvite(inviteId)}
+                      disabled={busy}
+                      className={`${INBOX_SECONDARY_PILL_SM} flex-1`}
+                    >
+                      {t('Decline')}
+                    </button>
+                  </div>
+                )}
+
+                {entry.entryType === 'OUTGOING_INVITE' && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => onCancelInvite(entry.conversationId, inviteId)}
+                      disabled={busy}
+                      className={INBOX_SECONDARY_PILL_SM}
+                    >
+                      {busy ? '…' : t('Cancel invite')}
+                    </button>
+                  </div>
+                )}
+
+                {(entry.entryType === 'ACTIVE_GUEST' || entry.entryType === 'ENDED_GUEST') && entry.canOpen && (
+                  <div className="mt-3">
+                    <button
+                      type="button"
+                      onClick={() => onOpenConversation(entry)}
+                      disabled={busy}
+                      className={INBOX_SECONDARY_PILL_SM}
+                    >
+                      {entry.entryType === 'ENDED_GUEST' ? t('View session history') : t('Open conversation')}
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
-
-            {entry.entryType === 'INCOMING_INVITE' && (
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onAcceptInvite(inviteId)}
-                  disabled={busy}
-                  className="inline-flex flex-1 items-center justify-center gap-2 rounded-xl bg-neutral-900 px-3 py-2 text-xs font-semibold text-white transition hover:bg-neutral-800 disabled:opacity-60 dark:bg-white dark:text-neutral-900"
-                >
-                  {busy ? <LoadingSpinner size="sm" /> : 'Accept'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDeclineInvite(inviteId)}
-                  disabled={busy}
-                  className="flex-1 rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-60 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                >
-                  Decline
-                </button>
-              </div>
-            )}
-
-            {entry.entryType === 'OUTGOING_INVITE' && (
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={() => onCancelInvite(entry.conversationId, inviteId)}
-                  disabled={busy}
-                  className="rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-60 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                >
-                  {busy ? '…' : 'Cancel invite'}
-                </button>
-              </div>
-            )}
-
-            {(entry.entryType === 'ACTIVE_GUEST' || entry.entryType === 'ENDED_GUEST') &&
-              entry.canOpen && (
-              <div className="mt-3">
-                <button
-                  type="button"
-                  onClick={() => onOpenConversation(entry)}
-                  disabled={busy}
-                  className="rounded-xl bg-neutral-100 px-3 py-2 text-xs font-semibold text-neutral-700 transition hover:bg-neutral-200 disabled:opacity-60 dark:bg-neutral-800 dark:text-neutral-300 dark:hover:bg-neutral-700"
-                >
-                  {entry.entryType === 'ENDED_GUEST' ? 'View session history' : 'Open conversation'}
-                </button>
-              </div>
-            )}
           </li>
         );
       })}

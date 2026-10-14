@@ -24,7 +24,7 @@ import {
   resolveExperienceTextColor,
   resolveMarqueeInkColor,
 } from '@/components/portfolio/portfolio-experience-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 
 const MARQUEE_REPEATS = 4;
 
@@ -112,7 +112,7 @@ export function ExperienceSpotlightHeader({
   const rootRef = useRef<HTMLDivElement>(null);
   const rowRef = useRef<HTMLDivElement>(null);
   const reduceMotion = useReducedMotion();
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
 
   const presentation: PortfolioExperiencePresentationSettings =
     presentationProp ?? DEFAULT_EXPERIENCE_PRESENTATION;

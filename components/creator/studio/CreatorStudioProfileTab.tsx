@@ -1,5 +1,6 @@
 'use client';
 
+import { localeTag, tr, trPlural } from '@/lib/i18n/active';
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
 import { useSearchParams } from 'next/navigation';
@@ -37,9 +38,17 @@ import {
   normalizeCreatorAppRole,
   type CreatorAppRole,
 } from '@/lib/creator-app-role';
-import { CreatorProfileDto } from '@/types/profile';
+import type { CreatorProfileDto, CreatorProfileUpdateBody } from '@/types/profile';
 import { updateCreatorProfile } from '@/lib/creator-profile-api';
 import { ProfileAppRoleField } from '@/components/creator/studio/ProfileAppRoleField';
+import {
+  ProfileSectionEditorDrawer,
+  SECTION_BODY_KEYS,
+  isProfileDrawerSection,
+  type ProfileDrawerSectionId,
+  type ProfileSectionSaveInput,
+} from '@/components/creator/studio/ProfileSectionEditors';
+import { ProfileSectionReadView, ProfileSectionsOverview } from '@/components/creator/studio/ProfileSectionReadViews';
 import {
   defaultSchedule,
   formatAvailabilityHours,
@@ -75,6 +84,7 @@ import {
   getProfileSection,
   filterProfileSectionGroups,
   filterStoreInformationSectionsForRole,
+  PORTFOLIO_RAIL_GROUPS,
   PROFILE_SECTION_GROUPS,
   ProfileSectionNavIcon,
   type ProfileSectionId,
@@ -121,6 +131,7 @@ import {
   type PortfolioContactLists,
 } from '@/components/portfolio/PortfolioContactChrome';
 import { PORTFOLIO_CHROME_SECTIONS } from '@/components/portfolio/portfolio-section-shared';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The studio edits one section at a time, so each section editor is its own chunk. */
 const PortfolioExperienceStudio = dynamic(() =>
@@ -182,6 +193,24 @@ const PORTFOLIO_DUAL_EDIT_SECTIONS = [
   'experience',
 ] as const;
 
+/** Every section the portfolio rail can show, in the rail's order — for "Show all sections". */
+const ALL_PORTFOLIO_RAIL_SECTION_IDS: ProfileSectionId[] = PORTFOLIO_RAIL_GROUPS.flatMap((group) => [...group.sections]);
+
+const SHOW_ALL_SECTIONS_KEY = 'portfolio-sections-show-all';
+
+/** Keys that never make an entry "filled": ids, ordering and kind flags carried by empty rows too. */
+const STRUCTURAL_KEYS = new Set(['id', 'type', 'kind', 'sortOrder', 'platform', 'mediaType', 'hideFromCv', 'level', 'category']);
+
+/** True when a form value holds any text a visitor would see (deep: lists, nested entries). */
+function hasFilledContent(value: unknown): boolean {
+  if (typeof value === 'string') return value.trim().length > 0;
+  if (Array.isArray(value)) return value.some(hasFilledContent);
+  if (value && typeof value === 'object') {
+    return Object.entries(value).some(([key, entry]) => !STRUCTURAL_KEYS.has(key) && hasFilledContent(entry));
+  }
+  return false;
+}
+
 function isPortfolioDualEditSection(sectionId: ProfileSectionId): boolean {
   return (PORTFOLIO_DUAL_EDIT_SECTIONS as readonly string[]).includes(sectionId);
 }
@@ -190,25 +219,21 @@ function formatMemberSince(value: string | null | undefined): string | null {
   if (!value) return null;
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return null;
-  return date.toLocaleDateString('en-US', { month: 'long', year: 'numeric' });
+  return date.toLocaleDateString(localeTag(), { month: 'long', year: 'numeric' });
 }
 
 function formatLastUpdatedLabel(value: string | null | undefined): string {
-  if (!value) return 'today';
+  if (!value) return tr('today');
   const date = new Date(value);
-  if (Number.isNaN(date.getTime())) return 'today';
+  if (Number.isNaN(date.getTime())) return tr('today');
   const now = new Date();
   const startOfToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
   const startOfThatDay = new Date(date.getFullYear(), date.getMonth(), date.getDate());
   const diffDays = Math.round((startOfToday.getTime() - startOfThatDay.getTime()) / 86_400_000);
-  if (diffDays <= 0) return 'today';
-  if (diffDays === 1) return 'yesterday';
-  if (diffDays < 7) return `${diffDays} days ago`;
-  return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
-}
-
-function formatItemCountLabel(count: number, singular: string, plural?: string): string {
-  return `${count} ${count === 1 ? singular : (plural ?? `${singular}s`)}`;
+  if (diffDays <= 0) return tr('today');
+  if (diffDays === 1) return tr('yesterday');
+  if (diffDays < 7) return tr('{count} days ago', { count: diffDays });
+  return date.toLocaleDateString(localeTag(), { month: 'short', day: 'numeric', year: 'numeric' });
 }
 
 function experienceBlockHasContent(
@@ -247,38 +272,38 @@ function portfolioSectionItemCountLabel(
       const count = values.experienceBlocks
         .map(mapProfileBlockToExperienceBlock)
         .filter(experienceBlockHasContent).length;
-      return formatItemCountLabel(count, 'experience');
+      return trPlural(count, '{count} experience', '{count} experiences');
     }
     case 'strengths': {
       const count = values.stackItems.filter((item) => item.value.trim().length > 0).length;
-      return formatItemCountLabel(count, 'item');
+      return trPlural(count, '{count} item', '{count} items');
     }
     case 'tools': {
       const count = values.strengthsTools.filter((item) => item.value.trim().length > 0).length;
-      return formatItemCountLabel(count, 'tool');
+      return trPlural(count, '{count} tool', '{count} tools');
     }
     case 'services': {
       const count = values.serviceOffers.filter((service) => (service.title ?? '').trim().length > 0)
         .length;
-      return formatItemCountLabel(count, 'service');
+      return trPlural(count, '{count} service', '{count} services');
     }
     case 'products':
-      return formatItemCountLabel(productsItemCount, 'product');
+      return trPlural(productsItemCount, '{count} product', '{count} products');
     case 'portfolio':
-      return formatItemCountLabel(portfolioItemCount, 'work');
+      return trPlural(portfolioItemCount, '{count} work', '{count} works');
     case 'faq': {
       const count = values.faqItems.filter(
         (item) =>
           (item.question ?? '').trim().length > 0 && (item.answer ?? '').trim().length > 0
       ).length;
-      return formatItemCountLabel(count, 'question');
+      return trPlural(count, '{count} question', '{count} questions');
     }
     case 'team': {
       const count = values.teamMembers.filter(
         (member) =>
           (member.name ?? '').trim().length > 0 && (member.responsibility ?? '').trim().length > 0
       ).length;
-      return formatItemCountLabel(count, 'member');
+      return trPlural(count, '{count} member', '{count} members');
     }
     case 'aboutUs': {
       const aboutUs = values.aboutUs;
@@ -291,23 +316,23 @@ function portfolioSectionItemCountLabel(
         (aboutUs.founder.name.trim() || aboutUs.founder.function.trim() || aboutUs.founder.logoUrl.trim()
           ? 1
           : 0);
-      return formatItemCountLabel(count, 'field');
+      return trPlural(count, '{count} field', '{count} fields');
     }
     case 'gallery': {
       const count = values.galleryItems.filter((item) => (item.mediaUrl ?? '').trim().length > 0)
         .length;
-      return formatItemCountLabel(count, 'media item');
+      return trPlural(count, '{count} media item', '{count} media items');
     }
     case 'links': {
       const count = values.profileLinks.filter((link) => (link.url ?? '').trim().length > 0).length;
-      return formatItemCountLabel(count, 'link');
+      return trPlural(count, '{count} link', '{count} links');
     }
     case 'contact': {
       const count =
         values.contactAddresses.filter((entry) => contactEntryFilled(entry.value)).length +
         values.contactPhones.filter((entry) => contactEntryFilled(entry.value, 'phone')).length +
         values.contactEmails.filter((entry) => contactEntryFilled(entry.value)).length;
-      return formatItemCountLabel(count, 'contact detail');
+      return trPlural(count, '{count} contact detail', '{count} contact details');
     }
     case 'about':
     case 'aboutPage':
@@ -335,8 +360,10 @@ type CreatorStudioProfileTabProps = {
   showProfileHero?: boolean;
   /** `top` swaps the sections rail for a horizontal pill row above the card (pages that already have a sidebar). */
   sectionsNavPlacement?: 'rail' | 'top';
-  /** Portfolio rail: action pinned under the sections list. `iconsOnly` is true while the rail is collapsed. */
-  sectionsNavFooter?: (iconsOnly: boolean) => ReactNode;
+  /** Portfolio rail: the page's actions (share, CV, format) — under "Sections", or from xl a column of their own. */
+  railActions?: ReactNode;
+  /** Portfolio rail: what sits right under the "Sections" box (the Preview pill). */
+  railPrimary?: ReactNode;
 };
 
 const PORTFOLIO_SECTION_LABELS: Partial<Record<ProfileSectionId, string>> = {
@@ -462,11 +489,13 @@ function CreatorStudioProfileTabContent({
   sectionsNavTitle,
   showProfileHero = true,
   sectionsNavPlacement = 'rail',
-  sectionsNavFooter,
+  railActions,
+  railPrimary,
 }: CreatorStudioProfileTabProps & { user: SessionUser }) {
+  const t = useT();
   const isPortfolioLayout = variant === 'portfolio';
   const sectionsNavTop = isPortfolioLayout && sectionsNavPlacement === 'top';
-  const navTitle = sectionsNavTitle ?? (allowedSections?.length ? 'Information' : 'Portfolio Sections');
+  const navTitle = sectionsNavTitle ?? (allowedSections?.length ? 'Information' : t('Portfolio Sections'));
   const isStoreInformationNav = sectionsNavTitle === 'Information';
   const sectionLabelOverrides = useMemo((): Partial<Record<ProfileSectionId, string>> => {
     if (!isStoreInformationNav) return PORTFOLIO_SECTION_LABELS;
@@ -503,12 +532,25 @@ function CreatorStudioProfileTabContent({
     initialCachedProfile ? initialCachedProfile.avatarUrl ?? user?.avatarUrl ?? null : null
   );
   const [activeSection, setActiveSection] = useState<ProfileSectionId>('about');
-  const [portfolioNavCollapsed, setPortfolioNavCollapsed] = useState(false);
-  const [portfolioNavIconsOnly, setPortfolioNavIconsOnly] = useState(false);
   const [portfolioNavSideInternal, setPortfolioNavSideInternal] = useState<'left' | 'right'>('left');
   const searchParams = useSearchParams();
   const portfolioNavSide = portfolioNavSideProp ?? portfolioNavSideInternal;
+  /* My Portfolio from xl: three columns — the actions box on the left, the form, the sections rail. */
+  const actionsColumn = isPortfolioLayout && !sectionsNavTop && portfolioNavSide === 'right' && railActions != null;
   const [isEditing, setIsEditing] = useState(false);
+  /*
+   * My Profile (`sectionsNavPlacement="top"`) follows LinkedIn's model: every section is shown as a
+   * visitor sees it, and edited on its own in a drawer opened by the section's Edit pill. The drawer
+   * starts from the saved profile captured here when it opens, and is unmounted when it closes, so each
+   * opening gets a fresh form. My Portfolio keeps its inline studios.
+   */
+  const sectionDrawers = sectionsNavTop;
+  const [sectionDrawer, setSectionDrawer] = useState<{
+    section: ProfileDrawerSectionId;
+    values: ProfileFormValues;
+    visibility: ContactVisibilitySettings;
+    typicalResponseTime: string;
+  } | null>(null);
   const [portfolioChromeOpen, setPortfolioChromeOpen] = useState(false);
   const [portfolioEditMode, setPortfolioEditMode] = useState<'individual' | 'global'>('individual');
   const [portfolioGlobalHasChanges, setPortfolioGlobalHasChanges] = useState(false);
@@ -550,9 +592,7 @@ function CreatorStudioProfileTabContent({
   useEffect(() => {
     if (!isPortfolioLayout || typeof window === 'undefined') return;
     try {
-      const collapsed = window.localStorage.getItem('portfolio-sections-nav-collapsed') === '1';
-      setPortfolioNavCollapsed(collapsed);
-      setPortfolioNavIconsOnly(collapsed);
+      setShowAllSections(window.localStorage.getItem(SHOW_ALL_SECTIONS_KEY) === '1');
       if (portfolioNavSideProp == null) {
         setPortfolioNavSideInternal(
           window.localStorage.getItem('portfolio-sections-nav-side') === 'right' ? 'right' : 'left'
@@ -562,28 +602,6 @@ function CreatorStudioProfileTabContent({
       /* ignore */
     }
   }, [isPortfolioLayout, portfolioNavSideProp]);
-
-  const togglePortfolioNav = useCallback(() => {
-    setPortfolioNavCollapsed((prev) => {
-      const next = !prev;
-      try {
-        window.localStorage.setItem('portfolio-sections-nav-collapsed', next ? '1' : '0');
-      } catch {
-        /* ignore */
-      }
-      return next;
-    });
-  }, []);
-
-  // Collapse: hide labels immediately. Expand: reveal labels after width eases open.
-  useEffect(() => {
-    if (portfolioNavCollapsed) {
-      setPortfolioNavIconsOnly(true);
-      return;
-    }
-    const timer = window.setTimeout(() => setPortfolioNavIconsOnly(false), 220);
-    return () => window.clearTimeout(timer);
-  }, [portfolioNavCollapsed]);
 
   useEffect(() => {
     if (
@@ -686,22 +704,60 @@ function CreatorStudioProfileTabContent({
       .filter((group) => group.length > 0);
   }, [effectiveAllowedSections, isPortfolioLayout]);
   const allowedSectionIds = useMemo(() => sectionGroups.flat(), [sectionGroups]);
+  /*
+   * My Portfolio's rail lists the open format's sections; its grid toggle shows every section there is
+   * (About us, My Role, Services, Products, Team…). The format only filters the menu — those sections
+   * exist whatever the format, and the live page shows whatever holds content — so they stay editable.
+   * The choice is remembered in this browser.
+   */
+  const [showAllSections, setShowAllSections] = useState(false);
+  const canShowAllSections = isPortfolioLayout && !sectionsNavTop;
+  const navigableSectionIds = useMemo(
+    () => (canShowAllSections && showAllSections ? ALL_PORTFOLIO_RAIL_SECTION_IDS : allowedSectionIds),
+    [allowedSectionIds, canShowAllSections, showAllSections]
+  );
+  const toggleShowAllSections = useCallback(() => {
+    setShowAllSections((current) => {
+      const next = !current;
+      try {
+        window.localStorage.setItem(SHOW_ALL_SECTIONS_KEY, next ? '1' : '0');
+      } catch {
+        /* ignore */
+      }
+      return next;
+    });
+  }, []);
+  /*
+   * My Profile shows every section on one page (ProfileSectionsOverview) when all of them are read
+   * views with a drawer — the usual case. Should a role ever add an inline section, it falls back to
+   * one section at a time behind the tab row.
+   */
+  const overviewSections = useMemo(
+    () =>
+      sectionsNavTop && allowedSectionIds.every(isProfileDrawerSection)
+        ? allowedSectionIds.filter(isProfileDrawerSection).map((id) => ({
+            id,
+            label: sectionLabelOverrides[id] ?? t(getProfileSection(id).label),
+          }))
+        : null,
+    [allowedSectionIds, sectionLabelOverrides, sectionsNavTop]
+  );
   const showProviderAboutFields = creatorShowsProviderAboutFields(watchedAppRole);
 
   useEffect(() => {
-    if (allowedSectionIds.length === 0) return;
-    if (!allowedSectionIds.includes(activeSection)) {
-      setActiveSection(allowedSectionIds[0]);
+    if (navigableSectionIds.length === 0) return;
+    if (!navigableSectionIds.includes(activeSection)) {
+      setActiveSection(navigableSectionIds[0]);
     }
-  }, [activeSection, allowedSectionIds]);
+  }, [activeSection, navigableSectionIds]);
 
   useEffect(() => {
     const section = searchParams.get('section');
     if (!section) return;
-    if ((allowedSectionIds as string[]).includes(section)) {
+    if ((navigableSectionIds as string[]).includes(section)) {
       setActiveSection(section as ProfileSectionId);
     }
-  }, [searchParams, allowedSectionIds]);
+  }, [searchParams, navigableSectionIds]);
 
   const {
     fields: linkFields,
@@ -1382,7 +1438,7 @@ function CreatorStudioProfileTabContent({
         applyProfile(res.data);
       } catch (e) {
         if (!options?.revalidate) {
-          setLoadError(getApiErrorMessage(e, 'Unable to load profile.'));
+          setLoadError(getApiErrorMessage(e, t('Unable to load profile.')));
         }
       } finally {
         if (!options?.silent) {
@@ -1390,7 +1446,7 @@ function CreatorStudioProfileTabContent({
         }
       }
     },
-    [applyProfile, user?.id]
+    [applyProfile, user?.id, t]
   );
 
   useEffect(() => {
@@ -1412,7 +1468,7 @@ function CreatorStudioProfileTabContent({
       form.setValue('locationCity', detected.city, { shouldValidate: true });
       form.setValue('locationCountry', detected.country, { shouldValidate: true });
     } catch (e) {
-      setLocationError(getApiErrorMessage(e, 'Unable to detect your location.'));
+      setLocationError(getApiErrorMessage(e, t('Unable to detect your location.')));
     } finally {
       setDetectingLocation(false);
     }
@@ -1437,8 +1493,8 @@ function CreatorStudioProfileTabContent({
       setIsEditing(false);
       pushFlashFeedback({
         variant: 'info',
-        title: 'No changes to save',
-        description: 'Update a field before saving your information.',
+        title: t('No changes to save'),
+        description: t('Update a field before saving your information.'),
       });
       return;
     }
@@ -1603,13 +1659,13 @@ function CreatorStudioProfileTabContent({
       await loadProfile({ silent: true });
       onProfileUpdated?.();
       setIsEditing(false);
-      const sectionLabel = getProfileSection(activeSection).label ?? 'Information';
+      const sectionLabel = t(getProfileSection(activeSection).label ?? 'Information');
       pushFlashFeedback({
         variant: 'success',
         title: `${sectionLabel} saved`,
       });
     } catch (e) {
-      setSectionSaveError(e, form, setSubmitError, 'Save failed.');
+      setSectionSaveError(e, form, setSubmitError, t('Save failed.'));
     } finally {
       setSaving(false);
     }
@@ -1697,28 +1753,36 @@ function CreatorStudioProfileTabContent({
     setIsEditing(false);
   };
 
+  /*
+   * My Profile's section navigation (`sectionsNavPlacement="top"`): one row of plain text tabs at the
+   * top left, at every width — the open one in bold ink over a 2px ink bar, the navbar's own idiom,
+   * no pills. Never a second vertical menu: the Manage rail on the right is the page's only one.
+   */
   const renderSectionPills = () => (
     <nav
       aria-label={`${navTitle} sections`}
-      className="order-first -mx-1 flex gap-2.5 overflow-x-auto px-1 pb-1 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="order-first -mx-4 flex gap-6 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden"
     >
       {sectionGroups.flat().map((sectionId) => {
         const section = getProfileSection(sectionId);
         const active = activeSection === section.id;
-        const label = sectionLabelOverrides[section.id] ?? section.label;
+        const label = sectionLabelOverrides[section.id] ?? t(section.label);
         return (
           <button
             key={section.id}
             type="button"
             onClick={() => handleSectionChange(section.id)}
             aria-current={active ? 'true' : undefined}
-            className={`shrink-0 rounded-full border px-[18px] py-2 text-[15px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+            className={`relative inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[15px] leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
-                ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
-                : 'border-black/[0.1] text-neutral-600 hover:border-black/30 hover:text-[#111111] dark:border-white/[0.12] dark:text-neutral-300 dark:hover:border-white/30 dark:hover:text-white'
+                ? 'font-bold text-[color:var(--gn-ink)]'
+                : 'font-medium text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-ink)]'
             }`}
           >
             {label}
+            {active ? (
+              <span aria-hidden className="absolute inset-x-0 bottom-0 h-[2px] rounded-full bg-[color:var(--gn-ink)]" />
+            ) : null}
           </button>
         );
       })}
@@ -1726,15 +1790,63 @@ function CreatorStudioProfileTabContent({
   );
 
   /** Portfolio on phones: the sections rail becomes a swipeable tab strip under the profile header. */
+  /* Whether a section has anything in it, read from the form — null where the count lives in another
+     studio (Portfolio works, Products: known once opened) or there is nothing to fill (My Role), so the
+     rail never calls a section empty without knowing. */
+  const sectionFilled = (id: ProfileSectionId): boolean | null => {
+    switch (id) {
+      case 'about':
+        return Boolean(values.fullName?.trim() && values.bio?.trim());
+      case 'aboutPage':
+        return hasFilledContent([
+          values.specialties,
+          values.spokenLanguages,
+          values.aboutSkills,
+          values.aboutStrengths,
+          values.aboutSystemsTools,
+          values.aboutInterests,
+          values.aboutEducation,
+        ]);
+      case 'aboutUs':
+        return hasFilledContent(values.aboutUs);
+      case 'experience':
+        return hasFilledContent(values.experienceBlocks);
+      case 'strengths':
+        return hasFilledContent(values.stackItems);
+      case 'tools':
+        return hasFilledContent(values.strengthsTools);
+      case 'services':
+        return hasFilledContent(values.serviceOffers);
+      case 'team':
+        return hasFilledContent(values.teamMembers);
+      case 'gallery':
+        return hasFilledContent(values.galleryItems);
+      case 'faq':
+        return hasFilledContent(values.faqItems);
+      case 'links':
+        return hasFilledContent(values.profileLinks);
+      case 'contact':
+        return hasFilledContent([values.contactEmails, values.contactPhones, values.contactAddresses]);
+      case 'portfolio':
+        return portfolioItemCount > 0 ? true : null;
+      case 'products':
+        return productsItemCount > 0 ? true : null;
+      default:
+        return null;
+    }
+  };
+
+  /* Phones: the sections as one swipeable row of the News interest chips (the open one solid ink),
+     the way search shows its result types below lg. */
   const renderPortfolioMobileTabs = () => (
     <nav
       aria-label={`${navTitle} sections`}
-      className="flex gap-6 overflow-x-auto border-b border-black/[0.08] px-5 [scrollbar-width:none] dark:border-white/[0.1] md:hidden [&::-webkit-scrollbar]:hidden"
+      className="flex gap-2 overflow-x-auto px-5 pb-1 pt-4 [scrollbar-width:none] md:hidden [&::-webkit-scrollbar]:hidden"
     >
-      {sectionGroups.flat().map((sectionId) => {
+      {navigableSectionIds.map((sectionId) => {
         const section = getProfileSection(sectionId);
         const active = activeSection === section.id;
-        const label = sectionLabelOverrides[section.id] ?? section.label;
+        const label = sectionLabelOverrides[section.id] ?? t(section.label);
         return (
           <button
             key={section.id}
@@ -1744,10 +1856,11 @@ function CreatorStudioProfileTabContent({
               handleSectionChange(section.id);
             }}
             aria-current={active ? 'true' : undefined}
-            className={`relative -mb-px shrink-0 whitespace-nowrap border-b-2 pb-3 pt-1 text-[15px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
+            data-pf-no-color-transition
+            className={`inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
-                ? 'border-[#111111] text-[#111111] dark:border-white dark:text-white'
-                : 'border-transparent text-neutral-500 hover:text-[#111111] dark:text-neutral-400 dark:hover:text-white'
+                ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
+                : 'bg-[color:var(--gn-inset)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover)]'
             }`}
           >
             {label}
@@ -1759,97 +1872,105 @@ function CreatorStudioProfileTabContent({
 
   const renderSectionNav = (layout: 'mobile' | 'desktop') => {
     if (isPortfolioLayout && layout === 'desktop') {
-      const collapsed = portfolioNavCollapsed;
-      const iconsOnly = portfolioNavIconsOnly;
-      // Keep scrollbar mode stable during width motion to avoid horizontal jitter.
-      const navScrollClass =
-        'min-h-0 overflow-y-auto overscroll-contain [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden';
+      /*
+       * The News rail (from md): an outlined "Sections" box — 20px title, then the sections under
+       * small-caps group kickers, as 44px rows (glyph, label; the open one bold with a check). An empty
+       * section carries a hollow dot, and the title line counts what is filled. A second box holds the
+       * page's actions (`railActions`).
+       */
+      const allowed = new Set(navigableSectionIds);
+      const inFormat = new Set(allowedSectionIds);
+      const railGroups = PORTFOLIO_RAIL_GROUPS.map((group) => ({
+        title: group.title,
+        sections: group.sections.filter((id) => allowed.has(id)),
+      })).filter((group) => group.sections.length > 0);
+      const known = railGroups.flatMap((group) => group.sections).map(sectionFilled).filter((value) => value != null);
+      const filledCount = known.filter(Boolean).length;
 
       return (
-        <div className={`flex min-h-0 flex-col ${iconsOnly ? 'items-center' : ''}`}>
-          <div
-            className={`flex h-12 shrink-0 items-center border-b border-black/[0.04] bg-transparent dark:border-white/[0.04] ${
-              iconsOnly ? 'justify-center px-0' : 'justify-between gap-2 px-3'
-            }`}
-          >
-            {!iconsOnly ? (
-              <p className="text-[13px] font-semibold uppercase tracking-[0.12em] text-[#666666] dark:text-neutral-400">
-                {navTitle}
-              </p>
-            ) : null}
-            <button
-              type="button"
-              onClick={togglePortfolioNav}
-              title={collapsed ? 'Expand sections' : 'Collapse sections'}
-              aria-label={collapsed ? 'Expand portfolio sections' : 'Collapse portfolio sections'}
-              aria-expanded={!collapsed}
-              className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-[#666666] transition-colors duration-200 hover:bg-black/[0.04] hover:text-[#111111] dark:text-neutral-400 dark:hover:bg-white/[0.06] dark:hover:text-neutral-100"
-            >
-              <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
-                {collapsed
-                  ? portfolioNavSide === 'right'
-                    ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                      )
-                    : (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                      )
-                  : portfolioNavSide === 'right'
-                    ? (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 5l7 7-7 7M5 5l7 7-7 7" />
-                      )
-                    : (
-                        <path strokeLinecap="round" strokeLinejoin="round" d="M11 19l-7-7 7-7m8 14l-7-7 7-7" />
-                      )}
-              </svg>
-            </button>
-          </div>
-          <nav
-            className={`flex w-full flex-col ${iconsOnly ? 'items-center gap-3.5 px-0 pb-2 pt-2' : 'gap-2.5 px-2 pb-2 pt-1'} ${navScrollClass}`}
-            aria-label="Portfolio sections"
-          >
-            {sectionGroups.flat().map((sectionId) => {
-              const section = getProfileSection(sectionId);
-              const active = activeSection === section.id;
-              const label = sectionLabelOverrides[section.id] ?? section.label;
-              return (
+        <>
+          <section className="gn-rail-box flex min-h-0 flex-col px-px pb-2 pt-5" aria-labelledby="portfolio-sections-title">
+            <div className="flex items-baseline justify-between gap-3 px-6 pb-1 pt-1">
+              <h2
+                id="portfolio-sections-title"
+                className="text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]"
+              >
+                {t('Sections')}
+              </h2>
+              <div className="flex shrink-0 items-center gap-1.5 self-center">
+                {known.length > 0 ? (
+                  <span className="text-[13px] tabular-nums text-[color:var(--gn-ink2)]">
+                    {t('{filledCount} / {knownLength} filled', { filledCount, knownLength: known.length })}
+                  </span>
+                ) : null}
+                {/* Four squares: every section there is, not only the format's. */}
                 <button
-                  key={section.id}
                   type="button"
-                  title={label}
-                  aria-label={label}
-                  onClick={() => handleSectionChange(section.id)}
-                  aria-current={active ? 'true' : undefined}
-                  className={`relative flex items-center rounded-xl text-left text-[15px] leading-snug transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 ${
-                    iconsOnly
-                      ? 'mx-auto h-10 w-10 shrink-0 justify-center'
-                      : 'min-h-11 w-full gap-2.5 px-3 py-3'
-                  } ${
-                    active
-                      ? isPortfolioLayout
-                        ? 'font-medium text-[#FF5722]'
-                        : 'bg-white font-semibold text-neutral-950 shadow-sm ring-1 ring-neutral-200 dark:bg-neutral-800/90 dark:text-white dark:ring-neutral-600/80'
-                      : isPortfolioLayout
-                        ? 'font-normal text-[#222222] hover:bg-black/[0.03] hover:text-[#0A0A0A] dark:text-neutral-300 dark:hover:bg-white/[0.05] dark:hover:text-white'
-                        : 'font-medium text-neutral-700 hover:bg-white/80 dark:text-neutral-300 dark:hover:bg-neutral-800/55'
+                  onClick={toggleShowAllSections}
+                  aria-pressed={showAllSections}
+                  title={showAllSections ? t('Show {navTitle} sections only', { navTitle }) : t('Show all sections')}
+                  aria-label={showAllSections ? t('Show {navTitle} sections only', { navTitle }) : t('Show all sections')}
+                  className={`-mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                    showAllSections
+                      ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
+                      : 'text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover)]'
                   }`}
                 >
-                  <ProfileSectionNavIcon sectionId={section.id} active={active} inheritColor />
-                  {!iconsOnly ? <span className="min-w-0 flex-1 truncate">{label}</span> : null}
+                  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={1.9} strokeLinejoin="round" aria-hidden>
+                    <rect x="4" y="4" width="6.5" height="6.5" rx="1.5" />
+                    <rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5" />
+                    <rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5" />
+                    <rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5" />
+                  </svg>
                 </button>
-              );
-            })}
-          </nav>
-          {sectionsNavFooter ? (
-            <div
-              className={`shrink-0 border-t border-black/[0.05] dark:border-white/[0.06] ${
-                iconsOnly ? 'flex w-full justify-center py-3' : 'p-3'
-              }`}
-            >
-              {sectionsNavFooter(iconsOnly)}
+              </div>
             </div>
-          ) : null}
-        </div>
+            <nav aria-label={t('Portfolio sections')} className="flex w-full flex-col">
+              {railGroups.map((group) => (
+                <div key={group.title} className="flex flex-col pt-3">
+                  <p className="gn-kicker px-6 pb-1">{t(group.title)}</p>
+                  {group.sections.map((sectionId) => {
+                    const section = getProfileSection(sectionId);
+                    const active = activeSection === section.id;
+                    const label = sectionLabelOverrides[section.id] ?? t(section.label);
+                    const filled = sectionFilled(section.id);
+                    /* Shown by "Show all sections": outside the open format, so in secondary ink. */
+                    const extra = !inFormat.has(section.id);
+                    return (
+                      <button
+                        key={section.id}
+                        type="button"
+                        onClick={() => handleSectionChange(section.id)}
+                        aria-current={active ? 'true' : undefined}
+                        title={extra ? t('Not part of the {navTitle} format', { navTitle }) : undefined}
+                        data-pf-no-color-transition
+                        className={`flex w-full items-center gap-3 px-6 py-2.5 text-left text-[15px] leading-5 transition-colors duration-150 hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+                          active ? 'font-bold' : 'font-medium'
+                        } ${extra && !active ? 'text-[color:var(--gn-ink2)]' : 'text-[color:var(--gn-ink)]'}`}
+                      >
+                        <ProfileSectionNavIcon sectionId={section.id} active={active} inheritColor />
+                        <span className="min-w-0 flex-1 truncate">{label}</span>
+                        {active ? (
+                          <svg viewBox="0 0 24 24" className="h-[18px] w-[18px] shrink-0" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                            <path d="m5 12.5 4.5 4.5L19 7.5" />
+                          </svg>
+                        ) : filled === false ? (
+                          <span className="flex shrink-0 items-center gap-1.5 text-[12px] text-[color:var(--gn-ink2)]">
+                            <span aria-hidden className="h-1.5 w-1.5 rounded-full shadow-[inset_0_0_0_1.5px_currentColor]" />
+                            <span className="sr-only">{t('Empty')}</span>
+                          </span>
+                        ) : null}
+                      </button>
+                    );
+                  })}
+                </div>
+              ))}
+            </nav>
+          </section>
+          {railPrimary}
+          {/* From xl the actions box has its own column on the left (see the grid below). */}
+          {railActions ? <div className={actionsColumn ? 'xl:hidden' : ''}>{railActions}</div> : null}
+        </>
       );
     }
 
@@ -1860,7 +1981,7 @@ function CreatorStudioProfileTabContent({
           ? 'flex gap-1 overflow-x-auto p-2'
           : 'flex flex-col gap-1 overflow-visible p-2 pt-3'
       }
-      aria-label="Information sections"
+      aria-label={t('Information sections')}
     >
       {sectionGroups.map((group, groupIndex) => (
         <div
@@ -1885,7 +2006,7 @@ function CreatorStudioProfileTabContent({
             {group.map((sectionId) => {
               const section = getProfileSection(sectionId);
               const active = activeSection === section.id;
-              const label = sectionLabelOverrides[section.id] ?? section.label;
+              const label = sectionLabelOverrides[section.id] ?? t(section.label);
               return (
                 <button
                   key={section.id}
@@ -2012,6 +2133,60 @@ function CreatorStudioProfileTabContent({
     [typicalResponseTime]
   );
 
+  /*
+   * My Profile's section drawers save through here. The body is the regular serializer's output
+   * (buildCreatorProfileUpdateBody) cut down to the drawer's own keys (SECTION_BODY_KEYS):
+   * PUT /api/creator/profile only writes the fields it receives non-null, so every other section stays
+   * exactly as stored — a section save can neither wipe nor re-validate the rest of the profile.
+   * Visibility is a single JSON column, so it goes whole (saved settings + this drawer's switches), and
+   * only when one of them changed.
+   */
+  const saveProfileSection = useCallback(
+    async ({
+      section,
+      values: draft,
+      visibility: nextVisibility,
+      typicalResponseTime: nextResponseTime,
+    }: ProfileSectionSaveInput) => {
+      const full: CreatorProfileUpdateBody = buildCreatorProfileUpdateBody(draft, nextVisibility, nextResponseTime);
+      const body: Record<string, unknown> = {};
+      for (const key of SECTION_BODY_KEYS[section]) {
+        if (full[key] !== undefined) body[key] = full[key];
+      }
+      if (section === 'about') {
+        /* The serializer turns an empty value into `undefined` ("leave as is"); a field the owner
+           cleared has to be sent empty for the API to remove it. */
+        body.gender = draft.gender?.trim() ?? '';
+        body.availabilityHours = draft.availabilityHours?.trim() ?? '';
+        /* The API only clears the years together with the experience blocks: resend the stored ones. */
+        if (draft.yearsOfExperience == null && savedSnapshot.current?.yearsOfExperience != null) {
+          body.experienceBlocks = full.experienceBlocks;
+        }
+      }
+      if (JSON.stringify(nextVisibility) !== JSON.stringify(savedContactVisibility.current)) {
+        body.contactVisibility = full.contactVisibility;
+      }
+
+      await updateCreatorProfile(body as CreatorProfileUpdateBody);
+      if (section === 'myRole') {
+        dispatchCreatorAppRoleChanged(normalizeCreatorAppRole(draft.appRole));
+      }
+      await loadProfile({ silent: true });
+      onProfileUpdated?.();
+      pushFlashFeedback({ variant: 'success', title: t('{section} saved', { section: t(getProfileSection(section).label) }) });
+    },
+    [buildCreatorProfileUpdateBody, loadProfile, onProfileUpdated]
+  );
+
+  const openSectionDrawer = (section: ProfileDrawerSectionId) => {
+    setSectionDrawer({
+      section,
+      values: savedSnapshot.current ?? form.getValues(),
+      visibility: savedContactVisibility.current,
+      typicalResponseTime,
+    });
+  };
+
   const persistPortfolioVisibility = useCallback(
     async (key: keyof ContactVisibilitySettings, level: ContactVisibilityLevel) => {
       const nextVisibility = { ...contactVisibility, [key]: level };
@@ -2032,16 +2207,16 @@ function CreatorStudioProfileTabContent({
         savedContactVisibility.current = nextVisibility;
         pushFlashFeedback({
           variant: 'success',
-          title: 'Visibility updated',
+          title: t('Visibility updated'),
         });
       } catch (e) {
         setContactVisibility(savedContactVisibility.current);
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update visibility.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update visibility.'));
       } finally {
         setSaving(false);
       }
     },
-    [availabilitySchedule, buildCreatorProfileUpdateBody, contactVisibility, form]
+    [availabilitySchedule, buildCreatorProfileUpdateBody, contactVisibility, form, t]
   );
 
   const persistPortfolioAboutField = useCallback(
@@ -2217,7 +2392,7 @@ function CreatorStudioProfileTabContent({
           if (isRepeatedBioContent(String(value))) {
             form.setError('bio', {
               type: 'manual',
-              message: 'Bio looks duplicated — remove the repeated paragraph before saving.',
+              message: t('Bio looks duplicated — remove the repeated paragraph before saving.'),
             });
             throw new UserFacingError('Bio looks duplicated — remove the repeated paragraph before saving.');
           }
@@ -2304,10 +2479,10 @@ function CreatorStudioProfileTabContent({
         onProfileUpdated?.();
         pushFlashFeedback({
           variant: 'success',
-          title: ABOUT_FIELD_TOAST_TITLES[field] ?? 'About updated',
+          title: ABOUT_FIELD_TOAST_TITLES[field] ?? t('About updated'),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this field.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this field.'));
         throw e;
       } finally {
         setSaving(false);
@@ -2406,7 +2581,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -2472,7 +2647,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -2593,7 +2768,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -2624,16 +2799,16 @@ function CreatorStudioProfileTabContent({
         onProfileUpdated?.();
         pushFlashFeedback({
           variant: 'success',
-          title: 'About us updated',
+          title: t('About us updated'),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update About us.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update About us.'));
         throw e;
       } finally {
         setSaving(false);
       }
     },
-    [form, onProfileUpdated]
+    [form, onProfileUpdated, t]
   );
 
   const persistPortfolioExperience = useCallback(
@@ -2777,7 +2952,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -2857,7 +3032,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -2937,7 +3112,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3051,7 +3226,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3199,7 +3374,7 @@ function CreatorStudioProfileTabContent({
           }),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update this section.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update this section.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3254,10 +3429,10 @@ function CreatorStudioProfileTabContent({
         onProfileUpdated?.();
         pushFlashFeedback({
           variant: 'success',
-          title: 'Location updated',
+          title: t('Location updated'),
         });
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update location.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update location.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3306,6 +3481,7 @@ function CreatorStudioProfileTabContent({
           parseSpecialtyList(latest.specialties ?? [], latest.specialite ?? '').join('|');
         await updateCreatorProfile({
           ...(specialtiesChanged ? { specialties, specialite: specialties[0] ?? '' } : {}),
+          ...(draft.yearsOfExperience != null ? { yearsOfExperience: draft.yearsOfExperience } : {}),
           bio: collapseRepeatedBio(draft.bio),
           gender: normalizeCreatorGender(draft.gender) ?? undefined,
           nationality: normalizeNationalityCode(draft.nationality) ?? '',
@@ -3317,7 +3493,7 @@ function CreatorStudioProfileTabContent({
         await loadProfile({ silent: true });
         onProfileUpdated?.();
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update profile.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update profile.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3347,7 +3523,7 @@ function CreatorStudioProfileTabContent({
         await loadProfile({ silent: true });
         onProfileUpdated?.();
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update profile.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update profile.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3441,7 +3617,7 @@ function CreatorStudioProfileTabContent({
         });
         setContactAddingKind(null);
       } catch (e) {
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update contact.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update contact.'));
         throw e;
       } finally {
         setSaving(false);
@@ -3476,16 +3652,16 @@ function CreatorStudioProfileTabContent({
         onProfileUpdated?.();
         pushFlashFeedback({
           variant: 'success',
-          title: 'Role updated',
+          title: t('Role updated'),
         });
       } catch (e) {
         form.setValue('appRole', current, { shouldDirty: false });
-        setSectionSaveError(e, form, setSubmitError, 'Unable to update your role.');
+        setSectionSaveError(e, form, setSubmitError, t('Unable to update your role.'));
       } finally {
         setSaving(false);
       }
     },
-    [form, onProfileUpdated]
+    [form, onProfileUpdated, t]
   );
 
   const renderSectionContent = () => {
@@ -3539,9 +3715,12 @@ function CreatorStudioProfileTabContent({
                   ? parseAvailabilityHours(values.availabilityHours)
                   : null,
                 specialties: parseSpecialtyList(values.specialties ?? [], values.specialite ?? ''),
+                yearsOfExperience: values.yearsOfExperience ?? null,
               }}
               availabilityLabel={values.availabilityLabel ?? ''}
               hideProviderFields={!showProviderAboutFields}
+              /* Career roles edit their specialty on the About page; the others have none, so it lives
+                 here. (My Profile edits it from the header's Edit intro and never renders this studio.) */
               showSpecialty={!creatorShowsCareerSections(watchedAppRole)}
               appRole={watchedAppRole}
               visibility={{
@@ -3589,30 +3768,30 @@ function CreatorStudioProfileTabContent({
         if (!isEditing) {
           return (
             <div className="space-y-4">
-              <ProfileReadOnlyField label="Name" value={values.fullName} />
+              <ProfileReadOnlyField label={t('Name')} value={values.fullName} />
               <ProfileReadOnlyField
-                label="Username"
+                label={t('Username')}
                 value={values.username || null}
-                emptyLabel="Not set"
+                emptyLabel={t('Not set')}
               />
-              <ProfileReadOnlyField label="Bio" value={values.bio} />
+              <ProfileReadOnlyField label={t('Bio')} value={values.bio} />
               <div className="grid gap-4 sm:grid-cols-2">
-                <ProfileReadOnlyField label="Gender" value={values.gender} emptyLabel="Not set" />
+                <ProfileReadOnlyField label={t('Gender')} value={values.gender} emptyLabel={t('Not set')} />
                 <ProfileReadOnlyField
-                  label="Nationality"
+                  label={t('Nationality')}
                   value={nationalityLabel(values.nationality)}
-                  emptyLabel="Not set"
+                  emptyLabel={t('Not set')}
                 />
               </div>
               <div className="flex items-center gap-2">
-                <span className={profileSectionMutedTextClass}>Status:</span>
+                <span className={profileSectionMutedTextClass}>{t('Status:')}</span>
                 <CreatorAvailabilityBadge
                   isAvailable={values.isAvailable}
                   availabilityLabel={values.availabilityLabel}
                 />
               </div>
               <ProfileReadOnlyField
-                label="Availability hours"
+                label={t('Availability hours')}
                 value={
                   values.availabilityHours
                     ? formatAvailabilityHours(parseAvailabilityHours(values.availabilityHours), timezoneId)
@@ -3621,31 +3800,31 @@ function CreatorStudioProfileTabContent({
               />
               <div className="grid gap-4 sm:grid-cols-2">
                 <ProfileReadOnlyField
-                  label="Member since"
+                  label={t('Member since')}
                   value={formatMemberSince(memberSince)}
-                  emptyLabel="Not available yet"
+                  emptyLabel={t('Not available yet')}
                 />
                 <ProfileReadOnlyField
-                  label="Typical response time"
+                  label={t('Typical response time')}
                   value={responseTimeLabel}
-                  emptyLabel="Not enough data yet"
+                  emptyLabel={t('Not enough data yet')}
                 />
               </div>
               {hasLocation ? (
                 <div className="rounded-xl border border-neutral-200 bg-neutral-50/60 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-950/50">
                   <p className={`mb-1 ${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
-                    Location
+                    {t('Location')}
                   </p>
                   <p className={`${profileSectionBodyTextClass} font-semibold text-neutral-900 dark:text-white`}>
                     {formatLocationLabel(locationCity, locationCountry)}
                   </p>
-                  <p className={`mt-1 ${profileSectionMutedTextClass}`}>Timezone: {timezoneId}</p>
+                  <p className={`mt-1 ${profileSectionMutedTextClass}`}>{t('Timezone: {timezoneId}', { timezoneId })}</p>
                 </div>
               ) : (
                 <ProfileReadOnlyField
-                  label="Location"
+                  label={t('Location')}
                   value={null}
-                  emptyLabel="Location not configured"
+                  emptyLabel={t('Location not configured')}
                 />
               )}
             </div>
@@ -3655,12 +3834,12 @@ function CreatorStudioProfileTabContent({
           <div className="space-y-5">
             <div>
               <label htmlFor="fullName" className={profileFormLabelClass}>
-                Name
+                {t('Name')}
               </label>
               <input
                 id="fullName"
                 type="text"
-                placeholder="e.g. Algorithmic Flow"
+                placeholder={t('e.g. Algorithmic Flow')}
                 className={profileFormInputClass}
                 {...form.register('fullName')}
               />
@@ -3672,7 +3851,7 @@ function CreatorStudioProfileTabContent({
             </div>
             <div>
               <label htmlFor="username" className={profileFormLabelClass}>
-                Username
+                {t('Username')}
               </label>
               <div>
                 <input
@@ -3686,7 +3865,7 @@ function CreatorStudioProfileTabContent({
                 />
               </div>
               <p className="mt-2 text-[15px] leading-relaxed text-neutral-500 dark:text-neutral-400">
-                Unique and case-sensitive — leopard and Leopard are different.
+                {t('Unique and case-sensitive — leopard and Leopard are different.')}
               </p>
               {form.formState.errors.username ? (
                 <p className="mt-1.5 text-sm text-red-600 dark:text-red-400">
@@ -3696,12 +3875,12 @@ function CreatorStudioProfileTabContent({
             </div>
             <div>
               <label htmlFor="bio" className={profileFormLabelClass}>
-                Bio
+                {t('Bio')}
               </label>
               <textarea
                 id="bio"
                 rows={5}
-                placeholder="e.g. Data insights and algorithm explainers to simplify the web."
+                placeholder={t('e.g. Data insights and algorithm explainers to simplify the web.')}
                 className={profileFormInputClass}
                 {...form.register('bio')}
               />
@@ -3714,20 +3893,20 @@ function CreatorStudioProfileTabContent({
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="gender" className={profileFormLabelClass}>
-                  Gender
+                  {t('Gender')}
                 </label>
                 <select id="gender" className={profileFormInputClass} {...form.register('gender')}>
-                  <option value="">Not set</option>
+                  <option value="">{t('Not set')}</option>
                   {CREATOR_GENDER_VALUES.map((value) => (
                     <option key={value} value={value}>
-                      {value}
+                      {t(value)}
                     </option>
                   ))}
                 </select>
               </div>
               <div>
                 <label htmlFor="nationality" className={profileFormLabelClass}>
-                  Nationality
+                  {t('Nationality')}
                 </label>
                 <select
                   id="nationality"
@@ -3735,7 +3914,7 @@ function CreatorStudioProfileTabContent({
                   {...form.register('nationality')}
                 >
                   <option value="" className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100">
-                    Not set
+                    {t('Not set')}
                   </option>
                   {NATIONALITY_SELECT_OPTIONS.map((option) => (
                     <option
@@ -3743,7 +3922,7 @@ function CreatorStudioProfileTabContent({
                       value={option.code}
                       className="bg-white text-neutral-900 dark:bg-neutral-950 dark:text-neutral-100"
                     >
-                      {option.label}
+                      {t(option.label)}
                     </option>
                   ))}
                 </select>
@@ -3756,12 +3935,12 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-gender"
-              label="Gender visibility (public profile)"
+              label={t('Gender visibility (public profile)')}
               value={contactVisibility.gender}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, gender: value }))}
             />
             <div>
-              <label className={profileFormLabelClass}>Availability hours</label>
+              <label className={profileFormLabelClass}>{t('Availability hours')}</label>
               <div className="mt-2">
                 <AvailabilityHoursInput
                   value={availabilitySchedule}
@@ -3772,20 +3951,20 @@ function CreatorStudioProfileTabContent({
             </div>
             <ContactVisibilitySelect
               id="visibility-availability-about"
-              label="Availability visibility (public profile)"
+              label={t('Availability visibility (public profile)')}
               value={contactVisibility.availability}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, availability: value }))}
             />
             <div className="grid gap-4 sm:grid-cols-2">
               <ProfileReadOnlyField
-                label="Member since"
+                label={t('Member since')}
                 value={formatMemberSince(memberSince)}
-                emptyLabel="Calculated automatically"
+                emptyLabel={t('Calculated automatically')}
                 variant={fieldVariant}
               />
               <div>
                 <label htmlFor="typicalResponseTime" className={profileFormLabelClass}>
-                  Typical response time
+                  {t('Typical response time')}
                 </label>
                 <select
                   id="typicalResponseTime"
@@ -3793,10 +3972,10 @@ function CreatorStudioProfileTabContent({
                   value={typicalResponseTime}
                   onChange={(event) => setTypicalResponseTime(event.target.value)}
                 >
-                  <option value="">Not set</option>
+                  <option value="">{t('Not set')}</option>
                   {TYPICAL_RESPONSE_TIME_OPTIONS.map((option) => (
                     <option key={option.value} value={option.value}>
-                      {option.label}
+                      {t(option.label)}
                     </option>
                   ))}
                 </select>
@@ -3804,12 +3983,12 @@ function CreatorStudioProfileTabContent({
             </div>
             <ContactVisibilitySelect
               id="visibility-response-time"
-              label="Response time visibility (public profile)"
+              label={t('Response time visibility (public profile)')}
               value={contactVisibility.responseTime}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, responseTime: value }))}
             />
             <div className="space-y-4 rounded-xl border border-neutral-200 bg-neutral-50/60 px-5 py-5 dark:border-neutral-800 dark:bg-neutral-950/50">
-              <p className={profileFormLabelClass}>Location</p>
+              <p className={profileFormLabelClass}>{t('Location')}</p>
               <button
                 type="button"
                 onClick={() => void enableLocation()}
@@ -3817,16 +3996,16 @@ function CreatorStudioProfileTabContent({
                 className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
               >
                 {detectingLocation && <LoadingSpinner size="sm" />}
-                {hasLocation ? 'Refresh location' : 'Enable location (required)'}
+                {hasLocation ? t('Refresh location') : t('Enable location (required)')}
               </button>
               {hasLocation ? (
                 <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-[15px] leading-relaxed text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
                   <p className="font-medium">{formatLocationLabel(locationCity, locationCountry)}</p>
-                  <p className="mt-1 text-emerald-800/80 dark:text-emerald-300/80">Timezone: {timezoneId}</p>
+                  <p className="mt-1 text-emerald-800/80 dark:text-emerald-300/80">{t('Timezone: {timezoneId}', { timezoneId })}</p>
                 </div>
               ) : (
                 <p className="text-[15px] leading-relaxed text-amber-700 dark:text-amber-300">
-                  You must enable location before saving your information.
+                  {t('You must enable location before saving your information.')}
                 </p>
               )}
               {locationError ? <p className="text-sm text-red-600">{locationError}</p> : null}
@@ -3835,7 +4014,7 @@ function CreatorStudioProfileTabContent({
               ) : null}
               <ContactVisibilitySelect
                 id="visibility-location"
-                label="Location visibility (public profile)"
+                label={t('Location visibility (public profile)')}
                 value={contactVisibility.location}
                 onChange={(value) => setContactVisibility((prev) => ({ ...prev, location: value }))}
               />
@@ -3878,7 +4057,7 @@ function CreatorStudioProfileTabContent({
               {showProviderAboutFields ? (
                 <div className="grid gap-4 sm:grid-cols-2 sm:gap-5">
                   <ProfileReadOnlyField
-                    label="Specialty"
+                    label={t('Specialty')}
                     value={
                       (values.specialties ?? []).length > 0
                         ? (values.specialties ?? []).join(' · ')
@@ -3886,7 +4065,7 @@ function CreatorStudioProfileTabContent({
                     }
                   />
                   <ProfileReadOnlyField
-                    label="Years of experience"
+                    label={t('Years of experience')}
                     value={
                       values.yearsOfExperience != null
                         ? values.yearsOfExperience === 1
@@ -3894,12 +4073,12 @@ function CreatorStudioProfileTabContent({
                           : `${values.yearsOfExperience} years`
                         : null
                     }
-                    emptyLabel="Not set"
+                    emptyLabel={t('Not set')}
                   />
                 </div>
               ) : (
                 <ProfileReadOnlyField
-                  label="Specialty"
+                  label={t('Specialty')}
                   value={
                     (values.specialties ?? []).length > 0
                       ? (values.specialties ?? []).join(' · ')
@@ -3909,7 +4088,7 @@ function CreatorStudioProfileTabContent({
               )}
               <div>
                 <p className={`mb-2 ${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
-                  Working languages
+                  {t('Working languages')}
                 </p>
                 <ProfileLanguagesField
                   control={form.control}
@@ -3943,7 +4122,7 @@ function CreatorStudioProfileTabContent({
                   control={form.control}
                   register={form.register}
                   name="aboutStrengths"
-                  label="Strengths"
+                  label={t('Strengths')}
                   maxItems={12}
                   readOnly
                   values={serializeAboutStringList(values.aboutStrengths)}
@@ -3952,7 +4131,7 @@ function CreatorStudioProfileTabContent({
                   control={form.control}
                   register={form.register}
                   name="aboutSystemsTools"
-                  label="Systems & Tools"
+                  label={t('Systems & Tools')}
                   maxItems={16}
                   readOnly
                   values={serializeAboutStringList(values.aboutSystemsTools)}
@@ -3961,7 +4140,7 @@ function CreatorStudioProfileTabContent({
                   control={form.control}
                   register={form.register}
                   name="aboutInterests"
-                  label="Interests"
+                  label={t('Interests')}
                   maxItems={12}
                   readOnly
                   values={serializeAboutStringList(values.aboutInterests)}
@@ -3975,7 +4154,7 @@ function CreatorStudioProfileTabContent({
             {showProviderAboutFields ? (
               <div className="grid gap-5 sm:grid-cols-2 sm:gap-6">
                 <div>
-                  <p className={profileFormLabelClass}>Specialty</p>
+                  <p className={profileFormLabelClass}>{t('Specialty')}</p>
                   <SpecialtyMultiSelect
                     specialties={values.specialties ?? []}
                     tags={values.specialtyTags ?? []}
@@ -3989,7 +4168,7 @@ function CreatorStudioProfileTabContent({
                 </div>
                 <div>
                   <label htmlFor="about-page-yearsOfExperience" className={profileFormLabelClass}>
-                    Years of experience
+                    {t('Years of experience')}
                   </label>
                   <input
                     id="about-page-yearsOfExperience"
@@ -4007,7 +4186,7 @@ function CreatorStudioProfileTabContent({
                   />
                   <ContactVisibilitySelect
                     id="visibility-years-about"
-                    label="Years of experience visibility (public profile)"
+                    label={t('Years of experience visibility (public profile)')}
                     value={contactVisibility.yearsOfExperience}
                     onChange={(value) =>
                       setContactVisibility((prev) => ({ ...prev, yearsOfExperience: value }))
@@ -4019,7 +4198,7 @@ function CreatorStudioProfileTabContent({
             <ProfileLanguagesField control={form.control} setValue={form.setValue} />
             <ContactVisibilitySelect
               id="visibility-spoken-languages-about"
-              label="Working languages visibility (public profile)"
+              label={t('Working languages visibility (public profile)')}
               value={contactVisibility.spokenLanguages}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, spokenLanguages: value }))}
             />
@@ -4033,7 +4212,7 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-about-education"
-              label="Education visibility (public profile)"
+              label={t('Education visibility (public profile)')}
               value={contactVisibility.aboutEducation}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutEducation: value }))}
             />
@@ -4049,7 +4228,7 @@ function CreatorStudioProfileTabContent({
                 />
                 <ContactVisibilitySelect
                   id="visibility-about-skills"
-                  label="Skills visibility (public profile)"
+                  label={t('Skills visibility (public profile)')}
                   value={contactVisibility.aboutSkills}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutSkills: value }))}
                 />
@@ -4059,13 +4238,13 @@ function CreatorStudioProfileTabContent({
                   control={form.control}
                   register={form.register}
                   name="aboutStrengths"
-                  label="Strengths"
-                  description="Personal strengths that complement your specialty."
+                  label={t('Strengths')}
+                  description={t('Personal strengths that complement your specialty.')}
                   maxItems={12}
                 />
                 <ContactVisibilitySelect
                   id="visibility-about-strengths"
-                  label="Strengths visibility (public profile)"
+                  label={t('Strengths visibility (public profile)')}
                   value={contactVisibility.aboutStrengths}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutStrengths: value }))}
                 />
@@ -4075,13 +4254,13 @@ function CreatorStudioProfileTabContent({
                   control={form.control}
                   register={form.register}
                   name="aboutSystemsTools"
-                  label="Systems & Tools"
-                  description="Platforms, software, and tools you rely on."
+                  label={t('Systems & Tools')}
+                  description={t('Platforms, software, and tools you rely on.')}
                   maxItems={16}
                 />
                 <ContactVisibilitySelect
                   id="visibility-about-systems-tools"
-                  label="Systems & tools visibility (public profile)"
+                  label={t('Systems & tools visibility (public profile)')}
                   value={contactVisibility.aboutSystemsTools}
                   onChange={(value) =>
                     setContactVisibility((prev) => ({ ...prev, aboutSystemsTools: value }))
@@ -4093,13 +4272,13 @@ function CreatorStudioProfileTabContent({
                   control={form.control}
                   register={form.register}
                   name="aboutInterests"
-                  label="Interests"
-                  description="Topics and hobbies that help clients connect with you."
+                  label={t('Interests')}
+                  description={t('Topics and hobbies that help clients connect with you.')}
                   maxItems={12}
                 />
                 <ContactVisibilitySelect
                   id="visibility-about-interests"
-                  label="Interests visibility (public profile)"
+                  label={t('Interests visibility (public profile)')}
                   value={contactVisibility.aboutInterests}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, aboutInterests: value }))}
                 />
@@ -4122,9 +4301,9 @@ function CreatorStudioProfileTabContent({
           return (
             <div className="space-y-5">
               <ProfileReadOnlyField
-                label="Years of experience"
+                label={t('Years of experience')}
                 value={values.yearsOfExperience != null ? String(values.yearsOfExperience) : null}
-                emptyLabel="Not specified"
+                emptyLabel={t('Not specified')}
                 variant={fieldVariant}
               />
               <ProfileMediaBlocksField
@@ -4151,14 +4330,14 @@ function CreatorStudioProfileTabContent({
             />
             <div>
               <label htmlFor="yearsOfExperience" className={profileFormLabelClass}>
-                Years of experience
+                {t('Years of experience')}
               </label>
               <input
                 id="yearsOfExperience"
                 type="number"
                 min={0}
                 max={80}
-                placeholder="e.g. 8"
+                placeholder={t('e.g. 8')}
                 className={`${profileFormInputClass} max-w-xs`}
                 {...form.register('yearsOfExperience', {
                   setValueAs: (value) => {
@@ -4182,13 +4361,13 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-experience-edit"
-              label="Public visibility (Experience)"
+              label={t('Public visibility (Experience)')}
               value={contactVisibility.experience}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, experience: value }))}
             />
             <ContactVisibilitySelect
               id="visibility-years-edit"
-              label="Public visibility (Years of experience)"
+              label={t('Public visibility (Years of experience)')}
               value={contactVisibility.yearsOfExperience}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, yearsOfExperience: value }))}
             />
@@ -4227,7 +4406,7 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-stack-edit"
-              label="Public visibility (Stack)"
+              label={t('Public visibility (Stack)')}
               value={contactVisibility.profileStack}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, profileStack: value }))}
             />
@@ -4266,7 +4445,7 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-tools-edit"
-              label="Public visibility (Tools)"
+              label={t('Public visibility (Tools)')}
               value={contactVisibility.strengthsTools}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, strengthsTools: value }))}
             />
@@ -4361,7 +4540,7 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-services"
-              label="Services visibility (public profile)"
+              label={t('Services visibility (public profile)')}
               value={contactVisibility.services}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, services: value }))}
             />
@@ -4406,7 +4585,7 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-faq"
-              label="FAQ visibility (public profile)"
+              label={t('FAQ visibility (public profile)')}
               value={contactVisibility.faq}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, faq: value }))}
             />
@@ -4560,7 +4739,7 @@ function CreatorStudioProfileTabContent({
             />
             <ContactVisibilitySelect
               id="visibility-links"
-              label="Links visibility (public profile)"
+              label={t('Links visibility (public profile)')}
               value={contactVisibility.links}
               onChange={(value) => setContactVisibility((prev) => ({ ...prev, links: value }))}
             />
@@ -4577,13 +4756,13 @@ function CreatorStudioProfileTabContent({
               <p className={`${profileSectionBodyTextClass} font-semibold text-neutral-900 dark:text-white`}>
                 {formatLocationLabel(locationCity, locationCountry)}
               </p>
-              <p className={`mt-1 ${profileSectionMutedTextClass}`}>Timezone: {timezoneId}</p>
+              <p className={`mt-1 ${profileSectionMutedTextClass}`}>{t('Timezone: {timezoneId}', { timezoneId })}</p>
             </div>
           ) : (
             <ProfileReadOnlyField
-              label="Location"
+              label={t('Location')}
               value={null}
-              emptyLabel="Location not configured"
+              emptyLabel={t('Location not configured')}
               variant={fieldVariant}
             />
           );
@@ -4597,16 +4776,16 @@ function CreatorStudioProfileTabContent({
               className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-5 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
             >
               {detectingLocation && <LoadingSpinner size="sm" />}
-              {hasLocation ? 'Refresh location' : 'Enable location (required)'}
+              {hasLocation ? t('Refresh location') : t('Enable location (required)')}
             </button>
             {hasLocation ? (
               <div className="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3.5 text-[15px] leading-relaxed text-emerald-900 dark:border-emerald-500/30 dark:bg-emerald-500/10 dark:text-emerald-200">
                 <p className="font-medium">{formatLocationLabel(locationCity, locationCountry)}</p>
-                <p className="mt-1 text-emerald-800/80 dark:text-emerald-300/80">Timezone: {timezoneId}</p>
+                <p className="mt-1 text-emerald-800/80 dark:text-emerald-300/80">{t('Timezone: {timezoneId}', { timezoneId })}</p>
               </div>
             ) : (
               <p className="text-[15px] leading-relaxed text-amber-700 dark:text-amber-300">
-                You must enable location before saving your information.
+                {t('You must enable location before saving your information.')}
               </p>
             )}
             {form.formState.errors.timezoneId ? (
@@ -4636,7 +4815,7 @@ function CreatorStudioProfileTabContent({
           return (
             <div className="space-y-4">
               <ProfileReadOnlyField
-                label="Professional address"
+                label={t('Professional address')}
                 value={
                   primaryContactValue(values.contactAddresses, values.contactAddress) || null
                 }
@@ -4644,14 +4823,14 @@ function CreatorStudioProfileTabContent({
               />
               <div className={isPortfolioLayout ? 'grid gap-0 sm:grid-cols-2' : 'grid gap-4 sm:grid-cols-2'}>
                 <ProfileReadOnlyField
-                  label="Phone"
+                  label={t('Phone')}
                   value={formatPhoneDisplay(
                     primaryContactValue(values.contactPhones, values.contactPhone)
                   )}
                   variant={fieldVariant}
                 />
                 <ProfileReadOnlyField
-                  label="Contact email"
+                  label={t('Contact email')}
                   value={
                     primaryContactValue(values.contactEmails, values.contactEmail) || user.email
                   }
@@ -4665,12 +4844,12 @@ function CreatorStudioProfileTabContent({
           <div className="space-y-5">
             <div>
               <label htmlFor="contactAddress" className={profileFormLabelClass}>
-                Professional address
+                {t('Professional address')}
               </label>
               <input
                 id="contactAddress"
                 type="text"
-                placeholder="e.g. Paris, France or 12 Rue de l'Innovation, 75001 Paris"
+                placeholder={t('e.g. Paris, France or 12 Rue de l\'Innovation, 75001 Paris')}
                 className={profileFormInputClass}
                 value={values.contactAddress ?? ''}
                 onChange={(event) => {
@@ -4698,7 +4877,7 @@ function CreatorStudioProfileTabContent({
             <div className="grid gap-5 sm:grid-cols-2">
               <div>
                 <label htmlFor="contactPhone" className={profileFormLabelClass}>
-                  Phone
+                  {t('Phone')}
                 </label>
                 <div className="mt-2">
                   <PhoneInput
@@ -4728,7 +4907,7 @@ function CreatorStudioProfileTabContent({
               </div>
               <div>
                 <label htmlFor="contactEmail" className={profileFormLabelClass}>
-                  Contact email
+                  {t('Contact email')}
                 </label>
                 <input
                   id="contactEmail"
@@ -4761,27 +4940,27 @@ function CreatorStudioProfileTabContent({
             </div>
             <div className="rounded-xl border border-neutral-200 bg-neutral-50/70 p-5 dark:border-neutral-800 dark:bg-neutral-950/40">
               <p className={`${profileSectionBodyTextClass} font-semibold text-neutral-900 dark:text-white`}>
-                Public visibility
+                {t('Public visibility')}
               </p>
               <p className={`mt-1.5 ${profileSectionMutedTextClass}`}>
-                Public = everyone · Members only = signed-in users · Hidden = never shown
+                {t('Public = everyone · Members only = signed-in users · Hidden = never shown')}
               </p>
               <div className="mt-5 space-y-4">
                 <ContactVisibilitySelect
                   id="visibility-address"
-                  label="Address"
+                  label={t('Address')}
                   value={contactVisibility.address}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, address: value }))}
                 />
                 <ContactVisibilitySelect
                   id="visibility-phone"
-                  label="Phone"
+                  label={t('Phone')}
                   value={contactVisibility.phone}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, phone: value }))}
                 />
                 <ContactVisibilitySelect
                   id="visibility-email"
-                  label="Email"
+                  label={t('Email')}
                   value={contactVisibility.email}
                   onChange={(value) => setContactVisibility((prev) => ({ ...prev, email: value }))}
                 />
@@ -4795,7 +4974,7 @@ function CreatorStudioProfileTabContent({
   };
 
   const sectionDisplayLabel =
-    sectionLabelOverrides[activeSection] || currentSection.label;
+    sectionLabelOverrides[activeSection] || t(currentSection.label);
   const sectionDisplayDescription = isPortfolioLayout
     ? currentSection.description.replace(
         /Highlight your background.*/,
@@ -4825,25 +5004,37 @@ function CreatorStudioProfileTabContent({
           <div
             className={
               sectionsNavTop
-                ? `grid items-start gap-8${showProfileHero ? ' pt-12 sm:pt-14' : ''}`
+                ? `grid items-start gap-6${showProfileHero ? ' pt-12 sm:pt-14' : ''}`
                 : isPortfolioLayout
-                ? `grid items-start gap-5 md:gap-6 ${
+                ? `grid items-start gap-5 md:gap-8 lg:gap-10 ${
                     portfolioNavSide === 'right'
-                      ? 'md:grid-cols-[minmax(0,1fr)_auto]'
+                      ? `md:grid-cols-[minmax(0,1fr)_auto]${actionsColumn ? ' xl:grid-cols-[auto_minmax(0,1fr)_auto]' : ''}`
                       : 'md:grid-cols-[auto_minmax(0,1fr)]'
-                  }${showProfileHero ? ' pt-12 sm:pt-14' : ''}`
+                  }`
                 : 'grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_15rem] md:gap-6'
             }
           >
-            {/* Portfolio: sections rail (sticky on scroll) */}
+            {/* Portfolio: the News rail (sticky on scroll) — the "Sections" box, then the actions box; from
+                xl the actions box moves to a column of its own on the left (three columns, the form in
+                the middle). Below xl three columns would squeeze the form, so it stays in the rail. */}
+            {actionsColumn ? (
+              <div className="hidden self-start xl:col-start-1 xl:row-start-1 xl:block">
+                <ProfileSectionStickyAside className="w-[232px]" surfaceClassName="flex w-full max-w-full min-w-0 flex-col pb-6">
+                  {railActions}
+                </ProfileSectionStickyAside>
+              </div>
+            ) : null}
             {sectionsNavTop ? (
-              renderSectionPills()
+              overviewSections ? null : renderSectionPills()
             ) : isPortfolioLayout ? (
               <ProfileSectionStickyAside
-                className={`${portfolioNavCollapsed ? 'w-[3.25rem]' : 'w-[15.5rem]'}${
-                  portfolioNavSide === 'right' ? ' md:col-start-2 md:row-start-1' : ''
+                className={`w-[16.5rem] lg:w-[300px]${
+                  portfolioNavSide === 'right'
+                    ? ` md:col-start-2 md:row-start-1${actionsColumn ? ' xl:col-start-3' : ''}`
+                    : ''
                 }`}
-                surfaceClassName={`gn-aside flex w-full max-w-full min-w-0 flex-col overflow-hidden rounded-lg ${APP_FIELD} dark:bg-white/[0.06]`}
+                surfaceClassName="flex w-full max-w-full min-w-0 flex-col gap-6 pb-6"
+                scrollable
               >
                 {renderSectionNav('desktop')}
               </ProfileSectionStickyAside>
@@ -4853,7 +5044,9 @@ function CreatorStudioProfileTabContent({
               className={
                 isPortfolioLayout
                   ? `order-2 min-h-[480px] min-w-0 md:order-none${
-                      portfolioNavSide === 'right' ? ' md:col-start-1 md:row-start-1' : ''
+                      portfolioNavSide === 'right'
+                        ? ` md:col-start-1 md:row-start-1${actionsColumn ? ' xl:col-start-2' : ''}`
+                        : ''
                     }`
                   : 'order-2 min-h-[480px] min-w-0 md:order-none md:col-start-1 md:row-start-1'
               }
@@ -4862,11 +5055,13 @@ function CreatorStudioProfileTabContent({
                 ref={isPortfolioLayout ? portfolioInfoCardRef : undefined}
                 className={
                   isPortfolioLayout
-                    ? 'flex min-h-[480px] flex-col overflow-x-clip rounded-lg border border-black/10 bg-white dark:border-white/[0.06] dark:bg-[#0F0F0F]'
+                    ? 'flex min-h-[480px] flex-col gap-6'
                     : 'flex min-h-[480px] flex-col overflow-hidden rounded-2xl border border-neutral-200/80 bg-white shadow-[0_1px_2px_rgba(0,0,0,0.04),0_8px_24px_rgba(0,0,0,0.04)] dark:border-neutral-700/50 dark:bg-[#171717] dark:shadow-[0_6px_20px_rgba(0,0,0,0.22)]'
                 }
               >
-                {isPortfolioLayout ? (
+                {/* The hero's section toolbar (visibility, Edit / Add) is My Portfolio's inline editing;
+                    My Profile's sections carry their own Edit pill and drawer instead. */}
+                {isPortfolioLayout && !sectionDrawers ? (
                   <PortfolioProfileHero
                     showIdentity={showProfileHero}
                     onPreview={onPortfolioPreview}
@@ -5389,14 +5584,29 @@ function CreatorStudioProfileTabContent({
                   />
                 ) : null}
 
+                {/* Portfolio: the form is its own card under the hero card; elsewhere this wrapper is
+                    layout-neutral (display: contents). */}
+                <div
+                  className={
+                    isPortfolioLayout
+                      ? sectionsNavTop
+                        ? /* My Profile: the sections sit straight on the page, like the other tabs —
+                             a grey card around a whole form only boxed it in. */
+                          'flex min-h-[420px] flex-1 flex-col overflow-x-clip'
+                        : 'gn-card flex min-h-[420px] flex-1 flex-col overflow-x-clip'
+                      : 'contents'
+                  }
+                >
                 {isPortfolioLayout && !sectionsNavTop ? renderPortfolioMobileTabs() : null}
 
                 <div
                   className={`flex-1 ${
                     isPortfolioLayout
-                      ? showProfileHero
-                        ? 'px-5 pt-5 sm:px-7 sm:pt-7'
-                        : 'px-5 pt-0 sm:px-7 sm:pt-0.5'
+                      ? sectionsNavTop
+                        ? 'px-4 pt-0 sm:px-0'
+                        : showProfileHero
+                          ? 'px-5 pt-5 sm:px-7 sm:pt-7'
+                          : 'px-5 pt-0 sm:px-7 sm:pt-0.5'
                       : 'p-5 sm:p-7'
                   }`}
                 >
@@ -5418,13 +5628,38 @@ function CreatorStudioProfileTabContent({
                     </div>
                   ) : null}
 
-                  {renderSectionContent()}
+                  {overviewSections ? (
+                    <ProfileSectionsOverview
+                      sections={overviewSections}
+                      values={values}
+                      visibility={contactVisibility}
+                      memberSince={memberSince}
+                      typicalResponseTime={typicalResponseTime}
+                      showProviderFields={showProviderAboutFields}
+                      onEdit={openSectionDrawer}
+                      onVisibilityChange={(key, level) => void persistPortfolioVisibility(key, level)}
+                    />
+                  ) : sectionDrawers && isProfileDrawerSection(activeSection) ? (
+                    <ProfileSectionReadView
+                      section={activeSection}
+                      title={sectionDisplayLabel}
+                      values={values}
+                      visibility={contactVisibility}
+                      memberSince={memberSince}
+                      typicalResponseTime={typicalResponseTime}
+                      showProviderFields={showProviderAboutFields}
+                      onEdit={() => openSectionDrawer(activeSection)}
+                    />
+                  ) : (
+                    renderSectionContent()
+                  )}
                 </div>
 
                 {isFormSection ||
                 (isPortfolioLayout && activeSection === 'myRole') ? (
                   isPortfolioLayout ? (
                     <PortfolioEditorFooter
+                      flush={sectionsNavTop}
                       lastUpdatedLabel={formatLastUpdatedLabel(profileUpdatedAt)}
                       leadingMetaLabel={portfolioSectionItemCountLabel(
                         activeSection,
@@ -5432,17 +5667,19 @@ function CreatorStudioProfileTabContent({
                         portfolioItemCount,
                         productsItemCount
                       )}
+                      /* My Profile: member since and response time are part of the General Info read
+                         view (response time is edited in its drawer), so the footer is meta only. */
                       metaItems={
-                        activeSection === 'about'
+                        activeSection === 'about' && !sectionDrawers
                           ? [
                               {
-                                label: 'Member since',
+                                label: t('Member since'),
                                 value: formatMemberSince(memberSince) ?? '—',
                               },
                               ...(showProviderAboutFields
                                 ? [
                                     {
-                                      label: 'Response time',
+                                      label: t('Response time'),
                                       value: (
                                         <PortfolioFooterSelect
                                           value={typicalResponseTime}
@@ -5451,7 +5688,7 @@ function CreatorStudioProfileTabContent({
                                             void persistPortfolioAboutField('typicalResponseTime', next)
                                           }
                                           disabled={saving}
-                                          ariaLabel="Typical response time"
+                                          ariaLabel={t('Typical response time')}
                                         />
                                       ),
                                     },
@@ -5464,7 +5701,10 @@ function CreatorStudioProfileTabContent({
                       saving={saving}
                       hasUnsavedChanges={hasUnsavedChanges}
                       onCancel={cancelEdit}
+                      /* No page-wide Edit / Save: My Profile saves per section from its drawers, and
+                         My Portfolio's chrome sections save inline. */
                       hidePrimaryActions={
+                        sectionDrawers ||
                         isPortfolioChromeSection ||
                         activeSection === 'myRole'
                       }
@@ -5494,7 +5734,7 @@ function CreatorStudioProfileTabContent({
                             disabled={saving}
                             className="rounded-full border border-neutral-300 px-5 py-2.5 text-[15px] font-semibold text-neutral-700 hover:bg-neutral-100 disabled:opacity-60 dark:border-neutral-600 dark:text-neutral-300 dark:hover:bg-neutral-800"
                           >
-                            Cancel
+                            {t('Cancel')}
                           </button>
                           <button
                             type="submit"
@@ -5502,7 +5742,7 @@ function CreatorStudioProfileTabContent({
                             className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-6 py-2.5 text-[15px] font-semibold text-white hover:bg-black disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
                           >
                             {saving ? <LoadingSpinner size="sm" /> : null}
-                            Save information
+                            {t('Save information')}
                           </button>
                         </>
                       ) : (
@@ -5514,12 +5754,15 @@ function CreatorStudioProfileTabContent({
                           }}
                           className="inline-flex items-center gap-2 rounded-full bg-[#111111] px-6 py-2.5 text-[15px] font-semibold text-white hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
                         >
-                          Edit
+                          {t('Edit')}
                         </button>
                       )}
                     </div>
                   )
                 ) : null}
+                </div>
+                {/* Phones (no rail): the page's actions under the form, so none is out of reach. */}
+                {actionsColumn ? <div className="px-2 md:hidden">{railActions}</div> : null}
               </div>
             </div>
 
@@ -5534,6 +5777,20 @@ function CreatorStudioProfileTabContent({
           </div>
         </form>
       )}
+
+      {/* Portaled to <body>, so it sits outside the form above (no implicit submit) and over the page. */}
+      {sectionDrawer ? (
+        <ProfileSectionEditorDrawer
+          section={sectionDrawer.section}
+          initialValues={sectionDrawer.values}
+          initialVisibility={sectionDrawer.visibility}
+          initialResponseTime={sectionDrawer.typicalResponseTime}
+          timezoneId={timezoneId ?? ''}
+          showProviderFields={showProviderAboutFields}
+          onSave={saveProfileSection}
+          onClose={() => setSectionDrawer(null)}
+        />
+      ) : null}
     </div>
   );
 }

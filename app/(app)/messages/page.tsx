@@ -1,5 +1,6 @@
 'use client';
 
+import { trPlural } from '@/lib/i18n/active';
 import dynamic from 'next/dynamic';
 import { Suspense, useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { useRouter, useSearchParams } from 'next/navigation';
@@ -10,7 +11,14 @@ import { EmptyConversation } from '@/components/messaging/EmptyConversation';
 import { InboxConversationRow } from '@/components/messaging/InboxConversationRow';
 import { InboxFollowersModal } from '@/components/messaging/InboxFollowersModal';
 import { InboxFollowersStrip } from '@/components/messaging/InboxFollowersStrip';
-import { InboxPanel, type InboxFilterId } from '@/components/messaging/InboxPanel';
+import {
+  INBOX_PRIMARY_PILL,
+  INBOX_SECONDARY_PILL,
+  InboxEmptyState,
+  InboxPanel,
+  InboxSkeleton,
+  type InboxFilterId,
+} from '@/components/messaging/InboxPanel';
 import { InboxPendingGuestInvites } from '@/components/messaging/InboxPendingGuestInvites';
 import { InboxTemporarySection } from '@/components/messaging/InboxTemporarySection';
 import { TemporaryGuestAvatarStrip } from '@/components/messaging/TemporaryGuestAvatarStrip';
@@ -52,9 +60,13 @@ import type {
   MessageDeliveryReceipt,
   PendingConversationInvite,
   TemporaryInboxEntry,
+  MessagingUserSummary,
   TypingIndicator,
 } from '@/types/messaging';
 import { useAuth } from '@/context/AuthContext';
+/* The section's News skin (tokens + a few keyframes), scoped under `.x-messages` — see the file. */
+import './x-messages.css';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const CreateGroupModal = dynamic(
   () => import('@/components/messaging/CreateGroupModal').then((module) => module.CreateGroupModal),
@@ -154,6 +166,7 @@ export default function DiscussionsPage() {
 }
 
 function DiscussionsPageContent() {
+  const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { user, hasRole } = useAuth();
@@ -268,13 +281,13 @@ function DiscussionsPageContent() {
       return list;
     } catch (e) {
       if (fetchGen === conversationsFetchGenRef.current && authUserIdRef.current === forUserId) {
-        setError(getApiErrorMessage(e, 'Unable to load conversations.'));
+        setError(getApiErrorMessage(e, t('Unable to load conversations.')));
         setConversations([]);
         setArchivedConversations([]);
       }
       return [];
     }
-  }, []);
+  }, [t]);
 
   const refreshTemporaryInbox = useCallback(async () => {
     const forUserId = user?.id;
@@ -621,7 +634,7 @@ function DiscussionsPageContent() {
         );
       } catch (e) {
         if (!cancelled) {
-          setError(getApiErrorMessage(e, 'Unable to start conversation.'));
+          setError(getApiErrorMessage(e, t('Unable to start conversation.')));
         }
       } finally {
         if (!cancelled) setOpeningUser(false);
@@ -631,7 +644,7 @@ function DiscussionsPageContent() {
     return () => {
       cancelled = true;
     };
-  }, [targetUserId, targetProductId, currentUserId, refreshConversations, router]);
+  }, [targetUserId, targetProductId, currentUserId, refreshConversations, router, t]);
 
   const selectedConversation = useMemo(
     () =>
@@ -739,6 +752,37 @@ function DiscussionsPageContent() {
   );
   const { isOnline: isPartnerOnline } = usePresence(inboxPresenceUserIds);
 
+  /* "New message" opens on the people you already talk to (most recent first), so on a phone the
+     usual case is one tap instead of typing a name. Same start path as a search result. */
+  const newMessageSuggestions = useMemo<MessagingUserSummary[]>(() => {
+    const seen = new Set<string>();
+    const people: MessagingUserSummary[] = [];
+    for (const conversation of permanentConversations) {
+      if (conversation.type === 'GROUP' || !conversation.otherUserId) continue;
+      if (seen.has(conversation.otherUserId)) continue;
+      seen.add(conversation.otherUserId);
+      people.push({
+        id: conversation.otherUserId,
+        fullName: conversation.otherUserName,
+        avatarUrl: conversation.otherUserAvatarUrl ?? null,
+      });
+      if (people.length >= 8) break;
+    }
+    return people;
+  }, [permanentConversations]);
+
+  /* The small-caps line over the list: what is listed and how many ("■ 12 conversations"). The
+     temporary filter's list carries its own line. */
+  const inboxSectionLabel = (() => {
+    if (loadingList || openingUser || inboxFilter === 'temporary') return null;
+    const count = filteredConversations.length;
+    if (inboxFilter === 'archived') return `${count} archived`;
+    if (inboxFilter === 'unread') return `${count} unread`;
+    if (inboxFilter === 'groups') return trPlural(count, '{count} group', '{count} groups');
+    if (count === 0) return null;
+    return trPlural(count, '{count} conversation', '{count} conversations');
+  })();
+
   const handleSelectConversation = (conversationId: string) => {
     const conversation =
       conversations.find((item) => item.id === conversationId) ??
@@ -824,7 +868,7 @@ function DiscussionsPageContent() {
       setOpenContext(buildOpenChatContext(conversation));
       setDetailsOpen(false);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to accept invite.'));
+      setError(getApiErrorMessage(e, t('Unable to accept invite.')));
     } finally {
       setInviteActionId(null);
     }
@@ -837,7 +881,7 @@ function DiscussionsPageContent() {
       await declineDirectGuestInvite(inviteId);
       await refreshTemporaryInbox();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to decline invite.'));
+      setError(getApiErrorMessage(e, t('Unable to decline invite.')));
     } finally {
       setInviteActionId(null);
     }
@@ -850,7 +894,7 @@ function DiscussionsPageContent() {
       await cancelOutgoingGuestInvite(conversationId, inviteId);
       await refreshTemporaryInbox();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to cancel invite.'));
+      setError(getApiErrorMessage(e, t('Unable to cancel invite.')));
     } finally {
       setCancelInviteId(null);
     }
@@ -875,13 +919,13 @@ function DiscussionsPageContent() {
       }
       pushFlashFeedback({
         variant: 'success',
-        title: 'Temporary entry deleted',
+        title: t('Temporary entry deleted'),
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to delete temporary entry.'));
+      setError(getApiErrorMessage(e, t('Unable to delete temporary entry.')));
       pushFlashFeedback({
         variant: 'error',
-        title: 'Unable to delete temporary entry',
+        title: t('Unable to delete temporary entry'),
       });
     } finally {
       setDismissingTemporaryKey(null);
@@ -893,7 +937,7 @@ function DiscussionsPageContent() {
     const found =
       conversations.find((item) => item.id === conversationId) ??
       archivedConversations.find((item) => item.id === conversationId);
-    return found?.otherUserName?.trim() || 'this conversation';
+    return found?.otherUserName?.trim() || t('this conversation');
   };
 
   const requestDeleteConversation = (conversationId: string) => {
@@ -925,13 +969,13 @@ function DiscussionsPageContent() {
       await refreshConversations();
       pushFlashFeedback({
         variant: 'success',
-        title: 'Conversation deleted',
+        title: t('Conversation deleted'),
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to delete conversation.'));
+      setError(getApiErrorMessage(e, t('Unable to delete conversation.')));
       pushFlashFeedback({
         variant: 'error',
-        title: 'Unable to delete conversation',
+        title: t('Unable to delete conversation'),
       });
     } finally {
       setMenuActionId(null);
@@ -954,7 +998,7 @@ function DiscussionsPageContent() {
       setArchivedConversations((prev) => bumpUnread(prev));
       await refreshConversations();
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to mark conversation as unread.'));
+      setError(getApiErrorMessage(e, t('Unable to mark conversation as unread.')));
     } finally {
       setMenuActionId(null);
     }
@@ -978,13 +1022,13 @@ function DiscussionsPageContent() {
       await refreshConversations();
       pushFlashFeedback({
         variant: 'success',
-        title: 'Conversation archived',
+        title: t('Conversation archived'),
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to archive conversation.'));
+      setError(getApiErrorMessage(e, t('Unable to archive conversation.')));
       pushFlashFeedback({
         variant: 'error',
-        title: 'Unable to archive conversation',
+        title: t('Unable to archive conversation'),
       });
     } finally {
       setMenuActionId(null);
@@ -1007,13 +1051,13 @@ function DiscussionsPageContent() {
       await refreshConversations();
       pushFlashFeedback({
         variant: 'success',
-        title: 'Conversation restored',
+        title: t('Conversation restored'),
       });
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to unarchive conversation.'));
+      setError(getApiErrorMessage(e, t('Unable to unarchive conversation.')));
       pushFlashFeedback({
         variant: 'error',
-        title: 'Unable to restore conversation',
+        title: t('Unable to restore conversation'),
       });
     } finally {
       setMenuActionId(null);
@@ -1075,7 +1119,7 @@ function DiscussionsPageContent() {
       setFollowersModalOpen(false);
       await handleNewMessageStarted(conversation);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to start conversation.'));
+      setError(getApiErrorMessage(e, t('Unable to start conversation.')));
     } finally {
       setOpeningFollowerId(null);
     }
@@ -1090,6 +1134,7 @@ function DiscussionsPageContent() {
       filterCounts={inboxFilterCounts}
       onNewMessage={() => setNewMessageOpen(true)}
       onNewGroup={SHOW_GROUP_CHAT ? () => setCreateGroupOpen(true) : undefined}
+      sectionLabel={inboxSectionLabel}
       pendingInvites={
         pendingIncomingInvites.length > 0 ? (
           <InboxPendingGuestInvites
@@ -1122,16 +1167,17 @@ function DiscussionsPageContent() {
       }
     >
       {loadingList || openingUser ? (
-        <div className="flex items-center justify-center py-12">
-          <LoadingSpinner />
-        </div>
+        <InboxSkeleton />
       ) : inboxFilter === 'temporary' ? (
         filteredTemporaryInboxWithoutIncoming.length === 0 && pendingIncomingInvites.length === 0 ? (
-          <p className="px-5 py-12 text-center text-sm font-light text-[var(--msg-ink-faint)] sm:px-6">
-            {inboxSearch.trim()
-              ? 'No temporary access matches your search.'
-              : 'No temporary guest access or pending invites.'}
-          </p>
+          <InboxEmptyState
+            title={inboxSearch.trim() ? t('Nothing matches this search') : t('No temporary access')}
+            body={
+              inboxSearch.trim()
+                ? t('No temporary access matches your search.')
+                : t('Guest invites you send or receive, and the rooms they open, show up here.')
+            }
+          />
         ) : filteredTemporaryInboxWithoutIncoming.length === 0 ? null : (
           <InboxTemporarySection
             entries={filteredTemporaryInboxWithoutIncoming}
@@ -1148,19 +1194,44 @@ function DiscussionsPageContent() {
           />
         )
       ) : filteredConversations.length === 0 ? (
-        activeTemporaryEntries.length > 0 && inboxFilter === 'all' ? null : (
-          <p className="px-5 py-12 text-center text-sm font-light text-[var(--msg-ink-faint)] sm:px-6">
-            {inboxSearch.trim()
-              ? 'No conversations match your search.'
-              : inboxFilter === 'archived'
-                ? 'No archived conversations.'
-                : inboxFilter !== 'all'
-                  ? 'No conversations match this filter.'
-                  : 'No conversations yet. Start one from a profile or with “New message”.'}
-          </p>
+        activeTemporaryEntries.length > 0 && inboxFilter === 'all' ? null : inboxSearch.trim() ? (
+          <InboxEmptyState
+            title={t('No conversation matches')}
+            body={t('Try another name, or a word from the message.')}
+            action={
+              <button type="button" onClick={() => setInboxSearch('')} className={INBOX_SECONDARY_PILL}>
+                {t('Clear search')}
+              </button>
+            }
+          />
+        ) : inboxFilter === 'archived' ? (
+          <InboxEmptyState
+            title={t('Nothing archived')}
+            body={t('Conversations you archive are kept here, out of your inbox. You can bring them back anytime.')}
+          />
+        ) : inboxFilter !== 'all' ? (
+          <InboxEmptyState
+            title={inboxFilter === 'unread' ? t('You’re all caught up') : t('Nothing here yet')}
+            body={inboxFilter === 'unread' ? t('Every conversation has been read.') : t('No conversations match this filter.')}
+            action={
+              <button type="button" onClick={() => setInboxFilter('all')} className={INBOX_SECONDARY_PILL}>
+                {t('See all conversations')}
+              </button>
+            }
+          />
+        ) : (
+          <InboxEmptyState
+            title={t('Welcome to your inbox')}
+            body={t('Message a provider from their profile, or start a conversation with anyone here.')}
+            action={
+              <button type="button" onClick={() => setNewMessageOpen(true)} className={INBOX_PRIMARY_PILL}>
+                {t('New message')}
+              </button>
+            }
+          />
         )
       ) : (
-        <ul role="listbox" aria-label="Conversations" className="flex flex-col">
+        <ul role="listbox" aria-label={t('Conversations')} className="flex flex-col">
           {filteredConversations.map((conversation) => (
             <InboxConversationRow
               key={conversation.id}
@@ -1232,6 +1303,7 @@ function DiscussionsPageContent() {
         key={newMessageOpen ? 'new-message-open' : 'new-message-closed'}
         open={newMessageOpen}
         currentUserId={user?.id}
+        suggestions={newMessageSuggestions}
         onClose={() => setNewMessageOpen(false)}
         onStarted={(conversation) => void handleNewMessageStarted(conversation)}
       />
@@ -1245,22 +1317,22 @@ function DiscussionsPageContent() {
         open={Boolean(inboxConfirm)}
         title={
           inboxConfirm?.type === 'dismiss-temporary'
-            ? 'Delete this temporary entry?'
+            ? t('Delete this temporary entry?')
             : inboxConfirm?.type === 'delete'
-              ? 'Delete this conversation?'
-              : 'Archive this conversation?'
+              ? t('Delete this conversation?')
+              : t('Archive this conversation?')
         }
         description={
           inboxConfirm?.type === 'dismiss-temporary'
             ? `Remove “${inboxConfirm.entry.headline || 'this temporary entry'}” from your temporary inbox?`
             : inboxConfirm?.type === 'delete'
-              ? `Remove “${inboxConfirm.conversationName}” from your inbox? This only removes it for you.`
+              ? t('Remove “{conversationName}” from your inbox? This only removes it for you.', { conversationName: inboxConfirm.conversationName })
               : `Move “${inboxConfirm?.type === 'archive' ? inboxConfirm.conversationName : 'this conversation'}” to Archived. You can find it again anytime.`
         }
         confirmLabel={
-          inboxConfirm?.type === 'archive' ? 'Archive' : 'Delete'
+          inboxConfirm?.type === 'archive' ? t('Archive') : t('Delete')
         }
-        cancelLabel="Cancel"
+        cancelLabel={t('Cancel')}
         tone={inboxConfirm?.type === 'archive' ? 'brand' : 'danger'}
         busy={Boolean(menuActionId) || Boolean(dismissingTemporaryKey)}
         onCancel={() => {
@@ -1269,7 +1341,7 @@ function DiscussionsPageContent() {
         onConfirm={confirmInboxAction}
       />
       {error ? (
-        <div className="shrink-0 px-3 pt-2">
+        <div className="shrink-0 px-5 pt-2 lg:px-6">
           <ErrorAlert message={error} onDismiss={() => setError(null)} />
         </div>
       ) : null}

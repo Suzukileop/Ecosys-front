@@ -5,13 +5,34 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import type { ProfileServiceItem } from '@/types/profile';
 import { PortfolioDeferredMedia } from '@/components/portfolio/PortfolioDeferredMedia';
+import { useServicesPricingStyle } from '@/components/portfolio/portfolio-services-pricing-runtime';
+import {
+  applyServicePriceLabels,
+  resolveBillingSuffix,
+} from '@/components/portfolio/portfolio-services-pricing-style';
+import {
+  ServicesOrderButton,
+  resolveServicesCardElements,
+  resolveServicesCtaLabel,
+} from '@/components/portfolio/portfolio-services-card-elements';
+import { formatServiceDelivery, getServicePriceParts } from '@/lib/profile-services';
 import {
   DEFAULT_SERVICES_INDEX_LIST_SETTINGS,
   type PortfolioServicesIndexListMediaRatio,
+  type PortfolioServicesIndexListRowGap,
   type PortfolioServicesIndexListSettings,
   type PortfolioServicesIndexListTasksStyle,
   type PortfolioServicesPresentationSettings,
 } from '@/components/portfolio/portfolio-services-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
+
+/** Vertical space between rows — phone / from md. Spacious is deliberately monumental. */
+const ROW_GAP: Record<PortfolioServicesIndexListRowGap, CSSProperties> = {
+  tight: { '--il-row-gap': '3rem', '--il-row-gap-md': '4.5rem' } as CSSProperties,
+  normal: { '--il-row-gap': '5rem', '--il-row-gap-md': '7.5rem' } as CSSProperties,
+  airy: { '--il-row-gap': '8rem', '--il-row-gap-md': '13rem' } as CSSProperties,
+  spacious: { '--il-row-gap': '12rem', '--il-row-gap-md': '22rem' } as CSSProperties,
+};
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -189,8 +210,9 @@ function resolveIndexListSettings(
  * description and the service's tasks; on the right its cover media. Layout settings choose the
  * media side (right, left, or a zigzag that alternates every row), the media ratio, whether the
  * index shows, and one of four task presentations (pills, ledger, numbered, inline). Rows reveal one by one as they scroll into view (rule draws left to right, the media
- * opens with a clip-path wipe, the text and tasks rise in a stagger) and the media zooms very
- * slightly on hover. Below `lg` each row stacks: text first, media underneath.
+ * opens with a clip-path wipe, the text and tasks rise in a stagger). On hover a row either zooms
+ * its media, slides its title, washes its background, or does nothing (Layout settings). Below
+ * `lg` each row stacks: text first, media underneath, and there is no hover motion.
  */
 export function ServicesIndexListSection({
   services,
@@ -199,6 +221,7 @@ export function ServicesIndexListSection({
   services: ProfileServiceItem[];
   presentation: PortfolioServicesPresentationSettings;
 }) {
+  const t = useT();
   const items = useMemo(() => services.filter((service) => service.title?.trim()), [services]);
   const count = items.length;
   const settings = resolveIndexListSettings(presentation);
@@ -206,11 +229,18 @@ export function ServicesIndexListSection({
   const accent = presentation.ctaColor || presentation.cardAccentColor || '#f97316';
   const fallbackGradient = `linear-gradient(145deg, ${accent} 0%, color-mix(in srgb, ${accent} 45%, #0a0a0a) 100%)`;
   const vars = indexListVars(presentation.activeColorMode, accent);
+  const pricingStyle = useServicesPricingStyle(presentation);
+  const hover = settings.hoverEffect;
+  const show = resolveServicesCardElements(presentation);
+  const ctaLabel = resolveServicesCtaLabel(presentation);
+  const isLight = presentation.activeColorMode === 'light';
+  const ink = isLight ? '#0a0a0a' : '#fafafa';
+  const inverse = isLight ? '#fafafa' : '#0a0a0a';
 
   const listRef = useRef<HTMLDivElement>(null);
 
   // Re-run the entrance when the structure of the rows changes (not on every color edit).
-  const entranceKey = `${count}|${settings.layout}|${settings.tasksStyle}|${settings.mediaRatio}`;
+  const entranceKey = `${count}|${settings.layout}|${settings.tasksStyle}|${settings.mediaRatio}|${show.title}|${show.description}|${show.price}|${show.delivery}|${show.tasks}|${show.cta}`;
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined' || count === 0) return undefined;
@@ -288,22 +318,37 @@ export function ServicesIndexListSection({
   if (count === 0) return null;
 
   return (
-    <div ref={listRef} className="flex w-full flex-col gap-14 md:gap-20" style={vars}>
+    <div
+      ref={listRef}
+      className="flex w-full flex-col gap-[var(--il-row-gap)] md:gap-[var(--il-row-gap-md)]"
+      style={{ ...vars, ...ROW_GAP[settings.rowGap ?? 'normal'] }}
+    >
       {items.map((item, index) => {
-        const tasks = (item.tasks ?? []).map((task) => task.trim()).filter(Boolean);
-        const description = item.description?.trim();
+        const tasks = show.tasks ? (item.tasks ?? []).map((task) => task.trim()).filter(Boolean) : [];
+        const description = show.description ? item.description?.trim() : '';
+        const delivery = show.delivery ? formatServiceDelivery(item, show.deliveryTemplate) : null;
         const mediaLeft =
           settings.layout === 'media-left' || (settings.layout === 'zigzag' && index % 2 === 1);
+        const priceParts = show.price && pricingStyle.style.showPrice ? applyServicePriceLabels(getServicePriceParts(item), pricingStyle.style) : null;
+        const priceSuffix =
+          priceParts && priceParts.kind === 'amount'
+            ? resolveBillingSuffix(pricingStyle.style, priceParts.period)
+            : null;
         return (
           <article
             key={item.id || index}
             data-index-row=""
             data-media-side={mediaLeft ? 'left' : 'right'}
-            className={`grid grid-cols-1 gap-8 lg:gap-10 ${
+            className={`group/row grid grid-cols-1 gap-8 lg:gap-10 ${
               mediaLeft
                 ? 'lg:grid-cols-[minmax(0,6fr)_minmax(0,5fr)]'
                 : 'lg:grid-cols-[minmax(0,5fr)_minmax(0,6fr)]'
+            } ${
+              hover === 'tint'
+                ? 'lg:transition-colors lg:duration-500 lg:hover:bg-[color-mix(in_srgb,var(--il-accent)_9%,transparent)]'
+                : ''
             }`}
+            data-pf-no-color-transition=""
           >
             <div className={`min-w-0 ${mediaLeft ? 'lg:order-2' : ''}`}>
               <div
@@ -312,25 +357,46 @@ export function ServicesIndexListSection({
                 aria-hidden
               />
               {settings.showIndex ? (
-                <p
-                  data-index-text=""
-                  className="mt-5 font-mono text-[0.7rem] leading-none tracking-wide text-[color:var(--il-muted)]"
-                >
-                  {String(index + 1).padStart(2, '0')}/
-                </p>
+                <div data-index-text="" className="mt-5 flex items-center gap-3">
+                  <p className="font-mono text-[0.7rem] leading-none tracking-wide text-[color:var(--il-muted)]">
+                    {String(index + 1).padStart(2, '0')}/
+                  </p>
+                </div>
               ) : null}
+              {show.title ? (
               <h3
                 data-index-text=""
                 className={`font-sans font-normal leading-[1.02] tracking-[-0.025em] ${
                   settings.showIndex ? 'mt-6' : 'mt-7'
+                } ${
+                  hover === 'slide'
+                    ? 'lg:transition-transform lg:duration-500 lg:ease-[cubic-bezier(0.22,1,0.36,1)] lg:group-hover/row:translate-x-3'
+                    : ''
                 }`}
                 style={{
-                  fontSize: 'calc(clamp(2rem, 3.4vw, 3.25rem) * var(--pf-services-font-scale, 1))',
+                  fontSize: 'calc(clamp(1.7rem, 2.8vw, 2.6rem) * var(--pf-services-font-scale, 1))',
                   overflowWrap: 'anywhere',
                 }}
               >
                 {item.title}
               </h3>
+              ) : null}
+              {priceParts ? (
+                <p data-index-text="" className="mt-5 font-semibold tracking-tight" style={{ fontSize: FONT(1.05) }}>
+                  {priceParts.isFrom && priceParts.kind === 'amount' ? `${t('From')} ` : ''}
+                  {priceParts.text}
+                  {priceSuffix ? (
+                    <span className="ml-1.5 font-normal text-[color:var(--il-muted)]" style={{ fontSize: FONT(0.8) }}>
+                      {priceSuffix}
+                    </span>
+                  ) : null}
+                </p>
+              ) : null}
+              {delivery ? (
+                <p data-index-text="" className="mt-3 text-[0.7rem] font-medium uppercase tracking-[0.16em] text-[color:var(--il-muted)]">
+                  {delivery}
+                </p>
+              ) : null}
               {description ? (
                 <p
                   data-index-text=""
@@ -345,15 +411,39 @@ export function ServicesIndexListSection({
                   <TasksBlock style={settings.tasksStyle} tasks={tasks} />
                 </div>
               ) : null}
+              {show.cta ? (
+                <ServicesOrderButton
+                  data-index-text=""
+                  pricingStyle={pricingStyle}
+                  label={ctaLabel}
+                  ink={ink}
+                  surface={inverse}
+                  className="group/cta mt-8 inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium transition-[background-color,color] duration-500 hover:bg-[color:var(--il-ink)] hover:text-[color:var(--il-inv)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                  autoContent={
+                    <>
+                      {ctaLabel}
+                      <span aria-hidden className="inline-block transition-transform duration-500 group-hover/cta:translate-x-0.5">
+                        &rarr;
+                      </span>
+                    </>
+                  }
+                />
+              ) : null}
             </div>
 
-            <div className={`group min-w-0 ${mediaLeft ? 'lg:order-1' : ''}`}>
+            <div className={`min-w-0 ${mediaLeft ? 'lg:order-1' : ''}`}>
               <div
                 data-index-media=""
                 className={`relative w-full overflow-hidden ${RATIO_CLASS[settings.mediaRatio]}`}
               >
+                {/* No will-change: a promoted layer is rasterised at 1x and then scaled, which softens
+                    the picture on hover. Without it the zoom re-rasterises and stays sharp. */}
                 <div
-                  className="absolute inset-0 transition-transform duration-[900ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover:scale-[1.035]"
+                  className={`absolute inset-0 ${
+                    hover === 'zoom'
+                      ? 'lg:transition-transform lg:duration-[900ms] lg:ease-[cubic-bezier(0.22,1,0.36,1)] lg:group-hover/row:scale-[1.035]'
+                      : ''
+                  }`}
                   data-pf-no-color-transition=""
                 >
                   {item.coverImageUrl ? (
@@ -362,6 +452,8 @@ export function ServicesIndexListSection({
                       alt={item.title}
                       className="h-full w-full"
                       objectFit="cover"
+                      crisp
+                      sizes="(min-width: 1024px) 55vw, 100vw"
                     />
                   ) : (
                     <div className="h-full w-full" style={{ background: fallbackGradient }} aria-hidden />

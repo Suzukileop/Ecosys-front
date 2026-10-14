@@ -17,6 +17,7 @@ import {
   type FooterDesignLayoutResolver,
   type FooterInkToken,
 } from '@/components/portfolio/portfolio-footer-design-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -138,6 +139,7 @@ export function FooterDesignInvertedWordmark({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignInvertedWordmarkProps) {
+  const t = useT();
   const rootRef = useRef<HTMLElement>(null);
   const wordmarkContainerRef = useRef<HTMLDivElement | null>(null);
   const wordmarkTextRef = useRef<HTMLSpanElement | null>(null);
@@ -241,7 +243,7 @@ export function FooterDesignInvertedWordmark({
       <div className={`relative z-[1] w-full pb-16 pt-20 sm:pb-20 sm:pt-24 lg:pb-24 lg:pt-28 ${portfolioEditorialGutterX(contentGutter)}`}>
         <div className="grid grid-cols-1 gap-12 sm:grid-cols-3 sm:gap-8">
           {/* Column 1 — internal nav, fine-weight geometric caps */}
-          <nav aria-label="Footer" data-iwm-fade-in className="flex flex-col gap-5">
+          <nav aria-label={t('Footer')} data-iwm-fade-in className="flex flex-col gap-5">
             {navLinks.map((link) => (
               <a
                 key={link.id}
@@ -366,6 +368,7 @@ export function FooterDesignInvertedWordmark({
 }
 
 export function FooterInvertedWordmarkWireframe() {
+  const t = useT();
   return (
     <svg viewBox="0 0 120 72" preserveAspectRatio="none" className="pf-stack-mini h-[4.35rem] w-full" aria-hidden>
       <rect className="pf-stack-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
@@ -393,7 +396,7 @@ export function FooterInvertedWordmarkWireframe() {
         className="pf-stack-mini-ink"
         transform="scale(1,-1) translate(0,-98)"
       >
-        AA
+        {t('AA')}
       </text>
     </svg>
   );

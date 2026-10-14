@@ -4,6 +4,7 @@ type StarRatingProps = {
   size?: 'sm' | 'md';
 };
 
+/** Rating stars: gold when filled — the rating's own colour, the only one besides the like's pink. */
 export function StarRating({ rating, max = 5, size = 'sm' }: StarRatingProps) {
   const starClass = size === 'md' ? 'h-5 w-5' : 'h-4 w-4';
   const rounded = Math.max(0, Math.min(max, rating));
@@ -16,7 +17,7 @@ export function StarRating({ rating, max = 5, size = 'sm' }: StarRatingProps) {
         return (
           <svg
             key={i}
-            className={`${starClass} ${filled || partial ? 'text-amber-400' : 'text-gray-300 dark:text-neutral-600'}`}
+            className={`${starClass} ${filled || partial ? 'text-[#FFB400]' : 'text-[#CFD9DE] dark:text-[#3E4144]'}`}
             viewBox="0 0 20 20"
             fill="currentColor"
             aria-hidden

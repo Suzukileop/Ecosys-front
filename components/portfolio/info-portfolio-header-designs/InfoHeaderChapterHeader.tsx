@@ -8,7 +8,8 @@ import {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
-import { usePortfolioMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_INDEX_TEXT = '02 /';
 const DEFAULT_TITLE_TEXT = 'Expertise & Mindset';
@@ -55,10 +56,13 @@ export function InfoHeaderChapterHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_INFO_PRESENTATION;
-  const motionOff = usePortfolioMotionOff();
+  const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'chapter');
+  const showTitle = show('title');
+  const showRule = show('rule');
   const align = presentation.headerDesignAlignment ?? 'left';
-  const indexText = (presentation.headerChapterIndexText || DEFAULT_INDEX_TEXT).trim();
+  const indexText = show('index') ? (presentation.headerChapterIndexText || DEFAULT_INDEX_TEXT).trim() : '';
   const titleText = (presentation.headerChapterTitleText || DEFAULT_TITLE_TEXT).trim();
   const indexColor = infoHeaderPaletteTokenColor(presentation.headerChapterIndexColor ?? 'principal');
   const titleColor = infoHeaderPaletteTokenColor(presentation.headerChapterTitleColor ?? 'texteFort');
@@ -131,7 +135,7 @@ export function InfoHeaderChapterHeader({
       observer.disconnect();
       timers.forEach((t) => clearTimeout(t));
     };
-  }, [animationEnabled, indexText, titleText]);
+  }, [animationEnabled, indexText, titleText, showTitle, showRule]);
 
   // ========== ANIMATION: Scroll — whole block recedes ==========
   useEffect(() => {
@@ -214,16 +218,20 @@ export function InfoHeaderChapterHeader({
             {indexText}
           </span>
         ) : null}
-        <span data-info-header-chapter-title style={{ color: titleColor, ...initialTitleStyle }}>
-          {titleText}
-        </span>
+        {showTitle ? (
+          <span data-info-header-chapter-title style={{ color: titleColor, ...initialTitleStyle }}>
+            {titleText}
+          </span>
+        ) : null}
       </h2>
-      <div
-        data-info-header-chapter-rule
-        aria-hidden
-        className="mt-3 h-1 w-14 origin-left sm:mt-4 sm:w-16"
-        style={{ backgroundColor: indexColor, ...initialRuleStyle }}
-      />
+      {showRule ? (
+        <div
+          data-info-header-chapter-rule
+          aria-hidden
+          className="mt-3 h-1 w-14 origin-left sm:mt-4 sm:w-16"
+          style={{ backgroundColor: indexColor, ...initialRuleStyle }}
+        />
+      ) : null}
       {trailing ? <div className="mt-4">{trailing}</div> : null}
     </header>
   );

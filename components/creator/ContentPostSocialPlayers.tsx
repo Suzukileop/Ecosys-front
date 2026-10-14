@@ -11,6 +11,7 @@ import {
 } from 'react';
 
 import { usePauseOffscreenVideo } from '@/lib/use-pause-offscreen-video';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const SPEEDS = [1, 1.25, 1.5, 2, 0.75] as const;
 const TOUCH_HIDE_MS = 2800;
@@ -232,6 +233,7 @@ export function SocialVideoPlayer({
   initialTime,
   autoPlay = false,
 }: SocialVideoPlayerProps) {
+  const t = useT();
   const shellRef = useRef<HTMLDivElement>(null);
   const touchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const clickTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -341,7 +343,7 @@ export function SocialVideoPlayer({
       {!playing ? (
         <span
           aria-hidden
-          className={`pointer-events-none absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#111111] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-transform duration-300 group-hover/video:scale-105 ${
+          className={`pointer-events-none absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#0F1419] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-transform duration-300 group-hover/video:scale-105 ${
             started ? 'opacity-80' : ''
           }`}
         >
@@ -368,8 +370,8 @@ export function SocialVideoPlayer({
         <button
           type="button"
           onClick={controls.togglePlay}
-          aria-label={playing ? 'Pause' : 'Play'}
-          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#111111] transition-transform hover:scale-105 active:scale-95"
+          aria-label={playing ? t('Pause') : t('Play')}
+          className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white text-[#0F1419] transition-transform hover:scale-105 active:scale-95"
         >
           <PlayGlyph playing={playing} className="h-3.5 w-3.5" />
         </button>
@@ -379,7 +381,7 @@ export function SocialVideoPlayer({
         <div
           role="slider"
           tabIndex={0}
-          aria-label="Seek"
+          aria-label={t('Seek')}
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
           aria-valuenow={Math.round(current)}
@@ -403,7 +405,7 @@ export function SocialVideoPlayer({
         <button
           type="button"
           onClick={controls.cycleSpeed}
-          aria-label="Playback speed"
+          aria-label={t('Playback speed')}
           className="hidden h-7 shrink-0 items-center rounded-full px-2 text-[12.5px] font-semibold tabular-nums text-white/85 transition-colors hover:bg-white/15 hover:text-white sm:flex"
         >
           {formatSpeed(speed)}
@@ -413,7 +415,7 @@ export function SocialVideoPlayer({
           <div
             role="slider"
             tabIndex={0}
-            aria-label="Volume"
+            aria-label={t('Volume')}
             aria-valuemin={0}
             aria-valuemax={100}
             aria-valuenow={Math.round(effectiveVolume * 100)}
@@ -427,7 +429,7 @@ export function SocialVideoPlayer({
           <button
             type="button"
             onClick={controls.toggleMute}
-            aria-label={muted ? 'Unmute' : 'Mute'}
+            aria-label={muted ? t('Unmute') : t('Mute')}
             className="flex h-7 w-7 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 hover:text-white"
           >
             <VolumeGlyph muted={effectiveVolume === 0} />
@@ -437,7 +439,7 @@ export function SocialVideoPlayer({
         <button
           type="button"
           onClick={toggleFullscreen}
-          aria-label="Fullscreen"
+          aria-label={t('Fullscreen')}
           className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full text-white/85 transition-colors hover:bg-white/15 hover:text-white"
         >
           <svg className="h-[17px] w-[17px]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -479,6 +481,7 @@ type SocialAudioPlayerProps = {
  * on hover (always shown on touch screens).
  */
 export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
+  const t = useT();
   const controls = useMediaControls<HTMLAudioElement>();
   const { playing, current, duration, muted, volume, speed, scrubbing } = controls;
   const bars = useMemo(() => waveformFor(src), [src]);
@@ -498,15 +501,15 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
       <button
         type="button"
         onClick={controls.togglePlay}
-        aria-label={playing ? 'Pause' : 'Play'}
-        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#111111] text-white shadow-[0_10px_30px_-12px_rgba(0,0,0,0.45)] transition-transform hover:scale-105 active:scale-95 dark:bg-white dark:text-[#111111]"
+        aria-label={playing ? t('Pause') : t('Play')}
+        className="flex h-14 w-14 shrink-0 items-center justify-center rounded-full bg-[#0F1419] text-white dark:bg-[#EFF3F4] dark:text-[#0F1419] shadow-[0_10px_30px_-12px_rgba(0,0,0,0.45)] transition-transform hover:scale-105 active:scale-95 dark:bg-white dark:text-[#111111]"
       >
         <PlayGlyph playing={playing} className="h-5 w-5" />
       </button>
 
       <div className="min-w-0 flex-1">
         <div className="flex items-baseline justify-between gap-3">
-          <p className="truncate text-[15px] font-semibold text-[#111111] dark:text-white">{title?.trim() || 'Audio'}</p>
+          <p className="truncate text-[15px] font-semibold text-[#111111] dark:text-white">{title?.trim() || t('Audio')}</p>
           <p className="shrink-0 text-[13px] tabular-nums text-neutral-500 dark:text-neutral-400">
             {formatTime(current)} / {formatTime(duration)}
           </p>
@@ -515,7 +518,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
         <div
           role="slider"
           tabIndex={0}
-          aria-label="Seek audio"
+          aria-label={t('Seek audio')}
           aria-valuemin={0}
           aria-valuemax={Math.round(duration)}
           aria-valuenow={Math.round(current)}
@@ -549,7 +552,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
           <button
             type="button"
             onClick={() => controls.skip(-10)}
-            aria-label="Back 10 seconds"
+            aria-label={t('Back 10 seconds')}
             className="flex h-8 items-center gap-1 rounded-full px-2 text-[12.5px] font-medium transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:hover:bg-white/[0.08] dark:hover:text-white"
           >
             <SkipGlyph direction="back" />
@@ -558,7 +561,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
           <button
             type="button"
             onClick={() => controls.skip(10)}
-            aria-label="Forward 10 seconds"
+            aria-label={t('Forward 10 seconds')}
             className="flex h-8 items-center gap-1 rounded-full px-2 text-[12.5px] font-medium transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:hover:bg-white/[0.08] dark:hover:text-white"
           >
             10
@@ -567,7 +570,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
           <button
             type="button"
             onClick={controls.cycleSpeed}
-            aria-label="Playback speed"
+            aria-label={t('Playback speed')}
             className="flex h-8 items-center rounded-full px-2.5 text-[12.5px] font-semibold tabular-nums transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:hover:bg-white/[0.08] dark:hover:text-white"
           >
             {formatSpeed(speed)}
@@ -576,7 +579,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
             <button
               type="button"
               onClick={controls.toggleMute}
-              aria-label={muted ? 'Unmute' : 'Mute'}
+              aria-label={muted ? t('Unmute') : t('Mute')}
               className="flex h-8 w-8 items-center justify-center rounded-full transition-colors hover:bg-black/[0.05] hover:text-[#111111] dark:hover:bg-white/[0.08] dark:hover:text-white"
             >
               <VolumeGlyph muted={effectiveVolume === 0} />
@@ -584,7 +587,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
             <div
               role="slider"
               tabIndex={0}
-              aria-label="Volume"
+              aria-label={t('Volume')}
               aria-valuemin={0}
               aria-valuemax={100}
               aria-valuenow={Math.round(effectiveVolume * 100)}

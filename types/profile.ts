@@ -339,6 +339,9 @@ export interface CreatorProfileDto {
   /** Manual preset: WITHIN_1_HOUR | FEW_HOURS | WITHIN_DAY | WITHIN_2_3_DAYS */
   typicalResponseTime?: string | null;
   responseTimeSampleCount?: number | null;
+  /** Provider hourly rate in cents (null = not set). */
+  hourlyRateCents?: number | null;
+  hourlyRateCurrency?: string | null;
 }
 
 export interface CreatorProfileUpdateBody {
@@ -383,6 +386,9 @@ export interface CreatorProfileUpdateBody {
   availabilityHours?: string;
   isAvailable?: boolean;
   availabilityLabel?: string | null;
+  /** Hourly rate in cents; 0 clears it. */
+  hourlyRateCents?: number;
+  hourlyRateCurrency?: string;
   contactVisibility?: string;
   typicalResponseTime?: string;
   studioHeaderLayout?: string;

@@ -4,6 +4,7 @@ import {
   PORTFOLIO_SECTION_COLOR_MODE_OPTIONS,
   type PortfolioSectionColorMode,
 } from '@/components/portfolio/portfolio-section-color-mode';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * Shared 3-way Auto / Light / Dark control for a section's own "General" tab —
@@ -18,6 +19,7 @@ export function SectionColorModeControl({
   onChange: (value: PortfolioSectionColorMode) => void;
   label?: string;
 }) {
+  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
@@ -39,7 +41,7 @@ export function SectionColorModeControl({
               data-active={active ? 'true' : 'false'}
               className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
             >
-              <span>{option.label}</span>
+              <span>{t(option.label)}</span>
             </button>
           );
         })}

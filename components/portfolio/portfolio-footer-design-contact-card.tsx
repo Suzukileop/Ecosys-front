@@ -24,6 +24,7 @@ import {
   DEFAULT_CONTENT_GUTTER,
   type PortfolioContentGutter,
 } from '@/components/portfolio/portfolio-editorial-layout';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return typeof window !== 'undefined' && window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -106,6 +107,7 @@ export function FooterDesignContactCard({
   backgroundStyle,
   fontSizeScale = 1,
 }: FooterDesignContactCardProps) {
+  const t = useT();
   const cardRef = useRef<HTMLDivElement>(null);
 
   const isLight = colorMode === 'light';
@@ -136,7 +138,7 @@ export function FooterDesignContactCard({
         }
         const rawLabel = link.label?.trim() ?? '';
         const label =
-          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? 'Website' : rawLabel || hostname || url;
+          link.type === 'WEBSITE' && /^site\s*web$/i.test(rawLabel) ? t('Website') : rawLabel || hostname || url;
         return { ...link, label };
       })
     : [];
@@ -270,7 +272,7 @@ export function FooterDesignContactCard({
                     {connectHeading}
                   </span>
                 ) : null}
-                <nav className="flex flex-wrap items-center gap-6 sm:gap-8" aria-label="Social">
+                <nav className="flex flex-wrap items-center gap-6 sm:gap-8" aria-label={t('Social')}>
                   {visibleLinks.map((link) => (
                     <a
                       key={link.id}

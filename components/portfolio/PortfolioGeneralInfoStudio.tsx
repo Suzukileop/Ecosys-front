@@ -1,9 +1,6 @@
 'use client';
 
 import { memo, useCallback, useEffect, useId, useMemo, useRef, useState, type ReactNode } from 'react';
-import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
-import { faPenToSquare } from '@fortawesome/free-regular-svg-icons';
-import { faCheck } from '@fortawesome/free-solid-svg-icons';
 import { AvailabilityHoursInput } from '@/components/ui/AvailabilityHoursInput';
 import { PortfolioFieldVisibilityMenu } from '@/components/portfolio/PortfolioInformationChrome';
 import { PortfolioLocationReadOnly } from '@/components/portfolio/PortfolioLocationChrome';
@@ -11,9 +8,8 @@ import {
   STUDIO_BLOCK_CLASS,
   STUDIO_FLOAT_IN_STYLE,
   STUDIO_GLASS_PANEL_CLASS,
-  STUDIO_ICON_BUTTON_TONES,
   STUDIO_INLINE_TEXT_CLASS,
-  STUDIO_LABEL_CLASS,
+  STUDIO_STATIC_BOX_CLASS,
   StudioField,
   StudioSaveChrome,
   useInlineStudio,
@@ -33,6 +29,7 @@ import {
   formatAvailabilityHoursLines,
   type AvailabilitySchedule,
 } from '@/lib/availabilityHours';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 export type PortfolioGeneralInfoDraft = {
   fullName: string;
@@ -43,6 +40,7 @@ export type PortfolioGeneralInfoDraft = {
   isAvailable: boolean;
   availability: AvailabilitySchedule | null;
   specialties: string[];
+  yearsOfExperience: number | null;
 };
 
 type DraftKey = keyof PortfolioGeneralInfoDraft;
@@ -53,6 +51,21 @@ type ChangeHandler = StudioChangeHandler<PortfolioGeneralInfoDraft>;
 type GeneralInfoVisibilityKey = 'gender' | 'availability' | 'location';
 
 type ChoiceOption = { value: string; label: string };
+
+/**
+ * A block's visible title: the site's section line — a small ink square, then the name in small caps
+ * (`gn-kicker`, as "■ PROFILES" on search and News) — the full width of the block's grid. Blocks are
+ * set apart by space alone, no hairline between them.
+ */
+function BlockTitle({ id, children, className = 'col-span-full -mb-2' }: { id: string; children: ReactNode; className?: string }) {
+  const t = useT();
+  return (
+    <h3 id={id} className={`gn-kicker flex items-center gap-2.5 ${className}`}>
+      <span aria-hidden className="h-1.5 w-1.5 shrink-0 bg-[color:var(--gn-ink)]" />
+      {children}
+    </h3>
+  );
+}
 
 const GENDER_OPTIONS: ChoiceOption[] = CREATOR_GENDER_VALUES.map((value) => ({ value, label: value }));
 const NATIONALITY_OPTIONS: ChoiceOption[] = NATIONALITY_SELECT_OPTIONS.map((option) => ({
@@ -69,6 +82,47 @@ function fieldSignature(key: DraftKey, value: PortfolioGeneralInfoDraft[DraftKey
   }
   return String(value ?? '');
 }
+
+/** Years of experience: two digits (0–80, the API's range), "years" after it; Enter saves. */
+const YearsField = memo(function YearsField({
+  defaultValue,
+  onChange,
+  onCommit,
+}: {
+  defaultValue: number | null;
+  onChange: ChangeHandler;
+  onCommit: () => void;
+}) {
+  const t = useT();
+  const id = useId();
+  return (
+    <StudioField label={t('Years of experience')} htmlFor={id}>
+      <div className="flex items-center gap-2">
+        <input
+          id={id}
+          type="text"
+          inputMode="numeric"
+          maxLength={2}
+          defaultValue={defaultValue != null ? String(defaultValue) : ''}
+          placeholder="0"
+          onChange={(event) => {
+            const digits = event.currentTarget.value.replace(/\D/g, '');
+            onChange('yearsOfExperience', digits ? Math.min(80, Number.parseInt(digits, 10)) : null);
+          }}
+          onBlur={onCommit}
+          onKeyDown={(event) => {
+            if (event.key === 'Enter') {
+              event.preventDefault();
+              onCommit();
+            }
+          }}
+          className={`${STUDIO_INLINE_TEXT_CLASS} !w-[calc(3ch+1.5rem+2px)] tabular-nums`}
+        />
+        <span className="text-[14px] text-[#536471] dark:text-[#8B98A5]">{t('years')}</span>
+      </div>
+    </StudioField>
+  );
+});
 
 const NO_TAGS: string[] = [];
 const noopTags = () => {};
@@ -95,17 +149,18 @@ const SpecialtyField = memo(function SpecialtyField({
   appRole: unknown;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const [value, setValue] = useState(defaultValue);
   const copy = specialtyCopyForRole(appRole);
   return (
     <StudioField
-      label={copy.label}
-      hint={`Add 1 to ${MAX_PROFILE_SPECIALTIES} ${copy.noun}. Click a chip to place it first.`}
+      label={t(copy.label)}
+      hint={t('Add 1 to {MAXPROFILESPECIALTIES} {noun}. Click a chip to place it first.', { MAXPROFILESPECIALTIES: MAX_PROFILE_SPECIALTIES, noun: copy.noun })}
     >
       <SpecialtyMultiSelect
         variant="studio"
         showHint={false}
-        placeholder={copy.placeholder}
+        placeholder={t(copy.placeholder)}
         specialties={value}
         tags={NO_TAGS}
         showTags={false}
@@ -148,7 +203,7 @@ const InlineTextField = memo(function InlineTextField({
           placeholder={placeholder}
           rows={1}
           onChange={(event) => onChange(name, event.currentTarget.value)}
-          className={`${STUDIO_INLINE_TEXT_CLASS} resize-none leading-relaxed [field-sizing:content]`}
+          className={`${STUDIO_INLINE_TEXT_CLASS} min-h-[76px] resize-none leading-relaxed [field-sizing:content]`}
         />
       ) : (
         <input
@@ -193,6 +248,7 @@ const ChoiceField = memo(function ChoiceField({
   aside?: ReactNode;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const id = useId();
   const [value, setValue] = useState(defaultValue);
   const [present, setPresent] = useState(false);
@@ -259,7 +315,7 @@ const ChoiceField = memo(function ChoiceField({
           className={`${STUDIO_INLINE_TEXT_CLASS} flex items-center justify-between gap-3 text-left`}
         >
           <span className={`truncate ${value ? '' : 'font-normal text-neutral-400 dark:text-neutral-600'}`}>
-            {value ? selectedLabel : placeholder}
+            {value ? t(selectedLabel) : placeholder}
           </span>
           <svg
             aria-hidden
@@ -269,7 +325,7 @@ const ChoiceField = memo(function ChoiceField({
             strokeWidth={1.75}
             strokeLinecap="round"
             strokeLinejoin="round"
-            className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-300 dark:text-white/50 ${visible ? 'rotate-180' : ''}`}
+            className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-300 dark:text-[#a1a1aa] ${visible ? 'rotate-180' : ''}`}
           >
             <path d="m4 6 4 4 4-4" />
           </svg>
@@ -290,7 +346,7 @@ const ChoiceField = memo(function ChoiceField({
                 type="text"
                 autoFocus
                 value={query}
-                placeholder="Search…"
+                placeholder={t('Search…')}
                 onChange={(event) => setQuery(event.currentTarget.value)}
                 onKeyDown={(event) => {
                   if (event.key === 'Enter') {
@@ -303,7 +359,7 @@ const ChoiceField = memo(function ChoiceField({
             ) : null}
             <ul role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1.5">
               {filtered.length === 0 ? (
-                <li className="px-3 py-2 text-[0.85rem] text-neutral-500">No match</li>
+                <li className="px-3 py-2 text-[0.85rem] text-neutral-500">{t('No match')}</li>
               ) : (
                 filtered.map((option) => {
                   const selected = option.value === value;
@@ -314,12 +370,12 @@ const ChoiceField = memo(function ChoiceField({
                         onClick={() => select(option.value)}
                         className={`flex w-full items-center justify-between gap-3 rounded-lg px-3 py-2 text-left text-[0.85rem] transition-colors duration-200 hover:bg-black/[0.04] dark:hover:bg-white/[0.06] ${
                           selected
-                            ? 'font-semibold text-[#FF5722]'
+                            ? 'font-semibold text-[#0F1419] dark:text-[#E7E9EA]'
                             : 'font-medium text-neutral-800 dark:text-neutral-200'
                         }`}
                       >
-                        <span className="truncate">{option.label}</span>
-                        {selected ? <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-[#FF5722]" /> : null}
+                        <span className="truncate">{t(option.label)}</span>
+                        {selected ? <span aria-hidden className="h-1 w-1 shrink-0 rounded-full bg-current" /> : null}
                       </button>
                     </li>
                   );
@@ -342,11 +398,12 @@ const StatusField = memo(function StatusField({
   availabilityLabel: string;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const id = useId();
   const [on, setOn] = useState(defaultValue);
   return (
-    <StudioField label="Status" htmlFor={id}>
-      <div className="flex items-center gap-3 pb-3">
+    <StudioField label={t('Status')} htmlFor={id}>
+      <div className={`${STUDIO_STATIC_BOX_CLASS} gap-3`}>
         <button
           id={id}
           type="button"
@@ -356,41 +413,24 @@ const StatusField = memo(function StatusField({
             setOn(!on);
             onChange('isAvailable', !on);
           }}
-          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 ${
-            on ? 'bg-emerald-500' : 'bg-black/[0.12] dark:bg-white/[0.14]'
+          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            on ? 'bg-[color:var(--gn-ink)]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
           }`}
         >
           <span
             aria-hidden
-            className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-              on ? 'translate-x-3.5' : 'translate-x-0.5'
+            className={`inline-block h-3 w-3 rounded-full shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+              on ? 'translate-x-3.5 bg-[color:var(--gn-surface)]' : 'translate-x-0.5 bg-[color:var(--gn-inset)]'
             }`}
           />
         </button>
-        <span className="truncate text-base font-normal text-black dark:text-neutral-100">
+        <span className="truncate text-[15px] font-normal text-[color:var(--gn-ink)]">
           {resolveAvailabilityStatusLabel(on, availabilityLabel)}
         </span>
       </div>
     </StudioField>
   );
 });
-
-/** Read-only: the timezone always follows the detected location. */
-function TimezoneField({ timezone }: { timezone: string }) {
-  const value = timezone.trim();
-  return (
-    <StudioField label="Timezone">
-      <div className="pb-3">
-        <p className={`truncate text-base ${value ? 'font-normal text-black dark:text-neutral-100' : 'font-normal text-neutral-400 dark:text-neutral-600'}`}>
-          {value ? value.replace(/_/g, ' ') : 'Not detected yet'}
-        </p>
-        <p className="mt-1 text-[12px] text-neutral-500 dark:text-neutral-400">
-          {value ? 'Detected from your location' : 'Detect your location below to set it'}
-        </p>
-      </div>
-    </StudioField>
-  );
-}
 
 const AvailabilityField = memo(function AvailabilityField({
   defaultValue,
@@ -403,31 +443,35 @@ const AvailabilityField = memo(function AvailabilityField({
   aside?: ReactNode;
   onChange: ChangeHandler;
 }) {
+  const t = useT();
   const id = useId();
   const [schedule, setSchedule] = useState(defaultValue);
   const [open, setOpen] = useStudioFold();
   return (
-    <StudioField label="Availability hours" htmlFor={id} aside={aside} className={open ? 'sm:col-span-2' : ''}>
+    <StudioField label={t('Availability hours')} htmlFor={id} aside={aside}>
       <button
         id={id}
         type="button"
         aria-expanded={open}
         onClick={() => setOpen(!open)}
-        className={`${STUDIO_INLINE_TEXT_CLASS} group/edit flex items-center justify-between gap-3 text-left`}
+        className={`${STUDIO_INLINE_TEXT_CLASS} flex items-center justify-between gap-3 text-left`}
       >
         <span className={`truncate ${schedule ? '' : 'font-normal text-neutral-400 dark:text-neutral-600'}`}>
-          {schedule ? formatAvailabilityHoursLines(schedule).join(' · ') : 'Set your hours'}
+          {schedule ? formatAvailabilityHoursLines(schedule).join(' · ') : t('Set your hours')}
         </span>
-        <span
+        {/* The selects' chevron: one way to open a field everywhere, not a pencil button inside it. */}
+        <svg
           aria-hidden
-          className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border transition-colors duration-200 ${
-            open
-              ? STUDIO_ICON_BUTTON_TONES.active
-              : 'border-neutral-300 bg-white text-neutral-700 group-hover/edit:border-neutral-900 group-hover/edit:bg-neutral-900 group-hover/edit:text-white dark:border-white/25 dark:bg-transparent dark:text-white/80 dark:group-hover/edit:border-white dark:group-hover/edit:bg-white dark:group-hover/edit:text-black'
-          }`}
+          viewBox="0 0 16 16"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth={1.75}
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          className={`h-4 w-4 shrink-0 text-neutral-500 transition-transform duration-300 dark:text-[#a1a1aa] ${open ? 'rotate-180' : ''}`}
         >
-          <FontAwesomeIcon icon={open ? faCheck : faPenToSquare} className="h-3.5 w-3.5" fixedWidth />
-        </span>
+          <path d="m4 6 4 4 4-4" />
+        </svg>
       </button>
       {open ? (
         <div style={STUDIO_FLOAT_IN_STYLE} className="pb-3 pt-6">
@@ -476,25 +520,28 @@ export function PortfolioGeneralInfoStudio({
   onVisibilityChange: (key: GeneralInfoVisibilityKey, level: ContactVisibilityLevel) => void;
   onSave: (draft: PortfolioGeneralInfoDraft) => Promise<void>;
 }) {
+  const t = useT();
   const studio = useInlineStudio({ initial, onSave, signature: fieldSignature });
   const { baseline, change, commit } = studio;
+  const titleId = useId();
 
   return (
     <>
       <div key={studio.revision}>
-        <section className={STUDIO_BLOCK_CLASS} aria-label="Identity">
-          <div className="grid grid-cols-1 items-start gap-x-8 gap-y-8 sm:grid-cols-[minmax(0,3fr)_minmax(0,2fr)]">
+        <section className={STUDIO_BLOCK_CLASS} aria-labelledby={`${titleId}-identity`}>
+          <BlockTitle id={`${titleId}-identity`}>{t('Identity')}</BlockTitle>
+          <div className="grid grid-cols-1 items-start gap-y-6">
             <InlineTextField
               name="fullName"
-              label="Name"
+              label={t('Name')}
               defaultValue={baseline.fullName}
-              placeholder="Your full name"
+              placeholder={t('Your full name')}
               onChange={change}
               onCommit={commit}
             />
             <InlineTextField
               name="username"
-              label="Username"
+              label={t('Username')}
               defaultValue={baseline.username}
               placeholder="username"
               onChange={change}
@@ -503,39 +550,42 @@ export function PortfolioGeneralInfoStudio({
           </div>
           <InlineTextField
             name="bio"
-            label="Bio"
+            label={t('Bio')}
             multiline
             defaultValue={baseline.bio}
-            placeholder="A few lines about you and your work"
+            placeholder={t('A few lines about you and your work')}
             onChange={change}
             onCommit={commit}
           />
           {showSpecialty ? <SpecialtyField defaultValue={baseline.specialties} appRole={appRole} onChange={change} /> : null}
+          {showSpecialty ? <YearsField defaultValue={baseline.yearsOfExperience} onChange={change} onCommit={commit} /> : null}
         </section>
 
-        <section className={`${STUDIO_BLOCK_CLASS} sm:grid-cols-2 lg:grid-cols-3`} aria-label="Status and identity details">
+        <section className={STUDIO_BLOCK_CLASS} aria-labelledby={`${titleId}-details`}>
+          <BlockTitle id={`${titleId}-details`}>{t('Details')}</BlockTitle>
           <StatusField defaultValue={baseline.isAvailable} availabilityLabel={availabilityLabel} onChange={change} />
           <ChoiceField
             name="gender"
-            label="Gender"
+            label={t('Gender')}
             defaultValue={baseline.gender}
             options={GENDER_OPTIONS}
-            placeholder="Not specified"
+            placeholder={t('Not specified')}
             onChange={change}
             aside={
               <PortfolioFieldVisibilityMenu
                 value={visibility.gender}
                 onChange={(level) => onVisibilityChange('gender', level)}
                 menuPlacement="down"
+                variant="text"
               />
             }
           />
           <ChoiceField
             name="nationality"
-            label="Nationality"
+            label={t('Nationality')}
             defaultValue={baseline.nationality}
             options={NATIONALITY_OPTIONS}
-            placeholder="Not specified"
+            placeholder={t('Not specified')}
             searchable
             align="end"
             onChange={change}
@@ -543,7 +593,8 @@ export function PortfolioGeneralInfoStudio({
         </section>
 
         {!hideProviderFields ? (
-          <section className={`${STUDIO_BLOCK_CLASS} sm:grid-cols-2`} aria-label="Time">
+          <section className={STUDIO_BLOCK_CLASS} aria-labelledby={`${titleId}-time`}>
+            <BlockTitle id={`${titleId}-time`}>{t('Availability')}</BlockTitle>
             <AvailabilityField
               defaultValue={baseline.availability}
               timezone={location.timezone}
@@ -553,21 +604,24 @@ export function PortfolioGeneralInfoStudio({
                   value={visibility.availability}
                   onChange={(level) => onVisibilityChange('availability', level)}
                   menuPlacement="down"
+                  variant="text"
                 />
               }
             />
-            <TimezoneField timezone={location.timezone} />
           </section>
         ) : null}
 
-        <section className={STUDIO_BLOCK_CLASS} aria-label="Location">
+        <section className={STUDIO_BLOCK_CLASS} aria-labelledby={`${titleId}-location`}>
           <div className="min-w-0">
-            <div className="mb-2.5 flex items-center justify-between gap-3">
-              <span className={STUDIO_LABEL_CLASS}>Location</span>
+            <div className="mb-2.5 flex items-center gap-3">
+              <BlockTitle id={`${titleId}-location`} className="">
+                {t('Location')}
+              </BlockTitle>
               <PortfolioFieldVisibilityMenu
                 value={visibility.location}
                 onChange={(level) => onVisibilityChange('location', level)}
                 menuPlacement="down"
+                variant="text"
               />
             </div>
             <PortfolioLocationReadOnly {...location} />

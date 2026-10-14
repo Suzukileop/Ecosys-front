@@ -50,6 +50,7 @@ import {
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
 import type { ProfileTeamMember } from '@/types/profile';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
  * The portrait frame's own corners. Kept local rather than imported from the catalogue file: that
@@ -127,6 +128,7 @@ export function TeamSplitScreen({
    *  real per-account value rather than assume the default. */
   contentGutter?: PortfolioContentGutter;
 }) {
+  const t = useT();
   const [activeId, setActiveId] = useState(members[0]?.id ?? '');
   const [socialsOpen, setSocialsOpen] = useState(false);
   const active = members.find((member) => member.id === activeId) ?? members[0];
@@ -267,7 +269,7 @@ export function TeamSplitScreen({
           className={`order-1 flex min-w-0 list-none flex-col ${textInset} ${splitNameGapClass(members.length)}`}
           role="tablist"
           aria-orientation="vertical"
-          aria-label="Team members"
+          aria-label={t('Team members')}
           onKeyDown={onListKeyDown}
           data-team-reveal=""
         >
@@ -366,7 +368,7 @@ export function TeamSplitScreen({
                   data-pf-no-color-transition=""
                 >
                   <span className="relative pb-1">
-                    Social links
+                    {t('Social links')}
                     {/* The underline draws itself in from the left instead of appearing — the whole
                         micro-interaction on an otherwise silent control. */}
                     <span

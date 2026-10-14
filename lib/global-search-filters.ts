@@ -3,9 +3,11 @@ import type {
   GlobalSearchPageData,
 } from '@/lib/global-search';
 import type { MarketplaceProductSummary } from '@/types/marketplace';
+import { msg } from '@/lib/i18n/config';
 
 export type GlobalSearchDateFilter = 'any' | '7d' | '30d' | '90d';
-export type GlobalSearchSortFilter = 'newest' | 'oldest' | 'popular';
+/** `relevance` keeps the server's ranked order (posts: relevance × engagement × freshness). */
+export type GlobalSearchSortFilter = 'relevance' | 'newest' | 'oldest' | 'popular';
 export type GlobalSearchContentMediaFilter = 'all' | 'photo' | 'video';
 /** Same Physical / Virtual split as Products explore. */
 export type GlobalSearchProductTypeFilter = 'all' | 'virtual' | 'physical';
@@ -25,48 +27,49 @@ export type GlobalSearchFilters = {
 };
 
 export const GLOBAL_SEARCH_DATE_OPTIONS: { value: GlobalSearchDateFilter; label: string }[] = [
-  { value: 'any', label: 'Any time' },
-  { value: '7d', label: 'Last 7 days' },
-  { value: '30d', label: 'Last 30 days' },
-  { value: '90d', label: 'Last 90 days' },
+  { value: 'any', label: msg('Any time') },
+  { value: '7d', label: msg('Last 7 days') },
+  { value: '30d', label: msg('Last 30 days') },
+  { value: '90d', label: msg('Last 90 days') },
 ];
 
 export const GLOBAL_SEARCH_SORT_OPTIONS: { value: GlobalSearchSortFilter; label: string }[] = [
-  { value: 'newest', label: 'Newest first' },
-  { value: 'oldest', label: 'Oldest first' },
-  { value: 'popular', label: 'Most popular' },
+  { value: 'relevance', label: msg('Most relevant') },
+  { value: 'newest', label: msg('Newest first') },
+  { value: 'oldest', label: msg('Oldest first') },
+  { value: 'popular', label: msg('Most popular') },
 ];
 
 export const GLOBAL_SEARCH_PRODUCT_TYPE_OPTIONS: {
   value: GlobalSearchProductTypeFilter;
   label: string;
 }[] = [
-  { value: 'all', label: 'All products' },
-  { value: 'virtual', label: 'Digital' },
-  { value: 'physical', label: 'Material' },
+  { value: 'all', label: msg('All products') },
+  { value: 'virtual', label: msg('Digital') },
+  { value: 'physical', label: msg('Material') },
 ];
 
 export const GLOBAL_SEARCH_CONTENT_MEDIA_OPTIONS: {
   value: GlobalSearchContentMediaFilter;
   label: string;
 }[] = [
-  { value: 'all', label: 'All media' },
-  { value: 'photo', label: 'Photos only' },
-  { value: 'video', label: 'Videos only' },
+  { value: 'all', label: msg('All media') },
+  { value: 'photo', label: msg('Photos only') },
+  { value: 'video', label: msg('Videos only') },
 ];
 
 export const GLOBAL_SEARCH_CATEGORY_OPTIONS: { value: GlobalSearchCategory; label: string }[] = [
-  { value: 'creators', label: 'Profiles' },
-  { value: 'serviceProviders', label: 'Service Provider' },
-  { value: 'products', label: 'Products' },
-  { value: 'content', label: 'Content' },
+  { value: 'creators', label: msg('Profiles') },
+  { value: 'serviceProviders', label: msg('Service Provider') },
+  { value: 'products', label: msg('Products') },
+  { value: 'content', label: msg('Content') },
 ];
 
 export function createDefaultGlobalSearchFilters(_isAuthenticated: boolean): GlobalSearchFilters {
   return {
     categories: ['creators', 'serviceProviders', 'products', 'content'],
     dateRange: 'any',
-    sort: 'newest',
+    sort: 'relevance',
     productType: 'all',
     contentMedia: 'all',
     minYearsExperience: null,

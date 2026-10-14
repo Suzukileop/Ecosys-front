@@ -2,7 +2,13 @@
 
 import { Avatar } from '@/components/ui/Avatar';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import {
+  INBOX_PRIMARY_PILL_SM,
+  INBOX_SECONDARY_PILL_SM,
+  InboxSectionKicker,
+} from '@/components/messaging/InboxPanel';
 import type { PendingConversationInvite } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type InboxPendingGuestInvitesProps = {
   invites: PendingConversationInvite[];
@@ -22,67 +28,61 @@ function formatExpiry(iso: string): string {
   return `${days}d left`;
 }
 
+/**
+ * Guest invites waiting for an answer, above the conversations: the section's kicker, then one
+ * block per invite on the module tone (tone, not a frame, sets it apart from the list) — who, what,
+ * how long is left, and the two answers as News pills (Accept in ink, Decline outlined), 40px tall.
+ */
 export function InboxPendingGuestInvites({
   invites,
   actingId,
   onAccept,
   onDecline,
 }: InboxPendingGuestInvitesProps) {
+  const t = useT();
   if (invites.length === 0) return null;
 
   return (
-    <div className="shrink-0 px-3 pb-3">
-      <p className="mb-2 px-1 text-[10px] font-bold uppercase tracking-wider text-neutral-500 dark:text-neutral-400">
-        Temporary invites
-      </p>
-      <ul className="space-y-2">
+    <section className="shrink-0 pb-2" aria-label={t('Temporary invites')}>
+      <InboxSectionKicker>{t('Temporary invites · {invitesLength}', { invitesLength: invites.length })}</InboxSectionKicker>
+      <ul className="flex flex-col gap-2 pt-1 lg:px-3">
         {invites.map((invite) => {
           const busy = actingId === invite.id;
           return (
-            <li
-              key={invite.id}
-              className="border border-[var(--msg-hairline)] p-3.5"
-            >
+            <li key={invite.id} className="bg-[color:var(--xm-chip)] px-5 py-4 lg:px-3">
               <div className="flex items-start gap-3">
-                <Avatar avatarUrl={invite.inviterAvatarUrl} name={invite.inviterName} size="sm" />
+                <Avatar avatarUrl={invite.inviterAvatarUrl} name={invite.inviterName} size="lg" tone="muted" />
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-semibold text-gray-900 dark:text-white">
-                    {invite.inviterName}
+                  <p className="text-[15px] leading-5 text-[color:var(--gn-ink2)]">
+                    <span className="font-bold text-[color:var(--gn-ink)]">{invite.inviterName}</span> {t('invited you to join')} <span className="font-bold text-[color:var(--gn-ink)]">{invite.conversationTitle}</span> {t('as a temporary guest')}
                   </p>
-                  <p className="mt-0.5 text-xs text-gray-600 dark:text-neutral-400">
-                    invited you to join{' '}
-                    <span className="font-medium text-gray-800 dark:text-neutral-200">
-                      {invite.conversationTitle}
-                    </span>{' '}
-                    as a temporary guest
-                  </p>
-                  <p className="mt-1 text-[11px] text-neutral-500 dark:text-neutral-500">
+                  <p className="mt-1 text-[13px] leading-5 tabular-nums text-[color:var(--gn-ink2)]">
                     {formatExpiry(invite.expiresAt)}
                   </p>
+                  <div className="mt-3 flex gap-2">
+                    <button
+                      type="button"
+                      onClick={() => onAccept(invite.id)}
+                      disabled={busy}
+                      className={`${INBOX_PRIMARY_PILL_SM} flex-1`}
+                    >
+                      {busy ? <LoadingSpinner size="sm" /> : t('Accept')}
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => onDecline(invite.id)}
+                      disabled={busy}
+                      className={`${INBOX_SECONDARY_PILL_SM} flex-1`}
+                    >
+                      {t('Decline')}
+                    </button>
+                  </div>
                 </div>
-              </div>
-              <div className="mt-3 flex gap-2">
-                <button
-                  type="button"
-                  onClick={() => onAccept(invite.id)}
-                  disabled={busy}
-                  className="msg-micro inline-flex flex-1 items-center justify-center gap-2 border border-[var(--msg-ink)] px-3 py-2.5 text-[var(--msg-ink)] transition-colors duration-300 hover:bg-[var(--msg-ink)] hover:text-[var(--msg-panel)] disabled:opacity-40"
-                >
-                  {busy ? <LoadingSpinner size="sm" /> : 'Accept'}
-                </button>
-                <button
-                  type="button"
-                  onClick={() => onDecline(invite.id)}
-                  disabled={busy}
-                  className="msg-micro flex-1 border border-[var(--msg-hairline-strong)] px-3 py-2.5 text-[var(--msg-ink-faint)] transition-colors duration-300 hover:border-[var(--msg-ink-soft)] hover:text-[var(--msg-ink)] disabled:opacity-40"
-                >
-                  Decline
-                </button>
               </div>
             </li>
           );
         })}
       </ul>
-    </div>
+    </section>
   );
 }

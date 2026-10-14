@@ -127,12 +127,12 @@ const PORTFOLIO_HERO_CTA_ICON_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'phone', label: 'Classic', description: 'Curved handset.' },
-  { value: 'phone-handset', label: 'Handset', description: 'Bold telephone receiver.' },
-  { value: 'smartphone', label: 'Mobile', description: 'Vertical smartphone.' },
-  { value: 'phone-call', label: 'Ringing', description: 'Handset with sound waves.' },
-  { value: 'phone-outgoing', label: 'Outgoing', description: 'Handset with outward arrow.' },
-  { value: 'phone-incoming', label: 'Incoming', description: 'Handset with inward arrow.' },
+  { value: 'phone', label: msg('Classic'), description: msg('Curved handset.') },
+  { value: 'phone-handset', label: msg('Handset'), description: msg('Bold telephone receiver.') },
+  { value: 'smartphone', label: msg('Mobile'), description: msg('Vertical smartphone.') },
+  { value: 'phone-call', label: msg('Ringing'), description: msg('Handset with sound waves.') },
+  { value: 'phone-outgoing', label: msg('Outgoing'), description: msg('Handset with outward arrow.') },
+  { value: 'phone-incoming', label: msg('Incoming'), description: msg('Handset with inward arrow.') },
 ];
 
 function normalizePortfolioHeroCtaIcon(
@@ -330,6 +330,7 @@ import {
   sanitizeHeroVerticalCellPlacement,
   type HeroVerticalCellPlacement,
 } from '@/components/portfolio/portfolio-hero-vertical-cell-placement';
+import { msg } from '@/lib/i18n/config';
 
 const DEFAULT_HERO_VISUAL_FREE_CELL: HeroVerticalCellPlacement = 'top-right';
 

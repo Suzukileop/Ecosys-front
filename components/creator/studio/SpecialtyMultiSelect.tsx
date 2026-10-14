@@ -10,6 +10,8 @@ import {
   specialtyKey,
 } from '@/lib/specialties';
 import { suggestSpecialties } from '@/lib/creator-profile-api';
+import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 type SpecialtyMultiSelectProps = {
   specialties: string[];
@@ -54,7 +56,7 @@ const VARIANT_CLASSES = {
       'min-w-0 flex-1 border-b border-black/[0.08] bg-transparent pb-2 text-base text-black caret-[#FF5722] outline-none placeholder:text-neutral-400 focus:border-[#FF5722] disabled:opacity-50 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]',
     addButton:
       'inline-flex shrink-0 items-center self-end rounded-full border border-neutral-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-700 transition-colors duration-200 hover:border-[#FF5722] hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-40 dark:border-white/20 dark:text-white/75',
-    list: 'absolute z-20 mt-2 max-h-56 w-full overflow-auto rounded-xl border border-black/[0.06] bg-white/90 py-1.5 shadow-2xl backdrop-blur-xl dark:border-white/[0.06] dark:bg-[#0D0D0D]/80',
+    list: 'absolute z-20 mt-2 max-h-56 w-full overflow-auto p-1.5 rounded-2xl bg-[#FEFEFE] shadow-[0_0_0_1px_#E1E8ED,0_8px_20px_-14px_rgba(15,20,25,0.18)] dark:bg-[#000000] dark:shadow-[0_0_0_1px_#2F3336]',
     optionActive: 'bg-black/[0.04] text-black dark:bg-white/[0.06] dark:text-white',
     optionIdle: 'text-neutral-600 dark:text-neutral-300',
   },
@@ -71,6 +73,7 @@ export function SpecialtyMultiSelect({
   showHint = true,
   placeholder = 'e.g. Motion Designer, DevOps Engineer',
 }: SpecialtyMultiSelectProps) {
+  const t = useT();
   const ui = VARIANT_CLASSES[variant];
   const [specialtyDraft, setSpecialtyDraft] = useState('');
   const [tagDraft, setTagDraft] = useState('');
@@ -171,7 +174,7 @@ export function SpecialtyMultiSelect({
     <div className="space-y-4">
       {showHint ? (
         <p className={ui.hint}>
-          Add 1 to {MAX_PROFILE_SPECIALTIES} specialties. Click a chip to place it first.
+          {t('Add 1 to {MAXPROFILESPECIALTIES} specialties. Click a chip to place it first.', { MAXPROFILESPECIALTIES: MAX_PROFILE_SPECIALTIES })}
         </p>
       ) : null}
       {specialties.length > 0 ? (
@@ -196,9 +199,9 @@ export function SpecialtyMultiSelect({
                   removeSpecialty(label);
                 }}
                 className={isPrimary ? ui.chipRemovePrimary : ui.chipRemoveIdle}
-                aria-label={`Remove ${label}`}
+                aria-label={t('Remove {label}', { label })}
               >
-                ×
+                {t('×')}
               </button>
             </span>
           );
@@ -262,7 +265,7 @@ export function SpecialtyMultiSelect({
             onClick={() => addSpecialty(specialtyDraft)}
             className={ui.addButton}
           >
-            Add
+            {t('Add')}
           </button>
         </div>
         {showSuggestions ? (
@@ -275,7 +278,7 @@ export function SpecialtyMultiSelect({
               <li key={item} role="option" aria-selected={index === activeIndex} id={`${listId}-${index}`}>
                 <button
                   type="button"
-                  className={`block w-full px-3 py-2 text-left text-sm ${
+                  className={`block w-full rounded-xl px-3 py-2 text-left text-sm ${
                     index === activeIndex ? ui.optionActive : ui.optionIdle
                   }`}
                   onMouseEnter={() => setActiveIndex(index)}
@@ -291,7 +294,7 @@ export function SpecialtyMultiSelect({
       {showTags ? (
       <div>
         <p className="mb-2 text-xs font-medium uppercase tracking-wide text-neutral-500 dark:text-neutral-400">
-          Keyword tags
+          {t('Keyword tags')}
         </p>
         <div className="flex flex-wrap gap-2">
           {tags.map((tag) => (
@@ -305,9 +308,9 @@ export function SpecialtyMultiSelect({
                 disabled={disabled}
                 onClick={() => onTagsChange(tags.filter((item) => item !== tag))}
                 className="text-neutral-400 hover:text-neutral-700 dark:hover:text-white"
-                aria-label={`Remove ${tag}`}
+                aria-label={t('Remove {tag}', { tag })}
               >
-                ×
+                {t('×')}
               </button>
             </span>
           ))}
@@ -318,7 +321,7 @@ export function SpecialtyMultiSelect({
             value={tagDraft}
             maxLength={MAX_SPECIALTY_TAG_LENGTH}
             disabled={disabled || tags.length >= MAX_SPECIALTY_TAGS}
-            placeholder="e.g. React, Python"
+            placeholder={t('e.g. React, Python')}
             onChange={(event) => setTagDraft(event.target.value)}
             onKeyDown={(event) => {
               if (event.key === 'Enter') {
@@ -334,7 +337,7 @@ export function SpecialtyMultiSelect({
             onClick={addTag}
             className="rounded-xl bg-neutral-900 px-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900"
           >
-            Add
+            {t('Add')}
           </button>
         </div>
       </div>

@@ -9,6 +9,7 @@ import type { TaggedUserRef } from '@/types/creator-content';
 import { CONTENT_MOODS, type ContentMood } from '@/components/creator/creator-content-enrichments';
 import { EmojiPicker } from '@/components/ui/EmojiPicker';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorContentComposeToolsProps = {
   locale?: 'fr' | 'en';
@@ -24,6 +25,9 @@ type CreatorContentComposeToolsProps = {
   /** `icons`: X-style row of accent icon buttons (label kept as tooltip / aria-label). */
   variant?: 'chips' | 'icons';
   showMood?: boolean;
+  /** `above`: panels (tag people, emoji) open upward on phones — the toolbar sits at the bottom of the
+   *  sheet — and downward from sm, where the centred card has room under it. */
+  panelPlacement?: 'below' | 'above';
 };
 
 type Panel = 'mood' | 'tag' | 'emoji' | null;
@@ -92,7 +96,9 @@ export function CreatorContentComposeTools({
   hasMedia,
   variant = 'chips',
   showMood = true,
+  panelPlacement = 'below',
 }: CreatorContentComposeToolsProps) {
+  const t = useT();
   const iconOnly = variant === 'icons';
   const panelId = useId();
   const rootRef = useRef<HTMLDivElement>(null);
@@ -148,7 +154,7 @@ export function CreatorContentComposeTools({
           }));
           setTagResults(users.filter((u) => !taggedUsers.some((t) => t.id === u.id)));
         } catch (e) {
-          setTagError(getApiErrorMessage(e, 'Search failed.'));
+          setTagError(getApiErrorMessage(e, t('Search failed.')));
           setTagResults([]);
         } finally {
           setTagLoading(false);
@@ -156,7 +162,7 @@ export function CreatorContentComposeTools({
       })();
     }, 300);
     return () => window.clearTimeout(timer);
-  }, [panel, tagQuery, taggedUsers]);
+  }, [panel, tagQuery, taggedUsers, t]);
 
   useEffect(() => {
     const onDocClick = (e: MouseEvent) => {
@@ -184,7 +190,9 @@ export function CreatorContentComposeTools({
   };
 
   return (
-    <div ref={rootRef} className="relative">
+    /* `above`: no positioning context of its own — the panels anchor to the caller's bar (which is
+       `relative`), so they span / align with the whole bar instead of overflowing the screen edge. */
+    <div ref={rootRef} className={panelPlacement === 'above' ? '' : 'relative'}>
       <div className={`flex flex-wrap items-center ${iconOnly ? '-ml-2 gap-0.5' : 'gap-1.5'}`}>
         <ToolChip
           label={copy.media}
@@ -260,10 +268,16 @@ export function CreatorContentComposeTools({
           className={`absolute z-30 mt-2 rounded-xl border border-neutral-200/60 bg-white shadow-lg dark:border-neutral-700 dark:bg-neutral-900 ${
             panel === 'emoji'
               ? `overflow-hidden p-0 shadow-[0_16px_48px_-16px_rgba(0,0,0,0.35)] ${
-                  iconOnly ? 'left-0 top-full' : 'bottom-full left-0 mb-2 mt-0 sm:left-auto sm:right-0'
+                  iconOnly
+                    ? panelPlacement === 'above'
+                      ? 'bottom-full right-0 mb-2 mt-0 max-w-full sm:bottom-auto sm:top-full sm:mb-0 sm:mt-2'
+                      : 'left-0 top-full'
+                    : 'bottom-full left-0 mb-2 mt-0 sm:left-auto sm:right-0'
                 }`
               : iconOnly
-                ? 'left-0 top-full w-[min(22rem,calc(100vw-3rem))] p-3'
+                ? panelPlacement === 'above'
+                  ? 'bottom-full left-0 right-0 mb-2 mt-0 p-3 sm:bottom-auto sm:top-full sm:mb-0 sm:mt-2'
+                  : 'left-0 top-full w-[min(22rem,calc(100vw-3rem))] p-3'
                 : 'left-0 right-0 top-full p-3'
           }`}
         >
@@ -283,7 +297,7 @@ export function CreatorContentComposeTools({
                     }`}
                   >
                     <span aria-hidden>{mood.emoji}</span>
-                    <span className="capitalize">{mood.label}</span>
+                    <span className="capitalize">{t(mood.label)}</span>
                   </button>
                 ))}
               </div>
@@ -325,9 +339,9 @@ export function CreatorContentComposeTools({
                         type="button"
                         onClick={() => onTaggedUsersChange(taggedUsers.filter((u) => u.id !== user.id))}
                         className="text-neutral-500 hover:text-neutral-800 dark:hover:text-white"
-                        aria-label={`Remove ${user.fullName}`}
+                        aria-label={t('Remove {fullName}', { fullName: user.fullName })}
                       >
-                        ×
+                        {t('×')}
                       </button>
                     </span>
                   ))}

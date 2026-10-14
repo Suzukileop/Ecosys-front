@@ -1,0 +1,91 @@
+/* ==========================================================================
+   Notifications — the page and the bell's panel, in News's X palette
+   --------------------------------------------------------------------------
+   Everything here is scoped under `.x-notifications` (the page root and the panel root, which both
+   also carry `news-theme news-feed news-mono` for the News tokens). Owned by the notifications
+   section; app/globals.css keeps its older `.notification-*` rules, which nothing here uses.
+
+   `--xn-row-bg` is the tone a row sits on and `--xn-row-hover` the tone under the pointer: on the
+   page the rows live in a square card (#F7F9F9 / #16181C), in the panel straight on the sheet
+   (#FFF / #000). The avatar's type badge is "cut out" of that tone (its glyph and its 2px ring take
+   it), so it follows the row when hovered.
+   ========================================================================== */
+.x-notifications {
+  --xn-row-bg: var(--gn-surface, #f7f9f9);
+  --xn-row-hover: var(--gn-hover-strong, #eff3f4);
+  --xn-disc-line: #cfd9de;
+}
+.dark .x-notifications {
+  --xn-disc-line: #333639;
+}
+
+.x-notifications.x-notifications--panel {
+  --xn-row-bg: #ffffff;
+  --xn-row-hover: #f7f9f9;
+}
+.dark .x-notifications.x-notifications--panel {
+  --xn-row-bg: #000000;
+  --xn-row-hover: #16181c;
+}
+
+/* Rows: no fill at rest (the card or sheet shows through), the hover tone under the pointer and on
+   keyboard focus, plus an inset ink ring for focus. */
+.x-notifications .xn-row:hover,
+.x-notifications .xn-row:focus-visible {
+  background-color: var(--xn-row-hover);
+}
+.x-notifications .xn-row:focus-visible {
+  box-shadow: inset 0 0 0 2px var(--gn-ring, rgba(15, 20, 25, 0.35));
+}
+@media (hover: none) {
+  /* Touch: no sticky hover after a tap; a brief press tone instead. */
+  .x-notifications .xn-row:hover {
+    background-color: transparent;
+  }
+  .x-notifications .xn-row:active {
+    background-color: var(--xn-row-hover);
+  }
+}
+
+/* The 20px ink badge on an avatar: glyph and ring in the row's tone. */
+.x-notifications .xn-badge {
+  color: var(--xn-row-bg);
+  box-shadow: 0 0 0 2px var(--xn-row-bg);
+  transition: box-shadow 150ms ease, color 150ms ease;
+}
+.x-notifications .xn-row:hover .xn-badge,
+.x-notifications .xn-row:focus-visible .xn-badge {
+  color: var(--xn-row-hover);
+  box-shadow: 0 0 0 2px var(--xn-row-hover);
+}
+@media (hover: none) {
+  .x-notifications .xn-row:hover .xn-badge {
+    color: var(--xn-row-bg);
+    box-shadow: 0 0 0 2px var(--xn-row-bg);
+  }
+}
+
+/* Outlined discs (no-actor rows, the visit bundle, the empty state): the secondary pill's 1px
+   frame, no fill. */
+.x-notifications .xn-disc {
+  box-shadow: inset 0 0 0 1px var(--xn-disc-line);
+}
+
+/* The panel's list: a thin neutral scrollbar (no accent). */
+.x-notifications .xn-scroll {
+  scrollbar-width: thin;
+  scrollbar-color: rgba(15, 20, 25, 0.2) transparent;
+}
+.dark .x-notifications .xn-scroll {
+  scrollbar-color: rgba(231, 233, 234, 0.2) transparent;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .x-notifications .xn-row,
+  .x-notifications .xn-badge {
+    transition: none;
+  }
+  .x-notifications.x-notifications--panel {
+    animation: none !important;
+  }
+}

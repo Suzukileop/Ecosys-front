@@ -12,6 +12,7 @@ import {
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
 
 const DEFAULT_TITLE_TEXT = "Let's work together.";
 
@@ -24,10 +25,12 @@ const TITLE_SIZE_CLASS: Record<PortfolioFooterHeaderTitleSize, string> = {
 
 /** A genuinely heavy display scale — the reference brief is a monumental, black-weight
  *  uppercase headline, not Team/Work's lighter editorial default. */
+// Bold stays black — the monumental default — and the lighter options now mean what they say
+// (Light used to render at 400, Regular at 600).
 const TITLE_WEIGHT_CLASS: Record<PortfolioFooterHeaderTitleWeight, string> = {
-  light: '!font-normal',
-  regular: '!font-semibold',
-  semibold: '!font-bold',
+  light: '!font-light',
+  regular: '!font-normal',
+  semibold: '!font-semibold',
   bold: '!font-black',
 };
 
@@ -46,14 +49,17 @@ export function FooterHeaderEditorialHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_FOOTER_PRESENTATION;
-  const centered = presentation.headerDesignAlignment === 'center';
+  const show = headerElementVisibility(presentation.headerHiddenElements, 'footer-editorial');
+  const align = presentation.headerDesignAlignment ?? 'left';
   const titleText = (presentation.headerEditorialTitleText || DEFAULT_TITLE_TEXT).trim();
   const subtitleText = (presentation.headerEditorialSubtitleText || '').trim();
   const titleInk = footerHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
 
   return (
     <header
-      className={`pf-footer-header-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
+      className={`pf-footer-header-editorial-header relative w-full ${
+        align === 'center' ? 'text-center' : align === 'right' ? 'text-right' : 'text-left'
+      }`}
       style={{
         marginBottom: `${FOOTER_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem`,
         paddingTop: `${FOOTER_HEADER_PADDING_REM[presentation.headerPaddingTop ?? 'none']}rem`,
@@ -61,19 +67,27 @@ export function FooterHeaderEditorialHeader({
       }}
       data-footer-header="editorial"
     >
-      <div className={`pf-footer-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
+      <div
+        className={`pf-footer-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${
+          align === 'center' ? 'items-center sm:flex-col' : align === 'right' ? 'items-end sm:flex-row-reverse' : ''
+        }`}
+      >
         <div className="min-w-0 max-w-4xl">
-          <h2
-            className={`mb-0 ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'xl']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'bold']} uppercase tracking-[-0.02em] lg:leading-[0.92]`}
-            style={{ color: titleInk }}
-          >
-            <span className="pf-footer-header-editorial-title-mask block overflow-hidden">
-              <span className="pf-footer-header-editorial-title-line block">{titleText}</span>
-            </span>
-          </h2>
-          {subtitleText ? (
+          {show('title') ? (
+            <h2
+              className={`mb-0 ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'xl']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'bold']} uppercase tracking-[-0.02em] lg:leading-[0.92]`}
+              style={{ color: titleInk }}
+            >
+              <span className="pf-footer-header-editorial-title-mask block overflow-hidden">
+                <span className="pf-footer-header-editorial-title-line block">{titleText}</span>
+              </span>
+            </h2>
+          ) : null}
+          {show('subtitle') && subtitleText ? (
             <p
-              className="pf-footer-header-editorial-sub mb-0 mt-6 max-w-xl text-sm leading-relaxed sm:text-base"
+              className={`pf-footer-header-editorial-sub mb-0 mt-6 max-w-xl text-sm leading-relaxed sm:text-base ${
+                align === 'center' ? 'mx-auto' : align === 'right' ? 'ms-auto' : ''
+              }`}
               style={{ color: `color-mix(in srgb, ${titleInk} 60%, transparent)` }}
             >
               {subtitleText}

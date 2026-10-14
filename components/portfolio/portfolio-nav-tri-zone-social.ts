@@ -2,6 +2,7 @@ import type {
   PortfolioNavTriZoneSocialLinkGap,
   PortfolioNavTriZoneSocialLinkSize,
 } from '@/components/portfolio/portfolio-settings-types';
+import { msg } from '@/lib/i18n/config';
 
 /** fontPx mirrors the validated progressive-size pill (see WorkSizePill) — each
  *  option's own label grows with the size it represents. */
@@ -21,10 +22,10 @@ export const PORTFOLIO_NAV_TRI_ZONE_SOCIAL_LINK_GAP_OPTIONS: {
   label: string;
   sizePx: number;
 }[] = [
-  { value: 'sm', label: 'Tight', sizePx: 12 },
-  { value: 'md', label: 'Normal', sizePx: 15 },
-  { value: 'lg', label: 'Wide', sizePx: 18 },
-  { value: 'xl', label: 'Extra wide', sizePx: 20 },
+  { value: 'sm', label: msg('Tight'), sizePx: 12 },
+  { value: 'md', label: msg('Normal'), sizePx: 15 },
+  { value: 'lg', label: msg('Wide'), sizePx: 18 },
+  { value: 'xl', label: msg('Extra wide'), sizePx: 20 },
 ];
 
 export function portfolioNavTriZoneSocialLinkGapClass(

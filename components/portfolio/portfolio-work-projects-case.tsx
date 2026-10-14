@@ -25,6 +25,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsCaseSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const CASE_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
 const CASE_HIDDEN: CSSProperties = {
@@ -456,6 +457,7 @@ function CaseThumbnail({
   wash: string;
   clipStyle: CSSProperties;
 }) {
+  const t = useT();
   return (
     <div className={caseThumbHeightClass(height)} style={{ backgroundColor: surface }}>
       {url ? (
@@ -482,7 +484,7 @@ function CaseThumbnail({
           />
         </div>
       ) : (
-        <span className="sr-only">No preview image</span>
+        <span className="sr-only">{t('No preview image')}</span>
       )}
     </div>
   );
@@ -546,6 +548,7 @@ function CaseMagneticCursor({
   stageRef: RefObject<HTMLElement | null>;
   accent: string;
 }) {
+  const t = useT();
   const cursorRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -592,7 +595,7 @@ function CaseMagneticCursor({
       aria-hidden
       style={{ ['--pf-case-cursor-accent' as string]: accent }}
     >
-      <span className="pf-work-case-cursor-label">View project</span>
+      <span className="pf-work-case-cursor-label">{t('View project')}</span>
     </div>
   );
 }
@@ -753,6 +756,7 @@ function CaseSheet({
   settings: PortfolioWorkProjectsCaseSettings;
   revealed: boolean;
 }) {
+  const t = useT();
   const accent = presentation.ctaColor || presentation.categoryActiveColor || '#2563eb';
   const ink = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted =
@@ -772,7 +776,7 @@ function CaseSheet({
   const tagSurface = presentation.cardBorderColor || rule;
   const categoryColor = accent && ink && sameHex(accent, ink) ? muted : accent;
 
-  const title = item.title?.trim() || 'Untitled';
+  const title = item.title?.trim() || t('Untitled');
   const role = workRoleLabel(item);
   const category = workCategoryLabel(item);
   const description = item.description?.trim() || '';
@@ -788,10 +792,10 @@ function CaseSheet({
   const showStack = settings.showStack !== false && tools.length > 0;
   const showConsult = settings.showConsult !== false && Boolean(href);
   const showFieldLabels = settings.showFieldLabels !== false;
-  const descriptionLabel = settings.descriptionLabel?.trim() || 'Summary';
-  const stackLabel = settings.stackLabel?.trim() || 'Stack';
-  const linkLabel = settings.linkLabel?.trim() || 'Link';
-  const consultLabel = settings.consultLabel?.trim() || 'Consult this project';
+  const descriptionLabel = settings.descriptionLabel?.trim() || t('Summary');
+  const stackLabel = settings.stackLabel?.trim() || t('Stack');
+  const linkLabel = settings.linkLabel?.trim() || t('Link');
+  const consultLabel = settings.consultLabel?.trim() || t('Consult this project');
   const consultDesign = settings.consultDesign ?? 'bracket';
   const consultInGrid = showConsult && href && consultDesign !== 'footer';
   const sheetFrame = settings.sheetFrame ?? 'thin';
@@ -1014,7 +1018,7 @@ function CaseSheet({
         <CaseConsultAnchor
           href={href}
           className="absolute inset-0 z-[2]"
-          ariaLabel={`View ${title}`}
+          ariaLabel={t('View {title}', { title })}
           magnetic
           noColorTransition
         >
@@ -1040,6 +1044,7 @@ export function ProjectsCaseGallery({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const itemsKey = items.map((item) => item.id).join('|');
   const { rootRef, revealed } = useCaseGalleryMotion(itemsKey);
   const settings = mergeProjectsCaseSettings(
@@ -1055,7 +1060,7 @@ export function ProjectsCaseGallery({
     <section
       ref={rootRef}
       className="relative w-full"
-      aria-label="Project cases"
+      aria-label={t('Project cases')}
       data-case-gallery=""
       data-pf-no-color-transition=""
     >

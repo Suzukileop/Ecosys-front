@@ -11,6 +11,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { mediaImageSrc } from '@/lib/media-image-url';
 import { repostContent } from '@/lib/marketplace-api';
 import type { PublicContentFeedItem } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const NOTE_MAX = 3000;
 
@@ -29,6 +30,7 @@ export function ContentPostRepostDialog({
   onClose: () => void;
   onReposted: (repost: PublicContentFeedItem) => void;
 }) {
+  const t = useT();
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -56,29 +58,31 @@ export function ContentPostRepostDialog({
       const repost = await repostContent(original.id, note);
       onReposted(repost);
     } catch (e) {
-      setError(getApiErrorMessage(e, 'Unable to repost this.'));
+      setError(getApiErrorMessage(e, t('Unable to repost this.')));
       setSubmitting(false);
     }
   };
 
   return (
-    <ContentPostDialogShell open={open} title="Repost" onClose={onClose} busy={submitting}>
+    <ContentPostDialogShell open={open} title={t('Repost')} onClose={onClose} busy={submitting}>
+      {/* X's quote composer: a borderless writing area, the quoted post in a rounded hairline box
+          under it, then the actions — full-width on phones, right-aligned pills from sm. */}
       <div className="px-5 pb-5">
         <label htmlFor="repost-note" className="sr-only">
-          Add your thoughts
+          {t('Add your thoughts')}
         </label>
         <textarea
           id="repost-note"
           value={note}
           onChange={(e) => setNote(e.target.value)}
           maxLength={NOTE_MAX}
-          rows={3}
+          rows={2}
           autoFocus
-          placeholder="Add your thoughts (optional)"
-          className="block w-full resize-none rounded-xl border border-black/[0.14] bg-transparent px-3.5 py-3 text-[15px] text-[#111111] caret-[#FF5722] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:border-white/[0.16] dark:text-white dark:placeholder:text-neutral-600"
+          placeholder={t('Add your thoughts (optional)')}
+          className="block w-full resize-none bg-transparent py-1 text-[17px] leading-6 text-[#0F1419] caret-current outline-none placeholder:text-[#536471] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
         />
 
-        <div className="mt-4 flex gap-3 overflow-hidden rounded-xl border border-black/[0.1] p-3 dark:border-white/[0.14]">
+        <div className="mt-3 flex gap-3 overflow-hidden rounded-2xl border border-[#CFD9DE] p-3 dark:border-[#2F3336]">
           {cover ? (
             <span className="relative h-16 w-16 shrink-0 overflow-hidden rounded-lg bg-neutral-100 dark:bg-neutral-900">
               {/* eslint-disable-next-line @next/next/no-img-element */}
@@ -102,29 +106,39 @@ export function ContentPostRepostDialog({
                   </span>
                 }
               />
-              <span className="truncate text-[14px] font-semibold text-[#111111] dark:text-white">{creatorName}</span>
+              <span className="truncate text-[15px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{creatorName}</span>
             </div>
             {excerpt ? (
-              <p className="mt-1.5 line-clamp-3 text-[14px] leading-snug text-neutral-600 dark:text-neutral-300">{excerpt}</p>
+              <p className="mt-1 line-clamp-3 text-[15px] leading-5 text-[#0F1419] dark:text-[#E7E9EA]">{excerpt}</p>
             ) : null}
           </div>
         </div>
 
         {error ? (
-          <p className="mt-3 text-[14px] font-medium text-red-600 dark:text-red-400" role="alert">
+          <p className="mt-3 text-[14px] font-medium text-[#F4212E]" role="alert">
             {error}
           </p>
         ) : null}
 
-        <div className="mt-5 flex items-center justify-end gap-2">
-          <button type="button" onClick={onClose} disabled={submitting} className={DIALOG_SECONDARY_BUTTON}>
-            Cancel
+        <div className="mt-5 flex items-center gap-2 sm:justify-end">
+          <button
+            type="button"
+            onClick={onClose}
+            disabled={submitting}
+            className={`${DIALOG_SECONDARY_BUTTON} flex-1 sm:flex-none`}
+          >
+            {t('Cancel')}
           </button>
-          <button type="button" onClick={() => void submit()} disabled={submitting} className={DIALOG_PRIMARY_BUTTON}>
+          <button
+            type="button"
+            onClick={() => void submit()}
+            disabled={submitting}
+            className={`${DIALOG_PRIMARY_BUTTON} flex-1 sm:flex-none`}
+          >
             {submitting ? (
               <span className="h-3.5 w-3.5 animate-spin rounded-full border-2 border-current border-t-transparent" aria-hidden />
             ) : null}
-            Repost
+            {t('Repost')}
           </button>
         </div>
       </div>

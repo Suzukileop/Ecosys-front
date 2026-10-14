@@ -1,5 +1,8 @@
+'use client';
+
 import type { ContactVisibilityLevel } from '@/lib/contact-visibility';
 import { CONTACT_VISIBILITY_OPTIONS } from '@/lib/contact-visibility';
+import { useT } from '@/lib/i18n/I18nProvider';
 import {
   profileFormInputClass,
   profileSectionMutedTextClass,
@@ -13,6 +16,7 @@ type ContactVisibilitySelectProps = {
 };
 
 export function ContactVisibilitySelect({ id, label, value, onChange }: ContactVisibilitySelectProps) {
+  const t = useT();
   return (
     <div className="flex flex-col gap-1.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3">
       <label htmlFor={id} className={`${profileSectionMutedTextClass} font-semibold text-neutral-700 dark:text-neutral-300`}>
@@ -26,7 +30,7 @@ export function ContactVisibilitySelect({ id, label, value, onChange }: ContactV
       >
         {CONTACT_VISIBILITY_OPTIONS.map((option) => (
           <option key={option.value} value={option.value}>
-            {option.label}
+            {t(option.label)}
           </option>
         ))}
       </select>

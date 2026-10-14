@@ -4,6 +4,7 @@ import { useEffect, useRef } from 'react';
 import type { Client } from '@stomp/stompjs';
 import { useWebRtcCall } from '@/hooks/useWebRtcCall';
 import type { CallSession, CallType } from '@/types/messaging';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type DiscussionCallPanelProps = {
   conversationId: string;
@@ -26,6 +27,7 @@ export function DiscussionCallPanel({
   connected,
   onEnded,
 }: DiscussionCallPanelProps) {
+  const t = useT();
   const {
     localStream,
     remoteStream,
@@ -68,13 +70,13 @@ export function DiscussionCallPanel({
   if (!callSession) return null;
 
   return (
-    <div className="mb-3 rounded-xl border border-green-200 bg-green-50 p-3 dark:border-green-900/50 dark:bg-green-950/30">
+    <div className="mx-4 mb-2 bg-[var(--msg-surface)] px-4 py-3 sm:mx-6">
       <div className="flex items-center justify-between gap-2">
         <div>
-          <p className="text-sm font-semibold text-green-900 dark:text-green-200">
-            {callType === 'VIDEO' ? 'Video call' : 'Voice call'} — {status}
+          <p className="text-[15px] font-bold text-[var(--msg-ink)]">
+            {callType === 'VIDEO' ? t('Video call') : t('Voice call')} — {status}
           </p>
-          <p className="text-xs text-green-700 dark:text-green-400">{callSession.initiatorName}</p>
+          <p className="text-[13px] text-[var(--msg-ink-faint)]">{callSession.initiatorName}</p>
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {isRinging ? (
@@ -82,30 +84,30 @@ export function DiscussionCallPanel({
               <button
                 type="button"
                 onClick={() => acceptCall()}
-                className="rounded-full bg-green-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-green-700"
+                className="inline-flex h-9 items-center rounded-full bg-[var(--msg-primary)] px-4 text-[14px] font-bold text-[var(--msg-primary-ink)] hover:bg-[var(--msg-primary-hover)]"
               >
-                Accept
+                {t('Accept')}
               </button>
               <button
                 type="button"
                 onClick={() => void declineCall()}
-                className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+                className="inline-flex h-9 items-center rounded-full bg-[#F4212E] px-4 text-[14px] font-bold text-white hover:bg-[#DC1D29]"
               >
-                Decline
+                {t('Decline')}
               </button>
             </>
           ) : (
             <button
               type="button"
               onClick={() => void hangUp()}
-              className="rounded-full bg-red-600 px-3 py-1.5 text-xs font-semibold text-white hover:bg-red-700"
+              className="inline-flex h-9 items-center rounded-full bg-[#F4212E] px-4 text-[14px] font-bold text-white hover:bg-[#DC1D29]"
             >
-              End
+              {t('End')}
             </button>
           )}
         </div>
       </div>
-      {error && <p className="mt-2 text-xs text-red-600 dark:text-red-400">{error}</p>}
+      {error && <p className="mt-2 text-[13px] text-[#F4212E]">{error}</p>}
       {callType === 'VIDEO' && !isRinging && (
         <div className="mt-3 grid grid-cols-2 gap-2">
           <video ref={localVideoRef} autoPlay muted playsInline className="aspect-video rounded-lg bg-black" />

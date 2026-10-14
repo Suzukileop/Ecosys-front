@@ -4,10 +4,12 @@ import { useEffect, useState } from 'react';
 import Link from 'next/link';
 import { useRouter } from 'next/navigation';
 import { readMarketplaceReturnPoint, requestMarketplaceRestore } from '@/lib/marketplace-return';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 const FALLBACK_HREF = '/marketplace';
 
 export function MarketplaceBackLink({ className = '' }: { className?: string }) {
+  const t = useT();
   const router = useRouter();
   const [href, setHref] = useState(FALLBACK_HREF);
 
@@ -31,7 +33,7 @@ export function MarketplaceBackLink({ className = '' }: { className?: string }) 
       <span aria-hidden className="transition-transform duration-300 group-hover:-translate-x-0.5">
         ←
       </span>
-      Back to marketplace
+      {t('Back to marketplace')}
     </Link>
   );
 }

@@ -1,24 +1,31 @@
 'use client';
 
 import { useId, type InputHTMLAttributes, type ReactNode } from 'react';
+import { useT } from '@/lib/i18n/I18nProvider';
 
-export const SETTINGS_CARD_CLASS =
-  'overflow-hidden rounded-lg border border-black/10 bg-white dark:border-0 dark:bg-white/[0.06]';
+/*
+ * Settings in the News skin (X palette): the page root carries `news-theme news-feed news-mono`, so the
+ * pieces below read the --gn-* tokens. Like My Profile's forms, blocks are not cards: each section sits
+ * straight on the page, opened by the same hairline that closes the profile header (`.gn-rail-under`:
+ * #E1E8ED / #2F3336). From lg a titled section is two columns — its title and description on the left,
+ * its controls on the right — so the wide column reads as a settings sheet rather than a stretched form.
+ * Buttons are pills, like My Profile's "Save information" and the rail's "Publish a post".
+ */
+export const SETTINGS_SECTION_CLASS = 'border-t border-[#E1E8ED] py-6 dark:border-[#2F3336] sm:py-8';
 
-export const PRIMARY_BUTTON_CLASS =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-[#111111] px-4 text-[14px] font-medium text-white transition-colors duration-200 hover:bg-black disabled:cursor-not-allowed disabled:opacity-40 dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200';
+const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
-export const SECONDARY_BUTTON_CLASS =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-black/10 bg-white px-4 text-[14px] font-medium text-[#111111] transition-colors duration-200 hover:bg-black/[0.03] disabled:cursor-not-allowed disabled:opacity-40 dark:border-white/15 dark:bg-transparent dark:text-white dark:hover:bg-white/[0.06]';
+export const PRIMARY_BUTTON_CLASS = `inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING}`;
 
-export const DANGER_BUTTON_CLASS =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-red-600/25 bg-white px-4 text-[14px] font-medium text-red-600 transition-colors duration-200 hover:bg-red-50 disabled:cursor-not-allowed disabled:opacity-40 dark:border-red-400/30 dark:bg-transparent dark:text-red-400 dark:hover:bg-red-500/10';
+export const SECONDARY_BUTTON_CLASS = `inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#CFD9DE] bg-transparent px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover)] disabled:cursor-not-allowed disabled:opacity-40 dark:border-[#536471] ${FOCUS_RING}`;
+
+export const DANGER_BUTTON_CLASS = `inline-flex h-10 items-center justify-center gap-2 rounded-full border border-[#F4212E]/50 bg-transparent px-5 text-[15px] font-semibold leading-5 text-[#F4212E] transition-colors duration-150 hover:bg-[#F4212E]/10 disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING}`;
 
 export function SettingsSectionHeader({ title, description }: { title: string; description: string }) {
   return (
-    <header className="mb-8">
-      <h2 className="text-[28px] font-semibold tracking-[-0.02em] text-[#111111] dark:text-white">{title}</h2>
-      <p className="mt-2 max-w-xl text-[15px] leading-relaxed text-[#666666] dark:text-neutral-400">{description}</p>
+    <header className="mb-4 px-4 sm:mb-6 sm:px-0">
+      <h2 className="text-[24px] font-extrabold leading-[30px] tracking-[-0.015em] text-[color:var(--gn-ink)]">{title}</h2>
+      <p className="mt-1.5 max-w-xl text-[15px] leading-5 text-[color:var(--gn-ink2)]">{description}</p>
     </header>
   );
 }
@@ -28,28 +35,44 @@ export function SettingsCard({
   description,
   children,
   footer,
+  tone = 'default',
 }: {
   title?: string;
   description?: string;
   children: ReactNode;
   footer?: ReactNode;
+  /** `danger` sets the title in red (the "Danger zone"). */
+  tone?: 'default' | 'danger';
 }) {
+  /* Rows pad themselves (py-4); the section's own padding replaces theirs at its edges. Untitled, and
+     beside the title from lg, the first row starts flush with the section's top. */
+  const body = (
+    <div className={`min-w-0 [&>*:last-child]:pb-0 ${title ? 'lg:[&>*:first-child]:pt-0' : '[&>*:first-child]:pt-0'}`}>
+      {children}
+    </div>
+  );
   return (
-    <section className={SETTINGS_CARD_CLASS}>
+    <section className={`${SETTINGS_SECTION_CLASS} ${title ? 'lg:grid lg:grid-cols-[15rem_minmax(0,1fr)] lg:gap-12' : ''}`}>
       {title ? (
-        <div className="border-b border-black/[0.05] px-6 py-5 dark:border-white/[0.05]">
-          <h3 className="text-[16px] font-semibold text-[#111111] dark:text-white">{title}</h3>
+        <div className="px-4 pb-1 sm:px-0">
+          <h3
+            className={`text-[17px] font-bold leading-[22px] ${
+              tone === 'danger' ? 'text-[#F4212E]' : 'text-[color:var(--gn-ink)]'
+            }`}
+          >
+            {title}
+          </h3>
           {description ? (
-            <p className="mt-1 text-[14px] leading-relaxed text-[#666666] dark:text-neutral-400">{description}</p>
+            <p className="mt-1 text-[14px] leading-5 text-[color:var(--gn-ink2)]">{description}</p>
           ) : null}
         </div>
       ) : null}
-      <div className="divide-y divide-black/[0.05] dark:divide-white/[0.05]">{children}</div>
-      {footer ? (
-        <div className="flex flex-wrap items-center justify-end gap-3 border-t border-black/[0.05] bg-black/[0.015] px-6 py-4 dark:border-white/[0.05] dark:bg-white/[0.02]">
-          {footer}
-        </div>
-      ) : null}
+      <div className="min-w-0">
+        {body}
+        {footer ? (
+          <div className="flex flex-wrap items-center justify-end gap-3 px-4 pt-5 sm:px-0">{footer}</div>
+        ) : null}
+      </div>
     </section>
   );
 }
@@ -60,18 +83,25 @@ export function SettingRow({
   htmlFor,
   children,
   stacked = false,
+  inline = false,
 }: {
   label: string;
   description?: ReactNode;
   htmlFor?: string;
   children?: ReactNode;
   stacked?: boolean;
+  /** Keep the control on the right even on phones (toggles). */
+  inline?: boolean;
 }) {
-  const labelClass = 'block text-[15px] font-medium text-[#111111] dark:text-white';
+  const labelClass = 'block text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] [overflow-wrap:anywhere]';
   return (
     <div
-      className={`flex gap-4 px-6 py-5 ${
-        stacked ? 'flex-col' : 'flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-8'
+      className={`flex gap-3 px-4 py-4 sm:px-0 ${
+        stacked
+          ? 'flex-col'
+          : inline
+            ? 'flex-row items-center justify-between sm:gap-8'
+            : 'flex-col sm:flex-row sm:items-center sm:justify-between sm:gap-8'
       }`}
     >
       <div className="min-w-0">
@@ -83,7 +113,7 @@ export function SettingRow({
           <p className={labelClass}>{label}</p>
         )}
         {description ? (
-          <div className="mt-1 text-[14px] leading-relaxed text-[#666666] dark:text-neutral-400">{description}</div>
+          <div className="mt-1 text-[14px] leading-5 text-[color:var(--gn-ink2)]">{description}</div>
         ) : null}
       </div>
       {children ? <div className={stacked ? 'w-full' : 'shrink-0'}>{children}</div> : null}
@@ -110,14 +140,17 @@ function Toggle({
       aria-label={label}
       disabled={disabled}
       onClick={() => onChange(!checked)}
-      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 disabled:cursor-not-allowed disabled:opacity-40 ${
-        checked ? 'bg-[#111111] dark:bg-white' : 'bg-black/[0.12] dark:bg-white/[0.16]'
+      data-pf-no-color-transition
+      className={`relative inline-flex h-6 w-11 shrink-0 items-center rounded-full transition-colors duration-200 disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING} ${
+        checked ? 'bg-[color:var(--gn-primary)]' : 'bg-[#CFD9DE] dark:bg-[#3E4144]'
       }`}
     >
       <span
         aria-hidden
-        className={`inline-block h-5 w-5 rounded-full bg-white shadow-[0_1px_3px_rgba(0,0,0,0.2)] transition-transform duration-200 dark:bg-[#111111] ${
-          checked ? 'translate-x-[1.375rem]' : 'translate-x-0.5 dark:bg-neutral-300'
+        className={`inline-block h-5 w-5 rounded-full shadow-[0_1px_2px_rgba(15,20,25,0.25)] transition-transform duration-200 ${
+          checked
+            ? 'translate-x-[1.375rem] bg-[color:var(--gn-primary-ink)] rtl:-translate-x-[1.375rem]'
+            : 'translate-x-0.5 bg-white dark:bg-[#E7E9EA] rtl:-translate-x-0.5'
         }`}
       />
     </button>
@@ -138,7 +171,7 @@ export function ToggleRow({
   disabled?: boolean;
 }) {
   return (
-    <SettingRow label={label} description={description}>
+    <SettingRow label={label} description={description} inline>
       <Toggle label={label} checked={checked} onChange={onChange} disabled={disabled} />
     </SettingRow>
   );
@@ -157,11 +190,12 @@ export function SegmentedControl<T extends string>({
   label: string;
   disabled?: boolean;
 }) {
+  const t = useT();
   return (
     <div
       role="radiogroup"
       aria-label={label}
-      className="inline-flex w-full flex-wrap gap-1 rounded-lg border border-black/10 p-1 sm:w-auto dark:border-white/10"
+      className="inline-flex w-full flex-wrap gap-1 rounded-full bg-[color:var(--gn-field)] p-1 sm:w-auto"
     >
       {options.map((option) => {
         const active = option.value === value;
@@ -173,13 +207,14 @@ export function SegmentedControl<T extends string>({
             aria-checked={active}
             disabled={disabled}
             onClick={() => onChange(option.value)}
-            className={`h-9 flex-1 whitespace-nowrap rounded-md px-3.5 text-[14px] transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 disabled:cursor-not-allowed sm:flex-none ${
+            data-pf-no-color-transition
+            className={`h-9 flex-1 whitespace-nowrap rounded-full px-4 text-[14px] leading-5 transition-colors duration-150 disabled:cursor-not-allowed sm:flex-none ${FOCUS_RING} ${
               active
-                ? 'bg-[#111111] font-medium text-white dark:bg-white dark:text-[#111111]'
-                : 'text-[#444444] hover:bg-black/[0.04] dark:text-neutral-300 dark:hover:bg-white/[0.06]'
+                ? 'bg-[color:var(--gn-primary)] font-semibold text-[color:var(--gn-primary-ink)]'
+                : 'font-medium text-[color:var(--gn-ink2)] hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)]'
             }`}
           >
-            {option.label}
+            {t(option.label)}
           </button>
         );
       })}
@@ -203,28 +238,28 @@ export function TextField({
   const id = input.id ?? generatedId;
   return (
     <div className="flex flex-col gap-2">
-      <label htmlFor={id} className="text-[14px] font-medium text-[#111111] dark:text-white">
+      <label htmlFor={id} className="text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)]">
         {label}
       </label>
       <div
-        className={`flex h-11 items-center rounded-lg border bg-white transition-colors duration-200 focus-within:border-[#111111] dark:bg-white/[0.03] dark:focus-within:border-white/60 ${
-          error ? 'border-red-500/60' : 'border-black/10 dark:border-white/10'
-        } ${input.disabled || input.readOnly ? 'bg-black/[0.02] dark:bg-white/[0.02]' : ''}`}
+        className={`flex h-11 items-center rounded-md bg-[color:var(--gn-field)] transition-shadow duration-150 focus-within:shadow-[inset_0_0_0_2px_var(--gn-ink)] ${
+          error ? 'shadow-[inset_0_0_0_1px_#F4212E]' : ''
+        } ${input.disabled || input.readOnly ? 'opacity-70' : ''}`}
       >
-        {prefix ? <span className="pl-3.5 text-[15px] text-[#888888] dark:text-neutral-500">{prefix}</span> : null}
+        {prefix ? <span className="ps-3.5 text-[15px] text-[color:var(--gn-ink2)]">{prefix}</span> : null}
         <input
           {...input}
           id={id}
           aria-invalid={error ? true : undefined}
-          className={`h-full w-full min-w-0 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-[#999999] read-only:text-[#666666] disabled:text-[#888888] dark:text-white dark:placeholder:text-neutral-600 dark:read-only:text-neutral-400 ${
-            prefix ? 'pl-0.5 pr-3.5' : 'px-3.5'
+          className={`h-full w-full min-w-0 bg-transparent text-[15px] text-[color:var(--gn-ink)] outline-none placeholder:text-[color:var(--gn-ink3)] read-only:text-[color:var(--gn-ink2)] disabled:text-[color:var(--gn-ink2)] ${
+            prefix ? 'pe-3.5 ps-0.5' : 'px-3.5'
           }`}
         />
       </div>
       {error ? (
-        <p className="text-[13px] text-red-600 dark:text-red-400">{error}</p>
+        <p className="text-[13px] leading-[18px] text-[#F4212E]">{error}</p>
       ) : hint ? (
-        <p className="text-[13px] text-[#888888] dark:text-neutral-500">{hint}</p>
+        <p className="text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">{hint}</p>
       ) : null}
     </div>
   );
@@ -239,11 +274,11 @@ export function Spinner({ className = 'h-4 w-4' }: { className?: string }) {
   );
 }
 
-export function formatSettingsDate(value: string | null | undefined, withTime = false): string {
+export function formatSettingsDate(value: string | null | undefined, withTime = false, localeTag = 'en-US'): string {
   if (!value) return '—';
   const date = new Date(value);
   if (Number.isNaN(date.getTime())) return '—';
-  return date.toLocaleString('en-US', {
+  return date.toLocaleString(localeTag, {
     month: 'long',
     day: 'numeric',
     year: 'numeric',

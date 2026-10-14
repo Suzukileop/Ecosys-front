@@ -24,6 +24,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   mergeProjectsShowcaseSettings,
 } from '@/components/portfolio/portfolio-work-settings';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 /** Same timing / easing principle as Gallery → Image haute + rangée. */
 const SHOWCASE_SLIDE_MS = 620;
@@ -459,12 +460,13 @@ function ShowcasePrimaryMedia({
    * skipped since the overlapping title covers that ground on that layout. */
   variant?: 'desktop' | 'mobile';
 }) {
+  const t = useT();
   const mediaUrl = item.mediaUrl?.trim() || null;
   const muted = presentation.subtitleColor;
   const border = presentation.cardBorderColor || muted;
   const radiusClass = showcaseRadiusClass(settings.mediaRadius ?? 'xl');
   const href = item.linkUrl?.trim() || null;
-  const title = item.title?.trim() || 'Project';
+  const title = item.title?.trim() || t('Project');
   const role = workRoleLabel(item);
   const showRole = variant === 'desktop' && settings.showRole !== false && Boolean(role);
   const sizes = variant === 'mobile' ? '100vw' : '(max-width: 1024px) 100vw, 58vw';
@@ -477,7 +479,7 @@ function ShowcasePrimaryMedia({
 
   const mediaNode = mediaUrl ? (
     href ? (
-      <ShowcaseHref href={href} className="absolute inset-0" ariaLabel={`Open ${title}`}>
+      <ShowcaseHref href={href} className="absolute inset-0" ariaLabel={t('Open {title}', { title })}>
         <span className="relative block h-full w-full">
           <Image
             src={mediaUrl}
@@ -506,7 +508,7 @@ function ShowcasePrimaryMedia({
       className="flex h-full w-full items-center justify-center px-6 text-center text-sm leading-[1.7]"
       style={{ color: muted }}
     >
-      Add a thumbnail in Information → Portfolio
+      {t('Add a thumbnail in Information → Portfolio')}
     </div>
   );
 
@@ -645,6 +647,7 @@ function ShowcaseDetails({
    * "very discreet, very thin" per the immersive full-width redesign. */
   compact?: boolean;
 }) {
+  const t = useT();
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const accent = presentation.ctaColor || presentation.categoryActiveColor || titleColor;
@@ -654,7 +657,7 @@ function ShowcaseDetails({
   const href = item.linkUrl?.trim() || null;
   const showDescription = settings.showDescription !== false && Boolean(description);
   const showCategory = settings.showCategory !== false && Boolean(category);
-  const categoryLabel = settings.categoryLabel?.trim() || 'Category';
+  const categoryLabel = settings.categoryLabel?.trim() || t('Category');
   const showTitle = !hideTitle && Boolean(title);
 
   return (
@@ -747,6 +750,7 @@ export function ProjectsShowcaseGallery({
   items: MarketplaceContentItem[];
   presentation?: PortfolioWorkPresentationSettings;
 }) {
+  const t = useT();
   const settings = mergeProjectsShowcaseSettings(
     DEFAULT_PROJECTS_SHOWCASE_SETTINGS,
     presentation.projectsShowcase
@@ -1166,7 +1170,7 @@ export function ProjectsShowcaseGallery({
         ref={thumbViewRef}
         data-showcase-thumb-strip=""
         className="w-full overflow-hidden [container-type:inline-size]"
-        aria-label="Project thumbnails"
+        aria-label={t('Project thumbnails')}
       >
         <div
           ref={thumbTrackElRef}
@@ -1195,7 +1199,7 @@ export function ProjectsShowcaseGallery({
                 key={`${item.id}-${index}`}
                 type="button"
                 role="listitem"
-                aria-label={`Show ${label}`}
+                aria-label={t('Show {label}', { label })}
                 onClick={() => selectThumb(index)}
                 disabled={busy}
                 data-showcase-thumb=""
@@ -1283,7 +1287,7 @@ export function ProjectsShowcaseGallery({
             <ShowcaseChevron
               direction="prev"
               onClick={() => cycle(-1)}
-              label="Previous project"
+              label={t('Previous project')}
               color={ink}
               disabled={busy}
             />
@@ -1302,7 +1306,7 @@ export function ProjectsShowcaseGallery({
             <ShowcaseChevron
               direction="next"
               onClick={() => cycle(1)}
-              label="Next project"
+              label={t('Next project')}
               color={ink}
               disabled={busy}
             />
@@ -1394,7 +1398,7 @@ export function ProjectsShowcaseGallery({
             <ShowcaseChevron
               direction="prev"
               onClick={() => cycle(-1)}
-              label="Previous project"
+              label={t('Previous project')}
               color={muted}
               disabled={busy}
               touchSize
@@ -1414,7 +1418,7 @@ export function ProjectsShowcaseGallery({
             <ShowcaseChevron
               direction="next"
               onClick={() => cycle(1)}
-              label="Next project"
+              label={t('Next project')}
               color={muted}
               disabled={busy}
               touchSize
@@ -1427,7 +1431,7 @@ export function ProjectsShowcaseGallery({
             className="pf-showcase-mobile-thumbs -mx-1 mt-6 flex gap-2 overflow-x-auto px-1 pb-1"
             style={{ scrollSnapType: 'x proximity' }}
             role="list"
-            aria-label="Project thumbnails"
+            aria-label={t('Project thumbnails')}
           >
             {items.map((item, idx) => {
               const thumbUrl = item.mediaUrl?.trim() || null;
@@ -1439,7 +1443,7 @@ export function ProjectsShowcaseGallery({
                   role="listitem"
                   onClick={() => selectThumb(idx)}
                   disabled={busy}
-                  aria-label={`Show ${label}`}
+                  aria-label={t('Show {label}', { label })}
                   aria-current={idx === safeIndex}
                   className="relative h-11 w-16 shrink-0 overflow-hidden rounded-[3px] transition-opacity duration-300 disabled:pointer-events-none"
                   style={{
@@ -1474,7 +1478,7 @@ export function ProjectsShowcaseGallery({
             style={{ color: ink }}
             ariaLabel={`Open ${active.title?.trim() || 'project'}`}
           >
-            Tap to Explore
+            {t('Tap to Explore')}
             <svg
               viewBox="0 0 24 24"
               fill="none"
@@ -1495,7 +1499,7 @@ export function ProjectsShowcaseGallery({
     <section
       ref={rootRef}
       className="relative w-full"
-      aria-label="Project showcase"
+      aria-label={t('Project showcase')}
       data-pf-no-color-transition=""
     >
       <style dangerouslySetInnerHTML={{ __html: SHOWCASE_MOTION_CSS }} />
@@ -1512,7 +1516,7 @@ export function ProjectsShowcaseGallery({
         }}
       />
       <p className="sr-only">
-        Project {safeIndex + 1} of {items.length}
+        {t('Project')} {safeIndex + 1} {t('of')} {items.length}
         {active.title?.trim() ? `: ${active.title.trim()}` : ''}
       </p>
       {mobileGallery}

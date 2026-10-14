@@ -1,3 +1,4 @@
+import { mergeHeaderHiddenElements } from '@/components/portfolio/portfolio-header-elements';
 import type { CSSProperties } from 'react';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
@@ -37,6 +38,7 @@ import {
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-footer-header-settings';
+import { msg } from '@/lib/i18n/config';
 
 type PortfolioFooterStyleTarget =
   | 'brand'
@@ -302,10 +304,10 @@ export const FOOTER_CONTACT_CARD_COLOR_TOKEN_OPTIONS: {
   value: PortfolioFooterContactCardColorToken;
   label: string;
 }[] = [
-  { value: 'principal', label: 'Principal' },
-  { value: 'secondaire', label: 'Secondary' },
-  { value: 'texteMuted', label: 'Muted' },
-  { value: 'neutre', label: 'Neutral' },
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteMuted', label: msg('Muted') },
+  { value: 'neutre', label: msg('Neutral') },
 ];
 
 /** Which of the "Mini bottom bar" variants renders below the Footer section (see
@@ -583,6 +585,8 @@ export type PortfolioFooterPresentationSettings = PortfolioSectionBackgroundSett
    * Independent of `design` (which of Footer's own layouts renders the content below).
    */
   headerDesign: PortfolioFooterHeaderDesign;
+  /** Header elements the owner hid, as `footer-<design>.<element>` keys. Empty = everything shown. */
+  headerHiddenElements: string[];
   headerDesignAlignment: PortfolioFooterHeaderDesignAlignment;
   /** Bottom spacing under every header design — shared across all of them. */
   headerMarginBottom: PortfolioFooterHeaderMarginBottom;
@@ -716,26 +720,26 @@ const DEFAULT_FOOTER_MARKETPLACE_CTA_BORDER = '#0a0a0a';
 export const DEFAULT_FOOTER_LINK_COLUMNS: PortfolioFooterLinkColumn[] = [
   {
     id: 'contact',
-    title: 'Contact',
+    title: msg('Contact'),
     /** Filled at render from email / phone / location / hours toggles. */
     links: [],
   },
   {
     id: 'links',
-    title: 'Links',
+    title: msg('Links'),
     links: [
-      { id: 'services', label: 'Services', href: '#services' },
-      { id: 'work', label: 'Work', href: '#work' },
+      { id: 'services', label: msg('Services'), href: '#services' },
+      { id: 'work', label: msg('Work'), href: '#work' },
     ],
   },
 ];
 
 const DEFAULT_FOOTER_CENTERED_LINKS: PortfolioFooterLinkItem[] = [
-  { id: 'centered-home', label: 'Home', href: '#hero' },
-  { id: 'centered-about', label: 'About', href: '#about' },
-  { id: 'centered-portfolio', label: 'Portfolio', href: '#work' },
-  { id: 'centered-services', label: 'Services', href: '#services' },
-  { id: 'centered-contact', label: 'Contact', href: '#contact' },
+  { id: 'centered-home', label: msg('Home'), href: '#hero' },
+  { id: 'centered-about', label: msg('About'), href: '#about' },
+  { id: 'centered-portfolio', label: msg('Portfolio'), href: '#work' },
+  { id: 'centered-services', label: msg('Services'), href: '#services' },
+  { id: 'centered-contact', label: msg('Contact'), href: '#contact' },
 ];
 
 /** True when saved columns are still the old landing Product / Creators / Legal set. */
@@ -789,11 +793,11 @@ const FOOTER_AUTO_SECTION_LINKS: {
   label: string;
   href: string;
 }[] = [
-  { section: 'gallery', id: 'gallery', label: 'Gallery', href: '#gallery' },
-  { section: 'aboutUs', id: 'about-us', label: 'About us', href: '#aboutUs' },
-  { section: 'team', id: 'team', label: 'Team', href: '#team' },
-  { section: 'services', id: 'services', label: 'Services', href: '#services' },
-  { section: 'work', id: 'work', label: 'Work', href: '#work' },
+  { section: 'gallery', id: 'gallery', label: msg('Gallery'), href: '#gallery' },
+  { section: 'aboutUs', id: 'about-us', label: msg('About us'), href: '#aboutUs' },
+  { section: 'team', id: 'team', label: msg('Team'), href: '#team' },
+  { section: 'services', id: 'services', label: msg('Services'), href: '#services' },
+  { section: 'work', id: 'work', label: msg('Work'), href: '#work' },
 ];
 
 function isFooterAutoSectionLink(
@@ -1125,6 +1129,7 @@ export const DEFAULT_FOOTER_PRESENTATION: PortfolioFooterPresentationSettings = 
   designLayouts: {},
   photoUrl: '',
   headerDesign: 'editorial',
+  headerHiddenElements: [],
   headerDesignAlignment: 'left',
   headerMarginBottom: 'md',
   headerTitleSize: 'xl',
@@ -1186,43 +1191,43 @@ export const PORTFOLIO_FOOTER_MINI_BAR_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'minimal',
-    label: 'Minimal',
-    description: 'Copyright, live clock + location, magnetic "Back to top".',
+    label: msg('Minimal'),
+    description: msg('Copyright, live clock + location, magnetic "Back to top".'),
   },
   {
     value: 'kinetic',
-    label: 'Kinetic line',
-    description: 'Accent scroll-progress hairline, bolder type, continuous looping arrow bounce.',
+    label: msg('Kinetic line'),
+    description: msg('Accent scroll-progress hairline, bolder type, continuous looping arrow bounce.'),
   },
   {
     value: 'split-caps',
-    label: 'Split caps',
-    description: 'Borderless Swiss caps in the far corners, GSAP letter-spacing hover, no divider line.',
+    label: msg('Split caps'),
+    description: msg('Borderless Swiss caps in the far corners, GSAP letter-spacing hover, no divider line.'),
   },
   {
     value: 'landing',
-    label: 'Landing',
-    description: 'A single quiet copyright line, left-aligned, on a thin top hairline.',
+    label: msg('Landing'),
+    description: msg('A single quiet copyright line, left-aligned, on a thin top hairline.'),
   },
   {
     value: 'contact-cta',
-    label: 'Contact CTA',
-    description: 'A single centered copyright line on a thin top hairline.',
+    label: msg('Contact CTA'),
+    description: msg('A single centered copyright line on a thin top hairline.'),
   },
   {
     value: 'hero-columns',
-    label: 'Hero columns',
-    description: 'Copyright on the left, availability status + hours on the right.',
+    label: msg('Hero columns'),
+    description: msg('Copyright on the left, availability status + hours on the right.'),
   },
   {
     value: 'inverted-wordmark',
-    label: 'Inverted wordmark',
-    description: 'Solid opposite-contrast fill — copyright, a centered credit line, and "Back to top".',
+    label: msg('Inverted wordmark'),
+    description: msg('Solid opposite-contrast fill — copyright, a centered credit line, and "Back to top".'),
   },
   {
     value: 'services-reveal',
-    label: 'Services reveal',
-    description: 'A single centered copyright line on a thin top hairline.',
+    label: msg('Services reveal'),
+    description: msg('A single centered copyright line on a thin top hairline.'),
   },
 ];
 
@@ -1239,14 +1244,14 @@ export const PORTFOLIO_FOOTER_PREMIUM_FONT_SIZE_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  { value: 'small', label: 'Small', description: 'Compact type across every Footer design.' },
-  { value: 'medium', label: 'Medium', description: 'Default, balanced type size.' },
-  { value: 'large', label: 'Large', description: 'Bigger type for maximum readability.' },
-  { value: 'xlarge', label: 'Extra Large', description: 'Extra large type for a bold, high-impact look.' },
+  { value: 'small', label: msg('Small'), description: msg('Compact type across every Footer design.') },
+  { value: 'medium', label: msg('Medium'), description: msg('Default, balanced type size.') },
+  { value: 'large', label: msg('Large'), description: msg('Bigger type for maximum readability.') },
+  { value: 'xlarge', label: msg('Extra Large'), description: msg('Extra large type for a bold, high-impact look.') },
   {
     value: 'xxlarge',
-    label: 'Super Extra Large',
-    description: 'Maximum type size for the most dramatic, oversized look.',
+    label: msg('Super Extra Large'),
+    description: msg('Maximum type size for the most dramatic, oversized look.'),
   },
 ];
 
@@ -1272,73 +1277,73 @@ export const PORTFOLIO_FOOTER_DESIGN_OPTIONS: {
 }[] = [
   {
     value: 'centered-minimal',
-    label: 'Centered minimal',
-    description: 'Centered identity, bare social/contact icons, spring-lift hover focus. Light/dark aware.',
+    label: msg('Centered minimal'),
+    description: msg('Centered identity, bare social/contact icons, spring-lift hover focus. Light/dark aware.'),
   },
   {
     value: 'landing',
-    label: 'Landing columns',
-    description: 'Borderless three-column Swiss grid, bare icons, spring-lift hover focus. Light/dark aware.',
+    label: msg('Landing columns'),
+    description: msg('Borderless three-column Swiss grid, bare icons, spring-lift hover focus. Light/dark aware.'),
   },
   {
     value: 'compact',
-    label: 'Compact SaaS',
-    description: 'Monumental headline reveal, borderless contact line, theatrical hover focus. Light/dark aware.',
+    label: msg('Compact SaaS'),
+    description: msg('Monumental headline reveal, borderless contact line, theatrical hover focus. Light/dark aware.'),
   },
   {
     value: 'minimal',
-    label: 'Contact CTA',
-    description: 'Name + bio + CTA | location, contact, socials — copyright below.',
+    label: msg('Contact CTA'),
+    description: msg('Name + bio + CTA | location, contact, socials — copyright below.'),
   },
   {
     value: 'contact-card',
-    label: 'Contact card',
-    description: 'Accent card (name, location, phone, email) + Links — grouped toward the center.',
+    label: msg('Contact card'),
+    description: msg('Accent card (name, location, phone, email) + Links — grouped toward the center.'),
   },
   {
     value: 'monumental',
-    label: 'Monumental',
-    description: 'Asymmetric editorial grid — giant headline, borderless contact form, kinetic watermark.',
+    label: msg('Monumental'),
+    description: msg('Asymmetric editorial grid — giant headline, borderless contact form, kinetic watermark.'),
   },
   {
     value: 'hero-columns',
-    label: 'Hero columns',
-    description: 'Monumental hero + pill CTA, then a 3-column grid — parallax portrait, navigation, acknowledgement & info.',
+    label: msg('Hero columns'),
+    description: msg('Monumental hero + pill CTA, then a 3-column grid — parallax portrait, navigation, acknowledgement & info.'),
   },
   {
     value: 'split-form',
-    label: 'Split project form',
-    description: 'Asymmetric split screen — identity card and quote on the left, borderless floating-label contact form on the right.',
+    label: msg('Split project form'),
+    description: msg('Asymmetric split screen — identity card and quote on the left, borderless floating-label contact form on the right.'),
   },
   {
     value: 'timezone-editorial',
-    label: 'Timezone editorial',
-    description: 'Editorial two-column layout — headline and contact pill left, live local time and arrow-led socials pinned right.',
+    label: msg('Timezone editorial'),
+    description: msg('Editorial two-column layout — headline and contact pill left, live local time and arrow-led socials pinned right.'),
   },
   {
     value: 'inverted-wordmark',
-    label: 'Inverted wordmark',
-    description: 'Three-column Swiss editorial grid landing on a mirrored, upside-down giant wordmark on a solid sub-footer bar.',
+    label: msg('Inverted wordmark'),
+    description: msg('Three-column Swiss editorial grid landing on a mirrored, upside-down giant wordmark on a solid sub-footer bar.'),
   },
   {
     value: 'services-reveal',
-    label: 'Services grid reveal',
-    description: 'Classic services/contact/address grid, elevated with a scroll-revealed monumental headline and magnetic social icons.',
+    label: msg('Services grid reveal'),
+    description: msg('Classic services/contact/address grid, elevated with a scroll-revealed monumental headline and magnetic social icons.'),
   },
   {
     value: 'editorial-grid',
-    label: 'Editorial grid',
-    description: 'Edge-to-edge monumental name, a suspended bento card with a magnetic arrow button, and a color-shift hover on every link.',
+    label: msg('Editorial grid'),
+    description: msg('Edge-to-edge monumental name, a suspended bento card with a magnetic arrow button, and a color-shift hover on every link.'),
   },
   {
     value: 'headline-reveal',
-    label: 'Headline reveal',
-    description: 'Borderless — no dividers, no icon chips. A monumental CTA masks in on scroll, with a simple hover accent on each coordinate.',
+    label: msg('Headline reveal'),
+    description: msg('Borderless — no dividers, no icon chips. A monumental CTA masks in on scroll, with a simple hover accent on each coordinate.'),
   },
   {
     value: 'dispatch',
-    label: 'Dispatch',
-    description: 'Agency band: a one-field email capture with a magnetic accent button beside a hairline-ruled link directory, closed by an edge-to-edge wordmark that masks in from below.',
+    label: msg('Dispatch'),
+    description: msg('Agency band: a one-field email capture with a magnetic accent button beside a hairline-ruled link directory, closed by an edge-to-edge wordmark that masks in from below.'),
   },
 ];
 
@@ -2250,6 +2255,7 @@ export function mergeFooterPresentation(
     photoUrl:
       typeof record.photoUrl === 'string' ? record.photoUrl.trim().slice(0, 2048) : (base.photoUrl ?? ''),
     headerDesign: pick(record.headerDesign, FOOTER_HEADER_DESIGNS, base.headerDesign ?? 'editorial'),
+    headerHiddenElements: mergeHeaderHiddenElements(record.headerHiddenElements, base.headerHiddenElements),
     headerDesignAlignment: pick(
       record.headerDesignAlignment,
       ['left', 'center', 'right'],

@@ -1,12 +1,12 @@
 'use client';
 
-import Link from 'next/link';
 import { useEffect, useMemo, useState } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { PublicServiceLightbox } from '@/components/marketplace/PublicServiceLightbox';
 import {
   filterActiveServices,
+  formatHourlyRateAmount,
   formatServiceDelivery,
   formatServicePrice,
   solidCoverHueFromTitle,
@@ -14,83 +14,115 @@ import {
 import { MediaImage } from '@/components/ui/MediaImage';
 import type { ProfileServiceItem } from '@/types/profile';
 import type { MarketplaceCreatorPublicProfile } from '@/types/marketplace';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type CreatorProfileServicesTabProps = {
   creatorId: string;
   profile: MarketplaceCreatorPublicProfile;
 };
 
-function ServiceCard({ service, onOpen }: { service: ProfileServiceItem; onOpen: () => void }) {
+export function ServiceCard({
+  service,
+  onOpen,
+  compact = false,
+}: {
+  service: ProfileServiceItem;
+  /** Omit for a non-interactive render — the service editor's live preview. */
+  onOpen?: () => void;
+  /** A narrower cover and tighter padding, to fit the editor panel (same anatomy). */
+  compact?: boolean;
+}) {
+  const t = useT();
   const deliveryLabel = formatServiceDelivery(service);
-  const title = service.title?.trim() || 'Service';
+  const title = service.title?.trim() || t('Service');
   const hue = solidCoverHueFromTitle(title);
   const solidCover = (
     <div
-      className="flex h-full items-center justify-center text-4xl font-semibold text-white/90"
+      className="absolute inset-0 flex items-center justify-center text-4xl font-semibold text-white/90"
       style={{ backgroundColor: `hsl(${hue} 32% 38%)` }}
     >
       {title[0].toUpperCase()}
     </div>
   );
 
-  return (
-    <button
-      type="button"
-      onClick={onOpen}
-      className="group flex h-full flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white text-left max-sm:-mx-5 max-sm:w-[calc(100%+2.5rem)] max-sm:rounded-none max-sm:border-x-0 max-sm:!border-[#DADDE1] max-sm:!bg-transparent dark:max-sm:!border-white/[0.16] transition-colors duration-300 hover:border-black/[0.14] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.18] dark:focus-visible:ring-white/25"
-    >
-      <div className="relative aspect-[4/3] w-full overflow-hidden bg-neutral-100 dark:bg-neutral-900">
+  /*
+   * One service per row, read like a listing: the cover on the left (16rem wide from sm, as tall as
+   * the card), and on the right the specialty, the title and the full description — nothing
+   * truncated, the card grows with its text — then a footer row: price · delivery on the left,
+   * "Details →" on the right. Phones stack the cover on top.
+   */
+  const body = (
+    <>
+      <div
+        className={`relative aspect-[16/9] w-full shrink-0 overflow-hidden bg-[#EFF3F4] dark:bg-[#202327] sm:aspect-auto ${
+          compact ? 'sm:min-h-[11rem] sm:w-48' : 'sm:min-h-[15rem] sm:w-60 md:w-64'
+        }`}
+      >
         <MediaImage
           src={service.coverImageUrl}
           widths={[384, 640, 828]}
-          sizes="(min-width: 1024px) 400px, (min-width: 640px) 50vw, 100vw"
+          sizes="(min-width: 640px) 256px, 100vw"
           fallback={solidCover}
-          className="h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
+          className="absolute inset-0 h-full w-full object-cover transition-transform duration-700 ease-[cubic-bezier(0.16,1,0.3,1)] group-hover:scale-[1.03]"
         />
       </div>
 
-      <div className="flex flex-1 flex-col p-6 max-sm:px-5 max-sm:py-5">
-        <div className="pb-5 sm:pb-6">
-          {service.specialty ? (
-            <p className="mb-2 truncate text-[14px] capitalize text-neutral-600 dark:text-neutral-300">
-              {service.specialty.toLowerCase()}
-            </p>
-          ) : null}
-          <h3 className="text-[1.125rem] font-semibold leading-snug tracking-[-0.01em] text-[#111111] dark:text-white">
-            {title}
-          </h3>
-          {service.description ? (
-            <p className="mt-3 line-clamp-2 text-[15px] leading-relaxed text-neutral-600 dark:text-neutral-300">
-              {service.description}
-            </p>
-          ) : null}
-        </div>
+      <div className={`flex min-w-0 flex-1 flex-col ${compact ? 'p-4 sm:px-5 sm:py-5' : 'p-5 sm:px-8 sm:py-7'}`}>
+        {service.specialty ? (
+          <p className="mb-1.5 text-[13px] capitalize leading-[18px] text-[#536471] dark:text-[#71767B]">
+            {service.specialty.toLowerCase()}
+          </p>
+        ) : null}
+        <h3 className="text-[19px] font-bold leading-6 tracking-[-0.01em] text-[#0F1419] dark:text-[#E7E9EA]">
+          {title}
+        </h3>
+        {service.description ? (
+          <p className="mt-2.5 whitespace-pre-line break-words text-[15px] leading-[23px] text-[#536471] dark:text-[#71767B]">
+            {service.description}
+          </p>
+        ) : null}
 
-        <div className="mt-auto flex items-end justify-between gap-4 border-t border-black/[0.06] pt-5 dark:border-white/[0.08]">
-          <div className="min-w-0">
-            <p className="text-[1.125rem] font-semibold tabular-nums tracking-[-0.01em] text-[#111111] dark:text-white">
+        <div className="mt-auto flex items-center justify-between gap-4 pt-6">
+          <p className="flex min-w-0 flex-wrap items-baseline gap-x-2 gap-y-0.5">
+            <span className="text-[17px] font-bold tabular-nums tracking-[-0.01em] text-[#0F1419] dark:text-[#E7E9EA]">
               {formatServicePrice(service)}
-            </p>
+            </span>
             {deliveryLabel ? (
-              <p className="mt-1 text-[14px] text-neutral-600 dark:text-neutral-300">{deliveryLabel}</p>
+              <span className="text-[13px] text-[#536471] dark:text-[#71767B]">· {deliveryLabel}</span>
             ) : null}
-          </div>
-          <span className="inline-flex shrink-0 items-center gap-1.5 text-[15px] font-medium text-[#111111] dark:text-white">
-            Details
-            <span
-              aria-hidden
-              className="transition-transform duration-300 group-hover:translate-x-0.5"
-            >
+          </p>
+          <span className="inline-flex shrink-0 items-center gap-1.5 text-[14px] font-semibold text-[#0F1419] underline-offset-4 group-hover:underline dark:text-[#E7E9EA]">
+            {t('Details')}
+            <span aria-hidden className="transition-transform duration-300 group-hover:translate-x-0.5">
               →
             </span>
           </span>
         </div>
       </div>
+    </>
+  );
+
+  if (!onOpen) {
+    return (
+      <div className="flex w-full flex-col overflow-hidden bg-[#F7F9F9] text-left dark:bg-[#16181C] sm:flex-row">
+        {body}
+      </div>
+    );
+  }
+
+  return (
+    <button
+      type="button"
+      onClick={onOpen}
+      className="group flex w-full flex-col overflow-hidden rounded-none bg-[#F7F9F9] text-left transition-colors duration-200 hover:bg-[#EFF3F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:bg-[#16181C] dark:hover:bg-[#1D1F23] dark:focus-visible:ring-white/25 max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] sm:flex-row"
+    >
+      {body}
     </button>
   );
 }
 
 export function CreatorProfileServicesTab({ creatorId, profile }: CreatorProfileServicesTabProps) {
+  const t = useT();
   const { user } = useAuth();
   const searchParams = useSearchParams();
   const deepLinkServiceId = searchParams.get('service');
@@ -115,41 +147,44 @@ export function CreatorProfileServicesTab({ creatorId, profile }: CreatorProfile
     return () => window.clearTimeout(timer);
   }, [deepLinkServiceId, services]);
 
+  const hourlyRate = formatHourlyRateAmount(profile.hourlyRateCents, profile.hourlyRateCurrency);
+  const hourlyRateBlock = hourlyRate ? (
+    <p className="flex shrink-0 items-baseline gap-2 sm:flex-col sm:items-end sm:gap-0.5">
+      <span className="text-[13px] text-[#536471] dark:text-[#71767B]">{t('Hourly rate')}</span>
+      <span className="text-[17px] font-bold tabular-nums tracking-[-0.01em] text-[#0F1419] dark:text-[#E7E9EA]">
+        {hourlyRate}
+        <span className="text-[14px] font-normal text-[#536471] dark:text-[#71767B]"> {t('/ hour')}</span>
+      </span>
+    </p>
+  ) : null;
+
   if (services.length === 0) {
     return (
-      <div
-        id="services"
-        className="rounded-lg border border-black/[0.06] bg-white px-6 py-16 text-center dark:border-white/[0.08] dark:bg-[#111111]"
-      >
-        <p className="text-[1.0625rem] font-semibold text-[#111111] dark:text-white">
-          This provider has not published any services yet
-        </p>
-        <p className="mt-2 text-[15px] text-neutral-600 dark:text-neutral-300">
-          Contact them directly to discuss your needs.
-        </p>
-        {discussHref ? (
-          <Link
-            href={discussHref}
-            className="mt-5 inline-flex h-11 items-center rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-colors hover:bg-black dark:bg-white dark:text-[#111111] dark:hover:bg-neutral-200"
-          >
-            Discuss
-          </Link>
-        ) : null}
+      <div id="services" className="space-y-4 sm:space-y-6">
+        {hourlyRateBlock}
+        <div className="gn-card -mx-4 rounded-none bg-[#F7F9F9] dark:bg-[#16181C] px-6 py-16 text-center sm:mx-0">
+          <p className="text-[17px] font-bold text-[#0F1419] dark:text-[#E7E9EA]">{t('No services published yet')}</p>
+          {discussHref ? (
+            <p className="mt-1 text-[15px] text-[#536471] dark:text-[#71767B]">{t('Use Discuss above to talk about your project.')}</p>
+          ) : null}
+        </div>
       </div>
     );
   }
 
   return (
-    <div id="services" className="space-y-10">
-      <div>
-        <h2 className="text-[1.375rem] font-semibold tracking-[-0.015em] text-[#111111] dark:text-white sm:text-[1.5rem]">
-          Services
-        </h2>
-        <p className="mt-2 text-[1rem] text-neutral-600 dark:text-neutral-300">
-          {services.length} available service{services.length !== 1 ? 's' : ''}.
-        </p>
+    <div id="services" className="space-y-4 sm:space-y-6">
+      {/* Phones: the active tab ("Services 3") already names the section; only the hourly rate shows. */}
+      <div className={`flex items-end justify-between gap-6 ${hourlyRateBlock ? '' : 'max-sm:hidden'}`}>
+        <div className="max-sm:hidden">
+          <h2 className="text-[20px] font-extrabold tracking-[-0.015em] text-[#0F1419] dark:text-[#E7E9EA]">{t('Services')}</h2>
+          <p className="mt-1 text-[15px] text-[#536471] dark:text-[#71767B]">
+            {services.length} {t('available service')}{services.length !== 1 ? 's' : ''}
+          </p>
+        </div>
+        {hourlyRateBlock}
       </div>
-      <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:gap-8 xl:grid-cols-3">
+      <div className="flex flex-col gap-2 sm:gap-4">
         {services.map((service) => (
           <ServiceCard key={service.id} service={service} onOpen={() => setActiveService(service)} />
         ))}
@@ -160,7 +195,7 @@ export function CreatorProfileServicesTab({ creatorId, profile }: CreatorProfile
         open={Boolean(activeService)}
         onClose={() => setActiveService(null)}
         discussHref={discussHref}
-        discussLabel="Discuss"
+        discussLabel={t('Discuss')}
       />
     </div>
   );

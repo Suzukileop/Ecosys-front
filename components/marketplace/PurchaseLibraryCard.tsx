@@ -1,11 +1,13 @@
 'use client';
 
 import Link from 'next/link';
-import { PRODUCT_TYPE_LABELS } from '@/lib/marketplace-api';
+import { productTypeName } from '@/lib/marketplace-api';
 import { ProductThumbnailMedia } from '@/components/marketplace/ProductThumbnailMedia';
 import { isVideoThumbnailUrl } from '@/lib/product-thumbnail';
 import { PurchaseAccessButton, canDownload, canStream } from '@/components/marketplace/PurchaseAccessButton';
 import type { MarketplacePurchase } from '@/types/marketplace';
+import { formatCompactDate } from '@/components/marketplace/product-relative-date';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 type PurchaseLibraryCardProps = {
   purchase: MarketplacePurchase;
@@ -19,16 +21,13 @@ function creatorInitials(name: string) {
 }
 
 function formatPurchasedAt(value: string) {
-  return new Date(value).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-    year: 'numeric',
-  });
+  return formatCompactDate(value);
 }
 
 export function PurchaseLibraryCard({ purchase }: PurchaseLibraryCardProps) {
+  const t = useT();
   const productHref = `/marketplace/products/${purchase.productId}`;
-  const typeLabel = PRODUCT_TYPE_LABELS[purchase.productType] ?? purchase.productType;
+  const typeLabel = productTypeName(purchase.productType, purchase.productTypeLabel);
   const hasVideoThumb = isVideoThumbnailUrl(purchase.thumbnailUrl);
   const accessMode = canDownload(purchase.deliveryMode)
     ? 'download'
@@ -37,10 +36,10 @@ export function PurchaseLibraryCard({ purchase }: PurchaseLibraryCardProps) {
       : null;
 
   return (
-    <article className="group flex w-full flex-col overflow-hidden rounded-2xl border border-gray-200 bg-white shadow-sm transition-shadow hover:shadow-lg dark:border-neutral-800 dark:bg-neutral-900 dark:hover:shadow-neutral-900/50">
+    <article className="group flex w-full flex-col overflow-hidden !rounded-none bg-[color:var(--gn-surface)]">
       <Link
         href={productHref}
-        className="relative block h-52 w-full shrink-0 overflow-hidden bg-gray-100 dark:bg-neutral-800"
+        className="relative block aspect-[4/3] w-full shrink-0 overflow-hidden bg-[#EFF3F4] dark:bg-[#202327]"
       >
         {purchase.thumbnailUrl ? (
           <ProductThumbnailMedia
@@ -52,68 +51,62 @@ export function PurchaseLibraryCard({ purchase }: PurchaseLibraryCardProps) {
             className="h-full w-full"
           />
         ) : (
-          <div className="flex h-full items-center justify-center text-sm text-gray-400 dark:text-gray-500">
-            Preview unavailable
+          <div className="flex h-full items-center justify-center text-[13px] text-[color:var(--gn-ink2)]">
+            {t('No preview')}
           </div>
         )}
 
         <div className="absolute left-3 top-3 flex flex-wrap gap-1.5">
-          <span className="rounded-md bg-gray-900/80 px-2.5 py-1 text-xs font-semibold text-white">
+          <span className="rounded-[4px] bg-black/70 px-2 py-0.5 text-[13px] font-semibold text-white">
             {typeLabel}
           </span>
           {purchase.fileFormat && (
-            <span className="rounded-md bg-gray-900/80 px-2.5 py-1 text-xs font-medium text-white">
+            <span className="rounded-[4px] bg-black/70 px-2 py-0.5 text-[13px] font-medium text-white">
               {purchase.fileFormat}
             </span>
           )}
         </div>
-
-        <div className="absolute bottom-3 left-3">
-          <span className="rounded-md bg-emerald-500 px-2.5 py-1 text-xs font-semibold text-white">
-            Owned
-          </span>
-        </div>
       </Link>
 
-      <div className="flex flex-1 flex-col p-5">
-        <div className="space-y-3">
+      <div className="flex flex-1 flex-col p-4 sm:p-5">
+        <div className="space-y-2">
           <Link
             href={productHref}
-            className="line-clamp-2 text-base font-bold leading-snug text-gray-900 group-hover:text-orange-600 dark:text-white dark:group-hover:text-orange-400 xl:line-clamp-1 xl:text-lg"
+            className="line-clamp-2 text-[16px] font-bold leading-[22px] text-[color:var(--gn-ink)] underline-offset-4 hover:underline"
             title={purchase.productTitle}
           >
             {purchase.productTitle}
           </Link>
 
-          <div className="flex items-center gap-2.5">
-            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-sky-100 text-xs font-semibold text-sky-800 dark:bg-sky-900/40 dark:text-sky-200">
+          <div className="flex items-center gap-2">
+            <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-[color:var(--gn-inset)] text-[11px] font-semibold text-[color:var(--gn-ink)]">
               {creatorInitials(purchase.creatorName)}
             </div>
-            <span className="truncate text-sm text-gray-700 dark:text-gray-300">{purchase.creatorName}</span>
+            <span className="truncate text-[13px] text-[color:var(--gn-ink2)]">{purchase.creatorName}</span>
           </div>
 
-          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-xs text-gray-500 dark:text-gray-400">
-            <span>Purchased {formatPurchasedAt(purchase.purchasedAt)}</span>
+          <div className="flex flex-wrap items-center gap-x-2 gap-y-1 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
+            <span>{t('Purchased {formatPurchasedAt}', { formatPurchasedAt: formatPurchasedAt(purchase.purchasedAt) })}</span>
             {purchase.maxDownloads != null && (
               <>
                 <span aria-hidden>·</span>
                 <span>
-                  {purchase.downloadCount}/{purchase.maxDownloads} downloads left
+                  {t('{downloadCount}/{maxDownloads} downloads left', { downloadCount: purchase.downloadCount, maxDownloads: purchase.maxDownloads })}
                 </span>
               </>
             )}
           </div>
 
           {purchase.genre && (
-            <div className="flex flex-wrap gap-2">
-              <span className="rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-xs font-medium lowercase text-orange-800 dark:border-orange-500/30 dark:bg-orange-500/10 dark:text-orange-200">
+            <div className="flex flex-wrap gap-1.5">
+              <span className="rounded-[2px] bg-[color:var(--gn-inset)] px-2 py-0.5 text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">
                 {purchase.genre}
               </span>
             </div>
           )}
         </div>
 
-        <div className="mt-4 space-y-2.5 border-t border-gray-200 pt-4 dark:border-neutral-700">
+        <div className="mt-auto space-y-1 pt-4">
           {accessMode && (
             <PurchaseAccessButton
               purchaseId={purchase.id}
@@ -124,9 +117,9 @@ export function PurchaseLibraryCard({ purchase }: PurchaseLibraryCardProps) {
           )}
           <Link
             href={productHref}
-            className="block text-center text-xs font-medium text-gray-500 transition hover:text-orange-600 dark:text-gray-400 dark:hover:text-orange-400"
+            className="flex h-10 items-center justify-center text-[14px] font-semibold text-[color:var(--gn-ink2)] underline-offset-4 transition-colors hover:text-[color:var(--gn-ink)] hover:underline"
           >
-            View product page
+            {t('View product page')}
           </Link>
         </div>
       </div>

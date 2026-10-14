@@ -1,3 +1,5 @@
+import { msg } from '@/lib/i18n/config';
+import { tr } from '@/lib/i18n/active';
 export const CREATOR_APP_ROLE_VALUES = [
   'GENERAL_MEMBER',
   'SERVICE_PROVIDER',
@@ -20,32 +22,32 @@ export const CREATOR_APP_ROLE_OPTIONS: ReadonlyArray<{
 }> = [
   {
     value: 'GENERAL_MEMBER',
-    label: 'General Member',
-    description: 'Explore the platform and connect with the community.',
+    label: msg('General Member'),
+    description: msg('Explore the platform and connect with the community.'),
   },
   {
     value: 'SERVICE_PROVIDER',
-    label: 'Service Provider / Freelancer',
+    label: msg('Service Provider / Freelancer'),
     description: [
-      'Manage your online storefront, portfolio, and profile to showcase your work and get contacted easily',
-      'Attract your first clients, trigger new professional opportunities, and optimize your visibility',
-      'Highlight your skills, publish your projects, and streamline how clients find you',
+      msg('Manage your online storefront, portfolio, and profile to showcase your work and get contacted easily'),
+      msg('Attract your first clients, trigger new professional opportunities, and optimize your visibility'),
+      msg('Highlight your skills, publish your projects, and streamline how clients find you'),
     ],
   },
   {
     value: 'FREELANCER_STUDENT',
-    label: 'Student',
-    description: 'Build your portfolio and showcase your work to attract your first clients.',
+    label: msg('Student'),
+    description: msg('Build your portfolio and showcase your work to attract your first clients.'),
   },
   {
     value: 'SELLER',
-    label: 'Seller',
-    description: 'Showcase your catalog and present your products to an active community',
+    label: msg('Seller'),
+    description: msg('Showcase your catalog and present your products to an active community'),
   },
   {
     value: 'RH_RECRUITER',
-    label: 'RH / Recruiter / Client',
-    description: 'Source talent and manage hiring workflows.',
+    label: msg('RH / Recruiter / Client'),
+    description: msg('Source talent and manage hiring workflows.'),
   },
 ];
 
@@ -81,23 +83,23 @@ export function normalizeCreatorAppRole(raw: unknown): CreatorAppRole {
 
 export function creatorAppRoleLabel(role: CreatorAppRole | null | undefined): string {
   const normalized = normalizeCreatorAppRole(role);
-  return CREATOR_APP_ROLE_OPTIONS.find((option) => option.value === normalized)?.label ?? 'General Member';
+  return tr(CREATOR_APP_ROLE_OPTIONS.find((option) => option.value === normalized)?.label ?? 'General Member');
 }
 
 /** Headline above the studio Content tab, worded for each role. */
 export function creatorStudioContentHeadline(role: CreatorAppRole | null | undefined): string {
   switch (normalizeCreatorAppRole(role)) {
     case 'SERVICE_PROVIDER':
-      return 'Show clients what you can deliver.';
+      return tr('Show clients what you can deliver.');
     case 'FREELANCER_STUDENT':
-      return 'Show the world what you are building.';
+      return tr('Show the world what you are building.');
     case 'SELLER':
-      return 'Show off what you sell.';
+      return tr('Show off what you sell.');
     case 'RH_RECRUITER':
-      return 'Tell talent who you are looking for.';
+      return tr('Tell talent who you are looking for.');
     case 'GENERAL_MEMBER':
     default:
-      return 'Show them what you are capable of.';
+      return tr('Show them what you are capable of.');
   }
 }
 
@@ -105,16 +107,16 @@ export function creatorStudioContentHeadline(role: CreatorAppRole | null | undef
 export function creatorComposePlaceholder(role: CreatorAppRole | null | undefined): string {
   switch (normalizeCreatorAppRole(role)) {
     case 'SERVICE_PROVIDER':
-      return 'What have you delivered lately?';
+      return tr('What have you delivered lately?');
     case 'FREELANCER_STUDENT':
-      return 'What are you building?';
+      return tr('What are you building?');
     case 'SELLER':
-      return 'What are you selling?';
+      return tr('What are you selling?');
     case 'RH_RECRUITER':
-      return 'Who are you looking for?';
+      return tr('Who are you looking for?');
     case 'GENERAL_MEMBER':
     default:
-      return 'What are you working on?';
+      return tr('What are you working on?');
   }
 }
 

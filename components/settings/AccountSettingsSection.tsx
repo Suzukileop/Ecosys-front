@@ -5,6 +5,7 @@ import Link from 'next/link';
 import { Avatar } from '@/components/ui/Avatar';
 import { useAuth } from '@/context/AuthContext';
 import { getApiErrorMessage } from '@/lib/api-error';
+import { useT } from '@/lib/i18n/I18nProvider';
 import { updateUserProfile, uploadUserAvatar } from '@/lib/user-profile-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
 import type { AccountSecurity } from '@/lib/account-settings-api';
@@ -23,6 +24,7 @@ const USERNAME_PATTERN = /^[A-Za-z0-9_]{3,30}$/;
 const MAX_AVATAR_BYTES = 5 * 1024 * 1024;
 
 export function AccountSettingsSection({ security }: { security: AccountSecurity | null }) {
+  const t = useT();
   const { user, updateUser } = useAuth();
   const [fullName, setFullName] = useState(user?.fullName ?? '');
   const [username, setUsername] = useState(user?.username ?? '');
@@ -39,12 +41,12 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
 
   const trimmedName = fullName.trim();
   const trimmedUsername = username.trim();
-  const nameError = trimmedName.length === 0 ? 'Your name is required.' : null;
+  const nameError = trimmedName.length === 0 ? t('Your name is required.') : null;
   const usernameError =
     trimmedUsername.length > 0 && !USERNAME_PATTERN.test(trimmedUsername)
-      ? '3–30 characters: letters, numbers and underscores only.'
+      ? t('3–30 characters: letters, numbers and underscores only.')
       : trimmedUsername.length === 0
-        ? 'A username is required.'
+        ? t('A username is required.')
         : null;
   const dirty = trimmedName !== (user.fullName ?? '') || trimmedUsername !== (user.username ?? '');
   const canSave = dirty && !nameError && !usernameError && !saving;
@@ -59,12 +61,12 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
         ...(trimmedUsername !== user.username ? { username: trimmedUsername } : {}),
       });
       updateUser({ fullName: updated.fullName, username: updated.username, avatarUrl: updated.avatarUrl });
-      pushFlashFeedback({ variant: 'success', title: 'Profile updated', description: 'Your account details were saved.' });
+      pushFlashFeedback({ variant: 'success', title: t('Profile updated'), description: t('Your account details were saved.') });
     } catch (error) {
       pushFlashFeedback({
         variant: 'error',
-        title: 'Could not save changes',
-        description: getApiErrorMessage(error, 'Please try again.'),
+        title: t('Could not save changes'),
+        description: getApiErrorMessage(error, t('Please try again.')),
       });
     } finally {
       setSaving(false);
@@ -74,23 +76,23 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
   const handleAvatar = async (file: File | undefined) => {
     if (!file) return;
     if (!file.type.startsWith('image/')) {
-      pushFlashFeedback({ variant: 'error', title: 'Unsupported file', description: 'Choose a JPG, PNG or WebP image.' });
+      pushFlashFeedback({ variant: 'error', title: t('Unsupported file'), description: t('Choose a JPG, PNG or WebP image.') });
       return;
     }
     if (file.size > MAX_AVATAR_BYTES) {
-      pushFlashFeedback({ variant: 'error', title: 'Image too large', description: 'The maximum size is 5 MB.' });
+      pushFlashFeedback({ variant: 'error', title: t('Image too large'), description: t('The maximum size is 5 MB.') });
       return;
     }
     setUploading(true);
     try {
       const updated = await uploadUserAvatar(file);
       updateUser({ avatarUrl: updated.avatarUrl });
-      pushFlashFeedback({ variant: 'success', title: 'Photo updated', description: 'Your new profile photo is live.' });
+      pushFlashFeedback({ variant: 'success', title: t('Photo updated'), description: t('Your new profile photo is live.') });
     } catch (error) {
       pushFlashFeedback({
         variant: 'error',
-        title: 'Upload failed',
-        description: getApiErrorMessage(error, 'Please try another image.'),
+        title: t('Upload failed'),
+        description: getApiErrorMessage(error, t('Please try another image.')),
       });
     } finally {
       setUploading(false);
@@ -103,17 +105,17 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
   return (
     <div>
       <SettingsSectionHeader
-        title="Account"
-        description="Manage the identity people see across Skraft and the email you use to sign in."
+        title={t('Account')}
+        description={t('Manage the identity people see across Skraft and the email you use to sign in.')}
       />
 
-      <div className="flex flex-col gap-6">
-        <SettingsCard title="Profile photo" description="Shown on your posts, messages and portfolio.">
-          <div className="flex flex-col gap-5 px-6 py-6 sm:flex-row sm:items-center">
+      <div className="flex flex-col">
+        <SettingsCard title={t('Profile photo')} description={t('Shown on your posts, messages and portfolio.')}>
+          <div className="flex flex-col gap-5 px-4 py-4 sm:flex-row sm:items-center sm:px-0">
             <div className="relative">
               <Avatar name={user.fullName} avatarUrl={user.avatarUrl} size="xl" />
               {uploading ? (
-                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/40 text-white">
+                <span className="absolute inset-0 flex items-center justify-center rounded-full bg-black/50 text-white">
                   <Spinner className="h-5 w-5" />
                 </span>
               ) : null}
@@ -126,10 +128,10 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
                   disabled={uploading}
                   className={PRIMARY_BUTTON_CLASS}
                 >
-                  {uploading ? 'Uploading…' : 'Upload new photo'}
+                  {uploading ? t('Uploading…') : t('Upload new photo')}
                 </button>
               </div>
-              <p className="text-[13px] text-[#888888] dark:text-neutral-500">JPG, PNG or WebP, up to 5 MB.</p>
+              <p className="text-[13px] leading-[18px] text-[color:var(--gn-ink2)]">{t('JPG, PNG or WebP, up to 5 MB.')}</p>
             </div>
             <input
               ref={fileRef}
@@ -143,8 +145,8 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
 
         <form onSubmit={(event) => void handleSubmit(event)}>
           <SettingsCard
-            title="Personal information"
-            description="Your name and username appear on your public profile."
+            title={t('Personal information')}
+            description={t('Your name and username appear on your public profile.')}
             footer={
               <>
                 <button
@@ -156,18 +158,18 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
                   }}
                   className={SECONDARY_BUTTON_CLASS}
                 >
-                  Cancel
+                  {t('Cancel')}
                 </button>
                 <button type="submit" disabled={!canSave} className={PRIMARY_BUTTON_CLASS}>
                   {saving ? <Spinner /> : null}
-                  Save changes
+                  {t('Save changes')}
                 </button>
               </>
             }
           >
-            <div className="grid gap-5 px-6 py-6 sm:grid-cols-2">
+            <div className="grid gap-5 px-4 py-4 sm:grid-cols-2 sm:px-0">
               <TextField
-                label="Full name"
+                label={t('Full name')}
                 value={fullName}
                 maxLength={120}
                 autoComplete="name"
@@ -175,7 +177,7 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
                 error={dirty ? nameError : null}
               />
               <TextField
-                label="Username"
+                label={t('Username')}
                 prefix="@"
                 value={username}
                 maxLength={30}
@@ -183,45 +185,46 @@ export function AccountSettingsSection({ security }: { security: AccountSecurity
                 spellCheck={false}
                 onChange={(event) => setUsername(event.target.value.replace(/\s/g, ''))}
                 error={dirty ? usernameError : null}
-                hint="Used in your profile link."
+                hint={t('Used in your profile link.')}
               />
             </div>
           </SettingsCard>
         </form>
 
-        <SettingsCard title="Email address" description="Used to sign in and to receive important account notices.">
+        <SettingsCard title={t('Email address')} description={t('Used to sign in and to receive important account notices.')}>
           <SettingRow
             label={security?.email ?? user.email}
             description={
               emailVerified
-                ? 'Verified — you will receive account and security emails here.'
-                : 'Not verified yet. Check your inbox for the verification link.'
+                ? t('Verified — you will receive account and security emails here.')
+                : t('Not verified yet. Check your inbox for the verification link.')
             }
           >
             <span
-              className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-medium ${
+              className={`inline-flex h-7 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold leading-[18px] ${
                 emailVerified
-                  ? 'bg-emerald-500/10 text-emerald-700 dark:text-emerald-400'
-                  : 'bg-amber-500/10 text-amber-700 dark:text-amber-400'
+                  ? 'bg-[color:var(--gn-field)] text-[color:var(--gn-ink)]'
+                  : 'border border-[#CFD9DE] text-[color:var(--gn-ink2)] dark:border-[#536471]'
               }`}
             >
-              <span
-                aria-hidden
-                className={`h-1.5 w-1.5 rounded-full ${emailVerified ? 'bg-emerald-500' : 'bg-amber-500'}`}
-              />
-              {emailVerified ? 'Verified' : 'Unverified'}
+              {emailVerified ? (
+                <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.4} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                  <path d="m5 12.5 4.5 4.5L19 7.5" />
+                </svg>
+              ) : null}
+              {emailVerified ? t('Verified') : t('Unverified')}
             </span>
           </SettingRow>
-          <SettingRow label="Member since" description={formatSettingsDate(security?.createdAt ?? user.createdAt)} />
+          <SettingRow label={t('Member since')} description={formatSettingsDate(security?.createdAt ?? user.createdAt, false, t.tag)} />
         </SettingsCard>
 
         <SettingsCard>
           <SettingRow
-            label="Public profile"
-            description="Bio, skills, languages and the fields visitors can see are edited in your studio."
+            label={t('Public profile')}
+            description={t('Bio, skills, languages and the fields visitors can see are edited in your studio.')}
           >
             <Link href="/profile" className={SECONDARY_BUTTON_CLASS}>
-              Open studio
+              {t('Open studio')}
             </Link>
           </SettingRow>
         </SettingsCard>
