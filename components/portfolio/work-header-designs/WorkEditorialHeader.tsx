@@ -7,8 +7,7 @@ import {
   DEFAULT_WORK_PRESENTATION,
   WORK_HEADER_MARGIN_BOTTOM_REM,
   workHeaderFontClass,
-  workSubtitleColorStyle,
-  workTitleColorStyle,
+  workPaletteTokenColor,
   type PortfolioWorkHeaderTitleSize,
   type PortfolioWorkHeaderTitleWeight,
   type PortfolioWorkPresentationSettings,
@@ -49,6 +48,33 @@ const TITLE_SIZE_CLASS: Record<PortfolioWorkHeaderTitleSize, string> = {
   xl: 'text-7xl sm:text-8xl lg:text-9xl',
 };
 
+/** Kicker — small uppercase label; "regular" keeps the prior semibold 0.68rem. */
+const LABEL_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
+  sm: '0.625rem',
+  md: '0.68rem',
+  lg: '0.78rem',
+  xl: '0.9rem',
+};
+const LABEL_WEIGHT: Record<PortfolioWorkHeaderTitleWeight, number> = {
+  light: 500,
+  regular: 600,
+  semibold: 700,
+  bold: 800,
+};
+/** Subtitle — "md" keeps the prior text-sm / sm:text-base default. */
+const SUBTITLE_SIZE: Record<PortfolioWorkHeaderTitleSize, string> = {
+  sm: '0.8125rem',
+  md: 'clamp(0.875rem, 0.35vw + 0.8rem, 1rem)',
+  lg: 'clamp(1rem, 0.4vw + 0.92rem, 1.125rem)',
+  xl: 'clamp(1.125rem, 0.5vw + 1rem, 1.3rem)',
+};
+const SUBTITLE_WEIGHT: Record<PortfolioWorkHeaderTitleWeight, number> = {
+  light: 300,
+  regular: 400,
+  semibold: 500,
+  bold: 600,
+};
+
 /** Editorial's identity is a light title — "regular" here preserves that prior default,
  *  the other 3 steps adjust from it, rather than the generic light/normal/semibold/bold scale. */
 const TITLE_WEIGHT_CLASS: Record<PortfolioWorkHeaderTitleWeight, string> = {
@@ -82,10 +108,16 @@ export function WorkEditorialHeader({
   const showLabel = show('label');
   const showTitle = show('title');
   const showSubtitle = show('subtitle');
-  const title = sectionTitle.trim();
-  const subtitle = sectionSubtitle?.trim() || '';
-  const titleInk = workTitleColorStyle(presentation.titleColor).color as string;
-  const kickerInk = `color-mix(in srgb, ${titleInk} 38%, transparent)`;
+  // Each text is its own field (like the other sections' headers); empty = section copy.
+  const label = presentation.editorialLabelText?.trim() || t('Portfolio');
+  const title = presentation.editorialTitleText?.trim() || sectionTitle.trim();
+  const subtitle = presentation.editorialSubtitleText?.trim() || sectionSubtitle?.trim() || '';
+  const labelInk = workPaletteTokenColor(presentation.editorialLabelColor ?? 'principal');
+  const titleInk = workPaletteTokenColor(presentation.editorialTitleColor ?? 'principal');
+  const subtitleInk = workPaletteTokenColor(presentation.editorialSubtitleColor ?? 'texteFort');
+  // Kicker and subtitle stay quieter than the title whatever token they use.
+  const kickerInk = `color-mix(in srgb, ${labelInk} 60%, transparent)`;
+  const subtitleMutedInk = `color-mix(in srgb, ${subtitleInk} 72%, transparent)`;
 
   const headerRef = useRef<HTMLElement>(null);
 
@@ -164,7 +196,7 @@ export function WorkEditorialHeader({
       window.clearTimeout(refreshId);
       ctx?.revert();
     };
-  }, [animationEnabled, title, subtitle, showLabel, showTitle, showSubtitle]);
+  }, [animationEnabled, label, title, subtitle, showLabel, showTitle, showSubtitle]);
 
   return (
     <header
@@ -176,16 +208,20 @@ export function WorkEditorialHeader({
         <div className="min-w-0 max-w-3xl">
           {showLabel ? (
             <p
-              className="pf-work-editorial-kicker mb-0 text-[0.68rem] font-semibold uppercase tracking-[0.24em]"
-              style={{ color: kickerInk }}
+              className="pf-work-editorial-kicker mb-0 uppercase tracking-[0.24em]"
+              style={{
+                color: kickerInk,
+                fontSize: LABEL_SIZE[presentation.editorialLabelSize ?? 'md'],
+                fontWeight: LABEL_WEIGHT[presentation.editorialLabelWeight ?? 'regular'],
+              }}
             >
-              {t('Portfolio')}
+              {label}
             </p>
           ) : null}
           {showTitle ? (
             <h2
               className={`mb-0 mt-3 ${workHeaderFontClass(presentation.titleFont, 'title')} ${TITLE_SIZE_CLASS[presentation.headerTitleSize ?? 'md']} ${TITLE_WEIGHT_CLASS[presentation.headerTitleWeight ?? 'regular']} tracking-[-0.03em] lg:leading-[0.98]`}
-              style={workTitleColorStyle(presentation.titleColor)}
+              style={{ color: titleInk }}
             >
               <span className="pf-work-editorial-title-mask block overflow-hidden">
                 <span className="pf-work-editorial-title-line block">{title}</span>
@@ -194,8 +230,12 @@ export function WorkEditorialHeader({
           ) : null}
           {showSubtitle && subtitle ? (
             <p
-              className={`pf-work-editorial-sub mb-0 mt-6 max-w-xl ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} text-sm leading-relaxed sm:text-base`}
-              style={workSubtitleColorStyle(presentation.subtitleColor)}
+              className={`pf-work-editorial-sub mb-0 mt-6 max-w-xl ${workHeaderFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
+              style={{
+                color: subtitleMutedInk,
+                fontSize: SUBTITLE_SIZE[presentation.editorialSubtitleSize ?? 'md'],
+                fontWeight: SUBTITLE_WEIGHT[presentation.editorialSubtitleWeight ?? 'regular'],
+              }}
             >
               {subtitle}
             </p>

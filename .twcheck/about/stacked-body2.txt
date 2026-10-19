@@ -1,0 +1,123 @@
+  const manyTasks = tasks.length > 4;
+  const hasQuoteBlock =
+    (presentation.showQuote && Boolean(quote)) ||
+    (presentation.showFounder && Boolean(founderName || founderFunction || founderLogo));
+  const hasImages = images.length > 0;
+  const [leadImage, ...restImages] = images;
+
+  // Two columns from `lg` when there are images, so a wide canvas is used instead of leaving its
+  // right half empty: copy + tasks top-left, the quote closing the left column at the foot of the
+  // images, the images spanning the right column. Below `lg` the DOM order is the reading order
+  // (copy, images, quote) in one column.
+  const gridClass = hasImages
+    ? 'grid gap-y-9 sm:gap-y-11 lg:grid-cols-[minmax(0,1fr)_minmax(0,1.1fr)] lg:gap-x-14 lg:gap-y-10 xl:gap-x-20'
+    : 'space-y-9 sm:space-y-11 lg:space-y-12';
+
+  return (
+    <div className={gridClass}>
+      <div className="space-y-9 sm:space-y-11 lg:col-start-1 lg:row-start-1 lg:self-start lg:space-y-10">
+        {title || description ? (
+          // Title + paragraph read as one unit (tight); the blocks after it get a larger step.
+          <div className="space-y-4 sm:space-y-5">
+            {title ? (
+              <h3
+                className="max-w-3xl text-balance text-[1.75rem] font-semibold leading-[1.15] tracking-tight sm:text-4xl sm:leading-[1.15] lg:text-[2.5rem] lg:leading-[1.1]"
+                style={{ color: presentation.titleColor } satisfies CSSProperties}
+              >
+                {title}
+              </h3>
+            ) : null}
+
+            {description ? (
+              // ~62–68 characters per line at every size: past that the eye loses its place.
+              <p
+                className="max-w-[40rem] text-pretty text-base leading-[1.7] sm:text-lg"
+                style={{ color: presentation.descriptionColor }}
+              >
+                {description}
+              </p>
+            ) : null}
+          </div>
+        ) : null}
+
+        {presentation.showTasks && tasks.length > 0 ? (
+          <ul
+            className={`space-y-3 ${
+              manyTasks ? 'max-w-3xl md:grid md:grid-cols-2 md:gap-x-10 md:gap-y-3 md:space-y-0' : 'max-w-2xl'
+            }`}
+          >
+            {tasks.map((task, index) => (
+              <li
+                key={`${index}-${task}`}
+                className="flex gap-3 text-[15px] leading-relaxed sm:text-base"
+                style={{ color: presentation.taskColor }}
+              >
+                <PortfolioListMarker
+                  style={marker.style}
+                  color={marker.color}
+                  index={index}
+                  size={marker.size}
+                  sizePx={marker.sizePx}
+                  weight={marker.weight}
+                  weightAmount={marker.weightAmount}
+                />
+                <span className="min-w-0">{task}</span>
+              </li>
+            ))}
+          </ul>
+        ) : null}
+      </div>
+
+      {hasImages ? (
+        // Mosaic: one lead image at full width, any others in pairs beneath it. A lone image keeps
+        // a 4:3 frame; with company it goes flatter so the stack stays compact.
+        <div className="grid gap-3 sm:gap-4 lg:col-start-2 lg:row-span-2 lg:row-start-1">
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            key={leadImage}
+            {...mediaImageResponsive(leadImage, ABOUT_MEDIA_WIDTHS)}
+            sizes="(min-width: 1024px) 50vw, 90vw"
+            alt=""
+            loading="lazy"
+            className={`w-full rounded-2xl object-cover ${
+              restImages.length > 0 ? 'aspect-[16/10]' : 'aspect-[4/3] lg:aspect-[5/4]'
+            }`}
+          />
+          {restImages.length > 0 ? (
+            <div
+              className={`grid gap-3 sm:gap-4 ${restImages.length === 1 ? '' : 'grid-cols-1 sm:grid-cols-2'}`}
+            >
+              {restImages.map((src) => (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  key={src}
+                  {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+                  sizes="(min-width: 1024px) 25vw, (min-width: 640px) 45vw, 90vw"
+                  alt=""
+                  loading="lazy"
+                  className={`w-full rounded-2xl object-cover ${
+                    restImages.length === 1 ? 'aspect-[16/10]' : 'aspect-[16/10] sm:aspect-[4/3]'
+                  }`}
+                />
+              ))}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+
+      {hasQuoteBlock ? (
+        <div className="lg:col-start-1 lg:row-start-2 lg:self-end">
+          <AboutUsQuoteFounder
+            quote={quote}
+            founderName={founderName}
+            founderFunction={founderFunction}
+            founderLogo={founderLogo}
+            presentation={presentation}
+            large
+          />
+        </div>
+      ) : null}
+    </div>
+  );
+}
+

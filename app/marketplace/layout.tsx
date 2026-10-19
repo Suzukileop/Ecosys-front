@@ -1,3 +1,5 @@
+/* Families portfolios can pick by name — not needed on the landing / sign-in pages. */
+import '@/lib/fonts/portfolio-fonts';
 import { cookies } from 'next/headers';
 import { MarketplaceShell } from '@/components/marketplace/MarketplaceShell';
 

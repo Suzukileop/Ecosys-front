@@ -228,7 +228,7 @@ function PhoneField({
             placeholder={t('Search country or code')}
             aria-label={t('Search country or code')}
             onChange={(event) => setQuery(event.currentTarget.value)}
-            className="mb-1 w-full rounded-lg bg-black/[0.03] px-3 py-2 text-[14px] text-black outline-none placeholder:text-neutral-400 dark:bg-white/[0.05] dark:text-neutral-100 dark:placeholder:text-neutral-500"
+            className="mb-1 w-full rounded-lg bg-black/[0.03] px-3 py-2 text-[14px] text-black outline-hidden placeholder:text-neutral-400 dark:bg-white/[0.05] dark:text-neutral-100 dark:placeholder:text-neutral-500"
           />
           <ul role="listbox" aria-label={t('Country code')} className="max-h-60 overflow-y-auto">
             {countries.map((country) => {

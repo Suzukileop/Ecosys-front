@@ -11,6 +11,7 @@ export type LegalSection = { id: string; title: string; content: ReactNode };
 const DOCUMENTS = [
   { href: '/terms', label: msg('Terms of service'), short: 'Terms' },
   { href: '/privacy', label: msg('Privacy policy'), short: 'Privacy' },
+  { href: '/legal', label: msg('Legal notice'), short: 'Legal' },
 ] as const;
 
 const PROSE =

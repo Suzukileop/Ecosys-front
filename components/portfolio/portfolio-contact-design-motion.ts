@@ -121,7 +121,9 @@ export function contactLightDarkTokens(colorMode: 'light' | 'dark'): ContactLigh
     bg: `var(--pf-palette-fond, ${isLight ? '#ffffff' : '#000000'})`,
     ink,
     muted: `var(--pf-palette-texte-muted, ${isLight ? '#8f8f8f' : '#7d7d7d'})`,
-    faint: `color-mix(in srgb, ${ink} 35%, transparent)`,
+    // Micro-caps labels (10–11px): 65% keeps them quiet yet above 4.5:1 in both modes (35% read
+    // at ~3:1 dark and ~2.6:1 light).
+    faint: `color-mix(in srgb, ${ink} 65%, transparent)`,
     border: `color-mix(in srgb, ${ink} 13%, transparent)`,
     placeholderBg: `var(--pf-palette-neutre, ${isLight ? '#ececec' : '#141414'})`,
   };

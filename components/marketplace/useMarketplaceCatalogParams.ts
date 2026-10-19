@@ -8,8 +8,9 @@ import type { ProductType } from '@/types/marketplace';
 export type MarketplaceSort = 'newest' | 'popular' | 'views' | 'price_asc' | 'price_desc';
 export type MarketplaceProductFormat = ProductFormat;
 
-export const MARKETPLACE_PAGE_SIZE_OPTIONS = [10, 50, 100, 200, 500, 1000] as const;
-export const MARKETPLACE_DEFAULT_PAGE_SIZE = 100;
+/* Capped at 200 by the API: a 1,000-product page was one multi-megabyte response to render at once. */
+export const MARKETPLACE_PAGE_SIZE_OPTIONS = [10, 50, 100, 200] as const;
+export const MARKETPLACE_DEFAULT_PAGE_SIZE = 50;
 export const MARKETPLACE_DEFAULT_FORMAT: MarketplaceProductFormat = 'physical';
 
 function parseEuroToCents(value: string): number | undefined {

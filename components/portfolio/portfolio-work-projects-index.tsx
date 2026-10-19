@@ -127,22 +127,19 @@ function IndexStack({ tools, ink }: { tools: string[]; ink: string }) {
   const t = useT();
   if (tools.length === 0) return null;
   return (
+    // Spacing instead of "·" (a wrapped line could start with an orphan dot); no extra 0.75
+    // opacity on top of the already-softened ink — tools sit on a photo.
     <ul
-      className="pf-work-index-reveal flex flex-wrap items-center gap-x-0 gap-y-1.5"
+      className="pf-work-index-reveal flex flex-wrap items-center gap-x-5 gap-y-2"
       aria-label={t('Stack')}
       style={{ transitionDelay: '0.18s' }}
     >
-      {tools.map((tool, index) => (
+      {tools.map((tool) => (
         <li
           key={tool}
-          className="flex items-center text-xs font-medium uppercase tracking-[0.14em] sm:text-sm"
-          style={{ color: ink, opacity: 0.75 }}
+          className="text-xs font-medium uppercase tracking-[0.16em] sm:text-[0.8125rem]"
+          style={{ color: ink }}
         >
-          {index > 0 ? (
-            <span className="mx-2.5 opacity-40" aria-hidden>
-              ·
-            </span>
-          ) : null}
           {tool}
         </li>
       ))}
@@ -155,12 +152,14 @@ function IndexNumberBadge({
   total,
   marker,
   accent,
+  ink,
   muted,
 }: {
   index: number;
   total: number;
   marker: 'number' | 'bullet';
   accent: string;
+  ink: string;
   muted: string;
 }) {
   if (marker === 'bullet') {
@@ -172,13 +171,18 @@ function IndexNumberBadge({
       />
     );
   }
+  // Red-on-photo digits read ~2:1: the digits take the scene ink, the creator's color moves
+  // to a short rule in front (shape, not text, so its contrast is decorative).
   return (
     <p
-      className="flex items-baseline gap-2 font-mono text-xs tracking-[0.18em] tabular-nums sm:text-sm"
+      className="flex items-center gap-3 font-mono text-xs tracking-[0.18em] tabular-nums sm:text-sm"
       aria-hidden
     >
-      <span style={{ color: accent }}>{formatIndexNumber(index)}</span>
-      <span style={{ color: muted, opacity: 0.55 }}>/ {formatIndexNumber(total - 1)}</span>
+      <span className="h-px w-6 shrink-0" style={{ backgroundColor: accent || ink }} />
+      <span className="font-medium" style={{ color: ink }}>
+        {formatIndexNumber(index)}
+      </span>
+      <span style={{ color: muted }}>/ {formatIndexNumber(total - 1)}</span>
     </p>
   );
 }
@@ -252,6 +256,7 @@ function IndexScene({
             total={total}
             marker={board.indexMarker ?? 'number'}
             accent={accent}
+            ink={heroInk}
             muted={heroMuted}
           />
         ) : null}
@@ -521,12 +526,15 @@ export function ProjectsIndexGallery({
   return (
     <div className="pf-work-index relative w-full" data-pf-no-color-transition="">
       <style>{`
+        /* Darkens from ~45 % down: the number and the first title line sit around 65 % of
+           the scene height, where the old ramp (0.18 → 0.8) left a bright photo under white type. */
         .pf-work-index-scene-scrim {
           background: linear-gradient(
             180deg,
-            rgba(0, 0, 0, 0.08) 0%,
-            rgba(0, 0, 0, 0.18) 42%,
-            rgba(0, 0, 0, 0.8) 100%
+            rgba(0, 0, 0, 0.06) 0%,
+            rgba(0, 0, 0, 0.14) 38%,
+            rgba(0, 0, 0, 0.56) 62%,
+            rgba(0, 0, 0, 0.84) 100%
           );
         }
         .pf-work-index-scene-media {
@@ -546,18 +554,25 @@ export function ProjectsIndexGallery({
           );
           transition: opacity 0.6s ease;
         }
+        /* A light, not a tint: at 0.55 the accent recolored the creator's photo. */
         .pf-work-index-scene[data-scene-active='true'] .pf-work-index-scene-spot {
-          opacity: 0.55;
+          opacity: 0.18;
         }
         .pf-work-index-scene-dim {
           pointer-events: none;
           background: #000;
           opacity: 0;
         }
+        /* Padding + matching negative margin: at leading 0.94 the mask clipped descenders,
+           and the italic last word's overhang on the right (the "g" of "booking"). */
         .pf-work-index-word-mask {
           display: inline-block;
           overflow: hidden;
           vertical-align: bottom;
+          padding-bottom: 0.16em;
+          margin-bottom: -0.16em;
+          padding-inline-end: 0.1em;
+          margin-inline-end: -0.1em;
         }
         .pf-work-index-word-inner {
           display: inline-block;

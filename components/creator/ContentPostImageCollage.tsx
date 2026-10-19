@@ -107,7 +107,7 @@ export function ContentPostImageCollage({
               overflow ? `Open photo ${index + 1} — ${hidden} more photos` : `Open photo ${index + 1} of ${urls.length}`
             }
             data-pf-no-color-transition
-            className={`group/tile relative min-h-0 min-w-0 cursor-pointer overflow-hidden bg-neutral-100 focus-visible:z-10 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF5722] dark:bg-neutral-900 ${slot.place}`}
+            className={`group/tile relative min-h-0 min-w-0 cursor-pointer overflow-hidden bg-neutral-100 focus-visible:z-10 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#FF5722] dark:bg-neutral-900 ${slot.place}`}
           >
             {/* eslint-disable-next-line @next/next/no-img-element */}
             <img

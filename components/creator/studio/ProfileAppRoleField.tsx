@@ -53,7 +53,7 @@ export function ProfileAppRoleField({ value, disabled, onChange }: ProfileAppRol
               onClick={() => {
                 if (!disabled && !selected) onChange(option.value);
               }}
-              className={`group flex w-full items-start gap-5 py-6 text-left transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset sm:gap-6 sm:py-7 ${
+              className={`group flex w-full items-start gap-5 py-6 text-left transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset sm:gap-6 sm:py-7 ${
                 accent.focusRing
               } ${disabled ? 'cursor-not-allowed opacity-60' : 'cursor-pointer'}`}
             >

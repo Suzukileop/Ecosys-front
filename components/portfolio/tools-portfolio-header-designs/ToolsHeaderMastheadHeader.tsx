@@ -52,7 +52,9 @@ export function ToolsHeaderMastheadHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_TOOLS_PRESENTATION;
-  const centered = presentation.headerDesignAlignment === 'center';
+  const alignment = presentation.headerDesignAlignment ?? 'left';
+  const centered = alignment === 'center';
+  const right = alignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   const ink = toolsHeaderPaletteTokenColor(presentation.headerMastheadHeadlineColor ?? 'principal');
@@ -231,11 +233,11 @@ export function ToolsHeaderMastheadHeader({
       data-tools-header="masthead"
     >
       {styledLines.length > 0 ? (
-        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : 'items-start'}`}>
+        <div className={`flex flex-col gap-1 sm:gap-2 ${centered ? 'items-center' : right ? 'items-end' : 'items-start'}`}>
           {styledLines.map((words, lineIndex) => (
             <div key={lineIndex} className="overflow-hidden" data-tools-header-line>
               <h2
-                className={`${HEADLINE_SIZE_CLASS[presentation.headerMastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : 'text-left'}`}
+                className={`${HEADLINE_SIZE_CLASS[presentation.headerMastheadHeadlineSize ?? 'md']} uppercase leading-[1.08] tracking-[-0.02em] ${centered ? 'text-center' : right ? 'text-right' : 'text-left'}`}
                 style={{ color: ink }}
               >
                 {words.map((word, wordIndex) => (

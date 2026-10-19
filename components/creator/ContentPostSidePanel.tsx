@@ -107,7 +107,7 @@ export function ContentPostSidePanel({
 
   return (
     <div
-      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm dark:border-neutral-800 dark:bg-neutral-900 ${className}`}
+      className={`flex h-full min-h-0 flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xs dark:border-neutral-800 dark:bg-neutral-900 ${className}`}
     >
       <div
         className="flex h-full min-h-0 flex-1 flex-col transition-opacity duration-300 ease-in-out motion-reduce:transition-none"
@@ -134,7 +134,7 @@ export function ContentPostSidePanel({
                   onClick={onCancelEdit}
                   title={t('Cancel')}
                   aria-label={t('Cancel')}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-sm transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-neutral-200 bg-white text-neutral-500 shadow-xs transition hover:border-neutral-300 hover:bg-neutral-50 hover:text-neutral-700 disabled:cursor-not-allowed disabled:opacity-50 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-400"
                 >
                   <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" fixedWidth />
                 </button>
@@ -144,7 +144,7 @@ export function ContentPostSidePanel({
                   onClick={onSaveEdit}
                   title={t('Save')}
                   aria-label={t('Save')}
-                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 shadow-sm transition hover:border-emerald-400 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300"
+                  className="inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border border-emerald-300 bg-emerald-50 text-emerald-700 shadow-xs transition hover:border-emerald-400 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50 dark:border-emerald-500/40 dark:bg-emerald-500/10 dark:text-emerald-300"
                 >
                   <FontAwesomeIcon
                     icon={editSaving ? faSpinner : faCircleCheck}

@@ -107,7 +107,7 @@ export function AbbreviatedLine({
   return (
     <div ref={boxRef} className={`flex min-w-0 items-center gap-2 ${className}`}>
       {href ? (
-        <Link href={href} className="min-w-0 focus-visible:outline-none">
+        <Link href={href} className="min-w-0 focus-visible:outline-hidden">
           {content}
         </Link>
       ) : (

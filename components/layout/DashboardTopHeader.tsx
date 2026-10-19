@@ -36,7 +36,7 @@ function MobileNavTrigger({ open, onToggle }: { open: boolean; onToggle: () => v
       onClick={onToggle}
       aria-label={open ? t('Close navigation') : t('Open navigation')}
       aria-expanded={open}
-      className={`group/burger inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] transition-[color,transform] duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 dark:text-neutral-300 lg:hidden`}
+      className={`group/burger inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#222222] transition-[color,transform,translate,scale,rotate] duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-neutral-400 dark:text-neutral-300 lg:hidden`}
     >
       <span className="relative flex h-[0.7rem] w-[1.1rem] flex-col justify-between" aria-hidden>
         <span
@@ -93,7 +93,7 @@ function HeaderAccountMenu() {
         aria-haspopup="menu"
         aria-label={t('Account')}
         title={user.fullName}
-        className={`group/avatar relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400`}
+        className={`group/avatar relative flex h-10 w-10 shrink-0 items-center justify-center rounded-full transition-transform duration-[420ms] ${EASE} hover:scale-105 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-neutral-400`}
       >
         {/* A hairline ring that draws itself in rather than a filled plate — the same restraint
             the rest of the bar's controls keep. */}
@@ -252,7 +252,7 @@ export function DashboardTopHeader() {
           <Link
             href="/feed"
             aria-label={t('Skraft — News')}
-            className={`shrink-0 rounded-lg text-[#0A0A0A] transition-opacity duration-[420ms] ${EASE} hover:opacity-80 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:text-white dark:focus-visible:ring-white/50`}
+            className={`shrink-0 rounded-lg text-[#0A0A0A] transition-opacity duration-[420ms] ${EASE} hover:opacity-80 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:text-white dark:focus-visible:ring-white/50`}
           >
             <SkraftWordmark />
           </Link>

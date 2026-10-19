@@ -879,7 +879,7 @@ export function aboutStatCardFrameClass(
   }
   if (p.cardBorder !== 'none') {
     parts.push(aboutCardBorderWidthClass(p.cardBorder));
-    if (p.cardBorder === 'soft') parts.push('shadow-sm');
+    if (p.cardBorder === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -1125,7 +1125,7 @@ export function aboutSidePanelFrameClass(
   }
   if (p.sidePanelBorder !== 'none') {
     parts.push(aboutCardBorderWidthClass(p.sidePanelBorder));
-    if (p.sidePanelBorder === 'soft') parts.push('shadow-sm');
+    if (p.sidePanelBorder === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -1287,7 +1287,7 @@ export function aboutSidePanelShellClass(design: PortfolioAboutSidePanelDesign):
     case 'list':
       return 'flex w-full flex-col';
     default:
-      return 'w-full overflow-hidden rounded-[1.35rem] border border-neutral-200/80 pf-muted-card-gradient shadow-sm';
+      return 'w-full overflow-hidden rounded-[1.35rem] border border-neutral-200/80 pf-muted-card-gradient shadow-xs';
   }
 }
 

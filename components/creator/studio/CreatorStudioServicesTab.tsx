@@ -64,7 +64,7 @@ const STATUS_FILTER_OPTIONS: { value: StatusFilter; label: string }[] = [
 
 /** "+ New service" — the page's one primary: an ink pill (every action on the page is a pill). */
 const newServiceButtonClass =
-  'inline-flex items-center justify-center gap-2 rounded-full bg-[#0F1419] px-4 py-2 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#0F1419] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC] dark:focus-visible:ring-[#E7E9EA]/40 dark:focus-visible:ring-offset-black dark:disabled:hover:bg-[#EFF3F4]';
+  'inline-flex items-center justify-center gap-2 rounded-full bg-[#0F1419] px-4 py-2 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 disabled:hover:bg-[#0F1419] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC] dark:focus-visible:ring-[#E7E9EA]/40 dark:focus-visible:ring-offset-black dark:disabled:hover:bg-[#EFF3F4]';
 
 /**
  * Display-only fix for the recurring "Scientis" misspelling in a specialty tag — the stored
@@ -103,7 +103,7 @@ function ExternalIcon({ className }: { className?: string }) {
 
 /** The rail's primary — News's "Publish a post" pill (the `gn-primary` ink fill, 48px, full width). */
 const railPrimaryButtonClass =
-  'gn-primary inline-flex h-12 w-full items-center justify-center !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:cursor-not-allowed disabled:opacity-40';
+  'gn-primary inline-flex h-12 w-full items-center justify-center !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:cursor-not-allowed disabled:opacity-40';
 
 /** A storefront: the public profile's services tab, as clients see it. */
 const STOREFRONT_ICON = (
@@ -901,7 +901,7 @@ export function CreatorStudioServicesTab({
                     onClick={() => setStatusFilter(option.value)}
                     aria-pressed={selected}
                     data-pf-no-color-transition
-                    className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-white/30 ${
+                    className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 text-[15px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-white/30 ${
                       selected
                         ? 'font-bold text-[#0F1419] dark:text-[#E7E9EA]'
                         : 'font-medium text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]'
@@ -1033,7 +1033,7 @@ export function CreatorStudioServicesTab({
                         title={t('Drag to reorder')}
                         // Floats over the media (glass chip), so it takes no room: its top-left corner on
                         // phones, the middle of its left edge from sm.
-                        className={`absolute left-5 top-5 z-10 flex touch-none select-none items-center justify-center rounded-md bg-black/55 px-1.5 py-2 text-white/80 backdrop-blur-md transition-opacity hover:text-white focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 sm:left-6 sm:top-1/2 sm:-translate-y-1/2 ${
+                        className={`absolute left-5 top-5 z-10 flex touch-none select-none items-center justify-center rounded-md bg-black/55 px-1.5 py-2 text-white/80 backdrop-blur-md transition-opacity hover:text-white focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/40 sm:left-6 sm:top-1/2 sm:-translate-y-1/2 ${
                           canReorder ? 'cursor-grab active:cursor-grabbing' : 'cursor-not-allowed'
                         } ${isDragging ? 'opacity-100' : 'opacity-100 md:opacity-0 md:group-hover:opacity-100'}`}
                         onPointerDown={(event) => {
@@ -1085,7 +1085,7 @@ export function CreatorStudioServicesTab({
                           onClick={() => openEdit(service)}
                           disabled={saving || Boolean(draft)}
                           title={t('Edit service')}
-                          className="text-left outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[#0F1419]/30 disabled:cursor-default dark:focus-visible:after:ring-white/30"
+                          className="text-left outline-hidden after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[#0F1419]/30 disabled:cursor-default dark:focus-visible:after:ring-white/30"
                         >
                           {service.title}
                         </button>
@@ -1243,7 +1243,7 @@ export function CreatorStudioServicesTab({
               href={publicServicesHref}
               target="_blank"
               rel="noreferrer"
-              className="gn-rail-box group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+              className="gn-rail-box group flex items-center gap-4 px-6 py-4 transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
             >
               <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_var(--gn-line)]">
                 <RailGlyph>{STOREFRONT_ICON}</RailGlyph>

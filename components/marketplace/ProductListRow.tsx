@@ -111,7 +111,7 @@ export function ProductListRow({
           {/* The title is the row's link; it stretches over the whole row. */}
           <Link
             href={href}
-            className="outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[color:var(--gn-ring)]"
+            className="outline-hidden after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[color:var(--gn-ring)]"
           >
             {product.title}
           </Link>

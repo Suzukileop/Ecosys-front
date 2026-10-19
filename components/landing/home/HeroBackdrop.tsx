@@ -2,6 +2,9 @@
 
 import Image from 'next/image';
 import { useEffect, useState } from 'react';
+import heroPro from '@/public/landing/hero/hero-pro.jpg';
+import heroStudent from '@/public/landing/hero/hero-student.jpg';
+import heroFreelance from '@/public/landing/hero/hero-freelance.jpg';
 
 /**
  * Professional, student, freelancer — each on the right of the frame, the left kept dark for the
@@ -9,9 +12,9 @@ import { useEffect, useState } from 'react';
  * 8OZh33HlFq4 by Daniel Maraventano, sgzFhiSUoII by Akram Huseyn.
  */
 const SLIDES = [
-  { src: '/landing/hero/hero-pro.jpg', frame: 'object-[62%_center] md:object-center' },
-  { src: '/landing/hero/hero-student.jpg', frame: 'object-[72%_center] md:object-center' },
-  { src: '/landing/hero/hero-freelance.jpg', frame: 'object-[75%_center] md:object-center' },
+  { src: heroPro, frame: 'object-[62%_center] md:object-center' },
+  { src: heroStudent, frame: 'object-[72%_center] md:object-center' },
+  { src: heroFreelance, frame: 'object-[75%_center] md:object-center' },
 ] as const;
 
 const INTERVAL_MS = 5000;
@@ -27,24 +30,44 @@ export function HeroBackdrop() {
     previous: null,
   });
 
+  /* Only the first photo competes with the page's first paint; the two others are mounted once the
+     page has loaded, well before the first cross-fade (INTERVAL_MS). */
+  const [restMounted, setRestMounted] = useState(false);
+
   useEffect(() => {
     if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
+    let timer = 0;
+    const mountRest = () => {
+      timer = window.setTimeout(() => setRestMounted(true), 1500);
+    };
+    if (document.readyState === 'complete') mountRest();
+    else window.addEventListener('load', mountRest, { once: true });
+    return () => {
+      window.clearTimeout(timer);
+      window.removeEventListener('load', mountRest);
+    };
+  }, []);
+
+  useEffect(() => {
+    if (!restMounted) return;
     const timer = window.setInterval(() => {
       setSlides(({ active: current }) => ({ active: (current + 1) % SLIDES.length, previous: current }));
     }, INTERVAL_MS);
     return () => window.clearInterval(timer);
-  }, []);
+  }, [restMounted]);
 
   return (
     <div aria-hidden className="pointer-events-none absolute inset-0 -z-10 overflow-hidden">
       {SLIDES.map(({ src, frame }, i) => {
+        if (i > 0 && !restMounted) return null;
         const isActive = i === active;
         /* The outgoing slide stays opaque underneath, so the fade never dips into the black background. */
         const isPrevious = i === previous;
         return (
           <Image
-            key={src}
+            key={src.src}
             src={src}
+            placeholder={i === 0 ? 'blur' : 'empty'}
             alt=""
             fill
             priority={i === 0}

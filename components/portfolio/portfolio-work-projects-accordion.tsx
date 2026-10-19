@@ -72,31 +72,20 @@ const ACCORDION_CSS = `
 [data-acc-ready='1'] .portfolio-acc-item:focus-within .portfolio-acc-title {
   transform: translateX(0.4rem);
 }
-/* Inactive titles pop to pure white on hover/focus — color value only (the
-   existing 0.4s transition above still carries it); needs !important because
-   this is fighting the inline style={{color}} on the same element, which no
-   plain-specificity external rule can ever out-rank. Scoped to closed items
-   only — the open item is already at titleInk, so this would be a no-op for
-   it visually, but scoping keeps the intent explicit. */
+/* Closed titles take the strong title ink on hover/focus. It comes from the palette
+   (--acc-title-ink on the list): the old fixed #ffffff vanished on a light section.
+   !important because it fights the inline style={{color}} on the same element. Closed
+   titles stay readable at rest (no more 0.18 opacity, no sibling dimming on list hover):
+   size and weight carry the open/closed hierarchy, not near-invisibility. */
 [data-acc-ready='1'] .portfolio-acc-item[data-open='false']:hover .portfolio-acc-title,
 [data-acc-ready='1'] .portfolio-acc-item[data-open='false']:focus-within .portfolio-acc-title {
-  color: #ffffff !important;
+  color: var(--acc-title-ink) !important;
+  opacity: 1 !important;
 }
-.portfolio-acc-tags {
-  scrollbar-width: none;
-  -ms-overflow-style: none;
-}
-.portfolio-acc-tags::-webkit-scrollbar {
-  display: none;
-}
-@media (hover: hover) and (prefers-reduced-motion: no-preference) {
-  [data-acc-ready='1'] .portfolio-acc-item {
-    opacity: 1;
-    transition: opacity 0.7s ${EASE_OUT};
-  }
-  [data-acc-ready='1'] .portfolio-acc-list:hover .portfolio-acc-item:not(:hover):not(:focus-within) {
-    opacity: 0.38;
-  }
+.portfolio-acc-trigger:focus-visible .portfolio-acc-title {
+  text-decoration: underline;
+  text-decoration-thickness: 1px;
+  text-underline-offset: 0.18em;
 }
 @media (prefers-reduced-motion: reduce) {
   .portfolio-acc-enter {
@@ -195,14 +184,17 @@ function EditorialTitleText({
   open: boolean;
 }) {
   const { lead, rest } = splitEditorialTitle(title);
+  // The light/semibold split is the open title's editorial signature; closed titles keep
+  // one weight so a list of small mixed-weight lines doesn't read as noise.
+  if (!open) return <span className="font-normal">{title}</span>;
   if (!rest) {
-    return <span className={open ? 'font-semibold' : 'font-light'}>{lead}</span>;
+    return <span className="font-semibold">{lead}</span>;
   }
   return (
     <>
       <span className="font-light">{lead}</span>
       {' '}
-      <span className={open ? 'font-semibold' : 'font-normal'}>{rest}</span>
+      <span className="font-semibold">{rest}</span>
     </>
   );
 }
@@ -519,7 +511,7 @@ function AccordionPreview({
           href={href}
           target="_blank"
           rel="noopener noreferrer"
-          className="block focus:outline-none"
+          className="block focus:outline-hidden"
           aria-label={`${ctaLabel}: ${title || 'project'}`}
         >
           {content}
@@ -548,6 +540,7 @@ function AccordionItem({
   showRoleInPanel,
   showCategoryInPanel,
   showTools,
+  toolsLabel,
   mobileThumbnailSurface,
 }: {
   item: MarketplaceContentItem;
@@ -566,6 +559,8 @@ function AccordionItem({
   showRoleInPanel: boolean;
   showCategoryInPanel: boolean;
   showTools: boolean;
+  /** Heading above the meta line when the item has tools (Tools label setting), else null. */
+  toolsLabel: string | null;
   /** Below `lg` there's no separate side preview column, so each item shows its
    *  own thumbnail inline, at the bottom of its own open panel (after the tags) —
    *  instead of a shared image ending up stranded after the whole list. */
@@ -600,14 +595,15 @@ function AccordionItem({
       data-pf-no-color-transition=""
     >
       {index > 0 ? (
+        // The border color at 24 % (#27272A on black) was invisible; lifted toward the ink.
         <div
           className="mb-1 h-px w-[min(100%,19rem)]"
-          style={{ backgroundColor: border, opacity: 0.24 }}
+          style={{ backgroundColor: `color-mix(in srgb, ${border}, ${titleInk} 18%)` }}
           aria-hidden
         />
       ) : null}
 
-      {/* focus:outline-none flips outline-style/width to solid/2px instantly on
+      {/* focus:outline-hidden flips outline-style/width to solid/2px instantly on
           click, but without data-pf-no-color-transition the global color-crossfade
           rule still fades outline-color from opaque to transparent over ~620ms —
           a solid frame flashing in on every click before fading back out. */}
@@ -620,28 +616,30 @@ function AccordionItem({
         onMouseEnter={onPreviewHover}
         onFocus={onPreviewHover}
         onMouseLeave={onPreviewLeave}
-        className={`flex w-full items-baseline gap-4 text-left sm:gap-5 ${
-          open ? 'pb-5 pt-9 sm:pb-6 sm:pt-12 lg:pt-14' : 'py-8 sm:py-10 lg:py-11'
-        } ${index === 0 ? '!pt-0' : ''} rounded-sm focus:outline-none`}
+        className={`portfolio-acc-trigger flex w-full items-baseline gap-4 text-left sm:gap-5 ${
+          open ? 'pb-5 pt-9 sm:pb-6 sm:pt-12 lg:pt-14' : 'py-7 sm:py-8 lg:py-9'
+        } ${index === 0 ? '!pt-0' : ''} rounded-xs focus:outline-hidden`}
         data-pf-no-color-transition=""
       >
+        {/* Decorative ordinal (the button already names the project): the open one takes
+            the creator's main color — the section's signature accent. */}
         <span
-          className="w-7 shrink-0 font-light tabular-nums text-xs tracking-[0.14em] transition-[color,opacity] duration-300 sm:w-8 sm:text-sm"
-          style={{ color: open ? titleInk : muted, opacity: open ? 0.9 : 0.4 }}
+          aria-hidden
+          className="w-7 shrink-0 font-medium tabular-nums text-xs tracking-[0.14em] transition-[color,opacity] duration-300 sm:w-8 sm:text-[0.8125rem]"
+          style={{ color: open ? accent || titleInk : muted, opacity: open ? 1 : 0.7 }}
           data-pf-no-color-transition=""
         >
           {formatAccordionIndex(index)}
         </span>
-        {/* Active title goes gigantic (display-scale) and full-opacity; closed
-            titles shrink back down and fade to ~0.3 — this size/opacity swing is
-            the sole state indicator now (no more +/- glyph). */}
+        {/* Open title is display-scale (sized to the ~5/12 column: the old 4.6rem wrapped
+            into a heavy block against the image); closed titles stay readable list items. */}
         <span
           className={`portfolio-acc-title min-w-0 flex-1 tracking-[-0.03em] ${
             open
-              ? 'text-[2.15rem] leading-[0.98] sm:text-[3.1rem] lg:text-[4.1rem] xl:text-[4.6rem]'
-              : 'text-[1.2rem] leading-[1.16] sm:text-[1.45rem] lg:text-[1.6rem]'
+              ? 'text-[2.1rem] leading-[1] sm:text-[2.75rem] lg:text-[3.25rem] xl:text-[3.75rem]'
+              : 'text-[1.25rem] leading-[1.2] sm:text-[1.4rem] lg:text-[1.5rem]'
           }`}
-          style={{ color: open ? titleInk : muted, opacity: open ? 1 : 0.18 }}
+          style={{ color: open ? titleInk : muted, opacity: open ? 1 : 0.6 }}
           data-pf-no-color-transition=""
         >
           <EditorialTitleText title={item.title} open={open} />
@@ -674,25 +672,41 @@ function AccordionItem({
               </p>
             ) : null}
 
-            {showMetaLine ? (
-              <ul
-                className={`portfolio-acc-tags group/tags flex flex-nowrap items-baseline gap-x-3 overflow-x-auto ${
+            {toolsLabel && tools.length > 0 ? (
+              <p
+                className={`flex items-center gap-3 text-[0.62rem] font-semibold uppercase tracking-[0.24em] ${
                   showDescription && description ? 'mt-7' : 'mt-1'
+                }`}
+                style={{ color: muted }}
+              >
+                <span aria-hidden className="h-px w-5" style={{ backgroundColor: muted, opacity: 0.5 }} />
+                {toolsLabel}
+              </p>
+            ) : null}
+
+            {showMetaLine ? (
+              // Wraps instead of a hidden-scrollbar horizontal scroll (tags were cut mid-line
+              // with no cue, ending on an orphan "/"). Spacing replaces the slashes; tags stay
+              // fully legible (no 50 % rest / 25 % sibling dimming).
+              <ul
+                className={`flex flex-wrap items-baseline gap-x-4 gap-y-2 ${
+                  toolsLabel && tools.length > 0 ? 'mt-3' : showDescription && description ? 'mt-7' : 'mt-1'
                 }`}
                 aria-label={t('Role, category and tools')}
               >
                 {metaItems.map((meta, metaIndex) => (
                   <li
                     key={`${meta.text}-${metaIndex}`}
-                    className="flex shrink-0 items-baseline gap-3 whitespace-nowrap text-[0.68rem] font-medium uppercase tracking-[0.22em] opacity-50 transition-opacity duration-300 hover:!opacity-100 group-hover/tags:opacity-25"
-                    style={{ color: meta.isRole ? roleColor : muted }}
+                    className={`whitespace-nowrap text-[0.6875rem] uppercase leading-none tracking-[0.18em] ${
+                      meta.isRole ? 'font-semibold' : 'font-medium'
+                    }`}
+                    style={{
+                      color: meta.isRole
+                        ? roleColor
+                        : `color-mix(in srgb, ${muted} 85%, transparent)`,
+                    }}
                   >
-                    {metaIndex > 0 ? (
-                      <span aria-hidden className="font-normal opacity-40" style={{ color: muted }}>
-                        /
-                      </span>
-                    ) : null}
-                    <span>{meta.text}</span>
+                    {meta.text}
                   </li>
                 ))}
               </ul>
@@ -808,7 +822,11 @@ export function ProjectsAccordionGallery({
 
   const list = (
     <div ref={listShiftRef} className="min-w-0 will-change-transform">
-      <div className="portfolio-acc-list flex min-w-0 flex-col" role="list">
+      <div
+        className="portfolio-acc-list flex min-w-0 flex-col"
+        role="list"
+        style={{ '--acc-title-ink': titleInk } as CSSProperties}
+      >
         {items.map((item, index) => {
           const open = item.id === effectiveOpenId;
           return (
@@ -836,6 +854,7 @@ export function ProjectsAccordionGallery({
                 showRoleInPanel={board.showRoleInPanel}
                 showCategoryInPanel={board.showCategoryInPanel}
                 showTools={board.showTools}
+                toolsLabel={board.showToolsLabel ? board.toolsLabel.trim() || t('Tools I use') : null}
                 mobileThumbnailSurface={previewSurface}
               />
             </div>

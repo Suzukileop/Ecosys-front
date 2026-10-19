@@ -15,8 +15,17 @@ const PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR = '--portfolio-nav-top-clearance';
 /** Duration to wait after closing an overlay nav before scrolling (panel fold animation). */
 const PORTFOLIO_NAV_OVERLAY_CLOSE_MS = 520;
 
+/*
+ * Last value usePortfolioNavTopClearanceSync wrote to the CSS variable (it is the only writer).
+ * Reading it back with getComputedStyle(document.documentElement) forced a style recalculation of
+ * the whole page on every call — the scroll-spy calls it on each scroll frame, and it was the
+ * single most expensive function while a portfolio hydrates (~1 s on a mid-range phone).
+ */
+let publishedClearancePx: number | null = null;
+
 export function readPortfolioNavTopClearancePx(): number {
   if (typeof document === 'undefined') return 0;
+  if (publishedClearancePx != null) return publishedClearancePx;
   const raw = getComputedStyle(document.documentElement)
     .getPropertyValue(PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR)
     .trim();
@@ -167,6 +176,7 @@ export function usePortfolioNavTopClearanceSync({
     const root = document.documentElement;
 
     const clear = () => {
+      publishedClearancePx = 0;
       root.style.removeProperty(PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR);
       root.style.removeProperty('scroll-padding-top');
     };
@@ -188,6 +198,7 @@ export function usePortfolioNavTopClearanceSync({
         (el.querySelector('[data-portfolio-nav-clearance-box]') as HTMLElement | null) ?? el;
       const bottom = Math.ceil(box.getBoundingClientRect().bottom);
       const clearance = Math.max(0, bottom + CLEARANCE_GAP_PX);
+      publishedClearancePx = clearance;
       root.style.setProperty(PORTFOLIO_NAV_TOP_CLEARANCE_CSS_VAR, `${clearance}px`);
       root.style.setProperty('scroll-padding-top', `${clearance}px`);
     };

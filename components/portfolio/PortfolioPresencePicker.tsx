@@ -79,7 +79,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                  * instead of being re-rasterised against the moving still every frame.
                  */
                 style={{ transition: `transform ${HOVER_MS}ms ${EASE}` }}
-                className={`group/panel relative flex min-h-[17rem] w-full cursor-pointer transform-gpu flex-col justify-between overflow-hidden bg-[#0F1419] p-6 text-left will-change-transform [backface-visibility:hidden] [contain:paint] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:focus-visible:ring-[#E7E9EA] dark:ring-offset-black sm:min-h-[19rem] sm:p-7 md:min-h-[21rem] md:p-8 lg:h-full lg:min-h-0 lg:p-8 ${
+                className={`group/panel relative flex min-h-[17rem] w-full cursor-pointer transform-gpu flex-col justify-between overflow-hidden bg-[#0F1419] p-6 text-left will-change-transform [backface-visibility:hidden] [contain:paint] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:focus-visible:ring-[#E7E9EA] dark:ring-offset-black sm:min-h-[19rem] sm:p-7 md:min-h-[21rem] md:p-8 lg:h-full lg:min-h-0 lg:p-8 ${
                   isActive
                     ? 'z-[1] -translate-y-1.5 lg:-translate-y-2'
                     : 'translate-y-0'
@@ -121,7 +121,7 @@ export function PortfolioPresencePicker({ onSelect }: PortfolioPresencePickerPro
                 <span className="relative z-10 flex items-start justify-end">
                   <span
                     aria-hidden
-                    className={`block transition-[transform,color] duration-[600ms] ${EASE_CLS} ${
+                    className={`block transition-[transform,translate,scale,rotate,color] duration-[600ms] ${EASE_CLS} ${
                       isActive ? '-rotate-45 text-white' : 'rotate-0 text-white/45'
                     }`}
                   >

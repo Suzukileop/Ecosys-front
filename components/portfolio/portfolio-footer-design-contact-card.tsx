@@ -4,10 +4,7 @@ import Link from 'next/link';
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   footerColorLuminance,
   resolveFooterCopyrightLabel,

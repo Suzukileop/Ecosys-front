@@ -102,7 +102,7 @@ export const ContentTitleField = forwardRef<ContentTitleFieldHandle, ContentTitl
           onChange={(e) => onChange(e.target.value)}
           placeholder={placeholder}
           maxLength={maxLength}
-          className={`w-full resize-none border-0 bg-transparent px-0 focus:outline-none focus:ring-0 ${
+          className={`w-full resize-none border-0 bg-transparent px-0 focus:outline-hidden focus:ring-0 ${
             isCompose
               ? `min-h-[6.5rem] py-2 font-normal text-[#111111] caret-[#FF5722] [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${
                   // A short thought reads big (20px); past a couple of lines the text drops to reading

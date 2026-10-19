@@ -48,7 +48,7 @@ export function TemporaryGuestAvatarStrip({
                 title={names}
                 aria-label={t('Open temporary conversation: {headline}', { headline: entry.headline })}
                 aria-current={selected ? 'true' : undefined}
-                className={`flex w-full items-center gap-3 px-5 py-3 text-left transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50 lg:px-6 ${
+                className={`flex w-full items-center gap-3 px-5 py-3 text-left transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50 lg:px-6 ${
                   selected
                     ? 'bg-[color:var(--xm-row-selected)]'
                     : 'hover:bg-[color:var(--xm-row-hover)] active:bg-[color:var(--xm-row-selected)]'

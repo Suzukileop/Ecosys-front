@@ -423,7 +423,7 @@ export function ServicesBandIndexSection({
                 ) : (
                   <svg
                     viewBox="0 0 24 24"
-                    className={`h-6 w-6 shrink-0 -rotate-45 opacity-0 transition-[transform,opacity] duration-500 ${EASE} md:group-hover/band:rotate-0 md:group-hover/band:opacity-100`}
+                    className={`h-6 w-6 shrink-0 -rotate-45 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-500 ${EASE} md:group-hover/band:rotate-0 md:group-hover/band:opacity-100`}
                     fill="none"
                     stroke="currentColor"
                     strokeWidth={1.6}
@@ -452,7 +452,7 @@ export function ServicesBandIndexSection({
                     aria-expanded={open}
                     aria-controls={panelId}
                     onClick={() => setOpenIndex(open ? null : index)}
-                    className={`${rowClass} focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current`}
+                    className={`${rowClass} focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-current`}
                     data-pf-no-color-transition=""
                   >
                     {rowInner}
@@ -471,7 +471,7 @@ export function ServicesBandIndexSection({
                           label={ctaLabel}
                           ink={ink}
                           surface={inverse}
-                          className="group/cta inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                          className="group/cta inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                           autoContent={
                             <>
                               {ctaLabel}
@@ -517,7 +517,7 @@ export function ServicesBandIndexSection({
                           label={ctaLabel}
                           ink={ink}
                           surface={inverse}
-                          className="group/cta inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                          className="group/cta inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                           autoContent={
                             <>
                               {ctaLabel}
@@ -572,7 +572,7 @@ export function ServicesBandIndexSection({
             {items.map((item, index) => (
               <div
                 key={item.id || index}
-                className={`absolute inset-0 transition-[opacity,transform] duration-500 ${EASE}`}
+                className={`absolute inset-0 transition-[opacity,transform,translate,scale,rotate] duration-500 ${EASE}`}
                 style={{
                   opacity: hoverIndex === index ? 1 : 0,
                   transform: hoverIndex === index ? 'scale(1)' : 'scale(1.12)',

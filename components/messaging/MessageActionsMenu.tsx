@@ -91,7 +91,7 @@ export function MessageActionsMenu({
 
   /* 32px disc beside the bubble, with an invisible 40px hit area (`before:`) so it is a fair touch
      target without taking more of the bubble's width. */
-  const triggerClass = `relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 before:absolute before:-inset-1 before:content-[''] hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] ${
+  const triggerClass = `relative flex h-8 w-8 shrink-0 items-center justify-center rounded-full transition-colors duration-200 before:absolute before:-inset-1 before:content-[''] hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] ${
     open ? 'text-[var(--msg-ink)]' : 'text-[var(--msg-ink-faint)] hover:text-[var(--msg-ink)]'
   }`;
 

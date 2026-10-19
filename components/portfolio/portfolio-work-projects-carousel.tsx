@@ -562,7 +562,7 @@ function CarouselQuietNav({
 }) {
   const t = useT();
   const buttonClass =
-    'group/nav inline-flex items-center gap-2 bg-transparent text-[11px] font-semibold uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-55 focus:outline-none focus-visible:opacity-55 disabled:pointer-events-none disabled:opacity-25 sm:text-[12px]';
+    'group/nav inline-flex items-center gap-2 bg-transparent text-[11px] font-semibold uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-55 focus:outline-hidden focus-visible:opacity-55 disabled:pointer-events-none disabled:opacity-25 sm:text-[12px]';
 
   return (
     <div
@@ -794,7 +794,7 @@ function CarouselSlide({
   );
 
   const wrapClass =
-    'group block shrink-0 outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2';
+    'group block shrink-0 outline-hidden focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2';
 
   if (href) {
     const external = /^https?:\/\//i.test(href);
@@ -958,7 +958,7 @@ export function ProjectsCarouselSection({
                 aria-label={`${formatCarouselIndex(index)} ${item.title?.trim() || 'Project'}`}
               >
                 <div
-                  className={`transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${recedeClass} ${hoverFocusClass}`}
+                  className={`transition-[transform,translate,scale,rotate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${recedeClass} ${hoverFocusClass}`}
                   style={{ zIndex: isActive ? 2 : 1 }}
                   data-pf-no-color-transition=""
                 >

@@ -153,7 +153,7 @@ export function CreatorCatalogueAddProductsModal({
                 placeholder={t('Search your products')}
                 aria-label={t('Search your products')}
                 autoFocus
-                className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+                className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
               />
             </label>
             <div className="flex items-center justify-between gap-3">

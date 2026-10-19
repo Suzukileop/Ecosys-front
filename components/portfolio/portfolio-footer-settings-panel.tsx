@@ -6,9 +6,8 @@ import {
   usePortfolioDesignPreviewSource,
 } from '@/components/portfolio/PortfolioDesignLivePreview';
 import { withDesignPreview } from '@/lib/portfolio-design-preview';
-import { createContext, useContext, useState, type ReactNode } from 'react';
+import { createContext, Fragment, useContext, useId, useState, type ReactNode } from 'react';
 import { PortfolioSettingsPhotoField } from '@/components/portfolio/portfolio-settings-photo-field';
-import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
@@ -32,6 +31,7 @@ import {
   FOOTER_CONTACT_CARD_COLOR_TOKEN_OPTIONS,
   DEFAULT_FOOTER_LINK_COLUMNS,
   DEFAULT_FOOTER_LANDING_BRAND_GAP_PX,
+  DEFAULT_FOOTER_PRESENTATION,
   isLegacyLandingMarketingColumns,
   type PortfolioFooterDesign,
   type PortfolioFooterMiniBarDesign,
@@ -86,9 +86,20 @@ import {
   type PortfolioFooterHeaderTitleSize,
   type PortfolioFooterHeaderPaletteToken,
 } from '@/components/portfolio/portfolio-footer-header-settings';
-import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
+import {
+  NpBackRow,
+  NpCollapsibleSection,
+  NpOptionCard,
+  NpOptionCardGroup,
+  NpPanelShell,
+  NpPickerRow,
+  NpSegmentedControl,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
+import { PORTFOLIO_SECTION_COLOR_MODE_OPTIONS } from '@/components/portfolio/portfolio-section-color-mode';
 
 function FooterMinimalCtaWireframe() {
   return (
@@ -158,85 +169,17 @@ function FooterDesignWireframe({ design }: { design: PortfolioFooterDesign }) {
   }
 }
 
-/** Expanded-grid card: wireframe + name only — no description paragraph (see the
- *  "Settings design standard" text-reduction rule). Tinted background (no visible border on
- *  rest); the selected card's only signal is its label switching to the accent color (plus a
- *  faint accent-tinted card background) — no stripe, no floating badge. Hover lift/brighten —
- *  see `.pf-footer-design-card` in globals.css. */
-function FooterPickerCard({
-  active,
-  label,
-  onClick,
-  children,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  children: ReactNode;
-}) {
+/** A footer wireframe (120×72 drawing) fitted into an option card, or bare into a picker thumbnail. */
+function FooterWireThumb({ children, framed = true }: { children: ReactNode; framed?: boolean }) {
   return (
-    <button
-      type="button"
-      aria-pressed={active}
-      aria-label={label}
-      title={label}
-      data-active={active ? 'true' : 'false'}
-      onClick={onClick}
-      className="pf-footer-design-card relative rounded-2xl p-2.5 text-left"
-    >
+    <span className={`${framed ? 'np-illus np-illus--glyph' : 'flex h-full w-full'} np-glyph np-wire`} aria-hidden>
       {children}
-      <span
-        className="pf-footer-card-label mt-2 block text-sm font-semibold leading-none tracking-tight"
-      >
-        {label}
-      </span>
-    </button>
+    </span>
   );
 }
 
-/** Collapsed-state row: a compact thumbnail, the selected design's name, and a trailing
- *  chevron — the whole row opens the grid. Mirrors Work/Services' own summary row 1:1. */
-function FooterDesignSummaryRow({
-  name,
-  onOpen,
-  children,
-}: {
-  name: string;
-  onOpen: () => void;
-  children: ReactNode;
-}) {
-  const t = useT();
-  return (
-    <div>
-      <FooterSectionLabel>{t('Design')}</FooterSectionLabel>
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={t('Change section design')}
-        className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
-      >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
-          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
-            {children}
-          </span>
-        </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
-          <path
-            d="M7.5 4.5l5 5.5-5 5.5"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
-  );
-}
-
-/** The main "Section design" picker — collapses to the selected design; click to expand
- *  and change. Mirrors Work/Services' `*DesignChoiceGrid` pattern 1:1 for consistency. */
+/** The main "Section design" picker — the current design with "Change"; the catalogue replaces it
+ *  until a card is picked. Same mechanism as Navigation › Layout. */
 function FooterDesignChoiceGrid({
   value,
   onChange,
@@ -245,7 +188,7 @@ function FooterDesignChoiceGrid({
 }: {
   value: PortfolioFooterDesign;
   onChange: (value: PortfolioFooterDesign) => void;
-  /** Owned by the panel so the selected design's Layout settings can hide while the catalogue is open. */
+  /** Owned by the panel so the selected design's settings can hide while the catalogue is open. */
   showGrid: boolean;
   setShowGrid: (open: boolean) => void;
 }) {
@@ -254,81 +197,63 @@ function FooterDesignChoiceGrid({
   const selected =
     PORTFOLIO_FOOTER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_FOOTER_DESIGN_OPTIONS[0];
+  const pick = (design: PortfolioFooterDesign) => {
+    onChange(design);
+    setShowGrid(false);
+  };
 
-  // In the studio: every design rendered for real, one per row. Elsewhere: the wireframe grid.
-  if (showGrid && previewSource) {
+  if (!showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <FooterSectionLabel>{t('Section design')}</FooterSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 flex flex-col gap-3">
-          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => (
-            <PortfolioDesignLivePreviewCard
-              key={option.value}
-              cardClassName="pf-footer-design-card"
-              labelClassName="pf-footer-card-label"
-              active={option.value === value}
-              label={t(option.label)}
-              src={withDesignPreview(previewSource.portfolioPath, { section: 'footer', design: option.value })}
-              settings={previewSource.settings}
-              onClick={() => {
-                onChange(option.value);
-                setShowGrid(false);
-              }}
-            />
-          ))}
-        </div>
-      </div>
-    );
-  }
-
-  if (showGrid) {
-    return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <FooterSectionLabel>{t('Section design')}</FooterSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <FooterPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <FooterDesignWireframe design={option.value} />
-              </FooterPickerCard>
-            );
-          })}
-        </div>
-      </div>
+      <NpPickerRow
+        label={t('Section design')}
+        value={t(selected.label)}
+        onClick={() => setShowGrid(true)}
+        thumbnail={
+          <FooterWireThumb framed={false}>
+            <FooterDesignWireframe design={value} />
+          </FooterWireThumb>
+        }
+      />
     );
   }
 
   return (
-    <FooterDesignSummaryRow name={selected.label} onOpen={() => setShowGrid(true)}>
-      <FooterDesignWireframe design={value} />
-    </FooterDesignSummaryRow>
+    <div>
+      <NpBackRow title={t('Section design')} onBack={() => setShowGrid(false)} />
+      {previewSource ? (
+        /* In the studio: every design rendered for real, one per row. */
+        <div className="flex flex-col gap-4">
+          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => (
+            <PortfolioDesignLivePreviewCard
+              key={option.value}
+              cardClassName="pf-stack-design-card"
+              labelClassName="pf-stack-card-label"
+              active={option.value === value}
+              label={t(option.label)}
+              src={withDesignPreview(previewSource.portfolioPath, { section: 'footer', design: option.value })}
+              settings={previewSource.settings}
+              onClick={() => pick(option.value)}
+            />
+          ))}
+        </div>
+      ) : (
+        <div className="grid grid-cols-2 gap-3">
+          {PORTFOLIO_FOOTER_DESIGN_OPTIONS.map((option) => (
+            <NpOptionCard
+              key={option.value}
+              selected={option.value === value}
+              title={t(option.label)}
+              illustration={
+                <FooterWireThumb>
+                  <FooterDesignWireframe design={option.value} />
+                </FooterWireThumb>
+              }
+              onClick={() => pick(option.value)}
+            />
+          ))}
+        </div>
+      )}
+    </div>
   );
 }
 
@@ -353,8 +278,7 @@ function FooterMiniBarWireframe({ design }: { design: PortfolioFooterMiniBarDesi
   }
 }
 
-/** 8 options — a static inline grid (no expand/collapse summary row needed, unlike the
- *  main 13-option Section design picker above). */
+/** 8 options — always shown as cards, two per row (no "Change" step for a short list). */
 function FooterMiniBarDesignGrid({
   value,
   onChange,
@@ -364,18 +288,21 @@ function FooterMiniBarDesignGrid({
 }) {
   const t = useT();
   return (
-    <div className="grid grid-cols-2 gap-3 sm:grid-cols-3">
+    <NpOptionCardGroup label={t('Bar design')}>
       {PORTFOLIO_FOOTER_MINI_BAR_DESIGN_OPTIONS.map((option) => (
-        <FooterPickerCard
+        <NpOptionCard
           key={option.value}
-          active={option.value === value}
-          label={t(option.label)}
+          selected={option.value === value}
+          title={t(option.label)}
+          illustration={
+            <FooterWireThumb>
+              <FooterMiniBarWireframe design={option.value} />
+            </FooterWireThumb>
+          }
           onClick={() => onChange(option.value)}
-        >
-          <FooterMiniBarWireframe design={option.value} />
-        </FooterPickerCard>
+        />
       ))}
-    </div>
+    </NpOptionCardGroup>
   );
 }
 
@@ -400,154 +327,58 @@ function asFooterPatch(patch: Record<string, unknown> | object): Partial<Portfol
   return patch as Partial<PortfolioFooterSectionSettings>;
 }
 
-/** Same animated switch as Services/Contact/Info's settings panels — shared settings-UI chrome. */
-function FooterSwitchTrack({ checked }: { checked: boolean }) {
+function FooterGroupLabel({ children, id }: { children: string; id?: string }) {
   return (
-    <span
-      className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #171717)',
-        }}
-      />
-    </span>
+    <p id={id} className="np-field-label">
+      {children}
+    </p>
   );
-}
-
-function FooterToggleRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full cursor-pointer flex-col gap-1 text-left"
-    >
-      <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0 truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
-        <FooterSwitchTrack checked={checked} />
-      </span>
-    </button>
-  );
-}
-
-/** One-per-line visibility row (hairline divider), same pattern as Contact's General tab. */
-function FooterVisibilityRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--pf-palette-bordure)] py-3.5 last:border-b-0">
-      <span
-        className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]"
-        onClick={() => onChange(!checked)}
-      >
-        {label}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className="shrink-0"
-      >
-        <FooterSwitchTrack checked={checked} />
-      </button>
-    </div>
-  );
-}
-
-function FooterSectionLabel({ children }: { children: string }) {
-  return <p className="pf-stack-block-label">{children}</p>;
-}
-
-function FooterGroupLabel({ children }: { children: string }) {
-  return <p className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">{children}</p>;
 }
 
 /* ---------------------------------------------------------------------- */
-/* Header tab — the shared 8-design GSAP Header mechanism (see Info/Work/  */
-/* Team/etc.), mounted above the Footer section independent of its own    */
-/* `design`. Small local segmented/pill/swatch controls, matching this     */
-/* file's own Tailwind-inline styling rather than Work's CSS-class set.    */
+/* Shared controls — thin wrappers over the Navigation panel's building   */
+/* blocks (portfolio-nav-panel-ui), so every Footer tab reads the same.   */
 /* ---------------------------------------------------------------------- */
 
+/** One-line segmented choice. `hideLabel` keeps `label` as the accessible name only — for a choice
+ *  that sits right under the switch it belongs to. */
 function FooterOptionGrid<T extends string>({
   label,
   options,
   value,
   onChange,
-  columns = 2,
   hideLabel = false,
 }: {
   label: string;
   options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
-  columns?: 1 | 2 | 3 | 4 | 5;
-  /** Keeps `label` as the accessible name only — for a pill that sits right under its toggle. */
   hideLabel?: boolean;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
+  const translated = options.map((option) => ({ value: option.value, label: t(option.label) }));
+  if (!hideLabel) {
+    return <NpSegmentedControl label={label} options={translated} value={value} onChange={onChange} />;
+  }
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {hideLabel ? null : (rows ? null : <FooterGroupLabel>{label}</FooterGroupLabel>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className={`${hideLabel ? '' : 'mt-2'} grid gap-1.5`}
-        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              className={`rounded-lg px-2.5 py-1.5 text-center text-xs font-semibold transition ${
-                active ? 'pf-choice pf-choice--active' : 'pf-choice'
-              }`}
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
+    <div
+      role="group"
+      aria-label={label}
+      className="np-seg"
+      style={{ gridTemplateColumns: `repeat(${translated.length}, minmax(0, 1fr))` }}
+    >
+      {translated.map((option) => (
+        <button
+          key={option.value}
+          type="button"
+          aria-pressed={option.value === value}
+          onClick={() => onChange(option.value)}
+          className="np-seg-btn"
+        >
+          <span className="relative truncate">{option.label}</span>
+        </button>
+      ))}
     </div>
-    </SettingRow>
   );
 }
 
@@ -558,6 +389,7 @@ const FOOTER_HEADER_SIZE_PILL_OPTIONS: { value: PortfolioFooterHeaderTitleSize; 
   { value: 'xl', label: 'XL', fontPx: 22 },
 ];
 
+/** S · M · L · XL, each letter drawn at its own size. */
 function FooterHeaderSizePill({
   label,
   value,
@@ -567,34 +399,21 @@ function FooterHeaderSizePill({
   value: PortfolioFooterHeaderTitleSize;
   onChange: (value: PortfolioFooterHeaderTitleSize) => void;
 }) {
-  const t = useT();
   return (
-    <div>
-      <FooterGroupLabel>{label}</FooterGroupLabel>
-      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-4 gap-1.5">
-        {FOOTER_HEADER_SIZE_PILL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              className={`rounded-lg px-2.5 py-2 text-center font-semibold leading-none transition ${
-                active ? 'pf-choice pf-choice--active' : 'pf-choice'
-              }`}
-              style={{ fontSize: `${option.fontPx}px` }}
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <NpSegmentedControl
+      label={label}
+      options={FOOTER_HEADER_SIZE_PILL_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        sizePx: option.fontPx,
+      }))}
+      value={value}
+      onChange={onChange}
+    />
   );
 }
 
+/** Palette tokens as chips, each with its colour dot. */
 function FooterHeaderPaletteSwatches({
   label,
   value,
@@ -605,32 +424,27 @@ function FooterHeaderPaletteSwatches({
   onChange: (value: PortfolioFooterHeaderPaletteToken) => void;
 }) {
   const t = useT();
+  const id = useId();
   return (
-    <div>
-      <FooterGroupLabel>{label}</FooterGroupLabel>
-      <div role="radiogroup" aria-label={label} className="mt-2 grid grid-cols-3 gap-1.5">
-        {FOOTER_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              className={`flex items-center gap-2 rounded-lg px-2.5 py-1.5 text-xs font-semibold transition ${
-                active ? 'pf-choice pf-choice--active' : 'pf-choice'
-              }`}
-            >
-              <span
-                aria-hidden
-                className="h-3 w-3 shrink-0 rounded-full border border-black/10"
-                style={{ backgroundColor: footerHeaderPaletteTokenColor(option.value) }}
-              />
-              {t(option.label)}
-            </button>
-          );
-        })}
+    <div className="np-field">
+      <FooterGroupLabel id={id}>{label}</FooterGroupLabel>
+      <div role="group" aria-labelledby={id} className="np-chips">
+        {FOOTER_HEADER_PALETTE_TOKEN_OPTIONS.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+            className="np-chip"
+          >
+            <span
+              aria-hidden
+              className="h-3 w-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]"
+              style={{ backgroundColor: footerHeaderPaletteTokenColor(option.value) }}
+            />
+            {t(option.label)}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -650,15 +464,15 @@ function FooterHeaderTextField({
   multiline?: boolean;
 }) {
   return (
-    <div>
-      <FooterGroupLabel>{label}</FooterGroupLabel>
+    <label className="np-field block">
+      <span className="np-field-label">{label}</span>
       {multiline ? (
         <textarea
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
           rows={2}
-          className={`mt-2 ${FOOTER_LAYOUT_INPUT_CLASS}`}
+          className="np-input"
         />
       ) : (
         <input
@@ -666,10 +480,10 @@ function FooterHeaderTextField({
           value={value}
           onChange={(event) => onChange(event.target.value)}
           placeholder={placeholder}
-          className={`mt-2 ${FOOTER_LAYOUT_INPUT_CLASS}`}
+          className="np-input"
         />
       )}
-    </div>
+    </label>
   );
 }
 
@@ -734,61 +548,65 @@ function FooterHeaderMiniWireframe({ design }: { design: PortfolioFooterHeaderDe
   );
 }
 
+/** Same picker as Section design; `open` is owned by the panel so the header's settings hide while
+ *  the catalogue is browsed. */
 function FooterHeaderDesignGrid({
   value,
   onChange,
+  open,
+  onOpenChange,
 }: {
   value: PortfolioFooterHeaderDesign;
   onChange: (value: PortfolioFooterHeaderDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS[0];
 
-  if (showGrid) {
+  if (!open) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <FooterSectionLabel>{t('Header design')}</FooterSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <FooterPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <FooterHeaderMiniWireframe design={option.value} />
-              </FooterPickerCard>
-            );
-          })}
-        </div>
-      </div>
+      <NpPickerRow
+        label={t('Header design')}
+        value={t(selected.label)}
+        onClick={() => onOpenChange(true)}
+        thumbnail={
+          <FooterWireThumb framed={false}>
+            <FooterHeaderMiniWireframe design={value} />
+          </FooterWireThumb>
+        }
+      />
     );
   }
 
   return (
-    <FooterDesignSummaryRow name={selected.label} onOpen={() => setShowGrid(true)}>
-      <FooterHeaderMiniWireframe design={value} />
-    </FooterDesignSummaryRow>
+    <div>
+      <NpBackRow title={t('Header design')} onBack={() => onOpenChange(false)} />
+      <div className="grid grid-cols-2 gap-3">
+        {PORTFOLIO_FOOTER_HEADER_DESIGN_OPTIONS.map((option) => (
+          <NpOptionCard
+            key={option.value}
+            selected={option.value === value}
+            title={t(option.label)}
+            illustration={
+              <FooterWireThumb>
+                <FooterHeaderMiniWireframe design={option.value} />
+              </FooterWireThumb>
+            }
+            onClick={() => {
+              onChange(option.value);
+              onOpenChange(false);
+            }}
+          />
+        ))}
+      </div>
+    </div>
   );
 }
 
+/** Free colour: round swatch (native picker), name, editable hex. */
 function FooterManualColorField({
   label,
   value,
@@ -798,37 +616,30 @@ function FooterManualColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const rows = useSettingsRows();
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
-    <div>
-      {rows ? null : (<p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">{label}</p>)}
-      <div className="mt-3 flex flex-wrap items-center gap-3">
-        <input
-          type="color"
-          value={value}
-          onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
-          aria-label={`${label} picker`}
-        />
-        <input
-          type="text"
-          value={value}
-          onChange={(event) => {
-            const next = event.target.value.trim();
-            if (isValidProfileHexColor(next)) onChange(next);
-          }}
-          className="w-28 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm font-mono text-[color:var(--pf-palette-texte-fort)]"
-          aria-label={`${label} hex`}
-        />
-      </div>
+    <div className="flex items-center gap-3">
+      <label className="np-swatch min-w-0 flex-1">
+        <span className="np-swatch-dot" style={{ backgroundColor: value }}>
+          <input type="color" value={value} onChange={(event) => onChange(event.target.value)} aria-label={`${label} picker`} />
+        </span>
+        <span className="np-swatch-name">{label}</span>
+      </label>
+      <input
+        type="text"
+        value={value}
+        onChange={(event) => {
+          const next = event.target.value.trim();
+          if (isValidProfileHexColor(next)) onChange(next);
+        }}
+        className="np-input !w-28 shrink-0 font-mono uppercase"
+        aria-label={`${label} hex`}
+      />
     </div>
-    </SettingRow>
   );
 }
 
-/** Palette-bound color field — dropdown of theme tokens when the Hero palette is on,
- *  manual hex picker when it's off. Same mechanism as Services/FAQ/Stack's own color fields. */
+/** Palette-bound color field — a theme token picker when the Hero palette is on, a free colour
+ *  when it's off. Same mechanism as Services/FAQ/Stack's own color fields. */
 function FooterColorField({
   footer,
   onChange,
@@ -843,7 +654,7 @@ function FooterColorField({
   value: string;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
+  const id = useId();
   if (footer.useHeroPalette === false) {
     return (
       <FooterManualColorField
@@ -860,33 +671,29 @@ function FooterColorField({
   const resolved = resolveHeroPaletteColor(palette, token);
 
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
-    <div className="space-y-2">
-      {rows ? null : (<div className="flex items-start justify-between gap-3">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">{label}</p>
-        <span
-          className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
-          style={{ backgroundColor: resolved }}
-          title={resolved}
-          aria-hidden
-        />
-      </div>)}
-      <select
-        value={token}
-        onChange={(event) =>
-          onChange(asFooterPatch(patchFooterColorBinding(footer, slot, event.target.value as HeroPaletteTokenId)))
-        }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
-        aria-label={t('{label} palette token', { label })}
-      >
-        {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
-          <option key={option.value} value={option.value}>
-            {t(option.label)}
-          </option>
-        ))}
-      </select>
+    <div className="np-field">
+      <label htmlFor={id} className="np-field-label">
+        {label}
+      </label>
+      <div className="flex items-center gap-3">
+        <span className="np-swatch-dot" style={{ backgroundColor: resolved }} title={resolved} aria-hidden />
+        <select
+          id={id}
+          value={token}
+          onChange={(event) =>
+            onChange(asFooterPatch(patchFooterColorBinding(footer, slot, event.target.value as HeroPaletteTokenId)))
+          }
+          className="np-input min-w-0 flex-1"
+          aria-label={t('{label} palette token', { label })}
+        >
+          {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
+            <option key={option.value} value={option.value}>
+              {t(option.label)}
+            </option>
+          ))}
+        </select>
+      </div>
     </div>
-    </SettingRow>
   );
 }
 
@@ -898,17 +705,15 @@ function FooterColorField({
 
 type FooterLayoutPatch = (patch: Partial<PortfolioFooterSectionSettings>) => void;
 
-const FOOTER_LAYOUT_INPUT_CLASS =
-  'w-full rounded-xl bg-[color:var(--pf-surface)] px-3 py-2.5 text-[14px] text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] outline-none transition-shadow focus:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)]';
-
 const FOOTER_BIO_SOURCE_OPTIONS = [
   { value: 'bio' as const, label: msg('Profile bio') },
   { value: 'custom' as const, label: msg('Custom') },
 ];
 
-/** Groups longer than this start collapsed (Settings design standard, rule 5). */
+/** Groups longer than this start folded (Settings design standard, rule 5). */
 const FOOTER_LAYOUT_COLLAPSE_AFTER = 5;
 
+/** The sections linked from the footer, as chips — the same picker as Navigation's dropdown menus. */
 function FooterSectionLinksPicker({
   footer,
   options,
@@ -919,33 +724,40 @@ function FooterSectionLinksPicker({
   onChange: FooterLayoutPatch;
 }) {
   const t = useT();
+  const id = useId();
   const selected = new Set(resolveFooterSelectedSectionIds(footer, footer.design));
   const selectedCount = options.filter((option) => selected.has(option.id)).length;
 
+  if (options.length === 0) {
+    return <p className="np-note">{t('Visible sections will appear here.')}</p>;
+  }
+
   return (
-    <div className="space-y-3">
-      <div className="flex items-baseline justify-between gap-3">
-        <FooterGroupLabel>{t('Section links')}</FooterGroupLabel>
-        {options.length > 0 ? (
-          <span className="text-[11px] font-semibold tabular-nums text-[color:var(--pf-palette-texte-muted)]">
-            {selectedCount}/{options.length}
-          </span>
-        ) : null}
+    <div className="np-field">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p id={id} className="np-field-label !mb-0">
+          {t('Links shown')}
+        </p>
+        <span className="np-value-badge tabular-nums">
+          {selectedCount}/{options.length}
+        </span>
       </div>
-      {options.length > 0 ? (
-        <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-          {options.map((option) => (
-            <FooterToggleRow
+      <div role="group" aria-labelledby={id} className="np-chips">
+        {options.map((option) => {
+          const checked = selected.has(option.id);
+          return (
+            <button
               key={option.id}
-              label={t(option.label)}
-              checked={selected.has(option.id)}
-              onChange={(checked) => onChange(patchFooterSectionLink(footer, footer.design, option.id, checked))}
-            />
-          ))}
-        </div>
-      ) : (
-        <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">{t('Visible sections will appear here.')}</p>
-      )}
+              type="button"
+              aria-pressed={checked}
+              onClick={() => onChange(patchFooterSectionLink(footer, footer.design, option.id, !checked))}
+              className="np-chip"
+            >
+              {t(option.label)}
+            </button>
+          );
+        })}
+      </div>
     </div>
   );
 }
@@ -968,15 +780,15 @@ function FooterLayoutTextField({
   const setText = (text: string) => onChange(patchFooterLayoutElement(footer, design, spec.key, { text }));
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       {hideable ? (
-        <FooterToggleRow
-          label={t(spec.label)}
+        <NpToggleRow
+          title={t(spec.label)}
           checked={visible}
           onChange={(checked) => onChange(patchFooterLayoutElement(footer, design, spec.key, { visible: checked }))}
         />
       ) : (
-        <p className="text-sm font-medium text-[color:var(--pf-palette-texte-fort)]">{t(spec.label)}</p>
+        <p className="np-field-label !mb-1">{t(spec.label)}</p>
       )}
       {visible ? (
         spec.multiline ? (
@@ -986,7 +798,7 @@ function FooterLayoutTextField({
             rows={2}
             aria-label={t(spec.label)}
             onChange={(event) => setText(event.target.value)}
-            className={`${FOOTER_LAYOUT_INPUT_CLASS} resize-y`}
+            className="np-input"
           />
         ) : (
           <input
@@ -995,7 +807,7 @@ function FooterLayoutTextField({
             placeholder={placeholder}
             aria-label={t(spec.label)}
             onChange={(event) => setText(event.target.value)}
-            className={FOOTER_LAYOUT_INPUT_CLASS}
+            className="np-input"
           />
         )
       ) : null}
@@ -1018,9 +830,9 @@ function FooterLayoutBioField({
   const source = resolveFooterLayoutBioSource(footer, design, spec.key);
 
   return (
-    <div className="space-y-2.5">
-      <FooterToggleRow
-        label={t(spec.label)}
+    <div className="flex flex-col gap-2">
+      <NpToggleRow
+        title={t(spec.label)}
         checked={visible}
         onChange={(checked) => onChange(patchFooterLayoutElement(footer, design, spec.key, { visible: checked }))}
       />
@@ -1041,11 +853,50 @@ function FooterLayoutBioField({
               onChange={(event) =>
                 onChange(patchFooterLayoutElement(footer, design, spec.key, { text: event.target.value }))
               }
-              className={`${FOOTER_LAYOUT_INPUT_CLASS} resize-y`}
+              className="np-input"
             />
           ) : null}
         </>
       ) : null}
+    </div>
+  );
+}
+
+/** Colour choices as chips, each with its colour dot (same look as the header's palette tokens). */
+function FooterSwatchChips<T extends string>({
+  label,
+  options,
+  value,
+  onChange,
+}: {
+  label: string;
+  options: { value: T; label: string; color: string }[];
+  value: T;
+  onChange: (value: T) => void;
+}) {
+  const t = useT();
+  const id = useId();
+  return (
+    <div className="np-field">
+      <FooterGroupLabel id={id}>{label}</FooterGroupLabel>
+      <div role="group" aria-labelledby={id} className="np-chips">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+            className="np-chip"
+          >
+            <span
+              aria-hidden
+              className="h-3 w-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]"
+              style={{ backgroundColor: option.color }}
+            />
+            {t(option.label)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -1065,45 +916,16 @@ function FooterLayoutOptionField({
     onChange(patchFooterLayoutElement(footer, footer.design, spec.key, { choice }));
 
   if (!spec.options.some((option) => option.swatch)) {
-    return (
-      <FooterOptionGrid
-        label={t(spec.label)}
-        options={spec.options}
-        value={value}
-        onChange={setValue}
-        columns={Math.min(spec.options.length, 4) as 2 | 3 | 4}
-      />
-    );
+    return <FooterOptionGrid label={t(spec.label)} options={spec.options} value={value} onChange={setValue} />;
   }
 
   return (
-    <div>
-      <FooterGroupLabel>{t(spec.label)}</FooterGroupLabel>
-      <div role="radiogroup" aria-label={t(spec.label)} className="mt-2 grid grid-cols-2 gap-1.5">
-        {spec.options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => setValue(option.value)}
-              className={`flex items-center gap-2 rounded-lg px-2.5 py-2 text-xs font-semibold transition ${
-                active ? 'pf-choice pf-choice--active' : 'pf-choice'
-              }`}
-            >
-              <span
-                aria-hidden
-                className="h-3.5 w-3.5 shrink-0 rounded-full border border-black/15"
-                style={{ backgroundColor: option.swatch }}
-              />
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <FooterSwatchChips
+      label={t(spec.label)}
+      options={spec.options.map((option) => ({ value: option.value, label: option.label, color: option.swatch ?? 'transparent' }))}
+      value={value}
+      onChange={setValue}
+    />
   );
 }
 
@@ -1142,13 +964,12 @@ function FooterLayoutTargetField({
     onChange(patchFooterLayoutElement(footer, design, spec.key, next));
 
   return (
-    <div className="space-y-2">
+    <div className="flex flex-col gap-2">
       <FooterOptionGrid
         label={t(spec.label)}
         options={FOOTER_CONTACT_TARGET_OPTIONS}
         value={target.mode}
         onChange={(mode) => patch({ choice: mode })}
-        columns={3}
       />
       {target.mode === 'link' ? (
         <>
@@ -1166,7 +987,7 @@ function FooterLayoutTargetField({
                 setCustomLink(false);
                 patch({ text: value });
               }}
-              className={FOOTER_LAYOUT_INPUT_CLASS}
+              className="np-input"
             >
               <option value="" disabled>
                 {t('Choose a link')}
@@ -1186,7 +1007,7 @@ function FooterLayoutTargetField({
               placeholder="https://"
               aria-label={`${spec.label} URL`}
               onChange={(event) => patch({ text: event.target.value })}
-              className={FOOTER_LAYOUT_INPUT_CLASS}
+              className="np-input"
             />
           ) : null}
         </>
@@ -1210,8 +1031,8 @@ function FooterLayoutElementControl({
       return <FooterLayoutTargetField footer={footer} spec={spec} onChange={onChange} />;
     case 'toggle':
       return (
-        <FooterToggleRow
-          label={t(spec.label)}
+        <NpToggleRow
+          title={t(spec.label)}
           checked={resolveFooterLayoutVisible(footer, footer.design, spec.key)}
           onChange={(checked) =>
             onChange(patchFooterLayoutElement(footer, footer.design, spec.key, { visible: checked }))
@@ -1226,7 +1047,6 @@ function FooterLayoutElementControl({
           options={spec.options}
           value={footer[spec.field] ?? spec.options[0].value}
           onChange={(value) => onChange({ [spec.field]: value })}
-          columns={spec.options.length as 2 | 3 | 4}
         />
       );
     case 'option':
@@ -1238,6 +1058,8 @@ function FooterLayoutElementControl({
   }
 }
 
+/** One group of the chosen design's elements as its own section: the on/off switches first, as a
+ *  tight list, then the fields. Long groups start folded. */
 function FooterLayoutGroup({
   title,
   elements,
@@ -1249,57 +1071,27 @@ function FooterLayoutGroup({
   footer: PortfolioFooterSectionSettings;
   onChange: FooterLayoutPatch;
 }) {
-  const collapsible = elements.length > FOOTER_LAYOUT_COLLAPSE_AFTER;
-  const [open, setOpen] = useState(!collapsible);
   const toggles = elements.filter((element) => element.kind === 'toggle');
   const rest = elements.filter((element) => element.kind !== 'toggle');
 
   return (
-    <div className="space-y-3">
-      {collapsible ? (
-        <button
-          type="button"
-          aria-expanded={open}
-          onClick={() => setOpen((value) => !value)}
-          className="flex w-full items-center justify-between gap-3 text-left"
-        >
-          <span className="flex items-baseline gap-2">
-            <FooterGroupLabel>{title}</FooterGroupLabel>
-            <span className="text-[11px] font-semibold tabular-nums text-[color:var(--pf-palette-texte-muted)]">{elements.length}</span>
-          </span>
-          <svg
-            viewBox="0 0 20 20"
-            fill="none"
-            aria-hidden
-            className={`h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)] transition-transform duration-200 ${open ? 'rotate-180' : ''}`}
-          >
-            <path d="M5 7.5l5 5 5-5" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" />
-          </svg>
-        </button>
-      ) : (
-        <FooterGroupLabel>{title}</FooterGroupLabel>
-      )}
-      {open ? (
-        <div className="space-y-5">
-          {toggles.length > 0 ? (
-            <div className="grid grid-cols-2 gap-x-4 gap-y-3">
-              {toggles.map((spec) => (
-                <FooterLayoutElementControl key={spec.key} footer={footer} spec={spec} onChange={onChange} />
-              ))}
-            </div>
-          ) : null}
-          {rest.map((spec) => (
+    <NpCollapsibleSection title={title} defaultOpen={elements.length <= FOOTER_LAYOUT_COLLAPSE_AFTER}>
+      {toggles.length > 0 ? (
+        <div className="flex flex-col">
+          {toggles.map((spec) => (
             <FooterLayoutElementControl key={spec.key} footer={footer} spec={spec} onChange={onChange} />
           ))}
         </div>
       ) : null}
-    </div>
+      {rest.map((spec) => (
+        <FooterLayoutElementControl key={spec.key} footer={footer} spec={spec} onChange={onChange} />
+      ))}
+    </NpCollapsibleSection>
   );
 }
 
-/** Contact card design only — 4 palette-token swatches for the left info card's fill.
- *  Same big-circle-swatch pattern as Services Pricing Grid/Aurora's "Featured card color". */
-function FooterContactCardColorBand({
+/** Contact card design only — the left info card's fill, from the palette. */
+function FooterContactCardColorField({
   footer,
   onChange,
 }: {
@@ -1308,46 +1100,23 @@ function FooterContactCardColorBand({
 }) {
   const t = useT();
   const palette = mergeFooterPalette(DEFAULT_FOOTER_PALETTE, footer.footerPalette);
-  const current: PortfolioFooterContactCardColorToken = footer.contactCardColorToken ?? 'principal';
-
   return (
-    <section className="pf-exp-layout-settings" aria-labelledby="footer-contact-card-color-title">
-      <h3 id="footer-contact-card-color-title" className="pf-exp-layout-settings-title">
-        {t('Contact card options')}
-      </h3>
-      <div className="pf-exp-layout-settings-body">
-        <FooterGroupLabel>{t('Card background color')}</FooterGroupLabel>
-        <div className="mt-3 flex flex-wrap gap-3">
-          {FOOTER_CONTACT_CARD_COLOR_TOKEN_OPTIONS.map((option) => {
-            const hex = resolveHeroPaletteColor(palette, option.value);
-            const active = current === option.value;
-            return (
-              <button
-                key={option.value}
-                type="button"
-                onClick={() => onChange({ contactCardColorToken: option.value })}
-                aria-pressed={active}
-                aria-label={t(option.label)}
-                title={t(option.label)}
-                className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                  active ? 'ring-2 ring-[color:var(--pf-palette-texte-fort)] ring-offset-2 ring-offset-[color:var(--pf-palette-fond)]' : 'hover:bg-[color:var(--pf-surface)]'
-                }`}
-              >
-                <span
-                  className="h-9 w-9 rounded-full border border-[color:var(--pf-palette-bordure)] shadow-inner"
-                  style={{ backgroundColor: hex }}
-                />
-                <span className="text-[11px] font-medium text-[color:var(--pf-palette-texte-muted)]">{t(option.label)}</span>
-              </button>
-            );
-          })}
-        </div>
-      </div>
-    </section>
+    <FooterSwatchChips
+      label={t('Card background color')}
+      options={FOOTER_CONTACT_CARD_COLOR_TOKEN_OPTIONS.map((option) => ({
+        value: option.value,
+        label: option.label,
+        color: resolveHeroPaletteColor(palette, option.value),
+      }))}
+      value={footer.contactCardColorToken ?? 'principal'}
+      onChange={(contactCardColorToken: PortfolioFooterContactCardColorToken) => onChange({ contactCardColorToken })}
+    />
   );
 }
 
-function FooterLayoutSettingsBand({
+/** The chosen design's own settings, generated from FOOTER_DESIGN_LAYOUT_SPECS: one section per
+ *  group (section links, wordmark, text, headings), keyed by design so switching starts fresh. */
+function FooterLayoutSettingsSections({
   footer,
   sectionLinkOptions,
   onChange,
@@ -1372,29 +1141,24 @@ function FooterLayoutSettingsBand({
   const wordmark = elements.filter((element) => element.group === 'wordmark');
   const text = elements.filter((element) => element.group === 'text');
   const headings = elements.filter((element) => element.group === 'labels');
-  const hasLayoutContent = Boolean(spec.sectionLinks) || elements.length > 0;
-  if (!hasLayoutContent) return null;
 
   return (
-    <section className="pf-exp-layout-settings" aria-labelledby="footer-layout-settings-title">
-      <h3 id="footer-layout-settings-title" className="pf-exp-layout-settings-title">
-        {t('Layout settings')}
-      </h3>
-      <div key={footer.design} className="pf-exp-layout-settings-body space-y-7">
-        {spec.sectionLinks ? (
+    <Fragment key={footer.design}>
+      {spec.sectionLinks ? (
+        <NpCollapsibleSection title={t('Section links')}>
           <FooterSectionLinksPicker footer={footer} options={sectionLinkOptions} onChange={onChange} />
-        ) : null}
-        {wordmark.length > 0 ? (
-          <FooterLayoutGroup title={t('Wordmark')} elements={wordmark} footer={footer} onChange={onChange} />
-        ) : null}
-        {text.length > 0 ? (
-          <FooterLayoutGroup title={t('Text')} elements={text} footer={footer} onChange={onChange} />
-        ) : null}
-        {headings.length > 0 ? (
-          <FooterLayoutGroup title={t('Headings')} elements={headings} footer={footer} onChange={onChange} />
-        ) : null}
-      </div>
-    </section>
+        </NpCollapsibleSection>
+      ) : null}
+      {wordmark.length > 0 ? (
+        <FooterLayoutGroup title={t('Wordmark')} elements={wordmark} footer={footer} onChange={onChange} />
+      ) : null}
+      {text.length > 0 ? (
+        <FooterLayoutGroup title={t('Text')} elements={text} footer={footer} onChange={onChange} />
+      ) : null}
+      {headings.length > 0 ? (
+        <FooterLayoutGroup title={t('Headings')} elements={headings} footer={footer} onChange={onChange} />
+      ) : null}
+    </Fragment>
   );
 }
 
@@ -1435,30 +1199,14 @@ const FOOTER_HEADER_TITLE_STYLE: Partial<Record<string, { sizeAndWeight: boolean
   'serif-lead': { sizeAndWeight: false },
 };
 
-/** A titled group of settings, the same hairline-and-label rhythm as Global and Navigation. */
-function FooterGroup({ label, children }: { label: string; children: ReactNode }) {
-  return (
-    <div className="pf-gs-section">
-      <div className="pf-gs-section-header flex items-center justify-between gap-3">
-        <p className="pf-stack-block-label">{label}</p>
-      </div>
-      <div className="space-y-4">{children}</div>
-    </div>
-  );
-}
-
 /** Shown on Design / Header / Background while the Footer is off — with the way back. */
 function FooterHiddenNotice({ onEnable }: { onEnable: () => void }) {
   const t = useT();
   return (
-    <div className="rounded-2xl px-4 py-5 text-center shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
-      <p className="text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)]">{t('The footer is hidden')}</p>
-      <p className="mt-1 text-[13px] text-[color:var(--pf-palette-texte-muted)]">{t('Turn it on to choose its design.')}</p>
-      <button
-        type="button"
-        onClick={onEnable}
-        className="mt-4 inline-flex h-9 items-center rounded-full bg-[color:var(--pf-palette-texte-fort)] px-4 text-[13px] font-semibold text-[color:var(--pf-palette-fond)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
-      >
+    <div className="np-toggle-card flex-col !gap-0 !py-6 text-center">
+      <p className="np-card-title">{t('The footer is hidden')}</p>
+      <p className="np-subtle mt-1">{t('Turn it on to choose its design.')}</p>
+      <button type="button" onClick={onEnable} className="np-primary-btn mt-5">
         {t('Show footer')}
       </button>
     </div>
@@ -1473,13 +1221,28 @@ const FOOTER_SPACING_OPTIONS = [
   { value: 'xl' as const, label: 'XL' },
 ];
 
+/** What "Reset" restores and what the header's status compares against. */
+const FOOTER_DEFAULTS: PortfolioFooterSectionSettings = { enabled: true, ...DEFAULT_FOOTER_PRESENTATION };
+
+/** A setting left unset counts as its default, so an old portfolio isn't reported as modified. */
+function isFooterModified(footer: PortfolioFooterSectionSettings) {
+  const keys = Object.keys({ ...FOOTER_DEFAULTS, ...footer }) as (keyof PortfolioFooterSectionSettings)[];
+  return keys.some((key) => {
+    const value = footer[key] === undefined ? FOOTER_DEFAULTS[key] : footer[key];
+    return JSON.stringify(value) !== JSON.stringify(FOOTER_DEFAULTS[key]);
+  });
+}
+
 /**
- * Footer settings, one question per tab:
+ * Footer settings, one question per tab — framed like the Navigation panel (header with status and
+ * history, underline tabs, folding sections, reset · done):
  *  - General: is there a footer, and which details it shows (contact, bottom line).
  *  - Design: which footer, its style, the chosen design's own options, the optional mini bar.
  *  - Header: the title block above it — design, words, title style, spacing (folded).
  *  - Background: the fill behind it.
- * With the footer off, the other tabs say so instead of showing settings that change nothing.
+ * With the footer off, General stays visible but dimmed and the other tabs say so instead of showing
+ * settings that change nothing. `chrome` gives the panel its own header and footer (the studio
+ * dock); without it the host frames the tabs.
  */
 export function FooterSettingsPanel({
   footer,
@@ -1489,20 +1252,23 @@ export function FooterSettingsPanel({
   sectionLinkOptions = [],
   profileAvatarUrl = null,
   contactLinkOptions = [],
+  chrome,
 }: {
   footer: PortfolioFooterSectionSettings;
   onChange: (patch: Partial<PortfolioFooterSectionSettings>) => void;
   subSection?: FooterSubSection;
   onSubSectionChange?: (value: FooterSubSection) => void;
-  /** Sections currently visible in the live preview — the Layout settings link picker. */
+  /** Sections currently visible in the live preview — the Section links picker. */
   sectionLinkOptions?: PortfolioFooterSectionLinkOption[];
   /** Account profile photo — shown in Design → Photo until a custom one replaces it. */
   profileAvatarUrl?: string | null;
-  /** Profile contact links — destinations offered by Layout settings "Button link" pickers. */
+  /** Profile contact links — destinations offered by the "Button link" pickers. */
   contactLinkOptions?: FooterContactLinkOption[];
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FooterSubSection>('general');
   const subSection = normalizeFooterSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: FooterSubSection) => {
@@ -1515,145 +1281,232 @@ export function FooterSettingsPanel({
   const designShows = FOOTER_DESIGN_SHOWS[footer.design] ?? FOOTER_DESIGN_SHOWS.minimal;
   // The mini bar can carry the copyright, location and hours under any design.
   const miniBarOn = footer.showMiniBar === true;
-  const headerTitleStyle = FOOTER_HEADER_TITLE_STYLE[footer.headerDesign ?? 'editorial'];
+  const headerDesign = footer.headerDesign ?? 'editorial';
+  const headerTitleStyle = FOOTER_HEADER_TITLE_STYLE[headerDesign];
+  const showBottomLine = designShows.copyright || designShows.marketplace || miniBarOn;
 
   return (
-    <div className="space-y-6">
-      <div className="flex flex-wrap gap-2" role="tablist" aria-label={t('Settings sections')}>
-        {FOOTER_SUB_SECTIONS.map((section) => {
-          const active = subSection === section.id;
-          return (
-            <button
-              key={section.id}
-              type="button"
-              role="tab"
-              aria-selected={active}
-              onClick={() => setSubSection(section.id)}
-              className={`h-8 rounded-full px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
-                active
-                  ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
-                  : 'bg-[color:var(--pf-surface)] text-[color:var(--pf-palette-texte-fort)] hover:bg-[color:var(--pf-palette-neutre)]'
-              }`}
-            >
-              {t(section.label)}
-            </button>
-          );
-        })}
-      </div>
-
+    <NpPanelShell
+      title={t('Footer')}
+      modified={isFooterModified(footer)}
+      tabs={FOOTER_SUB_SECTIONS.map((section) => ({ id: section.id, label: t(section.label) }))}
+      activeTab={subSection}
+      onTabChange={setSubSection}
+      onReset={() => onChange({ ...FOOTER_DEFAULTS })}
+      chrome={chrome}
+    >
       {subSection === 'general' ? (
-        <div>
-          <FooterToggleRow
-            label={t('Show footer')}
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={t('Show footer')}
+            description={enabled ? t('Contact details at the bottom of the page') : t('The page ends with its last section.')}
             checked={enabled}
             onChange={(next) => onChange({ enabled: next })}
           />
-          {!enabled ? (
-            <p className="mt-1 text-[13px] text-[color:var(--pf-palette-texte-muted)]">
-              {t('The page ends with its last section.')}
-            </p>
-          ) : (
-            <>
-              <FooterGroup label={t('Contact details')}>
-                <div>
-                  <FooterVisibilityRow label={t('Email')} checked={footer.showEmail !== false} onChange={(showEmail) => onChange({ showEmail })} />
-                  <FooterVisibilityRow label={t('Phone')} checked={footer.showPhone !== false} onChange={(showPhone) => onChange({ showPhone })} />
-                  {designShows.location || miniBarOn ? (
-                    <FooterVisibilityRow label={t('Location')} checked={footer.showLocation !== false} onChange={(showLocation) => onChange({ showLocation })} />
+
+          <div className="np-dimmable" data-disabled={enabled ? 'false' : 'true'} aria-disabled={!enabled} inert={!enabled}>
+            <NpCollapsibleSection title={t('Contact details')}>
+              <div className="flex flex-col">
+                <NpToggleRow title={t('Email')} checked={footer.showEmail !== false} onChange={(showEmail) => onChange({ showEmail })} />
+                <NpToggleRow title={t('Phone')} checked={footer.showPhone !== false} onChange={(showPhone) => onChange({ showPhone })} />
+                {designShows.location || miniBarOn ? (
+                  <NpToggleRow
+                    title={t('Location')}
+                    checked={footer.showLocation !== false}
+                    onChange={(showLocation) => onChange({ showLocation })}
+                  />
+                ) : null}
+                {designShows.hours || miniBarOn ? (
+                  <NpToggleRow title={t('Hours')} checked={footer.showHours !== false} onChange={(showHours) => onChange({ showHours })} />
+                ) : null}
+              </div>
+            </NpCollapsibleSection>
+
+            {showBottomLine ? (
+              <NpCollapsibleSection title={t('Bottom line')}>
+                <div className="flex flex-col">
+                  {designShows.copyright || miniBarOn ? (
+                    <NpToggleRow
+                      title={t('Copyright')}
+                      checked={footer.showCopyright !== false}
+                      onChange={(showCopyright) => onChange({ showCopyright })}
+                    />
                   ) : null}
-                  {designShows.hours || miniBarOn ? (
-                    <FooterVisibilityRow label={t('Hours')} checked={footer.showHours !== false} onChange={(showHours) => onChange({ showHours })} />
+                  {designShows.marketplace ? (
+                    <NpToggleRow
+                      title={t('Marketplace link')}
+                      checked={footer.showMarketplaceLink === true}
+                      onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
+                    />
                   ) : null}
                 </div>
-              </FooterGroup>
-              {designShows.copyright || designShows.marketplace || miniBarOn ? (
-                <FooterGroup label={t('Bottom line')}>
-                  <div>
-                    {designShows.copyright || miniBarOn ? (
-                      <FooterVisibilityRow
-                        label={t('Copyright')}
-                        checked={footer.showCopyright !== false}
-                        onChange={(showCopyright) => onChange({ showCopyright })}
-                      />
-                    ) : null}
-                    {designShows.marketplace ? (
-                      <FooterVisibilityRow
-                        label={t('Marketplace link')}
-                        checked={footer.showMarketplaceLink === true}
-                        onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
-                      />
-                    ) : null}
-                  </div>
-                </FooterGroup>
+              </NpCollapsibleSection>
+            ) : null}
+          </div>
+        </div>
+      ) : null}
+
+      {subSection !== 'general' && !enabled ? <FooterHiddenNotice onEnable={enable} /> : null}
+
+      {subSection === 'design' && enabled ? (
+        designCatalogOpen ? (
+          /* Browsing the catalogue is a task of its own: it takes the whole tab, like Navigation › Layout. */
+          <FooterDesignChoiceGrid
+            showGrid
+            setShowGrid={setDesignCatalogOpen}
+            value={footer.design}
+            onChange={(design) => onChange(footerDesignPatch(design, footer))}
+          />
+        ) : (
+          <div className="np-stack">
+            <NpCollapsibleSection title={t('Layout')}>
+              <FooterDesignChoiceGrid
+                showGrid={false}
+                setShowGrid={setDesignCatalogOpen}
+                value={footer.design}
+                onChange={(design) => onChange(footerDesignPatch(design, footer))}
+              />
+            </NpCollapsibleSection>
+
+            <NpCollapsibleSection title={t('Style')}>
+              <NpSegmentedControl
+                label={t('Color mode')}
+                options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+                value={footer.colorModeOverride}
+                onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+              />
+              <FooterOptionGrid
+                label={t('Text size')}
+                options={PORTFOLIO_FOOTER_PREMIUM_FONT_SIZE_OPTIONS}
+                value={footer.premiumFontSize ?? 'medium'}
+                onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+              />
+              <PortfolioSettingsPhotoField
+                label={t('Photo')}
+                photoUrl={footer.photoUrl ?? ''}
+                profileAvatarUrl={profileAvatarUrl}
+                onChange={(photoUrl) => onChange({ photoUrl })}
+              />
+            </NpCollapsibleSection>
+
+            <FooterContactLinkOptionsContext.Provider value={contactLinkOptions}>
+              <FooterLayoutSettingsSections footer={footer} sectionLinkOptions={sectionLinkOptions} onChange={onChange} />
+            </FooterContactLinkOptionsContext.Provider>
+
+            {footer.design === 'contact-card' ? (
+              <NpCollapsibleSection title={t('Contact card')}>
+                <FooterContactCardColorField footer={footer} onChange={onChange} />
+              </NpCollapsibleSection>
+            ) : null}
+
+            <NpCollapsibleSection title={t('Mini bottom bar')}>
+              <NpToggleRow
+                title={t('Show mini bottom bar')}
+                description={t('An independent, edge-to-edge bar below the Footer — works with every design.')}
+                checked={miniBarOn}
+                onChange={(showMiniBar) => onChange({ showMiniBar })}
+              />
+              {miniBarOn ? (
+                <FooterMiniBarDesignGrid value={footer.miniBarDesign} onChange={(miniBarDesign) => onChange({ miniBarDesign })} />
               ) : null}
-            </>
+            </NpCollapsibleSection>
+          </div>
+        )
+      ) : null}
+
+      {subSection === 'header' && enabled ? (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Header design')}>
+            <FooterHeaderDesignGrid
+              value={headerDesign}
+              onChange={(next) => onChange({ headerDesign: next })}
+              open={headerCatalogOpen}
+              onOpenChange={setHeaderCatalogOpen}
+            />
+            {!headerCatalogOpen && headerDesign === 'none' ? (
+              <p className="np-note">
+                {t('No header is shown above the footer — the section’s own layout starts right away.')}
+              </p>
+            ) : null}
+          </NpCollapsibleSection>
+
+          {/* Browsing the catalogue is a different task from tuning the chosen design: no settings below it. */}
+          {headerCatalogOpen || headerDesign === 'none' ? null : (
+            <Fragment key={headerDesign}>
+              <NpCollapsibleSection title={t('Content')}>
+                <HeaderElementToggles
+                  design={`footer-${headerDesign}`}
+                  settings={footer}
+                  onPatch={(patch) => onChange(patch as Partial<PortfolioFooterSectionSettings>)}
+                />
+                <FooterHeaderContentFields footer={footer} onChange={onChange} />
+              </NpCollapsibleSection>
+
+              {headerTitleStyle ? (
+                <NpCollapsibleSection title={t('Title style')}>
+                  <FooterOptionGrid
+                    label={t('Alignment')}
+                    options={[
+                      { value: 'left' as const, label: msg('Left') },
+                      { value: 'center' as const, label: msg('Center') },
+                      { value: 'right' as const, label: msg('Right') },
+                    ]}
+                    value={footer.headerDesignAlignment ?? 'left'}
+                    onChange={(headerDesignAlignment) => onChange({ headerDesignAlignment })}
+                  />
+                  {headerTitleStyle.sizeAndWeight ? (
+                    <>
+                      <FooterHeaderSizePill
+                        label={t('Title size')}
+                        value={footer.headerTitleSize ?? 'xl'}
+                        onChange={(headerTitleSize) => onChange({ headerTitleSize })}
+                      />
+                      <FooterOptionGrid
+                        label={t('Title weight')}
+                        options={[
+                          { value: 'light' as const, label: msg('Light') },
+                          { value: 'regular' as const, label: msg('Regular') },
+                          { value: 'semibold' as const, label: msg('Semibold') },
+                          { value: 'bold' as const, label: msg('Bold') },
+                        ]}
+                        value={footer.headerTitleWeight ?? 'bold'}
+                        onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+                      />
+                    </>
+                  ) : null}
+                </NpCollapsibleSection>
+              ) : null}
+
+              {/* Rarely touched: folded, like Global's Preferences. */}
+              <NpCollapsibleSection title={t('Spacing')} defaultOpen={false}>
+                <FooterOptionGrid
+                  label={t('Space above the title')}
+                  options={FOOTER_SPACING_OPTIONS}
+                  value={footer.headerPaddingTop ?? 'none'}
+                  onChange={(headerPaddingTop) => onChange({ headerPaddingTop })}
+                />
+                <FooterOptionGrid
+                  label={t('Space below the title')}
+                  options={FOOTER_SPACING_OPTIONS}
+                  value={footer.headerPaddingBottom ?? 'none'}
+                  onChange={(headerPaddingBottom) => onChange({ headerPaddingBottom })}
+                />
+                <FooterOptionGrid
+                  label={t('Gap before the footer')}
+                  options={FOOTER_SPACING_OPTIONS}
+                  value={footer.headerMarginBottom ?? 'md'}
+                  onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
+                />
+              </NpCollapsibleSection>
+            </Fragment>
           )}
         </div>
       ) : null}
 
-      {subSection === 'design' ? (
-        enabled ? (
-          <div>
-            <FooterDesignChoiceGrid
-              showGrid={designCatalogOpen}
-              setShowGrid={setDesignCatalogOpen}
-              value={footer.design}
-              onChange={(design) => onChange(footerDesignPatch(design, footer))}
-            />
-            {designCatalogOpen ? null : (
-              <>
-                <FooterGroup label={t('Style')}>
-                  <SectionColorModeControl
-                    label={t('Color mode')}
-                    value={footer.colorModeOverride}
-                    onChange={(colorModeOverride) => onChange({ colorModeOverride })}
-                  />
-                  <FooterOptionGrid
-                    label={t('Text size')}
-                    options={PORTFOLIO_FOOTER_PREMIUM_FONT_SIZE_OPTIONS}
-                    value={footer.premiumFontSize ?? 'medium'}
-                    onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-                    columns={3}
-                  />
-                  <PortfolioSettingsPhotoField
-                    label={t('Photo')}
-                    photoUrl={footer.photoUrl ?? ''}
-                    profileAvatarUrl={profileAvatarUrl}
-                    onChange={(photoUrl) => onChange({ photoUrl })}
-                  />
-                </FooterGroup>
-
-                <FooterContactLinkOptionsContext.Provider value={contactLinkOptions}>
-                  <SettingsRowsScope title={t('Layout options')}>
-                    <FooterLayoutSettingsBand footer={footer} sectionLinkOptions={sectionLinkOptions} onChange={onChange} />
-                  </SettingsRowsScope>
-                </FooterContactLinkOptionsContext.Provider>
-                {footer.design === 'contact-card' ? <FooterContactCardColorBand footer={footer} onChange={onChange} /> : null}
-
-                <FooterGroup label={t('Mini bottom bar')}>
-                  <FooterToggleRow
-                    label={t('Show mini bottom bar')}
-                    checked={footer.showMiniBar === true}
-                    onChange={(showMiniBar) => onChange({ showMiniBar })}
-                  />
-                  <p className="-mt-2 text-[13px] text-[color:var(--pf-palette-texte-muted)]">
-                    {t('An independent, edge-to-edge bar below the Footer — works with every design.')}
-                  </p>
-                  {footer.showMiniBar === true ? (
-                    <FooterMiniBarDesignGrid value={footer.miniBarDesign} onChange={(miniBarDesign) => onChange({ miniBarDesign })} />
-                  ) : null}
-                </FooterGroup>
-              </>
-            )}
-          </div>
-        ) : (
-          <FooterHiddenNotice onEnable={enable} />
-        )
-      ) : null}
-
-      {subSection === 'background' ? (
-        enabled ? (
-          <div className="space-y-4">
+      {subSection === 'background' && enabled ? (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Background')}>
             <SectionBackgroundSettingsFields
               settings={footer}
               onChange={onChange}
@@ -1666,117 +1519,16 @@ export function FooterSettingsPanel({
               }}
             />
             {footer.sectionBackgroundEnabled ? (
-              <FooterToggleRow
-                label={t('Unify header background')}
+              <NpToggleRow
+                title={t('Unify header background')}
                 checked={footer.headerBackgroundUnified === true}
                 onChange={(headerBackgroundUnified) => onChange({ headerBackgroundUnified })}
               />
             ) : null}
-          </div>
-        ) : (
-          <FooterHiddenNotice onEnable={enable} />
-        )
+          </NpCollapsibleSection>
+        </div>
       ) : null}
-
-      {subSection === 'header' ? (
-        enabled ? (
-          <div>
-            <FooterHeaderDesignGrid
-              value={footer.headerDesign ?? 'editorial'}
-              onChange={(headerDesign) => onChange({ headerDesign })}
-            />
-            {footer.headerDesign === 'none' ? (
-              <p className="mt-4 text-[13px] text-[color:var(--pf-palette-texte-muted)]">
-                {t('No header is shown above the footer — the section’s own layout starts right away.')}
-              </p>
-            ) : (
-              <div key={footer.headerDesign ?? 'editorial'}>
-                <FooterGroup label={t('Content')}>
-                  <HeaderElementToggles
-                    design={`footer-${footer.headerDesign ?? 'editorial'}`}
-                    settings={footer}
-                    onPatch={(patch) => onChange(patch as Partial<PortfolioFooterSectionSettings>)}
-                  />
-                  <FooterHeaderContentFields footer={footer} onChange={onChange} />
-                </FooterGroup>
-
-                {headerTitleStyle ? (
-                  <FooterGroup label={t('Title style')}>
-                    <FooterOptionGrid
-                      label={t('Alignment')}
-                      options={[
-                        { value: 'left' as const, label: t('Left') },
-                        { value: 'center' as const, label: t('Center') },
-                        { value: 'right' as const, label: t('Right') },
-                      ]}
-                      value={footer.headerDesignAlignment ?? 'left'}
-                      onChange={(headerDesignAlignment) => onChange({ headerDesignAlignment })}
-                      columns={3}
-                    />
-                    {headerTitleStyle.sizeAndWeight ? (
-                      <>
-                        <FooterHeaderSizePill
-                          label={t('Title size')}
-                          value={footer.headerTitleSize ?? 'xl'}
-                          onChange={(headerTitleSize) => onChange({ headerTitleSize })}
-                        />
-                        <FooterOptionGrid
-                          label={t('Title weight')}
-                          options={[
-                            { value: 'light' as const, label: t('Light') },
-                            { value: 'regular' as const, label: t('Regular') },
-                            { value: 'semibold' as const, label: t('Semibold') },
-                            { value: 'bold' as const, label: t('Bold') },
-                          ]}
-                          value={footer.headerTitleWeight ?? 'bold'}
-                          onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
-                          columns={4}
-                        />
-                      </>
-                    ) : null}
-                  </FooterGroup>
-                ) : null}
-
-                {/* Rarely touched: folded, like Global's Advanced. */}
-                <details className="group/spacing mt-6 rounded-2xl shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)]">
-                  <summary className="flex h-11 cursor-pointer list-none items-center justify-between gap-3 rounded-2xl px-3.5 text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)] transition-colors hover:bg-[color:var(--pf-surface)] [&::-webkit-details-marker]:hidden">
-                    {t('Spacing')}
-                    <svg viewBox="0 0 24 24" className="h-4 w-4 text-[color:var(--pf-palette-texte-muted)] transition-transform duration-200 group-open/spacing:rotate-180" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
-                      <path d="M6 9l6 6 6-6" />
-                    </svg>
-                  </summary>
-                  <div className="space-y-5 px-3.5 pb-4 pt-1">
-                    <FooterOptionGrid
-                      label={t('Space above the title')}
-                      options={FOOTER_SPACING_OPTIONS}
-                      value={footer.headerPaddingTop ?? 'none'}
-                      onChange={(headerPaddingTop) => onChange({ headerPaddingTop })}
-                      columns={5}
-                    />
-                    <FooterOptionGrid
-                      label={t('Space below the title')}
-                      options={FOOTER_SPACING_OPTIONS}
-                      value={footer.headerPaddingBottom ?? 'none'}
-                      onChange={(headerPaddingBottom) => onChange({ headerPaddingBottom })}
-                      columns={5}
-                    />
-                    <FooterOptionGrid
-                      label={t('Gap before the footer')}
-                      options={FOOTER_SPACING_OPTIONS}
-                      value={footer.headerMarginBottom ?? 'md'}
-                      onChange={(headerMarginBottom) => onChange({ headerMarginBottom })}
-                      columns={5}
-                    />
-                  </div>
-                </details>
-              </div>
-            )}
-          </div>
-        ) : (
-          <FooterHiddenNotice onEnable={enable} />
-        )
-      ) : null}
-    </div>
+    </NpPanelShell>
   );
 }
 
@@ -1826,7 +1578,6 @@ function FooterHeaderContentFields({
             options={FOOTER_HEADER_BILLBOARD_WORD_STYLE_OPTIONS.map((o) => ({ value: o.value, label: o.label }))}
             value={footer.headerBillboardWordStyle ?? 'outline'}
             onChange={(headerBillboardWordStyle) => onChange({ headerBillboardWordStyle })}
-            columns={3}
           />
           <FooterHeaderPaletteSwatches label={t('Word color')} value={footer.headerBillboardWordColor ?? 'principal'} onChange={(headerBillboardWordColor) => onChange({ headerBillboardWordColor })} />
         </>
@@ -1851,7 +1602,7 @@ function FooterHeaderContentFields({
     case 'name':
       return (
         <>
-          <p className="text-[13px] text-[color:var(--pf-palette-texte-muted)]">{t('Always shows your creator name — nothing to type here.')}</p>
+          <p className="np-subtle">{t('Always shows your creator name — nothing to type here.')}</p>
           <FooterHeaderPaletteSwatches label={t('Name color')} value={footer.headerNameColor ?? 'texteFort'} onChange={(headerNameColor) => onChange({ headerNameColor })} />
         </>
       );
@@ -1862,7 +1613,7 @@ function FooterHeaderContentFields({
           <FooterHeaderTextField label={t('Title')} value={footer.headerTimezoneTitleText} placeholder={t('Let\'s start\na conversation.')} onChange={(headerTimezoneTitleText) => onChange({ headerTimezoneTitleText })} multiline />
           <FooterHeaderTextField label={t('Description')} value={footer.headerTimezoneDescriptionText} placeholder={t('Reach out and tell us about your project — we read every message.')} onChange={(headerTimezoneDescriptionText) => onChange({ headerTimezoneDescriptionText })} multiline />
           <FooterHeaderPaletteSwatches label={t('Title color')} value={footer.headerTimezoneTitleColor ?? 'texteFort'} onChange={(headerTimezoneTitleColor) => onChange({ headerTimezoneTitleColor })} />
-          <p className="text-[13px] text-[color:var(--pf-palette-texte-muted)]">{t('The clock and location on the right always come from your real profile data.')}</p>
+          <p className="np-subtle">{t('The clock and location on the right always come from your real profile data.')}</p>
         </>
       );
     default:

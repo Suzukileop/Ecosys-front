@@ -10,7 +10,7 @@ export function ErrorAlert({ message, onDismiss }: ErrorAlertProps) {
       className="flex items-start gap-3 bg-[#F4212E]/[0.08] p-4 dark:bg-[#F4212E]/[0.12]"
     >
       <svg
-        className="mt-0.5 h-5 w-5 flex-shrink-0 text-[#F4212E]"
+        className="mt-0.5 h-5 w-5 shrink-0 text-[#F4212E]"
         fill="currentColor"
         viewBox="0 0 20 20"
         aria-hidden="true"

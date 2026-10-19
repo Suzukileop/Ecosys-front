@@ -6,6 +6,7 @@ const PORTFOLIO_STUDIO_EMBED_QUERY = 'embed';
 
 export type PortfolioStudioPreviewMeta = {
   availableTools: string[];
+  availableGallery?: import('@/types/profile').ProfileGalleryItem[];
   availableWorks: { id: string; title: string; imageUrl: string }[];
   availableServices: { id: string; title: string }[];
   navSocialLinkOptions: PortfolioNavChromeLink[];
@@ -46,6 +47,8 @@ type PortfolioStudioPreviewMessage =
       source: typeof PORTFOLIO_STUDIO_PREVIEW_SOURCE;
       type: 'set-inspect';
       enabled: boolean;
+      /** Page section that stays outlined while its settings are open. */
+      sectionId?: string | null;
     }
   | {
       /** Page → studio: the section clicked in the preview (a settings section id). */

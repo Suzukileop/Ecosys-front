@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { FaqItem } from '@/types/profile';
@@ -21,6 +21,9 @@ import { useT } from '@/lib/i18n/I18nProvider';
  * `--pf-palette-fond`/`--pf-palette-texte-fort` in CSS, so no prop is
  * needed here for that.
  */
+/** Rows other than the open one, while an answer is shown: set back but legible: with the 66% resting colour this stays ≥4.5:1 in light mode (~4.7:1). */
+const INACTIVE_ROW_OPACITY = 0.88;
+
 export function FaqFloatingGalleryDesign({
   items,
   header,
@@ -36,6 +39,8 @@ export function FaqFloatingGalleryDesign({
   const listRef = useRef<HTMLDivElement>(null);
   const rowRefs = useRef<(HTMLDivElement | null)[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Ties each question button to its answer panel (aria-controls) for screen readers.
+  const answerIdPrefix = useId();
 
   // Entrance (scroll-triggered).
   useLayoutEffect(() => {
@@ -52,7 +57,8 @@ export function FaqFloatingGalleryDesign({
           start: 'top 92%',
           once: true,
           onEnter: (batch) =>
-            gsap.fromTo(batch, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.07 }),
+            // clearProps: a leftover transform on a row would trap the answer's fixed mobile sheet inside it.
+            gsap.fromTo(batch, { y: 24, opacity: 0 }, { y: 0, opacity: 1, duration: 0.8, ease: 'power3.out', stagger: 0.07, clearProps: 'transform' }),
         });
       }, list);
     }
@@ -102,12 +108,13 @@ export function FaqFloatingGalleryDesign({
     panel.classList.add('is-visible');
 
     const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    if (reducedMotion) {
-      gsap.set(panel, { opacity: 1, y: 0, scale: 1 });
-      return;
-    }
-
-    gsap.fromTo(panel, { opacity: 0, y: 14, scale: 0.985 }, { opacity: 1, y: 18, scale: 1, duration: 0.75, ease: 'back.out(1.4)' });
+    // On phones the panel is a fixed bottom sheet: it rests on its own inset (no 18px drop) and
+    // nothing in the list needs to move.
+    const sheet = getComputedStyle(panel).position === 'fixed';
+    const restY = sheet ? 0 : 18;
+    if (reducedMotion) gsap.set(panel, { opacity: 1, y: 0, scale: 1 });
+    else gsap.fromTo(panel, { opacity: 0, y: restY - 4, scale: 0.985 }, { opacity: 1, y: restY, scale: 1, duration: 0.75, ease: 'back.out(1.4)' });
+    if (sheet) return;
 
     // The glass panel is absolutely positioned from this row's own top
     // edge downward, so only rows *below* it need real clearance — and
@@ -116,16 +123,28 @@ export function FaqFloatingGalleryDesign({
     // they only get a small decorative push for symmetry.
     requestAnimationFrame(() => {
       const clearance = panel.offsetHeight + 32;
+      const list = listRef.current;
+      // Rows are moved with transforms, which take no room: grow the list by the space the open
+      // state really uses, or the pushed rows (and a panel opened on the last row) spill past the
+      // section and get clipped by whatever follows it.
+      if (list) {
+        const natural = list.offsetHeight - (parseFloat(list.style.paddingBottom) || 0);
+        const pushedBottom = index < rows.length - 1 ? natural + clearance : 0;
+        // The row's top inside the list (offsetTop would be relative to a positioned ancestor).
+        const rowTop = rows.slice(0, index).reduce((sum, r) => sum + (r?.offsetHeight ?? 0), 0);
+        const panelBottom = rowTop + 18 + panel.offsetHeight + 32;
+        const extra = Math.max(0, pushedBottom - natural, panelBottom - natural);
+        if (reducedMotion) gsap.set(list, { paddingBottom: extra });
+        else gsap.to(list, { paddingBottom: extra, duration: 0.6, ease: 'power3.out', overwrite: 'auto' });
+      }
       rows.forEach((other, i) => {
         if (!other || i === index) return;
         const isBelow = i > index;
-        gsap.to(other, {
-          y: isBelow ? clearance : -40,
-          opacity: 0.16,
-          filter: 'blur(1px)',
-          duration: 1.1,
-          ease: 'elastic.out(1, 0.65)',
-        });
+        // Recede, but stay readable and clickable: no blur, and an opacity that keeps the
+        // resting question colour above 4.5:1 (0.16 + blur left them unreadable).
+        const to = { y: isBelow ? clearance : reducedMotion ? 0 : -40, opacity: INACTIVE_ROW_OPACITY };
+        if (reducedMotion) gsap.set(other, to);
+        else gsap.to(other, { ...to, duration: 1.1, ease: 'elastic.out(1, 0.65)' });
       });
     });
   }
@@ -147,10 +166,17 @@ export function FaqFloatingGalleryDesign({
         onComplete: () => panel.classList.remove('is-visible'),
       });
     }
+    const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
     rows.forEach((other) => {
       if (!other) return;
-      gsap.to(other, { y: 0, opacity: 1, filter: 'blur(0px)', duration: 0.9, ease: 'elastic.out(1, 0.7)' });
+      if (reducedMotion) gsap.set(other, { y: 0, opacity: 1, clearProps: 'transform' });
+      else gsap.to(other, { y: 0, opacity: 1, duration: 0.9, ease: 'elastic.out(1, 0.7)', clearProps: 'transform' });
     });
+    const list = listRef.current;
+    if (list) {
+      if (reducedMotion) gsap.set(list, { paddingBottom: 0 });
+      else gsap.to(list, { paddingBottom: 0, duration: 0.6, ease: 'power3.out', overwrite: 'auto' });
+    }
   }
 
   if (items.length === 0) return null;
@@ -174,6 +200,7 @@ export function FaqFloatingGalleryDesign({
               type="button"
               className="pf-faq-gallery-trigger"
               aria-expanded={openIndex === index}
+              aria-controls={`${answerIdPrefix}-answer-${index}`}
               onClick={() => handleToggle(index)}
             >
               <span className="pf-faq-gallery-q">{item.question}</span>
@@ -183,7 +210,7 @@ export function FaqFloatingGalleryDesign({
                 </svg>
               </span>
             </button>
-            <div className="pf-faq-gallery-glass">
+            <div id={`${answerIdPrefix}-answer-${index}`} className="pf-faq-gallery-glass">
               <div className="pf-faq-gallery-glass-head">
                 <span className="pf-faq-gallery-eyebrow">{t('Answer /')} {String(index + 1).padStart(2, '0')}</span>
                 <button

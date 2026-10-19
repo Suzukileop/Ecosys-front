@@ -43,12 +43,12 @@ export function StarGlyph({ filled, className = 'h-4 w-4' }: { filled: boolean; 
 }
 
 const baseClass =
-  'inline-flex items-center justify-center gap-2 rounded-none border font-semibold tabular-nums transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
+  'inline-flex items-center justify-center gap-2 rounded-none border font-semibold tabular-nums transition-colors duration-200 ease-out focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
 /* X secondary button (1px outline, ink text); starred = the same outline on a soft tone, filled ink star. */
 const idleClass = `${baseClass} border-[#CFD9DE] bg-transparent text-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]`;
 const starredClass = `${baseClass} border-[#CFD9DE] bg-[rgba(15,20,25,0.06)] text-[#0F1419] hover:bg-[rgba(15,20,25,0.1)] dark:border-[#536471] dark:bg-[rgba(231,233,234,0.1)] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.16)]`;
 const onDarkBaseClass =
-  'inline-flex items-center justify-center gap-2 rounded-full border font-medium tabular-nums backdrop-blur-md transition-[background-color,border-color,color,transform] duration-200 ease-out active:scale-[0.97] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/40 disabled:pointer-events-none';
+  'inline-flex items-center justify-center gap-2 rounded-full border font-medium tabular-nums backdrop-blur-md transition-[background-color,border-color,color,transform,translate,scale,rotate] duration-200 ease-out active:scale-[0.97] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/40 disabled:pointer-events-none';
 const onDarkIdleClass = `${onDarkBaseClass} border-white/25 bg-white/10 text-white hover:border-white/40 hover:bg-white/20`;
 const onDarkStarredClass = `${onDarkBaseClass} border-transparent bg-white text-[#111111] hover:bg-white/90`;
 

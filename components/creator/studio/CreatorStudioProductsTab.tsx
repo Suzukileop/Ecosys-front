@@ -76,17 +76,17 @@ type CreatorProductsLayout = 'all' | 'catalogues';
 /* Every action on the page is a pill (News / My services): ink fill for the primary, a 1px ring for
    the secondary — on the theme's tokens. */
 const PRIMARY_BUTTON_CLASS =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 const SECONDARY_BUTTON_CLASS =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] dark:shadow-[inset_0_0_0_1px_#536471] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] dark:shadow-[inset_0_0_0_1px_#536471] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 /** "Nothing here" blocks: the card tone, no dashed frame (My services' empty filter block). */
 const EMPTY_FRAME_CLASS = 'mx-5 bg-[color:var(--gn-surface)] px-6 py-12 text-center sm:mx-0';
 /** The rail's primary — News's "Publish a post" pill. */
 const RAIL_PRIMARY_CLASS =
-  'inline-flex h-12 w-full items-center justify-center gap-2 !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:cursor-not-allowed disabled:opacity-40';
+  'inline-flex h-12 w-full items-center justify-center gap-2 !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:cursor-not-allowed disabled:opacity-40';
 /** A rail row (the Specialty / Format rows' shape) for links and actions. */
 const RAIL_ROW =
-  'group/row flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
+  'group/row flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
 /** Catalogue rows shown in the rail before "Explore all". */
 const RAIL_CATALOGUES_LIMIT = 6;
 
@@ -147,7 +147,7 @@ function BackLink({ label, onClick }: { label: string; onClick: () => void }) {
     <button
       type="button"
       onClick={onClick}
-      className="mx-5 inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:mx-1"
+      className="mx-5 inline-flex min-h-10 items-center gap-1.5 text-[15px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:mx-1"
     >
       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
         <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -676,7 +676,7 @@ export function CreatorStudioProductsTab() {
           enterKeyHint="search"
           autoComplete="off"
           placeholder={t('Search title or tag')}
-          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
+          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-hidden focus:ring-0 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
         />
         {query ? (
           <button
@@ -733,7 +733,7 @@ export function CreatorStudioProductsTab() {
             onClick={() => setStatus(tab.id)}
             aria-pressed={selected}
             data-pf-no-color-transition
-            className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`relative inline-flex h-12 shrink-0 items-center gap-1.5 text-[15px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
               selected ? 'font-bold text-[color:var(--gn-ink)]' : 'font-medium text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-ink)]'
             }`}
           >
@@ -775,7 +775,7 @@ export function CreatorStudioProductsTab() {
           <button
             type="button"
             onClick={clearNarrowing}
-            className="shrink-0 font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="shrink-0 font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             {t('Clear')}
           </button>

@@ -277,7 +277,7 @@ function ComposeVideoPlayer({ src, locale = 'en' }: { src: string; locale?: 'fr'
         type="button"
         onClick={togglePlay}
         aria-label={playLabel}
-        className={`absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#111111] shadow-lg backdrop-blur-sm transition-opacity duration-200 hover:bg-white ${
+        className={`absolute left-1/2 top-1/2 flex h-14 w-14 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#111111] shadow-lg backdrop-blur-xs transition-opacity duration-200 hover:bg-white ${
           playing ? 'pointer-events-none opacity-0' : 'opacity-100'
         }`}
       >
@@ -440,7 +440,7 @@ export function ContentComposeMediaPreview({
             <button
               type="button"
               onClick={() => setZoomOpen(true)}
-              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
+              className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-xs transition hover:bg-black/65"
               aria-label={zoomLabel}
               title={zoomLabel}
             >
@@ -456,7 +456,7 @@ export function ContentComposeMediaPreview({
           <button
             type="button"
             onClick={onRemove}
-            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-sm transition hover:bg-black/65"
+            className="inline-flex h-8 w-8 items-center justify-center rounded-full bg-black/50 text-white backdrop-blur-xs transition hover:bg-black/65"
             aria-label={removeLabel}
             title={removeLabel}
           >
@@ -474,7 +474,7 @@ export function ContentComposeMediaPreview({
           <div className="fixed inset-0 z-[300] flex items-center justify-center p-4">
             <button
               type="button"
-              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-sm"
+              className="absolute inset-0 bg-neutral-950/85 backdrop-blur-xs"
               aria-label={locale === 'fr' ? t('Fermer') : t('Close')}
               onClick={() => setZoomOpen(false)}
             />
@@ -558,7 +558,7 @@ export function ContentMediaPreview({
       <div
         className={`flex ${frameClass} flex-col items-center justify-center rounded-2xl border-2 border-dashed border-neutral-200 bg-neutral-50/80 px-6 text-center dark:border-neutral-700 dark:bg-neutral-900/50`}
       >
-        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-sm dark:bg-neutral-800">
+        <div className="flex h-14 w-14 items-center justify-center rounded-2xl bg-white shadow-xs dark:bg-neutral-800">
           <svg className="h-7 w-7 text-neutral-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} aria-hidden>
             <path
               strokeLinecap="round"

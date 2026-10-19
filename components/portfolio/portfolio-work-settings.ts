@@ -666,7 +666,8 @@ export const DEFAULT_PROJECTS_SPLIT_SETTINGS: PortfolioWorkProjectsSplitSettings
   thumbnailSize: 'xl',
   thumbnailRadius: 'none',
   rowGap: 'md',
-  showDescription: false,
+  // On: without it each row was a ~700px image facing a lone 46px title (~92 % empty column).
+  showDescription: true,
   imageSide: 'left',
   titleSide: 'left',
   titleVerticalAlign: 'top',
@@ -2157,7 +2158,9 @@ export function workSectionDesignSettingsPatch(
       cardContentAlignment: 'left',
       cardContentVerticalAlign: 'top',
       showCardTitle: true,
-      showCardDescription: false,
+      // Split shows descriptions through its own toggle (projectsSplit.showDescription); turning
+      // the General "Project description" switch off here made that toggle a dead control.
+      showCardDescription: true,
       showCardTools: false,
       showCardToolIcons: false,
       showCardToolList: false,
@@ -2895,7 +2898,7 @@ export function workElementChromeClass(chrome: PortfolioWorkElementChromeSetting
   ];
   if (chrome.border !== 'none') {
     parts.push(workCardBorderWidthClass(chrome.border));
-    if (chrome.border === 'soft') parts.push('shadow-sm');
+    if (chrome.border === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -3002,6 +3005,22 @@ export type PortfolioWorkPresentationSettings = PortfolioSectionBackgroundSettin
   /** Masthead header — one size/weight for the whole headline, across every line. */
   mastheadHeadlineSize: PortfolioWorkHeaderTitleSize;
   mastheadHeadlineWeight: PortfolioWorkHeaderTitleWeight;
+  /** Editorial header — kicker above the title; empty = "Portfolio". */
+  editorialLabelText: string;
+  /** Editorial header — the big title; empty = the section title. */
+  editorialTitleText: string;
+  /** Editorial header — the line under the title; empty = the section subtitle. */
+  editorialSubtitleText: string;
+  /** Editorial header — each text bound to a palette token, independently. */
+  editorialLabelColor: PortfolioWorkPaletteToken;
+  editorialTitleColor: PortfolioWorkPaletteToken;
+  editorialSubtitleColor: PortfolioWorkPaletteToken;
+  /** Editorial header — label/subtitle sized and weighted independently (the title keeps
+   *  `headerTitleSize` / `headerTitleWeight`, already stored for this design). */
+  editorialLabelSize: PortfolioWorkHeaderTitleSize;
+  editorialLabelWeight: PortfolioWorkHeaderTitleWeight;
+  editorialSubtitleSize: PortfolioWorkHeaderTitleSize;
+  editorialSubtitleWeight: PortfolioWorkHeaderTitleWeight;
   /** Index header — small label on the top divider rule (e.g. "Index", "Catalog"). */
   indexLabelText: string;
   /** Index header — the title beside the counting numeral, independent of the section title. */
@@ -3275,6 +3294,16 @@ export const DEFAULT_WORK_PRESENTATION: PortfolioWorkPresentationSettings = {
   mastheadHeadlineColor: 'principal',
   mastheadHeadlineSize: 'md',
   mastheadHeadlineWeight: 'regular',
+  editorialLabelText: '',
+  editorialTitleText: '',
+  editorialSubtitleText: '',
+  editorialLabelColor: 'principal',
+  editorialTitleColor: 'principal',
+  editorialSubtitleColor: 'texteFort',
+  editorialLabelSize: 'md',
+  editorialLabelWeight: 'regular',
+  editorialSubtitleSize: 'md',
+  editorialSubtitleWeight: 'regular',
   indexLabelText: '',
   indexTitleText: '',
   indexCountLabelText: '',
@@ -4032,7 +4061,7 @@ export function workCardEdgeClass(
   const parts = [workCardRadiusClass(p.cardBorderRadius)];
   if (p.cardBorder !== 'none') {
     parts.push(workCardBorderWidthClass(p.cardBorder));
-    if (p.cardBorder === 'soft') parts.push('shadow-sm');
+    if (p.cardBorder === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -4147,7 +4176,7 @@ export function workContentFrameClass(
   ];
   if (p.contentFrameBorder !== 'none') {
     parts.push(workCardBorderWidthClass(p.contentFrameBorder));
-    if (p.contentFrameBorder === 'soft') parts.push('shadow-sm');
+    if (p.contentFrameBorder === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -4188,15 +4217,15 @@ export function workCardMediaBehaviorClass(design: PortfolioWorkCardDesign): str
     case 'minimal':
       return `${base} bg-neutral-50 dark:bg-neutral-900`;
     case 'compact':
-      return `${base} bg-neutral-100 shadow-sm hover:shadow-md dark:bg-neutral-900`;
+      return `${base} bg-neutral-100 shadow-xs hover:shadow-md dark:bg-neutral-900`;
     case 'stacked':
-      return `${base} bg-neutral-100 shadow-sm hover:shadow-lg dark:bg-neutral-900`;
+      return `${base} bg-neutral-100 shadow-xs hover:shadow-lg dark:bg-neutral-900`;
     case 'overlay':
       return `${base} bg-neutral-900 shadow-md hover:-translate-y-0.5 hover:shadow-xl`;
     case 'framed':
-      return `${base} bg-neutral-100 shadow-sm hover:shadow-md dark:bg-neutral-900`;
+      return `${base} bg-neutral-100 shadow-xs hover:shadow-md dark:bg-neutral-900`;
     default:
-      return `${base} bg-neutral-100 shadow-sm hover:-translate-y-0.5 hover:shadow-lg dark:bg-neutral-900`;
+      return `${base} bg-neutral-100 shadow-xs hover:-translate-y-0.5 hover:shadow-lg dark:bg-neutral-900`;
   }
 }
 
@@ -4449,11 +4478,11 @@ export function workCtaClassName(
 
   switch (design) {
     case 'pill-dark':
-      return `${base} ${borderW} ${radius} px-5 py-2.5 uppercase tracking-[0.1em] shadow-sm hover:shadow-md sm:px-6 sm:py-3`;
+      return `${base} ${borderW} ${radius} px-5 py-2.5 uppercase tracking-[0.1em] shadow-xs hover:shadow-md sm:px-6 sm:py-3`;
     case 'pill-outline':
-      return `${base} ${borderW} ${radius} px-5 py-2.5 uppercase tracking-[0.1em] hover:shadow-sm sm:px-6 sm:py-3`;
+      return `${base} ${borderW} ${radius} px-5 py-2.5 uppercase tracking-[0.1em] hover:shadow-xs sm:px-6 sm:py-3`;
     case 'pill-accent':
-      return `${base} ${borderW} ${radius} px-5 py-2.5 uppercase tracking-[0.1em] shadow-sm hover:shadow-md hover:-translate-y-px sm:px-6 sm:py-3`;
+      return `${base} ${borderW} ${radius} px-5 py-2.5 uppercase tracking-[0.1em] shadow-xs hover:shadow-md hover:-translate-y-px sm:px-6 sm:py-3`;
     case 'text-arrow':
       return `${base} border-0 bg-transparent px-0 py-1 uppercase tracking-[0.12em] underline-offset-4 decoration-transparent hover:underline hover:decoration-current`;
     default:
@@ -4854,6 +4883,55 @@ export function mergeWorkPresentation(
       record.mastheadHeadlineWeight,
       WORK_HEADER_TITLE_WEIGHTS,
       base.mastheadHeadlineWeight ?? 'regular'
+    ),
+    editorialLabelText:
+      typeof record.editorialLabelText === 'string' ? record.editorialLabelText : base.editorialLabelText,
+    editorialTitleText:
+      typeof record.editorialTitleText === 'string' ? record.editorialTitleText : base.editorialTitleText,
+    editorialSubtitleText:
+      typeof record.editorialSubtitleText === 'string'
+        ? record.editorialSubtitleText
+        : base.editorialSubtitleText,
+    editorialLabelColor: pickAllowlisted(
+      record.editorialLabelColor,
+      WORK_PALETTE_TOKENS,
+      base.editorialLabelColor ?? 'principal'
+    ),
+    editorialTitleColor: pickAllowlisted(
+      record.editorialTitleColor,
+      WORK_PALETTE_TOKENS,
+      // Before this field existed the Editorial title colour lived on the section's `title`
+      // binding — carry a creator's earlier pick over instead of resetting it.
+      pickAllowlisted(
+        (record.workColorBindings as Record<string, unknown> | undefined)?.title,
+        WORK_PALETTE_TOKENS,
+        base.editorialTitleColor ?? 'principal'
+      )
+    ),
+    editorialSubtitleColor: pickAllowlisted(
+      record.editorialSubtitleColor,
+      WORK_PALETTE_TOKENS,
+      base.editorialSubtitleColor ?? 'texteFort'
+    ),
+    editorialLabelSize: pickAllowlisted(
+      record.editorialLabelSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.editorialLabelSize ?? 'md'
+    ),
+    editorialLabelWeight: pickAllowlisted(
+      record.editorialLabelWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.editorialLabelWeight ?? 'regular'
+    ),
+    editorialSubtitleSize: pickAllowlisted(
+      record.editorialSubtitleSize,
+      WORK_HEADER_TITLE_SIZES,
+      base.editorialSubtitleSize ?? 'md'
+    ),
+    editorialSubtitleWeight: pickAllowlisted(
+      record.editorialSubtitleWeight,
+      WORK_HEADER_TITLE_WEIGHTS,
+      base.editorialSubtitleWeight ?? 'regular'
     ),
     indexLabelText:
       typeof record.indexLabelText === 'string' ? record.indexLabelText : base.indexLabelText,
@@ -5412,7 +5490,7 @@ export function workCategoryChipClass(
     case 'tabs':
       return `${base} rounded-xl px-3.5 py-2 ${
         active
-          ? 'shadow-sm'
+          ? 'shadow-xs'
           : 'opacity-70 hover:opacity-100 hover:bg-[var(--work-cat-hover-bg)] hover:text-[color:var(--work-cat-hover-text)]'
       }`;
     case 'underline':

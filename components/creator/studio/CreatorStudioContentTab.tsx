@@ -94,7 +94,7 @@ function BucketBar({ bucket, onSelect }: { bucket: ContentPostBucket; onSelect: 
               aria-label={t(entry.label)}
               title={t(entry.label)}
               onClick={() => onSelect(entry.id)}
-              className={`group/bucket relative inline-flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] 2xl:w-full 2xl:justify-start 2xl:gap-3 2xl:rounded-none 2xl:bg-transparent 2xl:pl-0 2xl:hover:bg-transparent ${
+              className={`group/bucket relative inline-flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] 2xl:w-full 2xl:justify-start 2xl:gap-3 2xl:rounded-none 2xl:bg-transparent 2xl:pl-0 2xl:hover:bg-transparent ${
                 active
                   ? 'bg-[color:var(--gn-hover-strong,var(--gn-hover))]'
                   : '2xl:text-[color:var(--gn-ink2)] 2xl:hover:text-[color:var(--gn-ink)]'
@@ -227,7 +227,7 @@ export function CreatorStudioContentTab({
                   aria-selected={active}
                   onClick={() => setBucket(entry.id)}
                   data-pf-no-color-transition
-                  className={`relative inline-flex h-10 shrink-0 items-center text-[15px] leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                  className={`relative inline-flex h-10 shrink-0 items-center text-[15px] leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                     active
                       ? 'font-bold text-[color:var(--gn-ink)]'
                       : 'font-medium text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-ink)]'

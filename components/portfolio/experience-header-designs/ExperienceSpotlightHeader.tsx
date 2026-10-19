@@ -13,10 +13,9 @@ import {
   DEFAULT_EXPERIENCE_TITLE_COLOR_DARK,
   MARQUEE_EDGE_FADE,
   MARQUEE_FILL_OPACITY,
+  MARQUEE_SPEED_PX,
   MARQUEE_WEIGHT,
   SERIF_LEAD_TRACKING,
-  SPOTLIGHT_MARQUEE_SPEED_PX,
-  SPOTLIGHT_MARQUEE_WEIGHT,
   SPOTLIGHT_MARQUEE_GAP,
   ensureExperienceInkContrast,
   normalizeExperienceElementStyles,
@@ -140,14 +139,16 @@ export function ExperienceSpotlightHeader({
     { ...presentation, marqueeInk: presentation.marqueeSeparatorColor ?? 'accent' },
     titleColor
   );
-  const letterStyle = presentation.spotlightMarqueeStyle ?? presentation.marqueeStyle ?? 'mixed';
-  const weight = presentation.spotlightMarqueeWeight ?? 'normal';
+  // Style, weight, direction, speed and scroll velocity come from the Marquee configuration
+  // panel (`marquee*` keys). The `spotlightMarquee*` twins are always filled with defaults by
+  // normalization, so letting them win made those five panel controls do nothing.
+  const letterStyle = presentation.marqueeStyle ?? 'alternate';
+  const weight = presentation.marqueeWeight ?? 'semibold';
   const scale = presentation.marqueeScale ?? 'default';
   const tracking = presentation.marqueeTracking ?? 'editorial';
   const fillOpacity = presentation.marqueeFillOpacity ?? 'muted';
-  const marqueeDirection = presentation.spotlightMarqueeDirection ?? 'left';
-  const direction = marqueeDirection === 'right' ? 'ltr' : 'rtl';
-  const speed = presentation.spotlightMarqueeSpeed ?? 'medium';
+  const direction = presentation.marqueeDirection ?? 'ltr';
+  const speed = presentation.marqueeSpeed ?? 'cruise';
   const edgeFade = presentation.spotlightMarqueeGradientFade === false
     ? 'none'
     : (presentation.marqueeEdgeFade ?? 'soft');
@@ -156,10 +157,10 @@ export function ExperienceSpotlightHeader({
     presentation.spotlightHeaderAnimationEnabled !== false &&
     presentation.marqueeMotion !== false &&
     !motionOff;
-  const scrollLink = presentation.spotlightScrollSpeedBoost === true;
+  const scrollLink = presentation.marqueeScrollLink !== false;
   const pauseOnHover = presentation.spotlightMarqueePauseOnHover !== false;
   const wordGap = SPOTLIGHT_MARQUEE_GAP[presentation.spotlightMarqueeGap ?? 'md'];
-  const pixelsPerSecond = SPOTLIGHT_MARQUEE_SPEED_PX[speed] ?? SPOTLIGHT_MARQUEE_SPEED_PX.medium;
+  const pixelsPerSecond = MARQUEE_SPEED_PX[speed] ?? MARQUEE_SPEED_PX.cruise;
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined') return;
@@ -323,13 +324,15 @@ export function ExperienceSpotlightHeader({
       style={
         {
           '--pf-exp-marquee-stroke': wordInk,
-          '--pf-exp-marquee-weight': String(SPOTLIGHT_MARQUEE_WEIGHT[weight] ?? MARQUEE_WEIGHT.regular),
+          '--pf-exp-marquee-weight': String(MARQUEE_WEIGHT[weight] ?? MARQUEE_WEIGHT.semibold),
           '--pf-exp-marquee-tracking': SERIF_LEAD_TRACKING[tracking],
           '--pf-exp-marquee-fill': String(MARQUEE_FILL_OPACITY[fillOpacity]),
           '--pf-exp-marquee-fade': MARQUEE_EDGE_FADE[edgeFade],
         } as CSSProperties
       }
     >
+      {/* Screen readers get the words once; the looping tracks repeat them 8× visually. */}
+      <span className="sr-only">{words.join(' · ')}</span>
       <div ref={rowRef} className="pf-exp-marquee-row">
         <SpotlightMarqueeTrack
           words={words}
@@ -339,6 +342,7 @@ export function ExperienceSpotlightHeader({
           letterStyle={letterStyle}
           showSeparator={showSeparator}
           wordGap={wordGap}
+          hidden
         />
         <SpotlightMarqueeTrack
           words={words}

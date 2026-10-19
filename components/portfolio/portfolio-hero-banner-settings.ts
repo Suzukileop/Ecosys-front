@@ -2,6 +2,22 @@ import { msg } from '@/lib/i18n/config';
 export type PortfolioHeroEditorialOverlapWidth = 'medium' | 'large' | 'full';
 export type PortfolioHeroEditorialOverlapAlign = 'left' | 'center' | 'right';
 export type PortfolioHeroSelectedWorksIdentityLayout = 'split' | 'centered';
+export type PortfolioHeroStudioSplitFrameStyle =
+  | 'circle-center'
+  | 'panorama'
+  | 'portrait'
+  | 'offset-square';
+
+export const PORTFOLIO_HERO_STUDIO_SPLIT_FRAME_STYLE_OPTIONS: {
+  value: PortfolioHeroStudioSplitFrameStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'circle-center', label: 'Centered circle', description: 'A focused circular studio portrait.' },
+  { value: 'panorama', label: 'Panorama', description: 'The wide cinematic frame.' },
+  { value: 'portrait', label: 'Vertical portrait', description: 'An editorial 4:5 frame.' },
+  { value: 'offset-square', label: 'Offset square', description: 'A square frame set off axis.' },
+];
 export type PortfolioHeroIdentityIndexPortraitRadius = 'none' | 'medium' | 'full';
 export type PortfolioHeroBowlIntroMotif = 'bowl' | 'hug' | 'orbs-top' | 'orbs-bottom';
 export type PortfolioHeroPortraitIdentityBottomGap = 'tight' | 'medium' | 'large' | 'xlarge';
@@ -97,7 +113,6 @@ export const PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS: {
  */
 
 export type PortfolioHeroBannerDesign =
-  | 'cinematic-reveal'
   | 'swiss-editorial'
   | 'portrait-identity'
   | 'editorial-rail'
@@ -111,7 +126,8 @@ export type PortfolioHeroBannerDesign =
   | 'identity-index'
   | 'studio-split'
   | 'work-duo'
-  | 'bowl-intro';
+  | 'bowl-intro'
+  | 'colophon';
 
 /** Default banner after Classic was removed permanently. */
 export const DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN: PortfolioHeroBannerDesign =
@@ -122,12 +138,6 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
   label: string;
   description: string;
 }[] = [
-  {
-    value: 'cinematic-reveal',
-    label: msg('Cinematic reveal'),
-    description:
-      msg('Scène plein écran premium : halo qui suit le curseur, nom en révélation kinétique lettre par lettre, portrait avec tilt 3D et anneau animé, bandeau défilant en bas.'),
-  },
   {
     value: 'swiss-editorial',
     label: msg('Swiss editorial'),
@@ -210,13 +220,19 @@ export const PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS: {
     value: 'bowl-intro',
     label: msg('Bowl intro'),
     description:
-      msg('Badge dispo + portrait + nom à gauche ; spécialité rouge + bio + View my work / Contact me à droite.'),
+      msg('Portrait sculptural porté par un motif concave ; spécialité monumentale, bio et actions à droite.'),
+  },
+  {
+    value: 'colophon',
+    label: msg('Colophon'),
+    description: msg(
+      'Advanced editorial minimalism: compact credits, a strong indented statement and an interactive project index facing a monumental fitted name.'
+    ),
   },
 ];
 
 function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBannerDesign {
   return (
-    value === 'cinematic-reveal' ||
     value === 'swiss-editorial' ||
     value === 'portrait-identity' ||
     value === 'editorial-rail' ||
@@ -230,11 +246,12 @@ function isPortfolioHeroBannerDesign(value: unknown): value is PortfolioHeroBann
     value === 'identity-index' ||
     value === 'studio-split' ||
     value === 'work-duo' ||
-    value === 'bowl-intro'
+    value === 'bowl-intro' ||
+    value === 'colophon'
   );
 }
 
-/** Maps legacy `classic` (removed) and invalid values to the current default. */
+/** Maps legacy `classic` / `cinematic-reveal` (removed) and invalid values to the current default. */
 export function normalizePortfolioHeroBannerDesign(
   value: unknown
 ): PortfolioHeroBannerDesign {
@@ -289,21 +306,14 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
   heroStudioSplitMediaUrl?: string;
   heroStudioSplitMediaCaption?: string;
   heroStudioSplitMediaWidth?: 'medium' | 'large' | 'full';
+  heroStudioSplitFrameStyle?: PortfolioHeroStudioSplitFrameStyle;
   heroWorkDuoSelectedWorkIds?: string[];
+  heroWorkDuoExperienceLabel?: string;
   heroBowlIntroMotif?: PortfolioHeroBowlIntroMotif;
   /** Apply grayscale (noir & blanc) to hero banner images / media. */
   heroImageGrayscale?: boolean;
 } {
   switch (design) {
-    case 'cinematic-reveal':
-      return {
-        heroBannerDesign: design,
-        showAvailabilityBadge: true,
-        showTools: false,
-        showContactCta: true,
-        heroEditorialRailSelectedTools: [],
-        heroImageGrayscale: false,
-      };
     case 'swiss-editorial':
       return {
         heroBannerDesign: design,
@@ -429,6 +439,7 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         heroStudioSplitMediaUrl: '',
         heroStudioSplitMediaCaption: 'Selected work',
         heroStudioSplitMediaWidth: 'full',
+        heroStudioSplitFrameStyle: 'circle-center',
       };
     case 'work-duo':
       return {
@@ -437,6 +448,7 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         showTools: false,
         showContactCta: true,
         heroWorkDuoSelectedWorkIds: [],
+        heroWorkDuoExperienceLabel: 'Experience built through real projects',
       };
     case 'bowl-intro':
       return {
@@ -445,6 +457,13 @@ export function heroBannerDesignSettingsPatch(design: PortfolioHeroBannerDesign)
         showTools: false,
         showContactCta: true,
         heroBowlIntroMotif: 'bowl',
+      };
+    case 'colophon':
+      return {
+        heroBannerDesign: design,
+        showAvailabilityBadge: true,
+        showTools: false,
+        showContactCta: true,
       };
     default:
       return { heroBannerDesign: design };

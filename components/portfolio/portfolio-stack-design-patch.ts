@@ -20,6 +20,18 @@ export function stackDesignSettingsPatch(
   stack: Pick<PortfolioStackSectionSettings, 'titlePreset'>,
   design: PortfolioStackDesign
 ): Partial<PortfolioStackSectionSettings> {
+  const patch = stackDesignOwnDefaults(stack, design);
+  // Headers now read `headerDesignAlignment`; the designs' defaults still name the legacy
+  // `headerAlignment`, so carry it over or the title never follows the design's content.
+  return patch.headerAlignment
+    ? { ...patch, headerDesignAlignment: patch.headerAlignment }
+    : patch;
+}
+
+function stackDesignOwnDefaults(
+  stack: Pick<PortfolioStackSectionSettings, 'titlePreset'>,
+  design: PortfolioStackDesign
+): Partial<PortfolioStackSectionSettings> {
   if (design === 'brand-cards') {
     return stackBrandCardsDesignDefaults();
   }

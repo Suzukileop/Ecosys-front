@@ -1,0 +1,14 @@
+.root { container-type: inline-size; color: var(--sheet-ink); min-width: 0; }
+.grid { display: grid; grid-template-columns: minmax(0, 1fr); column-gap: var(--sheet-gap); row-gap: var(--sheet-row-gap); list-style: none; margin: 0; padding: 0; }
+.item, .item figure { min-width: 0; margin: 0; }
+.image { position: relative; overflow: hidden; border-radius: var(--sheet-radius); }
+.open { display: block; width: 100%; height: 100%; padding: 0; border: 0; background: transparent; cursor: zoom-in; }
+.open:focus-visible { outline: 2px solid var(--sheet-ink); outline-offset: -5px; }
+.caption { display: flex; align-items: baseline; justify-content: space-between; gap: 16px; padding-top: 12px; font-size: 16px; line-height: 1.5; }
+.title { font-weight: 500; overflow-wrap: anywhere; }
+.number { flex: none; font-size: 12px; font-variant-numeric: tabular-nums; }
+.footer { display: flex; align-items: center; justify-content: space-between; gap: 20px; margin-top: 40px; padding-top: 20px; border-top: 1px solid color-mix(in srgb, var(--sheet-rule) 24%, transparent); font-size: 14px; line-height: 1.5; }
+.footer button { display: inline-flex; gap: 16px; align-items: center; min-height: 44px; background: transparent; color: inherit; border: 0; padding: 0; cursor: pointer; }
+.footer button:focus-visible { outline: 2px solid currentColor; outline-offset: 4px; }
+@container (min-width: 520px) { .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); } }
+@container (min-width: 900px) { .grid { grid-template-columns: repeat(3, minmax(0, 1fr)); } }

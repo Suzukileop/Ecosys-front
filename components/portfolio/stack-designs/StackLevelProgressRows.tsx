@@ -12,15 +12,17 @@ import { ToolsLevelProgressBar } from '@/components/portfolio/portfolio-tools-le
 import {
   resolveSkillIconUrl,
   resolveSkillLevel,
+  resolveSkillLevelLabel,
   resolveSkillName,
   type PortfolioSkillRef,
 } from '@/components/portfolio/skill-usage-descriptions';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
+import { toolDisplayName } from '@/components/portfolio/stack-designs/tool-display-name';
 import {
   resolveToolsIconBackgroundEnabled,
   resolveToolsLevelBarSize,
   resolveToolsLevelBarStyle,
   resolveToolsShowLevel,
-  toolsBrandCardLogoPx,
   toolsLevelProgressRowsGridGapClass,
   toolsLevelProgressRowsRowClass,
   type PortfolioToolsPresentationSettings,
@@ -93,12 +95,15 @@ function toolsLevelIndicatorFillColor(
   return presentation.activeColorMode === 'dark' ? '#f5f5f5' : '#171717';
 }
 
+/**
+ * Own scale for the row mark: a fraction of the card logo size made "Very large"
+ * (33px) barely bigger than "Standard". The mark spans name + bar, so it can grow.
+ */
 function stackProgressMarkPx(tileSize: PortfolioToolsPresentationSettings['tileSize']): number {
-  return Math.max(16, Math.round(toolsBrandCardLogoPx(tileSize) * 0.42));
-}
-
-function mixInk(color: string, amountPercent: number): string {
-  return `color-mix(in srgb, ${color} ${amountPercent}%, transparent)`;
+  if (tileSize === 'sm') return 24;
+  if (tileSize === 'lg') return 40;
+  if (tileSize === 'xl') return 48;
+  return 32;
 }
 
 function ToolLevelProgressRowItem({
@@ -135,8 +140,16 @@ function ToolLevelProgressRowItem({
     levelFallbackColor,
     presentation.cardBackgroundColor
   );
-  const barColor = toolsLevelIndicatorFillColor(presentation, logoBarColor);
+  // Brand tints are accepted from 1.4:1 upstream (JavaScript yellow ≈ 1.3:1 on white):
+  // deepen the same hue until the bar clears 3:1 on the row surface.
+  const barColor = readableMix(
+    toolsLevelIndicatorFillColor(presentation, logoBarColor),
+    100,
+    logoContrastBg,
+    3
+  );
   const percent = resolveToolLevelPercent(level);
+  const levelLabel = resolveSkillLevelLabel(tool);
   const logoBrandColor =
     !toolsLogosGrayscaleEnabled(presentation) && fromLogo ? logoBarColor : undefined;
   const levelBarStyle = resolveToolsLevelBarStyle(presentation);
@@ -148,7 +161,7 @@ function ToolLevelProgressRowItem({
       label={name}
       iconUrl={iconUrl}
       size={logoPx}
-      className="pf-stack-progress-logo shrink-0 rounded-sm"
+      className="pf-stack-progress-logo shrink-0 rounded-xs"
       bgColor={logoContrastBg}
       colorMode={logoColorMode}
       brandColor={logoBrandColor}
@@ -161,10 +174,10 @@ function ToolLevelProgressRowItem({
       <div className="pf-stack-progress-mark flex shrink-0 items-center">
         {showIconBg ? (
           <div
-            className="flex items-center justify-center rounded-sm"
+            className="flex items-center justify-center rounded-xs"
             style={{
-              width: logoPx + 6,
-              height: logoPx + 6,
+              width: Math.round(logoPx * 1.25),
+              height: Math.round(logoPx * 1.25),
               backgroundColor: tileBg,
             }}
           >
@@ -179,18 +192,21 @@ function ToolLevelProgressRowItem({
         {showName || (showLevel && level) ? (
           <div className="pf-stack-progress-meta flex min-w-0 items-baseline justify-between gap-3">
             {showName ? (
-              <span className="pf-stack-progress-name truncate font-medium leading-[1.3] tracking-[-0.02em]">
-                {name}
+              <span className="pf-stack-progress-name min-w-0 font-medium leading-[1.3] tracking-[-0.02em]">
+                {toolDisplayName(name)}
               </span>
             ) : (
               <span className="min-w-0 flex-1" />
             )}
             {showLevel && level ? (
+              // Four levels printed as 25–100 % read as false precision ("100 %" = total
+              // mastery): the bar carries the proportion, the text names the level.
               <span
-                className="pf-stack-progress-percent shrink-0 font-medium tabular-nums leading-none tracking-[0.04em]"
-                style={{ color: mixInk(labelColor, 52) }}
+                aria-hidden="true"
+                className="pf-stack-progress-percent shrink-0 font-semibold uppercase leading-none tracking-[0.1em]"
+                style={{ color: readableMix(labelColor, 62, logoContrastBg) }}
               >
-                {percent}%
+                {levelLabel}
               </span>
             ) : null}
           </div>
@@ -204,6 +220,7 @@ function ToolLevelProgressRowItem({
               fillColor={barColor}
               trackColor={levelTrackColor}
               percent={percent}
+              valueText={levelLabel}
               barStyle={levelBarStyle}
               barSize={levelBarSize}
               barHeightVariant="thin"
@@ -229,7 +246,11 @@ export function EditorialToolsLevelProgressRows({ tools, presentation }: ToolsGa
   const showLevel = resolveToolsShowLevel(presentation);
   const twoColumn = (presentation.levelProgressColumnsPerRow ?? 1) === 2;
   const rowGap = presentation.levelProgressRowGap;
-  const rowClass = toolsLevelProgressRowsRowClass(rowGap);
+  // In the grid layout the grid gap already spaces rows (no dividers to pad away from), so
+  // keeping the row padding too doubled the rhythm — ~140px per row on a phone.
+  const rowClass = twoColumn
+    ? `${toolsLevelProgressRowsRowClass(rowGap).replace(/(^|\s)(sm:)?py-\S+/g, '').trim()} content-center`
+    : toolsLevelProgressRowsRowClass(rowGap);
   const ink = presentation.labelColor;
   const rule = presentation.cardBorderColor;
   const trackColor = presentation.cardBorderColor;
@@ -338,7 +359,7 @@ export function EditorialToolsLevelProgressRows({ tools, presentation }: ToolsGa
             className={`pf-stack-progress-row group ${rowClass} ${
               twoColumn ? '' : 'border-b last:border-b-0'
             }`}
-            style={twoColumn ? undefined : { borderColor: mixInk(rule, 55) }}
+            style={twoColumn ? undefined : { borderColor: 'var(--pf-stack-progress-line)' }}
           >
             <ToolLevelProgressRowItem
               tool={tool}
@@ -350,7 +371,8 @@ export function EditorialToolsLevelProgressRows({ tools, presentation }: ToolsGa
               logoColorMode={logoColorMode}
               showName={showName}
               showLevel={showLevel}
-              levelTrackColor={mixInk(trackColor, 42)}
+              // The track shows where 100 % is: see --pf-stack-progress-line in globals.css.
+              levelTrackColor="var(--pf-stack-progress-line)"
               levelFallbackColor={presentation.labelColor}
             />
           </li>

@@ -263,7 +263,7 @@ function HalfPanelLink({
         className="group/link block w-full py-1.5 text-left sm:py-2"
       >
         <span
-          className={`relative inline-block text-[clamp(1.15rem,2.4vw,1.65rem)] leading-[1.2] tracking-[-0.02em] transition-[color,transform] duration-300 group-hover/link:-translate-x-0.5 ${
+          className={`relative inline-block text-[clamp(1.15rem,2.4vw,1.65rem)] leading-[1.2] tracking-[-0.02em] transition-[color,transform,translate,scale,rotate] duration-300 group-hover/link:-translate-x-0.5 ${
             active ? 'font-medium' : 'font-normal'
           }`}
           style={{ color: active ? strongInk : mutedInk }}
@@ -449,7 +449,7 @@ export function PortfolioHalfPanelNav({
             aria-modal
             aria-label={t('Navigation menu')}
             tabIndex={-1}
-            className="fixed inset-y-0 right-0 z-[230] flex w-[min(100%,50vw)] min-w-[min(100%,18rem)] max-w-[32rem] flex-col shadow-[-24px_0_80px_rgba(0,0,0,0.12)] focus:outline-none"
+            className="fixed inset-y-0 right-0 z-[230] flex w-[min(100%,50vw)] min-w-[min(100%,18rem)] max-w-[32rem] flex-col shadow-[-24px_0_80px_rgba(0,0,0,0.12)] focus:outline-hidden"
             style={{
               backgroundColor: panelFill,
               color: strongInk,

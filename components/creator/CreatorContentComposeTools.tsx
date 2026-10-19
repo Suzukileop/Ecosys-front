@@ -56,7 +56,7 @@ function ToolChip({
         title={label}
         aria-label={label}
         aria-pressed={active}
-        className={`inline-flex h-9 w-9 items-center justify-center rounded-full outline-none transition-colors duration-150 hover:bg-black/[0.05] hover:text-[#111111] focus-visible:bg-black/[0.05] disabled:opacity-40 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:bg-white/[0.08] ${
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-full outline-hidden transition-colors duration-150 hover:bg-black/[0.05] hover:text-[#111111] focus-visible:bg-black/[0.05] disabled:opacity-40 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:bg-white/[0.08] ${
           active
             ? 'bg-black/[0.05] text-[#111111] dark:bg-white/[0.08] dark:text-white'
             : 'text-neutral-500 dark:text-neutral-400'
@@ -325,7 +325,7 @@ export function CreatorContentComposeTools({
                 value={tagQuery}
                 onChange={(e) => setTagQuery(e.target.value)}
                 placeholder={copy.searchUsers}
-                className="w-full rounded-lg border-0 bg-neutral-100/80 px-3 py-2 text-sm outline-none focus:ring-2 focus:ring-orange-500/20 dark:bg-neutral-950"
+                className="w-full rounded-lg border-0 bg-neutral-100/80 px-3 py-2 text-sm outline-hidden focus:ring-2 focus:ring-orange-500/20 dark:bg-neutral-950"
               />
               {taggedUsers.length > 0 && (
                 <div className="flex flex-wrap gap-1.5">

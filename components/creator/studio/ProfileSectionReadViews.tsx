@@ -36,7 +36,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
  * reading position; a tap scrolls to the section.
  */
 
-const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+const FOCUS_RING = 'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /** The section block: square, the module tone, edge to edge on phones (the page has a 16px gutter). */
 const BLOCK_CLASS = 'gn-card -mx-4 rounded-none bg-[#F7F9F9] px-5 py-5 dark:bg-[#16181C] sm:mx-0 sm:p-6';

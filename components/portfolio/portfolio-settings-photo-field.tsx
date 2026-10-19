@@ -31,8 +31,8 @@ export function PortfolioSettingsPhotoField({
 
   return (
     <div>
-      <p className="text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">{label}</p>
-      <div className="mt-4 flex items-center gap-4">
+      <p className="np-field-label">{label}</p>
+      <div className="flex items-center gap-4">
         <span className="flex h-16 w-16 shrink-0 items-center justify-center overflow-hidden rounded-full border border-[color:var(--pf-palette-bordure)] bg-[color:var(--pf-surface)]">
           {shownPhoto ? (
             // eslint-disable-next-line @next/next/no-img-element
@@ -61,7 +61,7 @@ export function PortfolioSettingsPhotoField({
               type="button"
               onClick={pickFile}
               disabled={uploading}
-              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-1.5 text-xs font-semibold text-[color:var(--pf-palette-texte-fort)] transition hover:bg-[color:var(--pf-surface)] disabled:opacity-60"
+              className="inline-flex items-center gap-2 rounded-full border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-1.5 text-[13px] font-semibold text-[color:var(--pf-palette-texte-fort)] transition hover:bg-[color:var(--pf-surface)] disabled:opacity-60"
             >
               {uploading ? <LoadingSpinner size="sm" /> : null}
               {uploading ? t('Uploading…') : customPhoto ? t('Replace') : t('Replace photo')}
@@ -71,7 +71,7 @@ export function PortfolioSettingsPhotoField({
                 type="button"
                 onClick={() => onChange('')}
                 disabled={uploading}
-                className="rounded-full px-2 py-1.5 text-xs font-semibold text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] disabled:opacity-60"
+                className="rounded-full px-2 py-1.5 text-[13px] font-semibold text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] disabled:opacity-60"
               >
                 {t('Use profile photo')}
               </button>

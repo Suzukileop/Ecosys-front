@@ -354,7 +354,7 @@ const ChoiceField = memo(function ChoiceField({
                     if (filtered[0]) select(filtered[0].value);
                   }
                 }}
-                className="block w-full border-b border-black/[0.06] bg-transparent px-4 py-3 text-[11.5px] uppercase tracking-[0.14em] text-neutral-900 outline-none placeholder:text-neutral-400 dark:border-white/[0.06] dark:text-white dark:placeholder:text-neutral-600"
+                className="block w-full border-b border-black/[0.06] bg-transparent px-4 py-3 text-[11.5px] uppercase tracking-[0.14em] text-neutral-900 outline-hidden placeholder:text-neutral-400 dark:border-white/[0.06] dark:text-white dark:placeholder:text-neutral-600"
               />
             ) : null}
             <ul role="listbox" aria-label={label} className="max-h-64 overflow-y-auto p-1.5">
@@ -413,13 +413,13 @@ const StatusField = memo(function StatusField({
             setOn(!on);
             onChange('isAvailable', !on);
           }}
-          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
             on ? 'bg-[color:var(--gn-ink)]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
           }`}
         >
           <span
             aria-hidden
-            className={`inline-block h-3 w-3 rounded-full shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            className={`inline-block h-3 w-3 rounded-full shadow-xs transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               on ? 'translate-x-3.5 bg-[color:var(--gn-surface)]' : 'translate-x-0.5 bg-[color:var(--gn-inset)]'
             }`}
           />

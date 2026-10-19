@@ -141,7 +141,7 @@ export function AvailabilityHoursInput({
 
 const STUDIO_SUBLABEL = 'text-[13px] font-semibold text-neutral-500 dark:text-neutral-400';
 const STUDIO_TIME_INPUT =
-  'block w-full border-b border-black/[0.08] bg-transparent pb-2 text-base tabular-nums text-black outline-none focus:border-[#0F1419] disabled:opacity-60 dark:border-white/[0.08] dark:text-white dark:[color-scheme:dark] dark:focus:border-[#E7E9EA]';
+  'block w-full border-b border-black/[0.08] bg-transparent pb-2 text-base tabular-nums text-black outline-hidden focus:border-[#0F1419] disabled:opacity-60 dark:border-white/[0.08] dark:text-white dark:[color-scheme:dark] dark:focus:border-[#E7E9EA]';
 
 function StudioAvailability({
   value,

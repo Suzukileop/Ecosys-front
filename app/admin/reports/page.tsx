@@ -84,7 +84,7 @@ export default function AdminReportsPage() {
           <LoadingSpinner size="lg" />
         </div>
       ) : reports.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center shadow-sm">
+        <div className="rounded-2xl border border-dashed border-gray-200 bg-white p-12 text-center shadow-xs">
           <p className="text-gray-700">{t('No pending reports.')}</p>
         </div>
       ) : (
@@ -92,7 +92,7 @@ export default function AdminReportsPage() {
           {reports.map((report) => (
             <article
               key={report.id}
-              className="rounded-2xl border border-gray-100 bg-white p-5 shadow-sm"
+              className="rounded-2xl border border-gray-100 bg-white p-5 shadow-xs"
             >
               <div className="flex flex-wrap items-start justify-between gap-4">
                 <div>

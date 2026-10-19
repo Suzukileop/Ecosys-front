@@ -46,11 +46,11 @@ const PAGE_SIZE = 50;
 const SETTINGS_HREF = '/settings?section=notifications';
 
 const ICON_BUTTON =
-  'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /** Secondary action: an outlined pill (1px #CFD9DE / #536471), the fill tone on hover. */
 const OUTLINED_PILL =
-  'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
+  'inline-flex h-10 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
 
 function CheckIcon({ className }: { className?: string }) {
   return (
@@ -275,7 +275,7 @@ export function NotificationsPageClient() {
                   <button
                     type="button"
                     onClick={showAll}
-                    className="inline-flex min-h-8 shrink-0 items-center font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                    className="inline-flex min-h-8 shrink-0 items-center font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                   >
                     {t('Clear')}
                   </button>
@@ -319,7 +319,7 @@ export function NotificationsPageClient() {
                 <button
                   type="button"
                   onClick={() => void markAll()}
-                  className="gn-primary inline-flex h-12 w-full items-center justify-center gap-2 !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                  className="gn-primary inline-flex h-12 w-full items-center justify-center gap-2 !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                 >
                   <CheckIcon className="h-[18px] w-[18px]" />
                   {t('Mark all as read')}

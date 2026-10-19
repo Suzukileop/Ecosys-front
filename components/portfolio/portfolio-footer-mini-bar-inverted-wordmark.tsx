@@ -56,7 +56,7 @@ export function FooterMiniBarInvertedWordmark({
         </p>
       ) : null}
       <p
-        className="text-[0.65rem] font-medium uppercase tracking-[0.14em] sm:absolute sm:left-1/2 sm:-translate-x-1/2"
+        className="text-[0.65rem] font-medium uppercase tracking-[0.14em] sm:absolute sm:left-1/2 sm:[transform:translateX(-50%)]"
         style={{ color: barInk }}
       >
         {credit}

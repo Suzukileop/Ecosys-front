@@ -82,7 +82,7 @@ function ImageChip({
       title={label}
       aria-label={label}
       onClick={onClick}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition-colors duration-200 ${
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-xs backdrop-blur transition-colors duration-200 ${
         danger ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-neutral-900 hover:text-white'
       }`}
     >
@@ -263,7 +263,7 @@ function TasksBlock({ initial, onChange }: { initial: TaskRow[]; onChange: (next
                   value={row.value}
                   maxLength={200}
                   placeholder={t('A service or mission')}
-                  aria-label={`Task ${index + 1}`}
+                  aria-label={t('Task {number}', { number: index + 1 })}
                   autoFocus={row.key === freshKey}
                   autoComplete="off"
                   onKeyDown={(event) => onKeyDown(event, row)}

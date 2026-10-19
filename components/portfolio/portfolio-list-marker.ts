@@ -57,7 +57,7 @@ const LIST_MARKER_WEIGHT_AMOUNT_MIN = 0.75;
 const LIST_MARKER_WEIGHT_AMOUNT_MAX = 3.5;
 const LIST_MARKER_WEIGHT_AMOUNT_STEP = 0.05;
 
-const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
+export const PORTFOLIO_LIST_MARKER_STYLE_OPTIONS: {
   value: PortfolioListMarkerStyle;
   label: string;
   description: string;

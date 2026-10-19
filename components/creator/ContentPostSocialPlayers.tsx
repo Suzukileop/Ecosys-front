@@ -274,7 +274,7 @@ export function SocialVideoPlayer({
     <div
       ref={shellRef}
       tabIndex={0}
-      className={`group/video relative flex h-full w-full cursor-pointer items-center justify-center bg-black outline-none ${className}`}
+      className={`group/video relative flex h-full w-full cursor-pointer items-center justify-center bg-black outline-hidden ${className}`}
       onPointerEnter={(e) => {
         if (e.pointerType === 'mouse') setHovered(true);
       }}
@@ -343,7 +343,7 @@ export function SocialVideoPlayer({
       {!playing ? (
         <span
           aria-hidden
-          className={`pointer-events-none absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#0F1419] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-transform duration-300 group-hover/video:scale-105 ${
+          className={`pointer-events-none absolute left-1/2 top-1/2 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#0F1419] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-xs transition-transform duration-300 group-hover/video:scale-105 ${
             started ? 'opacity-80' : ''
           }`}
         >
@@ -531,7 +531,7 @@ export function SocialAudioPlayer({ src, title }: SocialAudioPlayerProps) {
               controls.togglePlay();
             }
           }}
-          className="mt-3 flex h-10 cursor-pointer touch-none items-center gap-[3px] outline-none"
+          className="mt-3 flex h-10 cursor-pointer touch-none items-center gap-[3px] outline-hidden"
         >
           {bars.map((height, i) => {
             const played = (i + 0.5) / bars.length <= ratio;

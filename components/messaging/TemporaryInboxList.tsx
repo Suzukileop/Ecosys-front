@@ -74,7 +74,7 @@ export function TemporaryInboxList({
                     disabled={busy}
                     aria-label={t('Delete temporary entry')}
                     title={t('Delete')}
-                    className="-mr-2.5 -mt-2.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[rgba(244,33,46,0.1)] hover:text-[#F4212E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50"
+                    className="-mr-2.5 -mt-2.5 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[rgba(244,33,46,0.1)] hover:text-[#F4212E] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50"
                   >
                     {dismissingEntryKey === entryKey ? (
                       <LoadingSpinner size="sm" />

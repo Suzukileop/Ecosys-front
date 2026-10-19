@@ -206,7 +206,7 @@ export function AddGroupMemberModal({
             value={memberSearch}
             onChange={(e) => setMemberSearch(e.target.value)}
             placeholder={t('Search by name…')}
-            className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-none focus:border-neutral-400 focus:ring-2 focus:ring-neutral-400/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+            className="w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm outline-hidden focus:border-neutral-400 focus:ring-2 focus:ring-neutral-400/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
             autoFocus
           />
 

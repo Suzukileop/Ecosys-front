@@ -84,7 +84,7 @@ export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerP
         aria-expanded={open}
         aria-label={t('Currency: {value}', { value })}
         onClick={() => (open ? close() : openPicker())}
-        className="flex h-full items-center gap-1.5 pl-3.5 pr-3 text-[14px] font-medium text-[#111111] outline-none dark:text-white"
+        className="flex h-full items-center gap-1.5 pl-3.5 pr-3 text-[14px] font-medium text-[#111111] outline-hidden dark:text-white"
       >
         {value}
         <svg
@@ -119,7 +119,7 @@ export function CurrencyPicker({ value, options, onChange, id }: CurrencyPickerP
               placeholder={t('Search currency')}
               aria-label={t('Search currency')}
               aria-controls={listId}
-              className="h-11 min-w-0 flex-1 bg-transparent text-[14px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+              className="h-11 min-w-0 flex-1 bg-transparent text-[14px] text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
             />
           </div>
           {/* A quiet scrollbar: thin tinted thumb on a transparent track (the OS default drew a white

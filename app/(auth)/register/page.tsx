@@ -5,7 +5,7 @@ import { useForm, useWatch } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import Link from 'next/link';
-import { useSearchParams } from 'next/navigation';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { InfoHint } from '@/components/ui/InfoHint';
@@ -20,8 +20,8 @@ import {
 import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { AxiosError } from 'axios';
 import { getApiErrorMessage } from '@/lib/api-error';
-import { SIGNED_IN_HOME } from '@/lib/routes';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { savePendingVerification } from '@/lib/pending-verification';
+import { useLocale, useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
 
 const USERNAME_REGEX = /^[A-Za-z0-9_]{3,30}$/;
@@ -94,6 +94,8 @@ function PasswordRules({ value, showErrors }: { value: string; showErrors: boole
 
 function RegisterForm() {
   const t = useT();
+  const { locale } = useLocale();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { signup } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -117,14 +119,17 @@ function RegisterForm() {
   const onSubmit = async (data: RegisterFormData) => {
     setApiError(null);
     try {
-      await signup({
+      /* No session yet: the account opens once the e-mailed code is confirmed on /verify-email. */
+      const response = await signup({
         fullName: data.fullName,
         username: data.username.trim(),
         email: data.email,
         password: data.password,
         role: 'CREATOR',
+        locale,
       });
-      window.location.assign(SIGNED_IN_HOME);
+      savePendingVerification(response.email, response.resendCooldownSeconds);
+      router.push('/verify-email');
     } catch (error) {
       const axiosError = error as AxiosError<{ message: string }>;
       if (axiosError.response?.status === 429) {

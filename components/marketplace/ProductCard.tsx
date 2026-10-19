@@ -38,7 +38,7 @@ type ProductCardProps = {
   flushOnMobile?: boolean;
 };
 
-const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-sm';
+const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-xs';
 
 export function ProductCard({
   product,

@@ -82,7 +82,8 @@ export function FaqHeaderEditorialHeader({
   const titleText = title.trim();
   const subtitleText = subtitle?.trim() || '';
   const titleInk = faqTitleColorStyle(presentation.titleColor).color as string;
-  const kickerInk = `color-mix(in srgb, ${titleInk} 38%, transparent)`;
+  // Small caps eyebrow: 65% reads above 4.5:1 in both modes (38% measured ~2.3:1 in light).
+  const kickerInk = `color-mix(in srgb, ${titleInk} 65%, transparent)`;
   const layout = createFaqHeaderLayoutResolver(presentation, 'editorial');
   const kickerText = layout.text('kicker');
   const showTitle = layout.isVisible('title');

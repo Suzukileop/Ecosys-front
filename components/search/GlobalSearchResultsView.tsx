@@ -155,13 +155,13 @@ function CheckMark() {
 const RAIL_BOX_TITLE = 'px-6 pb-2 pt-1 text-[20px] font-extrabold leading-6 tracking-[-0.01em] text-[color:var(--gn-ink)]';
 
 const RAIL_ROW =
-  'flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
+  'flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
 
 const PRIMARY_PILL =
-  'inline-flex h-10 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-10 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 const SECONDARY_PILL =
-  'inline-flex h-10 items-center justify-center rounded-full px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
+  'inline-flex h-10 items-center justify-center rounded-full px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
 
 /** Below lg: the result types as the News interest chips, one swipeable row. */
 function TypeChips({ tab, onSelect }: { tab: GlobalSearchTab; onSelect: (next: GlobalSearchTab) => void }) {
@@ -180,7 +180,7 @@ function TypeChips({ tab, onSelect }: { tab: GlobalSearchTab; onSelect: (next: G
             onClick={() => onSelect(item)}
             aria-current={active ? 'page' : undefined}
             data-pf-no-color-transition
-            className={`inline-flex h-10 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:h-9 ${
+            className={`inline-flex h-10 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:h-9 ${
               active
                 ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                 : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'
@@ -242,7 +242,7 @@ function SectionLine({ id, title, count, seeAllHref }: { id: string; title: stri
           href={seeAllHref}
           data-pf-no-color-transition
           aria-label={t('See all {toLowerCase}', { toLowerCase: title.toLowerCase() })}
-          className="-mr-3 inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+          className="-mr-3 inline-flex h-10 shrink-0 items-center rounded-full px-3 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
         >
           {t('See all')}
         </Link>
@@ -342,7 +342,7 @@ function SearchLanding() {
               <li key={term}>
                 <Link
                   href={buildGlobalSearchPageUrl(term)}
-                  className="inline-flex h-10 items-center rounded-full bg-[color:var(--gn-surface)] px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:h-9"
+                  className="inline-flex h-10 items-center rounded-full bg-[color:var(--gn-surface)] px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:h-9"
                 >
                   {term}
                 </Link>
@@ -742,7 +742,7 @@ function GlobalSearchResultsContent() {
                   onClick={() => setFiltersOpen(true)}
                   aria-haspopup="dialog"
                   aria-label={activeFilterCount > 0 ? t('Filters ({activeFilterCount} active)', { activeFilterCount }) : t('Filters')}
-                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[color:var(--gn-surface)] pl-3.5 pr-4 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] lg:hidden"
+                  className="inline-flex h-10 shrink-0 items-center gap-2 rounded-full bg-[color:var(--gn-surface)] pl-3.5 pr-4 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] lg:hidden"
                 >
                   <SlidersIcon className="h-[18px] w-[18px]" />
                   {t('Filters')}
@@ -761,7 +761,7 @@ function GlobalSearchResultsContent() {
                   <button
                     type="button"
                     onClick={clearFilters}
-                    className="inline-flex min-h-10 shrink-0 items-center font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                    className="inline-flex min-h-10 shrink-0 items-center font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                   >
                     {t('Clear')}
                   </button>
@@ -810,7 +810,7 @@ function GlobalSearchResultsContent() {
                     <button
                       type="button"
                       onClick={clearFilters}
-                      className="font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                      className="font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                     >
                       {t('Clear all filters')}
                     </button>

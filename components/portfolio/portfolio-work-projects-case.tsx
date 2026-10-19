@@ -294,7 +294,7 @@ function CaseConsultControl({
   surface: string;
 }) {
   const focusRing =
-    'focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4';
+    'focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4';
 
   if (design === 'underline') {
     return (
@@ -1002,7 +1002,7 @@ function CaseSheet({
           <span
             aria-hidden
             data-pf-no-color-transition=""
-            className="pointer-events-none absolute bottom-0 left-0 top-0 w-[1.5px] origin-top scale-y-0 opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100 group-focus-within/sheet:scale-y-100 group-focus-within/sheet:opacity-100"
+            className="pointer-events-none absolute bottom-0 left-0 top-0 w-[1.5px] origin-top scale-y-0 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100 group-focus-within/sheet:scale-y-100 group-focus-within/sheet:opacity-100"
             style={{ backgroundColor: accent }}
           />
         ) : null}

@@ -2,10 +2,7 @@
 
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode, type RefObject } from 'react';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import { contactLightDarkTokens } from '@/components/portfolio/portfolio-contact-design-motion';
 import { useT } from '@/lib/i18n/I18nProvider';

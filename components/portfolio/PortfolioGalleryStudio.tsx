@@ -70,7 +70,7 @@ function MediaChip({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-xs backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
         danger ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-neutral-900 hover:text-white'
       }`}
     >
@@ -120,7 +120,7 @@ const GalleryTile = memo(function GalleryTile({
     onUrlChange: (url) => onChange(row.key, mediaFromUrl(url)),
   });
   const { dragging, handlers } = useDropUpload(uploading, uploadFile);
-  const kind = row.mediaType === 'VIDEO' ? 'Video' : 'Image';
+  const kind = row.mediaType === 'VIDEO' ? t('Video') : t('Image');
 
   return (
     <li className="group/item min-w-0">
@@ -182,7 +182,7 @@ const GalleryTile = memo(function GalleryTile({
             value={row.title}
             maxLength={MAX_CAPTION}
             placeholder={t('Add a caption')}
-            aria-label={`Caption for item ${index + 1}`}
+            aria-label={t('Caption for item {number}', { number: index + 1 })}
             autoComplete="off"
             onChange={(event) => onChange(row.key, { title: event.currentTarget.value })}
             className={`${STUDIO_BARE_INPUT_CLASS} text-[15px] font-medium text-black dark:text-neutral-100`}

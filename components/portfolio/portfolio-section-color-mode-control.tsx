@@ -4,11 +4,12 @@ import {
   PORTFOLIO_SECTION_COLOR_MODE_OPTIONS,
   type PortfolioSectionColorMode,
 } from '@/components/portfolio/portfolio-section-color-mode';
+import { NpSegmentedControl } from '@/components/portfolio/portfolio-nav-panel-ui';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 /**
- * Shared 3-way Auto / Light / Dark control for a section's own "General" tab —
- * same visual language (rounded-xl hairline cards) as every other settings panel.
+ * Shared 3-way Auto / Light / Dark control for a section's settings — the Navigation panel's
+ * segmented control, since every section panel now sits in that frame.
  */
 export function SectionColorModeControl({
   value,
@@ -21,31 +22,11 @@ export function SectionColorModeControl({
 }) {
   const t = useT();
   return (
-    <div>
-      <p className="pf-stack-block-label pf-stack-option-label">{label}</p>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid grid-cols-3 gap-[3px] p-[3px]"
-        data-compact="true"
-      >
-        {PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => {
-          const active = value === option.value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
-            >
-              <span>{t(option.label)}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
+    <NpSegmentedControl
+      label={label}
+      options={PORTFOLIO_SECTION_COLOR_MODE_OPTIONS.map((option) => ({ value: option.value, label: t(option.label) }))}
+      value={value}
+      onChange={onChange}
+    />
   );
 }

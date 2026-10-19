@@ -104,6 +104,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   levelBarSize: PortfolioToolsLevelBarSize;
   /** `workflow-rail` only. Default center. */
   workflowRailContentAlignment: PortfolioToolsContentAlignment;
+  /** `workflow-rail` only — vivid keeps brand colours crisp; soft lowers their visual weight. */
+  workflowRailLogoTreatment?: 'vivid' | 'soft';
   /** `brand-cards` only — columns on `lg+`. Default 1. */
   brandCardsColumnsPerRow: PortfolioToolsBrandGridColumnsPerRow;
   /** `brand-cards` only. Default center. */
@@ -146,6 +148,8 @@ export type PortfolioStackPresentationSettings = PortfolioSectionBackgroundSetti
   showLevel: boolean;
   /** Explicit opt-in — legacy saves had `showLevel: true` by default without user action. */
   showLevelOptIn?: boolean;
+  /** Migration marker — see `migrateContentAlignmentToHeader`. */
+  contentAlignmentRevision?: number;
   /** Opt-in grey pad behind logos. Off by default for Stack. */
   iconBackgroundEnabled: boolean;
   /** Explicit opt-in/out for icon background (legacy saves had global `false`). */

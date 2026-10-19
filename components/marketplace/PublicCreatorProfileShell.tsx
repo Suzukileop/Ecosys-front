@@ -329,7 +329,7 @@ export function PublicCreatorProfileShell({
                     type="button"
                     onClick={() => selectTab(item.id)}
                     aria-current={active ? 'page' : undefined}
-                    className={`relative inline-flex min-h-11 shrink-0 items-center gap-1.5 pb-1 text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:focus-visible:ring-white/25 ${
+                    className={`relative inline-flex min-h-11 shrink-0 items-center gap-1.5 pb-1 text-[15px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/15 dark:focus-visible:ring-white/25 ${
                       active
                         ? 'font-bold text-[#0F1419] dark:text-[#E7E9EA]'
                         : 'font-medium text-[#536471] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:text-[#E7E9EA]'

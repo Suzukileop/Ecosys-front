@@ -121,7 +121,7 @@ export function CreatorProductCreateModal({
         />
 
         {confirmDiscard ? (
-          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 p-6 backdrop-blur-sm dark:bg-black/60">
+          <div className="absolute inset-0 z-10 flex items-center justify-center bg-white/70 p-6 backdrop-blur-xs dark:bg-black/60">
             <div
               role="alertdialog"
               aria-modal="true"

@@ -815,7 +815,7 @@ function glassShell(
     ? ''
     : (
         {
-          sm: 'backdrop-blur-sm',
+          sm: 'backdrop-blur-xs',
           md: 'backdrop-blur-md',
           lg: 'backdrop-blur-lg',
           xl: 'backdrop-blur-xl',
@@ -1327,13 +1327,13 @@ type PortfolioNavItemHoverPresentation = {
 };
 
 const NAV_ITEM_HOVER_SHELL_TRANSITION =
-  'transition-[background-color,border-color,color,box-shadow,transform,opacity] duration-200 ease-out';
+  'transition-[background-color,border-color,color,box-shadow,transform,translate,scale,rotate,opacity] duration-200 ease-out';
 
 const NAV_ITEM_HOVER_ICON_TRANSITION =
-  'transition-[color,opacity,transform] duration-200 ease-out';
+  'transition-[color,opacity,transform,translate,scale,rotate] duration-200 ease-out';
 
 const NAV_ITEM_HOVER_TEXT_TRANSITION =
-  'transition-[color,font-weight,opacity,transform] duration-200 ease-out';
+  'transition-[color,font-weight,opacity,transform,translate,scale,rotate] duration-200 ease-out';
 
 const NAV_EDITORIAL_HOVER_EASE = 'duration-320 ease-[cubic-bezier(0.22,1,0.36,1)]';
 
@@ -2023,7 +2023,7 @@ export function portfolioNavDrawerItemHoverClass(
   active: boolean,
   activeStyle: PortfolioNavActiveStyle
 ): string {
-  if (active) return 'shadow-sm';
+  if (active) return 'shadow-xs';
   switch (activeStyle) {
     case 'underline':
       return 'border-l-2 border-transparent hover:border-[color:var(--nav-item-hover-line)] hover:bg-[var(--nav-item-hover-bg)]';
@@ -2143,7 +2143,7 @@ export function portfolioNavItemBaseClass(
     switch (design) {
       case 'dock':
         // Palette-driven fill/border/icon (CSS vars + activeAccentStyle) — no hardcoded light/dark.
-        return `flex ${iconBox} shrink-0 items-center justify-center rounded-full border shadow-sm transition`;
+        return `flex ${iconBox} shrink-0 items-center justify-center rounded-full border shadow-xs transition`;
       case 'rail':
         return vertical
           ? `flex ${iconBox} shrink-0 items-center justify-center rounded-xl transition ${decor}`
@@ -2189,7 +2189,7 @@ export function portfolioNavItemBaseClass(
       if (contentMode === 'both') {
         return `inline-flex shrink-0 flex-col items-center justify-center gap-1 border-0 bg-transparent p-0 shadow-none${itemHeight} ${textSize} ${casing} transition`;
       }
-      return `inline-flex shrink-0 items-center justify-center rounded-full ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout} border shadow-sm transition`;
+      return `inline-flex shrink-0 items-center justify-center rounded-full ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout} border shadow-xs transition`;
     default:
       return `shrink-0 items-center justify-center rounded-full ${textPad}${itemHeight} ${textSize} ${casing} ${bothLayout || 'inline-flex'} transition ${decor}`;
   }
@@ -2203,7 +2203,7 @@ export function portfolioNavDockGlyphClass(
 ): string {
   const iconBox = iconSizeClass(thickness, compactOnMobile);
   // Colors: palette CSS vars (inactive) or activeAccentStyle (active).
-  return `inline-flex ${iconBox} shrink-0 items-center justify-center rounded-full border shadow-sm transition ${
+  return `inline-flex ${iconBox} shrink-0 items-center justify-center rounded-full border shadow-xs transition ${
     active ? 'shadow-md' : ''
   }`;
 }

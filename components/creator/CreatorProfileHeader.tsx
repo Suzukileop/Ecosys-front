@@ -165,7 +165,7 @@ function ProfileAvatar({
       onClick={onAvatarPick}
       disabled={uploadingAvatar}
       aria-busy={uploadingAvatar || undefined}
-      className={`group relative ${ringShellClass} focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-4 focus-visible:ring-offset-white disabled:cursor-progress dark:focus-visible:ring-[#E7E9EA] dark:focus-visible:ring-offset-black`}
+      className={`group relative ${ringShellClass} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-4 focus-visible:ring-offset-white disabled:cursor-progress dark:focus-visible:ring-[#E7E9EA] dark:focus-visible:ring-offset-black`}
       aria-label={uploadingAvatar ? t('Uploading profile photo') : t('Change profile photo')}
       title={uploadingAvatar ? undefined : t('Change profile photo')}
     >
@@ -247,7 +247,7 @@ function HeaderStatsColumn(props: CreatorProfileHeaderProps) {
           <dt className="sr-only">{t(CREATOR_PROFILE_SUBSCRIBERS_LABEL)}</dt>
           <dd className="flex min-w-0 flex-col gap-0.5">
             {props.profileSubscribersHref ? (
-              <Link href={props.profileSubscribersHref} className="flex min-w-0 flex-col gap-0.5 hover:underline focus-visible:underline focus-visible:outline-none">
+              <Link href={props.profileSubscribersHref} className="flex min-w-0 flex-col gap-0.5 hover:underline focus-visible:underline focus-visible:outline-hidden">
                 {subscribers}
               </Link>
             ) : (
@@ -551,7 +551,7 @@ function ArrowGlyph({ className }: { className?: string }) {
 
 /** Square page-level primary (the News "Publish a post" button). */
 const HEADER_PRIMARY_LINK =
-  'group inline-flex h-10 items-center gap-2 bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 focus-visible:ring-offset-2 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
+  'group inline-flex h-10 items-center gap-2 bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 focus-visible:ring-offset-2 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 
 /** Seller — storefront presentation: brand mark, shop tagline, categories and commerce metrics. */
 function SellerProfileHeader(props: CreatorProfileHeaderProps) {

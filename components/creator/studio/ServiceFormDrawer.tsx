@@ -40,14 +40,14 @@ const subscribeNoop = () => () => {};
 const INK = 'text-[#0F1419] dark:text-[#E7E9EA]';
 const INK2 = 'text-[#536471] dark:text-[#71767B]';
 
-const INPUT_CLASS = `block w-full min-w-0 border-0 bg-transparent p-0 text-[15px] leading-6 ${INK} caret-[#0F1419] outline-none placeholder:text-[#8B98A5] focus:ring-0 disabled:opacity-60 dark:caret-[#E7E9EA] dark:placeholder:text-[#536471]`;
+const INPUT_CLASS = `block w-full min-w-0 border-0 bg-transparent p-0 text-[15px] leading-6 ${INK} caret-[#0F1419] outline-hidden placeholder:text-[#8B98A5] focus:ring-0 disabled:opacity-60 dark:caret-[#E7E9EA] dark:placeholder:text-[#536471]`;
 
 const primaryButtonClass =
-  'inline-flex h-10 items-center justify-center rounded-full bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
+  'inline-flex h-10 items-center justify-center rounded-full bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const secondaryButtonClass = `inline-flex h-10 items-center justify-center rounded-full px-5 text-[15px] font-bold shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:cursor-not-allowed disabled:opacity-40 dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] ${INK}`;
 const ghostButtonClass = `inline-flex h-10 items-center justify-center rounded-full px-4 text-[15px] font-semibold transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:opacity-40 dark:hover:bg-[rgba(231,233,234,0.1)] ${INK}`;
 /** Quiet text action ("+ Delivery time", "Add an item", tag suggestions). */
-const textActionClass = `text-[14px] font-semibold underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none ${INK}`;
+const textActionClass = `text-[14px] font-semibold underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-hidden ${INK}`;
 
 /** A field is one hairline under its content (no box); focus draws it in ink, an error in red. */
 function lineClass(error?: string | null) {
@@ -457,7 +457,7 @@ export function ServiceFormDrawer({
             type="button"
             onClick={requestClose}
             disabled={saving}
-            className={`-mr-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${INK} transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 disabled:opacity-40 dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-white/30`}
+            className={`-mr-2 inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full ${INK} transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 disabled:opacity-40 dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-white/30`}
             aria-label={t('Close')}
           >
             <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />

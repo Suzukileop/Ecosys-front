@@ -2,12 +2,8 @@
 
 import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
+import { DEFAULT_EXPERIENCE_PRESENTATION } from '@/components/portfolio/portfolio-experience-settings';
 import { PORTFOLIO_EXPERIENCE_CARDS_BORDER_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_CARD_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TITLE_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_ELEMENT_SPACING_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_CARDS_TASKS_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_STICKY_VERTICAL_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_REPO_CTA_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_ENTRY_EXPAND_MODE_OPTIONS, PORTFOLIO_EXPERIENCE_EDITORIAL_DETAIL_LAYOUT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_BIG_TITLE_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_HEADER_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_SECONDARY_TITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_GALLERY_ROLE_COUNT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_THUMBNAIL_FIT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_HOVER_EFFECT_OPTIONS, PORTFOLIO_EXPERIENCE_LOFT_COLUMNS_OPTIONS, PORTFOLIO_EXPERIENCE_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_FIXED_SIDE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ITEM_GAP_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_THUMBNAIL_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_PREFIX_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_ACCENT_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_UNDERLINE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LEGACY_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_ANIMATION_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_WEIGHT_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_SUBTITLE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_HEADING_ALIGNMENT_OPTIONS, PORTFOLIO_EXPERIENCE_PRESS_PARALLAX_INTENSITY_OPTIONS, PORTFOLIO_EXPERIENCE_PERIOD_DESIGN_OPTIONS, PORTFOLIO_EXPERIENCE_REPO_LINK_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_LINK_ARROW_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_STATUS_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_REEL_SCROLL_MOTION_OPTIONS, PORTFOLIO_EXPERIENCE_TASKS_DISPLAY_OPTIONS, PORTFOLIO_EXPERIENCE_TOOLS_BADGE_STYLE_OPTIONS, DEFAULT_EXPERIENCE_BLOCK_LABEL_VISIBILITY, DEFAULT_ACCENT_YEARS_BADGE_TEXT, DEFAULT_ACCENT_YEARS_LEAD_TEXT, DEFAULT_CENTERED_TITLE_TEXT, DEFAULT_CENTERED_LEAD_TEXT, DEFAULT_SERIF_LEAD_LABEL_TEXT, DEFAULT_SERIF_LEAD_TITLE_TEXT, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_SIZE_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_RADIUS_OPTIONS, PORTFOLIO_EXPERIENCE_ACCENT_YEARS_COLOR_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_ALIGN_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WEIGHT_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_SCALE_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_WIDTH_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_LEADING_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPTIONS, PORTFOLIO_EXPERIENCE_CENTERED_DIVIDER_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_INK_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_TRACKING_OPTIONS, PORTFOLIO_EXPERIENCE_SERIF_LEAD_LABEL_OPACITY_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_STYLE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_DIRECTION_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SPEED_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_FADE_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_SEPARATOR_OPTIONS, PORTFOLIO_EXPERIENCE_MARQUEE_WEIGHT_OPTIONS, CENTERED_LEAD_WEIGHT, CENTERED_LEAD_OPACITY, SERIF_LEAD_WEIGHT, SERIF_LEAD_LABEL_OPACITY, MARQUEE_WEIGHT, MARQUEE_FILL_OPACITY, type PortfolioExperienceCardsBorderRadius, type PortfolioExperienceGalleryColumns, type PortfolioExperienceItemGap, type PortfolioExperienceLoftColumns, type PortfolioExperienceLoftHoverEffect, type PortfolioExperienceCenteredAlign, type PortfolioExperienceCenteredDivider, type PortfolioExperienceCenteredLineHeight, type PortfolioExperienceCenteredMaxWidth, type PortfolioExperienceSerifLeadInk, type PortfolioExperienceSerifLeadTracking, type PortfolioExperienceDesign, type PortfolioExperienceHeaderDesign, type PortfolioExperienceAccentYearsBadgeColor, type PortfolioExperienceLinkArrowStyle, type PortfolioExperienceRepoLinkStyle, type PortfolioExperienceSectionSettings, type PortfolioExperienceTasksDisplay, type PortfolioExperienceToolsBadgeStyle, PORTFOLIO_EXPERIENCE_PREMIUM_FONT_SIZE_OPTIONS } from '@/components/portfolio/portfolio-experience-settings';
 import {
   experienceLinkButtonPalette,
@@ -17,7 +13,7 @@ import {
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 export type ExperienceSubSection = 'general' | 'header' | 'design';
 
@@ -367,75 +363,44 @@ function ExperienceHeaderPreview({ value }: { value: PortfolioExperienceHeaderDe
 function ExperienceHeaderChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioExperienceHeaderDesign;
   onChange: (value: PortfolioExperienceHeaderDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selectedLabel = EXPERIENCE_HEADER_APPLY_CARDS.find((card) => card.id === value)?.label ?? t('Default');
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-exp-block-label !mb-0">{t('Header designs')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
           {EXPERIENCE_HEADER_APPLY_CARDS.map((card) => {
             const active = value === card.id;
             return (
-              <ExperiencePickerCard
+              <NpOptionCard
                 key={card.id}
-                active={active}
-                label={t(card.label)}
+                selected={active}
+                title={t(card.label)}
+                illustration={<ExperienceHeaderWireframe design={card.id} />}
                 onClick={() => {
                   onChange(active ? 'none' : card.id);
                   setShowGrid(false);
                 }}
-              >
-                <ExperienceHeaderWireframe design={card.id} />
-              </ExperiencePickerCard>
+              />
             );
           })}
-        </div>
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <div>
-      <p className="pf-exp-block-label">{t('Header designs')}</p>
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-[color:var(--pf-palette-bordure)] p-3">
-        <ExperienceHeaderPreview value={value} />
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label={t('Change header design')}
-          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full bg-transparent px-4 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)] shadow-lg">
-            {t('Change header design')}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label={t('Change header design')}
-          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
-        >
-          {t('Change')}
-        </button>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{selectedLabel}</p>
-    </div>
+    <NpPickerRow label={t('Header design')} value={selectedLabel} thumbnail={<ExperienceHeaderPreview value={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -2352,122 +2317,47 @@ function ExperienceDesignWireframe({ design }: { design: PortfolioExperienceDesi
   }
 }
 
-function ExperienceLayoutSettingsBand({
-  children,
-  motionKey,
-}: {
-  children: ReactNode;
-  motionKey: string;
-}) {
-  const t = useT();
-  return (
-    <section className="pf-exp-layout-settings" aria-labelledby="experience-layout-settings-title">
-      <h3 id="experience-layout-settings-title" className="pf-exp-layout-settings-title">
-        {t('Layout settings')}
-      </h3>
-      <div key={motionKey} className="pf-exp-layout-settings-body space-y-7">
-        {children}
-      </div>
-    </section>
-  );
-}
-
 function ExperienceDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioExperienceDesign;
   onChange: (value: PortfolioExperienceDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
-
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-exp-block-label !mb-0">{t('Item design')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
+      <div className="np-stack">
+        <NpBackRow title={t('Experience design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+          {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => {
+            return (
+              <NpOptionCard
                 key={option.value}
-                cardClassName="pf-exp-design-card"
-                labelClassName="pf-exp-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'experience', design: option.value })}
-                settings={previewSource.settings}
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<ExperienceDesignWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
               />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_EXPERIENCE_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <ExperiencePickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <ExperienceDesignWireframe design={option.value} />
-              </ExperiencePickerCard>
             );
           })}
-        </div>
-        )}
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <div>
-      <p className="pf-exp-block-label">{t('Item design')}</p>
-      <div className="group relative w-full overflow-hidden rounded-2xl border border-[color:var(--pf-palette-bordure)] p-3">
-        <ExperienceDesignWireframe design={value} />
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label={t('Change design')}
-          className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
-        >
-          <span className="inline-flex items-center gap-2 rounded-full bg-transparent px-4 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)] shadow-lg">
-            {t('Change design')}
-          </span>
-        </button>
-        <button
-          type="button"
-          onClick={() => setShowGrid(true)}
-          aria-label={t('Change design')}
-          className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
-        >
-          {t('Change')}
-        </button>
-      </div>
-      <p className="mt-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{t(selected.label)}</p>
-    </div>
+    <NpPickerRow label={t('Item design')} value={t(selected.label)} thumbnail={<ExperienceDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -2982,7 +2872,7 @@ function ExperienceInfoTooltip({ text }: { text: string }) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -2994,7 +2884,7 @@ function ExperienceInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -3125,18 +3015,31 @@ function ExperienceHoverMomentChoiceGrid({
   );
 }
 
+/** Designs that render an entry image — the "Media / image" toggle is a no-op elsewhere. */
+const EXPERIENCE_DESIGNS_WITH_ENTRY_MEDIA: ReadonlySet<PortfolioExperienceDesign> = new Set([
+  'duotone',
+  'gallery',
+  'loft',
+  'press',
+  'legacy',
+]);
+
 export function ExperienceSettingsPanel({
   experience,
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  chrome,
 }: {
   experience: PortfolioExperienceSectionSettings;
   onChange: (patch: Partial<PortfolioExperienceSectionSettings>) => void;
   subSection?: ExperienceSubSection;
   onSubSectionChange?: (value: ExperienceSubSection) => void;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ExperienceSubSection>('design');
   const subSection = normalizeExperienceSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: ExperienceSubSection) => {
@@ -3155,22 +3058,15 @@ export function ExperienceSettingsPanel({
   const isPress = design === 'press';
   const isLegacy = design === 'legacy';
   const showStackLabel = isEditorial || design === 'milestone';
+  const defaults: PortfolioExperienceSectionSettings = { enabled: true, title: 'Experience', subtitle: 'Roles, milestones, and the path that shaped my craft.', ...DEFAULT_EXPERIENCE_PRESENTATION };
 
   return (
     <PortfolioLinkArrowProvider value={experience.linkArrowStyle ?? 'northeast'}>
-    <div className="space-y-6">
-      <SettingsTabs tabs={EXPERIENCE_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell title={t('Experience')} modified={JSON.stringify(experience) !== JSON.stringify(defaults)} tabs={EXPERIENCE_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
       {subSection === 'general' ? (
-        <div>
-          <SettingsSwitchRow
-            label={t('Show section')}
-            description={experience.enabled ? undefined : t('Visitors go straight to the next section.')}
-            checked={experience.enabled}
-            onChange={(enabled) => onChange({ enabled })}
-          />
-          {experience.enabled ? (
-          <SettingsGroup label={t('Content shown')}>
+        <div className="np-stack"><NpToggleRow card title={t('Show Experience section')} description={experience.enabled ? undefined : t('Visitors go straight to the next section.')} checked={experience.enabled} onChange={(enabled) => onChange({ enabled })} /><div className="np-dimmable" data-disabled={experience.enabled ? 'false' : 'true'} inert={!experience.enabled}>
+          <NpCollapsibleSection title={t('Content shown')}>
             <div className="flex flex-wrap gap-3">
               <ExperienceVisibilityBadge
                 label={t('Title')}
@@ -3212,23 +3108,27 @@ export function ExperienceSettingsPanel({
                 checked={experience.showProof !== false}
                 onChange={(showProof) => onChange({ showProof })}
               />
-              <ExperienceVisibilityBadge
-                label={t('Media / image')}
-                checked={experience.showEntryMedia !== false}
-                onChange={(showEntryMedia) => onChange({ showEntryMedia })}
-              />
+              {EXPERIENCE_DESIGNS_WITH_ENTRY_MEDIA.has(design) ? (
+                <ExperienceVisibilityBadge
+                  label={t('Media / image')}
+                  checked={experience.showEntryMedia !== false}
+                  onChange={(showEntryMedia) => onChange({ showEntryMedia })}
+                />
+              ) : null}
             </div>
-          </SettingsGroup>
-          ) : null}
-        </div>
+          </NpCollapsibleSection>
+        </div></div>
       ) : !experience.enabled ? (
-        <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} />
+        <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div>
       ) : subSection === 'header' ? (
-        <div>
+        <div className="np-stack">
           <ExperienceHeaderChoiceGrid
             value={experience.headerDesign ?? 'none'}
             onChange={(headerDesign) => onChange({ headerDesign })}
+            open={headerCatalogOpen}
+            onOpenChange={setHeaderCatalogOpen}
           />
+          {headerCatalogOpen ? null : <>
           <div className="mt-6">
             <HeaderElementToggles
               design={`experience-${experience.headerDesign ?? 'none'}`}
@@ -3263,15 +3163,19 @@ export function ExperienceSettingsPanel({
           {(experience.headerDesign ?? 'none') === 'legacy' ? (
             <ExperienceAccentTitleHeaderSettings experience={experience} onChange={onChange} />
           ) : null}
+          </>}
         </div>
       ) : (
-        <div>
+        <div className="np-stack">
           <ExperienceDesignChoiceGrid
             value={experience.experienceDesign}
             onChange={(experienceDesign) => onChange({ experienceDesign })}
+            open={designCatalogOpen}
+            onOpenChange={setDesignCatalogOpen}
           />
-          <ExperienceLayoutSettingsBand motionKey={design}>
-<SettingsRowsScope title={t('Layout options')}>
+          {designCatalogOpen ? null : <>
+          <NpCollapsibleSection title={t('Layout options')}>
+          <SettingsRowsScope title={t('Layout options')}>
           {isTable ? (
             <ExperienceToggleRow
               label={t('Striped rows')}
@@ -3797,8 +3701,8 @@ export function ExperienceSettingsPanel({
             </>
           ) : null}
           </SettingsRowsScope>
-</ExperienceLayoutSettingsBand>
-          <SettingsGroup label={t('Style')}>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Style')}>
           <SectionColorModeControl
             label={t('Color mode')}
             value={experience.colorModeOverride}
@@ -3811,8 +3715,8 @@ export function ExperienceSettingsPanel({
             onChange={(premiumFontSize) => onChange({ premiumFontSize })}
             columns={3}
           />
-          </SettingsGroup>
-          <SettingsGroup label={t('Details')}>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Details')}>
           <ExperienceTasksDisplayChoiceGrid
             value={experience.tasksDisplay ?? 'editorial-dash'}
             onChange={(tasksDisplay) => onChange({ tasksDisplay })}
@@ -3829,10 +3733,11 @@ export function ExperienceSettingsPanel({
             value={experience.linkArrowStyle ?? 'northeast'}
             onChange={(linkArrowStyle) => onChange({ linkArrowStyle })}
           />
-          </SettingsGroup>
+          </NpCollapsibleSection>
+          </>}
         </div>
       )}
-    </div>
+    </NpPanelShell>
     </PortfolioLinkArrowProvider>
   );
 }

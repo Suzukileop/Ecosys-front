@@ -324,7 +324,7 @@ export function CreatorCard({
             {profileHref ? (
               <Link
                 href={profileHref}
-                className={`min-w-0 truncate text-[16px] font-semibold leading-6 tracking-[-0.01em] outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[#0F1419]/40 dark:focus-visible:after:ring-white/40 sm:text-[17px] ${INK}`}
+                className={`min-w-0 truncate text-[16px] font-semibold leading-6 tracking-[-0.01em] outline-hidden after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[#0F1419]/40 dark:focus-visible:after:ring-white/40 sm:text-[17px] ${INK}`}
               >
                 {displayName}
               </Link>

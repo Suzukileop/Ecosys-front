@@ -63,7 +63,7 @@ export function GlobalSearchFilterModal({
             <button
               type="button"
               onClick={() => onApply(createDefaultGlobalSearchFilters(isAuthenticated))}
-              className="inline-flex h-10 items-center text-[14px] font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+              className="inline-flex h-10 items-center text-[14px] font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
             >
               {t('Clear all')}
             </button>
@@ -73,7 +73,7 @@ export function GlobalSearchFilterModal({
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             {loading ? t('Show results') : trPlural(resultCount, 'Show {count} result', 'Show {count} results')}
           </button>

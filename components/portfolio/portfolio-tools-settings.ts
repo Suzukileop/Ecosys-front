@@ -278,6 +278,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   levelBarSize: PortfolioToolsLevelBarSize;
   /** `workflow-rail` only. Default center. */
   workflowRailContentAlignment: PortfolioToolsContentAlignment;
+  /** `workflow-rail` only — vivid keeps brand colours crisp; soft lowers their visual weight. */
+  workflowRailLogoTreatment?: 'vivid' | 'soft';
   /** `brand-directory` only — how the level is rendered on each row. Default percentage. */
   brandDirectoryLevelStyle: PortfolioToolsBrandDirectoryLevelStyle;
   /** `brand-cards` only — columns on `lg+`. Default 1. */
@@ -338,6 +340,8 @@ export type PortfolioToolsPresentationSettings = PortfolioSectionBackgroundSetti
   showLevel: boolean;
   /** Explicit opt-in — legacy saves had `showLevel: true` by default without user action. */
   showLevelOptIn?: boolean;
+  /** Migration marker — see `migrateContentAlignmentToHeader`. */
+  contentAlignmentRevision?: number;
   /** Opt-in grey pad behind logos. Off by default (`brand-float` on unless opted out). */
   iconBackgroundEnabled: boolean;
   /** Explicit opt-in/out for icon background (legacy saves had global `false`). */
@@ -603,7 +607,7 @@ function toolsLevelRingStrokeMultiplier(size: PortfolioToolsLevelBarSize): numbe
  *  aperture so it needs the open space. Do NOT reuse this for level-circular-cards: that design
  *  has no text inside the ring, so it can (and per feedback, should) go genuinely bold. */
 export function toolsLevelRingStroke(size: number, barSize: PortfolioToolsLevelBarSize): number {
-  return Math.max(1.35, size * 0.0155 * toolsLevelRingStrokeMultiplier(barSize));
+  return Math.max(3, size * 0.028 * toolsLevelRingStrokeMultiplier(barSize));
 }
 
 /** level-circular-cards' own stroke scale, as a fraction of ring diameter per tier — "small"
@@ -1025,6 +1029,54 @@ export const PORTFOLIO_TOOLS_CONTENT_ALIGNMENT_OPTIONS: {
 
 const DEFAULT_TOOLS_TITLE = 'Workflow & Tools';
 
+/**
+ * v1: content alignment defaults to the header's alignment (was always `center`, which put a
+ * narrow centered column under a left-aligned title). Bump to re-run the one-time migration.
+ */
+export const CONTENT_ALIGNMENT_REVISION = 1;
+
+const CONTENT_ALIGNMENT_KEYS = [
+  'contentAlignment',
+  'levelProgressContentAlignment',
+  'workflowRailContentAlignment',
+  'brandCardsContentAlignment',
+  'brandDirectoryContentAlignment',
+  'brandIndexContentAlignment',
+  'brandRowContentAlignment',
+  'brandFloatContentAlignment',
+] as const;
+
+type ContentAlignmentKey = (typeof CONTENT_ALIGNMENT_KEYS)[number];
+
+/**
+ * One-time migration for saves made before `CONTENT_ALIGNMENT_REVISION`. Settings are saved
+ * pruned against the defaults, so an alignment never stored was the old `center` default, not
+ * a choice: it now follows the header. Stored (explicit) alignments are kept. The stamped
+ * revision persists with the next save, so later choices are never reset.
+ */
+export function migrateContentAlignmentToHeader<
+  T extends Partial<Record<ContentAlignmentKey, PortfolioToolsContentAlignment>> & {
+    headerDesignAlignment?: PortfolioToolsContentAlignment;
+    contentAlignmentRevision?: number;
+  },
+>(next: T, record: Record<string, unknown>): T {
+  const revision =
+    typeof record.contentAlignmentRevision === 'number' ? record.contentAlignmentRevision : 0;
+  if (revision >= CONTENT_ALIGNMENT_REVISION) return next;
+  const header = next.headerDesignAlignment ?? 'left';
+  const migrated: T = { ...next, contentAlignmentRevision: CONTENT_ALIGNMENT_REVISION };
+  for (const key of CONTENT_ALIGNMENT_KEYS) {
+    if (!(key in next)) continue;
+    // Per-design alignments used to inherit the shared legacy `contentAlignment` when unset.
+    const stored =
+      record[key] ??
+      (key === 'brandCardsContentAlignment' ? record.brandShowcaseContentAlignment : undefined) ??
+      (key === 'contentAlignment' ? undefined : record.contentAlignment);
+    if (stored === undefined) migrated[key] = header as T[ContentAlignmentKey];
+  }
+  return migrated;
+}
+
 export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   ...DEFAULT_SECTION_BACKGROUND,
   design: 'workflow-rail',
@@ -1033,7 +1085,10 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   subtitlePreset: 'none',
   subtitleCustom: '',
   headerAlignment: 'left',
-  contentAlignment: 'center',
+  // Content follows the header's default (left) — a narrow centered column under a
+  // left-aligned title read as misaligned.
+  contentAlignment: 'left',
+  contentAlignmentRevision: CONTENT_ALIGNMENT_REVISION,
   headerDesign: 'editorial',
   headerAnimationEnabled: true,
   headerHiddenElements: [],
@@ -1129,19 +1184,19 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   cardGap: 'tight',
   levelProgressRowGap: 'large',
   levelProgressColumnsPerRow: 1,
-  levelProgressContentAlignment: 'center',
+  levelProgressContentAlignment: 'left',
   levelBarStyle: 'rectangle',
   levelBarSize: 'small',
-  workflowRailContentAlignment: 'center',
+  workflowRailContentAlignment: 'left',
   brandDirectoryLevelStyle: 'percentage',
   brandCardsColumnsPerRow: 1,
-  brandCardsContentAlignment: 'center',
+  brandCardsContentAlignment: 'left',
   brandCardsIconPlacement: 'top',
   brandCardsFullWidth: false,
   brandDirectoryColumnsPerRow: 1,
-  brandDirectoryContentAlignment: 'center',
+  brandDirectoryContentAlignment: 'left',
   brandDirectoryFullWidth: false,
-  brandIndexContentAlignment: 'center',
+  brandIndexContentAlignment: 'left',
   brandIndexFullWidth: false,
   levelIndicatorFullWidth: false,
   levelTableFullWidth: false,
@@ -1152,12 +1207,12 @@ export const DEFAULT_TOOLS_PRESENTATION: PortfolioToolsPresentationSettings = {
   levelBentoGridMode: 'equal',
   levelIndicatorDisplayStyle: 'text',
   brandRowColumnsPerRow: 3,
-  brandRowContentAlignment: 'center',
+  brandRowContentAlignment: 'left',
   brandRowCellStyle: 'dividers',
   brandFloatGridMode: 'fluid',
   brandFloatColumnsPerRow: 3,
   brandFloatTileDensity: 'comfortable',
-  brandFloatContentAlignment: 'center',
+  brandFloatContentAlignment: 'left',
   brandFloatCardStyle: 'framed',
   showLabels: true,
   showDescription: true,
@@ -1356,7 +1411,11 @@ export function resolveToolsDesignBrandColumnsPerRow(
   design: PortfolioToolsDesign,
   presentation: PortfolioToolsPresentationSettings
 ): PortfolioToolsBrandGridColumnsPerRow {
-  if (design === 'brand-cards') return presentation.brandCardsColumnsPerRow ?? 1;
+  if (design === 'brand-cards') {
+    // Legacy saves may hold 4: the cards grid tops out at 3 columns.
+    const cols = presentation.brandCardsColumnsPerRow ?? 1;
+    return cols > 3 ? 3 : cols;
+  }
   if (design === 'level-star-cards') return LEVEL_STAR_CARDS_COLUMNS_PER_ROW;
   if (design === 'level-circular-cards' || design === 'level-svg-rings') {
     return presentation.brandCardsColumnsPerRow ?? 3;
@@ -1413,12 +1472,13 @@ export function toolsContentAlignWrapperClass(
   return `w-full ${edge}`;
 }
 
-/** Gap for workflow-rail logo row. */
+/** Gutter between workflow-rail cells, as `--pf-stack-rail-gap` so the CSS can
+ *  center each hairline separator inside it. */
 export function toolsWorkflowRailGapClass(gap: PortfolioToolsCardGap | undefined): string {
-  if (gap === 'medium') return 'gap-x-10 gap-y-10 sm:gap-x-8 md:gap-x-12';
-  if (gap === 'large') return 'gap-x-14 gap-y-12 sm:gap-x-12 md:gap-x-16';
-  if (gap === 'xlarge') return 'gap-x-16 gap-y-14 sm:gap-x-16 md:gap-x-20';
-  return 'gap-x-8 gap-y-8 sm:gap-x-6 md:gap-x-8';
+  if (gap === 'medium') return '[--pf-stack-rail-gap:0.75rem] md:[--pf-stack-rail-gap:1.25rem]';
+  if (gap === 'large') return '[--pf-stack-rail-gap:1.25rem] md:[--pf-stack-rail-gap:2rem]';
+  if (gap === 'xlarge') return '[--pf-stack-rail-gap:1.75rem] md:[--pf-stack-rail-gap:3rem]';
+  return '[--pf-stack-rail-gap:0.25rem] md:[--pf-stack-rail-gap:0.5rem]';
 }
 
 /** Row layout spacing for level list rows (padding, min-height). */
@@ -1454,8 +1514,8 @@ export function toolsLevelBentoEqualColumnsClass(columnCount: number): string {
   const cols = Math.min(Math.max(columnCount, 1), 4);
   if (cols === 1) return 'md:grid-cols-1';
   if (cols === 2) return 'md:grid-cols-2';
-  if (cols === 3) return 'md:grid-cols-3';
-  return 'md:grid-cols-4';
+  if (cols === 3) return 'md:grid-cols-2 xl:grid-cols-3';
+  return 'md:grid-cols-2 xl:grid-cols-4';
 }
 
 /** Grid gutter when `level-progress-rows` uses 2 columns on large screens. */
@@ -2237,7 +2297,7 @@ export function mergeToolsPresentation(
   if (next.useHeroPalette !== false) {
     Object.assign(next, applyToolsPaletteToSettings(next));
   }
-  return next;
+  return migrateContentAlignmentToHeader(next, record);
 }
 
 function sanitizeHex(value: unknown, fallback: string): string {
@@ -2277,14 +2337,25 @@ function pick<T extends string>(value: unknown, allowed: readonly T[], fallback:
 /** What picking a Tools design changes: the design, plus that design's own defaults for the few
  *  designs that need them. Shared by the Tools panel and the design picker's live previews. */
 export function toolsDesignSettingsPatch(
-  tools: Pick<PortfolioToolsSectionSettings, 'iconBackgroundOptIn'>,
+  tools: Pick<PortfolioToolsSectionSettings, 'iconBackgroundOptIn' | 'headerDesignAlignment'>,
   design: PortfolioToolsDesign
 ): Partial<PortfolioToolsSectionSettings> {
   if (design === 'brand-float' && tools.iconBackgroundOptIn !== false) {
     return { design, iconBackgroundEnabled: true };
   }
+  // Brand cards read as a dossier grid: one narrow column stacks six cards into a very long section.
+  if (design === 'brand-cards') return { design, brandCardsColumnsPerRow: 2 };
   if (design === 'level-bento-categories') return { ...toolsLevelBentoCategoriesDesignDefaults(), design };
   if (design === 'level-star-cards') return { ...toolsLevelStarCardsDesignDefaults(), design };
-  if (design === 'level-svg-rings') return { ...toolsLevelSvgRingsDesignDefaults(), design };
+  if (design === 'level-svg-rings') {
+    // The rings grid is a narrow column: keep it under the title, not centered against it.
+    return {
+      ...toolsLevelSvgRingsDesignDefaults(),
+      brandCardsContentAlignment: tools.headerDesignAlignment ?? 'left',
+      design,
+    };
+  }
+  // A level design exists to show the level: re-enable it even if it was hidden on the previous design.
+  if (isToolsLevelIndicatorDesign(design)) return { design, showLevel: true, showLevelOptIn: true };
   return { design };
 }

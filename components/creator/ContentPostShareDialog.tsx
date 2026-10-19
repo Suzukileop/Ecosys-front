@@ -51,7 +51,7 @@ function ExternalTarget({ label, onClick, children }: { label: string; onClick: 
     <button
       type="button"
       onClick={onClick}
-      className="group flex w-[68px] shrink-0 flex-col items-center gap-2 rounded-xl py-1 outline-none"
+      className="group flex w-[68px] shrink-0 flex-col items-center gap-2 rounded-xl py-1 outline-hidden"
     >
       <span className="flex h-[52px] w-[52px] items-center justify-center rounded-full bg-neutral-100 transition group-hover:bg-neutral-200 group-focus-visible:ring-2 group-focus-visible:ring-[#111111]/30 group-active:scale-95 dark:bg-white/[0.08] dark:group-hover:bg-white/[0.14] dark:group-focus-visible:ring-white/40">
         {children}
@@ -320,7 +320,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t('Search people')}
                     aria-label={t('Search people')}
-                    className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-500 dark:text-white"
+                    className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-500 dark:text-white"
                   />
                 </label>
 
@@ -362,7 +362,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                             type="button"
                             onClick={() => toggleRecipient(r)}
                             aria-pressed={isSelected}
-                            className="group flex flex-col items-center gap-1.5 rounded-xl px-1 py-1 outline-none focus-visible:bg-neutral-100 dark:focus-visible:bg-white/[0.06]"
+                            className="group flex flex-col items-center gap-1.5 rounded-xl px-1 py-1 outline-hidden focus-visible:bg-neutral-100 dark:focus-visible:bg-white/[0.06]"
                           >
                             <span
                               className={`relative rounded-full transition ${
@@ -404,7 +404,7 @@ export function ContentPostShareDialog({ open, onClose, postId, shareUrl, shareT
                       maxLength={500}
                       placeholder={t('Add a message…')}
                       aria-label={t('Message')}
-                      className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-500 dark:text-white"
+                      className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-500 dark:text-white"
                     />
                     <button
                       type="button"

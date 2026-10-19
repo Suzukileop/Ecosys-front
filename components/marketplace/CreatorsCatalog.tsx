@@ -99,7 +99,7 @@ function ArrowIcon({ className }: { className?: string }) {
 }
 
 const MENU_ITEM_CLASS =
-  'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[14px] leading-5 transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:bg-[rgba(15,20,25,0.06)] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:bg-[rgba(231,233,234,0.1)]';
+  'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-2.5 py-1.5 text-left text-[14px] leading-5 transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:bg-[rgba(15,20,25,0.06)] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:bg-[rgba(231,233,234,0.1)]';
 
 /**
  * The filter sheet's specialties: the page's chips (card tone, the selected one solid ink), wrapped
@@ -125,7 +125,7 @@ function SheetSpecialtyChips({
           aria-pressed={active}
           onClick={() => onPick(active && next ? undefined : next)}
           data-pf-no-color-transition
-          className={`inline-flex h-9 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+          className={`inline-flex h-9 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
             active
               ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
               : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'
@@ -214,7 +214,7 @@ function SortMenu({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={t('Sort by: {current}', { current })}
-        className={`inline-flex h-8 items-center gap-1.5 rounded-full text-[13px] leading-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-white/30 ${PROVIDER_INK_CLASS}`}
+        className={`inline-flex h-8 items-center gap-1.5 rounded-full text-[13px] leading-5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-white/30 ${PROVIDER_INK_CLASS}`}
       >
         <span className={`hidden sm:inline ${PROVIDER_MUTED_CLASS}`}>{t('Sort by')}</span>
         <span className="font-semibold">{current}</span>
@@ -286,7 +286,7 @@ function parseMinYearsExperience(raw: string | null): number | null {
   return Math.min(n, 80);
 }
 
-function CreatorsCatalogContent() {
+function CreatorsCatalogContent({ initialPage }: { initialPage: MarketplaceCreatorsPage | null }) {
   const t = useT();
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -302,9 +302,12 @@ function CreatorsCatalogContent() {
   const page = Math.max(0, Number(searchParams.get('page') ?? '0') || 0);
 
   const [localQ, setLocalQ] = useState(q);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(!initialPage);
   const [error, setError] = useState<string | null>(null);
-  const [pageData, setPageData] = useState<MarketplaceCreatorsPage | null>(null);
+  const [pageData, setPageData] = useState<MarketplaceCreatorsPage | null>(initialPage);
+  /* With server-rendered cards, the first client fetch refreshes them in place (viewer-specific
+     fields such as isFollowing) instead of swapping them for a skeleton. */
+  const silentNextLoad = useRef(Boolean(initialPage));
   const { hasRole, isLoading: authLoading } = useAuth();
   const [viewerCoords, setViewerCoords] = useState<ViewerLocation | null>(null);
   const [geoAttempt, setGeoAttempt] = useState(0);
@@ -381,8 +384,10 @@ function CreatorsCatalogContent() {
       setLoading(true);
       return;
     }
+    const silent = silentNextLoad.current;
+    silentNextLoad.current = false;
     try {
-      setLoading(true);
+      if (!silent) setLoading(true);
       setError(null);
       const trimmed = q.trim();
       const proximity = viewerCoords
@@ -543,7 +548,7 @@ function CreatorsCatalogContent() {
           enterKeyHint="search"
           autoComplete="off"
           placeholder={isPhone ? t('Search providers') : t('Search by name, specialty, keyword')}
-          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 sm:text-[15px]"
+          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-hidden focus:ring-0 sm:text-[15px]"
         />
         {localQ.trim() || q ? (
           <button
@@ -567,7 +572,7 @@ function CreatorsCatalogContent() {
     <button
       type="button"
       onClick={resetSearchAndFilters}
-      className="font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+      className="font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
     >
       {t('Clear all filters')}
     </button>
@@ -646,7 +651,7 @@ function CreatorsCatalogContent() {
             <button
               type="button"
               onClick={() => setSheetOpen(false)}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
             >
               {pageData
                 ? trPlural(totalCount, 'Show {count} provider', 'Show {count} providers')
@@ -667,7 +672,7 @@ function CreatorsCatalogContent() {
                 type="button"
                 onClick={() => setSheetOpen(true)}
                 aria-label={activeFilters.length > 0 ? t('Filters ({activeFiltersLength} active)', { activeFiltersLength: activeFilters.length }) : t('Filters')}
-                className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                className="relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
               >
                 <SlidersIcon className="h-[18px] w-[18px]" />
                 {activeFilters.length > 0 ? (
@@ -702,7 +707,7 @@ function CreatorsCatalogContent() {
                   <button
                     type="button"
                     onClick={resetSearchAndFilters}
-                    className="shrink-0 font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                    className="shrink-0 font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                   >
                     {t('Clear')}
                   </button>
@@ -818,10 +823,10 @@ function CreatorsCatalogContent() {
   );
 }
 
-export function CreatorsCatalog() {
+export function CreatorsCatalog({ initialPage = null }: { initialPage?: MarketplaceCreatorsPage | null }) {
   return (
     <Suspense fallback={<ProvidersCatalogSkeleton />}>
-      <CreatorsCatalogContent />
+      <CreatorsCatalogContent initialPage={initialPage} />
     </Suspense>
   );
 }

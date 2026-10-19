@@ -70,7 +70,7 @@ const NETWORKS: Network[] = [
 ];
 
 const TARGET =
-  'group flex flex-col items-center gap-2 rounded-xl py-1 text-[12px] leading-4 text-[color:var(--gn-ink2)] outline-none';
+  'group flex flex-col items-center gap-2 rounded-xl py-1 text-[12px] leading-4 text-[color:var(--gn-ink2)] outline-hidden';
 const TARGET_DISC =
   'flex h-[52px] w-[52px] items-center justify-center rounded-full bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] transition group-hover:bg-[color:var(--gn-hover)] group-focus-visible:ring-2 group-focus-visible:ring-[color:var(--gn-ring)] group-active:scale-95';
 
@@ -155,7 +155,7 @@ export function PortfolioShareDialog({
             type="button"
             onClick={onClose}
             aria-label={t('Close')}
-            className="-mr-2 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="-mr-2 -mt-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             <svg viewBox="0 0 24 24" className="h-[18px] w-[18px]" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
               <path d="M6 6l12 12M18 6 6 18" />
@@ -197,12 +197,12 @@ export function PortfolioShareDialog({
             value={shareUrl}
             aria-label={t('Portfolio link')}
             onFocus={(event) => event.currentTarget.select()}
-            className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-[14px] text-[color:var(--gn-ink)] outline-none focus:ring-0"
+            className="min-w-0 flex-1 truncate border-0 bg-transparent p-0 text-[14px] text-[color:var(--gn-ink)] outline-hidden focus:ring-0"
           />
           <button
             type="button"
             onClick={() => void copy()}
-            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[color:var(--gn-primary)] px-4 text-[14px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full bg-[color:var(--gn-primary)] px-4 text-[14px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             {copied ? <IconCheck className="h-4 w-4" /> : null}
             {copied ? t('Copied') : t('Copy')}

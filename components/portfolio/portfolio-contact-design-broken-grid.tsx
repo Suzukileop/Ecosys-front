@@ -3,7 +3,7 @@
 import gsap from 'gsap';
 import Image from 'next/image';
 import { useLayoutEffect, useMemo, useRef } from 'react';
-import type { EditorialContactLink } from '@/components/portfolio/portfolio-section-primitives';
+import type { EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterInsetLeft,

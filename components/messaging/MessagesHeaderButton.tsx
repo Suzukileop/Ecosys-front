@@ -86,8 +86,19 @@ export function MessagesHeaderButton({ floating = false }: { floating?: boolean 
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), POLL_MS);
-    return () => window.clearInterval(id);
+    /* No polling from a background tab (each poll is an authenticated round-trip); catch up as soon
+       as the tab is visible again. */
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [load]);
 
   useEffect(() => {
@@ -121,7 +132,7 @@ export function MessagesHeaderButton({ floating = false }: { floating?: boolean 
         title={t('Messages')}
         aria-label={`Messages${badgeCount > 0 ? `, ${badgeCount} new` : ''}`}
         onClick={() => dismissBadge(unreadRef.current)}
-        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-[60] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#0F1419] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:focus-visible:ring-[#EFF3F4] lg:hidden"
+        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-[60] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#0F1419] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:focus-visible:ring-[#EFF3F4] lg:hidden"
       >
         <ChatGlyph className="h-6 w-6" strokeWidth={1.6} />
         {badgeCount > 0 ? (
@@ -135,7 +146,7 @@ export function MessagesHeaderButton({ floating = false }: { floating?: boolean 
 
   /* No filled plate at rest or on hover: this sits in a row of bare 36px controls, and a
      background here made it the only one of the four that looked pressed. */
-  const iconClass = `relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
+  const iconClass = `relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-[color,transform,translate,scale,rotate] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:scale-105 focus-visible:outline-hidden focus-visible:ring-1 focus-visible:ring-neutral-400 ${
     onMessagesPage || open ? 'text-neutral-950 dark:text-white' : 'text-[#222222] dark:text-neutral-300'
   }`;
 
@@ -232,7 +243,7 @@ export function MessagesHeaderButton({ floating = false }: { floating?: boolean 
                         href={`${MESSAGES_HREF}?conversation=${encodeURIComponent(conversation.id)}`}
                         onClick={() => setOpen(false)}
                         data-pf-no-color-transition
-                        className="flex min-h-16 items-center gap-3 px-5 py-2.5 transition-colors hover:bg-[#F7F9F9] focus-visible:bg-[#EFF3F4] focus-visible:outline-none dark:hover:bg-[#16181C] dark:focus-visible:bg-[#202327]"
+                        className="flex min-h-16 items-center gap-3 px-5 py-2.5 transition-colors hover:bg-[#F7F9F9] focus-visible:bg-[#EFF3F4] focus-visible:outline-hidden dark:hover:bg-[#16181C] dark:focus-visible:bg-[#202327]"
                       >
                         <Avatar
                           avatarUrl={

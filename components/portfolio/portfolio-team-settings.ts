@@ -210,6 +210,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   railImageRadius: PortfolioTeamCornerRadius;
   /** Portrait rail: portrait height — viewport-based in the rail, ratio-based in `show-all`. */
   railImageHeight: PortfolioTeamImageHeight;
+  /** Portrait Rail: optional decorative numbering over each portrait. */
+  railShowNumbers: boolean;
   /** Polaroid: how the print's color renders — black & white on hover, always mono, or always color. */
   polaroidPhotoTone: PortfolioTeamPolaroidPhotoTone;
   /** Polaroid, "View all" grid only: prints per row on large screens (never more than four). */
@@ -270,6 +272,8 @@ export type PortfolioTeamPresentationSettings = PortfolioSectionBackgroundSettin
   splitPhotoTone: PortfolioTeamPolaroidPhotoTone;
   /** Split screen: social links behind a `Social links +` control instead of always shown. */
   splitSocialsReveal: boolean;
+  /** Split screen: show roster indices and the selected-member counter. */
+  splitShowNumbers: boolean;
   /** Floating canvas: cards per row on large screens (the irregular grid stacks to one column below `lg`). */
   canvasColumns: PortfolioTeamRailColumns;
   /** Floating canvas: where the block of cards sits — it is not forced to the centre. */
@@ -457,9 +461,9 @@ export const PORTFOLIO_TEAM_LAYOUT_OPTIONS: {
   description: string;
 }[] = [
   { value: 'portrait-rail', label: msg('Portrait rail'), description: msg('Immersive portraits in a draggable rail with a scrub indicator.') },
-  { value: 'spotlight', label: msg('Spotlight'), description: msg('A monumental portrait panel; thumbnails swap it with a directional wipe.') },
-  { value: 'split-screen', label: msg('Split screen'), description: msg('Monumental names stacked on one side; the addressed one fills a full-height portrait on the other.') },
-  { value: 'editorial-rhythm', label: msg('Editorial rhythm'), description: msg('A broken grid of unequal plates; the first name is printed across its own portrait.') },
+  { value: 'spotlight', label: msg('Spotlight'), description: msg('One featured portrait with clear typography and a gently animated member selector.') },
+  { value: 'split-screen', label: msg('Split screen'), description: msg('A readable editorial roster beside a large portrait, with a subtle crossfade between members.') },
+  { value: 'editorial-rhythm', label: msg('Editorial rhythm'), description: msg('An asymmetric portrait grid with clear captions and a larger featured member.') },
   { value: 'directory', label: msg('Directory'), description: msg('A monumental numbered index; the portrait follows the cursor or sits in every row.') },
   { value: 'polaroid', label: msg('Polaroid'), description: msg('Grained instant prints on a dark table — drag/chevron rail, monochrome-to-color hover, a grid toggle.') },
   { value: 'profile-cards', label: msg('Profile cards'), description: msg('Portrait on top, name and socials centered below.') },
@@ -837,6 +841,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   railColumns: 3,
   railImageRadius: 'md',
   railImageHeight: 'tall',
+  railShowNumbers: true,
   polaroidPhotoTone: 'hover',
   polaroidColumns: 3,
   profileCardsView: 'grid',
@@ -867,6 +872,7 @@ export const DEFAULT_TEAM_PRESENTATION: PortfolioTeamPresentationSettings = {
   splitPanelRadius: 'none',
   splitPhotoTone: 'monochrome',
   splitSocialsReveal: true,
+  splitShowNumbers: true,
   canvasColumns: 3,
   canvasAlign: 'center',
   canvasParallax: true,
@@ -1231,7 +1237,7 @@ function teamCardBorderClass(settings: PortfolioTeamPresentationSettings): strin
 
 export function teamCardFrameClass(settings: PortfolioTeamPresentationSettings): string {
   const radius = { none: 'rounded-none', sm: 'rounded-lg', md: 'rounded-2xl', lg: 'rounded-3xl', xl: 'rounded-[2rem]' }[settings.cardRadius];
-  const shadow = { none: '', soft: 'shadow-sm', medium: 'shadow-lg shadow-black/10', strong: 'shadow-2xl shadow-black/20' }[settings.cardShadow];
+  const shadow = { none: '', soft: 'shadow-xs', medium: 'shadow-lg shadow-black/10', strong: 'shadow-2xl shadow-black/20' }[settings.cardShadow];
   return `${radius} ${shadow} ${teamCardBorderClass(settings)} overflow-hidden`;
 }
 
@@ -1245,7 +1251,7 @@ export function teamCardFooterPaddingClass(padding: PortfolioTeamCardPadding | u
 export function teamCardClass(settings: PortfolioTeamPresentationSettings): string {
   const radius = { none: 'rounded-none', sm: 'rounded-lg', md: 'rounded-2xl', lg: 'rounded-3xl', xl: 'rounded-[2rem]' }[settings.cardRadius];
   const padding = { none: 'p-0', sm: 'p-3', md: 'p-5', lg: 'p-7' }[settings.cardPadding];
-  const shadow = { none: '', soft: 'shadow-sm', medium: 'shadow-lg shadow-black/10', strong: 'shadow-2xl shadow-black/20' }[settings.cardShadow];
+  const shadow = { none: '', soft: 'shadow-xs', medium: 'shadow-lg shadow-black/10', strong: 'shadow-2xl shadow-black/20' }[settings.cardShadow];
   return `${radius} ${padding} ${shadow} ${teamCardBorderClass(settings)} overflow-hidden`;
 }
 
@@ -1336,6 +1342,7 @@ export function mergeTeamPresentation(
       PORTFOLIO_TEAM_IMAGE_HEIGHTS,
       base.railImageHeight ?? 'tall'
     ),
+    railShowNumbers: typeof record.railShowNumbers === 'boolean' ? record.railShowNumbers : (base.railShowNumbers ?? true),
     polaroidPhotoTone: pick(
       record.polaroidPhotoTone,
       PORTFOLIO_TEAM_POLAROID_PHOTO_TONES,
@@ -1473,6 +1480,7 @@ export function mergeTeamPresentation(
       PORTFOLIO_TEAM_POLAROID_PHOTO_TONES,
       base.splitPhotoTone ?? 'monochrome'
     ),
+    splitShowNumbers: typeof record.splitShowNumbers === 'boolean' ? record.splitShowNumbers : (base.splitShowNumbers ?? true),
     splitSocialsReveal:
       typeof record.splitSocialsReveal === 'boolean'
         ? record.splitSocialsReveal

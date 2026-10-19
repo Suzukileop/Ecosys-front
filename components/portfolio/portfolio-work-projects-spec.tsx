@@ -287,7 +287,7 @@ function SpecConsultControl({
   surface: string;
 }) {
   const focusClass =
-    'focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4';
+    'focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4';
 
   if (design === 'underline') {
     return (
@@ -425,6 +425,18 @@ function SpecThumbnail({
         data-pf-no-color-transition=""
       />
     </div>
+  );
+}
+
+/** "Field labels" setting — micro label above the Stack / Summary rows. */
+function SpecFieldLabel({ children, ink }: { children: string; ink: string }) {
+  return (
+    <p
+      className="mb-2 font-mono text-[10px] font-normal uppercase tracking-[0.16em] sm:text-[11px]"
+      style={{ color: ink, opacity: 0.55 }}
+    >
+      {children}
+    </p>
   );
 }
 
@@ -616,6 +628,9 @@ function SpecSheet({
   const showStack = settings.showStack !== false && tools.length > 0;
   const showConsult = settings.showConsult !== false && Boolean(href);
   const consultLabel = settings.consultLabel?.trim() || t('Consult this project');
+  const showFieldLabels = settings.showFieldLabels !== false;
+  const descriptionLabel = settings.descriptionLabel?.trim() || t('Summary');
+  const stackLabel = settings.stackLabel?.trim() || t('Stack');
   const consultDesign = settings.consultDesign ?? 'bracket';
   const sheetFrame = settings.sheetFrame ?? 'none';
   const framed = sheetFrame !== 'none';
@@ -692,19 +707,21 @@ function SpecSheet({
 
       {showStack ? (
         <div data-spec-body="" className="mt-4 sm:mt-5" data-pf-no-color-transition="">
+          {showFieldLabels ? <SpecFieldLabel ink={muted}>{stackLabel}</SpecFieldLabel> : null}
           <SpecStack tools={tools} ink={stackInk} />
         </div>
       ) : null}
 
       {showDescription ? (
-        <p
-          data-spec-body=""
-          className="mt-5 max-w-[58ch] text-[0.9375rem] font-normal leading-[1.72] sm:mt-6 sm:text-[1.02rem] sm:leading-[1.76]"
-          style={{ color: valueInk }}
-          data-pf-no-color-transition=""
-        >
-          {description}
-        </p>
+        <div data-spec-body="" className="mt-5 sm:mt-6" data-pf-no-color-transition="">
+          {showFieldLabels ? <SpecFieldLabel ink={muted}>{descriptionLabel}</SpecFieldLabel> : null}
+          <p
+            className="max-w-[58ch] text-[0.9375rem] font-normal leading-[1.72] sm:text-[1.02rem] sm:leading-[1.76]"
+            style={{ color: valueInk }}
+          >
+            {description}
+          </p>
+        </div>
       ) : null}
 
       {showConsult && href ? (
@@ -763,7 +780,7 @@ function SpecSheet({
           <span
             aria-hidden
             data-pf-no-color-transition=""
-            className="pointer-events-none absolute left-0 top-0 h-9 w-px origin-top scale-y-0 opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100"
+            className="pointer-events-none absolute left-0 top-0 h-9 w-px origin-top scale-y-0 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/sheet:scale-y-100 group-hover/sheet:opacity-100"
             style={{ backgroundColor: accent }}
           />
         ) : null}

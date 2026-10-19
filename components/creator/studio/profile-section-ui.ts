@@ -22,10 +22,10 @@ export const profileFormLabelClass =
   'block text-[15px] font-medium leading-snug text-neutral-800 dark:text-neutral-200';
 
 export const profileFormInputClass =
-  'mt-2 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-orange-400 focus:outline-none focus:ring-2 focus:ring-orange-400/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-500';
+  'mt-2 w-full rounded-xl border border-neutral-300 bg-white px-4 py-3 text-base text-neutral-900 placeholder:text-neutral-400 focus:border-orange-400 focus:outline-hidden focus:ring-2 focus:ring-orange-400/20 disabled:cursor-not-allowed disabled:opacity-60 dark:border-neutral-600 dark:bg-neutral-950 dark:text-neutral-100 dark:placeholder:text-neutral-500';
 
 export const profileNavButtonBaseClass =
-  'flex min-h-11 shrink-0 items-center gap-2.5 rounded-xl px-3 py-3 text-left text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40';
+  'flex min-h-11 shrink-0 items-center gap-2.5 rounded-xl px-3 py-3 text-left text-[15px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/40';
 
 export const profileNavButtonActiveClass =
   'font-medium text-[#FF5722]';

@@ -7,6 +7,7 @@ import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
 import { useLayoutEffect, useMemo, useRef, type MouseEvent } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
 import {
+  heroImageGrayscaleClass,
   resolveHeroAvailabilityValue,
   resolveHeroSpecialtyValue,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
@@ -124,7 +125,7 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
   const firstName = useMemo(() => {
     const raw = (data.fullName || data.nameLead || '').trim();
     return raw.split(/\s+/)[0] || t('Name');
-  }, [data.fullName, data.nameLead]);
+  }, [data.fullName, data.nameLead, t]);
 
   const specialty = resolveHeroSpecialtyValue(data.specialite);
   const titleLines = useMemo(
@@ -156,16 +157,14 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
     }
     return '08+';
   }, [data.yearsOfExperience, data.stats]);
+  const experienceLabel =
+    data.presentation.heroWorkDuoExperienceLabel?.trim() ||
+    t('Experience built through real projects');
 
   const works = useMemo(() => {
     const list = (data.featuredWorks ?? []).filter((w) => w.imageUrl?.trim());
     return list.slice(0, MAX_WORKS);
   }, [data.featuredWorks]);
-
-  const slots = useMemo(
-    () => [0, 1].map((index) => works[index] ?? null),
-    [works]
-  );
 
   const primaryHref = data.contactHref || '#contact';
   const secondaryHref = data.workHref || '#work';
@@ -331,23 +330,27 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
       />
 
       <div
-        className={`pf-work-duo-stage relative z-[1] flex flex-col pt-[calc(5.25rem+env(safe-area-inset-top,0px))] pb-12 lg:min-h-[100dvh] lg:pb-16 lg:pt-[calc(6.5rem+env(safe-area-inset-top,0px))] ${shellX}`}
+        className={`pf-work-duo-stage relative z-[1] flex flex-col pb-10 pt-[calc(5rem+env(safe-area-inset-top,0px))] sm:pb-14 sm:pt-[calc(6rem+env(safe-area-inset-top,0px))] lg:min-h-[100dvh] lg:pb-12 lg:pt-[calc(5.75rem+env(safe-area-inset-top,0px))] ${shellX}`}
       >
-        <div className="grid w-full flex-1 grid-cols-1 items-stretch gap-10 lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.15fr)] lg:gap-x-12 xl:gap-x-16">
+        <div className="grid w-full flex-1 grid-cols-1 items-stretch gap-12 lg:grid-cols-[minmax(18rem,0.82fr)_minmax(0,1.18fr)] lg:gap-x-10 xl:gap-x-16">
           <div className="pf-work-duo-west flex min-w-0 flex-col">
-            <p
-              className="pf-work-duo-copy mb-0 ml-0 mr-0 font-sans text-[0.7rem] font-bold uppercase tracking-[0.18em]"
-              style={{ color: principal }}
-            >
-              {availability}
-            </p>
+            <div className="pf-work-duo-copy flex items-center gap-3">
+              <span className="size-2 rounded-full" style={{ backgroundColor: principal }} aria-hidden />
+              <p
+                className="m-0 font-sans text-[0.68rem] font-bold uppercase tracking-[0.2em]"
+                style={{ color: principal }}
+              >
+                {availability}
+              </p>
+              <span className="h-px w-12" style={{ backgroundColor: principal, opacity: 0.38 }} aria-hidden />
+            </div>
 
             <h1
-              className="pf-work-duo-title mb-0 ml-0 mr-0 mt-5 max-w-full font-sans font-bold tracking-[-0.04em]"
+              className="pf-work-duo-title mb-0 ml-0 mr-0 mt-6 max-w-[12ch] font-sans font-bold tracking-[-0.055em]"
               style={{
                 color: ink,
-                fontSize: 'clamp(2.35rem, 5vw, 3.75rem)',
-                lineHeight: 1.08,
+                fontSize: 'clamp(2.65rem, 4.7vw, 4.8rem)',
+                lineHeight: 0.98,
               }}
             >
               {titleLines.map((line) => (
@@ -358,41 +361,52 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
             </h1>
 
             <p
-              className="pf-work-duo-copy pf-work-duo-bio mb-0 ml-0 mr-0 mt-8 max-w-[34rem] font-sans font-normal tracking-[-0.01em] [text-wrap:pretty]"
+              className="pf-work-duo-copy pf-work-duo-bio mb-0 ml-0 mr-0 mt-7 max-w-[31rem] border-l pl-5 font-sans font-normal tracking-[-0.01em] [text-wrap:pretty]"
               style={{
                 color: muted,
+                borderColor: principal,
                 fontSize: 'clamp(0.98rem, 1.15vw, 1.1rem)',
-                lineHeight: 1.55,
+                lineHeight: 1.6,
               }}
             >
               {bio}
             </p>
 
-            <div className="pf-work-duo-copy mt-8 flex flex-wrap items-center gap-3 sm:gap-3.5">
-              <a
-                href={primaryHref}
-                onClick={onNavClick(primaryHref)}
-                className="inline-flex h-12 items-center justify-center rounded-xl px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.12em] transition hover:brightness-110"
-                style={{ backgroundColor: principal, color: fond }}
-              >
-                {t('Let\'s talk')}
-              </a>
-              <a
-                href={secondaryHref}
-                onClick={onNavClick(secondaryHref)}
-                className="inline-flex h-12 items-center justify-center rounded-xl border-2 px-7 font-sans text-[0.72rem] font-bold uppercase tracking-[0.12em] transition hover:opacity-85"
-                style={{ borderColor: principal, color: principal, backgroundColor: 'transparent' }}
-              >
-                {t('View projects')}
-              </a>
-            </div>
+            {data.showContactCta !== false || data.showWorkCta !== false ? (
+              <div className="pf-work-duo-copy mt-8 flex flex-wrap items-center gap-3 sm:gap-3.5">
+                {data.showContactCta !== false ? (
+                  <a
+                    href={primaryHref}
+                    onClick={onNavClick(primaryHref)}
+                    className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.7rem] font-bold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5"
+                    style={{ backgroundColor: principal, color: fond }}
+                  >
+                    {t('Let\'s talk')}
+                  </a>
+                ) : null}
+                {data.showWorkCta !== false ? (
+                  <a
+                    href={secondaryHref}
+                    onClick={onNavClick(secondaryHref)}
+                    className="inline-flex h-12 items-center justify-center rounded-full border px-7 font-sans text-[0.7rem] font-bold uppercase tracking-[0.14em] transition-transform hover:-translate-y-0.5"
+                    style={{ borderColor: principal, color: principal, backgroundColor: 'transparent' }}
+                  >
+                    {t('View projects')}
+                  </a>
+                ) : null}
+              </div>
+            ) : null}
 
-            <div className="pf-work-duo-years mt-auto pt-12 lg:pt-16">
+            <div className="pf-work-duo-years mt-12 flex max-w-[31rem] items-end justify-between border-t pt-5 lg:mt-auto" style={{ borderColor: `color-mix(in srgb, ${ink} 18%, transparent)` }}>
+              <p className="m-0 max-w-[9rem] font-mono text-[0.62rem] font-semibold uppercase leading-[1.45] tracking-[0.16em]" style={{ color: muted }}>
+                {experienceLabel}
+              </p>
+              <div className="text-right">
               <p
                 className="mb-0 ml-0 mr-0 font-sans font-bold tracking-[-0.04em]"
                 style={{
                   color: principal,
-                  fontSize: 'clamp(2.75rem, 5vw, 3.75rem)',
+                  fontSize: 'clamp(2.6rem, 4vw, 3.5rem)',
                   lineHeight: 0.92,
                 }}
               >
@@ -404,11 +418,12 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
               >
                 {t('Years of experience')}
               </p>
+              </div>
             </div>
           </div>
 
           <div className="pf-work-duo-east flex min-h-0 min-w-0 flex-col">
-            <div className="pf-work-duo-seeall mb-4 flex w-full items-center justify-end lg:mb-5">
+            <div className="pf-work-duo-seeall mb-5 flex w-full items-center justify-end">
               <a
                 href={workHref}
                 onClick={onSeeAllClick}
@@ -419,17 +434,20 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
               </a>
             </div>
 
-            <ul className="pf-work-duo-gallery m-0 grid min-h-0 flex-1 list-none grid-cols-1 gap-4 p-0 sm:grid-cols-2 sm:gap-5">
-              {slots.map((work, index) => (
-                <li key={work?.id ?? `slot-${index}`} className="pf-work-duo-card-frame min-h-0 origin-center">
-                  {work ? (
+            <ul className={`pf-work-duo-gallery -mx-1 m-0 flex min-h-0 flex-1 snap-x snap-mandatory list-none gap-4 overflow-x-auto px-1 pb-3 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden sm:mx-0 sm:grid sm:gap-5 sm:overflow-visible sm:px-0 sm:pb-0 ${works.length === 1 ? 'sm:ml-auto sm:w-full sm:max-w-[31rem] sm:grid-cols-1' : 'sm:grid-cols-2'}`}>
+              {works.map((work, index) => (
+                <li key={work.id} className={`pf-work-duo-card-frame relative min-h-0 w-[82vw] max-w-[23rem] shrink-0 snap-center origin-center sm:w-auto sm:max-w-none ${index === 1 ? 'lg:top-10 lg:pb-10' : ''}`}>
                     <a
                       href={work.href || workHref}
                       onClick={
                         work.href?.startsWith('#') ? onNavClick(work.href) : undefined
                       }
-                      className="pf-work-duo-card relative block aspect-[3/4] h-full w-full overflow-hidden rounded-[1.75rem] lg:aspect-auto lg:min-h-[22rem] lg:rounded-[2rem]"
-                      style={{ backgroundColor: neutre }}
+                      className={`pf-work-duo-card group relative block aspect-[4/5] h-full w-full overflow-hidden border lg:aspect-auto lg:min-h-[27rem] ${index === 0 ? 'rounded-bl-[3rem] rounded-br-xl rounded-tl-xl rounded-tr-[3rem]' : 'rounded-bl-xl rounded-br-[3rem] rounded-tl-[3rem] rounded-tr-xl'}`}
+                      style={{
+                        backgroundColor: neutre,
+                        borderColor: `color-mix(in srgb, ${ink} 14%, transparent)`,
+                        borderWidth: '0.75px',
+                      }}
                       aria-label={work.title || t('View project')}
                       data-pf-no-color-transition=""
                     >
@@ -445,30 +463,22 @@ export function PortfolioHeroWorkDuo({ data }: { data: PortfolioHeroData }) {
                             src={work.imageUrl}
                             alt={work.title || t('Selected work')}
                             fill
+                            priority={index === 0}
                             sizes="(max-width: 639px) 100vw, 28vw"
-                            className="object-cover object-center"
+                            className={`object-cover object-center ${heroImageGrayscaleClass(data.presentation.heroImageGrayscale)}`}
                           />
                         </span>
                       </span>
-                    </a>
-                  ) : (
-                    <div
-                      className="pf-work-duo-card relative aspect-[3/4] h-full w-full overflow-hidden rounded-[1.75rem] lg:aspect-auto lg:min-h-[22rem] lg:rounded-[2rem]"
-                      style={{ backgroundColor: neutre }}
-                      aria-hidden
-                      data-pf-no-color-transition=""
-                    >
-                      <span
-                        className="pf-work-duo-card-media absolute block"
-                        data-pf-no-color-transition=""
-                      >
-                        <span
-                          className="pf-work-duo-card-zoom absolute inset-0 block"
-                          data-pf-no-color-transition=""
-                        />
+                      <span className="pointer-events-none absolute inset-x-0 bottom-0 h-2/5 bg-gradient-to-t from-black/80 via-black/30 to-transparent" aria-hidden />
+                      <span className="absolute inset-x-5 bottom-5 flex items-end justify-between gap-4 text-white">
+                        <span className="line-clamp-2 text-[clamp(1.05rem,1.5vw,1.35rem)] font-semibold leading-tight tracking-[-0.025em]">
+                          {work.title || t('Selected work')}
+                        </span>
+                        <span className="flex size-10 shrink-0 items-center justify-center rounded-full bg-white text-lg text-black transition-transform duration-300 group-hover:-rotate-45" aria-hidden>
+                          ↗
+                        </span>
                       </span>
-                    </div>
-                  )}
+                    </a>
                 </li>
               ))}
             </ul>

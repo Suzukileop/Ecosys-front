@@ -22,6 +22,7 @@ import {
   type ContactLightDarkTokens,
 } from '@/components/portfolio/portfolio-contact-design-motion';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -32,14 +33,14 @@ function prefersReducedMotion(): boolean {
 }
 
 const sequentialMessageSchema = z.object({
-  firstName: z.string().trim().min(1, 'First name is required').max(80, 'First name is too long'),
-  lastName: z.string().trim().min(1, 'Last name is required').max(80, 'Last name is too long'),
-  email: z.string().trim().email('Enter a valid email').max(254, 'Email is too long'),
+  firstName: z.string().trim().min(1, msg('First name is required')).max(80, msg('First name is too long')),
+  lastName: z.string().trim().min(1, msg('Last name is required')).max(80, msg('Last name is too long')),
+  email: z.string().trim().email(msg('Enter a valid email')).max(254, msg('Email is too long')),
   message: z
     .string()
     .trim()
-    .min(10, 'Message must be at least 10 characters')
-    .max(4000, 'Message is too long'),
+    .min(10, msg('Message must be at least 10 characters'))
+    .max(4000, msg('Message is too long')),
 });
 type SequentialFormValues = z.infer<typeof sequentialMessageSchema>;
 const EMPTY_FORM: SequentialFormValues = { firstName: '', lastName: '', email: '', message: '' };
@@ -105,7 +106,7 @@ function FloatingField({
   }, [active, focused, accent, tokens]);
 
   const fieldClassName =
-    'peer block w-full resize-none border-0 border-b bg-transparent pb-3 text-lg outline-none ring-0 focus:outline-none focus:ring-0';
+    'peer block w-full resize-none border-0 border-b bg-transparent pb-3 text-lg outline-hidden ring-0 focus:outline-hidden focus:ring-0';
   const fieldStyle = { color: tokens.ink, borderColor: tokens.border };
 
   return (
@@ -608,7 +609,7 @@ export function ContactDesignSequentialReveal({
                 label={layout.text('firstNameLabel') ?? t('First name')}
                 autoComplete="given-name"
                 registration={register('firstName')}
-                error={errors.firstName?.message}
+                error={errors.firstName?.message ? t(errors.firstName.message) : undefined}
                 active={Boolean(watched.firstName)}
                 accent={accent}
                 tokens={tokens}
@@ -620,7 +621,7 @@ export function ContactDesignSequentialReveal({
                 label={layout.text('lastNameLabel') ?? t('Last name')}
                 autoComplete="family-name"
                 registration={register('lastName')}
-                error={errors.lastName?.message}
+                error={errors.lastName?.message ? t(errors.lastName.message) : undefined}
                 active={Boolean(watched.lastName)}
                 accent={accent}
                 tokens={tokens}
@@ -635,7 +636,7 @@ export function ContactDesignSequentialReveal({
               type="email"
               autoComplete="email"
               registration={register('email')}
-              error={errors.email?.message}
+              error={errors.email?.message ? t(errors.email.message) : undefined}
               active={Boolean(watched.email)}
               accent={accent}
               tokens={tokens}
@@ -648,7 +649,7 @@ export function ContactDesignSequentialReveal({
               label={layout.text('messageLabel') ?? t('Message')}
               multiline
               registration={register('message')}
-              error={errors.message?.message}
+              error={errors.message?.message ? t(errors.message.message) : undefined}
               active={Boolean(watched.message)}
               accent={accent}
               tokens={tokens}

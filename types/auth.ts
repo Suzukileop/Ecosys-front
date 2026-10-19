@@ -26,11 +26,30 @@ export interface SignupData {
   password: string;
   /** Always CREATOR — kept for API compatibility; backend ignores other values. */
   role?: 'CREATOR';
+  /** Interface language, so the verification e-mail arrives in it. */
+  locale?: string;
+}
+
+/**
+ * Sign-up opens no session: the account stays locked until the e-mailed 6-digit code is confirmed
+ * (POST /api/auth/verify-email), which is what returns the tokens.
+ */
+export interface SignupResponse {
+  email: string;
+  verificationRequired: boolean;
+  resendCooldownSeconds: number;
+  codeTtlMinutes: number;
+}
+
+export interface ResendVerificationResponse {
+  resendCooldownSeconds: number;
 }
 
 export interface LoginData {
   email: string;
   password: string;
+  /** Interface language, used if the server has to send a new verification code. */
+  locale?: string;
 }
 
 export interface UpdateRoleData {

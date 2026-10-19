@@ -71,7 +71,8 @@ function splitCopyMaxClass(
 function splitRowGapClass(gap: PortfolioWorkProjectsSplitSettings['rowGap']): string {
   if (gap === 'tight') return 'gap-y-12 sm:gap-y-16';
   if (gap === 'xl') return 'gap-y-36 sm:gap-y-48 lg:gap-y-60 xl:gap-y-72';
-  return 'gap-y-24 sm:gap-y-36 lg:gap-y-44 xl:gap-y-52';
+  // Default: 208px at xl spread the list into isolated islands; ~160px keeps the rhythm.
+  return 'gap-y-24 sm:gap-y-32 lg:gap-y-36 xl:gap-y-40';
 }
 
 function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
@@ -236,11 +237,10 @@ function useSplitGalleryMotion(itemsKey: string): {
         if (media) {
           media.style.transform = `translate3d(0, ${(clamped * SPLIT_PARALLAX_TRAVEL * SPLIT_IMAGE_PARALLAX).toFixed(2)}px, 0)`;
         }
-        const fade = Math.max(0.48, 1 - Math.max(0, Math.abs(clamped) - 0.22) * 0.85);
+        // Depth only: the old scroll fade (down to 0.48) dimmed readable copy away from center.
         const textY = (clamped * SPLIT_PARALLAX_TRAVEL * SPLIT_TEXT_PARALLAX).toFixed(2);
         copies.forEach((copy) => {
           copy.style.transform = `translate3d(0, ${textY}px, 0)`;
-          copy.style.opacity = fade.toFixed(3);
         });
       }
     };
@@ -305,7 +305,7 @@ function SplitProjectTitle({
     <h3 className={headingClass} style={{ color }}>
       <SplitTextLink
         href={href}
-        className="group/split-title inline max-w-full no-underline transition-opacity duration-500 ease-out hover:opacity-70 focus:outline-none focus-visible:opacity-70"
+        className="group/split-title inline max-w-full no-underline transition-opacity duration-500 ease-out hover:opacity-70 focus:outline-hidden focus-visible:opacity-70"
         style={{ color: 'inherit' }}
       >
         {label}
@@ -337,6 +337,7 @@ function SplitRow({
   const titleColor = presentation.elementStyles?.cardTitle?.color || presentation.titleColor;
   const muted = presentation.elementStyles?.cardDescription?.color || presentation.subtitleColor;
   const borderColor = presentation.cardBorderColor || muted;
+  const accent = presentation.ctaColor || presentation.categoryActiveColor;
   const mediaUrl = item.mediaUrl?.trim() || null;
   const description = item.description?.trim() || '';
   const href = item.linkUrl?.trim() || null;
@@ -378,7 +379,7 @@ function SplitRow({
       >
         <span
           className="shrink-0 font-mono text-[10px] font-medium tabular-nums tracking-[0.16em] sm:text-[11px]"
-          style={{ color: muted, opacity: 0.48 }}
+          style={{ color: muted, opacity: 0.7 }}
           aria-hidden
         >
           {indexLabel}
@@ -389,9 +390,10 @@ function SplitRow({
       </div>
       {!descriptionOpposite && showDescription && description ? (
         <>
+          {/* The section's one touch of the creator's main color. */}
           <span
             className={`mt-5 block h-px w-8 sm:mt-6 ${alignTitleRight ? 'ml-auto' : ''}`}
-            style={{ backgroundColor: muted, opacity: 0.32 }}
+            style={{ backgroundColor: accent || muted }}
             aria-hidden
           />
           <p
@@ -431,7 +433,15 @@ function SplitRow({
             alt={item.title}
             fill
             sizes="(max-width: 640px) 100vw, (max-width: 1024px) 70vw, 60vw"
-            className="object-cover object-center transition-transform duration-[1.15s] ease-out group-hover/split:scale-[1.045]"
+            className={`object-cover object-center ${
+              // Zoom only when the row links somewhere: otherwise it promises a click.
+              href
+                ? 'transition-transform duration-[1.2s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/split:scale-[1.03]'
+                : ''
+            }`}
+            // Without it the theme color-crossfade rule rewrites transition-property and the
+            // zoom snapped instantly instead of easing.
+            data-pf-no-color-transition=""
           />
         </div>
       ) : (

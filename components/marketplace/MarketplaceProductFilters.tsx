@@ -96,7 +96,7 @@ export function customPriceLabel(minPrice: string, maxPrice: string): string {
 
 /** The sheet's chips: card tone, the selected one solid ink — the News interest chips. */
 export function filterChipClass(active: boolean) {
-  return `inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+  return `inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
     active
       ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
       : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'
@@ -164,7 +164,7 @@ function CustomPriceField({
           onBlur={onApply}
           onKeyDown={(e) => e.key === 'Enter' && onApply()}
           placeholder="0"
-          className="w-full min-w-0 border-0 bg-transparent text-[15px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink3)] focus:outline-none"
+          className="w-full min-w-0 border-0 bg-transparent text-[15px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink3)] focus:outline-hidden"
         />
       </div>
     </div>

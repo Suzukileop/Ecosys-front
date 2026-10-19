@@ -139,11 +139,11 @@ const STUDIO_TAB_ICONS: Record<CreatorStudioTab, ReactNode> = {
 
 /** Owner icon actions next to the name: 36px round outline buttons with a tooltip. */
 const HEADER_ICON_ACTION =
-  'group relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)]';
+  'group relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)]';
 
 /** "View as visitor": the same 36px outline, widened from lg into a pill that names itself. */
 const HEADER_VISITOR_ACTION =
-  'group relative inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] lg:w-auto lg:px-3.5 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)]';
+  'group relative inline-flex h-9 w-9 shrink-0 items-center justify-center gap-1.5 rounded-full text-[13px] font-semibold text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] lg:w-auto lg:px-3.5 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)]';
 
 /**
  * A visible tooltip under an icon action, on hover and on keyboard focus (the native `title` shows
@@ -154,7 +154,7 @@ function HeaderActionTooltip({ label, hideFromLg = false }: { label: string; hid
   return (
     <span
       aria-hidden
-      className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0F1419] px-2 py-1 text-[12px] font-semibold leading-4 text-white opacity-0 shadow-sm transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-[#E7E9EA] dark:text-[#0F1419] ${
+      className={`pointer-events-none absolute left-1/2 top-full z-20 mt-2 -translate-x-1/2 whitespace-nowrap rounded-md bg-[#0F1419] px-2 py-1 text-[12px] font-semibold leading-4 text-white opacity-0 shadow-xs transition-opacity duration-150 group-hover:opacity-100 group-focus-visible:opacity-100 dark:bg-[#E7E9EA] dark:text-[#0F1419] ${
         hideFromLg ? 'lg:hidden' : ''
       }`}
     >
@@ -234,7 +234,7 @@ function StudioTabsRow({
             onClick={() => onSelect(item.id)}
             aria-current={isActive ? 'page' : undefined}
             data-pf-no-color-transition
-            className={`relative flex h-12 shrink-0 items-center px-3 text-[15px] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`relative flex h-12 shrink-0 items-center px-3 text-[15px] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
               isActive ? 'font-bold text-[color:var(--gn-ink)]' : 'font-medium text-[color:var(--gn-ink2)]'
             }`}
           >
@@ -477,7 +477,7 @@ export function CreatorStudioShell({
                       onClick={() => selectTab(item.id)}
                       aria-current={active ? 'page' : undefined}
                       data-pf-no-color-transition
-                      className={`relative flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+                      className={`relative flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
                         active ? 'font-bold' : 'font-semibold'
                       }`}
                     >

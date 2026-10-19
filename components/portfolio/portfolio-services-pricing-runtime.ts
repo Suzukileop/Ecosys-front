@@ -1,10 +1,7 @@
 'use client';
 
 import { useMemo, type MouseEvent as ReactMouseEvent } from 'react';
-import {
-  handleServicesOrderCtaClick,
-  useServicesOrderCtaNav,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { handleServicesOrderCtaClick, useServicesOrderCtaNav } from '@/components/portfolio/portfolio-section-primitives';
 import {
   normalizePricingCtaUrl,
   pricingBorderColor,

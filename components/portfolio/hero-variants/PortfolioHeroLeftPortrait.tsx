@@ -77,7 +77,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
       cleaned ||
       t('Du premier échange à la livraison, je construis des identités visuelles sensibles, cohérentes et durables pour les marques qui avancent.')
     );
-  }, [data.description]);
+  }, [data.description, t]);
 
   const avatarUrl = data.avatarUrl?.trim() || null;
   const initials = useMemo(() => {
@@ -89,7 +89,12 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
 
   const primaryHref = data.contactHref || '#contact';
   const secondaryHref = data.workHref || '#work';
+  const showAvailability = data.presentation.showAvailabilityBadge !== false;
+  const showPrimaryCta = data.showContactCta !== false;
+  const showSecondaryCta = data.showWorkCta !== false;
+  const hasCtas = showPrimaryCta || showSecondaryCta;
   const borderSoft = `color-mix(in srgb, ${bordure} 80%, transparent)`;
+  const panelSurface = `color-mix(in srgb, ${neutre} 72%, transparent)`;
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
@@ -118,7 +123,10 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
     hero.dataset.pfEntry = 'running';
 
     const scroller = leftPortraitScrollParent(hero);
-    const pick = (selector: string) => Array.from(hero.querySelectorAll<HTMLElement>(selector));
+    const pick = (selector: string) =>
+      Array.from(hero.querySelectorAll<HTMLElement>(selector)).filter(
+        (element) => element.getClientRects().length > 0
+      );
 
     // Element selections
     const photoMasks = pick('.pf-left-photo-mask');
@@ -151,12 +159,12 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         gsap.set(titleInners, { yPercent: 110 });
       }
       
-      // Individual characters start discrete (0.4 opacity) - ready for scroll reveal
+      // Characters begin slightly softened, then become fully legible during the intro.
       const titleChars = pick('.pf-left-char');
       if (titleChars.length) {
         gsap.set(titleChars, { 
-          opacity: 0.35,
-          filter: 'blur(0.8px)',
+          opacity: 0.62,
+          filter: 'blur(0.45px)',
         });
       }
 
@@ -211,6 +219,20 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         );
       }
 
+      if (titleChars.length) {
+        intro.to(
+          titleChars,
+          {
+            opacity: 1,
+            filter: 'blur(0px)',
+            duration: 0.32,
+            stagger: 0.009,
+            ease: 'power2.out',
+          },
+          0.5
+        );
+      }
+
       // Bio cascade — staggered fade + slide (0.15s after title)
       if (bioElements.length) {
         intro.to(
@@ -262,40 +284,11 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         });
       }
 
-      // Title characters: reveal one by one on scroll (typewriter effect)
-      const scrollChars = [...hero.querySelectorAll<HTMLElement>('.pf-left-char')];
-      
+      // Title characters remain fully legible after entry; scroll only handles the exit.
+      const scrollChars = [...hero.querySelectorAll<HTMLElement>('.pf-left-char')].filter(
+        (element) => element.getClientRects().length > 0
+      );
       if (scrollChars.length) {
-        // Phase 1: Typewriter reveal - characters appear progressively
-        // Using ScrollTrigger with stagger for character-by-character reveal
-        ScrollTrigger.create({
-          trigger: hero,
-          scroller,
-          start: 'top top',
-          end: '25% top', // Spread the reveal over this scroll distance
-          scrub: 0.5, // Moderate scrub for smooth character reveal
-          invalidateOnRefresh: true,
-          onUpdate: (self) => {
-            const progress = self.progress;
-            const totalChars = scrollChars.length;
-            
-            scrollChars.forEach((char, index) => {
-              // Calculate when this character should be fully revealed
-              const charProgress = index / totalChars;
-              const charVisibility = Math.min(1, Math.max(0, (progress - charProgress * 0.7) / 0.3));
-              
-              // Interpolate opacity from 0.35 to 1
-              const opacity = 0.35 + (charVisibility * 0.65);
-              // Interpolate blur from 0.8px to 0px
-              const blur = 0.8 - (charVisibility * 0.8);
-              
-              char.style.opacity = String(opacity);
-              char.style.filter = `blur(${blur}px)`;
-            });
-          },
-        });
-
-        // Phase 2: Fade out all characters together
         gsap.to(
           scrollChars,
           {
@@ -371,17 +364,20 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
    * ─────────────────────────────────────────────────────────────────────────── */
 
   const availabilityRow = (
-    <div className="pf-left-availability flex items-center gap-2.5">
+    <div
+      className="pf-left-availability inline-flex w-fit items-center gap-2.5 px-3 py-2"
+      style={{ backgroundColor: fond, color: ink }}
+    >
       <span
-        className="inline-block h-2 w-2 shrink-0 rounded-full"
+        className="inline-block size-1.5 shrink-0"
         style={{ backgroundColor: principal }}
         aria-hidden
       />
       <p
-        className="m-0 font-sans font-normal leading-none tracking-[-0.01em]"
+        className="m-0 font-sans font-semibold uppercase leading-none tracking-[0.08em]"
         style={{
-          color: muted,
-          fontSize: 'clamp(0.8rem, 0.95vw, 0.95rem)',
+          color: ink,
+          fontSize: 'clamp(0.65rem, 0.75vw, 0.75rem)',
         }}
       >
         {availability}
@@ -391,30 +387,70 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
 
   // Split headline into lines for animation
   const headlineText = `Hello, I'm ${displayName} — a ${specialty}.`;
-  const headlineLines = useMemo(() => {
+  const headlineLines = (() => {
     // Split at natural break: em-dash
     const parts = headlineText.split(/\s*—\s*/);
     if (parts.length >= 2) {
-      return [parts[0].trim() + ' —', parts.slice(1).join(' — ').trim()];
+      return [parts[0].trim(), `— ${parts.slice(1).join(' — ').trim()}`];
     }
     return [headlineText];
-  }, [headlineText]);
+  })();
 
   // Split text into characters for typewriter reveal effect
   const splitIntoChars = (text: string): string[] => {
     return text.split('');
   };
 
-  const headline = (opts?: { mobile?: boolean }) => (
+  const animatedWords = (text: string, keyPrefix: string, highlighted = false): ReactNode[] => {
+    const tokens = text.split(/\s+/).filter(Boolean);
+    const words: string[] = [];
+    for (let index = 0; index < tokens.length; index += 1) {
+      if (tokens[index] === '—' && tokens[index + 1]) {
+        words.push(`${tokens[index]}\u00A0${tokens[index + 1]}`);
+        index += 1;
+      } else {
+        words.push(tokens[index]);
+      }
+    }
+    return words.map((word, wordIndex) => (
+      <span key={`${keyPrefix}-word-${wordIndex}`}>
+        <span
+          className="inline-block whitespace-nowrap"
+          style={
+            highlighted
+              ? {
+                  backgroundImage: `linear-gradient(to top, color-mix(in srgb, ${principal} 42%, transparent) 0.38em, transparent 0.38em)`,
+                }
+              : undefined
+          }
+        >
+          {splitIntoChars(word).map((char, charIndex) => (
+            <span
+              key={`${keyPrefix}-${wordIndex}-${charIndex}`}
+              className="pf-left-char inline-block"
+              style={{ opacity: 1 }}
+            >
+              {char}
+            </span>
+          ))}
+        </span>
+        {wordIndex < words.length - 1 ? ' ' : ''}
+      </span>
+    ));
+  };
+
+  const headline = (opts?: { mobile?: boolean; tablet?: boolean }) => (
     <h1
       className={`pf-left-title-block m-0 font-sans font-semibold tracking-[-0.035em] ${
-        opts?.mobile ? 'mt-8 w-full' : 'max-w-[18ch]'
+        opts?.mobile ? 'mt-8 w-full' : opts?.tablet ? 'w-full max-w-[16ch]' : 'max-w-[18ch]'
       }`}
       style={{
         color: ink,
         fontSize: opts?.mobile
           ? 'clamp(2.35rem, 10vw, 3.35rem)'
-          : 'clamp(2.65rem, 4.6vw, 4.35rem)',
+          : opts?.tablet
+            ? 'clamp(2.4rem, 5vw, 3.25rem)'
+            : 'clamp(2.65rem, 4.6vw, 4.35rem)',
         lineHeight: 1.06,
       }}
     >
@@ -427,48 +463,14 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           <span className="pf-left-title-inner inline-block will-change-transform">
             {lineIdx === headlineLines.length - 1 && markSpecialty ? (
               <>
-                {/* "a " characters */}
-                {splitIntoChars('a ').map((char, i) => (
-                  <span 
-                    key={`pre-${i}`} 
-                    className="pf-left-char inline-block"
-                    style={{ opacity: 0.4 }}
-                  >
-                    {char === ' ' ? '\u00A0' : char}
-                  </span>
-                ))}
-                {/* Specialty word with highlight */}
-                <span
-                  className="box-decoration-clone px-[0.12em]"
-                  style={{
-                    backgroundImage: `linear-gradient(to top, color-mix(in srgb, ${principal} 42%, transparent) 0.38em, transparent 0.38em)`,
-                  }}
-                >
-                  {splitIntoChars(specialty).map((char, i) => (
-                    <span 
-                      key={`spec-${i}`} 
-                      className="pf-left-char inline-block"
-                      style={{ opacity: 0.4 }}
-                    >
-                      {char === ' ' ? '\u00A0' : char}
-                    </span>
-                  ))}
-                </span>
-                {/* Period */}
-                <span className="pf-left-char inline-block" style={{ opacity: 0.4 }}>.</span>
+                {animatedWords('— a', 'pre')} {' '}
+                {animatedWords(specialty, 'spec', true)}
+                <span className="pf-left-char inline-block" style={{ opacity: 1 }}>.</span>
               </>
             ) : (
-              /* Regular line - split into characters */
-              splitIntoChars(line).map((char, charIdx) => (
-                <span 
-                  key={charIdx} 
-                  className="pf-left-char inline-block"
-                  style={{ opacity: 0.4 }}
-                >
-                  {char === ' ' ? '\u00A0' : char}
-                </span>
-              ))
+              animatedWords(line, `line-${lineIdx}`)
             )}
+            {lineIdx < headlineLines.length - 1 ? ' ' : ''}
           </span>
         </span>
       ))}
@@ -476,37 +478,40 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
   );
 
   const ctaRow = (opts?: { mobile?: boolean }): ReactNode => {
-    if (opts?.mobile) {
-      return (
-        <a
-          href={secondaryHref}
-          onClick={onNavClick(secondaryHref)}
-          className="pf-left-cta-entry inline-flex h-12 w-full items-center justify-center rounded-full font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
-          style={{ backgroundColor: ink, color: fond }}
-        >
-          {t('View project')}
-        </a>
-      );
-    }
-
+    if (!hasCtas) return null;
     return (
-      <div className="pf-left-cta-entry flex flex-wrap items-center justify-start gap-x-8 gap-y-3">
+      <div
+        className={`pf-left-cta-entry flex flex-wrap items-center ${
+          opts?.mobile ? 'gap-x-5 gap-y-3' : 'gap-x-7 gap-y-3'
+        }`}
+      >
+        {showPrimaryCta ? (
         <a
           href={primaryHref}
           onClick={onNavClick(primaryHref)}
-          className="inline-flex h-12 shrink-0 items-center justify-center rounded-full px-7 font-sans text-[0.95rem] font-semibold tracking-[-0.01em] transition hover:brightness-110"
-          style={{ backgroundColor: ink, color: fond }}
+          className="group inline-flex shrink-0 items-center gap-3 font-sans text-[0.88rem] font-semibold uppercase tracking-[0.08em]"
+          style={{ color: ink }}
         >
+          <span
+            className="inline-flex size-11 items-center justify-center rounded-full transition-transform group-hover:rotate-45"
+            style={{ backgroundColor: ink, color: fond }}
+            aria-hidden
+          >
+            ↗
+          </span>
           {t('Let\'s talk')}
         </a>
+        ) : null}
+        {showSecondaryCta ? (
         <a
           href={secondaryHref}
           onClick={onNavClick(secondaryHref)}
-          className="shrink-0 font-sans text-[0.95rem] font-medium tracking-[-0.01em] underline underline-offset-[5px] transition hover:opacity-80"
+          className="shrink-0 font-sans text-[0.88rem] font-semibold uppercase tracking-[0.08em] transition hover:opacity-65"
           style={{ color: ink }}
         >
-          {t('View project')}
+          {t('View project')} <span aria-hidden>→</span>
         </a>
+        ) : null}
       </div>
     );
   };
@@ -514,8 +519,12 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
   const bioAndCta = (opts?: { mobile?: boolean }) => (
     <div
       className={`pf-left-bottom-block flex w-full flex-col items-start text-left ${
-        opts?.mobile ? 'mt-8 max-w-none gap-6' : 'max-w-[32rem] gap-6'
+        opts?.mobile ? 'mt-8 max-w-none gap-6 p-5' : 'max-w-[36rem] gap-6 p-7'
       }`}
+      style={{
+        backgroundColor: panelSurface,
+        boxShadow: `inset 0.35rem 0 0 ${principal}`,
+      }}
     >
       <p
         className="pf-left-bio-entry m-0 font-sans font-normal tracking-[-0.01em]"
@@ -529,7 +538,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
       >
         {bio}
       </p>
-      {ctaRow({ mobile: opts?.mobile })}
+      {hasCtas ? ctaRow({ mobile: opts?.mobile }) : null}
     </div>
   );
 
@@ -539,9 +548,11 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
       style={{
         backgroundColor: neutre,
         border: `1px solid ${borderSoft}`,
+        clipPath:
+          'polygon(0 0, 100% 0, 100% calc(100% - 2.25rem), calc(100% - 2.25rem) 100%, 0 100%)',
       }}
     >
-      <div className="pf-left-photo-inner h-full w-full will-change-transform">
+      <div className="pf-left-photo-inner relative h-full w-full will-change-transform">
         {avatarUrl ? (
           <Image
             src={avatarUrl}
@@ -561,6 +572,16 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
           </div>
         )}
       </div>
+      {showAvailability ? (
+        <div className="absolute left-0 top-6 z-[2]">{availabilityRow}</div>
+      ) : null}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute bottom-4 right-4 z-[2] inline-flex size-12 items-center justify-center font-serif text-xl font-semibold"
+        style={{ backgroundColor: fond, color: principal }}
+      >
+        {initials}
+      </span>
     </div>
   );
 
@@ -579,11 +600,11 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
 
       {/* —— Desktop — global content width + gutter only —— */}
       <div
-        className={`relative z-[1] hidden min-h-[100dvh] md:grid ${shellX}`}
+        className={`relative z-[1] hidden h-[100dvh] min-h-0 xl:grid ${shellX}`}
         style={{
           paddingTop: 'calc(6.5rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2.5rem, 5vh, 4rem)',
-          gridTemplateColumns: 'minmax(14rem, 34vw) minmax(0, 1fr)',
+          gridTemplateColumns: 'minmax(18rem, 36vw) minmax(0, 1fr)',
           columnGap: 'clamp(2rem, 5vw, 4.5rem)',
           alignItems: 'stretch',
         }}
@@ -591,26 +612,29 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         {/* Photo column — will be pinned on scroll */}
         <div className="pf-left-photo-column relative">
           {portrait(
-            '(max-width: 1024px) 40vw, 34vw',
-            'h-full min-h-[28rem] w-full rounded-2xl'
+            '36vw',
+            'h-full min-h-0 w-full'
           )}
         </div>
 
         {/* Content column — scrolls with parallax */}
-        <div className="pf-left-content-column flex min-h-0 min-w-0 flex-col self-stretch">
+        <div className="pf-left-content-column relative flex min-h-0 min-w-0 flex-col self-stretch overflow-hidden">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-[5%] top-1/2 -translate-y-1/2 select-none font-serif font-semibold leading-none"
+            style={{
+              color: `color-mix(in srgb, ${ink} 5%, transparent)`,
+              fontSize: 'clamp(12rem, 21vw, 25rem)',
+            }}
+          >
+            {initials}
+          </span>
           {/* 
             GEOMETRY FIX: Badge and title share the same left alignment
             The badge sits directly above the title with no extra offset
           */}
-          <div className="shrink-0">
-            {availabilityRow}
-            {/* 
-              GEOMETRY FIX: Added margin-top for title breathing space from badge
-              And margin-bottom for space before the bottom block
-            */}
-            <div style={{ marginTop: 'clamp(1.5rem, 3vh, 2.25rem)' }}>
-              {headline()}
-            </div>
+          <div className="relative z-[1] shrink-0">
+            {headline()}
           </div>
 
           {/* 
@@ -618,7 +642,7 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
             Using flex-1 and justify-end ensures the CTA aligns to the bottom
           */}
           <div 
-            className="flex min-h-0 flex-1 flex-col items-start justify-end"
+            className="relative z-[1] flex min-h-0 flex-1 flex-col items-start justify-end"
             style={{ 
               /* Extra breathing space between title and bio */
               paddingTop: 'clamp(3rem, 6vh, 5rem)',
@@ -631,14 +655,34 @@ export function PortfolioHeroLeftPortrait({ data }: { data: PortfolioHeroData })
         </div>
       </div>
 
+      {/* —— Tablet — dedicated cover composition, portrait left and readable copy right —— */}
+      <div
+        className={`relative z-[1] hidden h-[100dvh] min-h-0 grid-cols-[minmax(17rem,0.9fr)_minmax(0,1.1fr)] gap-x-8 pb-6 pt-[calc(6rem+env(safe-area-inset-top,0px))] md:grid xl:hidden ${shellX}`}
+      >
+        <div className="pf-left-photo-column flex min-h-0 items-center">
+          {portrait('42vw', 'aspect-[4/5] w-full')}
+        </div>
+
+        <div className="pf-left-content-column relative flex min-h-0 min-w-0 flex-col justify-between overflow-hidden py-4">
+          <span
+            aria-hidden
+            className="pointer-events-none absolute left-[4%] top-1/2 -translate-y-1/2 select-none font-serif text-[15rem] font-semibold leading-none"
+            style={{ color: `color-mix(in srgb, ${ink} 5%, transparent)` }}
+          >
+            {initials}
+          </span>
+          <div className="relative z-[1] shrink-0">{headline({ tablet: true })}</div>
+          <div className="relative z-[1] mt-8">{bioAndCta()}</div>
+        </div>
+      </div>
+
       {/* —— Mobile — same global content width + gutter —— */}
       <div
         className={`relative z-[1] flex flex-col pb-12 pt-[calc(5.75rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
-        {availabilityRow}
         {headline({ mobile: true })}
 
-        {portrait('92vw', 'mt-8 aspect-[3/4] w-full rounded-2xl')}
+        {portrait('92vw', 'mt-8 aspect-[4/5] w-full')}
 
         <div className="flex w-full flex-col items-start">{bioAndCta({ mobile: true })}</div>
       </div>

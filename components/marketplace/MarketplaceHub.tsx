@@ -196,7 +196,7 @@ function MarketplaceHubContent() {
           enterKeyHint="search"
           autoComplete="off"
           placeholder={t('Search title, shop or author')}
-          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
+          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-hidden focus:ring-0 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
         />
         {localQ.trim() || q ? (
           <button
@@ -217,7 +217,7 @@ function MarketplaceHubContent() {
     <button
       type="button"
       onClick={clearAll}
-      className="font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+      className="font-semibold text-[color:var(--gn-ink)] underline underline-offset-4 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
     >
       {t('Clear all filters')}
     </button>
@@ -252,7 +252,7 @@ function MarketplaceHubContent() {
           <button
             type="button"
             onClick={clearAll}
-            className="shrink-0 font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="shrink-0 font-medium text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             {t('Clear')}
           </button>
@@ -268,7 +268,7 @@ function MarketplaceHubContent() {
       type="button"
       onClick={() => setFavorites(!favorites)}
       aria-pressed={favorites}
-      className="gn-rail-box group flex w-full items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+      className="gn-rail-box group flex w-full items-center gap-4 px-6 py-4 text-left transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
     >
       <span className="flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_var(--gn-line)]">
         <RailGlyph>{favorites ? GRID_GLYPH : BOOKMARK_GLYPH}</RailGlyph>
@@ -414,7 +414,7 @@ function MarketplaceHubContent() {
             <button
               type="button"
               onClick={() => setSheetOpen(false)}
-              className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+              className="inline-flex h-11 items-center justify-center rounded-full bg-[color:var(--gn-primary)] px-6 text-[15px] font-semibold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
             >
               {total != null ? `Show ${total} ${total === 1 ? noun : `${noun}s`}` : t('Show products')}
             </button>

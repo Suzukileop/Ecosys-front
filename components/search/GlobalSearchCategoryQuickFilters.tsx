@@ -66,7 +66,7 @@ function ChoiceChips<T extends string>({
             aria-checked={active}
             onClick={() => onChange(option.value)}
             data-pf-no-color-transition
-            className={`inline-flex h-10 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:h-9 ${
+            className={`inline-flex h-10 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:h-9 ${
               active
                 ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                 : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'

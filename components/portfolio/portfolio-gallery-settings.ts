@@ -33,6 +33,8 @@ import {
 import { msg } from '@/lib/i18n/config';
 
 export type PortfolioGalleryDesign =
+  | 'visual-index'
+  | 'contact-sheet'
   | 'framed-grid'
   | 'floating-canvas'
   | 'cinema-strip'
@@ -142,6 +144,9 @@ export type PortfolioGalleryIllustrationVariant =
 export type PortfolioGalleryIllustrationPlacement = 'left' | 'right';
 
 export type PortfolioGalleryPresentationSettings = PortfolioSectionBackgroundSettings & {
+  /** Ordered media IDs; newly added media follow in their profile order. */
+  mediaOrder?: string[];
+  visualIndexSmartFit?: boolean;
   design: PortfolioGalleryDesign;
   columns: 1 | 2 | 3 | 4;
   gap: number;
@@ -356,6 +361,8 @@ export const PORTFOLIO_GALLERY_DESIGN_OPTIONS: {
   { value: 'hero-mosaic', label: msg('Hero mosaic'), description: msg('Featured image with a mosaic that adapts to the media count; cursor depth and focus on hover.') },
   { value: 'tall-row', label: msg('Tall + row'), description: msg('A taller first image on the left, three shorter ones on the right.') },
   { value: 'editorial-split', label: msg('Editorial split'), description: msg('Alternating wide and compact compositions.') },
+  { value: 'visual-index', label: msg('Visual index'), description: msg('Large selected image with a thumbnail index and clear captions.') },
+  { value: 'contact-sheet', label: msg('Contact sheet'), description: msg('Equal-sized photographs in a clean editorial grid with clear captions.') },
 ];
 
 const PORTFOLIO_GALLERY_DESIGNS = PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => option.value);
@@ -414,6 +421,8 @@ export function gallerySectionLayoutIsAside(
 }
 
 export const DEFAULT_GALLERY_PRESENTATION: PortfolioGalleryPresentationSettings = {
+  mediaOrder: [],
+  visualIndexSmartFit: true,
   ...DEFAULT_SECTION_BACKGROUND,
   design: 'framed-grid',
   columns: 3,
@@ -634,6 +643,10 @@ export function mergeGalleryPresentation(
   return {
     ...mergeSectionBackground(base, patch),
     design: pickString(record.design, PORTFOLIO_GALLERY_DESIGNS, base.design),
+    visualIndexSmartFit: typeof record.visualIndexSmartFit === 'boolean' ? record.visualIndexSmartFit : (base.visualIndexSmartFit ?? true),
+    mediaOrder: Array.isArray(record.mediaOrder)
+      ? [...new Set(record.mediaOrder.filter((id): id is string => typeof id === 'string' && id.length > 0))]
+      : (base.mediaOrder ?? []),
     columns: clamp(record.columns, 1, 4, base.columns) as 1 | 2 | 3 | 4,
     gap: clamp(record.gap, 0, 64, base.gap),
     verticalGap: clamp(record.verticalGap, -1, 64, base.verticalGap),

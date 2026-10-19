@@ -343,7 +343,7 @@ export function ContentPostSocialBar({
     // active shape is a 36px circle around the icon only. Painting the button instead turned the
     // feedback into a 146px-wide pill.
     const cell =
-      'group/act relative flex h-10 min-w-0 items-center gap-0.5 pr-3 text-[13px] font-medium leading-4 tabular-nums transition-colors duration-150 focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-40';
+      'group/act relative flex h-10 min-w-0 items-center gap-0.5 pr-3 text-[13px] font-medium leading-4 tabular-nums transition-colors duration-150 focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-40';
     const disc =
       'relative inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full transition-colors duration-150 group-focus-visible/act:ring-2 group-focus-visible/act:ring-[color:var(--gn-ring)]';
     // The fill tone (#EFF3F4 / #2A2D32), the page's one "interactive" grey — the plain hover wash
@@ -543,7 +543,7 @@ export function ContentPostSocialBar({
   if (variant === 'rail') {
     const liked = userReaction === 'LIKE';
     const circleClass =
-      'relative inline-flex h-6 w-6 items-center justify-center rounded-full border-0 transition-[color,border-color,background-color,transform] duration-200 active:scale-90 sm:h-10 sm:w-10 sm:border';
+      'relative inline-flex h-6 w-6 items-center justify-center rounded-full border-0 transition-[color,border-color,background-color,transform,translate,scale,rotate] duration-200 active:scale-90 sm:h-10 sm:w-10 sm:border';
     const idleCircle =
       'border-black/[0.1] text-neutral-600 group-hover/rail:border-black/25 group-hover/rail:text-[#111111] dark:border-white/[0.14] dark:text-neutral-300 dark:group-hover/rail:border-white/30 dark:group-hover/rail:text-white';
     const labelClass = 'text-[12.5px] tabular-nums text-neutral-500 dark:text-neutral-400';

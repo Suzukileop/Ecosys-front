@@ -157,6 +157,7 @@ export function EditorialToolsLevelStarCards({ tools, presentation }: ToolsGalle
       ref={listRef}
       className={`pf-stack-stars grid w-full list-none p-0 ${toolsLevelStarCardsGridClass()} ${gridGapClass}`}
       role="list"
+      data-balanced-six={tools.length === 6 ? 'true' : undefined}
       data-pf-no-color-transition=""
       style={
         {

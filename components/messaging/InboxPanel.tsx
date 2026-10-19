@@ -76,7 +76,7 @@ const COMPOSE_GLYPH = (
 );
 
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /**
  * A group's label inside the inbox ("Temporary invites"): 15px semibold ink, sentence case — the
@@ -233,7 +233,7 @@ export function InboxPanel({
               placeholder={t('Search messages')}
               enterKeyHint="search"
               autoComplete="off"
-              className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-10 pr-11 text-[16px] text-[color:var(--gn-ink)] outline-none ring-0 placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 lg:text-[15px] [&::-webkit-search-cancel-button]:appearance-none"
+              className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-10 pr-11 text-[16px] text-[color:var(--gn-ink)] outline-hidden ring-0 placeholder:text-[color:var(--gn-ink2)] focus:outline-hidden focus:ring-0 lg:text-[15px] [&::-webkit-search-cancel-button]:appearance-none"
             />
             {search ? (
               <button
@@ -325,7 +325,7 @@ export function InboxPanel({
         onClick={onNewMessage}
         aria-label={t('New message')}
         title={t('New message')}
-        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-[60] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#0F1419] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:focus-visible:ring-[#EFF3F4] lg:hidden"
+        className="fixed bottom-[calc(1.25rem+env(safe-area-inset-bottom))] right-5 z-[60] inline-flex h-14 w-14 items-center justify-center rounded-full bg-[#0F1419] text-white shadow-[0_10px_30px_-8px_rgba(0,0,0,0.45)] transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] active:scale-95 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] focus-visible:ring-offset-2 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:focus-visible:ring-[#EFF3F4] lg:hidden"
       >
         <Glyph className="h-6 w-6">{COMPOSE_GLYPH}</Glyph>
       </button>

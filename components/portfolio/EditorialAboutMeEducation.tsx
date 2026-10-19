@@ -15,6 +15,8 @@ import {
 import { useT } from '@/lib/i18n/I18nProvider';
 
 type TraitEducationColors = {
+  /** Block label ("Education") — follows Info → General → Block label color. */
+  labelColor: string;
   titleColor: string;
   bodyColor: string;
   accent: string;
@@ -104,37 +106,25 @@ function TraitEducationYearStacked({
 }
 
 function EducationSectionHeader({
-  count,
-  titleColor,
-  bodyColor,
+  labelColor,
   cardBorder,
   contentSize,
 }: {
-  count: number;
-  titleColor: string;
-  bodyColor: string;
+  labelColor: string;
   cardBorder: string;
   contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const t = useT();
   const sectionTitleClass = infoContentBlockTitleSizeClass(contentSize);
-  const metaClass = infoContentEducationMetaSizeClass(contentSize);
+  // Label only: the former "02 — Academic path" counter read as a section number.
   return (
     <>
-      <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between sm:gap-6">
-        <h3
-          className={`text-left font-bold tracking-tight ${sectionTitleClass}`}
-          style={{ color: titleColor }}
-        >
-          {t('Education')}
-        </h3>
-        <p
-          className={`font-semibold uppercase tracking-[0.22em] ${metaClass}`}
-          style={{ color: bodyColor }}
-        >
-          {t('{padStart} — Academic path', { padStart: String(count).padStart(2, '0') })}
-        </p>
-      </div>
+      <h3
+        className={`text-left font-bold tracking-tight ${sectionTitleClass}`}
+        style={{ color: labelColor }}
+      >
+        {t('Education')}
+      </h3>
       <div className="mt-5 h-px w-full" style={{ backgroundColor: cardBorder }} aria-hidden />
     </>
   );
@@ -145,6 +135,7 @@ const TRAIT_EDUCATION_SECTION_TOP = 'mt-16 sm:mt-20 lg:mt-24';
 /** 1 — Timeline spine (current default). */
 function EducationTimeline({
   items,
+  labelColor,
   titleColor,
   bodyColor,
   accent,
@@ -162,13 +153,7 @@ function EducationTimeline({
 
   return (
     <section className={sectionClassName}>
-      <EducationSectionHeader
-        count={items.length}
-        titleColor={titleColor}
-        bodyColor={bodyColor}
-        cardBorder={cardBorder}
-        contentSize={contentSize}
-      />
+      <EducationSectionHeader labelColor={labelColor} cardBorder={cardBorder} contentSize={contentSize} />
       <ol className="relative mt-2">
         <span
           aria-hidden
@@ -184,7 +169,7 @@ function EducationTimeline({
           return (
             <li
               key={key}
-              className="group relative grid gap-4 border-b py-8 last:border-b-0 sm:grid-cols-[minmax(7rem,11rem)_minmax(0,1fr)_auto] sm:items-start sm:gap-8 sm:py-10"
+              className="relative grid gap-4 border-b py-8 last:border-b-0 sm:grid-cols-[minmax(7rem,11rem)_minmax(0,1fr)] sm:items-start sm:gap-8 sm:py-10"
               style={{ borderColor: cardBorder }}
             >
               <span
@@ -231,19 +216,7 @@ function EducationTimeline({
                     {institution}
                   </p>
                 ) : null}
-                <div
-                  className="mt-5 h-[2px] w-0 transition-[width] duration-500 ease-out group-hover:w-16"
-                  style={{ backgroundColor: accent }}
-                  aria-hidden
-                />
               </div>
-
-              <p
-                className="hidden pl-6 font-mono text-xs tabular-nums sm:block sm:pl-0 sm:pt-2"
-                style={{ color: bodyColor }}
-              >
-                {String(index + 1).padStart(2, '0')}
-              </p>
             </li>
           );
         })}
@@ -255,9 +228,9 @@ function EducationTimeline({
 /** 2 — Editorial magazine bands (Framer / Awwwards). */
 function EducationEditorial({
   items,
+  labelColor,
   titleColor,
   bodyColor,
-  accent,
   cardBorder,
   contentSize,
   sectionClassName = TRAIT_EDUCATION_SECTION_TOP,
@@ -271,13 +244,7 @@ function EducationEditorial({
 
   return (
     <section className={sectionClassName}>
-      <EducationSectionHeader
-        count={items.length}
-        titleColor={titleColor}
-        bodyColor={bodyColor}
-        cardBorder={cardBorder}
-        contentSize={contentSize}
-      />
+      <EducationSectionHeader labelColor={labelColor} cardBorder={cardBorder} contentSize={contentSize} />
       <ul className="pf-about-trait-edu-list mt-2">
         {items.map((entry, index) => {
           const year = entry.schoolYear?.trim() || '';
@@ -285,29 +252,11 @@ function EducationEditorial({
           const institution = entry.institution?.trim() || '';
           const key = entry.id || `${title}-${year}-${index}`;
           const yearLabel = year ? formatYearInline(year) : '';
-          const parsed = year ? parseSchoolYearRange(year) : null;
 
           return (
             <li key={key} className="pf-about-trait-edu-row" data-pf-no-color-transition="">
               <div className="pf-about-trait-edu-body" data-pf-no-color-transition="">
-                <span
-                  className="pf-about-trait-edu-index font-mono text-[0.7rem] tabular-nums tracking-widest"
-                  style={{ color: accent }}
-                >
-                  {String(index + 1).padStart(2, '0')}
-                </span>
-
                 <div className="pf-about-trait-edu-fade" data-pf-no-color-transition="">
-                  {parsed?.start ? (
-                    <span
-                      aria-hidden
-                      className="pf-about-trait-edu-watermark"
-                      style={{ color: titleColor }}
-                    >
-                      {parsed.start}
-                    </span>
-                  ) : null}
-
                   <div className="relative z-[1] min-w-0">
                     {yearLabel ? (
                       <span
@@ -326,10 +275,7 @@ function EducationEditorial({
                       </p>
                     ) : null}
                     {institution ? (
-                      <p
-                        className="mt-2 max-w-sm text-xs leading-relaxed"
-                        style={{ color: bodyColor, opacity: 0.6 }}
-                      >
+                      <p className="mt-2 max-w-xl text-sm leading-relaxed" style={{ color: bodyColor }}>
                         {institution}
                       </p>
                     ) : null}
@@ -347,6 +293,7 @@ function EducationEditorial({
 /** 3 — Soft panel grid — clear cards, plain years, fluid hover accent. */
 function EducationPanels({
   items,
+  labelColor,
   titleColor,
   bodyColor,
   accent,
@@ -366,13 +313,7 @@ function EducationPanels({
 
   return (
     <section className={sectionClassName}>
-      <EducationSectionHeader
-        count={items.length}
-        titleColor={titleColor}
-        bodyColor={bodyColor}
-        cardBorder={cardBorder}
-        contentSize={contentSize}
-      />
+      <EducationSectionHeader labelColor={labelColor} cardBorder={cardBorder} contentSize={contentSize} />
       <ul className="mt-10 grid gap-5 sm:grid-cols-2 sm:gap-6 lg:gap-7">
         {items.map((entry, index) => {
           const year = entry.schoolYear?.trim() || '';
@@ -383,12 +324,12 @@ function EducationPanels({
           return (
             <li
               key={key}
-              className="group flex flex-col rounded-2xl px-6 py-7 transition-[transform] duration-300 ease-out hover:-translate-y-0.5 sm:px-7 sm:py-8"
+              className="flex flex-col rounded-2xl px-6 py-7 sm:px-7 sm:py-8"
               style={{ backgroundColor: panelBg }}
             >
               {year ? (
                 <p
-                  className={`tabular-nums tracking-tight opacity-65 ${metaClass}`}
+                  className={`tabular-nums tracking-tight ${metaClass}`}
                   style={{ color: bodyColor }}
                 >
                   {formatYearInline(year)}
@@ -406,7 +347,7 @@ function EducationPanels({
                 ) : null}
                 {institution ? (
                   <p
-                    className={`leading-relaxed opacity-80 ${bodyClass}`}
+                    className={`leading-relaxed ${bodyClass}`}
                     style={{ color: bodyColor }}
                   >
                     {institution}
@@ -414,11 +355,7 @@ function EducationPanels({
                 ) : null}
               </div>
 
-              <div
-                className="mt-6 h-px w-10 transition-[width] duration-500 ease-out group-hover:w-20"
-                style={{ backgroundColor: accent }}
-                aria-hidden
-              />
+              <div className="mt-6 h-px w-10" style={{ backgroundColor: accent }} aria-hidden />
             </li>
           );
         })}
@@ -498,16 +435,6 @@ function EducationCascadeItem({
   const entryTitleClass = infoContentEducationTitleSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
-  const indexNumClass =
-    contentSize === 'small'
-      ? 'text-4xl sm:text-5xl'
-      : contentSize === 'large'
-        ? 'text-6xl sm:text-7xl'
-        : contentSize === 'xlarge'
-          ? 'text-7xl sm:text-8xl'
-          : contentSize === 'xxlarge'
-            ? 'text-8xl sm:text-9xl'
-            : 'text-5xl sm:text-6xl';
 
   return (
     <li
@@ -518,17 +445,8 @@ function EducationCascadeItem({
       style={cascadeStyle}
     >
       <div className="flex shrink-0 flex-col gap-3" style={{ color: bodyColor }}>
-        <span
-          className={`font-bold leading-none tracking-tighter opacity-25 ${indexNumClass}`}
-          style={{ color: titleColor }}
-        >
-          {String(index + 1).padStart(2, '0')}
-        </span>
         {year ? (
-          <span
-            className={`tabular-nums tracking-tight opacity-80 ${metaClass}`}
-            style={{ color: bodyColor }}
-          >
+          <span className={`tabular-nums tracking-tight ${metaClass}`} style={{ color: bodyColor }}>
             {formatYearInline(year)}
           </span>
         ) : null}
@@ -564,6 +482,7 @@ function EducationCascadeItem({
 /** 4 — Asymmetric cascade (Awwwards). */
 function EducationCascade({
   items,
+  labelColor,
   titleColor,
   bodyColor,
   accent,
@@ -647,13 +566,7 @@ function EducationCascade({
       ref={scrollShiftEnabled ? sectionRef : undefined}
       className={sectionClassName}
     >
-      <EducationSectionHeader
-        count={items.length}
-        titleColor={titleColor}
-        bodyColor={bodyColor}
-        cardBorder={cardBorder}
-        contentSize={contentSize}
-      />
+      <EducationSectionHeader labelColor={labelColor} cardBorder={cardBorder} contentSize={contentSize} />
       <ul className="mt-10">
         {items.map((entry, index) => (
           <EducationCascadeItem
@@ -679,6 +592,7 @@ function EducationCascade({
 export function TraitEducationBlock({
   items,
   style,
+  labelColor,
   titleColor,
   bodyColor,
   accent,
@@ -696,7 +610,7 @@ export function TraitEducationBlock({
 } & TraitEducationColors) {
   if (items.length === 0) return null;
 
-  const colors = { titleColor, bodyColor, accent, cardBg, cardBorder };
+  const colors = { labelColor, titleColor, bodyColor, accent, cardBg, cardBorder };
   const layoutProps = { contentSize, sectionClassName, ...colors };
 
   switch (style) {

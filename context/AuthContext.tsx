@@ -2,15 +2,16 @@
 
 import React, { createContext, useCallback, useContext, useEffect, useState } from 'react';
 import axios from 'axios';
-import { LoginData, Role, SignupData, User, AuthResponse } from '@/types/auth';
+import { LoginData, Role, SignupData, SignupResponse, User, AuthResponse } from '@/types/auth';
 import {
   loginApi,
   logoutApi,
   signupApi,
+  verifyEmailApi,
   clearRefreshCookie,
-  setRefreshCookie,
 } from '@/lib/auth';
 import { setAccessToken } from '@/lib/api';
+import { setSessionHint } from '@/lib/accessToken';
 import { sendPresenceOffline } from '@/lib/presence-api';
 import { refreshSession, beginLogout, endLogout } from '@/lib/sessionRefresh';
 
@@ -29,7 +30,10 @@ interface AuthContextType {
   sessionStatus: SessionStatus;
   isAuthenticated: boolean;
   login: (data: LoginData) => Promise<void>;
-  signup: (data: SignupData) => Promise<void>;
+  /** Creates the account and e-mails a code — no session yet (see `verifyEmail`). */
+  signup: (data: SignupData) => Promise<SignupResponse>;
+  /** Confirms the e-mailed code and opens the session. */
+  verifyEmail: (email: string, code: string) => Promise<void>;
   applyAuthResponse: (authResponse: AuthResponse) => Promise<void>;
   updateUser: (patch: Partial<User>) => void;
   restoreSession: () => Promise<boolean>;
@@ -39,10 +43,31 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+let sessionHintSeeded = false;
+
+/** Seeds the hint from the server value once per page load; later changes come from login / logout. */
+function setSessionHintOnce(value: boolean) {
+  if (typeof window === 'undefined' || sessionHintSeeded) return;
+  sessionHintSeeded = true;
+  setSessionHint(value);
+}
+
+export function AuthProvider({
+  children,
+  initialHasSession = true,
+}: {
+  children: React.ReactNode;
+  /** Server-read presence of the refresh_token cookie. False: a guest — no refresh round-trip. */
+  initialHasSession?: boolean;
+}) {
+  /* Set during render so api.ts sees it before any child effect fires a request. */
+  setSessionHintOnce(initialHasSession);
   const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-  const [sessionStatus, setSessionStatus] = useState<SessionStatus>('loading');
+  /* A guest (no session cookie) is known to be signed out from the first render: no loading state. */
+  const [isLoading, setIsLoading] = useState(initialHasSession);
+  const [sessionStatus, setSessionStatus] = useState<SessionStatus>(
+    initialHasSession ? 'loading' : 'unauthenticated',
+  );
 
   const restoreSession = useCallback(async (): Promise<boolean> => {
     try {
@@ -66,6 +91,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         // (cookie still present) while the client bounces /dashboard -> /login
         // (session invalid) → infinite redirect loop on server restart.
         setAccessToken(null);
+        setSessionHint(false);
         setUser(null);
         try {
           await clearRefreshCookie();
@@ -86,11 +112,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       return;
     }
 
+    // No session cookie: nothing to restore. Skips POST /api/auth/refresh (always a 401) and the
+    // cookie clean-up that followed it, on every page a guest opens.
+    if (!initialHasSession) return;
+
     void (async () => {
       await restoreSession();
       setIsLoading(false);
     })();
-  }, [restoreSession]);
+  }, [restoreSession, initialHasSession]);
 
   useEffect(() => {
     if (sessionStatus !== 'authenticated') return;
@@ -105,13 +135,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [sessionStatus]);
 
   const applyAuthResponse = useCallback(async (authResponse: AuthResponse) => {
+    // The API set the HttpOnly refresh_token cookie on this same response.
+    setSessionHint(true);
     setAccessToken(authResponse.accessToken);
     setUser(authResponse.user);
     setSessionStatus('authenticated');
     setIsLoading(false);
-    if (authResponse.refreshToken) {
-      await setRefreshCookie(authResponse.refreshToken);
-    }
   }, []);
 
   const login = useCallback(async (data: LoginData) => {
@@ -119,8 +148,10 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     await applyAuthResponse(authResponse);
   }, [applyAuthResponse]);
 
-  const signup = useCallback(async (data: SignupData) => {
-    const authResponse = await signupApi(data);
+  const signup = useCallback((data: SignupData) => signupApi(data), []);
+
+  const verifyEmail = useCallback(async (email: string, code: string) => {
+    const authResponse = await verifyEmailApi(email, code);
     await applyAuthResponse(authResponse);
   }, [applyAuthResponse]);
 
@@ -149,6 +180,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Still clear in-memory session
     }
     setAccessToken(null);
+    setSessionHint(false);
     setUser(null);
     setSessionStatus('unauthenticated');
     endLogout();
@@ -168,6 +200,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         isAuthenticated: user !== null,
         login,
         signup,
+        verifyEmail,
         applyAuthResponse,
         updateUser,
         restoreSession,
@@ -186,7 +219,8 @@ const SSR_AUTH_FALLBACK: AuthContextType = {
   sessionStatus: 'loading',
   isAuthenticated: false,
   login: async () => undefined,
-  signup: async () => undefined,
+  signup: () => Promise.reject(new Error('Sign-up needs the client AuthProvider.')),
+  verifyEmail: async () => undefined,
   applyAuthResponse: async () => undefined,
   updateUser: () => undefined,
   restoreSession: async () => false,

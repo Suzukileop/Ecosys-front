@@ -40,8 +40,22 @@ export async function getAccountSecurity(): Promise<AccountSecurity> {
   return res.data;
 }
 
-export async function changePassword(body: { currentPassword?: string; newPassword: string }): Promise<void> {
+/**
+ * Changes the password (`currentPassword`), or — for an account without one, made with Google —
+ * creates it with the e-mailed `verificationCode` from `sendPasswordSetupCode`.
+ */
+export async function changePassword(body: {
+  currentPassword?: string;
+  verificationCode?: string;
+  newPassword: string;
+}): Promise<void> {
   await api.post('/api/user/account/password', body);
+}
+
+/** E-mails the code an account without a password needs to create one. Returns the resend cooldown (s). */
+export async function sendPasswordSetupCode(locale?: string): Promise<number> {
+  const res = await api.post<{ resendCooldownSeconds: number }>('/api/user/account/password/code', { locale });
+  return res.data.resendCooldownSeconds;
 }
 
 export async function revokeAllSessions(): Promise<number> {

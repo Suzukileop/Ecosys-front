@@ -202,7 +202,7 @@ function CollectionTile({
 }) {
   const t = useT();
   return (
-    <button type="button" onClick={onOpen} className="group/tile block w-full text-start focus-visible:outline-none">
+    <button type="button" onClick={onOpen} className="group/tile block w-full text-start focus-visible:outline-hidden">
       <span className="relative block overflow-hidden bg-[color:var(--gn-surface)] group-focus-visible/tile:ring-2 group-focus-visible/tile:ring-[color:var(--gn-ring)] group-focus-visible/tile:ring-offset-2">
         <SavedCollectionCoverArt
           covers={covers}
@@ -330,8 +330,8 @@ export function SavedCollectionsStrip({
           </li>
         ))}
         <li className="shrink-0">
-          <button type="button" onClick={() => setCreating(true)} className="group/tile block w-28 text-left focus-visible:outline-none">
-            <span className="flex aspect-square w-full items-center justify-center border border-dashed border-[color:var(--gn-ink3)] text-[color:var(--gn-ink2)] transition-colors group-hover/tile:border-[color:var(--gn-ink)] group-hover/tile:text-[color:var(--gn-ink)] group-focus-visible/tile:outline group-focus-visible/tile:outline-2 group-focus-visible/tile:outline-offset-2 group-focus-visible/tile:outline-[color:var(--gn-ring)]">
+          <button type="button" onClick={() => setCreating(true)} className="group/tile block w-28 text-left focus-visible:outline-hidden">
+            <span className="flex aspect-square w-full items-center justify-center border border-dashed border-[color:var(--gn-ink3)] text-[color:var(--gn-ink2)] transition-colors group-hover/tile:border-[color:var(--gn-ink)] group-hover/tile:text-[color:var(--gn-ink)] group-focus-visible/tile:outline-solid group-focus-visible/tile:outline-2 group-focus-visible/tile:outline-offset-2 group-focus-visible/tile:outline-[color:var(--gn-ring)]">
               <PlusGlyph className="h-6 w-6" />
             </span>
             <span className="mt-2 block truncate text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)]">{t('New collection')}</span>
@@ -373,12 +373,12 @@ function StripTile({
 }) {
   const t = useT();
   return (
-    <button type="button" onClick={onOpen} aria-pressed={active} className="group/tile block w-28 text-start focus-visible:outline-none">
+    <button type="button" onClick={onOpen} aria-pressed={active} className="group/tile block w-28 text-start focus-visible:outline-hidden">
       <span
         className={`relative block overflow-hidden bg-[color:var(--gn-surface)] outline-offset-2 ${
           active
-            ? 'outline outline-2 outline-[color:var(--gn-ink)]'
-            : 'group-focus-visible/tile:outline group-focus-visible/tile:outline-2 group-focus-visible/tile:outline-[color:var(--gn-ring)]'
+            ? 'outline-solid outline-2 outline-[color:var(--gn-ink)]'
+            : 'group-focus-visible/tile:outline-solid group-focus-visible/tile:outline-2 group-focus-visible/tile:outline-[color:var(--gn-ring)]'
         }`}
       >
         <SavedCollectionCoverArt
@@ -812,7 +812,7 @@ function CollectionNameDialog({
           autoComplete="off"
           aria-invalid={Boolean(error)}
           aria-describedby="collection-name-help"
-          className="mt-2 h-11 w-full rounded-xl bg-[#EFF3F4] px-4 text-[15px] text-[#0F1419] outline-none placeholder:text-[#536471] focus:ring-2 focus:ring-[#0F1419] aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-[#F4212E] dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:ring-[#E7E9EA]"
+          className="mt-2 h-11 w-full rounded-xl bg-[#EFF3F4] px-4 text-[15px] text-[#0F1419] outline-hidden placeholder:text-[#536471] focus:ring-2 focus:ring-[#0F1419] aria-[invalid=true]:ring-2 aria-[invalid=true]:ring-[#F4212E] dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:ring-[#E7E9EA]"
         />
         <div id="collection-name-help" className="mt-1.5 flex justify-between gap-4 text-[12px] leading-4">
           <span className="text-[#F4212E]" role={error ? 'alert' : undefined}>

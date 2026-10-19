@@ -63,8 +63,19 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
 
   useEffect(() => {
     void load();
-    const id = window.setInterval(() => void load(), POLL_MS);
-    return () => window.clearInterval(id);
+    /* No polling from a background tab (each poll is an authenticated round-trip); catch up as soon
+       as the tab is visible again. */
+    const id = window.setInterval(() => {
+      if (document.visibilityState === 'visible') void load();
+    }, POLL_MS);
+    const onVisible = () => {
+      if (document.visibilityState === 'visible') void load();
+    };
+    document.addEventListener('visibilitychange', onVisible);
+    return () => {
+      window.clearInterval(id);
+      document.removeEventListener('visibilitychange', onVisible);
+    };
   }, [load]);
 
   useEffect(() => {
@@ -171,7 +182,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
         /* `compact` is the bar's form: a bare 36px disc that brightens and lifts, with no plate at
            rest or on hover — it stands in a row of identical controls and a background would make
            it the only one that looked pressed. */
-        className={`relative transition-[color,transform] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-none focus-visible:ring-1 focus-visible:ring-neutral-400 ${
+        className={`relative transition-[color,transform,translate,scale,rotate] duration-[420ms] ease-[cubic-bezier(0.16,1,0.3,1)] focus:outline-hidden focus-visible:ring-1 focus-visible:ring-neutral-400 ${
           compact
             ? 'flex h-9 w-9 items-center justify-center rounded-full hover:scale-105 text-[#222222] dark:text-neutral-300'
             : 'rounded-full p-2 text-[#536471] hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] dark:text-[#8B98A5] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]'
@@ -224,7 +235,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
                     type="button"
                     onClick={() => void markAllRead()}
                     data-pf-no-color-transition
-                    className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                    className="inline-flex h-9 items-center gap-1.5 rounded-full px-3 text-[13px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                   >
                     <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
                       <path d="m5 12.5 4.5 4.5L19 7.5" />
@@ -269,7 +280,7 @@ export function NotificationBell({ compact = false }: { compact?: boolean }) {
           <Link
             href="/notifications"
             data-pf-no-color-transition
-            className="group flex min-h-12 shrink-0 items-center justify-center gap-1.5 bg-[color:var(--gn-surface)] px-5 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]"
+            className="group flex min-h-12 shrink-0 items-center justify-center gap-1.5 bg-[color:var(--gn-surface)] px-5 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]"
             onClick={openAllPage}
           >
             {t('View all notifications')}

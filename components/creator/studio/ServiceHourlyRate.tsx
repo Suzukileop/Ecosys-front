@@ -15,7 +15,7 @@ const INK2 = 'text-[#536471] dark:text-[#71767B]';
 
 /* The page's one button shape: pills (as the directory's Discuss / Your profile). */
 const primaryButtonClass =
-  'inline-flex h-9 items-center justify-center rounded-full bg-[#0F1419] px-4 text-[14px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
+  'inline-flex h-9 items-center justify-center rounded-full bg-[#0F1419] px-4 text-[14px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const secondaryButtonClass = `inline-flex h-9 items-center justify-center rounded-full px-4 text-[14px] font-bold shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:cursor-not-allowed disabled:opacity-40 dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] ${INK}`;
 
 function PencilIcon({ className }: { className?: string }) {
@@ -125,7 +125,7 @@ export function ServiceHourlyRate({
               value={amount}
               onChange={(event) => setAmount(event.target.value)}
               placeholder="25"
-              className={`h-full w-24 rounded-l-full bg-transparent pl-4 pr-2 text-[15px] tabular-nums outline-none placeholder:text-[#536471] dark:placeholder:text-[#71767B] ${INK}`}
+              className={`h-full w-24 rounded-l-full bg-transparent pl-4 pr-2 text-[15px] tabular-nums outline-hidden placeholder:text-[#536471] dark:placeholder:text-[#71767B] ${INK}`}
             />
             <span aria-hidden className="h-5 w-px bg-[#CFD9DE] dark:bg-[#3E4144]" />
             <CurrencyPicker value={currency} options={currencyOptions} onChange={setCurrency} />
@@ -165,7 +165,7 @@ export function ServiceHourlyRate({
           <button
             type="button"
             onClick={startEdit}
-            className={`inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-none ${INK}`}
+            className={`inline-flex items-center gap-1 font-semibold underline-offset-4 hover:underline focus-visible:underline focus-visible:outline-hidden ${INK}`}
           >
             <PencilIcon className="h-3.5 w-3.5" />
             {current ? t('Edit') : t('Set your rate')}

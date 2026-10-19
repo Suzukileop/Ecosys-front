@@ -1,7 +1,10 @@
 'use client';
 
-import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
-import { resolveCreatorToolTechIconUrl } from '@/components/creator/studio/creator-tool-tech-icons';
+import { useCreatorToolSimpleIcons } from '@/components/creator/studio/creator-tool-simple-icons-lazy';
+import {
+  creatorToolTechIconIsDark,
+  resolveCreatorToolTechIconUrl,
+} from '@/components/creator/studio/creator-tool-tech-icons';
 import { MediaImage } from '@/components/ui/MediaImage';
 
 /**
@@ -67,6 +70,9 @@ export function CreatorToolLogo({
   grayscale = false,
 }: CreatorToolLogoProps) {
   const uploadedUrl = iconUrl?.trim() || null;
+  const techUrl = !uploadedUrl && !disableAutoIcon ? resolveCreatorToolTechIconUrl(label) : null;
+  /* Third source, loaded on demand: only when there is neither an upload nor a bundled PNG. */
+  const simpleIcons = useCreatorToolSimpleIcons(!uploadedUrl && !disableAutoIcon && !techUrl);
   const shell = `pf-tool-logo flex shrink-0 items-center justify-center overflow-hidden rounded-md bg-transparent ${className}`;
   const dark = isDarkSurface(bgColor, colorMode);
   const markFilter = grayscale ? { filter: 'grayscale(1)' } : undefined;
@@ -80,10 +86,15 @@ export function CreatorToolLogo({
   }
 
   if (!disableAutoIcon) {
-    const techUrl = resolveCreatorToolTechIconUrl(label);
     if (techUrl) {
+      // Black marks (GitHub, Next.js, Vercel…) flip to light on dark surfaces; hue-rotate keeps colored accents.
+      const lift = dark && creatorToolTechIconIsDark(techUrl) ? 'invert(1) hue-rotate(180deg)' : '';
+      const techFilter = [lift, grayscale ? 'grayscale(1)' : ''].filter(Boolean).join(' ');
       return (
-        <span className={shell} style={{ width: size, height: size, ...markFilter }}>
+        <span
+          className={shell}
+          style={{ width: size, height: size, ...(techFilter ? { filter: techFilter } : undefined) }}
+        >
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
             src={techUrl}
@@ -98,7 +109,7 @@ export function CreatorToolLogo({
       );
     }
 
-    const auto = resolveCreatorToolSimpleIcon(label);
+    const auto = simpleIcons?.resolveCreatorToolSimpleIcon(label) ?? null;
     if (auto) {
       const color = contrastSafeBrand(brandColor?.trim() || auto.hex, dark);
       const Icon = auto.Icon;

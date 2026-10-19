@@ -16,7 +16,7 @@ import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import { useToolLevelBarColor } from '@/components/creator/studio/creator-tool-logo-color';
 import {
-  resolveSkillDescription,
+  resolveSkillCustomDescription,
   resolveSkillIconUrl,
   resolveSkillLevel,
   resolveSkillLevelLabel,
@@ -25,7 +25,6 @@ import {
   compareSkillsByCategoryThenName,
   compareSkillsByLevelThenName,
   collectSkillCategories,
-  resolveSkillUseCases,
   type PortfolioSkillRef,
 } from '@/components/portfolio/skill-usage-descriptions';
 import {
@@ -56,6 +55,8 @@ import {
   toolsDesignSupportsCategoryFilter,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import { toolDisplayName } from '@/components/portfolio/stack-designs/tool-display-name';
+import { readableAccent, readableMix } from '@/components/portfolio/stack-designs/readable-ink';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The section renders one Tools design, so each design is its own chunk. */
@@ -233,8 +234,8 @@ function ToolsLevelCategoryFilterBar({
 
   return (
     <div
-      className="pf-tools-filter mb-6 flex flex-wrap items-baseline gap-x-5 gap-y-2 sm:mb-7"
-      role="tablist"
+      className="pf-tools-filter mb-6 flex flex-wrap items-baseline gap-x-5 gap-y-3 sm:mb-7"
+      role="group"
       aria-label={t('Filter by category')}
       style={
         {
@@ -246,8 +247,7 @@ function ToolsLevelCategoryFilterBar({
     >
       <button
         type="button"
-        role="tab"
-        aria-selected={activeCategory === 'all'}
+        aria-pressed={activeCategory === 'all'}
         data-on={activeCategory === 'all' ? 'true' : 'false'}
         onClick={() => onCategoryChange('all')}
         className="pf-tools-filter-chip"
@@ -260,8 +260,7 @@ function ToolsLevelCategoryFilterBar({
           <button
             key={category}
             type="button"
-            role="tab"
-            aria-selected={selected}
+            aria-pressed={selected}
             data-on={selected ? 'true' : 'false'}
             onClick={() => onCategoryChange(category)}
             className="pf-tools-filter-chip"
@@ -281,18 +280,28 @@ export function EditorialToolsGallery({ tools, presentation }: ToolsGalleryProps
     () => (supportsCategoryFilter ? collectSkillCategories(tools) : []),
     [supportsCategoryFilter, tools]
   );
-  const [activeCategory, setActiveCategory] = useState<string>('all');
-
-  useEffect(() => {
-    if (!supportsCategoryFilter || activeCategory === 'all') return;
-    const stillExists = categories.some(
-      (category) => category.toLocaleLowerCase() === activeCategory.toLocaleLowerCase()
-    );
-    if (!stillExists) setActiveCategory('all');
-  }, [activeCategory, categories, supportsCategoryFilter]);
+  const [selectedCategory, setActiveCategory] = useState<string>('all');
+  // A category that no longer exists (tools edited in the studio) falls back to "All".
+  const activeCategory =
+    selectedCategory !== 'all' &&
+    !categories.some(
+      (category) => category.toLocaleLowerCase() === selectedCategory.toLocaleLowerCase()
+    )
+      ? 'all'
+      : selectedCategory;
 
   const displayTools = useMemo(() => {
     if (!supportsCategoryFilter) return tools;
+    // These two designs never print the category: sorting by it with the filter hidden
+    // just looked shuffled. Keep the creator's order until the filter is on screen.
+    const categoryVisible =
+      resolveToolsLevelIndicatorShowCategoryFilter(presentation) && categories.length > 0;
+    if (
+      !categoryVisible &&
+      (presentation.design === 'level-stat-bars' || presentation.design === 'level-progress-rows')
+    ) {
+      return tools;
+    }
     const sorted = [...tools].sort(
       isLevelDesign && resolveToolsLevelTableGroupBy(presentation) === 'level'
         ? compareSkillsByLevelThenName
@@ -377,7 +386,6 @@ function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps
   const logoColorMode = toolsLogoColorMode(presentation);
   const framePx = showIconBg ? tilePx : logoPx;
   const showDescription = presentation.showDescription !== false;
-  const showUseCases = presentation.showUseCases !== false;
   const showLevel = resolveToolsShowLevel(presentation);
   const showName = presentation.showLabels !== false;
   const levelStyle = presentation.brandDirectoryLevelStyle ?? 'percentage';
@@ -408,8 +416,8 @@ function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps
     >
       {tools.map((tool) => {
         const name = resolveSkillName(tool);
-        const description = resolveSkillDescription(tool);
-        const useCases = resolveSkillUseCases(tool);
+        // Creator's own copy only — the generic fallback sentence repeated down a ledger.
+        const description = resolveSkillCustomDescription(tool);
         const levelRaw = resolveSkillLevel(tool);
         const key = typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`;
         const hasLevel = showLevel && Boolean(levelRaw);
@@ -451,7 +459,7 @@ function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps
                       className="pf-tools-directory-name"
                       style={toolsLabelColorStyle(presentation.labelColor)}
                     >
-                      {name}
+                      {toolDisplayName(name)}
                     </h3>
                   ) : null}
                   {hasLevel ? (
@@ -475,22 +483,6 @@ function EditorialToolsBrandDirectory({ tools, presentation }: ToolsGalleryProps
                   </p>
                 ) : null}
 
-                {showUseCases && useCases.length > 0 ? (
-                  <ul className="pf-tools-directory-chips flex list-none flex-wrap p-0">
-                    {useCases.map((useCase) => (
-                      <li
-                        key={useCase}
-                        className="pf-tools-directory-chip"
-                        style={{
-                          backgroundColor: presentation.chipBackgroundColor,
-                          color: presentation.chipTextColor,
-                        }}
-                      >
-                        {useCase}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
               </div>
 
               {hasLevel ? (
@@ -589,7 +581,6 @@ function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
   const logoColorMode = toolsLogoColorMode(presentation);
   const framePx = showIconBg ? tilePx : logoPx;
   const showDescription = presentation.showDescription !== false;
-  const showUseCases = presentation.showUseCases !== false;
   const showLevel = resolveToolsShowLevel(presentation);
   const showName = presentation.showLabels !== false;
   const gridMode = presentation.brandFloatGridMode ?? 'fluid';
@@ -597,13 +588,29 @@ function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
   const gridClass = isFluid
     ? 'grid w-full'
     : `grid w-full ${toolsBrandFloatFixedGridClass(presentation.brandFloatColumnsPerRow)}`;
+  // The min tile width folds to half the row on phones, so 375px shows two tiles
+  // instead of one 260px-tall tile per screen. 50% - 0.75rem leaves room for any gap preset.
   const gridStyle = isFluid
     ? {
-        gridTemplateColumns: `repeat(auto-fill, minmax(${toolsBrandFloatMinTilePx(presentation.brandFloatTileDensity)}px, 1fr))`,
+        gridTemplateColumns: `repeat(auto-fill, minmax(min(${toolsBrandFloatMinTilePx(presentation.brandFloatTileDensity)}px, calc(50% - 0.75rem)), 1fr))`,
       }
     : undefined;
   const border = presentation.cardBorderColor;
   const framed = (presentation.brandFloatCardStyle ?? 'framed') === 'framed';
+  const levelSurface = framed
+    ? presentation.cardBackgroundColor
+    : toolsLogoContrastBackground(presentation);
+  // Accent colours small caps here, so it must clear text contrast, not just 3:1 —
+  // a too-light accent is deepened in its own hue rather than swapped for the ink.
+  const levelInk = readableAccent(
+    presentation.levelAccentColor,
+    presentation.levelAccentColor,
+    levelSurface,
+    4.5
+  );
+  // Same top reserve on every tile when any shows a level: the badge sits in the
+  // corner, so logos share one line whether or not their tool has a level.
+  const reserveLevelRow = showLevel && tools.some((tool) => Boolean(resolveSkillLevelLabel(tool)));
 
   useToolsGalleryReveal(listRef, '.pf-tools-float-cell', [
     tools,
@@ -624,15 +631,17 @@ function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
     >
       {tools.map((tool) => {
         const name = resolveSkillName(tool);
-        const description = resolveSkillDescription(tool);
-        const useCases = resolveSkillUseCases(tool);
+        // Creator's own copy only — never the generic fallback sentence.
+        const description = resolveSkillCustomDescription(tool);
         const level = resolveSkillLevelLabel(tool);
         const key = typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`;
 
         return (
           <li key={key} className="pf-tools-float-cell relative z-0 min-w-0 hover:z-10 focus-within:z-10">
             <article
-              className={`pf-tools-float-card group relative flex h-full flex-col items-center overflow-visible px-4 pb-5 pt-6 sm:px-5 sm:pb-6 sm:pt-7 ${
+              className={`pf-tools-float-card group relative flex h-full flex-col items-center overflow-visible px-4 pb-5 sm:px-5 sm:pb-6 ${
+                reserveLevelRow ? 'pt-10 sm:pt-11' : 'pt-6 sm:pt-7'
+              } ${
                 framed ? 'pf-tools-float-card--framed' : 'pf-tools-float-card--open'
               }`}
               data-pf-no-color-transition=""
@@ -645,14 +654,12 @@ function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
               }
             >
               {showLevel && level ? (
-                <div className="relative z-[1] mb-2.5 flex w-full justify-end sm:mb-3">
-                  <span
-                    className="pf-tools-float-level"
-                    style={{ color: presentation.levelAccentColor }}
-                  >
-                    {level}
-                  </span>
-                </div>
+                <span
+                  className="pf-tools-float-level absolute right-3.5 top-3.5 z-[1] sm:right-4 sm:top-4"
+                  style={{ color: levelInk }}
+                >
+                  {level}
+                </span>
               ) : null}
 
               <div
@@ -681,7 +688,7 @@ function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
                     className="pf-tools-float-name"
                     style={toolsLabelColorStyle(presentation.labelColor)}
                   >
-                    {name}
+                    {toolDisplayName(name)}
                   </h3>
                 ) : null}
 
@@ -695,22 +702,6 @@ function EditorialToolsBrandFloat({ tools, presentation }: ToolsGalleryProps) {
                   />
                 ) : null}
 
-                {showUseCases && useCases.length > 0 ? (
-                  <ul className="pf-tools-float-chips mt-3 flex list-none flex-wrap justify-center p-0">
-                    {useCases.slice(0, 3).map((useCase) => (
-                      <li
-                        key={useCase}
-                        className="pf-tools-float-chip"
-                        style={{
-                          backgroundColor: presentation.chipBackgroundColor,
-                          color: presentation.chipTextColor,
-                        }}
-                      >
-                        {useCase}
-                      </li>
-                    ))}
-                  </ul>
-                ) : null}
               </div>
             </article>
           </li>
@@ -757,10 +748,19 @@ function ToolLevelStatBarCardItem({
     levelFallbackColor,
     presentation.cardBackgroundColor
   );
-  const barColor = toolsLevelIndicatorFillColor(presentation, logoBarColor);
-  const logoBrandColor = !toolsLogosGrayscaleEnabled(presentation) && fromLogo ? logoBarColor : undefined;
   const framed = resolveToolsLevelIndicatorCardFramed(presentation, 'level-stat-bars');
   const cardSurface = resolveToolsCardSurfaceColor(presentation);
+  // Brand tints are accepted from 1.4:1 upstream (JavaScript yellow ≈ 1.3:1 on white):
+  // the gauge is the point of this design, so deepen the same hue to 3:1 on the tile.
+  const barColor = readableMix(
+    toolsLevelIndicatorFillColor(presentation, logoBarColor),
+    100,
+    framed ? cardSurface : logoContrastBg,
+    3
+  );
+  const logoBrandColor = !toolsLogosGrayscaleEnabled(presentation) && fromLogo ? logoBarColor : undefined;
+  const levelLabel = resolveSkillLevelLabel(tool);
+  const levelInk = readableMix(presentation.labelColor, 62, framed ? cardSurface : logoContrastBg);
 
   return (
     <article
@@ -776,7 +776,7 @@ function ToolLevelStatBarCardItem({
       }
     >
       <div
-        className="mb-3 flex shrink-0 items-center justify-center rounded-sm"
+        className="mb-3 flex shrink-0 items-center justify-center rounded-xs"
         style={{
           width: framePx,
           height: framePx,
@@ -797,21 +797,30 @@ function ToolLevelStatBarCardItem({
 
       {showName ? (
         <span
-          className="pf-tools-stat-name mb-2.5 max-w-[8.5rem] text-center"
+          className="pf-tools-stat-name mb-3 max-w-[8.5rem] text-center"
           style={toolsLabelColorStyle(presentation.labelColor)}
         >
-          {name}
+          {toolDisplayName(name)}
         </span>
       ) : null}
 
-      {showLevel ? (
-        <ToolsLevelStatBar
-          level={level}
-          toolName={name}
-          fillColor={barColor}
-          trackColor={levelTrackColor}
-          className="mx-auto w-full"
-        />
+      {showLevel && level ? (
+        // The gauge alone (68×3px, no value) was the smallest thing on the tile:
+        // larger notches plus the level spelled out underneath.
+        <div className="flex w-full flex-col items-center gap-2">
+          <ToolsLevelStatBar
+            level={level}
+            toolName={name}
+            fillColor={barColor}
+            trackColor={levelTrackColor}
+            valueText={levelLabel}
+            notchClassName="h-1"
+            className="mx-auto w-20 max-w-none gap-[3px]"
+          />
+          <span aria-hidden="true" className="pf-tools-stat-level" style={{ color: levelInk }}>
+            {levelLabel}
+          </span>
+        </div>
       ) : null}
     </article>
   );

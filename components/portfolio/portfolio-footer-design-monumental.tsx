@@ -6,10 +6,7 @@ import { formatPhoneDisplay } from '@/lib/phone';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   resolveFooterCopyrightLabel,
   type PortfolioFooterPresentationSettings,
@@ -163,7 +160,7 @@ function MonumentalField({
   }, [elevated, focused, ink, muted]);
 
   const sharedClassName =
-    'w-full origin-left border-0 border-b border-[color:var(--pf-mon-hair)] bg-transparent pb-2.5 pt-6 text-base text-[color:var(--pf-mon-ink)] outline-none transition placeholder:text-transparent focus:outline-none focus:ring-0';
+    'w-full origin-left border-0 border-b border-[color:var(--pf-mon-hair)] bg-transparent pb-2.5 pt-6 text-base text-[color:var(--pf-mon-ink)] outline-hidden transition placeholder:text-transparent focus:outline-hidden focus:ring-0';
 
   return (
     <div className="relative">

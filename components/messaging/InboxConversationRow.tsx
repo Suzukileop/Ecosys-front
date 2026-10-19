@@ -175,7 +175,7 @@ export function InboxConversationRow({
         aria-selected={selected}
         onClick={() => onSelect(conversation.id)}
         title={conversation.otherUserName}
-        className={`relative flex w-full items-center gap-3 px-5 text-left lg:group-data-[folded=true]/inbox:justify-center lg:group-data-[folded=true]/inbox:px-0 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] lg:px-6 ${
+        className={`relative flex w-full items-center gap-3 px-5 text-left lg:group-data-[folded=true]/inbox:justify-center lg:group-data-[folded=true]/inbox:px-0 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] lg:px-6 ${
           compact ? 'py-2.5' : 'py-3'
         } ${
           selected

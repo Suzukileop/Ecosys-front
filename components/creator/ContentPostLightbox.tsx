@@ -719,7 +719,7 @@ export function ContentPostLightbox({
               toggleStage();
             }
           }}
-          className={`flex h-6 shrink-0 touch-none cursor-grab items-center justify-center outline-none active:cursor-grabbing lg:hidden ${
+          className={`flex h-6 shrink-0 touch-none cursor-grab items-center justify-center outline-hidden active:cursor-grabbing lg:hidden ${
             stageFull ? 'box-content bg-black pb-[env(safe-area-inset-bottom)]' : 'bg-white dark:bg-[#111111]'
           }`}
         >
@@ -909,7 +909,7 @@ export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThum
       <button
         type="button"
         onClick={onOpen}
-        className="group relative flex aspect-[3/4] w-full cursor-pointer flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white p-5 text-left outline-none transition-colors duration-300 hover:border-black/[0.16] focus-visible:ring-2 focus-visible:ring-black/15 dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.2] dark:focus-visible:ring-white/25 sm:p-6"
+        className="group relative flex aspect-[3/4] w-full cursor-pointer flex-col overflow-hidden rounded-lg border border-black/[0.06] bg-white p-5 text-left outline-hidden transition-colors duration-300 hover:border-black/[0.16] focus-visible:ring-2 focus-visible:ring-black/15 dark:border-white/[0.08] dark:bg-[#111111] dark:hover:border-white/[0.2] dark:focus-visible:ring-white/25 sm:p-6"
         aria-label={t('Open {title}', { title })}
       >
         {post.pinned ? (
@@ -949,7 +949,7 @@ export function ContentPostGalleryThumb({ post, onOpen }: ContentPostGalleryThum
     <button
       type="button"
       onClick={onOpen}
-      className="group relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg bg-neutral-100 text-left outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:bg-neutral-900 dark:focus-visible:ring-white/25"
+      className="group relative aspect-[3/4] w-full cursor-pointer overflow-hidden rounded-lg bg-neutral-100 text-left outline-hidden focus-visible:ring-2 focus-visible:ring-black/15 dark:bg-neutral-900 dark:focus-visible:ring-white/25"
       aria-label={t('Open {title}', { title })}
     >
       {mediaUrl && kind === 'video' ? (

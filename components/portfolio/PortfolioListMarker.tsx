@@ -241,7 +241,7 @@ export function PortfolioListMarker({
   if (style === 'dash') {
     return (
       <span
-        className={`mt-2.5 inline-block shrink-0 rounded-sm ${className}`.trim()}
+        className={`mt-2.5 inline-block shrink-0 rounded-xs ${className}`.trim()}
         style={{
           backgroundColor: color,
           width: Math.max(12, Math.round(px * 0.85)),

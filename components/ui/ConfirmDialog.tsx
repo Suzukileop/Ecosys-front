@@ -103,7 +103,7 @@ export function ConfirmDialog({
             type="button"
             disabled={busy}
             onClick={onConfirm}
-            className={`inline-flex h-10 items-center rounded-full px-5 text-[15px] font-bold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${confirmToneClass[tone]}`}
+            className={`inline-flex h-10 items-center rounded-full px-5 text-[15px] font-bold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-offset-2 dark:focus-visible:ring-offset-black ${confirmToneClass[tone]}`}
           >
             {busy ? t('Please wait…') : confirmLabel}
           </button>

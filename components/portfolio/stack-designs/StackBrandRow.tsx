@@ -20,6 +20,7 @@ import {
   type PortfolioToolsBrandGridColumnsPerRow,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import { toolDisplayName } from '@/components/portfolio/stack-designs/tool-display-name';
 
 type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
@@ -230,6 +231,7 @@ export function EditorialToolsBrandRow({ tools, presentation }: ToolsGalleryProp
     >
       {tools.map((tool) => {
         const name = resolveSkillName(tool);
+        const displayName = toolDisplayName(name);
         const key = toolRowKey(tool);
 
         return (
@@ -237,17 +239,13 @@ export function EditorialToolsBrandRow({ tools, presentation }: ToolsGalleryProp
             key={key}
             className={`pf-stack-brand-row-cell${useFrames ? ' pf-stack-brand-row-cell--frame' : ''}`}
             data-pf-no-color-transition=""
-            aria-label={showName ? undefined : name}
           >
             <div className={`pf-stack-brand-row-inner ${cellPad}`}>
               <div
                 className="pf-stack-brand-row-mark"
                 data-pf-no-color-transition=""
-                style={{
-                  width: framePx,
-                  height: framePx,
-                  backgroundColor: tileBg,
-                }}
+                // Size comes from --pf-stack-brand-row-logo so CSS can cap it on narrow screens.
+                style={{ backgroundColor: tileBg }}
               >
                 <span className="pf-stack-brand-row-logo" data-pf-no-color-transition="">
                   <CreatorToolLogo
@@ -263,9 +261,12 @@ export function EditorialToolsBrandRow({ tools, presentation }: ToolsGalleryProp
               </div>
               {showName ? (
                 <span className="pf-stack-brand-row-name" data-pf-no-color-transition="">
-                  {name}
+                  {displayName}
                 </span>
-              ) : null}
+              ) : (
+                // aria-label on a role-less <li> is skipped by most screen readers.
+                <span className="sr-only">{displayName}</span>
+              )}
             </div>
             {useDividers ? (
               <>

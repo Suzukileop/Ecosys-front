@@ -23,6 +23,11 @@ export function resolveSkillDescription(skill: PortfolioSkillRef): string {
   return getSkillUsageDescription(resolveSkillName(skill));
 }
 
+/** The creator's own description only — no generic fallback copy. */
+export function resolveSkillCustomDescription(skill: PortfolioSkillRef): string {
+  return typeof skill === 'string' ? '' : skill.description?.trim() ?? '';
+}
+
 const LEVEL_LABELS: Record<ProfileStrengthToolLevel, string> = {
   beginner: 'Beginner',
   intermediate: 'Intermediate',

@@ -61,8 +61,8 @@ import type { MarketplaceContentItem, MarketplaceCreatorPublicProfile } from '@/
  * Live design previews for the studio's design pickers: each picker card loads the creator's own
  * portfolio page (embed mode) in a small iframe with `?previewSection=<section>&previewDesign=<design>`.
  * That page renders only that section, in the requested design, with the studio's current
- * settings (sent with the regular `apply-settings` message) and placeholder profile data — so the
- * card shows the real design, at its real size and breakpoints, scaled down.
+ * settings (sent with the regular `apply-settings` message) and sample content. The creator's own
+ * portrait is preserved, so the card shows both the real design and the correct profile image.
  *
  * The preview page talks back with its own message types, which the main live preview's listener
  * ignores (they are not studio preview messages), so a card's iframe never stands in for it.
@@ -272,11 +272,14 @@ export const DESIGN_PREVIEW_PORTFOLIO_POSTS: MarketplaceContentItem[] = [
 export const DESIGN_PREVIEW_LOCATION_LABEL = 'Paris, France';
 
 export function withDesignPreviewProfile(profile: MarketplaceCreatorPublicProfile): MarketplaceCreatorPublicProfile {
+  const profileAvatarUrl = profile.avatarUrl?.trim() || '/landing/audience/freelancer-dev.jpg';
+
   return {
     ...profile,
     fullName: 'Alex Martin',
     bio: 'Independent designer and developer. I build clear, fast websites and brands for small studios.',
-    avatarUrl: '/landing/audience/freelancer-dev.jpg',
+    // Keep the creator recognizable in the picker; the stock portrait is only a no-photo fallback.
+    avatarUrl: profileAvatarUrl,
     contactEmail: 'hello@alexmartin.com',
     contactEmails: [{ id: 'preview-email', sortOrder: 0, value: 'hello@alexmartin.com' }],
     phone: '+33 6 12 34 56 78',

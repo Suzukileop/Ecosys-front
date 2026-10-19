@@ -3,10 +3,7 @@
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, type CSSProperties, type MouseEvent, type RefObject } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   portfolioEditorialGutterX,
   DEFAULT_CONTENT_GUTTER,

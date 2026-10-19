@@ -12,6 +12,7 @@ import {
   DEFAULT_PROJECTS_BOARD_SETTINGS,
   DEFAULT_WORK_PRESENTATION,
 } from '@/components/portfolio/portfolio-work-settings';
+import { sectionFillMode } from '@/components/portfolio/portfolio-section-color-mode';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const BOARD_EASE = 'cubic-bezier(0.22, 1, 0.36, 1)';
@@ -90,12 +91,32 @@ function useBoardInView(
   return { entered, instant };
 }
 
-/** Minimalist bottom-of-card CTA: uppercase text + a 1px underline that grows in from
- * the left on hover, instead of the old boxed button floating on the thumbnail. */
-function CaseStudyLink({ href, label }: { href: string; label: string }) {
+/** Minimalist bottom-of-card CTA: uppercase text + a 1px underline (creator's main color)
+ * that grows in from the left on hover. Its ::after covers the whole card, so the card is
+ * one target (the image zoom promises that) while the link stays the only focus stop.
+ * Colors come from the card palette: the old fixed neutral-400 → white read ~2.3:1 on a
+ * light card and vanished on hover. */
+function CaseStudyLink({
+  href,
+  label,
+  ink,
+  hoverInk,
+  accent,
+}: {
+  href: string;
+  label: string;
+  ink: string;
+  hoverInk: string;
+  accent: string;
+}) {
   const external = /^https?:\/\//i.test(href);
   const className =
-    'group/cta inline-flex items-center gap-1.5 text-[0.68rem] font-medium uppercase tracking-[0.2em] text-neutral-400 transition-colors duration-300 hover:text-white';
+    "group/cta inline-flex items-center gap-1.5 self-start rounded-sm text-[0.6875rem] font-semibold uppercase tracking-[0.2em] text-[var(--board-cta-ink)] transition-colors duration-300 after:absolute after:inset-0 after:rounded-xl after:content-[''] hover:text-[var(--board-cta-hover)] focus-visible:text-[var(--board-cta-hover)] focus-visible:outline-none";
+  const style = {
+    '--board-cta-ink': ink,
+    '--board-cta-hover': hoverInk,
+    '--board-cta-accent': accent,
+  } as CSSProperties;
 
   const content = (
     <>
@@ -103,7 +124,7 @@ function CaseStudyLink({ href, label }: { href: string; label: string }) {
         {label}
         <span
           aria-hidden
-          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-white transition-transform duration-500 ease-out group-hover/cta:scale-x-100"
+          className="absolute inset-x-0 bottom-0 h-px origin-left scale-x-0 bg-[var(--board-cta-accent)] transition-transform duration-500 ease-out group-hover/board-card:scale-x-100 group-focus-visible/cta:scale-x-100"
         />
       </span>
       <span aria-hidden className="translate-y-[-1px]">
@@ -119,6 +140,7 @@ function CaseStudyLink({ href, label }: { href: string; label: string }) {
         target="_blank"
         rel="noopener noreferrer"
         className={className}
+        style={style}
         data-pf-no-color-transition=""
       >
         {content}
@@ -126,7 +148,7 @@ function CaseStudyLink({ href, label }: { href: string; label: string }) {
     );
   }
   return (
-    <Link href={href} className={className} data-pf-no-color-transition="">
+    <Link href={href} className={className} style={style} data-pf-no-color-transition="">
       {content}
     </Link>
   );
@@ -146,11 +168,14 @@ function ProjectsBoardThumbnail({
   alt,
   surface,
   size,
+  interactive,
 }: {
   url: string | null;
   alt: string;
   surface: string;
   size: PortfolioWorkProjectsBoardThumbnailSize;
+  /** Zoom on hover only when the card links somewhere: otherwise it promises a click. */
+  interactive: boolean;
 }) {
   return (
     <div
@@ -163,12 +188,16 @@ function ProjectsBoardThumbnail({
           alt={alt}
           fill
           sizes="(max-width: 1024px) 100vw, 50vw"
-          className="object-cover object-center transition-transform duration-700 ease-out will-change-transform group-hover/board-card:scale-[1.04]"
+          className={`object-cover object-center ${
+            interactive
+              ? 'transition-transform duration-700 ease-out will-change-transform group-hover/board-card:scale-[1.04]'
+              : ''
+          }`}
           data-pf-no-color-transition=""
         />
       ) : null}
       <div
-        className="pointer-events-none absolute inset-0 bg-gradient-to-t from-neutral-950/50 via-neutral-950/0 to-transparent transition-opacity duration-500 ease-out group-hover/board-card:from-neutral-950/60"
+        className="pf-projects-board-overlay pointer-events-none absolute inset-0 bg-[linear-gradient(to_top,rgba(15,15,15,var(--board-overlay-alpha)),rgba(15,15,15,0),transparent)] [--board-overlay-alpha:0.5] transition-opacity duration-500 ease-out group-hover/board-card:[--board-overlay-alpha:0.6]"
         aria-hidden
       />
     </div>
@@ -258,7 +287,7 @@ function ProjectsBoardCard({
   return (
     <article
       data-board-card=""
-      className={`group/board-card pf-projects-board-card flex min-h-0 flex-col overflow-hidden rounded-xl ${spanClass}`}
+      className={`group/board-card pf-projects-board-card relative flex min-h-0 flex-col overflow-hidden rounded-xl ${spanClass}`}
       style={cardVars}
       data-pf-no-color-transition=""
     >
@@ -268,6 +297,7 @@ function ProjectsBoardCard({
           alt={item.title}
           surface={tagSurface || 'transparent'}
           size={thumbnailSize}
+          interactive={showCaseStudyLink}
         />
       ) : null}
 
@@ -299,27 +329,38 @@ function ProjectsBoardCard({
         {showBottomBlock ? (
           <div className="mt-auto flex flex-col gap-4 pt-8 sm:pt-10">
             {showMetaLine ? (
+              // Spacing instead of "•" separators: a wrapped line used to start with an
+              // orphan bullet. Tags stay fully legible — no 70 % rest / 40 % sibling dimming.
               <ul
-                className="group/tags flex flex-wrap items-baseline gap-x-2 gap-y-1.5"
+                className="flex flex-wrap items-baseline gap-x-4 gap-y-2"
                 aria-label={t('Role and tools')}
               >
                 {metaItems.map((meta, metaIndex) => (
                   <li
                     key={`${meta.text}-${metaIndex}`}
-                    className="flex items-baseline gap-2 text-[0.66rem] font-medium uppercase tracking-[0.14em] opacity-70 transition-opacity duration-300 hover:!opacity-100 group-hover/tags:opacity-40"
-                    style={{ color: meta.accent ? accent : tagInk }}
+                    className={`text-[0.6875rem] uppercase leading-none tracking-[0.14em] ${
+                      meta.accent ? 'font-semibold' : 'font-medium'
+                    }`}
+                    style={{
+                      color: meta.accent
+                        ? accent
+                        : `color-mix(in srgb, ${tagInk} 82%, transparent)`,
+                    }}
                   >
-                    {metaIndex > 0 ? (
-                      <span aria-hidden className="font-normal opacity-35">
-                        •
-                      </span>
-                    ) : null}
-                    <span>{meta.text}</span>
+                    {meta.text}
                   </li>
                 ))}
               </ul>
             ) : null}
-            {showCaseStudyLink ? <CaseStudyLink href={href!.trim()} label={caseStudyLabel} /> : null}
+            {showCaseStudyLink ? (
+              <CaseStudyLink
+                href={href!.trim()}
+                label={caseStudyLabel}
+                ink={tagInk}
+                hoverInk={titleColor}
+                accent={accent}
+              />
+            ) : null}
           </div>
         ) : null}
       </div>
@@ -362,8 +403,22 @@ export function ProjectsBoardGallery({
       ? 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16 md:grid-cols-12 md:gap-x-8 md:gap-y-16 lg:gap-y-20 xl:gap-x-10'
       : 'grid grid-cols-1 items-stretch gap-y-12 sm:gap-y-16 lg:grid-cols-12 lg:items-start lg:gap-x-8 lg:gap-y-20 xl:gap-x-10';
 
+  // The card surface is CSS keyed on the site-wide mode. A section pinned to the other mode
+  // (Color mode → Dark on a light site) gets an opaque fill instead: follow that fill, or
+  // the card stayed light under white text.
+  const fillMode = sectionFillMode(presentation);
+  const boardStyle: CSSProperties | undefined =
+    fillMode && presentation.sectionBackgroundFill === 'solid'
+      ? ({ '--pf-palette-fond': presentation.sectionBackgroundColor } as CSSProperties)
+      : undefined;
+
   return (
-    <div ref={rootRef} className={gridClass}>
+    <div
+      ref={rootRef}
+      className={gridClass}
+      data-board-mode={fillMode ?? undefined}
+      style={boardStyle}
+    >
       {items.map((item, index) => (
         <ProjectsBoardCard
           key={item.id}

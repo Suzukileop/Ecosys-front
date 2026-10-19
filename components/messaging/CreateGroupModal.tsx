@@ -352,7 +352,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                   onChange={(e) => setGroupName(e.target.value)}
                   maxLength={80}
                   placeholder={t('e.g. Design Sync, Project Alpha...')}
-                  className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[#F97316]/40 focus:ring-2 focus:ring-[#F97316]/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-hidden transition focus:border-[#F97316]/40 focus:ring-2 focus:ring-[#F97316]/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                   autoFocus
                 />
                 <p className="mt-2 text-xs text-neutral-500 dark:text-neutral-400">
@@ -374,7 +374,7 @@ export function CreateGroupModal({ open, currentUserId = null, onClose, onCreate
                   value={memberSearch}
                   onChange={(e) => setMemberSearch(e.target.value)}
                   placeholder={t('Search creators by name...')}
-                  className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-none transition focus:border-[#F97316]/40 focus:ring-2 focus:ring-[#F97316]/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
+                  className="mt-2 w-full rounded-2xl border border-neutral-200 bg-white px-4 py-3 text-sm text-neutral-900 outline-hidden transition focus:border-[#F97316]/40 focus:ring-2 focus:ring-[#F97316]/15 dark:border-neutral-700 dark:bg-neutral-950 dark:text-white"
                 />
               </div>
 

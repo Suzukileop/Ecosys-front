@@ -127,7 +127,7 @@ function MediaThumb({
       type="button"
       title={item.attachment.fileName}
       onClick={() => onOpen(item)}
-      className="group relative aspect-square w-full overflow-hidden bg-[var(--cw-surface-soft)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)]"
+      className="group relative aspect-square w-full overflow-hidden bg-[var(--cw-surface-soft)] transition-opacity hover:opacity-90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)]"
     >
       {url && !isVideo ? (
         <MediaImage
@@ -250,7 +250,7 @@ function MediaViewerPanel({
             <button
               type="button"
               onClick={() => onJumpToMessage(item.messageId)}
-              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[var(--msg-hairline-strong)] px-4 text-[15px] font-bold text-[var(--msg-ink)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)]"
+              className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full border border-[var(--msg-hairline-strong)] px-4 text-[15px] font-bold text-[var(--msg-ink)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)]"
             >
               <svg className="h-4 w-4 shrink-0 text-[var(--cw-text-secondary)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path
@@ -266,7 +266,7 @@ function MediaViewerPanel({
             type="button"
             onClick={() => void handleDownload()}
             disabled={downloading || loading}
-            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--msg-primary)] px-4 text-[15px] font-bold text-[var(--msg-primary-ink)] transition-colors hover:bg-[var(--msg-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:opacity-40"
+            className="inline-flex min-h-10 w-full items-center justify-center gap-2 rounded-full bg-[var(--msg-primary)] px-4 text-[15px] font-bold text-[var(--msg-primary-ink)] transition-colors hover:bg-[var(--msg-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:opacity-40"
           >
             <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
               <path
@@ -512,7 +512,7 @@ export function ConversationContextPanel({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--cw-text-primary)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] lg:hidden"
+              className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--cw-text-primary)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] lg:hidden"
               aria-label={t('Back to conversation')}
             >
               <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
@@ -530,7 +530,7 @@ export function ConversationContextPanel({
                 }
                 setView('overview');
               }}
-              className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-[15px] font-bold text-[var(--cw-text-primary)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] lg:-ml-2.5"
+              className="inline-flex min-h-10 items-center gap-1.5 rounded-full px-2.5 text-[15px] font-bold text-[var(--cw-text-primary)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] lg:-ml-2.5"
             >
               <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
@@ -551,7 +551,7 @@ export function ConversationContextPanel({
           <button
             type="button"
             onClick={onClose}
-            className="-mr-2 hidden h-10 w-10 items-center justify-center rounded-full text-[var(--cw-text-primary)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] lg:inline-flex"
+            className="-mr-2 hidden h-10 w-10 items-center justify-center rounded-full text-[var(--cw-text-primary)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] lg:inline-flex"
             aria-label={t('Close details')}
           >
             <svg className="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -632,7 +632,7 @@ export function ConversationContextPanel({
                     conversation.otherUserId,
                     `/messages?conversation=${encodeURIComponent(conversation.id)}`
                   )}
-                  className="mt-4 inline-flex h-10 items-center rounded-full px-5 text-[14px] font-semibold text-[var(--cw-text-primary)] shadow-[inset_0_0_0_1px_var(--msg-hairline-strong)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)]"
+                  className="mt-4 inline-flex h-10 items-center rounded-full px-5 text-[14px] font-semibold text-[var(--cw-text-primary)] shadow-[inset_0_0_0_1px_var(--msg-hairline-strong)] transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)]"
                 >
                   {t('View profile')}
                 </Link>
@@ -751,7 +751,7 @@ export function ConversationContextPanel({
                 value={messageSearch}
                 onChange={(e) => setMessageSearch(e.target.value)}
                 placeholder={t('Search messages…')}
-                className="h-10 w-full rounded-full border-0 bg-[var(--msg-field)] py-2 pl-10 pr-4 text-[15px] text-[var(--cw-text-primary)] outline-none ring-0 transition placeholder:text-[var(--cw-text-secondary)] focus:ring-1 focus:ring-[var(--msg-ink)]"
+                className="h-10 w-full rounded-full border-0 bg-[var(--msg-field)] py-2 pl-10 pr-4 text-[15px] text-[var(--cw-text-primary)] outline-hidden ring-0 transition placeholder:text-[var(--cw-text-secondary)] focus:ring-1 focus:ring-[var(--msg-ink)]"
                 autoComplete="off"
               />
             </div>
@@ -775,7 +775,7 @@ export function ConversationContextPanel({
                       <button
                         type="button"
                         onClick={() => jumpToMessage(message.id)}
-                        className="flex w-full flex-col gap-1 bg-[var(--msg-field)] px-4 py-3 text-left transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--msg-ink)]"
+                        className="flex w-full flex-col gap-1 bg-[var(--msg-field)] px-4 py-3 text-left transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--msg-ink)]"
                       >
                         <div className="flex items-center justify-between gap-2">
                           <span className="truncate text-[13px] font-semibold text-[var(--cw-text-primary)]">
@@ -791,7 +791,7 @@ export function ConversationContextPanel({
                         <p className="line-clamp-3 text-[13px] leading-snug text-[var(--cw-text-secondary)]">
                           <span>{preview.before}</span>
                           {preview.match ? (
-                            <mark className="rounded-sm bg-[var(--msg-wash)] px-0.5 font-bold text-[var(--cw-text-primary)]">
+                            <mark className="rounded-xs bg-[var(--msg-wash)] px-0.5 font-bold text-[var(--cw-text-primary)]">
                               {preview.match}
                             </mark>
                           ) : null}
@@ -825,7 +825,7 @@ export function ConversationContextPanel({
                     value={peopleSearch}
                     onChange={(e) => setPeopleSearch(e.target.value)}
                     placeholder={t('Search people…')}
-                    className="h-10 w-full rounded-full border-0 bg-[var(--msg-field)] py-2 pl-10 pr-4 text-[15px] text-[var(--cw-text-primary)] outline-none ring-0 transition placeholder:text-[var(--cw-text-secondary)] focus:ring-1 focus:ring-[var(--msg-ink)]"
+                    className="h-10 w-full rounded-full border-0 bg-[var(--msg-field)] py-2 pl-10 pr-4 text-[15px] text-[var(--cw-text-primary)] outline-hidden ring-0 transition placeholder:text-[var(--cw-text-secondary)] focus:ring-1 focus:ring-[var(--msg-ink)]"
                   />
                 </div>
                 <button
@@ -844,7 +844,7 @@ export function ConversationContextPanel({
                 value={peopleSearch}
                 onChange={(e) => setPeopleSearch(e.target.value)}
                 placeholder={t('Search people…')}
-                className="h-11 w-full rounded-full border-0 bg-[var(--msg-field)] px-4 text-[16px] text-[var(--cw-text-primary)] outline-none ring-0 transition-[box-shadow] placeholder:text-[var(--cw-text-secondary)] focus:shadow-[inset_0_0_0_2px_var(--msg-ink)] focus:outline-none focus:ring-0 lg:text-[15px]"
+                className="h-11 w-full rounded-full border-0 bg-[var(--msg-field)] px-4 text-[16px] text-[var(--cw-text-primary)] outline-hidden ring-0 transition-[box-shadow] placeholder:text-[var(--cw-text-secondary)] focus:shadow-[inset_0_0_0_2px_var(--msg-ink)] focus:outline-hidden focus:ring-0 lg:text-[15px]"
               />
             )}
             {filteredParticipants.length === 0 ? (

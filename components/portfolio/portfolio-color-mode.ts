@@ -366,10 +366,23 @@ export function patchActiveGlobalPalette(
       ? mergeHeroPalette(LIGHT_HERO_PALETTE, settings.global.paletteLight)
       : mergeHeroPalette(DEFAULT_HERO_PALETTE, settings.global.paletteDark);
   const nextPalette = mergeHeroPalette(base, patch);
+  // Brand accents are one identity across modes: a section forced to the other mode
+  // (e.g. Portfolio → Dark while Global shows Light) kept the old `principal` because
+  // only the visible half was patched. Surface and text tokens stay per-mode.
+  const accentPatch: Partial<PortfolioHeroPalette> = {
+    ...(patch.principal !== undefined ? { principal: patch.principal } : {}),
+    ...(patch.secondaire !== undefined ? { secondaire: patch.secondaire } : {}),
+  };
+  const otherPalette =
+    mode === 'light'
+      ? mergeHeroPalette(mergeHeroPalette(DEFAULT_HERO_PALETTE, settings.global.paletteDark), accentPatch)
+      : mergeHeroPalette(mergeHeroPalette(LIGHT_HERO_PALETTE, settings.global.paletteLight), accentPatch);
   const global = {
     ...settings.global,
     paletteFamily: 'custom' as const,
-    ...(mode === 'light' ? { paletteLight: nextPalette } : { paletteDark: nextPalette }),
+    ...(mode === 'light'
+      ? { paletteLight: nextPalette, paletteDark: otherPalette }
+      : { paletteDark: nextPalette, paletteLight: otherPalette }),
   };
   return applyActivePortfolioPalette({ ...settings, global });
 }

@@ -111,7 +111,7 @@ export function PostTextBlock({
 function MediaPriceBadge({ label, placement }: { label: string; placement: 'bottom' | 'top' }) {
   return (
     <span
-      className={`pointer-events-none absolute left-3 z-[2] inline-flex h-7 items-center rounded-full bg-[#0f0f0f]/85 px-3 text-[13px] font-semibold leading-4 tabular-nums text-white shadow-[0_2px_8px_rgba(0,0,0,0.25)] ring-1 ring-inset ring-white/15 backdrop-blur-sm ${
+      className={`pointer-events-none absolute left-3 z-[2] inline-flex h-7 items-center rounded-full bg-[#0f0f0f]/85 px-3 text-[13px] font-semibold leading-4 tabular-nums text-white shadow-[0_2px_8px_rgba(0,0,0,0.25)] ring-1 ring-inset ring-white/15 backdrop-blur-xs ${
         placement === 'bottom' ? 'bottom-3' : 'top-3'
       }`}
     >

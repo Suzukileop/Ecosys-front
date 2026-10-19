@@ -20,7 +20,7 @@ type ContentComposeMediaProps = {
 };
 
 const tileButton =
-  'inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-sm transition hover:bg-black/75 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white';
+  'inline-flex h-7 w-7 items-center justify-center rounded-full bg-black/55 text-white backdrop-blur-xs transition hover:bg-black/75 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white';
 
 /**
  * Media block of the composer: one file keeps the large preview; several images become an editable
@@ -88,14 +88,14 @@ export function ContentComposeMedia({
               className="absolute inset-0 h-full w-full object-cover"
             />
             {index === 0 ? (
-              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-sm">
+              <span className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white backdrop-blur-xs">
                 {t('Cover')}
               </span>
             ) : (
               <button
                 type="button"
                 onClick={() => onMakeCover(index)}
-                className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover/tile:opacity-100 max-sm:opacity-100"
+                className="absolute bottom-1.5 left-1.5 rounded-full bg-black/60 px-2 py-0.5 text-[11px] font-semibold text-white opacity-0 backdrop-blur-xs transition-opacity hover:bg-black/80 focus-visible:opacity-100 group-hover/tile:opacity-100 max-sm:opacity-100"
               >
                 {t('Make cover')}
               </button>

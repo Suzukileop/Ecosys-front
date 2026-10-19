@@ -2,6 +2,8 @@
 
 import { useCallback, useEffect, useMemo, useRef, useState, type PointerEvent as ReactPointerEvent, type ReactNode } from 'react';
 import dynamic from 'next/dynamic';
+import { FontAwesomeIcon } from '@fortawesome/react-fontawesome';
+import { faArrowLeft, faArrowPointer } from '@fortawesome/free-solid-svg-icons';
 import {
   getVisiblePortfolioSettingsSections,
   PortfolioStudioSectionList,
@@ -58,14 +60,6 @@ function LinkIcon({ className }: { className?: string }) {
   );
 }
 
-function CloseIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
-      <path strokeLinecap="round" strokeLinejoin="round" d="M6 6l12 12M18 6L6 18" />
-    </svg>
-  );
-}
-
 function RefreshIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
@@ -90,19 +84,6 @@ function FocusExitIcon({ className }: { className?: string }) {
   return (
     <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
       <path strokeLinecap="round" strokeLinejoin="round" d="M9 5H5v4M15 5h4v4M9 19H5v-4M15 19h4v-4" />
-    </svg>
-  );
-}
-
-function GearIcon({ className }: { className?: string }) {
-  return (
-    <svg className={className} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={STROKE} aria-hidden>
-      <path
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"
-      />
-      <path strokeLinecap="round" strokeLinejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
     </svg>
   );
 }
@@ -135,7 +116,7 @@ function DesktopDeviceIcon({ className }: { className?: string }) {
 }
 
 const chromeFocusRing =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-[#E7E9EA]/30';
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-[#E7E9EA]/30';
 const chromeIconClass = `group relative inline-flex h-10 w-10 items-center justify-center rounded-full transition-colors duration-200 ${chromeFocusRing}`;
 const chromeIconIdle =
   'text-[#536471] hover:bg-[rgba(15,20,25,0.06)] hover:text-[#0F1419] dark:text-[#71767B] dark:hover:bg-[rgba(231,233,234,0.1)] dark:hover:text-[#E7E9EA]';
@@ -204,7 +185,7 @@ const DEVICE_META: Record<
   mobile: { label: msg('Mobile'), Icon: MobileDeviceIcon },
 };
 
-function DeviceCycleButton({
+function DeviceSwitcher({
   device,
   onSelect,
 }: {
@@ -212,35 +193,34 @@ function DeviceCycleButton({
   onSelect: (device: PreviewDevice) => void;
 }) {
   const t = useT();
-  const next = DEVICE_CYCLE[(DEVICE_CYCLE.indexOf(device) + 1) % DEVICE_CYCLE.length];
-  const current = DEVICE_META[device];
-
   return (
-    <button
-      type="button"
-      onClick={() => onSelect(next)}
-      aria-label={t('{label} preview — switch to {label2}', { label: current.label, label2: DEVICE_META[next].label })}
-      title={t('Switch to {label}', { label: DEVICE_META[next].label })}
-      className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-[transform,background-color] duration-200 hover:bg-[rgba(15,20,25,0.06)] active:scale-90 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] ${chromeFocusRing}`}
+    <div
+      role="group"
+      aria-label={t('Preview device')}
+      className="portfolio-preview-device-switcher flex h-9 items-center gap-0.5 rounded-[10px] border border-neutral-200 bg-neutral-100 p-0.5 dark:border-neutral-800 dark:bg-neutral-900"
     >
-      <span className="relative block h-5 w-5">
-        {DEVICE_CYCLE.map((key) => {
-          const { Icon } = DEVICE_META[key];
-          const shown = key === device;
-          return (
-            <span
-              key={key}
-              aria-hidden
-              className={`absolute inset-0 transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
-                shown ? 'scale-100 opacity-100' : 'scale-75 opacity-0'
-              }`}
-            >
-              <Icon className="h-5 w-5" />
-            </span>
-          );
-        })}
-      </span>
-    </button>
+      {DEVICE_CYCLE.map((key) => {
+        const { Icon, label } = DEVICE_META[key];
+        const active = key === device;
+        return (
+          <button
+            key={key}
+            type="button"
+            onClick={() => onSelect(key)}
+            aria-label={t('{label} preview', { label })}
+            aria-pressed={active}
+            title={t('{label} preview', { label })}
+            className={`inline-flex h-7 w-8 items-center justify-center rounded-[7px] transition-colors ${chromeFocusRing} ${
+              active
+                ? 'bg-white text-neutral-950 shadow-sm dark:bg-neutral-700 dark:text-white'
+                : 'text-neutral-500 hover:text-neutral-950 dark:text-neutral-500 dark:hover:text-neutral-100'
+            }`}
+          >
+            <Icon className="h-[17px] w-[17px]" />
+          </button>
+        );
+      })}
+    </div>
   );
 }
 
@@ -283,7 +263,7 @@ function PreviewResizeHandle({
   const t = useT();
   return (
     <div
-      className={`pointer-events-none absolute inset-y-0 z-20 flex w-3 items-center justify-center ${
+      className={`portfolio-preview-resize-handle pointer-events-none absolute inset-y-0 z-20 flex w-3 items-center justify-center ${
         side === 'left' ? 'left-0' : 'right-0'
       }`}
     >
@@ -331,8 +311,8 @@ export function PortfolioLivePreview({
   const immersive = onExit != null;
   const [linkCopied, setLinkCopied] = useState(false);
   /*
-   * The three-pane studio (structure · preview · settings) shares one open section: the section list on
-   * the left (from lg), the settings panel on the right, and clicks inside the preview all set it.
+   * The pro-editor shell (section rail · settings · preview) shares one open section: the compact rail,
+   * the adjacent controls and clicks inside the preview all update the same selection.
    */
   const [studioSection, setStudioSectionState] = useState<PortfolioSettingsSectionId>(() =>
     readStoredPortfolioSettingsSection()
@@ -341,28 +321,11 @@ export function PortfolioLivePreview({
     setStudioSectionState(sectionId);
     storePortfolioSettingsSection(sectionId);
   }, []);
-  /* Hover to edit (the left pane's switch): remembered in this browser, on by default. */
-  const [hoverEdit, setHoverEditState] = useState(() => {
-    try {
-      return window.localStorage.getItem('portfolio-studio-hover-edit') !== '0';
-    } catch {
-      return true;
-    }
-  });
-  const setHoverEdit = useCallback((enabled: boolean) => {
-    setHoverEditState(enabled);
-    try {
-      window.localStorage.setItem('portfolio-studio-hover-edit', enabled ? '1' : '0');
-    } catch {
-      /* ignore */
-    }
-  }, []);
-  /** Whether the page should outline / pick sections: Settings open and Hover to edit on. */
+  /** Whether the page should outline / pick sections when direct preview editing is enabled. */
   const inspectRef = useRef(false);
   const [frameKey, setFrameKey] = useState(0);
-  const [settingsOpen, setSettingsOpen] = useState(false);
-  const [settingsMounted, setSettingsMounted] = useState(false);
-  if (settingsOpen && !settingsMounted) setSettingsMounted(true);
+  const [settingsOpen, setSettingsOpen] = useState(true);
+  const [inspectEnabled, setInspectEnabled] = useState(false);
   const [focusActive, setFocusActive] = useState(false);
   const [previewMeta, setPreviewMeta] = useState<PortfolioStudioPreviewMeta>(
     EMPTY_PORTFOLIO_STUDIO_PREVIEW_META
@@ -383,8 +346,15 @@ export function PortfolioLivePreview({
   const dragStopRef = useRef<(() => void) | null>(null);
 
   const [previewWidth, setPreviewWidth] = useState<number | null>(null);
+  const [previewContainerWidth, setPreviewContainerWidth] = useState(0);
   const [resizingPreview, setResizingPreview] = useState(false);
   previewWidthRef.current = previewWidth;
+
+  // Smaller workspaces open on the canvas. Their settings remain one tap away in the persistent
+  // section rail, instead of consuming the whole viewport before the user has chosen a section.
+  useEffect(() => {
+    if (window.matchMedia('(max-width: 1199px)').matches) setSettingsOpen(false);
+  }, []);
 
   const path = buildCreatorPortfolioPath(creatorId, username);
   const embedPath = withPortfolioStudioEmbed(path);
@@ -408,7 +378,15 @@ export function PortfolioLivePreview({
   } = usePortfolioSettings(creatorId, { canEdit: true });
 
   /* Design pickers render each design for real from this portfolio, wearing these settings. */
-  const designPreviewSource = useMemo(() => ({ portfolioPath: path, settings }), [path, settings]);
+  const designPreviewSource = useMemo(() => ({ portfolioPath: path, settings, availableGallery: previewMeta.availableGallery }), [path, settings, previewMeta.availableGallery]);
+  const studioSections = useMemo(
+    () =>
+      getVisiblePortfolioSettingsSections({
+        presenceKind: settings.global.presenceKind,
+        sectionOrder: settings.global.sectionOrder,
+      }),
+    [settings.global.presenceKind, settings.global.sectionOrder]
+  );
 
   const hydratedRef = useRef(hydrated);
   const settingsRef = useRef(settings);
@@ -431,20 +409,25 @@ export function PortfolioLivePreview({
     );
   }, []);
 
-  /* Inspect mode follows Settings: open, the page outlines sections under the pointer and a click
-     picks one; closed, the page behaves like the live site. Re-sent when the page (re)loads. */
+  /* Direct preview editing has its own switch: the settings panel may be folded while section
+     picking remains enabled. Re-sent whenever the page (re)loads. */
   const postInspectToPreview = useCallback(() => {
     const target = iframeRef.current?.contentWindow;
     if (!target || !iframeReadyRef.current) return;
     target.postMessage(
-      { source: PORTFOLIO_STUDIO_PREVIEW_SOURCE, type: 'set-inspect', enabled: inspectRef.current },
+      {
+        source: PORTFOLIO_STUDIO_PREVIEW_SOURCE,
+        type: 'set-inspect',
+        enabled: inspectRef.current,
+        sectionId: previewAnchorForSettingsSection(studioSection),
+      },
       window.location.origin
     );
-  }, []);
+  }, [studioSection]);
   useEffect(() => {
-    inspectRef.current = settingsOpen && hoverEdit;
+    inspectRef.current = inspectEnabled;
     postInspectToPreview();
-  }, [settingsOpen, hoverEdit, postInspectToPreview]);
+  }, [inspectEnabled, studioSection, postInspectToPreview]);
 
   const postScrollToPreview = useCallback((sectionId: string) => {
     const target = iframeRef.current?.contentWindow;
@@ -517,11 +500,23 @@ export function PortfolioLivePreview({
 
   useEffect(() => {
     const onKeyDown = (event: KeyboardEvent) => {
-      const isComma = event.key === ',' || event.code === 'Comma';
-      if (!isComma || !(event.metaKey || event.ctrlKey)) return;
       const target = event.target as HTMLElement | null;
       const tag = target?.tagName?.toLowerCase();
       if (tag === 'input' || tag === 'textarea' || target?.isContentEditable) return;
+
+      if (settingsOpen && !event.metaKey && !event.ctrlKey && (event.key === 'ArrowDown' || event.key === 'ArrowUp')) {
+        const current = Math.max(0, studioSections.findIndex((section) => section.id === studioSection));
+        const delta = event.key === 'ArrowDown' ? 1 : -1;
+        const next = studioSections[(current + delta + studioSections.length) % studioSections.length];
+        if (!next) return;
+        event.preventDefault();
+        setStudioSection(next.id);
+        focusPreviewSection(next.id);
+        return;
+      }
+
+      const isComma = event.key === ',' || event.code === 'Comma';
+      if (!isComma || !(event.metaKey || event.ctrlKey)) return;
       event.preventDefault();
       setSettingsOpen((open) => {
         if (open) flushPendingSave();
@@ -530,23 +525,12 @@ export function PortfolioLivePreview({
     };
     window.addEventListener('keydown', onKeyDown);
     return () => window.removeEventListener('keydown', onKeyDown);
-  }, [flushPendingSave]);
+  }, [flushPendingSave, focusPreviewSection, settingsOpen, studioSection, studioSections, setStudioSection]);
 
   const closeSettings = useCallback(() => {
     flushPendingSave();
     setSettingsOpen(false);
   }, [flushPendingSave]);
-
-  // The settings panel stays out of the first load, then downloads while the browser is idle
-  // so opening it is instant.
-  useEffect(() => {
-    if (typeof window.requestIdleCallback === 'function') {
-      const id = window.requestIdleCallback(() => void loadSettingsPanel());
-      return () => window.cancelIdleCallback(id);
-    }
-    const id = window.setTimeout(() => void loadSettingsPanel(), 2000);
-    return () => window.clearTimeout(id);
-  }, []);
 
   // Exclusive-open with the main dashboard sidebar — opening Settings collapses it,
   // and expanding it back closes Settings, so only one is ever open at a time.
@@ -600,6 +584,7 @@ export function PortfolioLivePreview({
       const width = entries[0]?.contentRect.width ?? 0;
       if (width < 50) return;
       containerWidthRef.current = width;
+      setPreviewContainerWidth(width);
       setPreviewWidth((current) => {
         if (current == null) return current;
         if (width <= PREVIEW_MIN_WIDTH) return null;
@@ -712,7 +697,7 @@ export function PortfolioLivePreview({
     };
   }, [immersive, onExit, settingsOpen, closeSettings]);
 
-  const activeDevice = resolvePreviewDevice(previewWidth);
+  const activeDevice = resolvePreviewDevice((previewWidth ?? previewContainerWidth) || null);
   const previewFrameWidth = previewWidth == null ? '100%' : `${previewWidth}px`;
 
   const dockTop = 'calc(var(--dash-header-h, 3.85rem) + var(--portfolio-workspace-nav-h, 0px))';
@@ -744,7 +729,7 @@ export function PortfolioLivePreview({
             : immersive
               ? /* One plain bar, closed off from the page by a single hairline. */
                 'h-14 border-b border-[#EBEFF1] px-3 dark:border-[#1F2226] sm:px-4'
-              : 'px-3 py-1.5 outline outline-1 outline-[#EBEFF1] dark:outline-[#1F2226]'
+              : 'px-3 py-1.5 outline-solid outline-1 outline-[#EBEFF1] dark:outline-[#1F2226]'
         }`}
       >
         {immersive ? (
@@ -753,10 +738,10 @@ export function PortfolioLivePreview({
               type="button"
               onClick={onExit}
               title={t('Back to the editor (Esc)')}
-              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/45"
+              className="inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-semibold text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/45"
             >
-              <span aria-hidden>←</span>
-              {t('Editor')}
+              <FontAwesomeIcon icon={faArrowLeft} className="h-3.5 w-3.5" fixedWidth aria-hidden />
+              <span className="hidden sm:inline">{t('Editor')}</span>
             </button>
             <p className="hidden min-w-0 truncate text-[15px] font-bold normal-case tracking-normal text-[#0F1419] dark:text-[#E7E9EA] sm:block">
               {t('Live preview')}
@@ -768,12 +753,21 @@ export function PortfolioLivePreview({
           </p>
         )}
 
-        <DeviceCycleButton device={activeDevice} onSelect={setPreviewDevice} />
+        <DeviceSwitcher device={activeDevice} onSelect={setPreviewDevice} />
 
         <div className="flex min-w-0 shrink-0 items-center justify-end gap-0.5">
-          <ChromeIcon label={t('Refresh')} onClick={refreshPreview}>
-            <RefreshIcon className="h-5 w-5" />
+          <ChromeIcon
+            label={inspectEnabled ? t('Disable click to edit') : t('Enable click to edit')}
+            pressed={inspectEnabled}
+            onClick={() => setInspectEnabled((enabled) => !enabled)}
+          >
+            <FontAwesomeIcon icon={faArrowPointer} className="h-[17px] w-[17px]" fixedWidth aria-hidden />
           </ChromeIcon>
+          <span className="hidden sm:contents">
+            <ChromeIcon label={t('Refresh')} onClick={refreshPreview}>
+              <RefreshIcon className="h-5 w-5" />
+            </ChromeIcon>
+          </span>
           <ChromeIcon
             label={focusActive ? t('Exit focus') : t('Focus')}
             pressed={focusActive}
@@ -795,19 +789,6 @@ export function PortfolioLivePreview({
               <ExternalLinkIcon className="h-5 w-5" />
             </ChromeIcon>
           </span>
-          <ChromeIcon
-            label={settingsOpen ? t('Close') : t('Settings')}
-            pressed={settingsOpen}
-            expanded={settingsOpen}
-            controls="portfolio-studio-settings"
-            onClick={() => setSettingsOpen((open) => !open)}
-          >
-            {settingsOpen ? (
-              <CloseIcon className="h-5 w-5" />
-            ) : (
-              <GearIcon className="h-5 w-5" />
-            )}
-          </ChromeIcon>
         </div>
       </div>
 
@@ -822,80 +803,40 @@ export function PortfolioLivePreview({
             ? 'border-t border-[#EBEFF1] dark:border-[#1F2226]'
             : immersive
               ? ''
-              : 'mt-px outline outline-1 outline-[#EBEFF1] dark:outline-[#1F2226]'
+              : 'mt-px outline-solid outline-1 outline-[#EBEFF1] dark:outline-[#1F2226]'
         }`}
       >
         <div
-          className="portfolio-live-preview-stage flex h-full min-h-0 min-w-0 w-full max-w-full gap-0 bg-transparent max-lg:overflow-hidden"
+          className="portfolio-live-preview-stage relative flex h-full min-h-0 min-w-0 w-full max-w-full gap-0 bg-transparent max-lg:overflow-hidden"
         >
-          {/* Left pane (from lg, while Settings is open): the page's sections — Site, then Page in the
-              page's order. Picking one opens its settings on the right and scrolls the preview to it. */}
+          {/* Pro-editor shell: a compact section rail, its settings immediately beside it, then the
+              uninterrupted canvas. Navigation and controls stay on the same side of the screen. */}
           <aside
             aria-label={t('Sections')}
-            aria-hidden={!settingsOpen}
-            className={`hidden h-full min-w-0 shrink-0 overflow-hidden transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] lg:block ${
-              settingsOpen ? 'w-[256px] border-r border-[#EBEFF1] dark:border-[#1F2226]' : 'pointer-events-none w-0'
-            }`}
+            className="portfolio-studio-sections-rail h-full min-h-0 w-[84px] min-w-0 shrink-0 overflow-hidden border-r border-neutral-200 bg-white dark:border-neutral-800 dark:bg-[#0A0A0A] sm:w-[96px] xl:w-[112px]"
           >
-            <div
-              className={`h-full w-[256px] overflow-y-auto overscroll-contain pt-4 [scrollbar-width:none] transition-opacity duration-300 [&::-webkit-scrollbar]:hidden ${
-                settingsOpen ? 'opacity-100 delay-100' : 'invisible opacity-0'
-              }`}
-            >
+            <div className="portfolio-studio-sections-rail-inner h-full min-h-0 w-[84px] sm:w-[96px] xl:w-[112px]">
               <PortfolioStudioSectionList
-                sections={getVisiblePortfolioSettingsSections({
-                  presenceKind: settings.global.presenceKind,
-                  sectionOrder: settings.global.sectionOrder,
-                })}
+                sections={studioSections}
                 activeId={studioSection}
                 onSelect={(sectionId) => {
                   setStudioSection(sectionId);
+                  setSettingsOpen(true);
                   focusPreviewSection(sectionId);
                 }}
-                hoverEdit={hoverEdit}
-                onHoverEditChange={setHoverEdit}
+                variant="toolbar"
               />
             </div>
           </aside>
 
-          <div
-            ref={previewColumnRef}
-            className={`relative min-w-0 max-w-full flex-1 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
-              previewWidth != null ? 'bg-[#FFFFFF] dark:bg-black' : ''
-            } ${settingsOpen ? 'lg:border-r lg:border-[#EBEFF1] dark:lg:border-[#1F2226]' : ''}`}
-          >
-            <div className="flex h-full w-full items-stretch justify-center">
-              <div
-                className="relative h-full max-w-full will-change-[width]"
-                style={{
-                  width: previewFrameWidth,
-                  transition: resizingPreview ? 'none' : 'width 180ms cubic-bezier(0.22, 1, 0.36, 1)',
-                }}
-              >
-                <iframe
-                  key={frameKey}
-                  ref={iframeRef}
-                  title={t('Portfolio live preview')}
-                  src={embedPath}
-                  className={`absolute inset-0 h-full w-full border-0 bg-white ${
-                    resizingPreview ? 'pointer-events-none' : ''
-                  }`}
-                />
-                <PreviewResizeHandle
-                  side="left"
-                  active={resizingPreview}
-                  onPointerDown={onPreviewResizePointerDown}
-                  onReset={resetPreviewWidth}
-                />
-                <PreviewResizeHandle
-                  side="right"
-                  active={resizingPreview}
-                  onPointerDown={onPreviewResizePointerDown}
-                  onReset={resetPreviewWidth}
-                />
-              </div>
-            </div>
-          </div>
+          {settingsOpen ? (
+            <button
+              type="button"
+              aria-label={t('Close settings')}
+              onClick={closeSettings}
+              className="portfolio-studio-settings-scrim absolute inset-0 z-10 hidden bg-black/40 backdrop-blur-[1px] max-lg:block"
+            />
+          ) : null}
 
           <aside
             id="portfolio-studio-settings"
@@ -903,21 +844,21 @@ export function PortfolioLivePreview({
             aria-label={t('Portfolio settings')}
             aria-hidden={!settingsOpen}
             data-open={settingsOpen ? 'true' : 'false'}
-            className={`portfolio-studio-settings-pane flex h-full min-w-0 shrink-0 flex-col bg-transparent transition-[width,min-width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] max-lg:absolute max-lg:inset-y-0 max-lg:right-0 max-lg:z-20 ${
+            className={`portfolio-studio-settings-pane relative z-20 flex h-full min-w-0 shrink-0 flex-col overflow-visible border-r border-neutral-200 bg-white transition-[width] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] dark:border-neutral-800 dark:bg-[#0A0A0A] ${
               settingsOpen
-                ? 'w-full overflow-hidden lg:w-[min(31%,25rem)] lg:max-w-[25rem]'
-                : 'pointer-events-none w-0 overflow-hidden'
+                ? 'w-[calc(100%_-_84px)] sm:w-[min(calc(100%_-_96px),25.5rem)] xl:w-[410px]'
+                : 'pointer-events-none w-0 border-r-0'
             }`}
           >
             <div
-              className={`h-full w-full min-w-0 overflow-visible transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              className={`h-full w-full min-w-0 overflow-hidden transition-opacity duration-300 ${
                 settingsOpen ? 'opacity-100 delay-75' : 'invisible opacity-0'
               }`}
             >
-              {settingsMounted ? (
-                <PortfolioDesignPreviewProvider value={designPreviewSource}>
+              <PortfolioDesignPreviewProvider value={designPreviewSource}>
                 <PortfolioSettingsModal
                   variant="dock"
+                  directDockNavigation
                   open={settingsOpen}
                   onClose={closeSettings}
                   settings={settings}
@@ -943,10 +884,68 @@ export function PortfolioLivePreview({
                   activeSectionId={studioSection}
                   onActiveSectionChange={setStudioSection}
                 />
-                </PortfolioDesignPreviewProvider>
-              ) : null}
+              </PortfolioDesignPreviewProvider>
             </div>
+            <button
+              type="button"
+              onClick={() => setSettingsOpen((open) => !open)}
+              aria-label={settingsOpen ? t('Collapse settings') : t('Expand settings')}
+              aria-expanded={settingsOpen}
+              aria-controls="portfolio-studio-settings"
+              title={settingsOpen ? t('Collapse settings') : t('Expand settings')}
+              className={`portfolio-studio-settings-toggle absolute top-1/2 z-40 flex h-12 w-6 -translate-y-1/2 items-center justify-center border border-neutral-200 bg-white text-neutral-500 shadow-sm transition-[right,transform,background-color,color] hover:bg-neutral-100 hover:text-neutral-950 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-blue-500 dark:border-neutral-800 dark:bg-neutral-950 dark:text-neutral-500 dark:hover:bg-neutral-900 dark:hover:text-neutral-100 ${
+                settingsOpen
+                  ? 'right-1 rounded-lg sm:right-0 sm:translate-x-full sm:rounded-l-none sm:rounded-r-lg sm:border-l-0'
+                  : 'right-0 translate-x-full rounded-r-lg border-l-0'
+              }`}
+            >
+              <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
+                <path d={settingsOpen ? 'm15 6-6 6 6 6' : 'm9 6 6 6-6 6'} />
+              </svg>
+            </button>
           </aside>
+
+          <div
+            ref={previewColumnRef}
+            className={`relative min-w-0 max-w-full flex-1 overflow-hidden transition-[flex-grow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+              previewWidth != null ? 'bg-[#FFFFFF] dark:bg-black' : ''
+            }`}
+          >
+            <div className="flex h-full w-full items-stretch justify-center">
+              <div
+                className="relative h-full max-w-full will-change-[width]"
+                style={{
+                  width: previewFrameWidth,
+                  transition: resizingPreview ? 'none' : 'width 180ms cubic-bezier(0.22, 1, 0.36, 1)',
+                }}
+              >
+                <iframe
+                  key={frameKey}
+                  ref={iframeRef}
+                  title={t('Portfolio live preview')}
+                  src={embedPath}
+                  className={`absolute inset-0 h-full w-full border-0 bg-white ${
+                    resizingPreview ? 'pointer-events-none' : ''
+                  }`}
+                />
+                <PreviewResizeHandle
+                  side="right"
+                  active={resizingPreview}
+                  onPointerDown={onPreviewResizePointerDown}
+                  onReset={resetPreviewWidth}
+                />
+              </div>
+            </div>
+            {inspectEnabled ? (
+              <div className="pointer-events-none absolute inset-x-0 bottom-5 z-10 hidden justify-center sm:flex">
+                <div className="flex items-center gap-3 rounded-full border border-[#2B3442] bg-[#11151B]/94 px-5 py-2 text-[12px] font-medium text-[#8D96A5] shadow-[0_10px_35px_rgba(0,0,0,0.28)] backdrop-blur-md">
+                  <span>↑↓ {t('Change section')}</span>
+                  <span className="h-4 w-px bg-[#343D4A]" aria-hidden />
+                  <span className="font-semibold text-[#DDE2EA]">{t('Click the preview to edit')}</span>
+                </div>
+              </div>
+            ) : null}
+          </div>
         </div>
       </div>
     </div>

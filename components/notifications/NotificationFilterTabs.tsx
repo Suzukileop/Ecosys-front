@@ -44,7 +44,7 @@ export function NotificationViewChips({
             /* A second tap on a selected filter goes back to everything, like News's interests. */
             onClick={() => onChange(active && view !== 'all' ? 'all' : view)}
             data-pf-no-color-transition
-            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
                 ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                 : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'
@@ -101,7 +101,7 @@ export function NotificationViewRailBox({
               aria-pressed={active}
               onClick={() => onChange(active && view !== 'all' ? 'all' : view)}
               data-pf-no-color-transition
-              className={`flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+              className={`flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
                 active ? 'font-bold' : 'font-normal'
               }`}
             >

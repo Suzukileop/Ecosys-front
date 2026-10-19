@@ -73,7 +73,7 @@ function AvatarFallback({
 
   return (
     <div
-      className={`${sizeClasses[size]} flex flex-shrink-0 items-center justify-center rounded-full font-semibold ${fallbackClassName}`}
+      className={`${sizeClasses[size]} flex shrink-0 items-center justify-center rounded-full font-semibold ${fallbackClassName}`}
       aria-label={safeName}
     >
       {initials}

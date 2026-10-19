@@ -56,8 +56,26 @@ const extraDevOrigins = (process.env.NEXT_DEV_ALLOWED_ORIGINS ?? '')
   .map((host) => host.trim())
   .filter(Boolean);
 
+/*
+ * Applied to every page. No full Content-Security-Policy yet: portfolios load images from several
+ * origins and the theme script is inline — a CSP needs a report-only rollout first. frame-ancestors
+ * alone already blocks click-jacking. Camera / microphone stay allowed for this origin (WebRTC calls).
+ */
+const SECURITY_HEADERS = [
+  { key: 'X-Content-Type-Options', value: 'nosniff' },
+  { key: 'X-Frame-Options', value: 'SAMEORIGIN' },
+  { key: 'Content-Security-Policy', value: "frame-ancestors 'self'" },
+  { key: 'Referrer-Policy', value: 'strict-origin-when-cross-origin' },
+  { key: 'Permissions-Policy', value: 'camera=(self), microphone=(self), geolocation=(self), payment=()' },
+  ...(process.env.NODE_ENV === 'production'
+    ? [{ key: 'Strict-Transport-Security', value: 'max-age=31536000; includeSubDomains' }]
+    : []),
+];
+
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+  // Don't advertise the framework (X-Powered-By: Next.js).
+  poweredByHeader: false,
   // Lets a production build run beside `next dev` without overwriting its .next folder.
   distDir: process.env.NEXT_DIST_DIR || '.next',
   // Hide the floating "N" dev badge (bottom-left) — it covered the feed; build/runtime errors still open the overlay.
@@ -147,6 +165,7 @@ const nextConfig = {
   },
   async headers() {
     return [
+      { source: '/:path*', headers: SECURITY_HEADERS },
       {
         // Versioned emoji spritesheet — rename the file when upgrading emoji-mart data.
         source: '/emoji/:file*',

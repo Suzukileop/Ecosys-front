@@ -333,7 +333,7 @@ function LedgerConsultLink({
 }) {
   const external = /^https?:\/\//i.test(href);
   const className =
-    'group/consult relative inline-flex items-center gap-2 text-sm tracking-[-0.012em] focus:outline-none focus-visible:opacity-70';
+    'group/consult relative inline-flex items-center gap-2 text-sm tracking-[-0.012em] focus:outline-hidden focus-visible:opacity-70';
   const body = (
     <>
       <span className="relative">
@@ -515,7 +515,7 @@ function LedgerRow({
           }
           className={`grid grid-cols-[auto_minmax(0,1fr)] items-start gap-x-4 gap-y-2 py-8 sm:gap-x-6 sm:py-10 lg:grid-cols-[3.5rem_minmax(0,1fr)_minmax(7.5rem,13rem)_1.75rem] lg:gap-x-8 lg:py-12 xl:grid-cols-[4rem_minmax(0,1fr)_minmax(8rem,14rem)_1.75rem] xl:gap-x-10 ${
             clickable
-              ? 'cursor-pointer rounded-sm focus:outline-none focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-4'
+              ? 'cursor-pointer rounded-xs focus:outline-hidden focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-4'
               : ''
           }`}
         >

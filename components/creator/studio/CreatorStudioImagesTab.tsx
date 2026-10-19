@@ -57,7 +57,7 @@ function ImageTile({
           className="absolute inset-0 h-full w-full object-cover transition-transform duration-500 ease-out group-hover:scale-[1.03]"
         />
         {featured ? (
-          <span className="absolute left-3 top-3 bg-black/70 px-2 py-1 text-[11px] font-bold uppercase leading-4 tracking-[0.12em] text-white backdrop-blur-sm">
+          <span className="absolute left-3 top-3 bg-black/70 px-2 py-1 text-[11px] font-bold uppercase leading-4 tracking-[0.12em] text-white backdrop-blur-xs">
             {t('Current')}
           </span>
         ) : (

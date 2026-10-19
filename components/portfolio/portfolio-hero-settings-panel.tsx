@@ -14,6 +14,7 @@ import {
   PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS,
   PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS,
   PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS,
+  PORTFOLIO_HERO_STUDIO_SPLIT_FRAME_STYLE_OPTIONS,
   heroBannerDesignSettingsPatch,
 } from '@/components/portfolio/portfolio-hero-banner-settings';
 import { HeroBannerDesignPreview } from '@/components/portfolio/portfolio-hero-banner-skeletons';
@@ -24,21 +25,24 @@ import {
   PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS,
   type PortfolioHeroBackgroundSettings,
 } from '@/components/portfolio/portfolio-hero-background-settings';
-import type { PortfolioHeroSectionSettings } from '@/components/portfolio/portfolio-settings-types';
+import {
+  createDefaultPortfolioSettings,
+  type PortfolioHeroSectionSettings,
+} from '@/components/portfolio/portfolio-settings-types';
 import { PortfolioBackgroundImageUpload, PortfolioHeroBannerMediaUpload } from '@/components/portfolio/portfolio-background-image-upload';
 import { usePortfolioBackgroundLibrary } from '@/components/portfolio/portfolio-background-library-context';
-import { SettingRow, SettingsRowsScope, settingValueLabel, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import {
-  FieldLabel,
-  PF_TEXT_INPUT,
-  SectionHiddenNotice,
-  SelectedBadge,
-  SettingsSwitch,
-  SettingsSwitchRow,
-  SettingsTabs,
-  pfChipClass,
-} from '@/components/portfolio/portfolio-settings-ui';
+  NpBackRow,
+  NpCollapsibleSection,
+  NpOptionCard,
+  NpPanelShell,
+  NpPickerRow,
+  NpRangeField,
+  NpSegmentedControl,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
 import { msg } from '@/lib/i18n/config';
 
 export type HeroSettingsSubSection = 'general' | 'banner' | 'background';
@@ -48,6 +52,11 @@ const HERO_SETTINGS_SUB_SECTIONS: {
   label: string;
   description: string;
 }[] = [
+  {
+    id: 'general',
+    label: msg('General'),
+    description: msg('Section visibility and shared image settings.'),
+  },
   {
     id: 'banner',
     label: msg('Design'),
@@ -62,29 +71,7 @@ const HERO_SETTINGS_SUB_SECTIONS: {
 
 /** Map legacy subsection ids (saved UI state / search) onto remaining Hero menus. */
 export function normalizeHeroSettingsSubSection(value: string | undefined): HeroSettingsSubSection {
-  // 'general' (legacy / search) held only "Show section", which now opens the Design tab.
-  return value === 'background' ? 'background' : 'banner';
-}
-
-function HeroChangeIcon({ className = 'h-4 w-4' }: { className?: string }) {
-  return (
-    <svg viewBox="0 0 20 20" fill="none" className={className} aria-hidden>
-      <path
-        d="M4 8a6 6 0 0 1 10.2-4.2M16 12a6 6 0 0 1-10.2 4.2"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-      <path
-        d="M14.2 2.4v3.4h-3.4M5.8 17.6v-3.4h3.4"
-        stroke="currentColor"
-        strokeWidth="1.6"
-        strokeLinecap="round"
-        strokeLinejoin="round"
-      />
-    </svg>
-  );
+  return value === 'general' || value === 'background' || value === 'banner' ? value : 'general';
 }
 
 function HeroToggleRow({
@@ -96,20 +83,7 @@ function HeroToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked: checked, onChange: onChange }} />;
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full cursor-pointer items-center justify-between gap-4 py-2 text-left"
-    >
-      <span className="min-w-0 text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
-      <SettingsSwitch checked={checked} />
-    </button>
-  );
+  return <NpToggleRow title={label} checked={checked} onChange={onChange} />;
 }
 
 function HeroColorField({
@@ -121,19 +95,19 @@ function HeroColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const rows = useSettingsRows();
   return (
-    <SettingRow label={label} value={value.toUpperCase()} preview={<span aria-hidden className="block h-3.5 w-3.5 rounded-full border border-black/10" style={{ backgroundColor: value }} />}>
-    <div>
-      {rows ? null : <FieldLabel>{label}</FieldLabel>}
-      <div className={`${rows ? '' : 'mt-3 '}flex flex-wrap items-center gap-3`}>
+    <div className="np-field">
+      <span className="np-field-label">{label}</span>
+      <div className="np-swatch w-full">
+        <span className="np-swatch-dot" style={{ backgroundColor: value }}>
         <input
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
+          className="np-color-input"
           aria-label={`${label} picker`}
         />
+        </span>
         <input
           type="text"
           value={value}
@@ -141,61 +115,53 @@ function HeroColorField({
             const next = event.target.value.trim();
             if (isValidProfileHexColor(next)) onChange(next);
           }}
-          className="w-28 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm font-mono text-[color:var(--pf-palette-texte-fort)]"
+          className="np-input !h-9 !w-28 font-mono uppercase"
           aria-label={`${label} hex`}
         />
       </div>
     </div>
-    </SettingRow>
   );
 }
 
-function HeroOptionGrid<T extends string | number>({
+function HeroOptionGrid<T extends string>({
   label,
   options,
   value,
   onChange,
-  columns = 2,
 }: {
   label: string;
   options: { value: T; label: string; description?: string }[];
   value: T;
   onChange: (value: T) => void;
-  columns?: 1 | 2 | 3 | 4;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  return (
-    <SettingRow label={label} value={settingValueLabel(options, value)}>
-    <div>
-      {rows ? null : <FieldLabel>{label}</FieldLabel>}
-      <div
-        className={`${rows ? '' : 'mt-3 '}grid gap-2 ${
-          columns === 4
-            ? 'grid-cols-2 sm:grid-cols-4'
-            : columns === 3
-              ? 'sm:grid-cols-2 lg:grid-cols-3'
-              : columns === 1
-                ? 'grid-cols-1'
-                : 'sm:grid-cols-2'
-        }`}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
+  if (options.length >= 5) {
+    return (
+      <div className="np-field">
+        <span className="np-field-label">{label}</span>
+        <div className="np-chips" role="group" aria-label={label}>
+          {options.map((option) => (
             <button
               key={option.value}
               type="button"
+              aria-pressed={option.value === value}
+              className="np-chip"
               onClick={() => onChange(option.value)}
-              className={`px-3 text-center ${active ? 'pf-choice pf-choice--active' : 'pf-choice'}`}
             >
-              <span>{t(option.label)}</span>
+              {t(option.label)}
             </button>
-          );
-        })}
+          ))}
+        </div>
       </div>
-    </div>
-    </SettingRow>
+    );
+  }
+  return (
+    <NpSegmentedControl
+      label={label}
+      options={options.map((option) => ({ ...option, label: t(option.label) }))}
+      value={value}
+      onChange={onChange}
+    />
   );
 }
 
@@ -234,29 +200,8 @@ function HeroPxSlider({
   min?: number;
   unit?: string;
 }) {
-  const rows = useSettingsRows();
   return (
-    <SettingRow label={label} value={`${value}${unit}`}>
-    <div>
-      <div className={rows ? 'hidden' : 'flex items-center justify-between gap-4'}>
-        <FieldLabel>{label}</FieldLabel>
-        <span className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)]">
-          {value}
-          {unit}
-        </span>
-      </div>
-      <input
-        type="range"
-        min={min}
-        max={max}
-        step={1}
-        value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className={`${rows ? '' : 'mt-3 '}h-2 w-full cursor-pointer accent-[color:var(--pf-palette-texte-fort)]`}
-        aria-label={label}
-      />
-    </div>
-    </SettingRow>
+    <NpRangeField label={label} value={value} min={min} max={max} unit={unit} onChange={onChange} />
   );
 }
 
@@ -277,12 +222,12 @@ function HeroToolPicker({
 }) {
   const t = useT();
   if (tools.length === 0) {
-    return <p className="mt-2 text-[13px] text-[color:var(--pf-palette-texte-muted)]">{t('Add tools to your profile to show them here.')}</p>;
+    return <p className="np-note">{t('Add tools to your profile to show them here.')}</p>;
   }
   const picked = value.length > 0 ? value : tools.slice(0, limit);
   return (
     <>
-      <div className="mt-2 flex flex-wrap gap-1.5">
+      <div className="np-chips">
         {tools.map((tool) => {
           const active = picked.includes(tool);
           return (
@@ -294,7 +239,8 @@ function HeroToolPicker({
               onClick={() =>
                 onChange(active ? picked.filter((item) => item !== tool) : [...picked, tool].slice(0, limit))
               }
-              className={pfChipClass(active)}
+              className="np-chip"
+              data-active={active ? 'true' : 'false'}
             >
               <CreatorToolLogo label={tool} size={18} />
               {tool}
@@ -302,19 +248,59 @@ function HeroToolPicker({
           );
         })}
       </div>
-      <div className="mt-2 flex items-center justify-between gap-3 text-[12px] text-[color:var(--pf-palette-texte-muted)]">
-        <span>{t('{count} of {limit} shown', { count: picked.length, limit })}</span>
+      <div className="mt-3 flex items-center justify-between gap-3">
+        <span className="np-value-badge">{t('{count} of {limit} shown', { count: picked.length, limit })}</span>
         {value.length > 0 ? (
           <button
             type="button"
             onClick={() => onChange([])}
-            className="font-semibold underline-offset-4 hover:text-[color:var(--pf-palette-texte-fort)] hover:underline"
+            className="np-link-btn"
           >
             {t('Use profile order')}
           </button>
         ) : null}
       </div>
     </>
+  );
+}
+
+const HERO_DEFAULTS = createDefaultPortfolioSettings().hero;
+
+function isHeroModified(hero: PortfolioHeroSectionSettings) {
+  const keys = Object.keys({ ...HERO_DEFAULTS, ...hero }) as (keyof PortfolioHeroSectionSettings)[];
+  return keys.some((key) => {
+    const value = hero[key] === undefined ? HERO_DEFAULTS[key] : hero[key];
+    return JSON.stringify(value) !== JSON.stringify(HERO_DEFAULTS[key]);
+  });
+}
+
+const HERO_DESIGNS_WITH_OPTIONS = new Set([
+  'swiss-editorial',
+  'portrait-identity',
+  'editorial-rail',
+  'statement-cta',
+  'portrait-balance',
+  'left-portrait',
+  'circle-portrait',
+  'experience-split',
+  'editorial-overlap',
+  'selected-works',
+  'identity-index',
+  'studio-split',
+  'work-duo',
+  'bowl-intro',
+]);
+
+function HeroHiddenNotice({ onEnable }: { onEnable: () => void }) {
+  const t = useT();
+  return (
+    <div className="np-toggle-card flex-col !gap-0 !py-6 text-center">
+      <p className="np-card-title">{t('The Hero section is hidden')}</p>
+      <p className="np-subtle mt-1">{t('Turn it on to customize its presentation.')}</p>
+      <button type="button" onClick={onEnable} className="np-primary-btn mt-5">
+        {t('Show section')}
+      </button>
+    </div>
   );
 }
 
@@ -325,6 +311,7 @@ export function HeroSettingsPanel({
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  chrome,
 }: {
   hero: PortfolioHeroSectionSettings;
   availableTools: string[];
@@ -332,9 +319,10 @@ export function HeroSettingsPanel({
   onChange: (patch: Partial<PortfolioHeroSectionSettings>) => void;
   subSection?: HeroSettingsSubSection;
   onSubSectionChange?: (value: HeroSettingsSubSection) => void;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
-  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<HeroSettingsSubSection>('banner');
+  const [uncontrolledSubSection, setUncontrolledSubSection] = useState<HeroSettingsSubSection>('general');
   const subSection = normalizeHeroSettingsSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: HeroSettingsSubSection) => {
     onSubSectionChange?.(value);
@@ -354,39 +342,53 @@ export function HeroSettingsPanel({
   const backgroundLibrary = usePortfolioBackgroundLibrary();
 
   return (
-    <div className="space-y-6">
-      <div className="space-y-2">
-        <SettingsTabs tabs={HERO_SETTINGS_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
-      </div>
-
-      {subSection === 'banner' ? (
-        <div className="space-y-6">
-          <SettingsSwitchRow
-            label={t('Show section')}
-            description={hero.enabled ? undefined : t('The page starts with the next section.')}
+    <NpPanelShell
+      title={t('Hero')}
+      modified={isHeroModified(hero)}
+      tabs={HERO_SETTINGS_SUB_SECTIONS.map((section) => ({ id: section.id, label: t(section.label) }))}
+      activeTab={subSection}
+      onTabChange={setSubSection}
+      onReset={() => onChange({ ...HERO_DEFAULTS })}
+      chrome={chrome}
+    >
+      {subSection === 'general' ? (
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={t('Show Hero section')}
+            description={hero.enabled ? t('The opening section of the public portfolio.') : t('The page starts with the next section.')}
             checked={hero.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          {!hero.enabled ? null : showBannerGrid ? (
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <FieldLabel>{t('Design Banner')}</FieldLabel>
-                <button
-                  type="button"
-                  onClick={() => setShowBannerGrid(false)}
-                  className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-                >
-                  {t('← Back')}
-                </button>
-              </div>
+          <div className="np-dimmable" data-disabled={hero.enabled ? 'false' : 'true'} aria-disabled={!hero.enabled} inert={!hero.enabled}>
+            <NpCollapsibleSection title={t('Images')}>
+              <NpToggleRow
+                title={t('Black & white images')}
+                checked={hero.heroImageGrayscale === true}
+                onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
+              />
+            </NpCollapsibleSection>
+          </div>
+        </div>
+      ) : null}
+
+      {subSection === 'banner' && !hero.enabled ? <HeroHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+
+      {subSection === 'banner' && hero.enabled ? (
+          showBannerGrid ? (
+            <div className="np-stack">
+              <NpBackRow title={t('Hero design')} onBack={() => setShowBannerGrid(false)} />
               {previewSource ? (
                 /* In the studio: every banner rendered for real, one per row. */
-                <div className="mt-4 flex flex-col gap-3">
+                <div className="mt-3 flex flex-col gap-7">
                   {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => (
                     <PortfolioDesignLivePreviewCard
                       key={option.value}
-                      cardClassName="pf-stack-design-card"
+                      cardClassName="pf-stack-design-card pf-hero-design-card"
                       labelClassName="pf-stack-card-label"
+                      showPreviewRing={false}
+                      showCurrentBadge={false}
+                      flush
                       active={selectedBannerDesign === option.value}
                       label={t(option.label)}
                       src={withDesignPreview(previewSource.portfolioPath, { section: 'hero', design: option.value })}
@@ -399,140 +401,93 @@ export function HeroSettingsPanel({
                   ))}
                 </div>
               ) : (
-              <div className="mt-4 grid grid-cols-2 gap-5">
+              <div className="mt-3 grid grid-cols-2 gap-3">
                 {PORTFOLIO_HERO_BANNER_DESIGN_OPTIONS.map((option) => {
                   const active = selectedBannerDesign === option.value;
                   return (
-                    <button
+                    <NpOptionCard
                       key={option.value}
-                      type="button"
-                      aria-pressed={active}
+                      selected={active}
+                      title={t(option.label)}
                       onClick={() => {
                         onChange(heroBannerDesignSettingsPatch(option.value));
                         setShowBannerGrid(false);
                       }}
-                      className={`relative rounded-2xl p-3 text-left transition-shadow focus-visible:outline-none ${
-                        active
-                          ? 'shadow-[inset_0_0_0_2px_var(--pf-palette-texte-fort)]'
-                          : 'shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] hover:shadow-[inset_0_0_0_1px_var(--pf-palette-texte-muted)] focus-visible:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)]'
-                      }`}
-                    >
-                      {active ? <SelectedBadge /> : null}
-                      <div className="overflow-hidden rounded-xl">
+                      illustration={
+                      <div className="h-full w-full overflow-hidden rounded-md">
                         {/* No `hero` prop here: this grid compares many designs at once, so
                             it must stay an abstract mini-schema (fixed shape count, uniform
                             height) — real content (variable-length text, pills, dots) belongs
                             only in the single-design detail preview above. */}
                         <HeroBannerDesignPreview design={option.value} />
                       </div>
-                      <span
-                        className={`mt-3 block text-sm ${
-                          active ? 'font-semibold text-[color:var(--pf-palette-texte-fort)]' : 'font-medium text-[color:var(--pf-palette-texte-muted)]'
-                        }`}
-                      >
-                        {t(option.label)}
-                      </span>
-                    </button>
+                      }
+                    />
                   );
                 })}
               </div>
               )}
             </div>
           ) : (
-            <div className="space-y-6">
-              <div>
-                <div className="group relative w-full overflow-hidden rounded-2xl border border-[color:var(--pf-palette-bordure)]">
-                  <HeroBannerDesignPreview design={selectedBannerDesign} hero={hero} />
+            <div className="np-stack">
+              <NpCollapsibleSection title={t('Layout')}>
+                <NpPickerRow
+                  label={t('Hero design')}
+                  value={t(selectedBannerLabel)}
+                  thumbnail={
+                    <div className="h-full w-full overflow-hidden rounded-md">
+                      <HeroBannerDesignPreview design={selectedBannerDesign} hero={hero} />
+                    </div>
+                  }
+                  onClick={() => setShowBannerGrid(true)}
+                />
+              </NpCollapsibleSection>
 
-                  {/* Desktop: full dark overlay revealed on hover/keyboard focus. */}
-                  <button
-                    type="button"
-                    onClick={() => setShowBannerGrid(true)}
-                    aria-label={t('Change banner design')}
-                    className="absolute inset-0 hidden items-center justify-center bg-black/55 opacity-0 outline-none transition-opacity duration-150 hover:opacity-100 focus-visible:opacity-100 sm:flex"
-                  >
-                    <span className="inline-flex items-center gap-2 rounded-full bg-transparent px-4 py-2 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)] shadow-lg">
-                      <HeroChangeIcon className="h-4 w-4" />
-                      {t('Change banner')}
-                    </span>
-                  </button>
-
-                  {/* Mobile/touch: no hover, so keep a small persistent affordance instead. */}
-                  <button
-                    type="button"
-                    onClick={() => setShowBannerGrid(true)}
-                    aria-label={t('Change banner design')}
-                    className="absolute bottom-2 right-2 inline-flex items-center gap-1.5 rounded-full bg-black/70 px-3 py-1.5 text-xs font-semibold text-white sm:hidden"
-                  >
-                    <HeroChangeIcon className="h-3.5 w-3.5" />
-                    {t('Change')}
-                  </button>
-                </div>
-                <p className="mt-3 text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{selectedBannerLabel}</p>
-                <p className="mt-0.5 text-xs text-[color:var(--pf-palette-texte-muted)]">
-                  <span className="hidden sm:inline">{t('Hover preview to change')}</span>
-                  <span className="sm:hidden">{t('Tap preview to change')}</span>
-                </p>
-              </div>
-
-              <SettingsRowsScope title={t('{design} options', { design: t(selectedBannerLabel) })}>
-              <HeroToggleRow
-                label={t('Black & white images')}
-                checked={hero.heroImageGrayscale === true}
-                onChange={(heroImageGrayscale) => onChange({ heroImageGrayscale })}
-              />
-
-              {(hero.heroBannerDesign ?? 'swiss-editorial') === 'cinematic-reveal' ? (
-                <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
-                  <div>
-                    <FieldLabel>{t('Tools in the band')}</FieldLabel>
-                    <HeroToolPicker tools={normalizedTools} limit={8} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
-                  </div>
-                </div>
-              ) : null}
+              {HERO_DESIGNS_WITH_OPTIONS.has(selectedBannerDesign) ? (
+              <NpCollapsibleSection title={t('Layout options')}>
 
               {(hero.heroBannerDesign ?? 'swiss-editorial') === 'swiss-editorial' ? (
-                <div className="space-y-6 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                <div className="space-y-6">
                   <HeroToggleRow
                     label={t('Swap bio ↔ name + specialty')}
                     checked={hero.heroBannerSwapBioName === true}
                     onChange={(heroBannerSwapBioName) => onChange({ heroBannerSwapBioName })}
                   />
-                  <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
-                    <div>
-                      <FieldLabel>{t('Currently label')}</FieldLabel>
+                  <div className="space-y-4">
+                    <label className="np-field block">
+                      <span className="np-field-label">{t('Currently label')}</span>
                       <input
                         type="text"
                         value={hero.heroCurrentlyLabel ?? 'Currently'}
                         onChange={(event) => onChange({ heroCurrentlyLabel: event.target.value })}
-                        className={`mt-2 ${PF_TEXT_INPUT}`}
+                        className="np-input"
                       />
-                    </div>
-                    <div>
-                      <FieldLabel>{t('Specialized in label')}</FieldLabel>
+                    </label>
+                    <label className="np-field block">
+                      <span className="np-field-label">{t('Specialized in label')}</span>
                       <input
                         type="text"
                         value={hero.heroSpecializedInLabel ?? 'Specialized in'}
                         onChange={(event) => onChange({ heroSpecializedInLabel: event.target.value })}
-                        className={`mt-2 ${PF_TEXT_INPUT}`}
+                        className="np-input"
                       />
-                    </div>
-                    <div>
-                      <FieldLabel>{t('Signature word')}</FieldLabel>
+                    </label>
+                    <label className="np-field block">
+                      <span className="np-field-label">{t('Signature word')}</span>
                       <input
                         type="text"
                         value={hero.heroSignatureWord ?? ''}
                         onChange={(event) => onChange({ heroSignatureWord: event.target.value })}
                         placeholder={t('e.g. JOHN')}
-                        className={`mt-2 ${PF_TEXT_INPUT}`}
+                        className="np-input"
                       />
-                    </div>
+                    </label>
                   </div>
                 </div>
               ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-identity' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-7">
+            <div className="space-y-4">
               <HeroToggleRow
                 label={t('Swap bio ↔ name + specialty')}
                 checked={hero.heroBannerSwapBioName === true}
@@ -543,7 +498,7 @@ export function HeroSettingsPanel({
 
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-rail' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroToggleRow
                 label={t('Bio under the portrait')}
                 checked={hero.heroEditorialRailBioUnderPortrait === true}
@@ -567,14 +522,14 @@ export function HeroSettingsPanel({
               />
 
               <div>
-                <FieldLabel>{t('Tools shown')}</FieldLabel>
+                <span className="np-field-label">{t('Tools shown')}</span>
                 <HeroToolPicker tools={normalizedTools} limit={4} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
               </div>
             </div>
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'statement-cta' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroToggleRow
                 label={t('Round portrait in the center')}
                 checked={hero.heroStatementCtaCenterPortrait === true}
@@ -634,23 +589,23 @@ export function HeroSettingsPanel({
                 />
               ) : null}
               <div>
-                <FieldLabel>{t('Tools shown')}</FieldLabel>
+                <span className="np-field-label">{t('Tools shown')}</span>
                 <HeroToolPicker tools={normalizedTools} limit={5} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
               </div>
             </div>
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'portrait-balance' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <div>
-                <FieldLabel>{t('Tools shown')}</FieldLabel>
+                <span className="np-field-label">{t('Tools shown')}</span>
                 <HeroToolPicker tools={normalizedTools} limit={12} value={hero.heroEditorialRailSelectedTools ?? []} onChange={(heroEditorialRailSelectedTools) => onChange({ heroEditorialRailSelectedTools })} />
               </div>
             </div>
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'left-portrait' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroToggleRow
                 label={t('Specialty highlight')}
                 checked={hero.heroLeftPortraitSpecialtyMark === true}
@@ -662,7 +617,7 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'circle-portrait' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroToggleRow
                 label={t('Specialty highlight')}
                 checked={hero.heroCirclePortraitSpecialtyMark === true}
@@ -681,7 +636,7 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'experience-split' ? (
-            <div className="space-y-3 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-3">
               <HeroToggleRow
                 label={t('Bio on the right')}
                 checked={hero.heroExperienceSplitBioRight !== false}
@@ -700,7 +655,7 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'editorial-overlap' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <PortfolioBackgroundImageUpload
                 label={t('Scene image')}
                 url={hero.heroEditorialOverlapImageUrl ?? ''}
@@ -711,8 +666,8 @@ export function HeroSettingsPanel({
                 onLibraryChange={backgroundLibrary?.onLibraryChange}
                 helperText={t('Landscape photo behind the panel — independent of the profile avatar.')}
               />
-              <label className="block space-y-2">
-                <span className="block text-[13px] font-medium text-[color:var(--pf-palette-texte-muted)]">
+              <label className="np-field block">
+                <span className="np-field-label">
                   {t('Editorial title (optional)')}
                 </span>
                 <textarea
@@ -722,12 +677,11 @@ export function HeroSettingsPanel({
                     onChange({ heroEditorialOverlapHeadline: event.target.value })
                   }
                   placeholder={t('Hi, I\'m …')}
-                  className={PF_TEXT_INPUT}
+                  className="np-input !h-auto min-h-20 resize-y py-3"
                 />
               </label>
               <HeroOptionGrid
                 label={t('Frame width')}
-                columns={3}
                 options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS}
                 value={hero.heroEditorialOverlapWidth ?? 'full'}
                 onChange={(heroEditorialOverlapWidth) =>
@@ -736,7 +690,6 @@ export function HeroSettingsPanel({
               />
               <HeroOptionGrid
                 label={t('Position')}
-                columns={3}
                 options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_ALIGN_OPTIONS}
                 value={hero.heroEditorialOverlapAlign ?? 'left'}
                 onChange={(heroEditorialOverlapAlign) =>
@@ -747,10 +700,9 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'selected-works' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroOptionGrid
                 label={t('Identity layout')}
-                columns={2}
                 options={PORTFOLIO_HERO_SELECTED_WORKS_IDENTITY_LAYOUT_OPTIONS}
                 value={hero.heroSelectedWorksIdentityLayout ?? 'split'}
                 onChange={(heroSelectedWorksIdentityLayout) =>
@@ -771,7 +723,7 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'identity-index' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroToggleRow
                 label={t('Swap name ↔ bio')}
                 checked={hero.heroBannerSwapBioName === true}
@@ -795,7 +747,6 @@ export function HeroSettingsPanel({
                   />
                   <HeroOptionGrid
                     label={t('Image rounding')}
-                    columns={3}
                     options={PORTFOLIO_HERO_IDENTITY_INDEX_PORTRAIT_RADIUS_OPTIONS}
                     value={hero.heroIdentityIndexPortraitRadius ?? 'none'}
                     onChange={(heroIdentityIndexPortraitRadius) =>
@@ -825,28 +776,33 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'studio-split' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
+            <div className="space-y-4">
+              <label className="np-field block">
+                <span className="np-field-label">
                   {t('Eyebrow (e.g. Portfolio)')}
-                </p>
+                </span>
                 <input
                   type="text"
                   value={hero.heroStudioSplitEyebrow ?? 'Portfolio'}
                   onChange={(event) => onChange({ heroStudioSplitEyebrow: event.target.value })}
                   placeholder={t('Portfolio')}
-                  className={`mt-2 ${PF_TEXT_INPUT}`}
+                  className="np-input"
                 />
-              </div>
+              </label>
               <PortfolioHeroBannerMediaUpload
                 label={t('Frame photo / video')}
                 url={hero.heroStudioSplitMediaUrl ?? ''}
                 onChange={(heroStudioSplitMediaUrl) => onChange({ heroStudioSplitMediaUrl })}
-                helperText={t('Large rounded frame under the band — independent of the profile avatar.')}
+                helperText={t('Optional custom media. Without one, the circle, portrait and square formats use the profile portrait; panorama keeps the abstract scene.')}
               />
               <HeroOptionGrid
-                label={t('Frame width')}
-                columns={3}
+                label={t('Frame format')}
+                options={PORTFOLIO_HERO_STUDIO_SPLIT_FRAME_STYLE_OPTIONS}
+                value={hero.heroStudioSplitFrameStyle ?? 'circle-center'}
+                onChange={(heroStudioSplitFrameStyle) => onChange({ heroStudioSplitFrameStyle })}
+              />
+              <HeroOptionGrid
+                label={t('Frame size')}
                 options={PORTFOLIO_HERO_EDITORIAL_OVERLAP_WIDTH_OPTIONS}
                 value={hero.heroStudioSplitMediaWidth ?? 'full'}
                 onChange={(heroStudioSplitMediaWidth) => onChange({ heroStudioSplitMediaWidth })}
@@ -855,9 +811,19 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'work-duo' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
-              <div>
-                <FieldLabel>{t('Selected works shown')}</FieldLabel>
+            <div className="space-y-4">
+              <label className="np-field block">
+                <span className="np-field-label">{t('Experience label')}</span>
+                <input
+                  type="text"
+                  value={hero.heroWorkDuoExperienceLabel ?? 'Experience built through real projects'}
+                  onChange={(event) => onChange({ heroWorkDuoExperienceLabel: event.target.value })}
+                  placeholder={t('Experience built through real projects')}
+                  className="np-input"
+                />
+              </label>
+              <div className="np-field">
+                <span className="np-field-label">{t('Selected works shown')}</span>
                 {availableWorks.length > 0 ? (
                   <>
                     <div className="mt-3 grid grid-cols-2 gap-2 sm:grid-cols-3">
@@ -886,13 +852,13 @@ export function HeroSettingsPanel({
                                   : [...current, work.id];
                               onChange({ heroWorkDuoSelectedWorkIds: next });
                             }}
-                            className={`overflow-hidden rounded-xl border text-left transition ${
+                            className={`overflow-hidden rounded-xl border bg-[color:var(--np-card)] text-left transition ${
                               active
-                                ? 'border-[color:var(--pf-palette-texte-fort)] ring-2 ring-[color:var(--pf-palette-texte-fort)]'
-                                : 'border-[color:var(--pf-palette-bordure)] hover:border-[color:var(--pf-palette-texte-muted)]'
+                                ? 'border-[color:var(--np-accent)] ring-2 ring-[color:var(--np-accent)]'
+                                : 'border-[color:var(--np-card-border)] hover:border-[color:var(--np-muted)]'
                             } disabled:cursor-not-allowed disabled:opacity-45`}
                           >
-                            <span className="relative block aspect-[4/3] w-full bg-[color:var(--pf-surface)]">
+                            <span className="relative block aspect-[4/3] w-full bg-[color:var(--np-well)]">
                               {/* eslint-disable-next-line @next/next/no-img-element */}
                               <img
                                 src={work.imageUrl}
@@ -900,7 +866,7 @@ export function HeroSettingsPanel({
                                 className="h-full w-full object-cover"
                               />
                             </span>
-                            <span className="block truncate px-2.5 py-2 text-xs font-medium text-[color:var(--pf-palette-texte-fort)]">
+                            <span className="block truncate px-2.5 py-2 text-xs font-medium text-[color:var(--np-text)]">
                               {work.title}
                             </span>
                           </button>
@@ -911,7 +877,7 @@ export function HeroSettingsPanel({
                       <button
                         type="button"
                         onClick={() => onChange({ heroWorkDuoSelectedWorkIds: [] })}
-                        className="mt-3 text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
+                        className="np-link-btn mt-3"
                       >
                         {t('Reset — first 2 projects')}
                       </button>
@@ -923,29 +889,29 @@ export function HeroSettingsPanel({
           ) : null}
 
           {(hero.heroBannerDesign ?? 'swiss-editorial') === 'bowl-intro' ? (
-            <div className="space-y-4 border-t border-[color:var(--pf-palette-bordure)] pt-6">
+            <div className="space-y-4">
               <HeroOptionGrid
-                label={t('Pattern behind the portrait')}
-                columns={2}
+                label={t('Portrait motif')}
                 options={PORTFOLIO_HERO_BOWL_INTRO_MOTIF_OPTIONS}
                 value={hero.heroBowlIntroMotif ?? 'bowl'}
                 onChange={(heroBowlIntroMotif) => onChange({ heroBowlIntroMotif })}
               />
             </div>
           ) : null}
-                          </SettingsRowsScope>
+
+              </NpCollapsibleSection>
+              ) : null}
             </div>
-          )}
-        </div>
+          )
       ) : null}
 
-      {subSection === 'background' && !hero.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection === 'background' && !hero.enabled ? <HeroHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
 
       {subSection === 'background' && hero.enabled ? (
-        <div className="space-y-5">
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Fill')}>
           <HeroOptionGrid
             label={t('Fill')}
-            columns={3}
             options={PORTFOLIO_HERO_SECTION_BACKGROUND_FILL_OPTIONS}
             value={hero.heroSectionBackgroundFill}
             onChange={(heroSectionBackgroundFill) => onChange({ heroSectionBackgroundFill })}
@@ -961,7 +927,7 @@ export function HeroSettingsPanel({
 
           {hero.heroSectionBackgroundFill === 'gradient' ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-4">
                 <HeroColorField
                   label={t('Gradient start')}
                   value={hero.heroSectionBackgroundGradientFrom}
@@ -979,7 +945,6 @@ export function HeroSettingsPanel({
               </div>
               <HeroOptionGrid
                 label={t('Type')}
-                columns={2}
                 options={PORTFOLIO_HERO_BACKGROUND_GRADIENT_TYPE_OPTIONS}
                 value={hero.heroSectionBackgroundGradientType}
                 onChange={(heroSectionBackgroundGradientType) =>
@@ -1001,7 +966,7 @@ export function HeroSettingsPanel({
 
           {hero.heroSectionBackgroundFill === 'split' ? (
             <>
-              <div className="grid gap-4 sm:grid-cols-2">
+              <div className="flex flex-col gap-4">
                 <HeroColorField
                   label={t('Color A')}
                   value={hero.heroSectionBackgroundColorA}
@@ -1015,7 +980,6 @@ export function HeroSettingsPanel({
               </div>
               <HeroOptionGrid
                 label={t('Direction')}
-                columns={2}
                 options={PORTFOLIO_HERO_BACKGROUND_SPLIT_AXIS_OPTIONS}
                 value={hero.heroSectionBackgroundSplitAxis}
                 onChange={(heroSectionBackgroundSplitAxis) =>
@@ -1036,14 +1000,12 @@ export function HeroSettingsPanel({
               />
               <HeroOptionGrid
                 label={t('Size')}
-                columns={3}
                 options={HERO_BACKGROUND_IMAGE_SIZE_OPTIONS}
                 value={hero.heroSectionBackgroundImageSize}
                 onChange={(heroSectionBackgroundImageSize) => onChange({ heroSectionBackgroundImageSize })}
               />
               <HeroOptionGrid
                 label={t('Position')}
-                columns={3}
                 options={HERO_BACKGROUND_IMAGE_POSITION_OPTIONS}
                 value={hero.heroSectionBackgroundImagePosition}
                 onChange={(heroSectionBackgroundImagePosition) =>
@@ -1063,8 +1025,9 @@ export function HeroSettingsPanel({
               onChange={(heroSectionBackgroundOpacity) => onChange({ heroSectionBackgroundOpacity })}
             />
           ) : null}
+          </NpCollapsibleSection>
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

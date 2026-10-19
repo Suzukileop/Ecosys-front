@@ -3,7 +3,7 @@
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, type CSSProperties, type MouseEvent } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
-import type { EditorialContactLink } from '@/components/portfolio/portfolio-section-primitives';
+import type { EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,

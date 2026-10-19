@@ -37,7 +37,7 @@ const VARIANT_CLASSES = {
     chipRemovePrimary: 'text-white/80 hover:text-white',
     chipRemoveIdle: 'text-neutral-400 hover:text-neutral-700 dark:hover:text-white',
     input:
-      'h-10 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white',
+      'h-10 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-hidden focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white',
     addButton:
       'rounded-xl bg-neutral-900 px-3 text-sm font-semibold text-white disabled:opacity-40 dark:bg-neutral-100 dark:text-neutral-900',
     list: 'absolute z-20 mt-1 max-h-48 w-full overflow-auto rounded-xl border border-neutral-200 bg-white py-1 shadow-lg dark:border-neutral-700 dark:bg-neutral-900',
@@ -53,7 +53,7 @@ const VARIANT_CLASSES = {
     chipRemovePrimary: 'text-white/60 hover:text-[#FF5722] dark:text-black/50',
     chipRemoveIdle: 'text-neutral-400 hover:text-[#FF5722]',
     input:
-      'min-w-0 flex-1 border-b border-black/[0.08] bg-transparent pb-2 text-base text-black caret-[#FF5722] outline-none placeholder:text-neutral-400 focus:border-[#FF5722] disabled:opacity-50 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]',
+      'min-w-0 flex-1 border-b border-black/[0.08] bg-transparent pb-2 text-base text-black caret-[#FF5722] outline-hidden placeholder:text-neutral-400 focus:border-[#FF5722] disabled:opacity-50 dark:border-white/[0.08] dark:text-white dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]',
     addButton:
       'inline-flex shrink-0 items-center self-end rounded-full border border-neutral-300 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-700 transition-colors duration-200 hover:border-[#FF5722] hover:text-[#FF5722] disabled:pointer-events-none disabled:opacity-40 dark:border-white/20 dark:text-white/75',
     list: 'absolute z-20 mt-2 max-h-56 w-full overflow-auto p-1.5 rounded-2xl bg-[#FEFEFE] shadow-[0_0_0_1px_#E1E8ED,0_8px_20px_-14px_rgba(15,20,25,0.18)] dark:bg-[#000000] dark:shadow-[0_0_0_1px_#2F3336]',
@@ -329,7 +329,7 @@ export function SpecialtyMultiSelect({
                 addTag();
               }
             }}
-            className="h-10 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-none focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white"
+            className="h-10 min-w-0 flex-1 rounded-xl border border-neutral-300 bg-white px-3 text-sm text-neutral-900 outline-hidden focus:border-orange-400 dark:border-neutral-600 dark:bg-neutral-950 dark:text-white"
           />
           <button
             type="button"

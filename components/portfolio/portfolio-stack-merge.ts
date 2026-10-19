@@ -15,6 +15,7 @@ import {
 } from '@/components/portfolio/portfolio-tools-palette-settings';
 import {
   mergeLevelIndicatorDisplayStyle,
+  migrateContentAlignmentToHeader,
   type PortfolioToolsBrandGridColumnsPerRow,
   type PortfolioToolsContentAlignment,
   type PortfolioToolsDesign,
@@ -745,6 +746,11 @@ export function mergeStackPresentationBase(
       base.workflowRailContentAlignment ??
         legacySharedContentAlignment(record, base.contentAlignment ?? 'center')
     ),
+    workflowRailLogoTreatment: pick(
+      record.workflowRailLogoTreatment,
+      ['vivid', 'soft'] as const,
+      base.workflowRailLogoTreatment ?? 'vivid'
+    ),
     brandCardsColumnsPerRow: parseBrandGridColumnsPerRow(
       record.brandCardsColumnsPerRow ??
         (record.design === 'brand-showcase' ? record.brandShowcaseColumnsPerRow : undefined),
@@ -864,7 +870,7 @@ export function mergeStackPresentationBase(
   if (next.useHeroPalette !== false) {
     Object.assign(next, applyToolsPaletteToSettings(next));
   }
-  return next;
+  return migrateContentAlignmentToHeader(next, record);
 }
 
 export { DEFAULT_SECTION_BACKGROUND };

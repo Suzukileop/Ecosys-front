@@ -10,7 +10,16 @@
  */
 
 import localFont from 'next/font/local';
-import { useId, useRef, useState, type CSSProperties, type KeyboardEvent, type ReactNode } from 'react';
+import {
+  createContext,
+  useContext,
+  useId,
+  useRef,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type ReactNode,
+} from 'react';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const geist = localFont({
@@ -43,15 +52,13 @@ function NpIcon({ children, className = 'h-[18px] w-[18px]' }: { children: React
 
 const UndoIcon = () => (
   <NpIcon>
-    <path d="M9 14 4 9l5-5" />
-    <path d="M4 9h10.5a5.5 5.5 0 0 1 0 11H12" />
+    <path d="m15 6-6 6 6 6" />
   </NpIcon>
 );
 
 const RedoIcon = () => (
   <NpIcon>
-    <path d="m15 14 5-5-5-5" />
-    <path d="M20 9H9.5a5.5 5.5 0 0 0 0 11H12" />
+    <path d="m9 6 6 6-6 6" />
   </NpIcon>
 );
 
@@ -80,6 +87,16 @@ const ChevronIcon = ({ className }: { className?: string }) => (
   </NpIcon>
 );
 
+/**
+ * True inside NpPanelShell. Shared settings blocks (switch rows, preview-card grids, sections) read it
+ * to take this panel's look, so the per-layout editors nested in it match without being rewritten.
+ */
+const NpPanelContext = createContext(false);
+
+export function useInNpPanel() {
+  return useContext(NpPanelContext);
+}
+
 /* ------------------------------------------------------------------------------------------------
  * Panel frame
  * --------------------------------------------------------------------------------------------- */
@@ -93,6 +110,7 @@ export type NpPanelChrome = {
   canUndo: boolean;
   canRedo: boolean;
   onDone: () => void;
+  hideClose?: boolean;
 };
 
 export type NpTab<T extends string> = { id: T; label: string };
@@ -191,6 +209,7 @@ export function NpPanelShell<T extends string>({
   onTabChange,
   onReset,
   chrome,
+  tone = 'studio',
   children,
 }: {
   title: string;
@@ -200,6 +219,9 @@ export function NpPanelShell<T extends string>({
   onTabChange: (value: T) => void;
   onReset: () => void;
   chrome?: NpPanelChrome;
+  /** `studio` (default): the studio chrome's palette and type scale, pure black like the Sections
+   *  pane. `classic`: the original #121214 panel grey. */
+  tone?: 'studio' | 'classic';
   children: ReactNode;
 }) {
   const t = useT();
@@ -212,13 +234,13 @@ export function NpPanelShell<T extends string>({
       aria-labelledby={`${idBase}-tab-${activeTab}`}
       className={chrome ? 'np-scroll' : 'np-body'}
     >
-      {children}
+      <NpPanelContext.Provider value>{children}</NpPanelContext.Provider>
     </div>
   );
 
   if (!chrome) {
     return (
-      <div className={`np-panel np-panel--embedded ${geist.className}`}>
+      <div className={`np-panel np-panel--embedded ${geist.className}`} data-np-tone={tone}>
         {tabList}
         {body}
       </div>
@@ -226,7 +248,7 @@ export function NpPanelShell<T extends string>({
   }
 
   return (
-    <div className={`np-panel ${geist.className}`}>
+    <div className={`np-panel ${geist.className}`} data-np-tone={tone}>
       <header className="np-header">
         {chrome.onBack ? (
           <NpIconButton label={t('All sections')} onClick={chrome.onBack} className="-ml-2 lg:hidden">
@@ -241,16 +263,20 @@ export function NpPanelShell<T extends string>({
           </p>
         </div>
         <div className="np-header-actions">
-          <NpIconButton label={t('Undo')} onClick={chrome.onUndo} disabled={!chrome.canUndo}>
+          <NpIconButton label={t('Undo')} onClick={chrome.onUndo} disabled={!chrome.canUndo} className="np-history-btn">
             <UndoIcon />
           </NpIconButton>
-          <NpIconButton label={t('Redo')} onClick={chrome.onRedo} disabled={!chrome.canRedo}>
+          <NpIconButton label={t('Redo')} onClick={chrome.onRedo} disabled={!chrome.canRedo} className="np-history-btn">
             <RedoIcon />
           </NpIconButton>
-          <span className="np-vsep" aria-hidden />
-          <NpIconButton label={t('Close')} onClick={chrome.onClose}>
-            <CloseIcon />
-          </NpIconButton>
+          {chrome.hideClose ? null : (
+            <>
+              <span className="np-vsep" aria-hidden />
+              <NpIconButton label={t('Close')} onClick={chrome.onClose}>
+                <CloseIcon />
+              </NpIconButton>
+            </>
+          )}
         </div>
       </header>
 
@@ -311,19 +337,30 @@ export function NpToggleRow({
   checked,
   onChange,
   card = false,
+  adornment,
+  disabled = false,
 }: {
   title: string;
   description?: string;
   checked: boolean;
   onChange: (checked: boolean) => void;
   card?: boolean;
+  /** Small element after the title, e.g. an info tooltip. */
+  adornment?: ReactNode;
+  /** Dimmed and inert, e.g. a sub-switch whose parent is off. */
+  disabled?: boolean;
 }) {
   const id = useId();
   return (
-    <div className={card ? 'np-toggle-card' : 'np-toggle-row'}>
+    <div
+      className={`${card ? 'np-toggle-card' : 'np-toggle-row'} np-dimmable`}
+      data-disabled={disabled ? 'true' : 'false'}
+      inert={disabled}
+    >
       <div className="min-w-0 flex-1">
-        <p id={`${id}-title`} className={card ? 'np-card-title' : 'np-field-label !mb-0'}>
-          {title}
+        <p className={`flex items-center gap-1.5 ${card ? 'np-card-title' : 'np-field-label !mb-0'}`}>
+          <span id={`${id}-title`}>{title}</span>
+          {adornment}
         </p>
         {description ? (
           <p id={`${id}-desc`} className="np-subtle mt-0.5">
@@ -341,6 +378,48 @@ export function NpToggleRow({
   );
 }
 
+/**
+ * Shared body for section-level General tabs. It brings the pro-editor tokens and context without
+ * replacing a panel's existing tabs, then keeps every General tab on the same activation pattern.
+ */
+export function NpGeneralSettings({
+  title,
+  description,
+  checked,
+  onChange,
+  children,
+}: {
+  title: string;
+  description?: string;
+  checked: boolean;
+  onChange: (checked: boolean) => void;
+  children: ReactNode;
+}) {
+  return (
+    <div className={`np-panel np-panel--embedded ${geist.className}`} data-np-tone="studio">
+      <NpPanelContext.Provider value>
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={title}
+            description={description}
+            checked={checked}
+            onChange={onChange}
+          />
+          <div
+            className="np-dimmable"
+            data-disabled={checked ? 'false' : 'true'}
+            aria-disabled={!checked}
+            inert={!checked}
+          >
+            {children}
+          </div>
+        </div>
+      </NpPanelContext.Provider>
+    </div>
+  );
+}
+
 /** One-line segmented control with an optional live help sentence under it. */
 export function NpSegmentedControl<T extends string>({
   label,
@@ -350,7 +429,7 @@ export function NpSegmentedControl<T extends string>({
   help,
 }: {
   label: string;
-  options: { value: T; label: string }[];
+  options: { value: T; label: string; title?: string; sizePx?: number }[];
   value: T;
   onChange: (value: T) => void;
   help?: string;
@@ -373,8 +452,10 @@ export function NpSegmentedControl<T extends string>({
             key={option.value}
             type="button"
             aria-pressed={option.value === value}
+            title={option.title}
             onClick={() => onChange(option.value)}
             className="np-seg-btn"
+            style={option.sizePx ? { fontSize: `${option.sizePx}px` } : undefined}
           >
             <span className="relative truncate">{option.label}</span>
           </button>
@@ -389,27 +470,38 @@ export function NpSegmentedControl<T extends string>({
   );
 }
 
-/** Visual option: mini illustration (60px), title, subtitle; selected = accent ring + check badge. */
+/**
+ * Visual option: mini illustration, title, optional subtitle; selected = accent ring + check badge.
+ * `compact` is the three-per-row size (shorter illustration, title only).
+ */
 export function NpOptionCard({
   selected,
   title,
   subtitle,
   illustration,
   onClick,
+  compact = false,
 }: {
   selected: boolean;
   title: string;
-  subtitle: string;
+  subtitle?: string;
   illustration: ReactNode;
   onClick: () => void;
+  compact?: boolean;
 }) {
   return (
-    <button type="button" aria-pressed={selected} onClick={onClick} className="np-option">
+    <button
+      type="button"
+      aria-pressed={selected}
+      onClick={onClick}
+      className="np-option"
+      data-compact={compact ? 'true' : undefined}
+    >
       <span className="np-option-illus" aria-hidden>
         {illustration}
       </span>
       <span className="np-option-title">{title}</span>
-      <span className="np-option-sub">{subtitle}</span>
+      {subtitle ? <span className="np-option-sub">{subtitle}</span> : null}
       {selected ? (
         <span className="np-option-badge" aria-hidden>
           <svg viewBox="0 0 20 20" className="h-2.5 w-2.5" fill="none">
@@ -421,17 +513,88 @@ export function NpOptionCard({
   );
 }
 
-/** Two option cards side by side under a field label. */
-export function NpOptionCardGroup({ label, children }: { label: string; children: ReactNode }) {
+/** Option cards in a grid (two per row by default) under a field label. */
+const NP_GRID_COLUMNS = { 2: 'grid-cols-2', 3: 'grid-cols-3', 4: 'grid-cols-4' } as const;
+
+export function NpOptionCardGroup({
+  label,
+  columns = 2,
+  action,
+  children,
+}: {
+  label: string;
+  columns?: 2 | 3 | 4;
+  /** Optional control at the end of the label row. */
+  action?: ReactNode;
+  children: ReactNode;
+}) {
   const id = useId();
   return (
     <div className="np-field">
-      <p id={id} className="np-field-label">
-        {label}
-      </p>
-      <div role="group" aria-labelledby={id} className="grid grid-cols-2 gap-2.5">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <p id={id} className="np-field-label !mb-0">
+          {label}
+        </p>
+        {action}
+      </div>
+      <div role="group" aria-labelledby={id} className={`grid gap-3 ${NP_GRID_COLUMNS[columns]}`}>
         {children}
       </div>
+    </div>
+  );
+}
+
+/** Wraps a 64×34 settings glyph (the shared `pf-stack-mini` drawings) as a card illustration. */
+export function NpGlyph({ children }: { children: ReactNode }) {
+  return (
+    <span className="np-illus np-illus--glyph">
+      <svg viewBox="0 0 64 34" className="pf-stack-mini np-glyph" aria-hidden>
+        {children}
+      </svg>
+    </span>
+  );
+}
+
+/**
+ * Current choice with a thumbnail, opening a fuller picker (e.g. the navigation layout).
+ * Reads as one row: preview, name, "Change" + chevron.
+ */
+export function NpPickerRow({
+  label,
+  value,
+  thumbnail,
+  onClick,
+}: {
+  label: string;
+  value: string;
+  thumbnail: ReactNode;
+  onClick: () => void;
+}) {
+  const t = useT();
+  return (
+    <button type="button" onClick={onClick} aria-label={`${label} : ${value}. ${t('Change')}`} className="np-picker-row">
+      <span className="np-picker-thumb" aria-hidden>
+        {thumbnail}
+      </span>
+      <span className="min-w-0 flex-1">
+        <span className="np-option-title block truncate !p-0">{value}</span>
+        <span className="np-option-sub block !p-0">{t('Change')}</span>
+      </span>
+      <ChevronIcon className="np-picker-chevron h-4 w-4 shrink-0" />
+    </button>
+  );
+}
+
+/** Back link at the top of a sub-view (e.g. the full layout list). */
+export function NpBackRow({ title, onBack }: { title: string; onBack: () => void }) {
+  const t = useT();
+  return (
+    <div className="np-back-row">
+      <button type="button" onClick={onBack} className="np-ghost-btn">
+        <BackIcon />
+        {t('Back')}
+      </button>
+      <span className="np-back-title">{title}</span>
     </div>
   );
 }
@@ -464,7 +627,7 @@ export function NpStepSlider<T extends string>({
 
   return (
     <div className="np-field">
-      <div className="mb-2.5 flex items-center justify-between gap-3">
+      <div className="mb-3 flex items-center justify-between gap-3">
         <label htmlFor={id} className="np-field-label !mb-0">
           {label}
         </label>
@@ -507,6 +670,53 @@ export function NpStepSlider<T extends string>({
   );
 }
 
+/** Continuous slider in the same style as NpStepSlider, with its value in the badge. */
+export function NpRangeField({
+  label,
+  value,
+  min,
+  max,
+  step = 1,
+  unit = '',
+  onChange,
+}: {
+  label: string;
+  value: number;
+  min: number;
+  max: number;
+  step?: number;
+  unit?: string;
+  onChange: (value: number) => void;
+}) {
+  const id = useId();
+  const fraction = max > min ? (value - min) / (max - min) : 0;
+  const valueText = `${value}${unit ? ` ${unit}` : ''}`;
+  return (
+    <div className="np-field">
+      <div className="mb-3 flex items-center justify-between gap-3">
+        <label htmlFor={id} className="np-field-label !mb-0">
+          {label}
+        </label>
+        <span className="np-value-badge" aria-hidden>
+          {valueText}
+        </span>
+      </div>
+      <input
+        id={id}
+        type="range"
+        min={min}
+        max={max}
+        step={step}
+        value={value}
+        aria-valuetext={valueText}
+        onChange={(event) => onChange(Number(event.target.value))}
+        className="np-range"
+        style={{ '--np-fill': npTrackPosition(fraction) } as CSSProperties}
+      />
+    </div>
+  );
+}
+
 /** Section with a 48px clickable header (small caps title, rotating chevron) and a top divider. */
 export function NpCollapsibleSection({
   title,
@@ -538,6 +748,27 @@ export function NpCollapsibleSection({
           <div className="np-section-content">{children}</div>
         </div>
       </div>
+    </section>
+  );
+}
+
+/** Same look as NpCollapsibleSection, without folding; `action` sits at the end of the header. */
+export function NpStaticSection({
+  title,
+  action,
+  children,
+}: {
+  title: string;
+  action?: ReactNode;
+  children: ReactNode;
+}) {
+  return (
+    <section className="np-section">
+      <div className="np-section-head np-section-head--static">
+        <h3>{title}</h3>
+        {action}
+      </div>
+      <div className="np-section-content">{children}</div>
     </section>
   );
 }

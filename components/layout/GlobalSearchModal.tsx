@@ -306,7 +306,7 @@ function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; ini
             onClick={() => removeRecentSearch(row.term)}
             aria-label={t('Remove “{term}” from recent searches', { term: row.term })}
             title={t('Remove')}
-            className="mr-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[color:var(--gn-ink2)] opacity-60 transition hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] hover:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="mr-1 inline-flex h-6 w-6 shrink-0 items-center justify-center rounded-md text-[color:var(--gn-ink2)] opacity-60 transition hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] hover:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             <Glyph className="h-3 w-3">
               <path d="M6 6l12 12M18 6 6 18" />
@@ -367,7 +367,7 @@ function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; ini
               autoComplete="off"
               autoCorrect="off"
               spellCheck={false}
-              className="h-full w-full rounded-xl border-0 bg-transparent p-0 pl-10 pr-24 text-[16px] text-[color:var(--gn-ink)] outline-none placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 sm:text-[14px]"
+              className="h-full w-full rounded-xl border-0 bg-transparent p-0 pl-10 pr-24 text-[16px] text-[color:var(--gn-ink)] outline-hidden placeholder:text-[color:var(--gn-ink2)] focus:outline-hidden focus:ring-0 sm:text-[14px]"
             />
             <div className="absolute right-2 top-1/2 flex -translate-y-1/2 items-center gap-1">
               {searching && loading ? (
@@ -381,7 +381,7 @@ function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; ini
                   onClick={() => fillField('')}
                   aria-label={t('Clear search')}
                   title={t('Clear')}
-                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                  className="inline-flex h-7 w-7 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                 >
                   <Glyph className="h-3.5 w-3.5">
                     <path d="M6 6l12 12M18 6 6 18" />
@@ -396,7 +396,7 @@ function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; ini
           <button
             type="button"
             onClick={onClose}
-            className="inline-flex h-10 shrink-0 items-center px-2 text-[15px] font-semibold text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:hidden"
+            className="inline-flex h-10 shrink-0 items-center px-2 text-[15px] font-semibold text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] sm:hidden"
           >
             {t('Cancel')}
           </button>
@@ -419,7 +419,7 @@ function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; ini
                   aria-pressed={active}
                   onClick={() => switchView(id)}
                   data-pf-no-color-transition
-                  className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                  className={`inline-flex h-9 shrink-0 items-center gap-1.5 rounded-lg px-3 text-[13px] font-medium leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                     active
                       ? 'bg-[color:var(--gn-ink)] text-[color:var(--xs-ground)]'
                       : 'text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover)]'
@@ -451,7 +451,7 @@ function GlobalSearchPanel({ onClose, initialQuery }: { onClose: () => void; ini
                     <button
                       type="button"
                       onClick={() => clearRecentSearches()}
-                      className="inline-flex h-7 items-center rounded-md px-2 text-[12px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                      className="inline-flex h-7 items-center rounded-md px-2 text-[12px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                     >
                       {t('Clear')}
                     </button>

@@ -61,13 +61,13 @@ const SHORTCUTS: Shortcut[] = [
 
 /** Tool shortcut: 36px pill, icon 18 + label 14/20 medium in secondary ink — the field is the hero. */
 const shortcutClass =
-  'gn-shortcut inline-flex h-9 items-center gap-2 rounded-full px-3 text-[14px] font-medium leading-5 text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'gn-shortcut inline-flex h-9 items-center gap-2 rounded-full px-3 text-[14px] font-medium leading-5 text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /** The one filled button on the page, 36px, 14/20 semibold. Its colours are tokens: brand orange
  *  (#FF5722, #E64A19 on hover) as a fallback; the `.news-theme` X palette makes it solid
  *  ink — black on light, white on dark. */
 const primaryButtonClass =
-  'gn-primary inline-flex h-9 shrink-0 items-center rounded-full bg-[color:var(--gn-primary,var(--gn-accent-fill))] px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-primary-ink,#ffffff)] transition-colors hover:bg-[color:var(--gn-primary-hover,#E64A19)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'gn-primary inline-flex h-9 shrink-0 items-center rounded-full bg-[color:var(--gn-primary,var(--gn-accent-fill))] px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-primary-ink,#ffffff)] transition-colors hover:bg-[color:var(--gn-primary-hover,#E64A19)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /** Inline "start a post" entry point at the top of the News feed. */
 export function NewsComposer({
@@ -124,7 +124,7 @@ export function NewsComposer({
       <button
         type="button"
         onClick={onCompose}
-        className="inline-flex h-12 min-w-0 max-w-full items-center gap-3 rounded-full border border-black/20 py-1.5 pl-1.5 pr-1.5 text-[15px] font-semibold text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/50 dark:border-white/25 dark:text-white"
+        className="inline-flex h-12 min-w-0 max-w-full items-center gap-3 rounded-full border border-black/20 py-1.5 pl-1.5 pr-1.5 text-[15px] font-semibold text-[#111111] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FF5722]/50 dark:border-white/25 dark:text-white"
       >
         <AvatarImage
           src={user?.avatarUrl}
@@ -161,7 +161,7 @@ export function NewsComposer({
         <button
           type="button"
           onClick={onCompose}
-          className="gn-field-input h-11 min-w-0 flex-1 truncate rounded-lg bg-[color:var(--gn-inset)] px-4 text-left text-[15px] leading-5 text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+          className="gn-field-input h-11 min-w-0 flex-1 truncate rounded-lg bg-[color:var(--gn-inset)] px-4 text-left text-[15px] leading-5 text-[color:var(--gn-ink2)] transition-colors hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
         >
           <span className="sm:hidden">{t('Share your work…')}</span>
           <span className="hidden sm:inline">{prompt}</span>

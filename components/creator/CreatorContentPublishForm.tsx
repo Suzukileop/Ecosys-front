@@ -45,12 +45,12 @@ const MAX_LIST_ITEMS = 10;
 
 /* Soft filled fields (the profile / News language): a quiet tone at rest, an ink ring when typing. */
 const FIELD_CLASS =
-  'block w-full rounded-lg border-0 bg-[#F7F9F9] px-3.5 py-3 text-[15px] text-[#0F1419] caret-current outline-none transition-[background-color,box-shadow] duration-150 placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#0F1419] focus:ring-0 dark:bg-[#16181C] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_1.5px_#E7E9EA]';
+  'block w-full rounded-lg border-0 bg-[#F7F9F9] px-3.5 py-3 text-[15px] text-[#0F1419] caret-current outline-hidden transition-[background-color,box-shadow] duration-150 placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_1.5px_#0F1419] focus:ring-0 dark:bg-[#16181C] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_1.5px_#E7E9EA]';
 
 const LABEL_CLASS = 'mb-2 block text-[14px] font-semibold text-[#0F1419] dark:text-[#E7E9EA]';
 
 const ROUND_ICON_BUTTON_CLASS =
-  '-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] outline-none transition-colors duration-150 hover:bg-[rgba(15,20,25,0.1)] focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:pointer-events-none disabled:opacity-40 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/50';
+  '-ml-1 inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] outline-hidden transition-colors duration-150 hover:bg-[rgba(15,20,25,0.1)] focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:pointer-events-none disabled:opacity-40 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]/50';
 
 /* Facebook's full-width Post: 44px, 8px corners, ink — the one primary of the sheet. */
 const POST_BUTTON_CLASS =
@@ -58,7 +58,7 @@ const POST_BUTTON_CLASS =
 
 /* Small soft chips under the author's name (audience, comments, details). */
 const CHIP_CLASS =
-  'inline-flex h-7 items-center gap-1.5 rounded-md bg-[#EFF3F4] px-2.5 text-[13px] font-semibold text-[#0F1419] transition-colors hover:bg-[#E1E8ED] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:bg-[#202327] dark:text-[#E7E9EA] dark:hover:bg-[#2F3336] dark:focus-visible:ring-white/30';
+  'inline-flex h-7 items-center gap-1.5 rounded-md bg-[#EFF3F4] px-2.5 text-[13px] font-semibold text-[#0F1419] transition-colors hover:bg-[#E1E8ED] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:bg-[#202327] dark:text-[#E7E9EA] dark:hover:bg-[#2F3336] dark:focus-visible:ring-white/30';
 
 /* Sheet header: icon button · centred title · balancing spacer, then a hairline (Facebook). */
 const SHEET_HEADER_CLASS =
@@ -261,7 +261,7 @@ function ChipListField({
             onKeyDown={onKeyDown}
             onBlur={() => commit(draft)}
             placeholder={items.length === 0 ? placeholder : t('Add another')}
-            className="min-w-[8rem] flex-1 border-0 bg-transparent p-0 py-1 text-[15px] text-[#0F1419] caret-current outline-none placeholder:text-[#536471] focus:ring-0 dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
+            className="min-w-[8rem] flex-1 border-0 bg-transparent p-0 py-1 text-[15px] text-[#0F1419] caret-current outline-hidden placeholder:text-[#536471] focus:ring-0 dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
           />
         ) : null}
       </div>

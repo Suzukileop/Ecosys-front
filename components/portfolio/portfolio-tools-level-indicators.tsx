@@ -69,12 +69,17 @@ export function ToolsLevelStatBar({
   fillColor,
   trackColor,
   className,
+  valueText,
+  notchClassName = 'h-[3px]',
 }: {
   level: ProfileStrengthToolLevel | null | undefined;
   toolName: string;
   fillColor: string;
   trackColor: string;
   className?: string;
+  /** Spoken value ("Advanced") — without it a reader only hears "2". */
+  valueText?: string;
+  notchClassName?: string;
 }) {
   const filled = resolveLevelSegmentCount(level);
   if (!level || filled === 0) return null;
@@ -85,6 +90,7 @@ export function ToolsLevelStatBar({
       aria-valuemin={0}
       aria-valuemax={4}
       aria-valuenow={filled}
+      aria-valuetext={valueText}
       aria-label={`${toolName} proficiency`}
       className={`flex w-14 max-w-[4.25rem] gap-[2px] ${className ?? ''}`}
     >
@@ -92,7 +98,7 @@ export function ToolsLevelStatBar({
         <span
           key={index}
           aria-hidden="true"
-          className="h-[3px] flex-1 rounded-px transition-colors duration-200"
+          className={`${notchClassName} flex-1 rounded-px transition-colors duration-200`}
           style={{
             backgroundColor:
               index < filled
@@ -113,6 +119,7 @@ function ToolsLevelCircularPercent({
   labelColor,
   size = 56,
   className,
+  ariaLabel,
 }: {
   percent: number;
   fillColor: string;
@@ -120,6 +127,8 @@ function ToolsLevelCircularPercent({
   labelColor: string;
   size?: number;
   className?: string;
+  /** Accessible name — defaults to the bare percentage. */
+  ariaLabel?: string;
 }) {
   if (percent <= 0) return null;
 
@@ -136,7 +145,7 @@ function ToolsLevelCircularPercent({
       viewBox={`0 0 ${size} ${size}`}
       className={className}
       role="img"
-      aria-label={`${percent}%`}
+      aria-label={ariaLabel ?? `${percent}%`}
     >
       <circle
         cx={center}
@@ -215,6 +224,7 @@ function ToolsLevelSignalDots({
 /** Circular progress ring with centered tool name — no logo, no percentage. */
 export function ToolsLevelSvgRingWithLabel({
   label,
+  secondaryLabel,
   percent,
   fillColor,
   trackColor,
@@ -229,6 +239,7 @@ export function ToolsLevelSvgRingWithLabel({
   trackCircleClassName,
 }: {
   label: string;
+  secondaryLabel?: string;
   percent: number;
   fillColor: string;
   trackColor: string;
@@ -315,6 +326,9 @@ export function ToolsLevelSvgRingWithLabel({
         >
           {label}
         </span>
+        {secondaryLabel ? (
+          <span className="pf-stack-svg-rings-value" aria-hidden="true">{secondaryLabel}</span>
+        ) : null}
       </div>
     </div>
   );
@@ -400,11 +414,14 @@ export function ToolsLevelProgressBar({
   barHeightVariant = 'default',
   className,
   fillClassName,
+  valueText,
 }: {
   level: ProfileStrengthToolLevel | null | undefined;
   toolName: string;
   fillColor: string;
   trackColor: string;
+  /** Spoken value ("Advanced") — without it a reader only hears a number. */
+  valueText?: string;
   /** Optional override; defaults to 25 / 50 / 75 / 100 from level. */
   percent?: number;
   barStyle?: PortfolioToolsLevelBarStyle;
@@ -431,6 +448,7 @@ export function ToolsLevelProgressBar({
         aria-valuemin={0}
         aria-valuemax={PROGRESS_BAR_SEGMENT_COUNT}
         aria-valuenow={filledSegments}
+        aria-valuetext={valueText}
         aria-label={`${toolName} proficiency`}
         className={`flex w-full gap-[3px] ${heightClass} ${className ?? ''}`}
       >
@@ -456,6 +474,7 @@ export function ToolsLevelProgressBar({
       aria-valuemin={0}
       aria-valuemax={100}
       aria-valuenow={widthPercent}
+      aria-valuetext={valueText}
       aria-label={`${toolName} proficiency`}
       className={`w-full overflow-hidden ${heightClass} ${radiusClass} ${className ?? ''}`}
       style={{ backgroundColor: trackColor }}
@@ -587,14 +606,38 @@ export function ToolsBrandDirectoryLevelIndicator({
   const accent = presentation.levelAccentColor;
 
   if (style === 'percentage') {
+    // Four levels mapped to 25–100 % read as false precision on their own: the
+    // level word always rides along, so it reads without a legend or hover.
+    if (compact) {
+      // Inline next to the name on phones: a 44px ring towered over the name and
+      // its centre figure shrank to ~8px — text + micro-bar keeps one baseline.
+      return (
+        <span className="pf-tools-directory-level-compact">
+          <span style={{ color: presentation.labelColor }}>{levelLabel}</span>
+          <span
+            aria-hidden="true"
+            className="pf-tools-directory-level-compact-bar"
+            style={{ backgroundColor: trackColor }}
+          >
+            <span style={{ width: `${percent}%`, backgroundColor: fillColor }} />
+          </span>
+        </span>
+      );
+    }
     return (
-      <ToolsLevelCircularPercent
-        percent={percent}
-        fillColor={fillColor}
-        trackColor={trackColor}
-        labelColor={presentation.labelColor}
-        size={compact ? 44 : 56}
-      />
+      <span className="pf-tools-directory-level">
+        <ToolsLevelCircularPercent
+          percent={percent}
+          fillColor={fillColor}
+          trackColor={trackColor}
+          labelColor={presentation.labelColor}
+          size={56}
+          ariaLabel={`${levelLabel} — ${percent}%`}
+        />
+        <span aria-hidden="true" style={{ color: presentation.labelColor }}>
+          {levelLabel}
+        </span>
+      </span>
     );
   }
 

@@ -45,7 +45,7 @@ function HeaderIconButton({
       title={label}
       aria-label={label}
       aria-pressed={active}
-      className={`h-10 w-10 items-center justify-center rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:cursor-not-allowed disabled:opacity-30 ${
+      className={`h-10 w-10 items-center justify-center rounded-full transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:cursor-not-allowed disabled:opacity-30 ${
         active
           ? 'bg-[var(--msg-wash)] text-[var(--msg-ink)]'
           : 'text-[var(--msg-ink)] hover:bg-[var(--msg-wash)]'
@@ -131,7 +131,7 @@ export function ConversationHeader({
       type="button"
       onClick={onToggleDetails}
       aria-label={t('{title} — conversation details', { title })}
-      className="-mx-1.5 flex min-h-11 min-w-0 items-center gap-2.5 rounded-full px-1.5 text-left transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+      className="-mx-1.5 flex min-h-11 min-w-0 items-center gap-2.5 rounded-full px-1.5 text-left transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
     >
       {identity}
     </button>
@@ -147,7 +147,7 @@ export function ConversationHeader({
             type="button"
             onClick={onBack}
             title={t('Back to inbox')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors duration-200 hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] lg:hidden"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors duration-200 hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] lg:hidden"
             aria-label={t('Back to inbox')}
           >
             <svg className="h-5 w-5" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden>

@@ -34,9 +34,9 @@ const STEPPER_BUTTON =
   'h-full w-10 text-lg text-[color:var(--gn-ink)] transition hover:bg-[color:var(--gn-hover)] disabled:opacity-30';
 /* The page's pills: ink fill for the primary, a 1px ring for the secondary. */
 const PRIMARY_PILL =
-  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-60';
+  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-60';
 const OUTLINE_PILL =
-  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full px-5 text-[15px] font-bold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-60 dark:shadow-[inset_0_0_0_1px_#536471]';
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full px-5 text-[15px] font-bold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-60 dark:shadow-[inset_0_0_0_1px_#536471]';
 
 export function CreatorProductManagePanel({
   product,
@@ -153,7 +153,7 @@ export function CreatorProductManagePanel({
                 type="button"
                 disabled={saleDisabled}
                 onClick={submitSale}
-                className={`relative inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-full px-4 text-[15px] font-bold transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                className={`relative inline-flex h-12 flex-1 items-center justify-center gap-2 overflow-hidden rounded-full px-4 text-[15px] font-bold transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                   saleLocked && !recordingSale
                     ? 'cursor-default bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] dark:shadow-[inset_0_0_0_1px_#536471]'
                     : 'bg-[color:var(--gn-primary)] text-[color:var(--gn-primary-ink)] hover:bg-[color:var(--gn-primary-hover)] disabled:opacity-60'

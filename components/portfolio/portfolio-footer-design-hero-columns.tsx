@@ -4,10 +4,7 @@ import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { useLayoutEffect, useMemo, useRef, type CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   portfolioEditorialGutterX,
   DEFAULT_CONTENT_GUTTER,

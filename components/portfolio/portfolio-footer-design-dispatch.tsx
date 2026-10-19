@@ -14,10 +14,7 @@ import { formatPhoneDisplay } from '@/lib/phone';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   DEFAULT_CONTENT_GUTTER,
   portfolioEditorialGutterX,

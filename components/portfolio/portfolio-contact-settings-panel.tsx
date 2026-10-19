@@ -2,17 +2,13 @@
 
 import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
 import { useState, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import type {
   PortfolioContactCardDesign,
   PortfolioContactPremiumDesign,
   PortfolioContactSectionSettings,
 } from '@/components/portfolio/portfolio-contact-settings';
 import {
+  DEFAULT_CONTACT_PRESENTATION,
   PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS,
   PORTFOLIO_CONTACT_PREMIUM_FONT_SIZE_OPTIONS,
   isContactPremiumDesign,
@@ -39,7 +35,7 @@ import {
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 export type ContactSubSection = 'general' | 'design' | 'header' | 'background';
 
@@ -210,7 +206,7 @@ function ContactPaletteSwatchPicker({
               aria-label={t(token.label)}
               title={t(token.label)}
               className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                active ? 'ring-2 ring-[color:var(--pf-palette-texte-fort)] ring-offset-2 ring-offset-[color:var(--pf-palette-fond)]' : 'hover:bg-[color:var(--pf-surface)]'
+                active ? 'ring-2 ring-[color:var(--np-accent)] ring-offset-2 ring-offset-[color:var(--np-bg)]' : 'hover:bg-[color:var(--pf-surface)]'
               }`}
             >
               <span className="h-9 w-9 rounded-full border border-[color:var(--pf-palette-bordure)] shadow-inner" style={{ backgroundColor: hex }} />
@@ -240,6 +236,24 @@ const PREMIUM_CONTACT_DESIGNS: PortfolioContactPremiumDesign[] = [
   'magnetic-overlap',
 ];
 
+/** What each premium design renders. They all show email and phone; none has the shared
+ *  section header, a CTA switch, a response-time subtitle or an optional form (the two with a
+ *  form always show it) — those settings only exist for the legacy card designs. */
+const CONTACT_PREMIUM_DESIGN_SHOWS: Record<
+  PortfolioContactPremiumDesign,
+  { location: boolean; socialLinks: boolean; photo: boolean }
+> = {
+  'editorial-focus': { location: true, socialLinks: true, photo: false },
+  'split-grid': { location: true, socialLinks: true, photo: false },
+  'liquid-distortion': { location: true, socialLinks: true, photo: false },
+  'sequential-reveal': { location: true, socialLinks: false, photo: true },
+  'studio-overlap': { location: true, socialLinks: false, photo: true },
+  'borderless-grid': { location: true, socialLinks: true, photo: false },
+  'broken-grid': { location: true, socialLinks: true, photo: true },
+  'numbered-narrative': { location: true, socialLinks: true, photo: true },
+  'magnetic-overlap': { location: false, socialLinks: true, photo: true },
+};
+
 /** Mini wireframe canvas — shared settings-UI chrome (`.pf-stack-*` classes are generic,
  *  not Stack-specific — reused across every section panel with this picker mechanism). */
 function ContactMiniSlide({ children }: { children: ReactNode }) {
@@ -256,7 +270,7 @@ function ContactMiniSlide({ children }: { children: ReactNode }) {
  *  only signal is its label switching to the accent color (plus a faint accent-tinted card
  *  background) — no stripe, no floating badge. Hover lift/brighten — see
  *  `.pf-contact-design-card` in globals.css (same recipe as Footer's own picker card). */
-function ContactPickerCard({
+function _ContactPickerCard({
   active,
   label,
   onClick,
@@ -399,7 +413,7 @@ function ContactDesignWireframe({ design }: { design: PortfolioContactCardDesign
 
 /** Collapsed-state row: thumbnail + selected design name + chevron; the whole row opens the
  *  catalogue. Same pattern as Footer's design picker. */
-function ContactDesignSummaryRow({
+function _ContactDesignSummaryRow({
   design,
   name,
   onOpen,
@@ -408,14 +422,13 @@ function ContactDesignSummaryRow({
   name: string;
   onOpen: () => void;
 }) {
-  const t = useT();
   return (
     <div>
-      <p className="pf-stack-block-label">{t('Design')}</p>
+      <p className="pf-stack-block-label">Design</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={t('Change section design')}
+        aria-label="Change section design"
         className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
@@ -643,6 +656,7 @@ export function ContactSettingsPanel({
   onSubSectionChange,
   heroPalette,
   profileAvatarUrl = null,
+  chrome,
 }: {
   contact: PortfolioContactSectionSettings;
   onChange: (patch: Partial<PortfolioContactSectionSettings>) => void;
@@ -651,140 +665,106 @@ export function ContactSettingsPanel({
   heroPalette?: PortfolioHeroPalette;
   /** Account profile photo — shown in General → Photo until a custom one replaces it. */
   profileAvatarUrl?: string | null;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
-  const previewSource = usePortfolioDesignPreviewSource();
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<ContactSubSection>('general');
-  const subSection = normalizeContactSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const premiumShows = isContactPremiumDesign(contact.cardDesign)
+    ? CONTACT_PREMIUM_DESIGN_SHOWS[contact.cardDesign as PortfolioContactPremiumDesign]
+    : null;
+  // Premium designs never render the shared section header, so its tab would edit nothing.
+  const tabs = premiumShows ? CONTACT_SUB_SECTIONS.filter((tab) => tab.id !== 'header') : CONTACT_SUB_SECTIONS;
+  const requestedSubSection = normalizeContactSubSection(controlledSubSection ?? uncontrolledSubSection);
+  const subSection = premiumShows && requestedSubSection === 'header' ? 'general' : requestedSubSection;
   const setSubSection = (value: ContactSubSection) => {
     const next = normalizeContactSubSection(value);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
+  const defaults: PortfolioContactSectionSettings = { enabled: true, title: 'Contact', subtitle: 'Should you have a project in mind, I would be pleased to hear from you to discuss your objectives.', ...DEFAULT_CONTACT_PRESENTATION };
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={CONTACT_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell title={t('Contact')} modified={JSON.stringify(contact) !== JSON.stringify(defaults)} tabs={tabs.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
       {subSection === 'general' ? (
-        <div className="space-y-8">
-          <SettingsSwitchRow
-            label={t('Show Contact section')}
-            description={contact.enabled ? undefined : t('Visitors go straight to the next section.')}
-            checked={contact.enabled}
-            onChange={(enabled) => onChange({ enabled })}
-          />
-          {contact.enabled ? (
-          <SettingsGroup label={t('Content shown')}>
-            <div>
-              <ContactToggleRow label={t('Email')} checked={contact.showEmail} onChange={(showEmail) => onChange({ showEmail })} />
-              <ContactToggleRow label={t('Phone')} checked={contact.showPhone} onChange={(showPhone) => onChange({ showPhone })} />
-              <ContactToggleRow label={t('Location')} checked={contact.showLocation} onChange={(showLocation) => onChange({ showLocation })} />
-              <ContactToggleRow
-                label={t('Social links')}
-                checked={contact.showSocialLinks}
-                onChange={(showSocialLinks) => onChange({ showSocialLinks })}
-              />
-              <ContactToggleRow label={t('CTA button')} checked={contact.showCta} onChange={(showCta) => onChange({ showCta })} />
-              <ContactToggleRow
-                label={t('Response time in subtitle')}
-                checked={contact.showResponseTimeInSubtitle}
-                onChange={(showResponseTimeInSubtitle) => onChange({ showResponseTimeInSubtitle })}
-              />
-              <ContactToggleRow
-                label={t('Contact form')}
-                checked={contact.showContactForm}
-                onChange={(showContactForm) => onChange({ showContactForm })}
-              />
-            </div>
-          </SettingsGroup>
-          ) : null}
-        </div>
+        <div className="np-stack"><NpToggleRow card title={t('Show Contact section')} description={contact.enabled ? undefined : t('Visitors go straight to the next section.')} checked={contact.enabled} onChange={(enabled) => onChange({ enabled })} /><div className="np-dimmable" data-disabled={contact.enabled ? 'false' : 'true'} inert={!contact.enabled}>
+          <NpCollapsibleSection title={t('Content shown')}>
+              <NpToggleRow title={t('Email')} checked={contact.showEmail} onChange={(showEmail) => onChange({ showEmail })} />
+              <NpToggleRow title={t('Phone')} checked={contact.showPhone} onChange={(showPhone) => onChange({ showPhone })} />
+              {!premiumShows || premiumShows.location ? (
+                <NpToggleRow title={t('Location')} checked={contact.showLocation} onChange={(showLocation) => onChange({ showLocation })} />
+              ) : null}
+              {!premiumShows || premiumShows.socialLinks ? (
+                <NpToggleRow
+                  title={t('Social links')}
+                  checked={contact.showSocialLinks}
+                  onChange={(showSocialLinks) => onChange({ showSocialLinks })}
+                />
+              ) : null}
+              {premiumShows ? null : (
+                <>
+                  <NpToggleRow title={t('CTA button')} checked={contact.showCta} onChange={(showCta) => onChange({ showCta })} />
+                  <NpToggleRow
+                    title={t('Response time in subtitle')}
+                    checked={contact.showResponseTimeInSubtitle}
+                    onChange={(showResponseTimeInSubtitle) => onChange({ showResponseTimeInSubtitle })}
+                  />
+                  <NpToggleRow
+                    title={t('Contact form')}
+                    checked={contact.showContactForm}
+                    onChange={(showContactForm) => onChange({ showContactForm })}
+                  />
+                </>
+              )}
+          </NpCollapsibleSection>
+        </div></div>
       ) : null}
 
-      {subSection !== 'general' && !(contact.enabled) ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection !== 'general' && !contact.enabled ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
 
       {subSection === 'design' && contact.enabled ? (
-        <div className="space-y-6">
+        <div className="np-stack">
           {designCatalogOpen ? (
-            <div>
-              <div className="flex items-center justify-between gap-3">
-                <p className="pf-stack-block-label">{t('Section design')}</p>
-                <button
-                  type="button"
-                  onClick={() => setDesignCatalogOpen(false)}
-                  className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-                >
-                  {t('← Back')}
-                </button>
-              </div>
-              {previewSource ? (
-                /* In the studio: every design rendered for real, one per row. */
-                <div className="mt-3 flex flex-col gap-3">
-                  {PREMIUM_CONTACT_DESIGNS.map((design) => {
-                    const option = PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS.find((item) => item.value === design);
-                    if (!option) return null;
-                    return (
-                      <PortfolioDesignLivePreviewCard
-                        key={design}
-                        cardClassName="pf-contact-design-card"
-                        labelClassName="pf-contact-card-label"
-                        active={contact.cardDesign === design}
-                        label={t(option.label)}
-                        src={withDesignPreview(previewSource.portfolioPath, { section: 'contact', design })}
-                        settings={previewSource.settings}
-                        onClick={() => {
-                          onChange({ cardDesign: design });
-                          setDesignCatalogOpen(false);
-                        }}
-                      />
-                    );
-                  })}
-                </div>
-              ) : (
-              <div className="relative mt-3 grid grid-cols-1 gap-4 sm:grid-cols-2">
+            <div className="np-stack">
+              <NpBackRow title={t('Contact design')} onBack={() => setDesignCatalogOpen(false)} />
+              <NpOptionCardGroup label={t('Choose a design')} columns={2}>
                 {PREMIUM_CONTACT_DESIGNS.map((design) => {
                   const option = PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS.find((item) => item.value === design);
                   if (!option) return null;
                   return (
-                    <ContactPickerCard
+                    <NpOptionCard
                       key={design}
-                      active={contact.cardDesign === design}
-                      label={t(option.label)}
+                      selected={contact.cardDesign === design}
+                      title={t(option.label)}
+                      illustration={<ContactDesignWireframe design={design} />}
                       onClick={() => {
                         onChange({ cardDesign: design });
                         setDesignCatalogOpen(false);
                       }}
-                    >
-                      <ContactDesignWireframe design={design} />
-                    </ContactPickerCard>
+                    />
                   );
                 })}
-              </div>
-              )}
+              </NpOptionCardGroup>
             </div>
           ) : (
             <>
-              <ContactDesignSummaryRow
-                design={contact.cardDesign}
-                name={
+              <NpPickerRow label={t('Design')} value={t(
                   PORTFOLIO_CONTACT_CARD_DESIGN_OPTIONS.find((item) => item.value === contact.cardDesign)?.label ??
                   'Choose a design'
-                }
-                onOpen={() => setDesignCatalogOpen(true)}
-              />
-              <SettingsRowsScope title={t('Layout options')}><ContactLayoutSettingsBand contact={contact} onChange={onChange} /></SettingsRowsScope>
+                )} thumbnail={<ContactDesignWireframe design={contact.cardDesign} />} onClick={() => setDesignCatalogOpen(true)} />
+              <NpCollapsibleSection title={t('Layout options')}><SettingsRowsScope title={t('Layout options')}><ContactLayoutSettingsBand contact={contact} onChange={onChange} /></SettingsRowsScope></NpCollapsibleSection>
             </>
           )}
           {designCatalogOpen ? null : (
-          <div>
-          <SettingsGroup label={t('Style')}>
+          <NpCollapsibleSection title={t('Style')}>
 
-          <PortfolioSettingsPhotoField
-            photoUrl={contact.photoUrl ?? ''}
-            profileAvatarUrl={profileAvatarUrl}
-            onChange={(photoUrl) => onChange({ photoUrl })}
-          />
+          {!premiumShows || premiumShows.photo ? (
+            <PortfolioSettingsPhotoField
+              photoUrl={contact.photoUrl ?? ''}
+              profileAvatarUrl={profileAvatarUrl}
+              onChange={(photoUrl) => onChange({ photoUrl })}
+            />
+          ) : null}
 
           <SectionColorModeControl label={t('Color mode')} value={contact.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
 
@@ -795,22 +775,21 @@ export function ContactSettingsPanel({
             onChange={(premiumFontSize) => onChange({ premiumFontSize })}
             columns={3}
           />
-          </SettingsGroup>
-          </div>
+          </NpCollapsibleSection>
           )}
         </div>
       ) : null}
 
       {subSection === 'header' && contact.enabled ? (
-        <HeaderElementToggles
+        <div className="np-stack"><NpCollapsibleSection title={t('Header settings')}><HeaderElementToggles
           design={contact.headerDesign ?? 'editorial'}
           settings={contact}
           onPatch={(patch) => onChange(patch as Partial<PortfolioContactSectionSettings>)}
-        />
+        /></NpCollapsibleSection></div>
       ) : null}
 
       {subSection === 'background' && contact.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={contact}
             onChange={onChange}
@@ -823,8 +802,8 @@ export function ContactSettingsPanel({
               />
             )}
           />
-        </div>
+        </NpCollapsibleSection></div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

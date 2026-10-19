@@ -1,9 +1,14 @@
 'use client';
 
 import Image from 'next/image';
-import { useMemo, useRef, useEffect } from 'react';
+import { useMemo, useRef, useEffect, type CSSProperties } from 'react';
 import type { PortfolioHeroData } from '@/components/portfolio/portfolio-hero-types';
-import { heroImageGrayscaleClass, resolveHeroAvailabilityValue, resolveHeroSpecialtyValue } from '@/components/portfolio/portfolio-hero-banner-settings';
+import {
+  heroImageGrayscaleClass,
+  resolveHeroAvailabilityValue,
+  resolveHeroBannerTools,
+  resolveHeroSpecialtyValue,
+} from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_PALETTE,
   mergeHeroPalette,
@@ -46,10 +51,11 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
   // Refs for GSAP animation targets
   const sectionRef = useRef<HTMLElement>(null);
   const portraitDesktopRef = useRef<HTMLDivElement>(null);
+  const portraitTabletRef = useRef<HTMLDivElement>(null);
   const portraitMobileRef = useRef<HTMLDivElement>(null);
   const portraitContainerRef = useRef<HTMLDivElement>(null);
   const leftColumnRef = useRef<HTMLDivElement>(null);
-  const specialtyTagRef = useRef<HTMLParagraphElement>(null);
+  const specialtyTagRef = useRef<HTMLDivElement>(null);
   const titleBlockRef = useRef<HTMLDivElement>(null);
   const toolsBlockRef = useRef<HTMLDivElement>(null);
   const bioBlockRef = useRef<HTMLDivElement>(null);
@@ -62,6 +68,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     data.presentation.availabilityLabel,
     data.presentation.availabilityUnavailableLabel || DEFAULT_AVAILABILITY_UNAVAILABLE_LABEL
   );
+  const showAvailability = data.presentation.showAvailabilityBadge !== false;
   const avatarUrl = data.avatarUrl?.trim() || null;
   const initials = useMemo(() => {
     const parts = displayName.split(/\s+/).filter(Boolean);
@@ -76,27 +83,41 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       cleaned ||
       t('Lorem ipsum dolor sit amet, consectetur adipiscing elit. Sed do eiusmod tempor incididunt ut labore.')
     );
-  }, [data.description]);
+  }, [data.description, t]);
 
+  // Layout options → tool picker (up to 12); no pick = the profile's first 12 tools.
   const tools = useMemo(
-    () =>
-      Array.from(
-        new Set((data.tools ?? []).map((tool) => tool.trim()).filter(Boolean))
-      ),
-    [data.tools]
+    () => resolveHeroBannerTools(data.tools, data.presentation.heroEditorialRailSelectedTools, 12),
+    [data.tools, data.presentation.heroEditorialRailSelectedTools]
   );
 
   const toolsLabel =
     data.presentation.toolsLabelText?.trim() || t('Core stack');
 
-  const chipSurface = `color-mix(in srgb, ${neutre} 88%, ${bordure})`;
-  const chipBorder = `color-mix(in srgb, ${bordure} 85%, transparent)`;
+  const toolSurface = `color-mix(in srgb, ${neutre} 72%, transparent)`;
+  const portraitClip = 'polygon(0 0, calc(100% - 1.5rem) 0, 100% 1.5rem, 100% 100%, 1.5rem 100%, 0 calc(100% - 1.5rem))';
 
   // GSAP animation - Portrait blur reveal on load
   // Initial state (blur + opacity 0) is set via inline styles in renderPortrait
   useEffect(() => {
-    const portraits = [portraitDesktopRef.current, portraitMobileRef.current].filter(Boolean);
-    
+    const portraits = [
+      portraitDesktopRef.current,
+      portraitTabletRef.current,
+      portraitMobileRef.current,
+    ].filter(Boolean);
+
+    // Reduced motion (or Global → Animations off, which forces this query): final state, no timer.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      portraits.forEach((portrait) => {
+        if (portrait) {
+          portrait.style.transition = 'none';
+          portrait.style.filter = 'blur(0px)';
+          portrait.style.opacity = '1';
+        }
+      });
+      return;
+    }
+
     // Animate blur removal on load
     const timer = motionTimeout(() => {
       portraits.forEach((portrait) => {
@@ -118,7 +139,18 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     if (!leftColumn) return;
 
     const revealElements = leftColumn.querySelectorAll('[data-gsap-reveal]');
-    
+
+    // Reduced motion: final state (custom final opacity included), no timers.
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) {
+      revealElements.forEach((el) => {
+        const element = el as HTMLElement;
+        element.style.transition = 'none';
+        element.style.opacity = element.dataset.finalOpacity || '1';
+        element.style.transform = 'translateY(0)';
+      });
+      return;
+    }
+
     // Staggered reveal animation
     const timers: ReturnType<typeof setTimeout>[] = [];
     
@@ -144,6 +176,7 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     if (typeof window === 'undefined') return;
     // Animations switched off (Global → Animations): no scroll-driven parallax.
     if (isPortfolioMotionOff()) return;
+    if (window.matchMedia('(prefers-reduced-motion: reduce)').matches) return;
     const mediaQuery = window.matchMedia('(min-width: 768px)');
     if (!mediaQuery.matches) return;
 
@@ -315,14 +348,12 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
     </div>
   );
 
-  // Compact vertical tools block for left sub-column
-  // FLUSH LEFT alignment: Left edge of badges aligns with "H" of title and "Available" text
+  // Editorial tool index — compact enough for twelve entries without becoming a badge cloud.
   const toolsBlockCompact = tools.length > 0 ? (
-    <div 
-      className="flex flex-col gap-3 items-start" 
+    <div
+      className="flex w-full flex-col items-start gap-3"
       data-gsap-reveal="tools"
-      style={{ 
-        alignItems: 'flex-start',
+      style={{
         // INITIAL HIDDEN STATE
         opacity: 0,
         transform: 'translateY(24px)',
@@ -339,22 +370,28 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       >
         {toolsLabel}
       </p>
-      <ul 
-        className="m-0 flex list-none flex-col gap-1.5 p-0 items-start" 
+      <ul
+        className="m-0 grid w-full list-none grid-cols-2 gap-2 p-0"
         aria-label={toolsLabel}
-        style={{ alignItems: 'flex-start' }} // Badges align flush left
       >
-        {tools.map((tool) => (
+        {tools.map((tool, index) => (
           <li
             key={tool}
-            className="inline-flex w-fit items-center rounded-sm px-2 py-0.5 font-sans text-[0.75rem] font-medium tracking-[-0.01em]"
-            style={{
-              color: muted,
-              backgroundColor: chipSurface,
-              border: `1px solid ${chipBorder}`,
-            }}
+            className="group relative flex min-w-0 items-center gap-2 overflow-hidden px-2.5 py-2 font-sans"
+            style={{ color: muted, backgroundColor: toolSurface }}
           >
-            {tool}
+            <span
+              aria-hidden
+              className="shrink-0 font-mono text-[0.56rem] tabular-nums tracking-[0.08em]"
+              style={{ color: principal, opacity: 0.9 }}
+            >
+              {String(index + 1).padStart(2, '0')}
+            </span>
+            <span className="truncate text-[0.78rem] font-medium tracking-[-0.01em] transition-colors group-hover:text-[var(--portrait-balance-ink)]"
+              style={{ '--portrait-balance-ink': ink } as CSSProperties}
+            >
+              {tool}
+            </span>
           </li>
         ))}
       </ul>
@@ -390,34 +427,48 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
       className={`flex w-full flex-col items-start ${opts?.mobile ? 'mt-8 gap-4' : 'gap-3.5'}`}
       style={{ alignItems: 'flex-start' }}
     >
-      <p
-        className="m-0 font-sans font-medium tracking-[-0.01em]"
-        style={{
-          color: muted,
-          fontSize: opts?.mobile
-            ? 'clamp(0.95rem, 3.5vw, 1.05rem)'
-            : 'clamp(0.95rem, 1.1vw, 1.0625rem)',
-          lineHeight: 1.35,
-          // INITIAL HIDDEN STATE
-          opacity: opts?.mobile ? 1 : 0,
-          transform: opts?.mobile ? 'none' : 'translateY(24px)',
-        }}
-        data-gsap-reveal="availability"
-      >
-        {availability}
-      </p>
-      <div
-        aria-hidden
-        className="w-full max-w-[16ch]"
-        style={{ 
-          height: 1, 
-          backgroundColor: bordure,
-          // INITIAL HIDDEN STATE
-          opacity: opts?.mobile ? 1 : 0,
-          transform: opts?.mobile ? 'none' : 'translateY(24px)',
-        }}
-        data-gsap-reveal="hairline-1"
-      />
+      {showAvailability ? (
+        <div
+          className="inline-flex w-fit items-center gap-2.5 px-3 py-2"
+          style={{
+            backgroundColor: toolSurface,
+            opacity: opts?.mobile ? 1 : 0,
+            transform: opts?.mobile ? 'none' : 'translateY(24px)',
+          }}
+          data-gsap-reveal="availability"
+        >
+          <span
+            aria-hidden
+            className="size-1.5 shrink-0 rounded-full"
+            style={{
+              backgroundColor: principal,
+            }}
+          />
+          <p
+            className="m-0 shrink-0 font-sans font-medium tracking-[-0.01em]"
+            style={{
+              color: muted,
+              fontSize: opts?.mobile
+                ? 'clamp(0.88rem, 3.5vw, 1rem)'
+                : 'clamp(0.88rem, 1vw, 1rem)',
+              lineHeight: 1.35,
+            }}
+          >
+            {availability}
+          </p>
+        </div>
+      ) : (
+        <div
+          aria-hidden
+          className="size-3"
+          style={{
+            backgroundColor: principal,
+            opacity: opts?.mobile ? 1 : 0,
+            transform: opts?.mobile ? 'none' : 'translateY(24px)',
+          }}
+          data-gsap-reveal="availability"
+        />
+      )}
       <h1
         className={`m-0 font-sans font-semibold ${
           opts?.mobile ? 'w-full tracking-[-0.04em]' : 'max-w-[16ch] tracking-[-0.045em]'
@@ -455,32 +506,39 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
 
       {/* —— Desktop — Brutalist Asymmetric Layout —— */}
       <div
-        className={`relative z-[1] hidden md:grid lg:min-h-[100dvh] ${shellX}`}
+        className={`relative z-[1] hidden h-[100dvh] min-h-0 xl:grid ${shellX}`}
         style={{
           paddingTop: 'calc(8.75rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(2.5rem, 5vh, 4rem)',
-          gridTemplateColumns: 'minmax(0, 1.15fr) minmax(17rem, 32vw)',
+          gridTemplateColumns: 'minmax(0, 1.15fr) minmax(17rem, 31vw)',
           gridTemplateRows: 'auto minmax(0, 1fr)',
           columnGap: 'clamp(3rem, 6vw, 5.5rem)', // Increased gap for better vertical gutter
           rowGap: 0,
           alignItems: 'stretch',
         }}
       >
-        {/* Specialty tag — isolated top right above image (magazine label style) */}
-        <p
+        {/* Specialty tab — a solid counterweight overlapping the portrait. */}
+        <div
           ref={specialtyTagRef}
-          className="m-0 mb-4 self-end justify-self-end text-right font-sans font-medium tracking-[-0.01em]"
+          className="relative z-[2] mb-0 flex w-fit translate-y-1/2 items-center justify-self-end px-4 py-2 font-sans"
           style={{
             gridColumn: 2,
             gridRow: 1,
-            color: principal,
-            fontSize: 'clamp(1.15rem, 1.5vw, 1.45rem)',
-            lineHeight: 1.3,
+            color: fond,
+            backgroundColor: principal,
           }}
           data-gsap-scroll="specialty"
         >
-          {specialty}
-        </p>
+          <p
+            className="m-0 max-w-full text-right font-semibold uppercase tracking-[0.08em]"
+            style={{
+              fontSize: 'clamp(0.72rem, 0.85vw, 0.84rem)',
+              lineHeight: 1.3,
+            }}
+          >
+            {specialty}
+          </p>
+        </div>
 
         {/*
           Left column: Title at top-center, then asymmetric split below.
@@ -506,11 +564,11 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
             Bottom edges align geometrically with portrait bottom
             FLUSH LEFT: Tools column starts at exact same X as title "H"
           */}
-          <div 
+          <div
             className="mt-auto grid shrink-0 items-end"
             style={{
-              gridTemplateColumns: tools.length > 0 ? 'minmax(8rem, 0.38fr) minmax(0, 1fr)' : '1fr',
-              columnGap: 'clamp(1.75rem, 3.5vw, 3rem)',
+              gridTemplateColumns: tools.length > 0 ? 'minmax(15rem, 0.75fr) minmax(0, 1fr)' : '1fr',
+              columnGap: 'clamp(2.5rem, 4.5vw, 4.5rem)',
               alignItems: 'end',
             }}
           >
@@ -524,23 +582,23 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
             <div 
               ref={bioBlockRef}
               className="flex flex-col justify-end"
-              style={{ maxWidth: '28rem' }} // Reduced from 32rem for more breathing room
+              style={{ maxWidth: '28rem' }}
               data-gsap-scroll="bio"
             >
-              {/* Thin separator above bio */}
-              <div
+              {/* Oversized quotation mark gives this variant its own editorial signature. */}
+              <span
                 aria-hidden
-                className="mb-4 w-full max-w-[35ch]"
-                style={{ 
-                  height: 1, 
-                  backgroundColor: bordure,
-                  // INITIAL HIDDEN STATE (final opacity is 0.5)
+                className="mb-1 block font-serif text-[4.5rem] leading-[0.65]"
+                style={{
+                  color: principal,
                   opacity: 0,
                   transform: 'translateY(24px)',
                 }}
-                data-gsap-reveal="hairline-2"
-                data-final-opacity="0.5"
-              />
+                data-gsap-reveal="quote-mark"
+                data-final-opacity="0.9"
+              >
+                “
+              </span>
               {bioBlock}
             </div>
           </div>
@@ -551,32 +609,142 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
         <div
           ref={portraitContainerRef}
           className="relative w-full self-stretch"
-          style={{ gridColumn: 2, gridRow: 2, aspectRatio: '5 / 6' }}
+          style={{
+            gridColumn: 2,
+            gridRow: 2,
+            aspectRatio: '5 / 6',
+          }}
           data-gsap-scroll="portrait-container"
         >
-          {renderPortrait('(max-width: 1024px) 42vw, 32vw', 'absolute inset-0 h-full', portraitDesktopRef)}
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 translate-x-3 translate-y-3"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${principal} 42%, transparent)`,
+              clipPath: portraitClip,
+            }}
+          />
+          <div className="relative h-full overflow-hidden" style={{ clipPath: portraitClip }}>
+            {renderPortrait('(max-width: 1024px) 42vw, 31vw', 'h-full', portraitDesktopRef)}
+          </div>
         </div>
+      </div>
+
+      {/* —— Tablet — dedicated two-column composition; never squeeze the bio into a rail —— */}
+      <div
+        className={`relative z-[1] hidden h-[100dvh] min-h-0 grid-cols-[minmax(0,1fr)_minmax(17rem,0.9fr)] grid-rows-[minmax(0,1fr)_auto] gap-x-10 gap-y-6 pb-6 pt-[calc(6rem+env(safe-area-inset-top,0px))] md:grid xl:hidden ${shellX}`}
+      >
+        <div className="flex min-w-0 flex-col justify-between gap-10">
+          {titleBlock({ mobile: true })}
+
+          <div className="max-w-[35ch]">
+            <span
+              aria-hidden
+              className="mb-1 block font-serif text-[4rem] leading-[0.55]"
+              style={{ color: principal, opacity: 0.9 }}
+            >
+              “
+            </span>
+            <p
+              className="m-0 font-sans text-[0.96rem] font-normal leading-[1.7] tracking-[-0.01em]"
+              style={{ color: muted }}
+            >
+              {bio}
+            </p>
+          </div>
+        </div>
+
+        <div className="relative self-start pt-4">
+          <div
+            className="absolute right-0 top-0 z-[2] w-fit px-3 py-2"
+            style={{ color: fond, backgroundColor: principal }}
+          >
+            <p className="m-0 font-sans text-[0.68rem] font-semibold uppercase leading-[1.3] tracking-[0.08em]">
+              {specialty}
+            </p>
+          </div>
+          <div className="relative" style={{ aspectRatio: '5 / 6' }}>
+            <span
+              aria-hidden
+              className="pointer-events-none absolute inset-0 translate-x-3 translate-y-3"
+              style={{
+                backgroundColor: `color-mix(in srgb, ${principal} 42%, transparent)`,
+                clipPath: portraitClip,
+              }}
+            />
+            <div className="relative h-full overflow-hidden" style={{ clipPath: portraitClip }}>
+              {renderPortrait('42vw', 'h-full', portraitTabletRef)}
+            </div>
+          </div>
+        </div>
+
+        {tools.length > 0 ? (
+          <div className="col-span-2 flex flex-col gap-3">
+            <p
+              className="m-0 font-sans text-[0.69rem] font-medium uppercase leading-[1.3] tracking-[0.12em]"
+              style={{ color: muted }}
+            >
+              {toolsLabel}
+            </p>
+            <ul className="m-0 grid list-none grid-cols-3 gap-2 p-0" aria-label={toolsLabel}>
+              {tools.map((tool, index) => (
+                <li
+                  key={tool}
+                  className="flex min-w-0 items-center gap-2 px-3 py-2.5 font-sans"
+                  style={{ color: muted, backgroundColor: toolSurface }}
+                >
+                  <span
+                    aria-hidden
+                    className="shrink-0 font-mono text-[0.58rem] tabular-nums tracking-[0.08em]"
+                    style={{ color: principal, opacity: 0.9 }}
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span className="truncate text-[0.8rem] font-medium tracking-[-0.01em]">
+                    {tool}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        ) : null}
       </div>
 
       {/* —— Mobile — Stacked layout (maintains clarity on small screens) —— */}
       <div
         className={`relative z-[1] flex flex-col pb-12 pt-[calc(7.25rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
-        {/* Specialty tag at top right */}
-        <p
-          className="m-0 self-end text-right font-sans font-medium tracking-[-0.01em]"
-          style={{
-            color: principal,
-            fontSize: 'clamp(1.15rem, 4vw, 1.35rem)',
-            lineHeight: 1.3,
-          }}
+        {/* Specialty tab */}
+        <div
+          className="relative z-[2] flex w-fit translate-y-1/2 self-end px-3 py-2"
+          style={{ color: fond, backgroundColor: principal }}
         >
-          {specialty}
-        </p>
+          <p
+            className="m-0 max-w-full text-right font-sans text-[0.72rem] font-semibold uppercase tracking-[0.08em]"
+            style={{
+              lineHeight: 1.3,
+            }}
+          >
+            {specialty}
+          </p>
+        </div>
 
         {/* Portrait */}
-        <div className="relative mt-3 w-full" style={{ aspectRatio: '5 / 6' }}>
-          {renderPortrait('92vw', 'absolute inset-0 h-full', portraitMobileRef)}
+        <div
+          className="relative"
+          style={{ width: 'calc(100% - 0.75rem)', aspectRatio: '5 / 6' }}
+        >
+          <span
+            aria-hidden
+            className="pointer-events-none absolute inset-0 translate-x-3 translate-y-3"
+            style={{
+              backgroundColor: `color-mix(in srgb, ${principal} 42%, transparent)`,
+              clipPath: portraitClip,
+            }}
+          />
+          <div className="relative h-full overflow-hidden" style={{ clipPath: portraitClip }}>
+            {renderPortrait('92vw', 'h-full', portraitMobileRef)}
+          </div>
         </div>
 
         {/* Title */}
@@ -597,30 +765,36 @@ export function PortfolioHeroPortraitBalance({ data }: { data: PortfolioHeroData
               >
                 {toolsLabel}
               </p>
-              <ul className="m-0 flex list-none flex-wrap gap-2 p-0" aria-label={toolsLabel}>
-                {tools.map((tool) => (
+              <ul className="m-0 grid list-none grid-cols-2 gap-2 p-0" aria-label={toolsLabel}>
+                {tools.map((tool, index) => (
                   <li
                     key={tool}
-                    className="inline-flex items-center rounded-sm px-2 py-0.5 font-sans text-[0.75rem] font-medium tracking-[-0.01em]"
-                    style={{
-                      color: muted,
-                      backgroundColor: chipSurface,
-                      border: `1px solid ${chipBorder}`,
-                    }}
+                    className="flex min-w-0 items-center gap-2 px-2.5 py-2 font-sans"
+                    style={{ color: muted, backgroundColor: toolSurface }}
                   >
-                    {tool}
+                    <span
+                      aria-hidden
+                      className="shrink-0 font-mono text-[0.58rem] tabular-nums tracking-[0.08em]"
+                      style={{ color: principal, opacity: 0.8 }}
+                    >
+                      {String(index + 1).padStart(2, '0')}
+                    </span>
+                    <span className="truncate text-[0.8rem] font-medium tracking-[-0.01em]">
+                      {tool}
+                    </span>
                   </li>
                 ))}
               </ul>
             </div>
           ) : null}
 
-          {/* Separator */}
-          <div
+          <span
             aria-hidden
-            className="w-full"
-            style={{ height: 1, backgroundColor: bordure, opacity: 0.5 }}
-          />
+            className="block font-serif text-[4rem] leading-[0.55]"
+            style={{ color: principal, opacity: 0.9 }}
+          >
+            “
+          </span>
 
           {/* Bio with 60% opacity */}
           <p

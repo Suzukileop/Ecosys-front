@@ -376,7 +376,7 @@ export function ServicesIconCardsSection({
             data-pf-no-color-transition=""
             className={`group relative flex min-w-0 flex-col [--c:var(--ic-c-base)] sm:[--c:var(--ic-c-md)] lg:[--c:var(--ic-c-lg)] w-[calc((100%-(var(--c)-1)*var(--ic-gap))/var(--c))] ${
               centered ? 'items-center text-center' : 'items-start text-left'
-            } ${plain ? 'px-2 py-4' : 'px-6 py-9 sm:px-9 sm:py-11'} transition-[transform,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
+            } ${plain ? 'px-2 py-4' : 'px-6 py-9 sm:px-9 sm:py-11'} transition-[transform,translate,scale,rotate,box-shadow] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               settings.hoverEffect === 'lift' ? 'md:hover:-translate-y-1.5' : ''
             } ${
               settings.hoverEffect === 'glow'
@@ -455,7 +455,7 @@ export function ServicesIconCardsSection({
                 label={ctaLabel}
                 ink={cardInk}
                 surface={cardFill ? cardFill.blended : isLight ? '#ffffff' : '#0a0a0a'}
-                className="group/cta mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[0.85rem] font-semibold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                className="group/cta mt-6 inline-flex items-center gap-2 rounded-full px-5 py-2.5 text-[0.85rem] font-semibold transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                 style={{ backgroundColor: cardInk, color: cardFill ? cardFill.blended : isLight ? '#ffffff' : '#0a0a0a' }}
                 autoContent={
                   <>

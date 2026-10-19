@@ -114,7 +114,7 @@ export function ServiceCard({
     <button
       type="button"
       onClick={onOpen}
-      className="group flex w-full flex-col overflow-hidden rounded-none bg-[#F7F9F9] text-left transition-colors duration-200 hover:bg-[#EFF3F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:bg-[#16181C] dark:hover:bg-[#1D1F23] dark:focus-visible:ring-white/25 max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] sm:flex-row"
+      className="group flex w-full flex-col overflow-hidden rounded-none bg-[#F7F9F9] text-left transition-colors duration-200 hover:bg-[#EFF3F4] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/15 dark:bg-[#16181C] dark:hover:bg-[#1D1F23] dark:focus-visible:ring-white/25 max-sm:-mx-4 max-sm:w-[calc(100%+2rem)] sm:flex-row"
     >
       {body}
     </button>

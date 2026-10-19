@@ -88,7 +88,7 @@ export function PublicServiceLightbox({
           <button
             type="button"
             onClick={onClose}
-            className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,20,25,0.75)] text-white backdrop-blur-sm transition hover:bg-[rgba(39,44,48,0.75)]"
+            className="absolute right-3 top-3 inline-flex h-10 w-10 items-center justify-center rounded-full bg-[rgba(15,20,25,0.75)] text-white backdrop-blur-xs transition hover:bg-[rgba(39,44,48,0.75)]"
             aria-label={t('Close')}
           >
             <FontAwesomeIcon icon={faXmark} className="h-4 w-4" />

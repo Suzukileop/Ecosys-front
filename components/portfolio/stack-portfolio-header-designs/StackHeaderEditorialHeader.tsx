@@ -101,7 +101,9 @@ export function StackHeaderEditorialHeader({
   trailing?: ReactNode;
 }) {
   const presentation = presentationProp ?? DEFAULT_STACK_PRESENTATION;
-  const centered = presentation.headerDesignAlignment === 'center';
+  const alignment = presentation.headerDesignAlignment ?? 'left';
+  const centered = alignment === 'center';
+  const right = alignment === 'right';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   /* Each text is the design's own setting; empty falls back to the section-level value. */
@@ -222,10 +224,10 @@ export function StackHeaderEditorialHeader({
   return (
     <header
       ref={headerRef}
-      className={`pf-stack-header-editorial-header relative w-full ${centered ? 'text-center' : 'text-left'}`}
+      className={`pf-stack-header-editorial-header relative w-full ${centered ? 'text-center' : right ? 'text-right' : 'text-left'}`}
       style={{ marginBottom: `${STACK_HEADER_MARGIN_BOTTOM_REM[presentation.headerMarginBottom ?? 'md']}rem` }}
     >
-      <div className={`pf-stack-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${centered ? 'sm:flex-col sm:items-center' : ''}`}>
+      <div className={`pf-stack-header-editorial-stage flex flex-col gap-6 sm:justify-between ${centered ? 'items-center sm:flex-col sm:items-center' : right ? 'items-end sm:flex-col sm:items-end' : 'sm:flex-row sm:items-end'}`}>
         <div className="min-w-0 max-w-3xl">
           {showLabel ? (
             <p
@@ -251,7 +253,7 @@ export function StackHeaderEditorialHeader({
           ) : null}
           {showSubtitle && subtitleText ? (
             <p
-              className={`pf-stack-header-editorial-sub mb-0 mt-6 max-w-xl ${stackHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
+              className={`pf-stack-header-editorial-sub mb-0 mt-6 max-w-xl ${centered ? 'mx-auto' : right ? 'ml-auto' : ''} ${stackHeaderDesignFontClass(presentation.subtitleFont, 'subtitle')} leading-relaxed`}
               style={{
                 color: subtitleInk,
                 fontSize: SUBTITLE_SIZE[presentation.headerEditorialSubtitleSize ?? 'md'],

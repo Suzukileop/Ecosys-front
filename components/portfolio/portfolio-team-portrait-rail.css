@@ -1,0 +1,78 @@
+/* Portrait Rail only: quiet typography, readable roles and subordinate controls. */
+.team-portrait-rail { position: relative; min-width: 0; }
+.team-portrait-rail::before {
+  content: '';
+  display: block;
+  width: 28px;
+  height: 2px;
+  margin-bottom: 18px;
+  background: var(--pf-palette-principal, currentColor);
+}
+.team-rail-grid::before { position: absolute; top: -20px; }
+.team-portrait-rail .team-rail-name {
+  margin: 0;
+  max-width: 100%;
+  font-size: calc(clamp(1.25rem, 1.8vw, 1.75rem) * var(--pf-team-font-scale, 1));
+  font-weight: 500;
+  line-height: 1.25;
+  letter-spacing: -0.02em;
+  text-wrap: pretty;
+  overflow-wrap: anywhere;
+}
+.team-portrait-rail .team-rail-role {
+  margin: 8px 0 0;
+  max-width: 36ch;
+  font-size: calc(clamp(0.8125rem, 1vw, 0.9375rem) * var(--pf-team-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.5;
+  letter-spacing: 0;
+  text-transform: none;
+  overflow-wrap: anywhere;
+}
+.team-portrait-rail .team-rail-index {
+  padding: 5px 8px;
+  border-radius: 4px;
+  background: rgb(0 0 0 / 72%);
+  color: #ffffff;
+  font-size: calc(0.6875rem * var(--pf-team-font-scale, 1));
+  font-weight: 500;
+  line-height: 1.4;
+  letter-spacing: 0.04em;
+}
+.team-portrait-rail .team-rail-portrait .relative[data-pf-no-color-transition] {
+  transition: transform 650ms cubic-bezier(0.16, 1, 0.3, 1);
+}
+@media (hover: hover) and (pointer: fine) {
+  .team-portrait-rail .team-rail-card:hover .team-rail-portrait .relative[data-pf-no-color-transition] {
+    transform: scale(1.025);
+  }
+}
+.team-portrait-rail .team-rail-socials a { min-width: 44px; min-height: 44px; }
+.team-portrait-rail .team-rail-socials a:focus-visible,
+.team-portrait-rail .team-rail-scroller:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: 3px;
+}
+.team-portrait-rail .team-rail-scroller { overscroll-behavior-x: contain; }
+.team-portrait-rail .team-rail-total {
+  font-size: calc(0.8125rem * var(--pf-team-font-scale, 1));
+  font-weight: 400;
+  line-height: 1.5;
+}
+.team-portrait-rail .team-rail-track { min-height: 44px; }
+@media (max-width: 639px) {
+  .team-portrait-rail .team-rail-scroller { column-gap: 16px; }
+  .team-portrait-rail .team-rail-scroller > div { width: calc(100% - 40px); }
+  .team-portrait-rail .team-rail-scroller[data-member-count='1'] > div { width: 100%; }
+  .team-portrait-rail .team-rail-portrait[data-rail-grid='false'] {
+    height: auto;
+    min-height: 0;
+    aspect-ratio: 3 / 4;
+  }
+  .team-portrait-rail .team-rail-portrait[data-rail-grid='false'][data-rail-height='short'] { aspect-ratio: 1; }
+  .team-portrait-rail .team-rail-portrait[data-rail-grid='false'][data-rail-height='medium'] { aspect-ratio: 4 / 5; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .team-portrait-rail [data-pf-no-color-transition] { transition: none !important; }
+  .team-portrait-rail .team-rail-portrait .relative[data-pf-no-color-transition] { transform: none !important; }
+}

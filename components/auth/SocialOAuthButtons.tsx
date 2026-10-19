@@ -4,7 +4,8 @@ import { useEffect, useState } from 'react';
 import { fetchOAuthStatus } from '@/lib/auth';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { API_BASE } from '@/lib/api-base';
+
 
 function startGoogleOAuth(signup: boolean) {
   const params = new URLSearchParams();
@@ -55,7 +56,7 @@ export function SocialOAuthButtons({ signup = false }: { signup?: boolean }) {
         disabled={!googleEnabled}
         onClick={() => startGoogleOAuth(signup)}
         title={googleEnabled ? undefined : t('Google sign-in is not configured')}
-        className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-black/[0.12] bg-white px-4 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 hover:bg-black/[0.02] focus-visible:outline-none focus-visible:ring-[3px] focus-visible:ring-[#FF5722]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.14] dark:bg-[#111111] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
+        className="flex h-12 w-full items-center justify-center gap-3 rounded-full border border-black/[0.12] bg-white px-4 text-[15px] font-medium text-[#111111] transition-colors hover:border-black/25 hover:bg-black/[0.02] focus-visible:outline-hidden focus-visible:ring-[3px] focus-visible:ring-[#FF5722]/20 disabled:cursor-not-allowed disabled:opacity-50 dark:border-white/[0.14] dark:bg-[#111111] dark:text-white dark:hover:border-white/25 dark:hover:bg-white/[0.04]"
       >
         <GoogleIcon />
         {signup ? t('Sign up with Google') : t('Continue with Google')}

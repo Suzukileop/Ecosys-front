@@ -506,7 +506,7 @@ function DutenPanelLink({
           {label}
         </span>
         <span
-          className="inline-flex max-w-0 shrink-0 -translate-x-1.5 items-baseline overflow-hidden opacity-0 transition-[max-width,opacity,transform,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/link:max-w-[3rem] group-hover/link:translate-x-0 group-hover/link:opacity-100 group-hover/link:ml-2 group-focus-visible/link:max-w-[3rem] group-focus-visible/link:translate-x-0 group-focus-visible/link:opacity-100 group-focus-visible/link:ml-2 sm:group-hover/link:ml-2.5 sm:group-focus-visible/link:ml-2.5"
+          className="inline-flex max-w-0 shrink-0 -translate-x-1.5 items-baseline overflow-hidden opacity-0 transition-[max-width,opacity,transform,translate,scale,rotate,margin] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/link:max-w-[3rem] group-hover/link:translate-x-0 group-hover/link:opacity-100 group-hover/link:ml-2 group-focus-visible/link:max-w-[3rem] group-focus-visible/link:translate-x-0 group-focus-visible/link:opacity-100 group-focus-visible/link:ml-2 sm:group-hover/link:ml-2.5 sm:group-focus-visible/link:ml-2.5"
           data-pf-no-color-transition=""
           style={{ color: active ? accent : mutedInk }}
         >
@@ -866,7 +866,7 @@ export function PortfolioDutenPanelNav({
               key="duten-links"
               ref={linksPanelRef}
               tabIndex={-1}
-              className={`${PANEL_SCROLL_CLASS} focus:outline-none`}
+              className={`${PANEL_SCROLL_CLASS} focus:outline-hidden`}
               initial={reduceMotion ? false : { opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={reduceMotion ? undefined : { opacity: 0 }}

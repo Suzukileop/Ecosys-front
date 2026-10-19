@@ -5,15 +5,12 @@
  *
  * No two members share a size. Every card takes its column span, its portrait proportion and its
  * vertical drop from one slot table, so the row reads as a deliberately ragged skyline rather than
- * a grid: a tall plate, a small square, an intermediate vertical, a wide cinematic one. The first
- * member is treated as a magazine cover — the name set massive in pure white directly over the
- * darkened portrait — and every other member gets the opposite treatment: an ultra-sparse caption
- * printed *above* its image, with a micro `↗` pushed to the far right of the row.
+ * a grid: a tall plate, a small square, an intermediate vertical, a wide cinematic one. Captions
+ * live above the portraits, including the featured member, to keep long text off the photographs.
  *
  * Interactions are CSS-only (no scroll-driven JS at all beyond the family's shared entrance), so
  * the whole composition costs one compositor layer per hovered card and nothing while scrolling:
- * a very slow portrait push-in, the arrow drifting up and to the right, the social row rising in
- * under the role on a per-icon stagger.
+ * a modest portrait push-in and a short colour transition. Social links stay visible without hover.
  *
  * Two layout rules that are load-bearing here:
  * - Every slot carries an explicit `col-start` as well as a `col-span`. With definite column
@@ -29,10 +26,8 @@
  * globals.css replaces its `transition-property` and the motion silently disappears.
  */
 
-import type { ReactNode } from 'react';
 import {
   teamListAlignClass,
-  teamReadableCardText,
   teamSpotlightMaxWidthClass,
   type PortfolioTeamCardRadius,
   type PortfolioTeamGap,
@@ -40,11 +35,11 @@ import {
 } from '@/components/portfolio/portfolio-team-settings';
 import {
   EASE_CLS,
-  META_CLS,
   TeamMemberImage,
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
 import type { ProfileTeamMember } from '@/types/profile';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
 
 /**
  * One member's whole geometry. Kept in a table rather than derived from the index so the rhythm can
@@ -190,14 +185,14 @@ function rhythmGapClass(gap: PortfolioTeamGap | undefined): string {
   return 'gap-x-6 gap-y-16 lg:gap-y-24';
 }
 
-/** A very slow, cinematic push-in. Its own layer, so nothing it scales can ever be text. */
-const ZOOM_CLS = `h-full w-full transition-transform duration-[1700ms] ${EASE_CLS} group-hover:scale-[1.07]`;
+/** A modest push-in isolated from text and the shared entrance. */
+const ZOOM_CLS = 'team-rhythm-zoom h-full w-full';
 
 /**
  * Black and white at rest, full colour on hover. The grade is what holds a row of four unrelated
  * photographs together as one composition; the colour arriving is the reward for reaching a card.
  */
-const TONE_CLS = `grayscale contrast-[1.08] saturate-[0.85] transition-[filter] duration-[1400ms] ${EASE_CLS} group-hover:grayscale-0 group-hover:contrast-100 group-hover:saturate-100`;
+const TONE_CLS = 'team-rhythm-tone';
 
 /**
  * The card's one outgoing link, so the `↗` is never decoration: a portfolio site first, then a
@@ -248,39 +243,32 @@ function RhythmPortrait({
   presentation,
   slot,
   radius,
-  children,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   slot: RhythmSlot;
   radius: string;
-  /** Overlay content for the hero treatment; the standard cards pass nothing. */
-  children?: ReactNode;
 }) {
   return (
-    <div className={`relative w-full overflow-hidden ${radius} ${slot.ratio}`}>
+    <div className={`team-rhythm-portrait relative w-full overflow-hidden ${radius} ${slot.ratio}`}>
       {/* The zoom sits above the entrance's own node, never on it: the entrance clears the
           transform it wrote by name when it finishes, which would take this one with it. */}
       <div className={ZOOM_CLS} data-pf-no-color-transition="">
         <TeamMemberImage
           member={member}
-          /* `cover` is forced rather than read from the section setting: each slot is a fixed
-             proportion, so `contain` would letterbox a portrait inside its own plate. */
-          presentation={{ ...presentation, imageFit: 'cover' }}
+          presentation={presentation}
           className={TONE_CLS}
           fill
           reveal
+          sizes="(max-width: 1023px) 100vw, 50vw"
         />
       </div>
-      {children}
     </div>
   );
 }
 
 /**
- * The first member, as a magazine cover: the name set massive in pure white across the top of the
- * darkened portrait, the role and the links as a caption along the bottom edge. Both scrims are
- * drawn rather than a flat overlay, so the middle of the photograph stays untouched.
+ * The first member keeps the largest name and portrait without overlaying important copy.
  */
 function RhythmHeroCard({
   member,
@@ -293,75 +281,13 @@ function RhythmHeroCard({
   slot: RhythmSlot;
   radius: string;
 }) {
-  const link = rhythmPrimaryLink(member);
-  const showSocials = presentation.showSocials && hasSocialLinks(member);
-  return (
-    <article
-      className={`group relative min-w-0 ${slot.place} ${slot.drop} ${slot.indent}`}
-      data-team-reveal=""
-    >
-      <RhythmPortrait member={member} presentation={presentation} slot={slot} radius={radius}>
-        {/* Two drawn scrims rather than one flat overlay, so the middle of the photograph is left
-            alone. Both are deliberately heavy: the caption sits a third of the way up the lower
-            one, where a lighter ramp has already faded out — measured against a bright photo, the
-            first pass left the role line at about 2:1. */}
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 top-0 block h-3/5 bg-gradient-to-b from-black/85 via-black/40 to-transparent"
-        />
-        <span
-          aria-hidden
-          className="pointer-events-none absolute inset-x-0 bottom-0 block h-1/2 bg-gradient-to-t from-black/85 via-black/45 to-transparent"
-        />
-        {presentation.showName ? (
-          <div className="pointer-events-none absolute inset-x-0 top-0 p-6 sm:p-8 lg:p-10">
-            <h3 className="text-[calc(clamp(1.9rem,4.2vw,4.25rem)*var(--pf-team-font-scale,1))] font-semibold uppercase leading-[0.86] tracking-[-0.045em] text-white">
-              {member.name}
-            </h3>
-          </div>
-        ) : null}
-        <div className="absolute inset-x-0 bottom-0 flex items-end justify-between gap-6 p-6 sm:p-8 lg:p-10">
-          <div className="min-w-0">
-            {presentation.showResponsibility ? (
-              <p className={`${META_CLS} text-white/75`}>{member.responsibility}</p>
-            ) : null}
-            {showSocials ? (
-              <div className="mt-5 [&_a:hover]:opacity-100 [&_a]:opacity-80">
-                <TeamSocialLinks
-                  member={member}
-                  presentation={{
-                    ...presentation,
-                    socialIconColor: '#ffffff',
-                    socialBackgroundColor: 'transparent',
-                    socialIconStyle: 'minimal',
-                  }}
-                  align="justify-start"
-                  revealOnHover
-                />
-              </div>
-            ) : null}
-          </div>
-          {link ? (
-            <a
-              href={link.href}
-              target={link.external ? '_blank' : undefined}
-              rel={link.external ? 'noopener noreferrer' : undefined}
-              aria-label={link.label}
-              className="shrink-0 p-1 text-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-white"
-            >
-              <RhythmArrow className="h-4 w-4" />
-            </a>
-          ) : null}
-        </div>
-      </RhythmPortrait>
-    </article>
-  );
+  return <RhythmStandardCard member={member} presentation={presentation} slot={slot}
+    radius={radius} withImage featured />;
 }
 
 /**
- * Every other member: the caption printed above the image and nothing drawn around either. Thin
- * uppercase name, the role under it at low contrast, the arrow pushed to the far right of the row,
- * and the social links rising in under the role only while the card is addressed.
+ * Every other member: a medium-weight name and readable role above the image, with real links
+ * visible at rest. Slot geometry, rather than reduced contrast, creates the editorial rhythm.
  */
 function RhythmStandardCard({
   member,
@@ -369,50 +295,58 @@ function RhythmStandardCard({
   slot,
   radius,
   withImage,
+  featured = false,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
   slot: RhythmSlot;
   radius: string;
   withImage: boolean;
+  featured?: boolean;
 }) {
-  const readable = teamReadableCardText(presentation);
-  const link = rhythmPrimaryLink(member);
+  const surface = presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#fff');
+  const readable = {
+    strong: readableMix(presentation.nameColor, 100, surface),
+    muted: readableMix(presentation.responsibilityColor, 100, surface),
+  };
+  const socialSurface = ['minimal', 'outline'].includes(presentation.socialIconStyle) ? surface : presentation.socialBackgroundColor;
+  const socialPresentation = { ...presentation, socialIconColor: readableMix(presentation.socialIconColor, 100, socialSurface) };
+  // The ↗ goes to one of the member's links, so General → Social links off removes it too.
+  const link = presentation.showSocials ? rhythmPrimaryLink(member) : null;
   const showSocials = presentation.showSocials && hasSocialLinks(member);
   return (
     <article
-      className={`group relative min-w-0 ${slot.place} ${slot.drop} ${slot.indent}`}
+      className={`team-rhythm-card group relative min-w-0 ${slot.place} ${withImage ? `${slot.drop} ${slot.indent}` : ''}`}
+      data-featured={featured}
       data-team-reveal=""
     >
       <div className="flex items-start justify-between gap-4">
         <div className="min-w-0">
           {presentation.showName ? (
             <h3
-              className={`min-w-0 break-words font-light uppercase leading-[1.08] tracking-[0.04em] ${slot.nameSize}`}
+              className={`team-rhythm-name ${slot.nameSize}`}
               style={{ color: readable.strong }}
             >
               {member.name}
             </h3>
           ) : null}
-          {presentation.showResponsibility ? (
+          {presentation.showResponsibility && member.responsibility.trim() ? (
             <p
               /* Light, not faint: `readable.muted` is already a muted token, so stacking a 60%
                  alpha on it dropped the role under 2.5:1 against a white section. */
-              className={`${META_CLS} mt-2.5 opacity-80`}
+              className="team-rhythm-role"
               style={{ color: readable.muted }}
             >
               {member.responsibility}
             </p>
           ) : null}
-          {/* The row's height is reserved whether it is showing or not — only opacity and offset
-              change — so revealing the links can never nudge the portrait underneath it. */}
+          {/* Links stay available to mouse, touch and keyboard without a reveal gesture. */}
           {showSocials ? (
             <div className="mt-4">
               <TeamSocialLinks
                 member={member}
-                presentation={presentation}
+                presentation={socialPresentation}
                 align="justify-start"
-                revealOnHover
               />
             </div>
           ) : null}
@@ -423,7 +357,7 @@ function RhythmStandardCard({
             target={link.external ? '_blank' : undefined}
             rel={link.external ? 'noopener noreferrer' : undefined}
             aria-label={link.label}
-            className="mt-1 shrink-0 p-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2"
+            className="team-rhythm-link shrink-0 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2"
             style={{ color: readable.strong }}
           >
             <RhythmArrow />
@@ -454,14 +388,14 @@ export function TeamEditorialRhythm({
     <div
       /* `items-start` is what lets the drops read as a broken baseline: with the default `stretch`
          every card in a row would be pulled to the tallest one's height. */
-      className={`grid w-full min-w-0 grid-cols-1 items-start lg:grid-cols-12 ${rhythmGapClass(
+      className={`team-rhythm grid w-full min-w-0 grid-cols-1 items-start lg:grid-cols-12 ${rhythmGapClass(
         presentation.gap
       )} ${teamSpotlightMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)}`}
+      data-with-image={withImage}
     >
       {members.map((member, index) => {
         const slot = table[index % table.length];
-        // Without a portrait there is no cover to print a name on, so the hero treatment simply
-        // does not exist and every member reads as a caption block.
+        // Without portraits the collection becomes a compact, regular caption grid.
         return index === 0 && withImage ? (
           <RhythmHeroCard
             key={member.id}

@@ -8,7 +8,6 @@ import {
   useState,
   useSyncExternalStore,
   type CSSProperties,
-  type MouseEvent,
   type ReactNode,
   type RefObject,
 } from 'react';
@@ -37,6 +36,7 @@ import {
   aboutBannerMetaSizeClass,
   aboutPlatformHeadlineSizeClass,
   aboutPlatformLeadSizeClass,
+  aboutPlatformItemSizeClass,
   aboutPlatformSkillsTitleSizeClass,
   aboutPortraitSkillsBioSizeClass,
   aboutPortraitSkillsListSizeClass,
@@ -83,6 +83,8 @@ import {
   resolveInfoShowStrengths,
   resolveInfoShowSystemsTools,
   type PortfolioInfoPremiumFontSize,
+  type PortfolioInfoBlockLabelColor,
+  infoBlockLabelColor,
   type PortfolioInfoAboutValueValuesLayout,
   type PortfolioInfoAboutValueBlocksLayout,
   type PortfolioInfoAboutManifestoBlocksLayout,
@@ -254,6 +256,7 @@ function TraitInteractiveList({
 
 function TraitHeadingList({
   label,
+  labelColor,
   items,
   titleColor,
   bodyColor,
@@ -261,6 +264,7 @@ function TraitHeadingList({
   contentSize,
 }: {
   label: string;
+  labelColor: string;
   items: string[];
   titleColor: string;
   bodyColor: string;
@@ -274,7 +278,7 @@ function TraitHeadingList({
     <div className="pf-about-trait-block">
       <h3
         className={`text-left font-bold tracking-tight ${blockTitleClass}`}
-        style={{ color: titleColor }}
+        style={{ color: labelColor }}
       >
         {label}
       </h3>
@@ -291,6 +295,7 @@ function TraitHeadingList({
 
 function TraitLanguageList({
   label,
+  labelColor,
   items,
   titleColor,
   bodyColor,
@@ -298,6 +303,7 @@ function TraitLanguageList({
   contentSize,
 }: {
   label: string;
+  labelColor: string;
   items: LanguageDisplayItem[];
   titleColor: string;
   bodyColor: string;
@@ -311,7 +317,7 @@ function TraitLanguageList({
     <div className="pf-about-trait-block">
       <h3
         className={`text-left font-bold tracking-tight ${blockTitleClass}`}
-        style={{ color: titleColor }}
+        style={{ color: labelColor }}
       >
         {label}
       </h3>
@@ -328,7 +334,7 @@ function TraitLanguageList({
               </>
             ),
             secondary: levelLabel ? (
-              <span className="pf-about-trait-lang-level">({levelLabel})</span>
+              <span className="pf-about-trait-lang-level">· {levelLabel}</span>
             ) : null,
           };
         })}
@@ -379,14 +385,13 @@ function aboutClassicMuted(color: string, percent = 62): string {
   return `color-mix(in srgb, ${color} ${percent}%, transparent)`;
 }
 
-/** "2018 - 2019" → "18 — 19"; a single year → "'19"; unparseable text passes through. */
-function aboutClassicShortYearRange(raw: string): string {
+/** "2018-2019" / "2018 — 2019" → "2018 – 2019" (en dash, full years); a single year stays as
+ *  is; unparseable text passes through. */
+function aboutClassicYearRange(raw: string): string {
   const years = raw.match(/\d{4}/g);
   if (!years || years.length === 0) return raw.trim();
-  if (years.length === 1) return `'${years[0].slice(2)}`;
-  const first = years[0].slice(2);
-  const last = years[years.length - 1].slice(2);
-  return `${first} — ${last}`;
+  if (years.length === 1) return years[0];
+  return `${years[0]} – ${years[years.length - 1]}`;
 }
 
 const ABOUT_CLASSIC_LANG_CODES: Record<string, string> = {
@@ -448,7 +453,7 @@ function AboutClassicLanguageList({
         const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
         return (
           <li key={item.name} className="pf-about-classic-lang">
-            <span className="pf-about-classic-lang-code" style={{ color: ink }}>
+            <span aria-hidden className="pf-about-classic-lang-code" style={{ color: ink }}>
               {code}
             </span>
             <span className="pf-about-classic-lang-meta" style={{ color: body }}>
@@ -460,6 +465,17 @@ function AboutClassicLanguageList({
       })}
     </ul>
   );
+}
+
+/** Drops repeated entries (case/space-insensitive) — a duplicated line reads as a padding bug. */
+function aboutClassicUniqueItems(items: string[]): string[] {
+  const seen = new Set<string>();
+  return items.filter((item) => {
+    const key = item.trim().replace(/\s+/g, ' ').toLowerCase();
+    if (!key || seen.has(key)) return false;
+    seen.add(key);
+    return true;
+  });
 }
 
 function AboutClassicItemList({
@@ -477,28 +493,21 @@ function AboutClassicItemList({
           key={`${index}-${item}`}
           className={`pf-about-classic-list-item leading-relaxed ${bodySizeClass ?? 'text-[0.95rem]'}`}
         >
-          <span aria-hidden className="pf-about-classic-list-index tabular-nums">
-            {String(index + 1).padStart(2, '0')}
-          </span>
-          <span>{item}</span>
+          {item}
         </li>
       ))}
     </ul>
   );
 }
 
-/** Strengths — plain floating keywords, no pill/background/border. Contrast comes
- *  purely from alternating two gray tones (ink / muted) and generous spacing. */
-function AboutClassicKeywordList({ items, ink, bodyColor }: { items: string[]; ink: string; bodyColor: string }) {
+/** Strengths / tools — plain floating keywords, no pill/background/border, one even tone:
+ *  alternating tones read as a ranking the owner never made. */
+function AboutClassicKeywordList({ items, ink }: { items: string[]; ink: string }) {
   if (items.length === 0) return null;
   return (
     <ul className="pf-about-classic-keywords">
       {items.map((item, index) => (
-        <li
-          key={`${index}-${item}`}
-          className="pf-about-classic-keyword font-medium"
-          style={{ color: index % 2 === 0 ? ink : bodyColor }}
-        >
+        <li key={`${index}-${item}`} className="pf-about-classic-keyword font-medium" style={{ color: ink }}>
           {item}
         </li>
       ))}
@@ -522,29 +531,50 @@ function aboutClassicFlattenToolItems(items: string[]): string[] {
   return flat;
 }
 
-function AboutClassicBentoCard({
-  cardKey,
-  className,
+/** One index row of the layout: label in the left rail (stacked above on narrow screens),
+ *  content in the shared text column every block — and the bio — aligns to. */
+function AboutClassicBlock({
+  blockKey,
+  label,
+  labelClass,
+  labelColor,
+  motionOff,
   children,
 }: {
-  cardKey?: string;
-  className?: string;
+  blockKey: string;
+  label: string;
+  labelClass: string;
+  labelColor: string;
+  motionOff: boolean;
   children: ReactNode;
 }) {
   return (
-    <article
-      data-card={cardKey}
-      className={`pf-about-classic-card${cardKey ? ` pf-about-classic-card--${cardKey}` : ''}${className ? ` ${className}` : ''}`}
+    <motion.section
+      data-block={blockKey}
+      className="pf-about-classic-block"
+      initial={motionOff ? false : 'hidden'}
+      whileInView={motionOff ? undefined : 'show'}
+      viewport={ABOUT_CLASSIC_BLOCK_VIEWPORT}
+      variants={ABOUT_CLASSIC_STAGGER}
     >
-      <div className="pf-about-classic-card-inner">{children}</div>
-    </article>
+      <motion.h3
+        className={`pf-about-classic-block-label font-bold uppercase tracking-[0.18em] ${labelClass}`}
+        style={{ color: labelColor }}
+        variants={motionOff ? undefined : ABOUT_CLASSIC_FADE_UP}
+      >
+        {label}
+      </motion.h3>
+      <motion.div className="pf-about-classic-block-body" variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
+        {children}
+      </motion.div>
+    </motion.section>
   );
 }
 
 function AboutMeClassicLayout({
   title: _title,
   subtitle: _subtitle,
-  bio: _bio,
+  bio,
   educationItems,
   skillItems,
   strengthItems,
@@ -563,6 +593,7 @@ function AboutMeClassicLayout({
   cardBg,
   cardBorder,
   contentSize,
+  blockLabelColor,
 }: {
   title: string;
   subtitle: string;
@@ -585,6 +616,7 @@ function AboutMeClassicLayout({
   cardBg: string;
   cardBorder: string;
   contentSize: PortfolioInfoPremiumFontSize;
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
   const reduceMotion = useReducedMotion();
@@ -592,13 +624,17 @@ function AboutMeClassicLayout({
   const rootRef = useRef<HTMLDivElement>(null);
   const labelClass = infoContentLabelSizeClass(contentSize);
   const bodyClass = infoContentBodySizeClass(contentSize);
-  const cardLabelClass = infoContentLabelSizeClass(contentSize);
+  const labelColor = infoBlockLabelColor(blockLabelColor, aboutClassicMuted(subtitleColor));
 
   useEffect(() => {
     rootRef.current?.setAttribute('data-pf-js', 'true');
   }, []);
 
-  const hasAnyGridBlock = showSkills || showStrengths || showLanguages || showSystemsTools;
+  const bioText = bio?.trim() ?? '';
+  const skillLabels = aboutClassicUniqueItems(skillEntryLabels(skillItems));
+  const strengthLabels = aboutClassicUniqueItems(strengthItems);
+  const toolLabels = aboutClassicUniqueItems(aboutClassicFlattenToolItems(toolItems));
+  const blockProps = { labelClass, labelColor, motionOff };
 
   const rootStyle = {
     '--pf-about-classic-accent': accent,
@@ -615,155 +651,77 @@ function AboutMeClassicLayout({
       data-pf-entry={motionOff ? 'static' : 'armed'}
       style={rootStyle}
     >
-      {showEducation ? (
-        <motion.section
-          className="pf-about-classic-edu"
+      {/* The shared header carries title and subtitle; the bio is this design's only prose, and
+          without it a profile with just a bio got an empty section under the header. */}
+      {bioText ? (
+        <motion.p
+          className={`pf-about-classic-bio whitespace-pre-line ${bodyClass}`}
+          style={{ color: bodyColor }}
           initial={motionOff ? false : 'hidden'}
           whileInView={motionOff ? undefined : 'show'}
           viewport={ABOUT_CLASSIC_BLOCK_VIEWPORT}
-          variants={ABOUT_CLASSIC_STAGGER}
+          variants={motionOff ? undefined : ABOUT_CLASSIC_FADE_UP}
         >
-          <motion.p
-            className={`pf-about-classic-section-kicker font-bold uppercase tracking-[0.18em] ${labelClass}`}
-            style={{ color: aboutClassicMuted(subtitleColor) }}
-            variants={motionOff ? undefined : ABOUT_CLASSIC_FADE_UP}
-          >
-            <span aria-hidden className="pf-about-classic-kicker-mark" />
-            <span>{t('Education')}</span>
-          </motion.p>
-          <motion.ol className="pf-about-classic-edu-index" variants={motionOff ? undefined : ABOUT_CLASSIC_STAGGER}>
-            {educationItems.map((entry, index) => (
-              <motion.li
-                key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
-                className="pf-about-classic-edu-row"
-                variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}
-                whileHover={motionOff ? undefined : { x: 8 }}
-                transition={{ duration: 0.45, ease: ABOUT_CLASSIC_EASE }}
-              >
-                <div className="pf-about-classic-edu-when">
-                  <span className="pf-about-classic-edu-index-chip tabular-nums" style={{ color: accent }}>
-                    {String(index + 1).padStart(2, '0')}
-                  </span>
-                  {entry.schoolYear?.trim() ? (
-                    <p className="pf-about-classic-edu-range font-light tabular-nums text-3xl md:text-4xl">
-                      {aboutClassicShortYearRange(entry.schoolYear.trim())}
-                    </p>
-                  ) : null}
-                </div>
-                <div className="pf-about-classic-edu-what">
-                  {entry.title?.trim() ? (
-                    <p className="pf-about-classic-edu-title font-semibold leading-snug text-base" style={{ color: subtitleColor }}>
-                      {entry.title.trim()}
-                    </p>
-                  ) : null}
-                  {entry.institution?.trim() ? (
-                    <p className="pf-about-classic-edu-school leading-relaxed text-xs">
-                      {entry.institution.trim()}
-                    </p>
-                  ) : null}
-                </div>
-              </motion.li>
-            ))}
-          </motion.ol>
-        </motion.section>
+          {bioText}
+        </motion.p>
       ) : null}
 
-      {hasAnyGridBlock ? (
-        <motion.section
-          className="pf-about-classic-skills pf-about-classic-bento"
-          initial={motionOff ? false : 'hidden'}
-          whileInView={motionOff ? undefined : 'show'}
-          viewport={ABOUT_CLASSIC_BLOCK_VIEWPORT}
-          variants={ABOUT_CLASSIC_STAGGER}
-        >
-          {showSkills ? (
-            <motion.div variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
-              <AboutClassicBentoCard cardKey="skills" className="pf-about-classic-card--full">
-                <p
-                  className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
-                  style={{ color: aboutClassicMuted(subtitleColor) }}
+      <div className="pf-about-classic-blocks">
+        {showEducation ? (
+          <AboutClassicBlock blockKey="education" label={t('Education')} {...blockProps}>
+            <motion.ol className="pf-about-classic-edu-index" variants={motionOff ? undefined : ABOUT_CLASSIC_STAGGER}>
+              {educationItems.map((entry, index) => (
+                <motion.li
+                  key={entry.id || `${entry.title}-${entry.schoolYear}-${index}`}
+                  className="pf-about-classic-edu-row"
+                  variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}
                 >
-                  {t('Skills')}
-                </p>
-                <AboutClassicItemList items={skillEntryLabels(skillItems)} bodySizeClass={bodyClass} />
-              </AboutClassicBentoCard>
-            </motion.div>
-          ) : null}
-
-          {showLanguages ? (
-            <motion.div variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
-              <AboutClassicBentoCard cardKey="languages" className="pf-about-classic-card--full">
-                <p
-                  className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
-                  style={{ color: aboutClassicMuted(subtitleColor) }}
-                >
-                  {t('Languages')}
-                </p>
-                <AboutClassicLanguageList items={languageItems} ink={subtitleColor} body={bodyColor} />
-              </AboutClassicBentoCard>
-            </motion.div>
-          ) : null}
-
-          {showStrengths && showSystemsTools ? (
-            <div className="pf-about-classic-split-row">
-              <motion.div variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
-                <AboutClassicBentoCard cardKey="strengths">
-                  <p
-                    className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
-                    style={{ color: aboutClassicMuted(subtitleColor) }}
-                  >
-                    {t('Strengths')}
+                  {/* Plain dates, no ordinal: the list order is the owner's, not a ranking or steps. */}
+                  <p className={`pf-about-classic-edu-range tabular-nums ${bodyClass}`}>
+                    {entry.schoolYear?.trim() ? aboutClassicYearRange(entry.schoolYear.trim()) : null}
                   </p>
-                  <AboutClassicKeywordList items={strengthItems} ink={subtitleColor} bodyColor={bodyColor} />
-                </AboutClassicBentoCard>
-              </motion.div>
-              <motion.div variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
-                <AboutClassicBentoCard cardKey="systems">
-                  <p
-                    className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
-                    style={{ color: aboutClassicMuted(subtitleColor) }}
-                  >
-                    {t('Systems & tools')}
-                  </p>
-                  <AboutClassicKeywordList
-                    items={aboutClassicFlattenToolItems(toolItems)}
-                    ink={subtitleColor}
-                    bodyColor={bodyColor}
-                  />
-                </AboutClassicBentoCard>
-              </motion.div>
-            </div>
-          ) : showStrengths ? (
-            <motion.div variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
-              <AboutClassicBentoCard cardKey="strengths" className="pf-about-classic-card--full">
-                <p
-                  className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
-                  style={{ color: aboutClassicMuted(subtitleColor) }}
-                >
-                  {t('Strengths')}
-                </p>
-                <AboutClassicKeywordList items={strengthItems} ink={subtitleColor} bodyColor={bodyColor} />
-              </AboutClassicBentoCard>
-            </motion.div>
-          ) : showSystemsTools ? (
-            <motion.div variants={motionOff ? undefined : ABOUT_CLASSIC_CARD_VARIANTS}>
-              <AboutClassicBentoCard cardKey="systems" className="pf-about-classic-card--full">
-                <p
-                  className={`pf-about-classic-card-label font-bold uppercase tracking-[0.18em] ${cardLabelClass}`}
-                  style={{ color: aboutClassicMuted(subtitleColor) }}
-                >
-                  {t('Systems & tools')}
-                </p>
-                <AboutClassicKeywordList
-                  items={aboutClassicFlattenToolItems(toolItems)}
-                  ink={subtitleColor}
-                  bodyColor={bodyColor}
-                />
-              </AboutClassicBentoCard>
-            </motion.div>
-          ) : null}
-        </motion.section>
-      ) : null}
+                  <div className="pf-about-classic-edu-what">
+                    {entry.title?.trim() ? (
+                      <p className="pf-about-classic-edu-title font-semibold leading-snug text-base" style={{ color: subtitleColor }}>
+                        {entry.title.trim()}
+                      </p>
+                    ) : null}
+                    {entry.institution?.trim() ? (
+                      <p className="pf-about-classic-edu-school leading-relaxed text-xs">
+                        {entry.institution.trim()}
+                      </p>
+                    ) : null}
+                  </div>
+                </motion.li>
+              ))}
+            </motion.ol>
+          </AboutClassicBlock>
+        ) : null}
+
+        {showSkills && skillLabels.length > 0 ? (
+          <AboutClassicBlock blockKey="skills" label={t('Skills')} {...blockProps}>
+            <AboutClassicItemList items={skillLabels} bodySizeClass={bodyClass} />
+          </AboutClassicBlock>
+        ) : null}
+
+        {showLanguages ? (
+          <AboutClassicBlock blockKey="languages" label={t('Languages')} {...blockProps}>
+            <AboutClassicLanguageList items={languageItems} ink={subtitleColor} body={bodyColor} />
+          </AboutClassicBlock>
+        ) : null}
+
+        {showStrengths && strengthLabels.length > 0 ? (
+          <AboutClassicBlock blockKey="strengths" label={t('Strengths')} {...blockProps}>
+            <AboutClassicKeywordList items={strengthLabels} ink={subtitleColor} />
+          </AboutClassicBlock>
+        ) : null}
+
+        {showSystemsTools && toolLabels.length > 0 ? (
+          <AboutClassicBlock blockKey="systems" label={t('Systems & tools')} {...blockProps}>
+            <AboutClassicKeywordList items={toolLabels} ink={subtitleColor} />
+          </AboutClassicBlock>
+        ) : null}
+      </div>
     </div>
   );
 }
@@ -799,7 +757,7 @@ function AboutMeTraitHeadline({
 }
 
 /** Air between the headline block and the three columns. */
-const ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM = 'mt-28 sm:mt-36 lg:mt-44';
+const ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM = 'mt-16 sm:mt-20 lg:mt-24';
 
 function aboutTraitDisplayInk(color: string, colorMode: 'light' | 'dark' = 'dark'): string {
   const raw = color.trim();
@@ -823,7 +781,7 @@ function aboutTraitDisplayInk(color: string, colorMode: 'light' | 'dark' = 'dark
   return luma > 208 ? '#171717' : raw;
 }
 /** Education — same gap as above skills, no horizontal divider. */
-const ABOUT_ME_TRAIT_EDUCATION_SECTION_TOP = 'mt-28 sm:mt-32 lg:mt-36';
+const ABOUT_ME_TRAIT_EDUCATION_SECTION_TOP = 'mt-16 sm:mt-20 lg:mt-24';
 
 function AboutMeTraitLayout({
   title: _title,
@@ -850,6 +808,7 @@ function AboutMeTraitLayout({
   cardBorder,
   portraitGrayscale,
   colorMode = 'dark',
+  blockLabelColor,
 }: {
   title: string;
   headlineText: string;
@@ -875,8 +834,10 @@ function AboutMeTraitLayout({
   cardBorder: string;
   portraitGrayscale: boolean;
   colorMode?: 'light' | 'dark';
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
+  const labelColor = infoBlockLabelColor(blockLabelColor, titleColor);
   const initials = (fullName ?? '')
     .trim()
     .split(/\s+/)
@@ -908,6 +869,8 @@ function AboutMeTraitLayout({
           '--pf-about-trait-accent': accent,
           '--pf-about-trait-ink': displayInk,
           '--pf-about-trait-muted': bodyColor,
+          '--pf-about-trait-card-bg': cardBg,
+          '--pf-about-trait-card-border': cardBorder,
         } as CSSProperties
       }
     >
@@ -920,7 +883,7 @@ function AboutMeTraitLayout({
           }`}
         >
           <div
-            className={`pf-about-trait-portrait mx-auto aspect-[4/5] w-full max-w-[26rem] overflow-hidden bg-neutral-800 sm:aspect-square lg:mx-0 lg:aspect-auto lg:h-[min(24rem,28vw)] lg:w-[min(24rem,28vw)] lg:max-w-none lg:shrink-0 ${
+            className={`pf-about-trait-portrait aspect-square w-full max-w-[22rem] overflow-hidden bg-neutral-800 sm:max-w-[26rem] lg:mx-0 lg:aspect-auto lg:h-[min(24rem,28vw)] lg:w-[min(24rem,28vw)] lg:max-w-none lg:shrink-0 ${
               showHeadline ? '' : 'lg:h-auto lg:w-full lg:aspect-square lg:max-w-[40rem]'
             }`}
             style={{ backgroundColor: cardBg }}
@@ -957,7 +920,10 @@ function AboutMeTraitLayout({
 
         {(showSkillsBlock || showStrengthsBlock || showLanguagesBlock) && (
           <section
-            className={`pf-about-trait-columns grid gap-16 sm:grid-cols-2 lg:grid-cols-3 lg:gap-x-20 lg:gap-y-16 ${ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM}`}
+            // Columns come from the space and the blocks actually shown — one or two blocks
+            // share the full width instead of leaving empty thirds.
+            className={`pf-about-trait-columns grid gap-6 lg:gap-8 ${ABOUT_ME_TRAIT_SKILLS_SECTION_RHYTHM}`}
+            style={{ gridTemplateColumns: 'repeat(auto-fit, minmax(min(100%, 16rem), 1fr))' }}
           >
             {showSkillsBlock ? (
               <motion.div
@@ -970,6 +936,7 @@ function AboutMeTraitLayout({
               >
                 <TraitHeadingList
                   label={t('Skills')}
+                  labelColor={labelColor}
                   items={skillEntryLabels(skillItems)}
                   titleColor={titleColor}
                   bodyColor={bodyColor}
@@ -989,6 +956,7 @@ function AboutMeTraitLayout({
               >
                 <TraitHeadingList
                   label={t('Strengths')}
+                  labelColor={labelColor}
                   items={strengthItems}
                   titleColor={titleColor}
                   bodyColor={bodyColor}
@@ -1008,6 +976,7 @@ function AboutMeTraitLayout({
               >
                 <TraitLanguageList
                   label={t('Languages')}
+                  labelColor={labelColor}
                   items={languageItems}
                   titleColor={titleColor}
                   bodyColor={bodyColor}
@@ -1039,6 +1008,7 @@ function AboutMeTraitLayout({
             contentSize={contentSize}
             cascadeScrollShift={cascadeScrollShift}
             sectionClassName=""
+            labelColor={labelColor}
             titleColor={titleColor}
             bodyColor={bodyColor}
             accent={accent}
@@ -1213,79 +1183,10 @@ function AboutPlatformSkillCard({
   // read as different sizes, which fought the "equal width/height" grid.
   const densityClass = 'px-5 pb-6 pt-[1.15rem] sm:px-6 sm:pb-7 sm:pt-5';
 
-  const cardRef = useRef<HTMLElement>(null);
-  const targetTilt = useRef({ x: 0, y: 0 });
-  const currentTilt = useRef({ x: 0, y: 0 });
-  const rafRef = useRef(0);
-  const hoveringRef = useRef(false);
-  const tickRef = useRef<() => void>(() => {});
-
-  const tick = useCallback(() => {
-    const node = cardRef.current;
-    if (!node) {
-      rafRef.current = 0;
-      return;
-    }
-    const damping = 0.14;
-    currentTilt.current.x += (targetTilt.current.x - currentTilt.current.x) * damping;
-    currentTilt.current.y += (targetTilt.current.y - currentTilt.current.y) * damping;
-    node.style.setProperty('--pf-about-platform-tilt-x', `${currentTilt.current.x.toFixed(3)}deg`);
-    node.style.setProperty('--pf-about-platform-tilt-y', `${currentTilt.current.y.toFixed(3)}deg`);
-    const settled =
-      Math.abs(targetTilt.current.x - currentTilt.current.x) < 0.02 &&
-      Math.abs(targetTilt.current.y - currentTilt.current.y) < 0.02;
-    if (hoveringRef.current || !settled) {
-      rafRef.current = window.requestAnimationFrame(() => tickRef.current());
-    } else {
-      rafRef.current = 0;
-    }
-  }, []);
-
-  useEffect(() => {
-    tickRef.current = tick;
-  }, [tick]);
-
-  const handlePointerMove = useCallback(
-    (event: MouseEvent<HTMLElement>) => {
-      const node = cardRef.current;
-      if (!node) return;
-      const rect = node.getBoundingClientRect();
-      const px = ((event.clientX - rect.left) / rect.width) * 100;
-      const py = ((event.clientY - rect.top) / rect.height) * 100;
-      targetTilt.current = { x: (py / 100 - 0.5) * -4.5, y: (px / 100 - 0.5) * 4.5 };
-      node.style.setProperty('--pf-about-platform-glow-x', `${px}%`);
-      node.style.setProperty('--pf-about-platform-glow-y', `${py}%`);
-      if (!rafRef.current) rafRef.current = window.requestAnimationFrame(tick);
-    },
-    [tick]
-  );
-
-  const handlePointerEnter = useCallback(() => {
-    hoveringRef.current = true;
-  }, []);
-
-  const handlePointerLeave = useCallback(() => {
-    hoveringRef.current = false;
-    targetTilt.current = { x: 0, y: 0 };
-    if (!rafRef.current) rafRef.current = window.requestAnimationFrame(tick);
-  }, [tick]);
-
-  useEffect(
-    () => () => {
-      if (rafRef.current) window.cancelAnimationFrame(rafRef.current);
-    },
-    []
-  );
-
   return (
     <article
-      ref={cardRef}
       className={`pf-about-platform-card flex flex-1 flex-col rounded-[1.15rem] border ${densityClass}`}
-      onMouseEnter={handlePointerEnter}
-      onMouseMove={handlePointerMove}
-      onMouseLeave={handlePointerLeave}
     >
-      <span className="pf-about-platform-card-glow" aria-hidden />
       <span className="pf-about-platform-card-mark" data-reveal="mark">
         <AboutPlatformSkillIcon variant={index} color="currentColor" />
       </span>
@@ -1335,7 +1236,6 @@ function AboutPlatformIndexSection({
         <span className="pf-about-platform-headline-mask">
           <span className="pf-about-platform-split-title-line">{title}</span>
         </span>
-        <span className="pf-about-platform-title-progress" aria-hidden="true" />
       </h3>
       <div className="pf-about-platform-split-body min-w-0 lg:col-start-6 lg:col-span-7">
         {children}
@@ -1370,6 +1270,7 @@ function AboutPlatformLayout({
   cardBg,
   cardBorder,
   contentSize,
+  blockLabelColor,
 }: {
   title: string;
   bio?: string | null;
@@ -1395,16 +1296,18 @@ function AboutPlatformLayout({
   cardBg: string;
   cardBorder: string;
   contentSize: PortfolioInfoPremiumFontSize;
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const reduceMotion = useReducedMotion();
   const motionDisabled = reduceMotion === true;
+  const blockTitleColor = infoBlockLabelColor(blockLabelColor, titleColor);
   const rootRef = useRef<HTMLDivElement>(null);
   const [hasEntered, setHasEntered] = useState(false);
   const [motionState, setMotionState] = useState<'armed' | 'active' | 'done'>('armed');
   const headlineClass = aboutPlatformHeadlineSizeClass(contentSize);
   const leadClass = aboutPlatformLeadSizeClass(contentSize);
   const strengthsTitleClass = aboutPlatformSkillsTitleSizeClass(contentSize);
-  const cardTitleClass = infoContentBlockTitleSizeClass(contentSize);
+  const itemClass = aboutPlatformItemSizeClass(contentSize);
   const cardBodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
   const headlineLines = headlineText
@@ -1473,7 +1376,6 @@ function AboutPlatformLayout({
     const strengths = root.querySelector<HTMLElement>('.pf-about-platform-strengths');
     const languages = root.querySelector<HTMLElement>('.pf-about-platform-languages');
     const education = root.querySelector<HTMLElement>('.pf-about-platform-education');
-    const interests = root.querySelector<HTMLElement>('.pf-about-platform-interests');
 
     let stopHeaderWatch: (() => void) | undefined;
     let headerFallbackId: number | undefined;
@@ -1572,7 +1474,7 @@ function AboutPlatformLayout({
         if (bio) {
           const risePx = Math.round((lines[0]?.offsetHeight || 48) * 1.08);
           gsap.set(bio, { y: risePx, autoAlpha: 0, willChange: 'transform,opacity' });
-          headerIntro.to(bio, { y: 0, autoAlpha: 0.82, duration: 0.88 }, 0.04);
+          headerIntro.to(bio, { y: 0, autoAlpha: 1, duration: 0.88 }, 0.04);
         }
 
         let headerStarted = false;
@@ -1674,13 +1576,8 @@ function AboutPlatformLayout({
           duration: 0.72,
           stagger: 0.08,
           ease: 'power3.out',
-          // Only transform is handed back — opacity/visibility must stay
-          // inline: with no [data-pf-motion='done'] un-hide rule for this
-          // element, clearing them would re-expose the CSS "hidden until
-          // animated" baseline and the words would vanish again. The rest/
-          // hover opacity swing below uses !important to still win over
-          // that permanently-inline opacity: 1.
-          onComplete: () => gsap.set(badges, { clearProps: 'transform' }),
+          // The words keep their final inline transform: clearing it handed them back to the
+          // CSS "hidden until animated" baseline (translateX 36px) and left them indented.
         }
       );
       playIn(
@@ -1696,48 +1593,6 @@ function AboutPlatformLayout({
         { x: 0, autoAlpha: 1, duration: 0.72, stagger: 0.08, ease: 'power3.out' }
       );
 
-      // Each education row's year and diploma title drift horizontally at
-      // different speeds as the row crosses the viewport — a scroll-scrubbed
-      // parallax, not a shared one, so the two never travel in lockstep.
-      eduRows.forEach((row) => {
-        const year = row.querySelector<HTMLElement>('.pf-about-platform-edu-year');
-        const titleTrack = row.querySelector<HTMLElement>('.pf-about-platform-edu-title-track');
-        if (year) {
-          gsap.fromTo(
-            year,
-            { x: -14 },
-            {
-              x: 14,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: row,
-                ...(scroller ? { scroller } : {}),
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 0.6,
-              },
-            }
-          );
-        }
-        if (titleTrack) {
-          gsap.fromTo(
-            titleTrack,
-            { x: 9 },
-            {
-              x: -9,
-              ease: 'none',
-              scrollTrigger: {
-                trigger: row,
-                ...(scroller ? { scroller } : {}),
-                start: 'top bottom',
-                end: 'bottom top',
-                scrub: 1.5,
-              },
-            }
-          );
-        }
-      });
-
       const interestList = root.querySelector<HTMLElement>('.pf-about-platform-split-list');
       playIn(
         Array.from(root.querySelectorAll<HTMLElement>('.pf-about-platform-split-list > *')),
@@ -1746,32 +1601,6 @@ function AboutPlatformLayout({
         { y: 0, autoAlpha: 1, duration: 0.72, stagger: 0.08, ease: 'power3.out' }
       );
 
-      // Sticky title "comes into focus" while its own section's content is the
-      // one actually being read — continuously scrubbed (not a one-shot
-      // reveal), so it dims back out on the way back up too. A thin accent
-      // rule under the title tracks the exact same progress as a "you are
-      // here" indicator.
-      const focusSections = [strengths, languages, education, interests].filter(
-        (section): section is HTMLElement => Boolean(section)
-      );
-      focusSections.forEach((section) => {
-        const titleEl = section.querySelector<HTMLElement>('.pf-about-platform-split-title');
-        if (!titleEl) return;
-        const progressEl = section.querySelector<HTMLElement>('.pf-about-platform-title-progress');
-        gsap.set(titleEl, { opacity: 0.32 });
-        if (progressEl) gsap.set(progressEl, { scaleX: 0, transformOrigin: 'left center' });
-        const focusTl = gsap.timeline({
-          scrollTrigger: {
-            trigger: section,
-            ...(scroller ? { scroller } : {}),
-            start: 'top 70%',
-            end: 'bottom 55%',
-            scrub: 0.3,
-          },
-        });
-        focusTl.to(titleEl, { opacity: 1, ease: 'none' }, 0);
-        if (progressEl) focusTl.to(progressEl, { scaleX: 1, ease: 'none' }, 0);
-      });
     }, root);
 
     const refreshId = window.setTimeout(() => {
@@ -1843,7 +1672,7 @@ function AboutPlatformLayout({
         {bioText ? (
           <div className="pf-about-platform-bio-wrap min-w-0 lg:col-start-2 lg:row-start-1 lg:self-start">
             <p
-              className={`pf-about-platform-bio min-w-0 w-full max-w-xl font-medium !leading-[1.28] tracking-[-0.018em] lg:max-w-none ${leadClass}`}
+              className={`pf-about-platform-bio min-w-0 w-full max-w-xl !leading-[1.35] tracking-[-0.012em] lg:max-w-none ${leadClass}`}
               style={{ color: bodyColor }}
             >
               {bioText}
@@ -1865,7 +1694,7 @@ function AboutPlatformLayout({
                     <AboutPlatformSkillCard
                       skill={skill}
                       index={index}
-                      cardTitleClass={cardTitleClass}
+                      cardTitleClass={itemClass}
                       cardBodyClass={cardBodyClass}
                     />
                   </div>
@@ -1880,16 +1709,14 @@ function AboutPlatformLayout({
         <AboutPlatformIndexSection
           title={strengthsSectionTitle}
           sectionTitleClass={strengthsTitleClass}
-          titleColor={titleColor}
+          titleColor={blockTitleColor}
           className="pf-about-platform-strengths"
         >
           <div className="pf-about-platform-words flex flex-wrap items-baseline gap-x-9 gap-y-5">
             {visibleStrengths.map((item, index) => (
               <span
                 key={`${index}-${item}`}
-                className={`pf-about-platform-word ${cardBodyClass} ${
-                  index % 3 === 1 ? 'pf-about-platform-word--minor' : ''
-                }`}
+                className={`pf-about-platform-word ${cardBodyClass}`}
                 data-pf-no-color-transition=""
               >
                 {item}
@@ -1903,37 +1730,22 @@ function AboutPlatformLayout({
         <AboutPlatformIndexSection
           title={ABOUT_VALUE_STEPS_SECTION_LABELS.languages}
           sectionTitleClass={strengthsTitleClass}
-          titleColor={titleColor}
+          titleColor={blockTitleColor}
           className="pf-about-platform-languages"
         >
           <ul className="pf-about-platform-langs">
             {languageItems.map((item) => {
               const code = aboutClassicLanguageCode(item.name);
               const levelLabel = item.level ? resolveSpokenLanguageLevelLabel(item.level) : null;
-              const fill = item.level ? ABOUT_CLASSIC_LEVEL_TONE[item.level] ?? 0.72 : 0.72;
               return (
                 <li key={item.name} className="pf-about-platform-lang" data-pf-no-color-transition="">
-                  <span className="pf-about-platform-lang-code" style={{ color: titleColor }}>
+                  <span aria-hidden className="pf-about-platform-lang-code" style={{ color: titleColor }}>
                     {code}
                   </span>
-                  <span className="sr-only">{item.name}</span>
+                  <span className="pf-about-platform-lang-name">{item.name}</span>
                   {levelLabel ? (
-                    <span className="pf-about-platform-lang-level-mask">
-                      <span
-                        className="pf-about-platform-lang-level"
-                        style={{ color: bodyColor, opacity: fill }}
-                        data-pf-no-color-transition=""
-                      >
-                        {levelLabel}
-                      </span>
-                      <span
-                        className="pf-about-platform-lang-level pf-about-platform-lang-level--dup"
-                        style={{ opacity: fill }}
-                        data-pf-no-color-transition=""
-                        aria-hidden="true"
-                      >
-                        {levelLabel}
-                      </span>
+                    <span className="pf-about-platform-lang-level" data-pf-no-color-transition="">
+                      {levelLabel}
                     </span>
                   ) : null}
                 </li>
@@ -1947,7 +1759,7 @@ function AboutPlatformLayout({
         <AboutPlatformIndexSection
           title={ABOUT_VALUE_STEPS_SECTION_LABELS.education}
           sectionTitleClass={strengthsTitleClass}
-          titleColor={titleColor}
+          titleColor={blockTitleColor}
           className="pf-about-platform-education"
         >
           <ol className="pf-about-platform-edu-list">
@@ -1971,7 +1783,7 @@ function AboutPlatformLayout({
                     {headline ? (
                       <p className="pf-about-platform-edu-title-track min-w-0">
                         <span
-                          className={`pf-about-platform-edu-degree font-semibold leading-[1.18] tracking-[-0.025em] ${leadClass}`}
+                          className={`pf-about-platform-edu-degree font-medium leading-[1.2] tracking-[-0.02em] ${itemClass}`}
                           style={{ color: titleColor }}
                         >
                           {headline}
@@ -1979,7 +1791,7 @@ function AboutPlatformLayout({
                       </p>
                     ) : null}
                     {detail ? (
-                      <span className="pf-about-platform-edu-meta-mask mt-3 block overflow-hidden">
+                      <span className="pf-about-platform-edu-meta-mask mt-3 block">
                         <span
                           className={`pf-about-platform-edu-school block leading-relaxed ${metaClass}`}
                           style={{ color: bodyColor }}
@@ -2003,15 +1815,15 @@ function AboutPlatformLayout({
         <AboutPlatformIndexSection
           title={ABOUT_VALUE_STEPS_SECTION_LABELS.interests}
           sectionTitleClass={strengthsTitleClass}
-          titleColor={titleColor}
+          titleColor={blockTitleColor}
           className="pf-about-platform-interests"
         >
-          <ul className="pf-about-platform-split-list space-y-4 sm:space-y-5 lg:space-y-6">
+          <ul className="pf-about-platform-split-list space-y-3 sm:space-y-4">
             {visibleInterests.map((item, index) => (
               <li
                 key={`${index}-${item}`}
-                className={`pf-about-platform-split-item font-semibold leading-[1.14] tracking-[-0.025em] ${leadClass}`}
-                style={{ color: bodyColor, opacity: 0.88 }}
+                className={`pf-about-platform-split-item font-medium leading-[1.2] tracking-[-0.02em] ${itemClass}`}
+                style={{ color: bodyColor }}
               >
                 {item}
               </li>
@@ -2118,6 +1930,7 @@ function AboutPortraitSkillsLayout({
   cardBg,
   contentSize,
   portraitGrayscale = false,
+  blockLabelColor,
 }: {
   title: string;
   subtitle: string;
@@ -2142,9 +1955,11 @@ function AboutPortraitSkillsLayout({
   cardBg: string;
   contentSize: PortfolioInfoPremiumFontSize;
   portraitGrayscale?: boolean;
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
   const reduceMotion = Boolean(useReducedMotion());
+  const blockTitleColor = infoBlockLabelColor(blockLabelColor, subtitleColor);
   const rootRef = useRef<HTMLDivElement>(null);
   const pinRef = useRef<HTMLElement>(null);
   const skillsWrapRef = useRef<HTMLDivElement>(null);
@@ -2171,7 +1986,10 @@ function AboutPortraitSkillsLayout({
   const showBentoBlock = showStrengthsBlock || showMetaBlock;
   const showAfterBlock = showBentoBlock || showEducationBlock;
   const scrollFocusEnabled = showSkillsBlock && visibleSkills.length > 1 && !reduceMotion;
-  const skillListClass = aboutPortraitSkillsListSizeClass(contentSize);
+  // Dense rails (4+ skills, or a sentence-long title) switch to a smaller, lighter, airier setting.
+  const compactSkills =
+    visibleSkills.length > 3 || visibleSkills.some((skill) => (skill.title?.trim().length ?? 0) > 26);
+  const skillListClass = aboutPortraitSkillsListSizeClass(contentSize, compactSkills);
   const bioClass = aboutPortraitSkillsBioSizeClass(contentSize);
   const strengthsTitleClass = aboutPortraitSkillsStrengthsTitleSizeClass(contentSize);
   const strengthsItemClass = aboutPortraitSkillsStrengthsItemSizeClass(contentSize);
@@ -2481,7 +2299,7 @@ function AboutPortraitSkillsLayout({
         style={{ color: bodyColor }}
         data-pf-no-color-transition=""
         initial={reduceMotion ? false : { opacity: 0, y: 18 }}
-        animate={{ opacity: 0.9, y: 0 }}
+        animate={{ opacity: 1, y: 0 }}
         transition={aboutPortraitSkillsTween(reduceMotion, 0.82, bioDelay)}
       >
         {bioText}
@@ -2504,7 +2322,7 @@ function AboutPortraitSkillsLayout({
               style={{ color: bodyColor }}
               data-pf-no-color-transition=""
               initial={reduceMotion ? false : { opacity: 0, y: 10 }}
-              animate={{ opacity: 0.88, y: 0 }}
+              animate={{ opacity: 1, y: 0 }}
               transition={aboutPortraitSkillsTween(reduceMotion, 0.64, 0.08)}
             >
               {kickerText}
@@ -2519,7 +2337,7 @@ function AboutPortraitSkillsLayout({
                     aria-hidden
                   />
                   <ul
-                    className="pf-about-portrait-skills"
+                    className={`pf-about-portrait-skills${compactSkills ? ' pf-about-portrait-skills--compact' : ''}`}
                     role="list"
                     onMouseLeave={() => setInteractionIndex(null)}
                   >
@@ -2542,9 +2360,6 @@ function AboutPortraitSkillsLayout({
                             onClick={() => activateSkill(index)}
                             aria-pressed={isActive}
                           >
-                            <span className="pf-about-portrait-skill-index tabular-nums" aria-hidden>
-                              {String(index + 1).padStart(2, '0')}
-                            </span>
                             <span className="pf-about-portrait-skill-mask">
                               <motion.span
                                 className="pf-about-portrait-skill-title"
@@ -2636,12 +2451,9 @@ function AboutPortraitSkillsLayout({
                 data-pf-no-color-transition=""
               >
                 <div className="pf-about-portrait-strengths-head">
-                  <span className="pf-about-portrait-strengths-count" aria-hidden>
-                    {String(visibleStrengths.length).padStart(2, '0')}
-                  </span>
                   <h3
                     className={`pf-about-portrait-strengths-title font-semibold tracking-[-0.02em] ${strengthsTitleClass}`}
-                    style={{ color: subtitleColor }}
+                    style={{ color: blockTitleColor }}
                   >
                     {ABOUT_VALUE_STEPS_SECTION_LABELS.strengths}
                   </h3>
@@ -2653,9 +2465,6 @@ function AboutPortraitSkillsLayout({
                       className="pf-about-portrait-badge-cell pf-about-portrait-bring-item"
                       data-pf-no-color-transition=""
                     >
-                      <span className="pf-about-portrait-bring-index tabular-nums" aria-hidden>
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
                       <span
                         className={`pf-about-portrait-bring-title font-medium tracking-[-0.015em] ${strengthsItemClass}`}
                         style={{ color: titleColor, fontFamily: ABOUT_CLASSIC_SERIF }}
@@ -2691,7 +2500,7 @@ function AboutPortraitSkillsLayout({
               >
                 {showInterests && visibleInterests.length > 0 ? (
                   <div className="pf-about-portrait-meta-col pf-about-portrait-meta-col--interests">
-                    <p className="pf-about-portrait-meta-kicker" style={{ color: bodyColor }}>
+                    <p className="pf-about-portrait-meta-kicker" style={{ color: blockTitleColor }}>
                       {ABOUT_PORTRAIT_SKILLS_INTERESTS_LABEL}
                     </p>
                     <p
@@ -2704,7 +2513,7 @@ function AboutPortraitSkillsLayout({
                 ) : null}
                 {showLanguages && visibleLanguageItems.length > 0 ? (
                   <div className="pf-about-portrait-meta-col pf-about-portrait-meta-col--languages">
-                    <p className="pf-about-portrait-meta-kicker" style={{ color: bodyColor }}>
+                    <p className="pf-about-portrait-meta-kicker" style={{ color: blockTitleColor }}>
                       {ABOUT_PORTRAIT_SKILLS_LANGUAGES_LABEL}
                     </p>
                     <AboutPortraitLanguageList
@@ -2726,12 +2535,9 @@ function AboutPortraitSkillsLayout({
               data-pf-no-color-transition=""
             >
               <div className="pf-about-portrait-education-head">
-                <span className="pf-about-portrait-education-count" aria-hidden>
-                  {String(visibleEducation.length).padStart(2, '0')}
-                </span>
                 <h3
                   className={`pf-about-portrait-education-title font-semibold tracking-[-0.02em] ${strengthsTitleClass}`}
-                  style={{ color: subtitleColor }}
+                  style={{ color: blockTitleColor }}
                 >
                   {ABOUT_VALUE_STEPS_SECTION_LABELS.education}
                 </h3>
@@ -2744,9 +2550,6 @@ function AboutPortraitSkillsLayout({
                     data-pf-no-color-transition=""
                   >
                     <span className="pf-about-portrait-edu-heading">
-                      <span className="pf-about-portrait-edu-index tabular-nums" aria-hidden>
-                        {String(index + 1).padStart(2, '0')}
-                      </span>
                       {entry.title?.trim() ? (
                         <span
                           className={`pf-about-portrait-edu-title font-medium tracking-[-0.012em] ${strengthsItemClass}`}
@@ -2786,7 +2589,7 @@ const ABOUT_BANNER_PORTRAIT_CLIP_START =
 const ABOUT_BANNER_PORTRAIT_CLIP_END = 'inset(0% 0% 0% 0% round 0rem)';
 
 const ABOUT_BANNER_LABEL_CLASS =
-  'mb-7 text-[0.72rem] font-semibold uppercase tracking-[0.22em] sm:mb-8';
+  'mb-7 text-xs font-semibold uppercase tracking-[0.2em] sm:mb-8';
 
 if (typeof window !== 'undefined') {
   gsap.registerPlugin(ScrollTrigger);
@@ -2795,15 +2598,15 @@ if (typeof window !== 'undefined') {
 /** About · banner — strengths folio: ghost text badges, not a CV bullet list. */
 function AboutBannerStrengthsIntro({
   label,
+  labelColor,
   strengthItems,
   textColor,
-  bodyColor,
   bodyClass,
 }: {
   label?: string;
+  labelColor: string;
   strengthItems: string[];
   textColor: string;
-  bodyColor: string;
   bodyClass: string;
 }) {
   const visible = strengthItems.map((item) => item.trim()).filter(Boolean);
@@ -2812,7 +2615,7 @@ function AboutBannerStrengthsIntro({
   return (
     <section className="pf-about-banner-folio-child pf-about-banner-strengths">
       {label?.trim() ? (
-        <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: bodyColor, opacity: 0.72 }}>
+        <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: labelColor }}>
           {label.trim()}
         </p>
       ) : null}
@@ -2839,23 +2642,27 @@ function AboutBannerStrengthsIntro({
 /** About · banner — skills folio: uneven magazine columns, title / whisper description. */
 function AboutBannerSkillsFooter({
   label,
+  labelColor,
   skills,
   titleColor,
   bodyColor,
   bodyClass,
+  descClass,
 }: {
   label: string;
+  labelColor: string;
   skills: ProfileSkillEntry[];
   titleColor: string;
   bodyColor: string;
   bodyClass: string;
+  descClass: string;
 }) {
   const visible = skills.filter((item) => item.title?.trim());
   if (visible.length === 0) return null;
 
   return (
     <section className="pf-about-banner-folio-child pf-about-banner-skills">
-      <p className={ABOUT_BANNER_LABEL_CLASS} style={{ color: bodyColor, opacity: 0.72 }}>
+      <p className={ABOUT_BANNER_LABEL_CLASS} style={{ color: labelColor }}>
         {label}
       </p>
 
@@ -2878,8 +2685,8 @@ function AboutBannerSkillsFooter({
                 </p>
                 {skillDescription ? (
                   <p
-                    className={`pf-about-banner-skill-desc text-[0.92em] leading-[1.65] ${bodyClass}`}
-                    style={{ color: bodyColor, opacity: 0.82 }}
+                    className={`pf-about-banner-skill-desc leading-[1.65] ${descClass}`}
+                    style={{ color: bodyColor }}
                   >
                     {skillDescription}
                   </p>
@@ -2898,6 +2705,7 @@ function AboutBannerEducationBlock({
   educationItems,
   showEducation,
   educationLabel,
+  labelColor,
   textColor,
   bodyColor,
   bodyClass,
@@ -2906,6 +2714,7 @@ function AboutBannerEducationBlock({
   educationItems: ProfileEducationEntry[];
   showEducation: boolean;
   educationLabel: string;
+  labelColor: string;
   textColor: string;
   bodyColor: string;
   bodyClass: string;
@@ -2918,7 +2727,7 @@ function AboutBannerEducationBlock({
 
   return (
     <section className="pf-about-banner-education min-w-0 text-left">
-      <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: bodyColor, opacity: 0.72 }}>
+      <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: labelColor }}>
         {educationLabel}
       </p>
       <ol className="space-y-5 text-left">
@@ -2936,7 +2745,7 @@ function AboutBannerEducationBlock({
             >
               {headline ? (
                 <p
-                  className={`font-medium leading-snug tracking-[-0.01em] text-[1.05rem] sm:text-[1.12rem] ${bodyClass}`}
+                  className={`font-medium leading-snug tracking-[-0.01em] ${bodyClass}`}
                   style={{ color: textColor }}
                 >
                   {headline}
@@ -2974,6 +2783,7 @@ function AboutBannerInterestsBlock({
   interestItems,
   showInterests,
   interestsLabel,
+  labelColor,
   textColor,
   bodyColor,
   bodyClass,
@@ -2981,6 +2791,7 @@ function AboutBannerInterestsBlock({
   interestItems: string[];
   showInterests: boolean;
   interestsLabel: string;
+  labelColor: string;
   textColor: string;
   bodyColor: string;
   bodyClass: string;
@@ -2990,11 +2801,11 @@ function AboutBannerInterestsBlock({
 
   return (
     <section className="pf-about-banner-interests min-w-0 text-left">
-      <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: bodyColor, opacity: 0.72 }}>
+      <p className={`${ABOUT_BANNER_LABEL_CLASS} text-left`} style={{ color: labelColor }}>
         {interestsLabel}
       </p>
       <p
-        className={`text-left leading-[1.85] tracking-[-0.01em] text-[1.05rem] sm:text-[1.12rem] ${bodyClass}`}
+        className={`text-left leading-[1.85] tracking-[-0.01em] ${bodyClass}`}
         style={{ color: textColor }}
       >
         {visibleInterests.map((item, index) => (
@@ -3043,6 +2854,7 @@ function AboutBannerLayout({
   cardBg,
   cardBorder,
   portraitGrayscale,
+  blockLabelColor,
 }: {
   title: string;
   subtitle: string;
@@ -3069,8 +2881,10 @@ function AboutBannerLayout({
   cardBg: string;
   cardBorder: string;
   portraitGrayscale: boolean;
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
+  const labelColor = infoBlockLabelColor(blockLabelColor, aboutClassicMuted(bodyColor, 100));
   const bioText = bio?.trim() || subtitle?.trim() || '';
   const bioClass = aboutBannerBioSizeClass(contentSize);
   const bodyClass = aboutBannerContentSizeClass(contentSize);
@@ -3276,9 +3090,11 @@ function AboutBannerLayout({
       className="pf-about-banner relative z-[1] w-full"
       data-pf-motion={motionMode}
     >
-      <div className="pf-about-banner-cover flex w-full flex-col px-6 pt-8 sm:px-10 sm:pt-10 lg:px-16 lg:pt-14 xl:px-20">
-        <div className="pf-about-banner-pair grid grid-cols-[minmax(0,13rem)_minmax(0,1fr)] items-end sm:grid-cols-[minmax(0,17rem)_minmax(0,1fr)]">
-          <div className="pf-about-banner-portrait-frame">
+      <div className="pf-about-banner-cover flex w-full flex-col pt-8 sm:pt-10 lg:pt-14">
+        {/* Phones stack portrait over bio (a 13rem portrait left a 47px bio column); wider
+            screens put the bio beside it, with a larger portrait from 1024px. */}
+        <div className="pf-about-banner-pair grid grid-cols-1 items-end gap-y-8 sm:grid-cols-[minmax(0,17rem)_minmax(0,1fr)] lg:grid-cols-[minmax(0,21rem)_minmax(0,1fr)]">
+          <div className="pf-about-banner-portrait-frame max-w-[13rem] sm:max-w-none">
             <div
               className="pf-about-banner-portrait aspect-[3/4] w-full overflow-hidden"
               style={{ backgroundColor: cardBg }}
@@ -3338,25 +3154,27 @@ function AboutBannerLayout({
 
       {showFolio ? (
         <div
-          className="pf-about-banner-folio px-6 sm:px-10 lg:px-16 xl:px-20"
+          className="pf-about-banner-folio"
           style={{ borderColor: cardBorder }}
         >
           {showSkillsBlock ? (
             <AboutBannerSkillsFooter
               label={skillsLabel}
+              labelColor={labelColor}
               skills={skillItems}
               titleColor={skillsTitleColor}
               bodyColor={bodyColor}
               bodyClass={bodyClass}
+              descClass={metaClass}
             />
           ) : null}
 
           {showStrengthsBlock ? (
             <AboutBannerStrengthsIntro
               label={strengthsLabel}
+              labelColor={labelColor}
               strengthItems={strengthItems}
               textColor={subtitleColor}
-              bodyColor={bodyColor}
               bodyClass={bodyClass}
             />
           ) : null}
@@ -3367,6 +3185,7 @@ function AboutBannerLayout({
                 educationItems={educationItems}
                 showEducation={showEducation}
                 educationLabel={educationLabel}
+                labelColor={labelColor}
                 textColor={subtitleColor}
                 bodyColor={bodyColor}
                 bodyClass={bodyClass}
@@ -3381,6 +3200,7 @@ function AboutBannerLayout({
                     interestItems={interestItems}
                     showInterests={showInterests}
                     interestsLabel={interestsLabel}
+                    labelColor={labelColor}
                     textColor={subtitleColor}
                     bodyColor={bodyColor}
                     bodyClass={bodyClass}
@@ -3469,38 +3289,25 @@ function AboutSplitSectionHeading({
   );
 }
 
-/** About · split — numbered skill rows in content column (titles only, no descriptions). */
+/** About · split — skill rows in the content column (titles only, no descriptions, no ordinals). */
 function AboutSplitSkillsList({
   label,
+  labelColor,
   skills,
-  accent,
   titleColor,
-  bodyColor,
   bodyClass,
-  metaClass,
   reduceMotion,
 }: {
   label: string;
+  labelColor: string;
   skills: ProfileSkillEntry[];
-  accent: string;
   titleColor: string;
-  bodyColor: string;
   bodyClass: string;
-  metaClass: string;
   reduceMotion: boolean;
 }) {
-  const countLabel = String(skills.length).padStart(2, '0');
-
   return (
     <>
-      <AboutSplitSectionHeading
-        label={label}
-        titleColor={titleColor}
-        meta={countLabel}
-        metaColor={bodyColor}
-        metaClass={metaClass}
-        metaAriaLabel={`${skills.length} skills`}
-      />
+      <AboutSplitSectionHeading label={label} titleColor={labelColor} />
       <ul className={`pf-about-split-skills ${bodyClass}`} data-pf-no-color-transition="">
         {skills.map((skill, index) => {
           const skillTitle = skill.title?.trim();
@@ -3520,13 +3327,6 @@ function AboutSplitSkillsList({
                 ease: ABOUT_SPLIT_EASE,
               }}
             >
-              <span
-                className={`pf-about-split-skill-index tabular-nums ${metaClass}`}
-                style={{ color: accent }}
-                aria-hidden
-              >
-                {String(index + 1).padStart(2, '0')}
-              </span>
               <span className="pf-about-split-skill-title" style={{ color: titleColor }}>
                 {skillTitle}
               </span>
@@ -3575,12 +3375,10 @@ function AboutSplitStrengthsList({
 /** About · split — typographic languages only (no gauges, no flags). */
 function AboutSplitLanguageList({
   items,
-  accent,
   bodyClass,
   reduceMotion,
 }: {
   items: LanguageDisplayItem[];
-  accent: string;
   bodyClass: string;
   reduceMotion: boolean;
 }) {
@@ -3610,9 +3408,7 @@ function AboutSplitLanguageList({
               <span className="pf-about-split-lang-name">{item.name}</span>
             </span>
             {levelLabel ? (
-              <span className="pf-about-split-lang-level" style={{ color: accent }}>
-                {levelLabel}
-              </span>
+              <span className="pf-about-split-lang-level">{levelLabel}</span>
             ) : null}
           </motion.li>
         );
@@ -3641,7 +3437,7 @@ function useHydrationSafeReducedMotion() {
 function AboutSplitLayout({
   title: _title,
   subtitle: _subtitle,
-  bio: _bio,
+  bio,
   specialty,
   avatarUrl,
   fullName,
@@ -3667,6 +3463,7 @@ function AboutSplitLayout({
   portraitSide,
   sectionLabels,
   portraitGrayscale,
+  blockLabelColor,
 }: {
   title: string;
   subtitle: string;
@@ -3696,9 +3493,12 @@ function AboutSplitLayout({
   portraitSide: PortfolioInfoAboutSplitPortraitSide;
   sectionLabels: AboutSplitSectionLabels;
   portraitGrayscale: boolean;
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
   const reduceMotion = useHydrationSafeReducedMotion();
+  const labelColor = infoBlockLabelColor(blockLabelColor, titleColor);
+  const bioText = bio?.trim() ?? '';
   const rootRef = useRef<HTMLDivElement>(null);
   const bodyClass = infoContentBodySizeClass(contentSize);
   const metaClass = infoContentEducationMetaSizeClass(contentSize);
@@ -3816,16 +3616,28 @@ function AboutSplitLayout({
             portraitOnRight ? 'pf-about-split-copy--before-portrait' : 'pf-about-split-copy--after-portrait'
           }`}
         >
+          {/* The portrait plate already carries name + specialty; the copy column opens with
+              the person's own words, so the split tells something before it lists things. */}
+          {bioText ? (
+            <motion.p
+              className="pf-about-split-lede whitespace-pre-line"
+              data-pf-no-color-transition=""
+              initial={reduceMotion ? false : { opacity: 0, y: 12 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.75, delay: 0.35, ease: ABOUT_SPLIT_EASE }}
+            >
+              {bioText}
+            </motion.p>
+          ) : null}
+
           {showSkillsBlock ? (
             <section className="pf-about-split-section pf-about-split-section--skills">
               <AboutSplitSkillsList
                 label={sectionLabels.skills}
+                labelColor={labelColor}
                 skills={visibleSkills}
-                accent={accent}
                 titleColor={titleColor}
-                bodyColor={bodyColor}
                 bodyClass={bodyClass}
-                metaClass={metaClass}
                 reduceMotion={reduceMotion}
               />
             </section>
@@ -3833,7 +3645,7 @@ function AboutSplitLayout({
 
           {showStrengthsBlock ? (
             <section className="pf-about-split-section pf-about-split-section--tags">
-              <AboutSplitSectionHeading label={sectionLabels.strengths} titleColor={titleColor} />
+              <AboutSplitSectionHeading label={sectionLabels.strengths} titleColor={labelColor} />
               <AboutSplitStrengthsList
                 items={visibleStrengths}
                 bodyClass={bodyClass}
@@ -3851,10 +3663,9 @@ function AboutSplitLayout({
               viewport={reduceMotion ? undefined : { once: true, amount: 0.18 }}
               transition={{ duration: 0.7, delay: 0.05, ease: ABOUT_SPLIT_EASE }}
             >
-              <AboutSplitSectionHeading label={sectionLabels.languages} titleColor={titleColor} />
+              <AboutSplitSectionHeading label={sectionLabels.languages} titleColor={labelColor} />
               <AboutSplitLanguageList
                 items={languageItems}
-                accent={accent}
                 bodyClass={bodyClass}
                 reduceMotion={reduceMotion}
               />
@@ -3871,7 +3682,7 @@ function AboutSplitLayout({
               viewport={reduceMotion ? undefined : { once: true, amount: 0.16 }}
               transition={{ duration: 0.7, ease: ABOUT_SPLIT_EASE }}
             >
-              <AboutSplitSectionHeading label={t('Education')} titleColor={titleColor} />
+              <AboutSplitSectionHeading label={t('Education')} titleColor={labelColor} />
               <ul className={`pf-about-split-edu ${bodyClass}`}>
                 {educationItems.map((entry) => (
                   <li
@@ -3885,10 +3696,10 @@ function AboutSplitLayout({
                       </span>
                     ) : null}
                     {entry.institution?.trim() ? (
-                      <span className="mt-0.5 block opacity-80">{entry.institution.trim()}</span>
+                      <span className="mt-0.5 block">{entry.institution.trim()}</span>
                     ) : null}
                     {entry.schoolYear?.trim() ? (
-                      <span className={`mt-0.5 block opacity-70 ${metaClass}`}>
+                      <span className={`mt-0.5 block ${metaClass}`}>
                         {entry.schoolYear.trim()}
                       </span>
                     ) : null}
@@ -3900,7 +3711,7 @@ function AboutSplitLayout({
 
           {showSystemsBlock ? (
             <motion.section
-              className="pf-about-split-section"
+              className="pf-about-split-section pf-about-split-section--tools"
               style={{ borderColor: cardBorder }}
               data-pf-no-color-transition=""
               initial={reduceMotion ? false : splitSectionMotion}
@@ -3908,7 +3719,7 @@ function AboutSplitLayout({
               viewport={reduceMotion ? undefined : { once: true, amount: 0.16 }}
               transition={{ duration: 0.7, ease: ABOUT_SPLIT_EASE }}
             >
-              <AboutSplitSectionHeading label={t('Systems & tools')} titleColor={titleColor} />
+              <AboutSplitSectionHeading label={t('Systems & tools')} titleColor={labelColor} />
               <InfoBulletList
                 items={toolItems}
                 accent={accent}
@@ -4042,7 +3853,7 @@ function manifestoBlockFocusClass(isFocused: boolean, scrollFocus: boolean): str
   if (!scrollFocus) return '';
   return isFocused
     ? 'opacity-100 blur-none'
-    : 'opacity-[0.62] blur-[1px] saturate-[0.9]';
+    : 'opacity-[0.7]';
 }
 
 function manifestoPadIndex(index: number): string {
@@ -4188,7 +3999,7 @@ function ManifestoSectionLabel({
 
 function ManifestoEditorialList({
   items,
-  bodyColor,
+  bodyColor: _bodyColor,
   bodySizeClass,
   numbered = false,
   quiet = false,
@@ -4211,7 +4022,7 @@ function ManifestoEditorialList({
         <li
           key={`${index}-${item}`}
           className={`pf-about-manifesto-item leading-relaxed ${bodySizeClass}`}
-          style={quiet ? undefined : { color: bodyColor }}
+          style={{ color: 'var(--pf-about-manifesto-ink, inherit)' }}
         >
           <span className="pf-about-manifesto-line-mask">
             <span className="pf-about-manifesto-line-shift">
@@ -4241,7 +4052,6 @@ function ManifestoIndexGrid({
   showSkills,
   showStrengths,
   showLanguages,
-  accent,
   labelColor,
   bodyColor,
   subtitleColor,
@@ -4254,7 +4064,6 @@ function ManifestoIndexGrid({
   showSkills: boolean;
   showStrengths: boolean;
   showLanguages: boolean;
-  accent: string;
   labelColor?: string;
   bodyColor: string;
   subtitleColor: string;
@@ -4270,7 +4079,6 @@ function ManifestoIndexGrid({
   const bodySizeClass = infoContentBodySizeClass(contentSize);
   const langBodyClass = infoContentBodySizeClass(contentSize);
   const colCount = [showSkillsCol, showStrengthsCol, showLangCol].filter(Boolean).length;
-  const indexColor = `color-mix(in srgb, ${accent} 58%, white)`;
 
   return (
     <div className="pf-about-manifesto-pair-grid" data-cols={colCount}>
@@ -4284,8 +4092,6 @@ function ManifestoIndexGrid({
               items={skillLabels}
               bodyColor={bodyColor}
               bodySizeClass={bodySizeClass}
-              numbered
-              indexColor={indexColor}
             />
           </div>
         </div>
@@ -4485,37 +4291,38 @@ function ManifestoDetailsSection({
   );
 }
 
-const MANIFESTO_PORTRAIT_SIZE_CLASS = 'w-full max-w-[20rem]';
-const MANIFESTO_PORTRAIT_RECT_CLASS = 'w-full max-w-[17.5rem]';
+const MANIFESTO_PORTRAIT_SIZE_CLASS = 'w-full max-w-[26rem]';
+const MANIFESTO_PORTRAIT_RECT_CLASS = 'w-full max-w-[22rem]';
 const MANIFESTO_PORTRAIT_COMPACT_CLASS = 'size-[4.25rem] sm:size-[4.75rem]';
 const MANIFESTO_PORTRAIT_COMPACT_RECT_CLASS = 'w-[4.25rem] sm:w-[4.75rem]';
 
 function manifestoStatementSizeClass(size: PortfolioInfoPremiumFontSize, isLong: boolean): string {
+  // A display line, but one step above the headline scale — not four times the bio.
   if (isLong) {
     switch (size) {
       case 'small':
-        return 'pf-about-manifesto-statement--long text-[clamp(1.55rem,4.2vw,2.9rem)]';
+        return 'pf-about-manifesto-statement--long text-[clamp(1.4rem,3.2vw,2.25rem)]';
       case 'large':
-        return 'pf-about-manifesto-statement--long text-[clamp(1.95rem,5.1vw,3.6rem)]';
+        return 'pf-about-manifesto-statement--long text-[clamp(1.9rem,4.4vw,3.25rem)]';
       case 'xlarge':
-        return 'pf-about-manifesto-statement--long text-[clamp(2.15rem,5.5vw,3.95rem)]';
+        return 'pf-about-manifesto-statement--long text-[clamp(2.15rem,5vw,3.75rem)]';
       case 'xxlarge':
-        return 'pf-about-manifesto-statement--long text-[clamp(2.35rem,5.9vw,4.3rem)]';
+        return 'pf-about-manifesto-statement--long text-[clamp(2.4rem,5.6vw,4.25rem)]';
       default:
-        return 'pf-about-manifesto-statement--long text-[clamp(1.75rem,4.7vw,3.35rem)]';
+        return 'pf-about-manifesto-statement--long text-[clamp(1.6rem,3.8vw,2.75rem)]';
     }
   }
   switch (size) {
     case 'small':
-      return 'text-[clamp(2.2rem,6.5vw,4.2rem)]';
+      return 'text-[clamp(1.9rem,4.6vw,3rem)]';
     case 'large':
-      return 'text-[clamp(2.85rem,7.8vw,5.25rem)]';
+      return 'text-[clamp(2.6rem,6.4vw,4.5rem)]';
     case 'xlarge':
-      return 'text-[clamp(3.2rem,8.4vw,5.85rem)]';
+      return 'text-[clamp(3rem,7.2vw,5.25rem)]';
     case 'xxlarge':
-      return 'text-[clamp(3.55rem,9vw,6.45rem)]';
+      return 'text-[clamp(3.4rem,8vw,6rem)]';
     default:
-      return 'text-[clamp(2.5rem,7.2vw,4.85rem)]';
+      return 'text-[clamp(2.25rem,5.6vw,3.75rem)]';
   }
 }
 
@@ -4831,7 +4638,7 @@ function useManifestoGsapReveal(rootRef: RefObject<HTMLDivElement | null>, motio
           0.14
         );
       }
-      if (caption) heroTl.to(caption, { autoAlpha: 0.62, duration: 0.55 }, 0.7);
+      if (caption) heroTl.to(caption, { autoAlpha: 1, duration: 0.55 }, 0.7);
 
       const folioTl = gsap.timeline({
         paused: true,
@@ -4933,6 +4740,8 @@ function useManifestoGsapReveal(rootRef: RefObject<HTMLDivElement | null>, motio
           );
         });
         if (pair) {
+          // Exit fade only once the columns are leaving: from 'top 42%' they were already at ~60%
+          // opacity in the top fifth of the screen, while still being read.
           gsap.fromTo(
             pair,
             { autoAlpha: 1 },
@@ -4941,8 +4750,8 @@ function useManifestoGsapReveal(rootRef: RefObject<HTMLDivElement | null>, motio
               ease: 'none',
               scrollTrigger: {
                 trigger: pair,
-                start: 'top 42%',
-                end: 'bottom 18%',
+                start: 'top 15%',
+                end: 'bottom top',
                 scrub: true,
                 invalidateOnRefresh: true,
                 ...stBase,
@@ -5021,6 +4830,7 @@ function AboutManifestoLayout({
   cardBorder,
   statementStyle = null,
   colorMode = 'dark',
+  blockLabelColor,
 }: {
   title: string;
   subtitle: string;
@@ -5054,11 +4864,13 @@ function AboutManifestoLayout({
   /** Optional typography override for the statement line (color/size/weight/italic). */
   statementStyle?: PortfolioElementTextStyle | null;
   colorMode?: 'light' | 'dark';
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
   const reduceMotion = useReducedMotion();
   const motionOff = reduceMotion === true;
   const rootRef = useRef<HTMLDivElement>(null);
+  const labelColor = infoBlockLabelColor(blockLabelColor, subtitleColor);
 
   const bioParagraphs = (bio?.trim() || '')
     .split(/\n{2,}/)
@@ -5133,6 +4945,8 @@ function AboutManifestoLayout({
   const rootStyle = {
     '--pf-about-manifesto-accent': accent,
     '--pf-about-manifesto-line': cardBorder,
+    '--pf-about-manifesto-body': bodyColor,
+    '--pf-about-manifesto-ink': subtitleColor,
   } as CSSProperties;
 
   const portraitFrameNode = (compact: boolean) => (
@@ -5163,9 +4977,9 @@ function AboutManifestoLayout({
         }`}
       >
         {showAvatarColumn ? (
-          <div className="pf-about-manifesto-kicker-row" style={{ justifyContent: 'flex-end' }}>
+          <div className="pf-about-manifesto-kicker-row" style={{ justifyContent: 'flex-start' }}>
             <div className="pf-about-manifesto-portrait-slot pf-about-manifesto-portrait-slot--mobile">
-              {portraitFrameNode(true)}
+              {portraitFrameNode(false)}
             </div>
           </div>
         ) : null}
@@ -5244,8 +5058,7 @@ function AboutManifestoLayout({
                 showSkills={showSkillsCol}
                 showStrengths={showStrengthsCol}
                 showLanguages={showLangCol}
-                accent={accent}
-                labelColor={subtitleColor}
+                labelColor={labelColor}
                 bodyColor={bodyColor}
                 subtitleColor={subtitleColor}
                 contentSize={contentSize}
@@ -5266,7 +5079,7 @@ function AboutManifestoLayout({
             showInterests={showInterests}
             showSystemsTools={showSystemsTools}
             accent={accent}
-            labelColor={subtitleColor}
+            labelColor={labelColor}
             subtitleColor={subtitleColor}
             bodyColor={bodyColor}
             cardBorder={cardBorder}
@@ -6187,18 +6000,18 @@ function ValueStepsLanguageDial({
 
 function ValueStepsMetaBlock({
   label,
-  accent,
+  labelColor,
   contentSize,
   children,
 }: {
   label: string;
-  accent: string;
+  labelColor: string;
   contentSize: PortfolioInfoPremiumFontSize;
   children: ReactNode;
 }) {
   return (
     <div className="min-w-0">
-      <ManifestoSectionLabel accent={accent} contentSize={contentSize}>
+      <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
         {label}
       </ManifestoSectionLabel>
       {children}
@@ -6215,12 +6028,14 @@ function ValueStepsMetaBlock({
  *  the title. */
 function ValueStepsEducationList({
   items,
+  labelColor,
   accent,
   subtitleColor,
   bodyColor,
   contentSize,
 }: {
   items: ProfileEducationEntry[];
+  labelColor: string;
   accent: string;
   subtitleColor: string;
   bodyColor: string;
@@ -6302,7 +6117,7 @@ function ValueStepsEducationList({
 
   return (
     <div ref={rootRef} className="w-full">
-      <ManifestoSectionLabel accent={accent} contentSize={contentSize}>
+      <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
         {ABOUT_VALUE_STEPS_SECTION_LABELS.education}
       </ManifestoSectionLabel>
       <ol className="pf-value-edu mt-10 w-full sm:mt-14">
@@ -6426,48 +6241,31 @@ function ValueStepsSquarePortrait({
 }
 
 function AboutValueStepsNativeValues({
-  title,
   visibleSkills,
   accent,
-  titleColor,
   subtitleColor,
   bodyColor,
   contentSize,
 }: {
-  title: string;
   visibleSkills: ProfileSkillEntry[];
   accent: string;
-  titleColor: string;
   subtitleColor: string;
   bodyColor: string;
   contentSize: PortfolioInfoPremiumFontSize;
 }) {
   const motionOff = useReducedMotion() === true;
-  const sectionTitleClass = infoContentBodySizeClass(contentSize);
   const stepTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
   const descriptionSizeClass = aboutValueStepsDescriptionSizeClass(contentSize);
 
   return (
     <>
-      <motion.h2
-        className={`pf-about-values-kicker mb-10 font-semibold uppercase tracking-[0.2em] sm:mb-12 lg:hidden ${sectionTitleClass}`}
-        style={{ color: titleColor }}
-        data-pf-no-color-transition=""
-        initial={motionOff ? false : { opacity: 0, y: 10 }}
-        whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
-        viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
-        transition={{ duration: 0.62, ease: ABOUT_VALUE_STEPS_EASE }}
-      >
-        ({title})
-      </motion.h2>
-
       <div className="lg:grid lg:grid-cols-12 lg:gap-x-10 xl:gap-x-16">
         <div className="lg:col-span-8">
           {visibleSkills.map((skill, index) => (
             <motion.div
               key={skill.id}
-              className={`pf-about-values-step grid grid-cols-1 items-start gap-x-10 gap-y-4 lg:grid-cols-8 ${
-                index > 0 ? 'mt-24 sm:mt-28 lg:mt-36 xl:mt-40' : ''
+              className={`pf-about-values-step grid grid-cols-1 items-start gap-x-6 gap-y-3 lg:grid-cols-[4rem_minmax(0,1fr)] ${
+                index > 0 ? 'mt-10 sm:mt-12 lg:mt-14' : ''
               }`}
               style={{ ['--pf-about-values-i' as string]: index } as CSSProperties}
               data-pf-no-color-transition=""
@@ -6477,7 +6275,7 @@ function AboutValueStepsNativeValues({
               variants={ABOUT_VALUE_STEPS_STEP_STAGGER}
               whileHover={motionOff ? undefined : { y: -5 }}
             >
-              <div className="flex items-baseline gap-4 lg:col-span-2 lg:pt-1.5">
+              <div className="flex items-baseline gap-4 lg:pt-1.5">
                 <motion.span
                   className="pf-about-values-index inline-flex"
                   variants={motionOff ? undefined : ABOUT_VALUE_STEPS_INDEX}
@@ -6493,7 +6291,7 @@ function AboutValueStepsNativeValues({
                 </motion.h3>
               </div>
 
-              <div className="min-w-0 max-w-xl lg:col-span-6">
+              <div className="min-w-0 max-w-xl">
                 <motion.h3
                   className={`pf-about-values-serif hidden font-semibold tracking-tight lg:block ${stepTitleClass}`}
                   style={{ color: subtitleColor, ...ABOUT_VALUE_SERIF_STYLE }}
@@ -6503,7 +6301,7 @@ function AboutValueStepsNativeValues({
                 </motion.h3>
                 {skill.description.trim() ? (
                   <motion.p
-                    className={`mt-4 hidden leading-relaxed opacity-80 lg:mt-5 lg:block ${descriptionSizeClass}`}
+                    className={`mt-4 hidden leading-relaxed lg:mt-5 lg:block ${descriptionSizeClass}`}
                     style={{ color: bodyColor }}
                     variants={motionOff ? undefined : ABOUT_VALUE_STEPS_COPY}
                   >
@@ -6514,7 +6312,7 @@ function AboutValueStepsNativeValues({
 
               {skill.description.trim() ? (
                 <motion.p
-                  className={`max-w-xl leading-relaxed opacity-80 lg:hidden ${descriptionSizeClass}`}
+                  className={`max-w-xl leading-relaxed lg:hidden ${descriptionSizeClass}`}
                   style={{ color: bodyColor }}
                   variants={motionOff ? undefined : ABOUT_VALUE_STEPS_COPY}
                 >
@@ -6525,19 +6323,6 @@ function AboutValueStepsNativeValues({
           ))}
         </div>
 
-        <div className="hidden lg:col-span-4 lg:block">
-          <motion.h2
-            className={`pf-about-values-kicker pf-about-values-kicker--sticky sticky top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+0.5rem)] z-20 text-right font-semibold uppercase tracking-[0.2em] ${sectionTitleClass}`}
-            style={{ color: titleColor }}
-            data-pf-no-color-transition=""
-            initial={motionOff ? false : { opacity: 0 }}
-            whileInView={motionOff ? undefined : { opacity: 1 }}
-            viewport={motionOff ? undefined : ABOUT_VALUE_STEPS_BLOCK_VIEWPORT}
-            transition={{ duration: 0.7, ease: ABOUT_VALUE_STEPS_EASE }}
-          >
-            ({title})
-          </motion.h2>
-        </div>
       </div>
     </>
   );
@@ -6572,6 +6357,7 @@ function AboutValueStepsLayout({
   valuesLayout,
   listMarkerStyle,
   portraitGrayscale,
+  blockLabelColor,
 }: {
   title: string;
   skillItems: ProfileSkillEntry[];
@@ -6601,11 +6387,13 @@ function AboutValueStepsLayout({
   valuesLayout: PortfolioInfoAboutValueValuesLayout;
   listMarkerStyle: PortfolioInfoAboutValueListMarkerStyle;
   portraitGrayscale: boolean;
+  blockLabelColor: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
   const motionOff = useReducedMotion() === true;
   const rootRef = useRef<HTMLDivElement>(null);
-  const stepTitleClass = aboutValueStepsItemTitleSizeClass(contentSize);
+  const labelColor = infoBlockLabelColor(blockLabelColor, subtitleColor);
+  const introLeadClass = aboutPlatformLeadSizeClass(contentSize);
   const descriptionSizeClass = aboutValueStepsDescriptionSizeClass(contentSize);
   const emptyMessageClass = infoContentEducationMetaSizeClass(contentSize);
   const visibleSkills = skillItems.filter(
@@ -6645,7 +6433,7 @@ function AboutValueStepsLayout({
       node: (
         <ValueStepsMetaBlock
           label={ABOUT_VALUE_STEPS_SECTION_LABELS.interests}
-          accent={accent}
+          labelColor={labelColor}
           contentSize={contentSize}
         >
           <ValueStepsInlineDotList
@@ -6664,7 +6452,7 @@ function AboutValueStepsLayout({
       node: (
         <ValueStepsMetaBlock
           label={ABOUT_VALUE_STEPS_SECTION_LABELS.systemsTools}
-          accent={accent}
+          labelColor={labelColor}
           contentSize={contentSize}
         >
           <ValueStepsInlineDotList
@@ -6709,13 +6497,13 @@ function AboutValueStepsLayout({
           {introParagraphs.map((paragraph, index) => (
             <motion.p
               key={paragraph.slice(0, 48)}
-              className={`pf-about-values-intro-p leading-relaxed ${stepTitleClass}${
-                index === 0 ? ' pf-about-values-intro-p--display' : ''
-              }`}
+              className={`pf-about-values-intro-p leading-relaxed ${
+                index === 0 ? introLeadClass : descriptionSizeClass
+              }${index === 0 ? ' pf-about-values-intro-p--display' : ''}`}
               style={
                 index === 0
                   ? { color: subtitleColor, fontStyle: 'italic', fontWeight: 500, ...ABOUT_VALUE_SERIF_STYLE }
-                  : { color: subtitleColor }
+                  : { color: bodyColor }
               }
               variants={motionOff ? undefined : ABOUT_VALUE_STEPS_INTRO_LINE}
             >
@@ -6727,7 +6515,7 @@ function AboutValueStepsLayout({
 
       {showIntro && showValuesContent ? (
         <motion.div
-          className="pf-about-values-rule my-14 h-px w-full origin-left sm:my-16 lg:my-20"
+          className="pf-about-values-rule my-10 h-px w-full origin-left sm:my-12 lg:my-14"
           style={{ backgroundColor: cardBorder }}
           aria-hidden
           data-pf-no-color-transition=""
@@ -6742,10 +6530,8 @@ function AboutValueStepsLayout({
         <div className="pf-about-values-stage">
           {valuesLayout === 'value-steps' ? (
             <AboutValueStepsNativeValues
-              title={title}
               visibleSkills={visibleSkills}
               accent={accent}
-              titleColor={titleColor}
               subtitleColor={subtitleColor}
               bodyColor={bodyColor}
               contentSize={contentSize}
@@ -6798,9 +6584,9 @@ function AboutValueStepsLayout({
       ) : null}
 
       {showFooter ? (
-        <div className="pf-about-values-footer mt-32 sm:mt-40 lg:mt-48 xl:mt-56">
+        <div className="pf-about-values-footer mt-16 sm:mt-20 lg:mt-24">
           <motion.div
-            className="pf-about-values-rule mb-14 h-px w-full origin-left sm:mb-16 lg:mb-20"
+            className="pf-about-values-rule mb-10 h-px w-full origin-left sm:mb-12 lg:mb-14"
             style={{ backgroundColor: cardBorder }}
             aria-hidden
             data-pf-no-color-transition=""
@@ -6822,13 +6608,13 @@ function AboutValueStepsLayout({
                 className="pf-about-values-strengths min-w-0 lg:col-span-6"
                 variants={motionOff ? undefined : ABOUT_VALUE_STEPS_FADE}
               >
-                <ManifestoSectionLabel accent={accent} contentSize={contentSize}>
+                <ManifestoSectionLabel color={labelColor} contentSize={contentSize}>
                   {ABOUT_VALUE_STEPS_SECTION_LABELS.strengths}
                 </ManifestoSectionLabel>
                 <ValueStepsFloatingSkillWords
                   items={visibleStrengths}
                   bodyColor={subtitleColor}
-                  bodySizeClass={stepTitleClass}
+                  bodySizeClass={descriptionSizeClass}
                 />
               </motion.div>
             ) : null}
@@ -6864,11 +6650,11 @@ function AboutValueStepsLayout({
       ) : null}
 
       {showMetaSection ? (
-        <div className="pf-about-values-meta-section mt-32 sm:mt-40 lg:mt-48 xl:mt-56">
-          <ValueStepsSectionRule cardBorder={cardBorder} className="pf-about-values-rule mb-14 sm:mb-16 lg:mb-20" />
+        <div className="pf-about-values-meta-section mt-16 sm:mt-20 lg:mt-24">
+          <ValueStepsSectionRule cardBorder={cardBorder} className="pf-about-values-rule mb-10 sm:mb-12 lg:mb-14" />
           {showEducationBlock ? (
             <motion.div
-              className={`pf-about-values-meta ${showMeta || showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''}`}
+              className={`pf-about-values-meta ${showMeta || showLanguagesBlock ? 'mb-16 sm:mb-20 lg:mb-24' : ''}`}
               data-pf-no-color-transition=""
               initial={motionOff ? false : { opacity: 0, y: 22 }}
               whileInView={motionOff ? undefined : { opacity: 1, y: 0 }}
@@ -6877,6 +6663,7 @@ function AboutValueStepsLayout({
             >
               <ValueStepsEducationList
                 items={educationItems}
+                labelColor={labelColor}
                 accent={accent}
                 subtitleColor={subtitleColor}
                 bodyColor={bodyColor}
@@ -6886,13 +6673,13 @@ function AboutValueStepsLayout({
           ) : null}
           {showMeta ? (
             motionOff ? (
-              <div className={showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''}>
+              <div className={showLanguagesBlock ? 'mb-16 sm:mb-20 lg:mb-24' : ''}>
                 <ValueStepsMetaGrid blocks={metaBlocks} />
               </div>
             ) : (
               <motion.div
                 className={`grid grid-cols-1 gap-16 sm:gap-20 lg:grid-cols-2 lg:gap-x-10 lg:gap-y-20 xl:gap-x-16 ${
-                  showLanguagesBlock ? 'mb-32 sm:mb-40 lg:mb-48 xl:mb-56' : ''
+                  showLanguagesBlock ? 'mb-16 sm:mb-20 lg:mb-24' : ''
                 }`}
                 data-pf-no-color-transition=""
                 initial="hidden"
@@ -6923,7 +6710,7 @@ function AboutValueStepsLayout({
             >
               <ValueStepsMetaBlock
                 label={ABOUT_VALUE_STEPS_SECTION_LABELS.languages}
-                accent={accent}
+                labelColor={labelColor}
                 contentSize={contentSize}
               >
                 <ValueStepsLanguageDial
@@ -7035,6 +6822,7 @@ export function EditorialAboutMeSection({
         cardBorder={cardBorder}
         statementStyle={resolveInfoAboutManifestoStatementStyle(presentation)}
         colorMode={presentation.activeColorMode === 'light' ? 'light' : 'dark'}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7072,6 +6860,7 @@ export function EditorialAboutMeSection({
         cardBg={cardBg}
         cardBorder={cardBorder}
         contentSize={contentSize}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7106,6 +6895,7 @@ export function EditorialAboutMeSection({
         cardBg={cardBg}
         cardBorder={cardBorder}
         portraitGrayscale={portraitGrayscale}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7143,6 +6933,7 @@ export function EditorialAboutMeSection({
         cardBg={cardBg}
         contentSize={contentSize}
         portraitGrayscale={portraitGrayscale}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7171,6 +6962,7 @@ export function EditorialAboutMeSection({
         contentSize={contentSize}
         portraitSide={resolveInfoAboutSplitPortraitSide(presentation)}
         sectionLabels={resolveAboutSplitSectionLabels(presentation)}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
         accent={accent}
         titleColor={
           presentation.useHeroPalette === false
@@ -7219,6 +7011,7 @@ export function EditorialAboutMeSection({
         bodyColor={terminalDark?.bodyColor ?? bodyColor}
         cardBg={terminalDark?.cardBackgroundColor ?? cardBg}
         cardBorder={terminalDark?.cardBorderColor ?? cardBorder}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7248,6 +7041,7 @@ export function EditorialAboutMeSection({
         subtitleColor={subtitleColor}
         bodyColor={bodyColor}
         cardBorder={cardBorder}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7289,6 +7083,7 @@ export function EditorialAboutMeSection({
         valuesLayout={resolveInfoAboutValueValuesLayout(presentation)}
         listMarkerStyle={resolveInfoAboutValueListMarkerStyle(presentation)}
         portraitGrayscale={portraitGrayscale}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7331,6 +7126,7 @@ export function EditorialAboutMeSection({
         cardBorder={cardBorder}
         portraitGrayscale={portraitGrayscale}
         colorMode={presentation.activeColorMode === 'light' ? 'light' : 'dark'}
+        blockLabelColor={presentation.blockLabelColor ?? 'muted'}
       />
     );
   }
@@ -7358,6 +7154,7 @@ export function EditorialAboutMeSection({
       bodyColor={bodyColor}
       cardBg={cardBg}
       cardBorder={cardBorder}
+      blockLabelColor={presentation.blockLabelColor ?? 'muted'}
     />
   );
 }

@@ -136,7 +136,7 @@ type NewsComposeProps = {
 export function NewsPublishButton({ canPublish, onCompose }: NewsComposeProps) {
   const t = useT();
   const className =
-    'gn-primary inline-flex h-12 w-full items-center justify-center !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+    'gn-primary inline-flex h-12 w-full items-center justify-center !rounded-full bg-[color:var(--gn-primary)] text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
   if (!canPublish) {
     return (
       <Link href="/profile" className={className}>
@@ -163,7 +163,7 @@ export function NewsComposerRow({ canPublish, onCompose }: NewsComposeProps) {
   const firstName = user?.fullName?.trim().split(/\s+/)[0] ?? '';
   const prompt = canPublish ? (firstName ? `What's new, ${firstName}?` : t('What\'s new?')) : t('Become a creator to publish');
   const field =
-    'flex h-10 min-w-0 flex-1 items-center rounded-full bg-[color:var(--gn-surface)] px-4 text-left text-[15px] leading-5 text-[color:var(--gn-ink2)] transition-colors active:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+    'flex h-10 min-w-0 flex-1 items-center rounded-full bg-[color:var(--gn-surface)] px-4 text-left text-[15px] leading-5 text-[color:var(--gn-ink2)] transition-colors active:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
   const initials = (user?.fullName ?? '?').trim().slice(0, 1).toUpperCase();
 
   return (
@@ -188,7 +188,7 @@ export function NewsComposerRow({ canPublish, onCompose }: NewsComposeProps) {
             onClick={onCompose}
             aria-label={t('Publish a photo or video')}
             title={t('Publish a photo or video')}
-            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] active:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] active:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             <svg aria-hidden className="h-[22px] w-[22px]" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.7} strokeLinecap="round" strokeLinejoin="round">
               <rect x="3" y="4" width="18" height="16" rx="2.5" />
@@ -217,7 +217,7 @@ export function NewsComposerRow({ canPublish, onCompose }: NewsComposeProps) {
  */
 export function PortfolioCta({ stacked = false }: { stacked?: boolean }) {
   const t = useT();
-  const focus = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  const focus = 'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
   return (
     <Link
       href="/studio"
@@ -265,7 +265,7 @@ function InterestNavItem({
       onClick={onClick}
       aria-pressed={active}
       data-pf-no-color-transition
-      className={`flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+      className={`flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
         active ? 'font-bold' : 'font-semibold'
       }`}
     >
@@ -281,7 +281,7 @@ function InterestNavItem({
 }
 
 const quickButton =
-  'inline-flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-10 w-10 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /**
  * The feed's quick bar, in the gutter left of the posts (wide screens only — HomeNewsFeed decides):
@@ -369,7 +369,7 @@ export function NewsInterestChips({
             aria-pressed={active}
             onClick={() => onSelect(active && chip.value !== null ? null : chip.value)}
             data-pf-no-color-transition
-            className={`inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
                 ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                 : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'

@@ -21,7 +21,7 @@ import {
   type PortfolioStackTitlePresetLegacy,
   type PortfolioStackTitleSize,
 } from '@/components/portfolio/portfolio-stack-presentation';
-import { mergeLevelIndicatorDisplayStyle, LEVEL_STAR_CARDS_COLUMNS_PER_ROW, toolsSubtitleColorStyle, toolsTitleColorStyle, type PortfolioToolsContentAlignment, type PortfolioToolsHeaderAlignment } from '@/components/portfolio/portfolio-tools-settings';
+import { CONTENT_ALIGNMENT_REVISION, mergeLevelIndicatorDisplayStyle, LEVEL_STAR_CARDS_COLUMNS_PER_ROW, toolsSubtitleColorStyle, toolsTitleColorStyle, type PortfolioToolsContentAlignment, type PortfolioToolsHeaderAlignment } from '@/components/portfolio/portfolio-tools-settings';
 import { msg } from '@/lib/i18n/config';
 
 export type {
@@ -312,7 +312,7 @@ export function stackBrandIndexDesignDefaults(): Partial<PortfolioStackSectionSe
     showLevel: false,
     showLevelOptIn: false,
     showLabels: true,
-    brandIndexContentAlignment: 'center',
+    brandIndexContentAlignment: 'left',
     brandIndexFullWidth: true,
     levelIndicatorShowCategoryFilter: false,
     levelTableShowCategoryFilter: false,
@@ -338,7 +338,7 @@ export function stackBrandRowDesignDefaults(): Partial<PortfolioStackSectionSett
     showLevelOptIn: false,
     showLabels: true,
     brandRowColumnsPerRow: 3,
-    brandRowContentAlignment: 'center',
+    brandRowContentAlignment: 'left',
     brandRowCellStyle: 'dividers',
     cardGap: 'tight',
     headerAlignment: 'left',
@@ -363,7 +363,7 @@ export function stackBrandCardsDesignDefaults(): Partial<PortfolioStackSectionSe
     showLabels: true,
     brandCardsIconPlacement: 'left',
     brandCardsColumnsPerRow: 2,
-    brandCardsContentAlignment: 'center',
+    brandCardsContentAlignment: 'left',
     brandCardsFullWidth: false,
     headerAlignment: 'left',
   };
@@ -701,7 +701,9 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   subtitlePreset: 'none',
   subtitleCustom: '',
   headerAlignment: 'center',
-  contentAlignment: 'center',
+  // Content follows the header's default (left alignment).
+  contentAlignment: 'left',
+  contentAlignmentRevision: CONTENT_ALIGNMENT_REVISION,
   titleFont: 'serif',
   subtitleFont: 'sans',
   titleColor: '#171717',
@@ -718,15 +720,16 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   cardGap: 'tight',
   levelProgressRowGap: 'large',
   levelProgressColumnsPerRow: 2,
-  levelProgressContentAlignment: 'center',
+  levelProgressContentAlignment: 'left',
   levelBarStyle: 'rectangle',
   levelBarSize: 'small',
-  workflowRailContentAlignment: 'center',
+  workflowRailContentAlignment: 'left',
+  workflowRailLogoTreatment: 'vivid',
   brandCardsColumnsPerRow: 1,
-  brandCardsContentAlignment: 'center',
+  brandCardsContentAlignment: 'left',
   brandCardsIconPlacement: 'top',
   brandCardsFullWidth: false,
-  brandIndexContentAlignment: 'center',
+  brandIndexContentAlignment: 'left',
   brandIndexFullWidth: false,
   levelIndicatorFullWidth: false,
   levelTableFullWidth: false,
@@ -737,7 +740,7 @@ export const DEFAULT_STACK_PRESENTATION: PortfolioStackPresentationSettings = {
   levelBentoGridMode: 'equal',
   levelIndicatorDisplayStyle: 'text',
   brandRowColumnsPerRow: 3,
-  brandRowContentAlignment: 'center',
+  brandRowContentAlignment: 'left',
   brandRowCellStyle: 'dividers',
   showLabels: true,
   showDescription: false,

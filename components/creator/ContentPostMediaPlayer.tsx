@@ -131,7 +131,7 @@ export function ContentPostVideoPlayer({
             togglePlay();
           }}
           aria-label={t('Play')}
-          className="absolute left-1/2 top-1/2 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#0F1419] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-sm transition-transform duration-200 hover:scale-105 active:scale-95"
+          className="absolute left-1/2 top-1/2 z-20 flex h-16 w-16 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full bg-white/90 text-[#0F1419] shadow-[0_12px_40px_-8px_rgba(0,0,0,0.5)] backdrop-blur-xs transition-transform duration-200 hover:scale-105 active:scale-95"
         >
           <svg className="ml-0.5 h-6 w-6" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
             <path d="M8 5.14v13.72a1 1 0 001.52.85l10.6-6.86a1 1 0 000-1.7L9.52 4.29A1 1 0 008 5.14z" />

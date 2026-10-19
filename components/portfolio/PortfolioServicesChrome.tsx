@@ -161,7 +161,7 @@ function IconButton({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-white shadow-sm transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 ${toneClass}`}
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full border bg-white shadow-xs transition disabled:cursor-not-allowed disabled:opacity-50 dark:bg-neutral-900 ${toneClass}`}
     >
       {children}
     </button>
@@ -542,7 +542,7 @@ export function PortfolioServicesReadOnly({
               <div
                 className={`px-5 pt-5 ${
                   isNewComposer
-                    ? 'sticky top-0 z-10 rounded-t-2xl border-b border-neutral-200/70 bg-white/95 pb-3 backdrop-blur-sm dark:border-white/[0.08] dark:bg-[#121212]/95'
+                    ? 'sticky top-0 z-10 rounded-t-2xl border-b border-neutral-200/70 bg-white/95 pb-3 backdrop-blur-xs dark:border-white/[0.08] dark:bg-[#121212]/95'
                     : 'mb-3 pb-0'
                 }`}
               >

@@ -1,9 +1,8 @@
 import axios from 'axios';
 import { AuthResponse } from '@/types/auth';
 import { setAccessToken } from './accessToken';
-import { setRefreshCookie } from './refreshCookie';
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { API_BASE } from './api-base';
 
 /** How long a successful refresh result is considered fresh. */
 const CACHE_TTL_MS = 30_000;
@@ -45,7 +44,10 @@ function readSharedCache(): SharedSessionCache | null {
 
 function writeSharedCache(authResponse: AuthResponse): void {
   if (!isBrowser()) return;
-  const payload: SharedSessionCache = { cachedAt: Date.now(), authResponse };
+  /* Never persist a refresh token (the API no longer sends one; this guards older responses). */
+  const { refreshToken: _omit, ...withoutRefresh } = authResponse;
+  void _omit;
+  const payload: SharedSessionCache = { cachedAt: Date.now(), authResponse: withoutRefresh };
   localStorage.setItem(SHARED_CACHE_KEY, JSON.stringify(payload));
 }
 
@@ -211,12 +213,6 @@ export async function refreshSession(): Promise<AuthResponse> {
       writeSharedCache(data);
       broadcastSessionRefreshed(sharedCache);
 
-      if (data.refreshToken && typeof window !== 'undefined') {
-        if (logoutInProgress) {
-          return data;
-        }
-        await setRefreshCookie(data.refreshToken);
-      }
       return data;
     })
     .catch((err) => {

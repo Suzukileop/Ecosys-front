@@ -331,7 +331,7 @@ function ReplyForm({
             if (hasText && !submitting) void handleSubmit(submit)();
           }
         }}
-        className="mt-1.5 block w-full resize-none bg-transparent text-[15px] leading-5 text-[#0F1419] caret-current outline-none placeholder:text-[#536471] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
+        className="mt-1.5 block w-full resize-none bg-transparent text-[15px] leading-5 text-[#0F1419] caret-current outline-hidden placeholder:text-[#536471] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
       />
       {errors.comment && <p className="sr-only">{errors.comment.message}</p>}
       <div className="mt-3 flex items-center justify-end gap-1.5">
@@ -810,7 +810,7 @@ export function CommentThread({
         type="text"
         placeholder={t('Add a comment…')}
         autoComplete="off"
-        className="h-10 min-w-0 flex-1 rounded-full border border-transparent bg-[#EFF3F4] px-4 text-[15px] text-[#0F1419] caret-current placeholder:text-[#536471] transition-colors focus:border-[#0F1419] focus:bg-white focus:outline-none dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:border-[#E7E9EA] dark:focus:bg-black"
+        className="h-10 min-w-0 flex-1 rounded-full border border-transparent bg-[#EFF3F4] px-4 text-[15px] text-[#0F1419] caret-current placeholder:text-[#536471] transition-colors focus:border-[#0F1419] focus:bg-white focus:outline-hidden dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:border-[#E7E9EA] dark:focus:bg-black"
         {...register('comment')}
       />
       <button
@@ -839,7 +839,7 @@ export function CommentThread({
         rows={3}
         placeholder={t('Write a comment…')}
         autoComplete="off"
-        className="w-full rounded-xl border border-black/[0.08] bg-transparent px-3.5 py-2.5 text-sm text-[#111111] transition-colors focus:border-black/25 focus:outline-none dark:border-white/[0.1] dark:text-white dark:focus:border-white/30"
+        className="w-full rounded-xl border border-black/[0.08] bg-transparent px-3.5 py-2.5 text-sm text-[#111111] transition-colors focus:border-black/25 focus:outline-hidden dark:border-white/[0.1] dark:text-white dark:focus:border-white/30"
         {...register('comment')}
       />
       {errors.comment && <p className="text-sm text-red-600">{errors.comment.message}</p>}
@@ -936,7 +936,7 @@ export function CommentThread({
     return (
       <>
         <section
-          className={`flex h-full min-h-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-sm dark:bg-black ${className}`}
+          className={`flex h-full min-h-[360px] flex-col overflow-hidden rounded-2xl bg-white shadow-xs dark:bg-black ${className}`}
           aria-labelledby="comments-heading"
         >
           <header className="flex shrink-0 items-center justify-between px-4 pb-1 pt-3">

@@ -1,5 +1,5 @@
 import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios';
-import { getAccessToken, setAccessToken } from './accessToken';
+import { getAccessToken, hasSessionHint, setAccessToken } from './accessToken';
 import { refreshAccessToken, invalidateSessionCache } from './sessionRefresh';
 import { reportNetworkFailure } from '@/stores/serverStatusStore';
 import { normalizeStorageUrlsDeep } from './storage-media-url';
@@ -8,7 +8,7 @@ export {
   setAccessToken,
 };
 
-const API_BASE = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:8080';
+import { API_BASE } from './api-base';
 
 const api = axios.create({
   baseURL: API_BASE,
@@ -59,6 +59,14 @@ api.interceptors.response.use(
       const isAuthEndpoint = originalRequest.url?.includes('/api/auth/');
 
       if (onOAuthPage || isAuthEndpoint) {
+        return Promise.reject(error);
+      }
+
+      // A guest (no token sent, no session cookie) hitting a members-only endpoint from a public page:
+      // there is nothing to refresh, and bouncing them to /login would throw away what they were doing
+      // (the landing feedback form did exactly that). Let the caller show its own error.
+      const sentToken = Boolean(originalRequest.headers?.Authorization);
+      if (!sentToken && !hasSessionHint()) {
         return Promise.reject(error);
       }
 

@@ -40,7 +40,7 @@ type CreatorProductCardProps = {
 export const creatorProductGridClassName =
   'grid min-w-0 grid-cols-1 gap-2 sm:grid-cols-2 sm:gap-5 lg:grid-cols-3';
 
-const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-sm';
+const OVERLAY_CHIP = 'rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium text-white backdrop-blur-xs';
 const OVERLAY_ROUND =
   'inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-[#0F1419] dark:bg-black/80 dark:text-[#E7E9EA]';
 export const CREATOR_EYEBROW = 'truncate text-[13px] leading-[18px] text-[color:var(--gn-ink2)]';

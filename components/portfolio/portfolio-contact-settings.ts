@@ -1153,7 +1153,7 @@ export function contactCardFrameClass(p: PortfolioContactPresentationSettings): 
   const parts = [servicesCardRadiusClass(p.cardBorderRadius), servicesCardPaddingClass(p.cardPadding)];
   if (p.cardBorder !== 'none') {
     parts.push(contactCardBorderWidthClass(p.cardBorder));
-    if (p.cardBorder === 'soft') parts.push('shadow-sm');
+    if (p.cardBorder === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -1893,9 +1893,9 @@ export function contactCtaClassName(design: PortfolioContactCtaDesign): string {
     case 'pill-outline':
       return `${base} rounded-full border-2 px-8 py-3.5 text-sm hover:opacity-90`;
     case 'pill-accent':
-      return `${base} rounded-full px-8 py-3.5 text-sm shadow-sm hover:opacity-90`;
+      return `${base} rounded-full px-8 py-3.5 text-sm shadow-xs hover:opacity-90`;
     case 'full-width':
-      return `${base} w-full rounded-2xl px-8 py-4 text-sm shadow-sm hover:opacity-90`;
+      return `${base} w-full rounded-2xl px-8 py-4 text-sm shadow-xs hover:opacity-90`;
     default:
       return `${base} rounded-full px-8 py-3.5 text-sm hover:opacity-90`;
   }

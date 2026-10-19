@@ -221,7 +221,7 @@ export function TeamHeaderSerifLeadHeader({
               ref={labelRef}
               className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
               style={{
-                color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
+                color: `color-mix(in srgb, ${labelTone} 65%, transparent)`,
                 fontSize: labelFontSize,
                 fontWeight: labelFontWeight,
               }}

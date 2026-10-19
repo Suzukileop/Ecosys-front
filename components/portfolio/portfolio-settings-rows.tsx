@@ -9,6 +9,7 @@ import {
   useSettingsVariant,
   type SettingsVariant,
 } from '@/components/portfolio/portfolio-settings-variants';
+import { useInNpPanel } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /**
  * Retrofits the Expanded / Compact settings views onto a panel's existing controls.
@@ -33,7 +34,7 @@ export function useSettingsRows(): boolean {
 
 const ROW_DIVIDER = 'border-b border-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_9%,transparent)] last:border-b-0';
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)]';
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)]';
 
 function RowSwitch({ checked, onChange, label }: { checked: boolean; onChange: (checked: boolean) => void; label: string }) {
   return (
@@ -110,7 +111,7 @@ export function SettingRow({
   if (toggle) {
     return (
       <div data-setting-row className={`flex items-center justify-between gap-4 ${state.view === 'focus' ? 'min-h-14' : 'py-5'} ${ROW_DIVIDER}`}>
-        {state.view === 'focus' ? labelNode('text-[14.5px]', 'font-medium') : labelNode('text-[14px]', 'font-semibold')}
+        {state.view === 'focus' ? labelNode('text-[14px]', 'font-medium') : labelNode('text-[14px]', 'font-semibold')}
         <RowSwitch checked={toggle.checked} onChange={toggle.onChange} label={label} />
       </div>
     );
@@ -126,7 +127,7 @@ export function SettingRow({
           onClick={() => state.setOpenId(open ? null : id)}
           className={`flex min-h-14 w-full items-center gap-3 rounded-md text-left ${FOCUS_RING}`}
         >
-          <span className="flex min-w-0 flex-1">{labelNode('text-[14.5px]', 'font-medium')}</span>
+          <span className="flex min-w-0 flex-1">{labelNode('text-[14px]', 'font-medium')}</span>
           {preview ? <span className={`flex shrink-0 items-center ${SV_TEXT_MUTED}`}>{preview}</span> : null}
           {value ? (
             <span className={`max-w-[45%] shrink-0 truncate text-[13px] font-medium ${SV_TEXT_MUTED}`}>{value}</span>
@@ -156,6 +157,9 @@ export function SettingRow({
 export function SettingsRowsScope({ title, children }: { title: string; children: ReactNode }) {
   const [view, setView] = useSettingsVariant();
   const [openId, setOpenId] = useState<string | null>(null);
+  // In the Navigation-style frame the folding sections already organise the options: no second
+  // Expanded / Compact layer, the controls render as they are.
+  if (useInNpPanel()) return <div className="flex flex-col gap-[30px]">{children}</div>;
   return (
     <div className="space-y-6">
       <SettingsVariantSwitcher title={title} value={view} onChange={setView} />

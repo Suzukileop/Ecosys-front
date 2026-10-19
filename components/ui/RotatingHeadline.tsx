@@ -25,10 +25,10 @@ export function RotatingHeadline({ phrases, intervalMs = 30_000, className = '' 
           <span
             key={phrase}
             aria-hidden={!active}
-            className={`col-start-1 row-start-1 transition-[opacity,transform,filter] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-opacity motion-reduce:duration-300 ${
+            className={`col-start-1 row-start-1 transition-[opacity,transform,translate,scale,rotate,filter] duration-[900ms] ease-[cubic-bezier(0.16,1,0.3,1)] motion-reduce:transition-opacity motion-reduce:duration-300 ${
               active
-                ? 'translate-y-0 opacity-100 blur-0'
-                : 'pointer-events-none translate-y-2 opacity-0 blur-[6px] motion-reduce:translate-y-0 motion-reduce:blur-0'
+                ? 'translate-y-0 opacity-100 blur-none'
+                : 'pointer-events-none translate-y-2 opacity-0 blur-[6px] motion-reduce:translate-y-0 motion-reduce:blur-none'
             }`}
           >
             {phrase}

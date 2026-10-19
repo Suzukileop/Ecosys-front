@@ -13,7 +13,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
  */
 export const SETTINGS_SECTION_CLASS = 'border-t border-[#E1E8ED] py-6 dark:border-[#2F3336] sm:py-8';
 
-const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+const FOCUS_RING = 'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 export const PRIMARY_BUTTON_CLASS = `inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-primary-hover)] disabled:cursor-not-allowed disabled:opacity-40 ${FOCUS_RING}`;
 
@@ -251,7 +251,7 @@ export function TextField({
           {...input}
           id={id}
           aria-invalid={error ? true : undefined}
-          className={`h-full w-full min-w-0 bg-transparent text-[15px] text-[color:var(--gn-ink)] outline-none placeholder:text-[color:var(--gn-ink3)] read-only:text-[color:var(--gn-ink2)] disabled:text-[color:var(--gn-ink2)] ${
+          className={`h-full w-full min-w-0 bg-transparent text-[15px] text-[color:var(--gn-ink)] outline-hidden placeholder:text-[color:var(--gn-ink3)] read-only:text-[color:var(--gn-ink2)] disabled:text-[color:var(--gn-ink2)] ${
             prefix ? 'pe-3.5 ps-0.5' : 'px-3.5'
           }`}
         />

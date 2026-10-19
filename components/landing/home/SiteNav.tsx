@@ -98,11 +98,11 @@ export function SiteNav() {
         data-landing-nav
         /* Keyboard users tabbing back into the bar always get it on screen. */
         onFocusCapture={() => setHidden(false)}
-        className={`fixed inset-x-0 top-0 z-50 transition-[transform,background-color,backdrop-filter] ${NAV_MOTION} ${
+        className={`fixed inset-x-0 top-0 z-50 transition-[transform,translate,scale,rotate,background-color,backdrop-filter] ${NAV_MOTION} ${
           hidden && !menuOpen ? '-translate-y-full' : 'translate-y-0'
         } ${
           atTop || menuOpen
-            ? 'bg-transparent backdrop-blur-0'
+            ? 'bg-transparent backdrop-blur-none'
             : onDark
               ? 'bg-[#0B0B0B]/70 backdrop-blur-xl'
               : 'bg-white/75 backdrop-blur-xl'
@@ -152,12 +152,12 @@ export function SiteNav() {
               className="relative inline-flex h-10 w-10 items-center justify-center rounded-full lg:hidden"
             >
               <span
-                className={`absolute h-px w-5 transition-[background-color,transform] ${NAV_MOTION} ${onDark ? 'bg-white' : 'bg-[#111111]'} ${
+                className={`absolute h-px w-5 transition-[background-color,transform,translate,scale,rotate] ${NAV_MOTION} ${onDark ? 'bg-white' : 'bg-[#111111]'} ${
                   menuOpen ? 'rotate-45' : '-translate-y-[4px]'
                 }`}
               />
               <span
-                className={`absolute h-px w-5 transition-[background-color,transform] ${NAV_MOTION} ${onDark ? 'bg-white' : 'bg-[#111111]'} ${
+                className={`absolute h-px w-5 transition-[background-color,transform,translate,scale,rotate] ${NAV_MOTION} ${onDark ? 'bg-white' : 'bg-[#111111]'} ${
                   menuOpen ? '-rotate-45' : 'translate-y-[4px]'
                 }`}
               />

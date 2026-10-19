@@ -4,7 +4,15 @@ import Image from 'next/image';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { ScrollToPlugin } from 'gsap/ScrollToPlugin';
-import { useMemo, useLayoutEffect, useRef, useCallback, type MouseEvent, type ReactNode } from 'react';
+import {
+  useMemo,
+  useLayoutEffect,
+  useRef,
+  useCallback,
+  type CSSProperties,
+  type MouseEvent,
+  type ReactNode,
+} from 'react';
 
 // Register GSAP plugins at module level for immediate availability
 if (typeof window !== 'undefined') {
@@ -134,8 +142,10 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
     180,
     Math.max(100, data.presentation.heroStatementCtaPortraitScale ?? 125)
   );
-  const portraitScaleFactor = portraitScale / 100;
-  const desktopPortraitSize = `clamp(${(10 * portraitScaleFactor).toFixed(2)}rem, ${(18 * portraitScaleFactor).toFixed(2)}vw, ${(15 * portraitScaleFactor).toFixed(2)}rem)`;
+  // The optical base is 10% larger than the legacy geometry; the size slider
+  // still scales proportionally from the user's saved value.
+  const portraitScaleFactor = (portraitScale / 100) * 1.1;
+  const desktopPortraitSize = `min(clamp(${(10 * portraitScaleFactor).toFixed(2)}rem, ${(18 * portraitScaleFactor).toFixed(2)}vw, ${(15 * portraitScaleFactor).toFixed(2)}rem), max(14rem, calc(100dvh - 27rem)))`;
   const mobilePortraitSize = `min(${(56 * portraitScaleFactor).toFixed(2)}vw, ${(14 * portraitScaleFactor).toFixed(2)}rem)`;
 
   const centerCover = data.presentation.heroStatementCtaCenterCover === true;
@@ -146,7 +156,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
       data.description?.trim() ||
       t('I turn complex ideas into thoughtful, high-performing products through strategy, design, and development.\n\nI partner with founders and teams to ship clear interfaces, resilient systems, and work that feels inevitable.');
     return splitBioParagraphs(source);
-  }, [data.description]);
+  }, [data.description, t]);
 
   const statementTools = useMemo(
     () =>
@@ -163,16 +173,21 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
 
   const primaryHref = data.contactHref || '#contact';
   const secondaryHref = data.workHref || '#work';
+  const showAvailability = data.presentation.showAvailabilityBadge !== false;
+  const showPrimaryCta = data.showContactCta !== false;
+  const showSecondaryCta = data.showWorkCta !== false;
+  const hasCtas = showPrimaryCta || showSecondaryCta;
 
   /* ───────────────────────────────────────────────────────────────────────────
    * Ref for GSAP animations and scroll detection
    * ─────────────────────────────────────────────────────────────────────────── */
   const heroRef = useRef<HTMLDivElement>(null);
+  const onNavigateSection = data.onNavigateSection;
 
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
-    if (href.startsWith('#') && data.onNavigateSection) {
+    if (href.startsWith('#') && onNavigateSection) {
       event.preventDefault();
-      data.onNavigateSection(href.slice(1) || 'contact');
+      onNavigateSection(href.slice(1) || 'contact');
     }
   };
 
@@ -248,8 +263,8 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
       }
       
       // Also notify portfolio navigation if available
-      if (data.onNavigateSection) {
-        data.onNavigateSection('about');
+      if (onNavigateSection) {
+        onNavigateSection('about');
       }
       return;
     }
@@ -281,16 +296,14 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
     }
     
     // Also notify portfolio navigation if available (for state sync)
-    if (data.onNavigateSection) {
-      data.onNavigateSection('about');
+    if (onNavigateSection) {
+      onNavigateSection('about');
     }
-  }, [data.onNavigateSection]);
+  }, [onNavigateSection]);
 
   const hairline = `1px solid color-mix(in srgb, ${bordure} 65%, transparent)`;
-  const toolsColor = `color-mix(in srgb, ${muted} 58%, ${fond})`;
+  const toolsColor = `color-mix(in srgb, ${muted} 82%, ${fond})`;
   /* Reduced padding to tighten vertical rhythm after adding title margin */
-  const bandPadBottom = 'clamp(12rem, 22vh, 18rem)';
-
   /* ───────────────────────────────────────────────────────────────────────────
    * GSAP Animation & ScrollTrigger Parallax
    * ─────────────────────────────────────────────────────────────────────────── */
@@ -600,33 +613,52 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
     };
   }, [centerPortrait, centerCover]);
 
-  const ctaRow = (opts?: { compact?: boolean }): ReactNode => (
-    <div className={`flex flex-nowrap items-center gap-x-8 ${opts?.compact ? 'gap-x-6' : ''}`}>
-      <a
-        href={primaryHref}
-        onClick={onNavClick(primaryHref)}
-        className={`inline-flex shrink-0 items-center justify-center rounded-full font-sans font-semibold tracking-[-0.01em] transition hover:brightness-110 ${
-          opts?.compact ? 'h-11 px-6 text-[0.9rem]' : 'h-12 px-7 text-[0.95rem]'
-        }`}
-        style={{ backgroundColor: ink, color: fond }}
-      >
-        {t('Start a project')}
-      </a>
-      <a
-        href={secondaryHref}
-        onClick={onNavClick(secondaryHref)}
-        className={`shrink-0 font-sans font-medium tracking-[-0.01em] underline underline-offset-[5px] transition hover:opacity-80 ${
-          opts?.compact ? 'text-[0.9rem]' : 'text-[0.95rem]'
-        }`}
-        style={{ color: ink }}
-      >
-        {t('View project')}
-      </a>
-    </div>
-  );
+  const ctaRow = (opts?: { compact?: boolean }): ReactNode => {
+    if (!hasCtas) return null;
+    return (
+      <div className={`flex flex-wrap items-center gap-x-7 gap-y-4 ${opts?.compact ? 'gap-x-5' : ''}`}>
+        {showPrimaryCta ? (
+          <a
+            href={primaryHref}
+            onClick={onNavClick(primaryHref)}
+            className={`group inline-flex shrink-0 items-center justify-center gap-5 rounded-sm font-sans font-semibold uppercase tracking-[0.1em] transition hover:brightness-110 ${
+              opts?.compact ? 'h-11 px-5 text-[0.7rem]' : 'h-12 px-6 text-[0.74rem]'
+            }`}
+            style={{ backgroundColor: ink, color: fond }}
+          >
+            {t('Start a project')}
+            <span aria-hidden className="transition-transform group-hover:translate-x-1">↗</span>
+          </a>
+        ) : null}
+        {showSecondaryCta ? (
+          <a
+            href={secondaryHref}
+            onClick={onNavClick(secondaryHref)}
+            className={`group inline-flex shrink-0 items-center gap-3 border-b pb-1 font-sans font-medium tracking-[-0.01em] transition hover:opacity-80 ${
+              opts?.compact ? 'text-[0.9rem]' : 'text-[0.95rem]'
+            }`}
+            style={{ color: ink, borderColor: `color-mix(in srgb, ${bordure} 72%, transparent)` }}
+          >
+            {t('View project')}
+            <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
+          </a>
+        ) : null}
+      </div>
+    );
+  };
 
   const bioBlock = (fontSize: string): ReactNode => (
     <div className="flex min-w-0 flex-col gap-5">
+      <div className="flex items-center gap-3" aria-hidden>
+        <span
+          className="h-px w-[clamp(2.75rem,4vw,4.5rem)]"
+          style={{ backgroundColor: principal }}
+        />
+        <span
+          className="size-1.5 rotate-45 border"
+          style={{ borderColor: principal }}
+        />
+      </div>
       <p
         className="m-0 font-sans font-normal tracking-[-0.01em]"
         style={{ color: muted, fontSize, lineHeight: 1.55 }}
@@ -681,35 +713,44 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
     if (!portraitRing) {
       return (
         <div
-          className="relative shrink-0 overflow-hidden rounded-full"
+          className="relative shrink-0 rounded-full"
           style={{
             width: size,
             height: size,
             aspectRatio: '1 / 1',
             flex: '0 0 auto',
+            padding: '6px',
+            boxSizing: 'border-box',
             backgroundColor: `color-mix(in srgb, ${bordure} 35%, ${fond})`,
+            border: `1px solid color-mix(in srgb, ${bordure} 72%, transparent)`,
             ...pointerNone,
           }}
         >
-          {avatarUrl ? (
-            <Image
-              src={avatarUrl}
-              alt={t('Portrait of {displayName}', { displayName })}
-              fill
-              sizes="(max-width: 768px) 56vw, 22vw"
-              className={`object-cover object-center ${heroImageGrayscaleClass(imageBw)}`}
-              style={pointerNone}
-              priority
+          {image}
+          <span
+            aria-hidden
+            className="absolute -inset-2 rounded-full border"
+            style={{ borderColor: `color-mix(in srgb, ${bordure} 44%, transparent)` }}
+          />
+          <span
+            aria-hidden
+            className="absolute -right-2 top-[18%] size-3 rounded-full"
+            style={{
+              backgroundColor: principal,
+              boxShadow: `0 0 0 5px ${fond}`,
+            }}
+          />
+          <span
+            aria-hidden
+            className="absolute -bottom-4 left-[12%] flex items-center gap-1.5"
+          >
+            <span className="h-px w-8" style={{ backgroundColor: principal }} />
+            <span className="size-1 rounded-full" style={{ backgroundColor: principal }} />
+            <span
+              className="h-px w-3"
+              style={{ backgroundColor: `color-mix(in srgb, ${bordure} 72%, transparent)` }}
             />
-          ) : (
-            <div
-              className="flex h-full w-full items-center justify-center font-sans text-2xl font-semibold tracking-tight md:text-4xl"
-              style={{ color: muted, ...pointerNone }}
-              aria-hidden
-            >
-              {initials}
-            </div>
-          )}
+          </span>
         </div>
       );
     }
@@ -734,6 +775,22 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         >
           {image}
         </div>
+        <span
+          aria-hidden
+          className="absolute -inset-2 rounded-full border"
+          style={{ borderColor: `color-mix(in srgb, ${principal} 48%, transparent)` }}
+        />
+        <span
+          aria-hidden
+          className="absolute -bottom-4 left-[12%] flex items-center gap-1.5"
+        >
+          <span className="h-px w-8" style={{ backgroundColor: principal }} />
+          <span className="size-1 rounded-full" style={{ backgroundColor: principal }} />
+          <span
+            className="h-px w-3"
+            style={{ backgroundColor: `color-mix(in srgb, ${bordure} 72%, transparent)` }}
+          />
+        </span>
       </div>
     );
   };
@@ -745,7 +802,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
       style={{
         width: '92%',
         height: 'clamp(13rem, 28vw, 26rem)',
-        borderRadius: '0.85rem',
+        borderRadius: '1.5rem 0.35rem 1.5rem 0.35rem',
         backgroundColor: `color-mix(in srgb, ${bordure} 35%, ${fond})`,
         border: `1px solid color-mix(in srgb, ${bordure} 50%, transparent)`,
         flex: '0 0 auto',
@@ -769,6 +826,18 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           {t('Cover')}
         </div>
       )}
+      <span
+        aria-hidden
+        className="pointer-events-none absolute left-3 top-[12%] h-[12%] w-[2px]"
+        style={{ backgroundColor: principal }}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-1.5"
+      >
+        <span className="h-px w-7 bg-white/70" />
+        <span className="size-1 rotate-45 border border-white/70" />
+      </span>
     </div>
   );
 
@@ -789,13 +858,13 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
 
       {/* —— Desktop — global content width + gutter only —— */}
       <div
-        className={`relative z-[1] hidden min-h-[100dvh] md:grid ${shellX}`}
+        className={`relative z-[1] hidden h-[100dvh] min-h-0 md:grid ${shellX}`}
         style={{
           paddingTop: 'calc(8.25rem + env(safe-area-inset-top, 0px))',
           paddingBottom: 'clamp(1.5rem, 3vh, 2.25rem)',
           /* Same 2-col frame always — portrait must not reshape title or tools. */
           gridTemplateColumns: 'minmax(0, 74fr) minmax(12rem, 26fr)',
-          gridTemplateRows: 'auto auto auto auto',
+          gridTemplateRows: 'auto minmax(0, 1fr) auto',
           columnGap: 'clamp(2rem, 4.5vw, 3.5rem)',
           rowGap: 0,
           alignContent: 'start',
@@ -810,8 +879,6 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           style={{
             gridColumn: 1,
             gridRow: 1,
-            /* GEOMETRY: Generous bottom margin to detach title from mid content */
-            marginBottom: 'clamp(3rem, 6vh, 5rem)',
           }}
         >
           <h1
@@ -837,34 +904,27 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           </h1>
         </div>
 
-        <div
-          className="pf-statement-availability flex items-center justify-end gap-2.5 self-start"
-          style={{ gridColumn: 2, gridRow: 1, paddingTop: '0.45rem' }}
-        >
-          <span
-            className="inline-block h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: principal }}
-            aria-hidden
-          />
-          <p
-            className="m-0 text-[clamp(0.85rem,1vw,1rem)] font-normal leading-none tracking-[-0.01em]"
-            style={{ color: muted }}
+        {showAvailability ? (
+          <div
+            className="pf-statement-availability flex items-center justify-end gap-2.5 self-start"
+            style={{ gridColumn: 2, gridRow: 1, paddingTop: '0.45rem' }}
           >
-            {availability}
-          </p>
-        </div>
-
-        {/* 
-          GEOMETRY FIX: Reduced spacer since title now has margin-bottom
-        */}
-        <div
-          aria-hidden
-          style={{
-            gridColumn: '1 / -1',
-            gridRow: 2,
-            height: 'clamp(2rem, 4vh, 3.5rem)',
-          }}
-        />
+            <span
+              className="inline-block size-2 shrink-0 rounded-full"
+              style={{
+                backgroundColor: principal,
+                boxShadow: `0 0 0 4px color-mix(in srgb, ${principal} 12%, transparent)`,
+              }}
+              aria-hidden
+            />
+            <p
+              className="m-0 text-[clamp(0.85rem,1vw,1rem)] font-normal leading-none tracking-[-0.01em]"
+              style={{ color: muted }}
+            >
+              {availability}
+            </p>
+          </div>
+        ) : null}
 
         {/*
           Mid content: Photo + Bio aligned horizontally
@@ -874,17 +934,17 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           className="pf-statement-mid-content relative min-w-0"
           style={{
             gridColumn: '1 / -1',
-            gridRow: 3,
-            paddingBottom: bandPadBottom,
+            gridRow: 2,
+            minHeight: 0,
           }}
         >
           <div
-            className="relative z-[1] grid w-full"
+            className="relative z-[1] grid h-full w-full"
             style={{
               gridTemplateColumns: 'minmax(0, 74fr) minmax(12rem, 26fr)',
               columnGap: 'clamp(2rem, 4.5vw, 3.5rem)',
-              /* GEOMETRY: Align photo top with bio text top */
-              alignItems: 'start',
+              /* The flexible middle row absorbs portrait growth inside 100dvh. */
+              alignItems: 'center',
             }}
           >
             {ctaUnderBio ? (
@@ -934,17 +994,19 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                 </div>
 
                 {/* Bio column with parallax wrapper (slower speed) */}
-                <div className="pf-statement-parallax-text relative min-w-0 self-start will-change-transform">
+                <div className="pf-statement-parallax-text relative min-w-0 self-center will-change-transform">
                   <div className="pf-statement-bio-entry">
                     {bioBlock('clamp(1.05rem, 1.2vw, 1.2rem)')}
                   </div>
-                  <div className="pf-statement-cta-entry mt-7">{ctaRow()}</div>
+                  {hasCtas ? <div className="pf-statement-cta-entry mt-7">{ctaRow()}</div> : null}
                 </div>
               </>
             ) : (
               <>
                 {/* Default Statement CTA: CTAs bottom-aligned with end of bio */}
-                <div className="pf-statement-cta-entry flex items-end self-end">{ctaRow()}</div>
+                <div className="pf-statement-cta-entry flex items-end self-end">
+                  {ctaRow()}
+                </div>
                 <div className="pf-statement-bio-entry min-w-0 self-end">
                   {bioBlock('clamp(1.05rem, 1.2vw, 1.2rem)')}
                 </div>
@@ -956,7 +1018,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
         {/* 
           TOOLS BAR — GEOMETRY FIX: Compact capsule aligned left, not full-width spread
         */}
-        <div className="pf-statement-tools-bar min-w-0" style={{ gridColumn: '1 / -1', gridRow: 4 }}>
+        <div className="pf-statement-tools-bar min-w-0" style={{ gridColumn: '1 / -1', gridRow: 3 }}>
           <div className="w-full" style={{ borderTop: hairline }} />
           {statementTools.length > 0 ? (
             <div
@@ -970,14 +1032,30 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
               aria-label={t('Tools')}
             >
               {statementTools.map((tool, index) => (
-                <span
+                <div
                   key={`${tool}-${index}`}
                   role="listitem"
-                  className="shrink-0 font-sans text-[clamp(1.05rem,1.25vw,1.2rem)] font-medium tracking-[-0.01em]"
-                  style={{ color: toolsColor }}
+                  className="group flex shrink-0 items-baseline gap-2.5"
                 >
-                  {tool}
-                </span>
+                  <span
+                    className="font-mono text-[0.62rem] tabular-nums tracking-[0.08em] transition-opacity group-hover:opacity-100"
+                    style={{ color: principal, opacity: 0.72 }}
+                    aria-hidden
+                  >
+                    {String(index + 1).padStart(2, '0')}
+                  </span>
+                  <span
+                    className="font-sans text-[clamp(0.92rem,1.08vw,1.05rem)] font-medium tracking-[-0.01em] transition-colors group-hover:text-[var(--statement-tools-hover)]"
+                    style={
+                      {
+                        color: toolsColor,
+                        '--statement-tools-hover': ink,
+                      } as CSSProperties
+                    }
+                  >
+                    {tool}
+                  </span>
+                </div>
               ))}
             </div>
           ) : null}
@@ -988,19 +1066,24 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
       <div
         className={`relative z-[1] flex flex-col pb-12 pt-[calc(7rem+env(safe-area-inset-top,0px))] md:hidden ${shellX}`}
       >
-        <div className="pf-statement-availability flex items-center gap-2.5">
-          <span
-            className="inline-block h-2 w-2 shrink-0 rounded-full"
-            style={{ backgroundColor: principal }}
-            aria-hidden
-          />
-          <p
-            className="m-0 text-[0.875rem] font-normal leading-none tracking-[-0.01em]"
-            style={{ color: muted }}
-          >
-            {availability}
-          </p>
-        </div>
+        {showAvailability ? (
+          <div className="pf-statement-availability flex items-center gap-2.5">
+            <span
+              className="inline-block size-2 shrink-0 rounded-full"
+              style={{
+                backgroundColor: principal,
+                boxShadow: `0 0 0 4px color-mix(in srgb, ${principal} 12%, transparent)`,
+              }}
+              aria-hidden
+            />
+            <p
+              className="m-0 text-[0.875rem] font-normal leading-none tracking-[-0.01em]"
+              style={{ color: muted }}
+            >
+              {availability}
+            </p>
+          </div>
+        ) : null}
 
         {/* MOBILE TITLE — with line reveal animation */}
         <div className="pf-statement-title-container mt-8">
@@ -1033,7 +1116,7 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                 className="relative w-full overflow-hidden"
                 style={{
                   height: 'clamp(13rem, 28vw, 26rem)',
-                  borderRadius: '0.85rem',
+                  borderRadius: '1.5rem 0.35rem 1.5rem 0.35rem',
                   backgroundColor: `color-mix(in srgb, ${bordure} 35%, ${fond})`,
                   border: `1px solid color-mix(in srgb, ${bordure} 50%, transparent)`,
                 }}
@@ -1056,6 +1139,18 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
                     {t('Cover')}
                   </div>
                 )}
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute left-3 top-[12%] h-[12%] w-[2px]"
+                  style={{ backgroundColor: principal }}
+                />
+                <span
+                  aria-hidden
+                  className="pointer-events-none absolute bottom-5 right-5 flex items-center gap-1.5"
+                >
+                  <span className="h-px w-7 bg-white/70" />
+                  <span className="size-1 rotate-45 border border-white/70" />
+                </span>
               </div>
             </div>
           </div>
@@ -1097,7 +1192,9 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
           ) : null}
         </div>
 
-        <div className="pf-statement-cta-entry mt-8">{ctaRow({ compact: true })}</div>
+        {hasCtas ? (
+          <div className="pf-statement-cta-entry mt-8">{ctaRow({ compact: true })}</div>
+        ) : null}
 
         <div className="pf-statement-tools-bar mt-10 w-full" style={{ borderTop: hairline }} />
 
@@ -1109,14 +1206,25 @@ export function PortfolioHeroStatementCta({ data }: { data: PortfolioHeroData })
             aria-label={t('Tools')}
           >
             {statementTools.map((tool, index) => (
-              <span
+              <div
                 key={`${tool}-${index}`}
                 role="listitem"
-                className="font-sans text-[1.05rem] font-medium tracking-[-0.01em]"
-                style={{ color: toolsColor }}
+                className="flex items-baseline gap-2"
               >
-                {tool}
-              </span>
+                <span
+                  className="font-mono text-[0.6rem] tabular-nums tracking-[0.08em]"
+                  style={{ color: principal, opacity: 0.72 }}
+                  aria-hidden
+                >
+                  {String(index + 1).padStart(2, '0')}
+                </span>
+                <span
+                  className="font-sans text-[0.98rem] font-medium tracking-[-0.01em]"
+                  style={{ color: toolsColor }}
+                >
+                  {tool}
+                </span>
+              </div>
             ))}
           </div>
         ) : null}

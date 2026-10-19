@@ -134,7 +134,7 @@ export function ChatShortVideoPlayer({
         <button
           type="button"
           onClick={togglePlay}
-          className="absolute inset-0 m-auto flex h-14 w-14 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-sm transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:group-hover/media:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:opacity-90"
+          className="absolute inset-0 m-auto flex h-14 w-14 items-center justify-center rounded-full bg-black/45 text-white backdrop-blur-xs transition-opacity duration-200 [@media(hover:hover)_and_(pointer:fine)]:group-hover/media:opacity-100 [@media(hover:hover)_and_(pointer:fine)]:opacity-90"
           aria-label={t('Play video')}
         >
           <svg className="ml-1 h-7 w-7" fill="currentColor" viewBox="0 0 24 24" aria-hidden>

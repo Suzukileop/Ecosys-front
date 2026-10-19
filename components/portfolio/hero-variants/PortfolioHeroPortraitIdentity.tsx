@@ -82,6 +82,9 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
 
   const contactHref = data.contactHref || '#contact';
   const workHref = data.workHref || '#work';
+  const showWorkCta = data.showWorkCta !== false;
+  const showContactCta = data.showContactCta !== false;
+  const hasCtas = showWorkCta || showContactCta;
   const onNavClick = (href: string) => (event: MouseEvent<HTMLAnchorElement>) => {
     if (href.startsWith('#') && data.onNavigateSection) {
       event.preventDefault();
@@ -274,7 +277,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
           <div
             className="grid w-full shrink-0"
             style={{
-              gridTemplateColumns: 'minmax(18rem, 44%) minmax(0, 8%) minmax(0, 1fr)',
+              gridTemplateColumns: 'minmax(18rem, 42%) minmax(1.5rem, 4%) minmax(0, 1fr)',
               alignItems: 'last baseline',
             }}
           >
@@ -308,13 +311,21 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             )}
             <div aria-hidden />
             <p
-              className="m-0 justify-self-start whitespace-nowrap font-sans font-normal tracking-[-0.01em]"
+              className="m-0 flex items-center gap-3 justify-self-start whitespace-nowrap font-sans font-normal tracking-[-0.01em]"
               style={{
                 color: muted,
                 fontSize: 'clamp(0.85rem, 1.05vw, 1.25rem)',
                 lineHeight: 1.16,
               }}
             >
+              <span
+                aria-hidden
+                className="inline-block size-2 shrink-0 rounded-full"
+                style={{
+                  backgroundColor: principal,
+                  boxShadow: `0 0 0 5px color-mix(in srgb, ${principal} 14%, transparent)`,
+                }}
+              />
               {availability}
             </p>
           </div>
@@ -332,25 +343,36 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
           <div
             className="grid w-full items-start"
             style={{
-              gridTemplateColumns: 'minmax(18rem, 44%) minmax(0, 8%) minmax(0, 1fr)',
+              gridTemplateColumns: 'minmax(18rem, 42%) minmax(1.5rem, 4%) minmax(0, 1fr)',
             }}
           >
             <div
-              className="pf-identity-photo-mask relative aspect-[4/5] w-[min(100%,28rem)] max-h-[min(58vh,34rem)] shrink-0 justify-self-start overflow-hidden"
-              style={{ backgroundColor: neutre }}
+              className="pf-identity-photo-mask relative aspect-[4/5] w-[min(100%,30rem)] max-h-[min(62vh,36rem)] shrink-0 justify-self-start overflow-hidden"
+              style={{
+                backgroundColor: neutre,
+                border: `1px solid color-mix(in srgb, ${bordure} 86%, transparent)`,
+                boxShadow: `0 1.5rem 5rem color-mix(in srgb, ${fond} 72%, transparent)`,
+              }}
             >
               <IdentityPortrait
                 avatarUrl={avatarUrl}
                 initials={initials}
                 muted={muted}
                 imageBw={imageBw}
+                bordure={bordure}
+                principal={principal}
                 className="pf-identity-photo-inner absolute inset-0 h-full w-full"
               />
             </div>
 
             <div aria-hidden />
 
-            <div className="pf-identity-shift flex min-w-0 flex-col self-stretch">
+            <div className="pf-identity-shift relative flex min-w-0 flex-col self-stretch">
+              <span
+                aria-hidden
+                className="absolute right-full top-0 h-px w-[clamp(1.5rem,3vw,3.75rem)]"
+                style={{ backgroundColor: principal }}
+              />
               {swapBioName ? (
                 <p
                   className="pf-identity-entry-name m-0 max-w-full text-left font-sans font-semibold tracking-[-0.02em]"
@@ -370,7 +392,7 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                   <IdentityName
                     word={displayName}
                     ink={ink}
-                    maxFontPx={108}
+                    maxFontPx={116}
                     minFontPx={56}
                     flushTop
                     className="pf-identity-entry-name"
@@ -388,37 +410,9 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               )}
 
               <div
-                className="pf-identity-entry-cta flex shrink-0 flex-wrap items-center gap-3.5"
-                style={{ marginTop: 'clamp(2.25rem, 4.5vh, 3rem)' }}
+                className="pf-identity-void relative min-h-[clamp(4rem,10vh,8rem)] w-full flex-1"
+                aria-hidden
               >
-                <a
-                  href={workHref}
-                  onClick={onNavClick(workHref)}
-                  className="inline-flex h-14 min-h-14 shrink-0 items-center justify-center px-8 font-sans text-[1.05rem] font-normal tracking-[-0.01em] transition hover:brightness-110"
-                  style={{
-                    backgroundColor: principal,
-                    color: '#FFFFFF',
-                    borderRadius: 10,
-                  }}
-                >
-                  {t('View project')}
-                </a>
-                <a
-                  href={contactHref}
-                  onClick={onNavClick(contactHref)}
-                  className="inline-flex h-14 min-h-14 shrink-0 items-center justify-center border-2 px-8 font-sans text-[1.05rem] font-normal tracking-[-0.01em] transition hover:opacity-85"
-                  style={{
-                    borderColor: ink,
-                    color: ink,
-                    backgroundColor: 'transparent',
-                    borderRadius: 10,
-                  }}
-                >
-                  {t('Contact me')}
-                </a>
-              </div>
-
-              <div className="pf-identity-void relative min-h-0 w-full flex-1" aria-hidden>
                 <span
                   className="pf-identity-cursor pointer-events-none absolute left-0 top-0 flex h-[7.25rem] w-[7.25rem] items-center justify-center whitespace-nowrap rounded-full font-sans text-[0.55rem] font-normal uppercase tracking-[0.22em]"
                   style={{
@@ -430,6 +424,41 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
                   {t('Scroll ✕')}
                 </span>
               </div>
+
+              {hasCtas ? (
+                <div
+                  className="pf-identity-entry-cta flex shrink-0 flex-wrap items-center gap-3 border-t pt-5"
+                  style={{ borderColor: `color-mix(in srgb, ${bordure} 70%, transparent)` }}
+                >
+                  {showWorkCta ? (
+                    <a
+                      href={workHref}
+                      onClick={onNavClick(workHref)}
+                      className="group inline-flex h-[3.25rem] min-h-[3.25rem] shrink-0 items-center justify-center gap-5 px-7 font-sans text-[0.78rem] font-medium uppercase tracking-[0.12em] transition hover:brightness-110"
+                      style={{ backgroundColor: principal, color: '#FFFFFF', borderRadius: 2 }}
+                    >
+                      {t('View project')}
+                      <span aria-hidden className="transition-transform group-hover:translate-x-1">↗</span>
+                    </a>
+                  ) : null}
+                  {showContactCta ? (
+                    <a
+                      href={contactHref}
+                      onClick={onNavClick(contactHref)}
+                      className="group inline-flex h-[3.25rem] min-h-[3.25rem] shrink-0 items-center justify-center gap-5 border px-7 font-sans text-[0.78rem] font-medium uppercase tracking-[0.12em] transition hover:opacity-85"
+                      style={{
+                        borderColor: ink,
+                        color: ink,
+                        backgroundColor: 'transparent',
+                        borderRadius: 2,
+                      }}
+                    >
+                      {t('Contact me')}
+                      <span aria-hidden className="transition-transform group-hover:translate-x-1">→</span>
+                    </a>
+                  ) : null}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -464,7 +493,11 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             {bio}
           </p>
         )}
-        <p className="mt-5 font-sans text-[0.95rem] font-normal leading-snug" style={{ color: muted }}>
+        <p
+          className="mt-5 flex items-center gap-2.5 font-sans text-[0.95rem] font-normal leading-snug"
+          style={{ color: muted }}
+        >
+          <span aria-hidden className="size-2 rounded-full" style={{ backgroundColor: principal }} />
           {availability}
         </p>
         <div
@@ -501,29 +534,37 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
               </p>
             </>
           )}
-          <div className="pf-identity-entry-cta mt-6 flex flex-wrap items-center gap-3">
-            <a
-              href={workHref}
-              onClick={onNavClick(workHref)}
-              className="inline-flex h-12 min-h-12 shrink-0 items-center justify-center px-7 font-sans text-[0.95rem] font-normal tracking-[-0.01em] transition hover:brightness-110"
-              style={{ backgroundColor: principal, color: '#FFFFFF', borderRadius: 10 }}
-            >
-              {t('View project')}
-            </a>
-            <a
-              href={contactHref}
-              onClick={onNavClick(contactHref)}
-              className="inline-flex h-12 min-h-12 shrink-0 items-center justify-center border-2 px-7 font-sans text-[0.95rem] font-normal tracking-[-0.01em] transition hover:opacity-85"
-              style={{
-                borderColor: ink,
-                color: ink,
-                backgroundColor: 'transparent',
-                borderRadius: 10,
-              }}
-            >
-              {t('Contact me')}
-            </a>
-          </div>
+          {hasCtas ? (
+            <div className="pf-identity-entry-cta mt-6 flex flex-wrap items-center gap-3">
+              {showWorkCta ? (
+                <a
+                  href={workHref}
+                  onClick={onNavClick(workHref)}
+                  className="group inline-flex h-12 min-h-12 shrink-0 items-center justify-center gap-4 px-6 font-sans text-[0.72rem] font-medium uppercase tracking-[0.11em] transition hover:brightness-110"
+                  style={{ backgroundColor: principal, color: '#FFFFFF', borderRadius: 2 }}
+                >
+                  {t('View project')}
+                  <span aria-hidden>↗</span>
+                </a>
+              ) : null}
+              {showContactCta ? (
+                <a
+                  href={contactHref}
+                  onClick={onNavClick(contactHref)}
+                  className="group inline-flex h-12 min-h-12 shrink-0 items-center justify-center gap-4 border px-6 font-sans text-[0.72rem] font-medium uppercase tracking-[0.11em] transition hover:opacity-85"
+                  style={{
+                    borderColor: ink,
+                    color: ink,
+                    backgroundColor: 'transparent',
+                    borderRadius: 2,
+                  }}
+                >
+                  {t('Contact me')}
+                  <span aria-hidden>→</span>
+                </a>
+              ) : null}
+            </div>
+          ) : null}
         </div>
         <div
           className={`pf-identity-photo-mask relative w-full overflow-hidden ${
@@ -536,6 +577,8 @@ export function PortfolioHeroPortraitIdentity({ data }: { data: PortfolioHeroDat
             initials={initials}
             muted={muted}
             imageBw={imageBw}
+            bordure={bordure}
+            principal={principal}
             className="pf-identity-photo-inner h-full w-full"
           />
         </div>
@@ -549,12 +592,16 @@ function IdentityPortrait({
   initials,
   muted,
   imageBw,
+  bordure,
+  principal,
   className,
 }: {
   avatarUrl: string | null;
   initials: string;
   muted: string;
   imageBw: boolean;
+  bordure: string;
+  principal: string;
   className: string;
 }) {
   return (
@@ -582,6 +629,19 @@ function IdentityPortrait({
           {initials}
         </div>
       )}
+      <div
+        aria-hidden
+        className="pointer-events-none absolute inset-0"
+        style={{
+          boxShadow: `inset 0 0 0 1px color-mix(in srgb, ${bordure} 58%, transparent)`,
+          background: `linear-gradient(180deg, transparent 62%, color-mix(in srgb, ${principal} 12%, transparent) 100%)`,
+        }}
+      />
+      <span
+        aria-hidden
+        className="pointer-events-none absolute bottom-0 left-0 h-1 w-[28%]"
+        style={{ backgroundColor: principal }}
+      />
     </div>
   );
 }

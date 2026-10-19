@@ -240,11 +240,56 @@ export function PortfolioStudioSectionList({
   hoverEdit?: boolean;
   onHoverEditChange?: (enabled: boolean) => void;
   tone?: Tone;
-  /** `rail`: the open section bold with a check. `drill`: every row ends in a chevron (it opens a screen). */
-  variant?: 'rail' | 'drill';
+  /** `toolbar`: compact editor rail. `rail`: full list. `drill`: mobile list with chevrons. */
+  variant?: 'toolbar' | 'rail' | 'drill';
 }) {
   const toneClass = TONE[tone];
   const t = useT();
+
+  if (variant === 'toolbar') {
+    return (
+      <nav
+        aria-label={t('Portfolio sections')}
+        className="portfolio-studio-section-toolbar flex h-full min-h-0 w-full touch-pan-y flex-col overflow-y-auto overscroll-y-contain pb-2 [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      >
+        {groupPortfolioStudioSections(sections).map((group, groupIndex) => (
+          <div
+            key={group.title}
+            className={`portfolio-studio-toolbar-group flex shrink-0 flex-col px-2 pb-2 ${groupIndex > 0 ? 'mt-1 border-t border-neutral-200 pt-3 dark:border-neutral-800' : 'pt-3'}`}
+          >
+            <p className="mb-1 px-2 text-[10px] font-medium uppercase leading-3 tracking-[0.16em] text-neutral-500 dark:text-neutral-500">
+              {t(group.title)}
+            </p>
+            <div className="flex flex-col gap-0.5">
+              {group.sections.map((section) => {
+                const active = section.id === activeId;
+                return (
+                  <button
+                    key={section.id}
+                    type="button"
+                    onClick={() => onSelect(section.id)}
+                    aria-current={active ? 'true' : undefined}
+                    title={t(section.label)}
+                    className={`group flex min-h-[58px] w-full flex-col items-center justify-center gap-1 rounded-[10px] px-1 py-1.5 text-center transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[#4C9AFF] [&>svg]:h-5 [&>svg]:w-5 ${
+                      active
+                        ? 'bg-neutral-200 text-neutral-950 dark:bg-neutral-800 dark:text-neutral-50'
+                        : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-950 dark:text-neutral-400 dark:hover:bg-neutral-900 dark:hover:text-neutral-100'
+                    }`}
+                  >
+                    <SectionGlyph id={section.id} active={active} />
+                    <span className="line-clamp-2 max-w-full text-[11px] font-medium leading-[1.15]">
+                      {t(section.label)}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        ))}
+      </nav>
+    );
+  }
+
   return (
     <nav aria-label={t('Portfolio sections')} className="flex flex-col pb-4">
       {/* The rail's title, as the editor's "Sections" box; the drill-down list has it in its header. */}
@@ -262,7 +307,7 @@ export function PortfolioStudioSectionList({
                 type="button"
                 onClick={() => onSelect(section.id)}
                 aria-current={active ? 'true' : undefined}
-                className={`mx-2 flex h-11 items-center gap-3.5 rounded-full px-3 text-left text-[15px] leading-5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${toneClass.row} ${
+                className={`mx-2 flex h-11 items-center gap-3.5 rounded-full px-3 text-left text-[15px] leading-5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset ${toneClass.row} ${
                   active ? toneClass.active : toneClass.idle
                 }`}
               >
@@ -291,7 +336,7 @@ export function PortfolioStudioSectionList({
             role="switch"
             aria-checked={hoverEdit}
             onClick={() => onHoverEditChange(!hoverEdit)}
-            className={`mx-2 flex min-h-11 items-center gap-3.5 rounded-full px-3 py-2 text-left transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset ${toneClass.row}`}
+            className={`mx-2 flex min-h-11 items-center gap-3.5 rounded-full px-3 py-2 text-left transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset ${toneClass.row}`}
           >
             <svg viewBox="0 0 24 24" className={`h-5 w-5 shrink-0 ${toneClass.title}`} fill="none" stroke="currentColor" strokeWidth={1.75} strokeLinecap="round" strokeLinejoin="round" aria-hidden>
               <rect x="3.5" y="3.5" width="17" height="17" rx="2" strokeDasharray="3 2.5" />

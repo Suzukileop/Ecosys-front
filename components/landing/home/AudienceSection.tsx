@@ -1,18 +1,25 @@
 'use client';
 
-import Image from 'next/image';
+import Image, { type StaticImageData } from 'next/image';
 import { PrimaryCta } from '@/components/landing/home/shared';
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type PointerEvent } from 'react';
 import { CONTAINER } from '@/components/landing/home/shared';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
+/* Static imports: Next inlines a tiny blurred preview, so the frame is never an empty grey square
+   while the photo loads on a slow connection. */
+import studentPhoto from '@/public/landing/audience/student-glasses.jpg';
+import clientPhoto from '@/public/landing/audience/client.jpg';
+import sellerPhoto from '@/public/landing/audience/seller.jpg';
+import recruiterPhoto from '@/public/landing/audience/recruiter.jpg';
+import freelancerPhoto from '@/public/landing/audience/freelancer-dev.jpg';
 
 type Audience = {
   key: string;
   label: string;
   title: string;
   text: string;
-  image: { src: string; alt: string };
+  image: { src: StaticImageData; alt: string };
   cta: { label: string; href: string };
 };
 
@@ -27,7 +34,7 @@ const AUDIENCES: readonly Audience[] = [
     label: msg('Students'),
     title: msg('Turn your coursework into a portfolio that gets you hired.'),
     text: msg('Showcase projects, internships and skills on a clean page recruiters actually read. Start free, publish in minutes and share one link with every application.'),
-    image: { src: '/landing/audience/student-glasses.jpg', alt: msg('A student with glasses focused on her laptop') },
+    image: { src: studentPhoto, alt: msg('A student with glasses focused on her laptop') },
     cta: { label: msg('Create your portfolio'), href: '/register' },
   },
   {
@@ -35,7 +42,7 @@ const AUDIENCES: readonly Audience[] = [
     label: msg('Clients'),
     title: msg('Find the right talent — and talk to them directly.'),
     text: msg('Browse portfolios, compare services and message providers without a middleman. See real work before you commit, and keep every conversation in a single inbox.'),
-    image: { src: '/landing/audience/client.jpg', alt: msg('A client looking for a provider on her phone by a window') },
+    image: { src: clientPhoto, alt: msg('A client looking for a provider on her phone by a window') },
     cta: { label: msg('Find a provider'), href: '/providers' },
   },
   {
@@ -43,7 +50,7 @@ const AUDIENCES: readonly Audience[] = [
     label: msg('Sellers'),
     title: msg('Open a store that looks as good as what you make.'),
     text: msg('List physical and digital products, manage stock and orders, and get discovered in the Skraft marketplace — from the same place as your portfolio.'),
-    image: { src: '/landing/audience/seller.jpg', alt: msg('A shop owner holding a parcel ready to ship') },
+    image: { src: sellerPhoto, alt: msg('A shop owner holding a parcel ready to ship') },
     cta: { label: msg('Open your store'), href: '/register' },
   },
   {
@@ -51,7 +58,7 @@ const AUDIENCES: readonly Audience[] = [
     label: msg('Recruiters'),
     title: msg('Hire from real work, not from a CV.'),
     text: msg('Review projects, skills and experience on structured profiles. Shortlist candidates and reach them directly, in one place built for clear hiring decisions.'),
-    image: { src: '/landing/audience/recruiter.jpg', alt: msg('A recruiter interviewing a candidate') },
+    image: { src: recruiterPhoto, alt: msg('A recruiter interviewing a candidate') },
     cta: { label: msg('Browse portfolios'), href: '/providers' },
   },
   {
@@ -60,7 +67,7 @@ const AUDIENCES: readonly Audience[] = [
     title: msg('Sell your services with a page that closes deals.'),
     text: msg('Present your offers with clear pricing, show the work behind them and handle client conversations right next to your portfolio. Less admin, more booked projects.'),
     image: {
-      src: '/landing/audience/freelancer-dev.jpg',
+      src: freelancerPhoto,
       alt: msg('A freelance developer working on code at his desk'),
     },
     cta: { label: msg('Offer your services'), href: '/register' },
@@ -160,7 +167,7 @@ export function AudienceSection() {
                   tabIndex={selected ? 0 : -1}
                   onClick={() => setActive(i)}
                   onKeyDown={onKeyDown}
-                  className={`shrink-0 snap-start whitespace-nowrap rounded-sm py-1 text-[16px] tracking-[-0.015em] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 sm:text-[17px] lg:text-[20px] ${
+                  className={`shrink-0 snap-start whitespace-nowrap rounded-xs py-1 text-[16px] tracking-[-0.015em] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 sm:text-[17px] lg:text-[20px] ${
                     selected ? 'underline decoration-1 underline-offset-[8px]' : 'text-neutral-400 hover:text-[#111111]'
                   }`}
                 >
@@ -185,6 +192,7 @@ export function AudienceSection() {
                 alt={i === active ? t(audience.image.alt) : ''}
                 aria-hidden={i !== active}
                 fill
+                placeholder="blur"
                 sizes="(min-width: 768px) 50vw, 100vw"
                 className={`object-cover grayscale-[20%] sepia-[15%] transition-opacity duration-700 ease-out ${i === active ? 'opacity-100' : 'opacity-0'}`}
               />
@@ -211,7 +219,7 @@ export function AudienceSection() {
                 onClick={() => setActive((active + 1) % AUDIENCES.length)}
                 aria-label={t('Next audience')}
                 aria-controls={`${baseId}-panel`}
-                className="-me-3 inline-flex h-11 w-11 items-center justify-center rounded-full active:bg-black/[0.05] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 md:hidden"
+                className="-me-3 inline-flex h-11 w-11 items-center justify-center rounded-full active:bg-black/[0.05] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#FF5722]/40 md:hidden"
               >
                 <svg
                   className="h-5 w-5"

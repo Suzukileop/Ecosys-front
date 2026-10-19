@@ -84,7 +84,7 @@ function CvSwitch({ shown, onChange, label }: { shown: boolean; onChange: (shown
       aria-label={label}
       title={shown ? t('Shown in CV') : t('Hidden from CV')}
       onClick={() => onChange(!shown)}
-      className="mr-2 inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
+      className="mr-2 inline-flex items-center gap-2 rounded-full py-1 pl-1 pr-1.5 outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
     >
       <span
         className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 ${
@@ -93,7 +93,7 @@ function CvSwitch({ shown, onChange, label }: { shown: boolean; onChange: (shown
       >
         <span
           aria-hidden
-          className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+          className={`inline-block h-3 w-3 rounded-full bg-white shadow-xs transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
             shown ? 'translate-x-3.5 dark:bg-[#0F1419]' : 'translate-x-0.5'
           }`}
         />

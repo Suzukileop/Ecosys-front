@@ -194,7 +194,7 @@ export function FilterDropdown({
             aria-expanded={open}
             aria-label={selected ? `${label}: ${selected.label}` : label}
             onClick={() => (open ? close() : openMenu())}
-            className={`flex h-full min-w-0 flex-1 items-center gap-3 text-[15px] leading-5 outline-none ${PROVIDER_INK_CLASS}`}
+            className={`flex h-full min-w-0 flex-1 items-center gap-3 text-[15px] leading-5 outline-hidden ${PROVIDER_INK_CLASS}`}
           >
             <span className={`truncate ${selected ? 'font-bold' : ''}`}>{label}</span>
             <span className={`ml-auto min-w-0 truncate text-[14px] ${selected ? `font-medium ${PROVIDER_INK_CLASS}` : PROVIDER_MUTED_CLASS}`}>
@@ -233,7 +233,7 @@ export function FilterDropdown({
           aria-expanded={open}
           aria-label={selected ? `${label}: ${selected.label}` : label}
           onClick={() => (open ? close() : openMenu())}
-          className={`flex h-full min-w-0 flex-1 items-center gap-2 outline-none ${
+          className={`flex h-full min-w-0 flex-1 items-center gap-2 outline-hidden ${
             line ? 'text-[15px]' : 'rounded-full pl-3.5 pr-2.5 text-[14px] sm:pl-4 sm:pr-3'
           }`}
         >
@@ -297,7 +297,7 @@ export function FilterDropdown({
                 }}
                 placeholder={t('Search {toLowerCase}…', { toLowerCase: label.toLowerCase() })}
                 aria-label={t('Search {toLowerCase}', { toLowerCase: label.toLowerCase() })}
-                className={`h-10 w-full rounded-full bg-[#EFF3F4] px-4 text-[15px] ${PROVIDER_INK_CLASS} outline-none placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#202327] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]`}
+                className={`h-10 w-full rounded-full bg-[#EFF3F4] px-4 text-[15px] ${PROVIDER_INK_CLASS} outline-hidden placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#202327] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]`}
               />
             </div>
           ) : null}
@@ -417,7 +417,7 @@ export function ServiceProviderFilterPills({
           aria-label={t('Closest first')}
           title={t('Closest first')}
           onClick={() => onClosestFirstChange(!closestFirst)}
-          className={`${TRIGGER_CLASS} ${closestFirst ? TRIGGER_ACTIVE_CLASS : TRIGGER_IDLE_CLASS} !w-9 shrink-0 justify-center gap-2 px-0 text-[14px] outline-none sm:!w-auto sm:px-4`}
+          className={`${TRIGGER_CLASS} ${closestFirst ? TRIGGER_ACTIVE_CLASS : TRIGGER_IDLE_CLASS} !w-9 shrink-0 justify-center gap-2 px-0 text-[14px] outline-hidden sm:!w-auto sm:px-4`}
         >
           <FontAwesomeIcon
             icon={faLocationCrosshairs}

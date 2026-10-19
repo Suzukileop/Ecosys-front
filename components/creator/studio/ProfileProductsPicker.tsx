@@ -64,7 +64,7 @@ function SelectedProductCard({
           onClick={onRemove}
           disabled={busy}
           aria-label={t('Remove product')}
-          className="absolute right-14 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-red-600 opacity-0 shadow-sm transition hover:bg-red-50 group-hover/selected:opacity-100 focus-visible:opacity-100 disabled:opacity-40 dark:bg-neutral-900/95 dark:text-red-400 dark:hover:bg-red-500/10"
+          className="absolute right-14 top-3 z-20 flex h-8 w-8 items-center justify-center rounded-full bg-white/95 text-red-600 opacity-0 shadow-xs transition hover:bg-red-50 group-hover/selected:opacity-100 focus-visible:opacity-100 disabled:opacity-40 dark:bg-neutral-900/95 dark:text-red-400 dark:hover:bg-red-500/10"
         >
           <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" fixedWidth aria-hidden />
         </button>
@@ -79,7 +79,7 @@ function SelectedProductCard({
             onClick={onMoveUp}
             disabled={!canMoveUp || busy}
             aria-label={t('Move up')}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm text-neutral-700 shadow-sm disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm text-neutral-700 shadow-xs disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
           >
             ↑
           </button>
@@ -88,7 +88,7 @@ function SelectedProductCard({
             onClick={onMoveDown}
             disabled={!canMoveDown || busy}
             aria-label={t('Move down')}
-            className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm text-neutral-700 shadow-sm disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
+            className="flex h-8 w-8 items-center justify-center rounded-full border border-neutral-200 bg-white text-sm text-neutral-700 shadow-xs disabled:opacity-40 dark:border-neutral-700 dark:bg-neutral-900 dark:text-neutral-200"
           >
             ↓
           </button>

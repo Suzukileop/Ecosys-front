@@ -3,11 +3,7 @@
 import Link from 'next/link';
 import type { CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
-import {
-  FooterContactIcon,
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterContactIcon, FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import type { PortfolioFooterPresentationSettings } from '@/components/portfolio/portfolio-footer-settings';
 import type { FooterDesignLayoutResolver } from '@/components/portfolio/portfolio-footer-design-layout';
 import {

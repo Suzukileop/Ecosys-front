@@ -19,8 +19,8 @@ export function ProductStatusBadges({ labels }: { labels?: readonly string[] | n
       {values.map((value) => (
         <span
           key={value}
-          className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold uppercase leading-none tracking-[0.06em] shadow-sm ${
-            SALE_LABELS.has(value) ? 'bg-[#E0245E] text-white' : 'bg-black/80 text-white backdrop-blur-sm'
+          className={`inline-flex h-6 items-center rounded-full px-2.5 text-[11px] font-semibold uppercase leading-none tracking-[0.06em] shadow-xs ${
+            SALE_LABELS.has(value) ? 'bg-[#E0245E] text-white' : 'bg-black/80 text-white backdrop-blur-xs'
           }`}
         >
           {productStatusLabelText(value)}

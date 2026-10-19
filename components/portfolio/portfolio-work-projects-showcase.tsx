@@ -351,7 +351,7 @@ function ShowcaseNavAura({ children, color }: { children: ReactNode; color: stri
     >
       <span
         aria-hidden
-        className="pointer-events-none absolute left-0 top-0 h-9 w-9 rounded-full border transition-[opacity,transform] duration-300 ease-out"
+        className="pointer-events-none absolute left-0 top-0 h-9 w-9 rounded-full border transition-[opacity,transform,translate,scale,rotate] duration-300 ease-out"
         style={{ borderColor: color, ...style }}
       />
       {children}
@@ -419,7 +419,7 @@ function ShowcaseChevron({
       disabled={disabled}
       aria-label={label}
       data-pf-no-color-transition=""
-      className={`relative z-[1] inline-flex items-center justify-center rounded-sm transition-[opacity,transform] duration-200 ease-out hover:opacity-50 focus:outline-none focus-visible:ring-2 focus-visible:ring-current active:opacity-40 disabled:pointer-events-none disabled:opacity-25 ${
+      className={`relative z-[1] inline-flex items-center justify-center rounded-xs transition-[opacity,transform,translate,scale,rotate] duration-200 ease-out hover:opacity-50 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current active:opacity-40 disabled:pointer-events-none disabled:opacity-25 ${
         touchSize ? 'h-12 w-12' : 'h-9 w-9'
       }`}
       style={{ color }}
@@ -579,7 +579,7 @@ function ShowcaseTitleReveal({
     return href ? (
       <ShowcaseHref
         href={href}
-        className="rounded-sm outline-none transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
+        className="rounded-xs outline-hidden transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
       >
         <EditorialTitleText text={title} />
       </ShowcaseHref>
@@ -614,7 +614,7 @@ function ShowcaseTitleReveal({
   return href ? (
     <ShowcaseHref
       href={href}
-      className="rounded-sm outline-none transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
+      className="rounded-xs outline-hidden transition-opacity duration-500 hover:opacity-70 focus-visible:opacity-70"
       style={{ color: titleColor }}
     >
       {track}
@@ -1203,7 +1203,7 @@ export function ProjectsShowcaseGallery({
                 onClick={() => selectThumb(index)}
                 disabled={busy}
                 data-showcase-thumb=""
-                className={`group/thumb relative block aspect-[4/5] overflow-hidden opacity-[0.72] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 focus:outline-none focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none ${radiusClass}`}
+                className={`group/thumb relative block aspect-[4/5] overflow-hidden opacity-[0.72] transition-opacity duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:opacity-100 focus:outline-hidden focus-visible:opacity-100 focus-visible:ring-2 focus-visible:ring-current disabled:pointer-events-none ${radiusClass}`}
                 style={{
                   backgroundColor: `${border}28`,
                   flex: `0 0 ${

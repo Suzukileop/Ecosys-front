@@ -53,7 +53,7 @@ const PANEL_IN_STYLE = {
 
 /** One action of the frameless list — X's left nav row: glyph, label, a quiet value right. */
 const ACTION_ROW =
-  'flex h-12 w-full items-center gap-4 rounded-full px-3 text-left text-[16px] font-medium leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'flex h-12 w-full items-center gap-4 rounded-full px-3 text-left text-[16px] font-medium leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 function ActionGlyph({ children }: { children: React.ReactNode }) {
   return (

@@ -85,6 +85,14 @@ function resolveVisitorSettings(serverSettings: unknown | undefined): PortfolioS
   return createDefaultPortfolioSettings();
 }
 
+/** The first render's result when the payload is unchanged (same object), else a fresh merge. */
+function resolveVisitorSettingsOnce(
+  serverSettings: unknown | undefined,
+  first: { input: unknown; result: PortfolioSettings }
+): PortfolioSettings {
+  return first.input === serverSettings ? first.result : resolveVisitorSettings(serverSettings);
+}
+
 function refreshActiveCustomTheme(current: PortfolioSettings): PortfolioSettings {
   if (!isCustomPortfolioThemeId(current.themeId)) return current;
   return {
@@ -151,13 +159,19 @@ export function usePortfolioSettings(
 ) {
   const canEdit = options?.canEdit ?? false;
   const initialSettings = options?.initialSettings;
-  const [settings, setSettings] = useState<PortfolioSettings>(() => {
-    if (!isPortfolioSettingsEmpty(initialSettings)) {
-      return mergePortfolioSettings(initialSettings);
-    }
-    return createDefaultPortfolioSettings();
-  });
-  const [hydrated, setHydrated] = useState(false);
+  /*
+   * The visitor settings resolved for a given server payload. Merging is expensive (every section's
+   * normaliser, again for each custom theme snapshot) and the mount effect below used to redo it for
+   * the very same payload — then hand React a new, equal object, which re-rendered the whole page
+   * right after hydration. Reusing the result makes that effect a no-op unless the payload changes.
+   */
+  const [firstResolved] = useState(() => ({
+    input: initialSettings,
+    result: resolveVisitorSettings(initialSettings),
+  }));
+  const [settings, setSettings] = useState<PortfolioSettings>(firstResolved.result);
+  /* A visitor's settings are final from the first render; an owner's wait for the server sync. */
+  const [hydrated, setHydrated] = useState(!canEdit);
   const [persistStatus, setPersistStatus] = useState<PortfolioSettingsPersistStatus>('idle');
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const latestSettingsRef = useRef<PortfolioSettings>(settings);
@@ -361,9 +375,9 @@ export function usePortfolioSettings(
 
   useEffect(() => {
     if (canEdit) return;
-    setSettings(resolveVisitorSettings(initialSettings));
+    setSettings(resolveVisitorSettingsOnce(initialSettings, firstResolved));
     setHydrated(true);
-  }, [canEdit, initialSettings]);
+  }, [canEdit, initialSettings, firstResolved]);
 
   useEffect(() => {
     if (!canEdit) return;

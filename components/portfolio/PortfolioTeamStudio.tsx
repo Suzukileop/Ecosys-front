@@ -98,7 +98,7 @@ function PhotoChip({
       aria-label={label}
       onClick={onClick}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
+      className={`inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-xs backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
         danger ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-neutral-900 hover:text-white'
       }`}
     >
@@ -306,7 +306,7 @@ function MemberLinks({
                   value={link.url}
                   autoFocus={link.id === focusId}
                   placeholder={t('Profile link or email')}
-                  aria-label={`Link ${linkIndex + 1} for ${memberLabel}`}
+                  aria-label={t('Link {number} for {memberLabel}', { number: linkIndex + 1, memberLabel })}
                   aria-invalid={error ? true : undefined}
                   autoComplete="off"
                   onChange={(event) => {
@@ -368,7 +368,7 @@ const MemberCard = memo(function MemberCard({
   onRemove: (key: string) => void;
 }) {
   const t = useT();
-  const memberLabel = row.name.trim() || `member ${index + 1}`;
+  const memberLabel = row.name.trim() || t('member {number}', { number: index + 1 });
   const missingRole = Boolean(row.name.trim()) && !row.responsibility.trim();
 
   return (
@@ -382,7 +382,7 @@ const MemberCard = memo(function MemberCard({
             value={row.name}
             maxLength={MAX_NAME}
             placeholder={t('Full name')}
-            aria-label={`Name of member ${index + 1}`}
+            aria-label={t('Name of member {number}', { number: index + 1 })}
             autoFocus={autoFocus}
             autoComplete="off"
             onChange={(event) => onChange(row.key, { name: event.currentTarget.value })}

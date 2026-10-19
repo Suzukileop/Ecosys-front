@@ -23,7 +23,7 @@ export function ContextSummary({ items }: ContextSummaryProps) {
             type="button"
             onClick={item.onClick}
             title={t('Open {label}', { label: item.label })}
-            className="group relative flex min-h-16 flex-col items-center justify-center gap-0.5 bg-[var(--msg-field)] px-2 py-2 transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--msg-ink)]"
+            className="group relative flex min-h-16 flex-col items-center justify-center gap-0.5 bg-[var(--msg-field)] px-2 py-2 transition-colors hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[var(--msg-ink)]"
           >
             <span className="text-[17px] font-bold tabular-nums text-[var(--cw-text-primary)]">{item.value}</span>
             <span className="text-[13px] text-[var(--cw-text-secondary)]">{t(item.label)}</span>
@@ -60,7 +60,7 @@ export function ContextShortcut({ icon, label, meta, onClick }: ContextShortcutP
     <button
       type="button"
       onClick={onClick}
-      className="group flex min-h-12 w-full items-center gap-3 px-5 py-3 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--xm-row-hover)] active:bg-[color:var(--xm-row-selected)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] lg:px-6"
+      className="group flex min-h-12 w-full items-center gap-3 px-5 py-3 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--xm-row-hover)] active:bg-[color:var(--xm-row-selected)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] lg:px-6"
     >
       <span className="flex h-5 w-5 shrink-0 items-center justify-center">{icon}</span>
       <span className="min-w-0 flex-1 truncate">{label}</span>

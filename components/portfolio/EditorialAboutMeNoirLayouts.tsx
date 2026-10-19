@@ -5,8 +5,10 @@ import { useReducedMotion } from 'framer-motion';
 import type { LanguageProficiencyLevel, ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
 import type { PortfolioInfoLanguageLevelDisplayStyle } from '@/components/portfolio/portfolio-info-settings';
 import {
+  infoBlockLabelColor,
   terminalHeadingSizeClass,
   terminalShellSizeClass,
+  type PortfolioInfoBlockLabelColor,
   type PortfolioInfoPremiumFontSize,
 } from '@/components/portfolio/portfolio-info-settings';
 import {
@@ -92,18 +94,19 @@ function TerminalPrompt({
   index,
   accent,
   bodyColor,
+  commandColor,
 }: {
   command: string;
   index: number;
   accent: string;
   bodyColor: string;
+  commandColor: string;
 }) {
   return (
     <p
       className="pf-about-terminal-prompt mb-5 font-mono text-sm tracking-[0.02em] sm:text-[15px]"
       style={{
         color: bodyColor,
-        opacity: 0.55,
         ['--pf-about-terminal-i' as string]: index,
       }}
     >
@@ -114,8 +117,9 @@ function TerminalPrompt({
         $
       </span>{' '}
       <span
-        className="pf-about-terminal-cmd"
+        className="pf-about-terminal-cmd font-semibold"
         style={{
+          color: commandColor,
           ['--pf-about-terminal-ch' as string]: `${Math.max(command.length, 8)}ch`,
           ['--pf-about-terminal-type-dur' as string]: commandTypeDuration(command),
         }}
@@ -167,14 +171,12 @@ function TerminalSkillEntry({
   description,
   nameColor,
   bodyColor,
-  accent,
   index,
 }: {
   name: string;
   description: string;
   nameColor: string;
   bodyColor: string;
-  accent: string;
   index: number;
 }) {
   const note = description.trim().replace(/\s+/g, ' ');
@@ -185,7 +187,7 @@ function TerminalSkillEntry({
       style={{ ['--pf-about-terminal-j' as string]: Math.min(index, 8) }}
     >
       <p className="text-base font-medium leading-snug sm:text-[17px]" style={{ color: nameColor }}>
-        <span className="mr-2 font-mono" style={{ color: accent }}>
+        <span className="mr-2 font-mono" style={{ color: bodyColor }}>
           ›
         </span>
         {name}
@@ -193,9 +195,9 @@ function TerminalSkillEntry({
       {note ? (
         <p
           className="pf-about-terminal-comment mt-2 pl-4 font-mono text-[13px] leading-relaxed sm:text-sm"
-          style={{ color: bodyColor, opacity: 0.55 }}
+          style={{ color: bodyColor }}
         >
-          <span style={{ color: accent, opacity: 0.55 }}>{'// '}</span>
+          <span aria-hidden>{'// '}</span>
           {note}
         </p>
       ) : null}
@@ -206,12 +208,12 @@ function TerminalSkillEntry({
 function TerminalListEntry({
   label,
   nameColor,
-  accent,
+  bulletColor,
   index,
 }: {
   label: string;
   nameColor: string;
-  accent: string;
+  bulletColor: string;
   index: number;
 }) {
   return (
@@ -222,7 +224,7 @@ function TerminalListEntry({
         ['--pf-about-terminal-j' as string]: Math.min(index, 8),
       }}
     >
-      <span className="mr-2 font-mono" style={{ color: accent }}>
+      <span className="mr-2 font-mono" style={{ color: bulletColor }}>
         ›
       </span>
       {label}
@@ -235,14 +237,12 @@ function TerminalLanguageRow({
   level,
   nameColor,
   noteColor,
-  accent,
   index,
 }: {
   name: string;
   level?: LanguageProficiencyLevel | null;
   nameColor: string;
   noteColor: string;
-  accent: string;
   index: number;
 }) {
   const code = terminalLanguageCode(name);
@@ -253,7 +253,7 @@ function TerminalLanguageRow({
       className="pf-about-terminal-item pf-about-terminal-lang"
       style={{ ['--pf-about-terminal-j' as string]: Math.min(index, 8) }}
     >
-      <span className="pf-about-terminal-lang-code" style={{ color: accent }}>
+      <span className="pf-about-terminal-lang-code" style={{ color: nameColor }}>
         {code}
       </span>
       <span className="pf-about-terminal-lang-name" style={{ color: nameColor }}>
@@ -266,24 +266,6 @@ function TerminalLanguageRow({
       ) : null}
     </li>
   );
-}
-
-function terminalScrollbarColors(
-  colorMode: 'light' | 'dark',
-  cardBorder: string,
-  bodyColor: string
-): { thumb: string; thumbHover: string } {
-  if (colorMode === 'light') {
-    return {
-      thumb: `color-mix(in srgb, ${cardBorder} 40%, #c4c4c4)`,
-      thumbHover: `color-mix(in srgb, ${cardBorder} 60%, #8a8a8a)`,
-    };
-  }
-
-  return {
-    thumb: `color-mix(in srgb, ${cardBorder} 72%, ${bodyColor})`,
-    thumbHover: `color-mix(in srgb, ${cardBorder} 88%, ${bodyColor})`,
-  };
 }
 
 /** Dev-console aesthetic — palette-driven shell, typographic locale rows. */
@@ -314,6 +296,7 @@ export function AboutTerminalLayout({
   cardBg,
   cardBorder,
   className,
+  blockLabelColor = 'muted',
 }: {
   title: string;
   subtitle?: string | null;
@@ -336,6 +319,7 @@ export function AboutTerminalLayout({
   contentSize?: PortfolioInfoPremiumFontSize;
   colorMode?: 'light' | 'dark';
   className?: string;
+  blockLabelColor?: PortfolioInfoBlockLabelColor;
 } & InfoColors) {
   const t = useT();
   const headerLabel = fullName?.trim() || title.trim();
@@ -355,7 +339,7 @@ export function AboutTerminalLayout({
   );
 
   const faintColor = bodyColor;
-  const scrollColors = terminalScrollbarColors(colorMode, cardBorder, bodyColor);
+  const commandColor = infoBlockLabelColor(blockLabelColor, subtitleColor);
   const showSkillsBlock = showSkills && visibleSkills.length > 0;
   const showStrengthsBlock = showStrengths && visibleStrengths.length > 0;
   const showInterestsBlock = showInterests && visibleInterests.length > 0;
@@ -432,7 +416,7 @@ export function AboutTerminalLayout({
       }}
     >
       <div
-        className="pf-about-terminal-shell flex max-h-[min(88vh,960px)] flex-col overflow-hidden rounded-[8px] border lg:sticky lg:top-[calc(var(--portfolio-nav-top-clearance,5.5rem)+0.875rem)] lg:z-20 lg:max-h-[calc(100dvh-var(--portfolio-nav-top-clearance,5.5rem)-1.75rem)]"
+        className="pf-about-terminal-shell flex flex-col overflow-hidden rounded-[8px] border"
         style={{
           backgroundColor: cardBg,
           borderColor: cardBorder,
@@ -466,7 +450,7 @@ export function AboutTerminalLayout({
           <div className="pf-about-terminal-chrome-item pf-about-terminal-tab relative flex min-h-[42px] min-w-0 flex-1 items-center">
             <span
               className="flex min-w-0 items-center gap-2 px-3 py-2 font-mono text-[12px] tracking-[0.01em] sm:text-[13px]"
-              style={{ color: faintColor, opacity: 0.72 }}
+              style={{ color: faintColor }}
             >
               <span
                 className="h-1.5 w-1.5 shrink-0 rounded-full"
@@ -478,26 +462,22 @@ export function AboutTerminalLayout({
           </div>
 
           <p
-            className="pf-about-terminal-chrome-item hidden shrink-0 font-mono text-[11px] tracking-[0.08em] uppercase sm:block"
-            style={{ color: faintColor, opacity: 0.42 }}
+            className="pf-about-terminal-chrome-item hidden shrink-0 font-mono text-xs tracking-[0.08em] uppercase sm:block"
+            style={{ color: faintColor }}
           >
             {t('zsh · utf-8')}
           </p>
         </div>
 
-        <div className="pf-about-terminal-viewport relative flex min-h-0 flex-1 flex-col">
+        <div className="pf-about-terminal-viewport relative flex flex-col">
           <div className="pf-about-terminal-scan" aria-hidden />
           <div
-            className="terminal-panel-scroll pf-about-terminal-scroll min-h-0 flex-1 overflow-y-auto overscroll-contain px-[26px] py-10 sm:px-[52px] sm:py-14 lg:px-16 lg:py-16 xl:px-[72px]"
-            style={{
-              color: bodyColor,
-              ['--terminal-scroll-thumb' as string]: scrollColors.thumb,
-              ['--terminal-scroll-thumb-hover' as string]: scrollColors.thumbHover,
-            }}
+            className="pf-about-terminal-scroll px-[26px] py-10 sm:px-[52px] sm:py-14 lg:px-16 lg:py-16 xl:px-[72px]"
+            style={{ color: bodyColor }}
           >
             <p
-              className="pf-about-terminal-boot mb-8 font-mono text-[12px] tracking-[0.04em] sm:text-[13px]"
-              style={{ color: faintColor, opacity: 0.42 }}
+              className="pf-about-terminal-boot mb-8 font-mono text-xs tracking-[0.04em] sm:text-[13px]"
+              style={{ color: faintColor }}
             >
               {`// init · profile.session · ${blockCount} blk`}
             </p>
@@ -508,6 +488,7 @@ export function AboutTerminalLayout({
                 index={blockIndex('header')}
                 accent={accent}
                 bodyColor={bodyColor}
+                commandColor={commandColor}
               />
               <div className="pf-about-terminal-output">
                 <h2
@@ -517,7 +498,7 @@ export function AboutTerminalLayout({
                   {headerLabel}
                 </h2>
                 {showRole ? (
-                  <p className="mt-3 font-mono text-sm sm:text-[15px]" style={{ color: accent }}>
+                  <p className="mt-3 font-mono text-sm sm:text-[15px]" style={{ color: bodyColor }}>
                     {roleLabel}
                   </p>
                 ) : null}
@@ -531,10 +512,11 @@ export function AboutTerminalLayout({
                   index={blockIndex('bio')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <p
                   className="pf-about-terminal-output pf-about-terminal-bio max-w-[56ch] text-lg leading-[1.75] sm:text-xl"
-                  style={{ color: bodyColor, opacity: 0.88 }}
+                  style={{ color: bodyColor }}
                 >
                   {bioText}
                 </p>
@@ -548,6 +530,7 @@ export function AboutTerminalLayout({
                   index={blockIndex('skills')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <div className="pf-about-terminal-output space-y-7">
                   {visibleSkills.map((skill, index) => (
@@ -557,7 +540,6 @@ export function AboutTerminalLayout({
                       description={skill.description}
                       nameColor={subtitleColor}
                       bodyColor={bodyColor}
-                      accent={accent}
                       index={index}
                     />
                   ))}
@@ -572,6 +554,7 @@ export function AboutTerminalLayout({
                   index={blockIndex('strengths')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <div className="pf-about-terminal-output space-y-4">
                   {visibleStrengths.map((item, index) => (
@@ -579,7 +562,7 @@ export function AboutTerminalLayout({
                       key={`${index}-${item}`}
                       label={item}
                       nameColor={subtitleColor}
-                      accent={accent}
+                      bulletColor={bodyColor}
                       index={index}
                     />
                   ))}
@@ -594,6 +577,7 @@ export function AboutTerminalLayout({
                   index={blockIndex('interests')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <div className="pf-about-terminal-output space-y-4">
                   {visibleInterests.map((item, index) => (
@@ -601,7 +585,7 @@ export function AboutTerminalLayout({
                       key={`${index}-${item}`}
                       label={item}
                       nameColor={subtitleColor}
-                      accent={accent}
+                      bulletColor={bodyColor}
                       index={index}
                     />
                   ))}
@@ -616,6 +600,7 @@ export function AboutTerminalLayout({
                   index={blockIndex('languages')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <ul className="pf-about-terminal-output pf-about-terminal-langs">
                   {languageItems.map((item, index) => (
@@ -625,7 +610,6 @@ export function AboutTerminalLayout({
                       level={item.level}
                       nameColor={subtitleColor}
                       noteColor={faintColor}
-                      accent={accent}
                       index={index}
                     />
                   ))}
@@ -640,6 +624,7 @@ export function AboutTerminalLayout({
                   index={blockIndex('tools')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <div className="pf-about-terminal-output space-y-4">
                   {visibleTools.map((item, index) => (
@@ -647,7 +632,7 @@ export function AboutTerminalLayout({
                       key={`${index}-${item}`}
                       label={item}
                       nameColor={subtitleColor}
-                      accent={accent}
+                      bulletColor={bodyColor}
                       index={index}
                     />
                   ))}
@@ -662,6 +647,7 @@ export function AboutTerminalLayout({
                   index={blockIndex('education')}
                   accent={accent}
                   bodyColor={bodyColor}
+                  commandColor={commandColor}
                 />
                 <div className="pf-about-terminal-output space-y-[22px]">
                   {visibleEducation.map((entry, index) => {
@@ -680,7 +666,7 @@ export function AboutTerminalLayout({
                       >
                         <p
                           className="min-w-[100px] shrink-0 whitespace-nowrap pt-0.5 font-mono text-sm tabular-nums sm:min-w-[110px] sm:text-[15px]"
-                          style={{ color: accent }}
+                          style={{ color: bodyColor }}
                         >
                           {year}
                         </p>
@@ -699,7 +685,7 @@ export function AboutTerminalLayout({
                           {institution ? (
                             <p
                               className="mt-1 text-sm leading-relaxed sm:text-[15px]"
-                              style={{ color: bodyColor, opacity: 0.88 }}
+                              style={{ color: bodyColor }}
                             >
                               {institution}
                             </p>
@@ -717,7 +703,6 @@ export function AboutTerminalLayout({
               style={{
                 borderColor: cardBorder,
                 color: faintColor,
-                opacity: 0.55,
                 ['--pf-about-terminal-i' as string]: blockCount,
               }}
             >
@@ -731,7 +716,7 @@ export function AboutTerminalLayout({
         </div>
 
         <div
-          className="pf-about-terminal-status flex shrink-0 items-center gap-3 px-4 py-1.5 font-mono text-[10px] tracking-[0.12em] uppercase sm:px-5 sm:text-[11px]"
+          className="pf-about-terminal-status flex shrink-0 items-center gap-3 px-4 py-1.5 font-mono text-xs tracking-[0.1em] uppercase sm:px-5"
           style={{
             borderTop: `1px solid ${cardBorder}`,
             backgroundColor: statusFill,
@@ -742,15 +727,15 @@ export function AboutTerminalLayout({
             <span className="pf-about-terminal-live h-1.5 w-1.5 rounded-full" aria-hidden />
             {t('ready')}
           </span>
-          <span aria-hidden className="opacity-45">
+          <span aria-hidden >
             ·
           </span>
-          <span className="opacity-45">{t('utf-8')}</span>
-          <span aria-hidden className="hidden opacity-45 sm:inline">
+          <span >{t('utf-8')}</span>
+          <span aria-hidden className="hidden sm:inline">
             ·
           </span>
-          <span className="hidden truncate opacity-45 sm:inline">{t('{fileSlug}.md', { fileSlug })}</span>
-          <span className="ml-auto tabular-nums opacity-45">{t('{blockCount} blk', { blockCount })}</span>
+          <span className="hidden truncate sm:inline">{t('{fileSlug}.md', { fileSlug })}</span>
+          <span className="ml-auto tabular-nums">{t('{blockCount} blk', { blockCount })}</span>
         </div>
       </div>
     </div>

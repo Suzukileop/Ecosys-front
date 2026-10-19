@@ -74,7 +74,7 @@ function SettingsNavItem({
       onClick={onClick}
       aria-current={active ? 'page' : undefined}
       data-pf-no-color-transition
-      className={`relative flex min-h-11 w-full items-center gap-3 px-6 py-3.5 text-start text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+      className={`relative flex min-h-11 w-full items-center gap-3 px-6 py-3.5 text-start text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
         active ? 'font-bold' : 'font-normal'
       }`}
     >

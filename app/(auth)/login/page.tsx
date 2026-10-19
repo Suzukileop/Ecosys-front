@@ -4,7 +4,8 @@ import { Suspense, useEffect, useRef, useState } from 'react';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
-import { useSearchParams } from 'next/navigation';
+import Link from 'next/link';
+import { useRouter, useSearchParams } from 'next/navigation';
 import { useAuth } from '@/context/AuthContext';
 import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { AuthShell } from '@/components/auth/AuthShell';
@@ -16,9 +17,10 @@ import {
 } from '@/components/auth/AuthFields';
 import { SocialOAuthButtons } from '@/components/auth/SocialOAuthButtons';
 import { AxiosError } from 'axios';
-import { getApiErrorMessage } from '@/lib/api-error';
+import { getApiErrorCode, getApiErrorMessage } from '@/lib/api-error';
+import { savePendingVerification } from '@/lib/pending-verification';
 import { SIGNED_IN_HOME } from '@/lib/routes';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { useLocale, useT } from '@/lib/i18n/I18nProvider';
 
 const loginSchema = z.object({
   email: z.string().email('Invalid email address'),
@@ -37,6 +39,8 @@ function resolvePostAuthDest(searchParams: URLSearchParams): string {
 
 function LoginForm() {
   const t = useT();
+  const { locale } = useLocale();
+  const router = useRouter();
   const searchParams = useSearchParams();
   const { login, user, isLoading } = useAuth();
   const [apiError, setApiError] = useState<string | null>(null);
@@ -67,7 +71,7 @@ function LoginForm() {
     if (busy) return;
     setApiError(null);
     try {
-      await login(data);
+      await login({ ...data, locale });
       setSubmitRedirecting(true);
       // Full document navigation resets client auth/UI state from the previous account.
       window.location.assign(resolvePostAuthDest(searchParams));
@@ -75,6 +79,14 @@ function LoginForm() {
       setSubmitRedirecting(false);
       const axiosError = error as AxiosError<{ message: string }>;
       const status = axiosError.response?.status;
+      if (getApiErrorCode(error) === 'EMAIL_NOT_VERIFIED') {
+        /* Right password, unconfirmed address: the server has just e-mailed a fresh code (or one is
+           still valid from the last minute). Continue on the code screen, then back to `redirect`. */
+        const redirectTo = searchParams.get('redirect') ?? undefined;
+        savePendingVerification(data.email.trim(), 60, redirectTo);
+        router.push('/verify-email');
+        return;
+      }
       if (status === 401) {
         setApiError(t('Incorrect email or password.'));
       } else if (status === 403) {
@@ -120,6 +132,14 @@ function LoginForm() {
           registration={register('password')}
           error={errors.password?.message}
         />
+        <div className="-mt-2 flex justify-end">
+          <Link
+            href="/forgot-password"
+            className="text-[14px] font-medium text-neutral-500 underline-offset-4 transition-colors hover:text-[#111111] hover:underline dark:text-neutral-400 dark:hover:text-white"
+          >
+            {t('Forgot password?')}
+          </Link>
+        </div>
 
         <div className="pt-2">
           <AuthSubmitButton busy={busy} busyLabel={isRedirecting ? t('Redirecting...') : t('Signing in...')}>

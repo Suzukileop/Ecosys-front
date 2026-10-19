@@ -140,7 +140,7 @@ export function ProductReviewComposer({ productId, onSubmitted }: ProductReviewC
           onChange={(e) => setComment(e.target.value)}
           rows={4}
           placeholder={t('Describe your experience with this product…')}
-          className="w-full border-0 bg-[color:var(--gn-inset)] px-4 py-3 text-[15px] text-[color:var(--gn-ink)] outline-none transition placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-60"
+          className="w-full border-0 bg-[color:var(--gn-inset)] px-4 py-3 text-[15px] text-[color:var(--gn-ink)] outline-hidden transition placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-60"
           disabled={submitting || !canPostReviewToday}
         />
         <button

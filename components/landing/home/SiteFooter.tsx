@@ -53,12 +53,13 @@ export function SiteFooter() {
           {COLUMNS.map((column) => (
             <div key={column.title} className="md:col-span-2">
               <h4 className="text-[13px] font-medium uppercase tracking-[0.14em] text-white/45">{t(column.title)}</h4>
-              <ul className="mt-6 space-y-4">
+              {/* Each link is a 44px-tall target (WCAG 2.5.8 / touch); the gap comes from the targets. */}
+              <ul className="mt-4 space-y-0">
                 {column.links.map((link) => (
                   <li key={link.label}>
                     <Link
                       href={link.href}
-                      className="text-[16px] text-white/80 transition-colors hover:text-white"
+                      className="inline-flex min-h-11 items-center text-[16px] text-white/80 transition-colors hover:text-white"
                     >
                       {t(link.label)}
                     </Link>
@@ -76,7 +77,7 @@ export function SiteFooter() {
           <button
             type="button"
             onClick={() => window.scrollTo({ top: 0, behavior: 'smooth' })}
-            className="inline-flex items-center gap-2 self-start font-medium text-white transition-opacity hover:opacity-60 sm:self-auto"
+            className="inline-flex min-h-11 items-center gap-2 self-start font-medium text-white transition-opacity hover:opacity-60 sm:self-auto"
           >
             {t('Back to top')}
             <span aria-hidden>↑</span>

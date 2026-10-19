@@ -93,7 +93,7 @@ export function ProviderTextAction({
 
   const classes = `${ACTION_VARIANT_CLASS[variant]} ${
     disabled ? 'pointer-events-none opacity-35' : ''
-  } focus-visible:outline-none ${className}`;
+  } focus-visible:outline-hidden ${className}`;
 
   if (disabled || (!href && !onClick && type !== 'submit')) {
     return (
@@ -121,7 +121,7 @@ export function ProviderTextAction({
 /** Rounded-full filter pill: outline when off, ink fill when on. Shared by chips and toggles. */
 /** Toggle pill (Verified only, Available only): the chips' soft geometry — filled tone at rest, ink when on. */
 export function providerPillClass(active: boolean) {
-  return `inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:focus-visible:ring-[#E7E9EA]/45 ${
+  return `inline-flex h-9 shrink-0 items-center justify-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:focus-visible:ring-[#E7E9EA]/45 ${
     active
       ? 'bg-[#0F1419] text-white hover:bg-[#272C30] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]'
       : 'bg-[#EFF3F4] text-[#0F1419] hover:bg-[#E1E8ED] dark:bg-[#202327] dark:text-[#E7E9EA] dark:hover:bg-[#2A2D32]'
@@ -165,7 +165,7 @@ export function ProviderSwitch({
  * no outline; active is the ink fill with inverted text, like the selected row of the News rail.
  */
 export function providerChipClass(active: boolean) {
-  return `inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[14px] leading-5 transition-colors duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:focus-visible:ring-[#E7E9EA]/45 ${
+  return `inline-flex h-9 shrink-0 items-center gap-1.5 whitespace-nowrap rounded-full px-4 text-[14px] leading-5 transition-colors duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:focus-visible:ring-[#E7E9EA]/45 ${
     active
       ? 'bg-[#0F1419] font-semibold text-white hover:bg-[#272C30] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]'
       : 'bg-[#EFF3F4] font-medium text-[#0F1419] hover:bg-[#E1E8ED] dark:bg-[#202327] dark:text-[#E7E9EA] dark:hover:bg-[#2A2D32]'

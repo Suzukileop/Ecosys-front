@@ -52,7 +52,7 @@ export function InboxFollowersStrip({
         <button
           type="button"
           onClick={onSeeAll}
-          className="-mr-3 inline-flex min-h-10 items-center rounded-full px-3 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+          className="-mr-3 inline-flex min-h-10 items-center rounded-full px-3 text-[14px] font-semibold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
         >
           {t('See all')}
         </button>
@@ -86,7 +86,7 @@ export function InboxFollowersStrip({
                   onClick={() => onOpenFollower(follower)}
                   title={t('Message {name} ({statusLabel})', { name, statusLabel })}
                   aria-label={t('Message {name}, {statusLabel}', { name, statusLabel })}
-                  className="group flex w-14 flex-col items-center gap-1.5 rounded-xl focus-visible:outline-none disabled:opacity-50"
+                  className="group flex w-14 flex-col items-center gap-1.5 rounded-xl focus-visible:outline-hidden disabled:opacity-50"
                 >
                   <span className="relative">
                     <span className="msg-portrait flex h-14 w-14 items-center justify-center overflow-hidden rounded-full ring-2 ring-transparent transition-shadow group-focus-visible:ring-[color:var(--gn-ink)] [&>*]:!h-14 [&>*]:!w-14">

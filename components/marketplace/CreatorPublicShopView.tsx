@@ -54,12 +54,12 @@ const RAIL_CATALOGUES_LIMIT = 6;
 
 const EMPTY_BLOCK_CLASS = 'mx-5 bg-[color:var(--gn-surface)] px-6 py-12 text-center sm:mx-0';
 const RAIL_ROW =
-  'group/row flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
+  'group/row flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] font-semibold leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
 /** X pills: ink fill for the primary, a 1px ring for the secondary. */
 const PRIMARY_PILL =
-  'inline-flex h-9 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-4 text-[14px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-9 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-4 text-[14px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 const SECONDARY_PILL =
-  'inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-bold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] dark:shadow-[inset_0_0_0_1px_#536471] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-9 items-center justify-center gap-2 rounded-full px-4 text-[14px] font-bold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] dark:shadow-[inset_0_0_0_1px_#536471] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /** Stacked sheets: a catalogue. */
 const CATALOGUE_GLYPH = (
@@ -297,7 +297,7 @@ export function CreatorPublicShopView({
           enterKeyHint="search"
           autoComplete="off"
           placeholder={t('Search {displayName}', { displayName })}
-          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-none focus:ring-0 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
+          className="h-full w-full rounded-full border-0 bg-transparent p-0 pl-11 pr-12 text-[16px] text-[color:var(--gn-ink)] placeholder:text-[color:var(--gn-ink2)] focus:outline-hidden focus:ring-0 sm:text-[15px] [&::-webkit-search-cancel-button]:hidden"
         />
         {query ? (
           <button

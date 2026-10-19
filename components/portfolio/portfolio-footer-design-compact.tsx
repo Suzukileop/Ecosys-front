@@ -2,10 +2,7 @@
 
 import type { CSSProperties } from 'react';
 import { formatPhoneDisplay } from '@/lib/phone';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   resolveFooterCopyrightLabel,
   type PortfolioFooterPresentationSettings,

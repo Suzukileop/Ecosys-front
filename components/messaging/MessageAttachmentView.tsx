@@ -101,7 +101,7 @@ function MediaLightbox({
               type="button"
               onClick={onDownload}
               disabled={downloading}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] disabled:opacity-50 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] disabled:opacity-50 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]"
               aria-label={downloading ? t('Downloading') : t('Download')}
               title={t('Download')}
             >
@@ -116,7 +116,7 @@ function MediaLightbox({
             <button
               type="button"
               onClick={onClose}
-              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]"
+              className="inline-flex h-10 w-10 items-center justify-center rounded-full text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-[#E7E9EA]"
               aria-label={t('Close')}
               title={t('Close')}
             >
@@ -324,7 +324,7 @@ function InlineMediaAttachment({
             <button
               type="button"
               onClick={openLightbox}
-              className={`absolute left-2 top-2 z-[2] rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-sm transition hover:bg-black/70 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-white/60 ${HOVER_CHROME}`}
+              className={`absolute left-2 top-2 z-[2] rounded-md bg-black/55 px-2 py-1 text-[11px] font-medium text-white backdrop-blur-xs transition hover:bg-black/70 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-white/60 ${HOVER_CHROME}`}
             >
               {t('Expand')}
             </button>
@@ -334,7 +334,7 @@ function InlineMediaAttachment({
             <button
               type="button"
               onClick={openLightbox}
-              className={`relative block w-full cursor-pointer overflow-hidden focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400 ${
+              className={`relative block w-full cursor-pointer overflow-hidden focus:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400 ${
                 embedded ? '' : 'rounded-2xl'
               } ${revealed ? '' : 'min-h-44 bg-neutral-100 dark:bg-neutral-800'}`}
             >

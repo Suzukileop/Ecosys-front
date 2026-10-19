@@ -19,7 +19,7 @@ const subscribeNoop = () => () => {};
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]):not([type="hidden"]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+const FOCUS_RING = 'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 function focusableIn(container: HTMLElement | null): HTMLElement[] {
   if (!container) return [];
@@ -188,7 +188,7 @@ export function ProfileSectionDrawer({
         style={STUDIO_FLOAT_IN_STYLE}
         /* The panel is the page's own white / black, so the --gn-surface fields read as fields on it.
            (`bg-[#fff]`, not `bg-white`: the news scope repaints `bg-white` as the card surface.) */
-        className="absolute inset-y-0 right-0 flex h-full w-full flex-col bg-[#fff] text-[color:var(--gn-ink)] outline-none dark:bg-black sm:max-w-[520px] sm:shadow-[0_0_0_1px_var(--gn-line),0_16px_48px_-16px_rgba(15,20,25,0.3)]"
+        className="absolute inset-y-0 right-0 flex h-full w-full flex-col bg-[#fff] text-[color:var(--gn-ink)] outline-hidden dark:bg-black sm:max-w-[520px] sm:shadow-[0_0_0_1px_var(--gn-line),0_16px_48px_-16px_rgba(15,20,25,0.3)]"
       >
         <div className="flex items-start justify-between gap-4 border-b border-[color:var(--gn-line)] px-4 py-4 sm:px-6">
           <div className="min-w-0 pt-1">

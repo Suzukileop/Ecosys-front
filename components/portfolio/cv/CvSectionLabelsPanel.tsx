@@ -58,7 +58,7 @@ export function CvSectionLabelsPanel({
                 maxLength={maxLength}
                 autoComplete="off"
                 onChange={(event) => onChange({ ...labels, [section.id]: event.currentTarget.value })}
-                className="h-10 w-full rounded-lg border border-black/[0.08] bg-transparent px-3 text-[14px] text-[#111111] outline-none transition-colors placeholder:text-neutral-400 focus:border-black/30 dark:border-white/[0.1] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-white/30"
+                className="h-10 w-full rounded-lg border border-black/[0.08] bg-transparent px-3 text-[14px] text-[#111111] outline-hidden transition-colors placeholder:text-neutral-400 focus:border-black/30 dark:border-white/[0.1] dark:text-white dark:placeholder:text-neutral-500 dark:focus:border-white/30"
               />
             </div>
           );

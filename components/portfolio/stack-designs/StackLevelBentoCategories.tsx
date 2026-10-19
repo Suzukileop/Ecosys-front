@@ -35,6 +35,7 @@ import {
 } from '@/components/portfolio/portfolio-tools-settings';
 import {
   groupSkillsByCategory,
+  resolveSkillCategory,
   resolveSkillIconUrl,
   resolveSkillLevel,
   resolveSkillLevelLabel,
@@ -128,10 +129,10 @@ function bentoRowVars(rowGap: PortfolioToolsLevelProgressRowGap | undefined): {
   min: string;
   pad: string;
 } {
-  if (rowGap === 'tight') return { min: '2.35rem', pad: '0.38rem' };
-  if (rowGap === 'large') return { min: '3.15rem', pad: '0.7rem' };
-  if (rowGap === 'xlarge') return { min: '3.5rem', pad: '0.85rem' };
-  return { min: '2.75rem', pad: '0.52rem' };
+  if (rowGap === 'tight') return { min: '3.25rem', pad: '0.85rem' };
+  if (rowGap === 'large') return { min: '5rem', pad: '1.75rem' };
+  if (rowGap === 'xlarge') return { min: '6.5rem', pad: '2.5rem' };
+  return { min: '4rem', pad: '1.25rem' };
 }
 
 function bentoLevelTrack(
@@ -181,6 +182,8 @@ function BentoLevelRead({
 }): ReactNode {
   if (displayStyle === 'progress-bar') {
     return (
+      <div className="pf-stack-bento-progress">
+      <span className="pf-stack-bento-percent" aria-hidden="true">{resolveToolLevelPercent(level)}%</span>
       <ToolsLevelProgressBar
         level={level}
         toolName={name}
@@ -192,6 +195,7 @@ function BentoLevelRead({
         barHeightVariant="thin"
         className="pf-stack-bento-bar w-full"
       />
+      </div>
     );
   }
 
@@ -417,7 +421,7 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
   return (
     <div
       ref={rootRef}
-      className={`pf-stack-bento grid w-full grid-cols-1 items-stretch ${toolsLevelBentoEqualColumnsClass(columnCount)} ${toolsLevelBentoGridGapClass(presentation.cardGap)}`}
+      className={`pf-stack-bento grid w-full grid-cols-1 items-start ${toolsLevelBentoEqualColumnsClass(columnCount)} ${toolsLevelBentoGridGapClass(presentation.cardGap)}`}
       data-framed={framed ? 'true' : 'false'}
       data-show-name={showName ? 'true' : 'false'}
       data-show-level={showLevel ? 'true' : 'false'}
@@ -428,6 +432,7 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
       {groups.map((group) => {
         const featured = featuredCategory === group.category;
         const countLabel = String(group.tools.length).padStart(2, '0');
+        const hasCategory = group.tools.some((tool) => Boolean(resolveSkillCategory(tool).trim()));
 
         return (
           <article
@@ -435,16 +440,16 @@ export function EditorialToolsLevelBentoCategories({ tools, presentation }: Tool
             className="pf-stack-bento-panel"
             data-featured={featured ? 'true' : 'false'}
             data-span={featured ? '2' : '1'}
-            aria-label={`${group.category}, ${group.tools.length} ${
+            aria-label={`${hasCategory ? `${group.category}, ` : ''}${group.tools.length} ${
               trPlural(group.tools.length, 'skill', 'skills')
             }`}
           >
-            <header className="pf-stack-bento-kicker">
+            {hasCategory ? <header className="pf-stack-bento-kicker">
               <h3 className="pf-stack-bento-kicker-title">{group.category}</h3>
               <span className="pf-stack-bento-kicker-count" aria-hidden="true">
                 {countLabel}
               </span>
-            </header>
+            </header> : null}
 
             <ul className="pf-stack-bento-list" role="list">
               {group.tools.map((tool) => {

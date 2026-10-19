@@ -33,7 +33,7 @@ export function LanguageSettingsSection() {
                 lang={option}
                 onClick={() => setLocale(option)}
                 data-pf-no-color-transition
-                className={`flex min-h-16 items-center justify-between gap-3 bg-[color:var(--gn-field)] px-4 py-3 text-start transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                className={`flex min-h-16 items-center justify-between gap-3 bg-[color:var(--gn-field)] px-4 py-3 text-start transition-shadow duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                   active ? 'shadow-[inset_0_0_0_2px_var(--gn-ink)]' : 'hover:shadow-[inset_0_0_0_1px_var(--gn-ink3)]'
                 }`}
               >

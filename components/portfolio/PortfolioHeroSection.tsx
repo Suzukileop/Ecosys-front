@@ -10,9 +10,6 @@ import { usePortfolioHeroGeomFade } from '@/components/portfolio/use-portfolio-h
 const PortfolioHeroSwissEditorial = dynamic(() =>
   import('@/components/portfolio/hero-variants/PortfolioHeroSwissEditorial').then((m) => m.PortfolioHeroSwissEditorial)
 );
-const PortfolioHeroCinematicReveal = dynamic(() =>
-  import('@/components/portfolio/hero-variants/PortfolioHeroCinematicReveal').then((m) => m.PortfolioHeroCinematicReveal)
-);
 const PortfolioHeroPortraitIdentity = dynamic(() =>
   import('@/components/portfolio/hero-variants/PortfolioHeroPortraitIdentity').then((m) => m.PortfolioHeroPortraitIdentity)
 );
@@ -52,6 +49,9 @@ const PortfolioHeroWorkDuo = dynamic(() =>
 const PortfolioHeroBowlIntro = dynamic(() =>
   import('@/components/portfolio/hero-variants/PortfolioHeroBowlIntro').then((m) => m.PortfolioHeroBowlIntro)
 );
+const PortfolioHeroColophon = dynamic(() =>
+  import('@/components/portfolio/hero-variants/PortfolioHeroColophon').then((m) => m.PortfolioHeroColophon)
+);
 
 export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   const { sectionRef } = usePortfolioHeroGeomFade(heroData.geomFadeEnabled ?? false);
@@ -79,9 +79,6 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
     </section>
   );
 
-  if (design === 'cinematic-reveal') {
-    return shell(<PortfolioHeroCinematicReveal data={heroDataForVariant} />);
-  }
   if (design === 'portrait-identity') {
     return shell(<PortfolioHeroPortraitIdentity data={heroDataForVariant} />);
   }
@@ -120,6 +117,9 @@ export function PortfolioHeroSection(heroData: PortfolioHeroData) {
   }
   if (design === 'bowl-intro') {
     return shell(<PortfolioHeroBowlIntro data={heroDataForVariant} />);
+  }
+  if (design === 'colophon') {
+    return shell(<PortfolioHeroColophon data={heroDataForVariant} />);
   }
 
   // Default + legacy Classic → Swiss editorial (Classic permanently removed).

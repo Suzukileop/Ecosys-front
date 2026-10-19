@@ -1,4 +1,5 @@
 import { z } from 'zod';
+import { inferProfileMediaType } from '@/lib/profile-media-type';
 import type { ContactVisibilitySettings } from '@/lib/contact-visibility';
 import { parseSpokenLanguageEntries, serializeSpokenLanguagesForApi } from '@/lib/spoken-languages';
 import { CREATOR_GENDER_VALUES } from '@/lib/creator-gender';
@@ -1482,13 +1483,7 @@ export function parseStrengthsTools(raw: unknown): StrengthFormItem[] {
   return parsed;
 }
 
-export function inferProfileMediaType(url: string): 'IMAGE' | 'VIDEO' {
-  const probe = url.toLowerCase();
-  if (/\.(mp4|webm|mov)(\?|$)/i.test(probe) || probe.includes('video/')) {
-    return 'VIDEO';
-  }
-  return 'IMAGE';
-}
+export { inferProfileMediaType };
 
 export function serializeProfileBlocks(
   blocks: ProfileMediaBlockForm[],

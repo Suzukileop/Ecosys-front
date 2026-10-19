@@ -146,7 +146,7 @@ const ERROR = 'mt-2 text-[13px] text-[#F4212E]';
  */
 const FIELD_BASE = 'rounded-none border border-transparent bg-[color:var(--x-field,#EFF3F4)] transition-shadow';
 const FIELD_FOCUS =
-  'focus:outline-none focus:shadow-[inset_0_0_0_2px_#0F1419] dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]';
+  'focus:outline-hidden focus:shadow-[inset_0_0_0_2px_#0F1419] dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]';
 const FIELD_FOCUS_WITHIN =
   'focus-within:shadow-[inset_0_0_0_2px_#0F1419] dark:focus-within:shadow-[inset_0_0_0_2px_#E7E9EA]';
 const INPUT = `mt-2 block h-11 w-full ${FIELD_BASE} ${FIELD_FOCUS} px-3.5 text-[15px] text-[#111111] placeholder:text-neutral-400 disabled:opacity-50 dark:text-white dark:placeholder:text-neutral-500 dark:[color-scheme:dark]`;
@@ -586,7 +586,7 @@ function Switch({ checked, onChange, label }: { checked: boolean; onChange: () =
       aria-checked={checked}
       aria-label={label}
       onClick={onChange}
-      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/50 ${
+      className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/50 ${
         checked ? 'bg-[#0F1419] dark:bg-[#EFF3F4]' : 'bg-[#CFD9DE] dark:bg-[#3E4144]'
       }`}
     >
@@ -669,7 +669,7 @@ function ChipsInput({
           onBlur={commit}
           placeholder={values.length >= max ? t('Limit reached') : placeholder}
           aria-label={label}
-          className="h-8 min-w-[8rem] flex-1 bg-transparent px-1.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+          className="h-8 min-w-[8rem] flex-1 bg-transparent px-1.5 text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
         />
       </div>
     </div>
@@ -1201,7 +1201,7 @@ export function ProductEditorForm({
                       onChange={(event) =>
                         setValue('typeLabel', event.target.value, { shouldDirty: true, shouldValidate: true })
                       }
-                      className="block h-11 w-full rounded-lg border border-black/[0.1] bg-transparent pl-3.5 pr-11 text-[15px] text-[#111111] transition-colors placeholder:text-neutral-400 hover:border-black/20 focus:border-[#111111] focus:outline-none dark:border-white/[0.12] dark:text-white dark:placeholder:text-neutral-500 dark:hover:border-white/25 dark:focus:border-white/70"
+                      className="block h-11 w-full rounded-lg border border-black/[0.1] bg-transparent pl-3.5 pr-11 text-[15px] text-[#111111] transition-colors placeholder:text-neutral-400 hover:border-black/20 focus:border-[#111111] focus:outline-hidden dark:border-white/[0.12] dark:text-white dark:placeholder:text-neutral-500 dark:hover:border-white/25 dark:focus:border-white/70"
                     />
                     <button
                       type="button"
@@ -1212,7 +1212,7 @@ export function ProductEditorForm({
                       }}
                       aria-label={t('Choose a type from the list')}
                       title={t('Choose from the list')}
-                      className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-black/[0.05] hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:ring-white/30"
+                      className="absolute right-1.5 top-1/2 inline-flex h-8 w-8 -translate-y-1/2 items-center justify-center rounded-md text-neutral-400 transition-colors hover:bg-black/[0.05] hover:text-[#111111] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/20 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:ring-white/30"
                     >
                       <svg className="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2} aria-hidden>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M19 9l-7 7-7-7" />
@@ -1467,7 +1467,7 @@ export function ProductEditorForm({
                     min="0"
                     placeholder="0.00"
                     aria-invalid={Boolean(errors.priceAmount)}
-                    className={`h-full min-w-0 flex-1 bg-transparent px-4 text-[22px] font-semibold tracking-[-0.01em] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                    className={`h-full min-w-0 flex-1 bg-transparent px-4 text-[22px] font-semibold tracking-[-0.01em] tabular-nums text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                     {...register('priceAmount')}
                   />
                   <span aria-hidden className="h-5 w-px bg-black/[0.1] dark:bg-white/[0.12]" />
@@ -1509,7 +1509,7 @@ export function ProductEditorForm({
                       step="0.01"
                       min="0"
                       placeholder={t('e.g. 49.00')}
-                      className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                      className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                       {...register('compareAtPriceAmount')}
                     />
                     <span className="pr-3.5 text-[14px] font-medium text-neutral-400 dark:text-neutral-500">
@@ -1544,7 +1544,7 @@ export function ProductEditorForm({
                   max={STOCK_MAX}
                   placeholder="1"
                   aria-invalid={Boolean(errors.stockQuantity)}
-                  className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                  className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] tabular-nums text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                   {...register('stockQuantity')}
                 />
                 <span className="pr-3.5 text-[14px] text-neutral-400 dark:text-neutral-500">{t('units')}</span>
@@ -1591,7 +1591,7 @@ export function ProductEditorForm({
                       { shouldDirty: true, shouldValidate: true }
                     )
                   }
-                  className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-white dark:focus-visible:ring-offset-black ${
+                  className={`inline-flex min-h-10 items-center gap-1.5 rounded-full border px-4 text-[14px] font-medium transition-colors duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#111111] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-40 dark:focus-visible:ring-white dark:focus-visible:ring-offset-black ${
                     selected
                       ? 'border-[#111111] bg-[#111111] text-white dark:border-white dark:bg-white dark:text-[#111111]'
                       : 'border-black/[0.12] text-[#111111] hover:border-black/30 dark:border-white/[0.14] dark:text-white dark:hover:border-white/30'
@@ -1703,7 +1703,7 @@ export function ProductEditorForm({
                       min="0"
                       step="0.1"
                       placeholder={fileSizeUnit === 'GB' ? t('e.g. 1.5') : t('e.g. 250')}
-                      className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
+                      className={`h-full min-w-0 flex-1 bg-transparent px-3.5 text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500 ${NO_SPIN}`}
                       {...register('fileSizeMb')}
                     />
                     <span aria-hidden className="h-5 w-px bg-black/[0.1] dark:bg-white/[0.12]" />
@@ -1712,7 +1712,7 @@ export function ProductEditorForm({
                         aria-label={t('File size unit')}
                         value={fileSizeUnit}
                         onChange={(event) => setFileSizeUnit(event.target.value as FileSizeUnit)}
-                        className="h-full cursor-pointer appearance-none bg-transparent pl-3 pr-8 text-[14px] font-medium text-[#111111] outline-none dark:text-white dark:[color-scheme:dark]"
+                        className="h-full cursor-pointer appearance-none bg-transparent pl-3 pr-8 text-[14px] font-medium text-[#111111] outline-hidden dark:text-white dark:[color-scheme:dark]"
                       >
                         <option value="MB">{t('MB')}</option>
                         <option value="GB">{t('GB')}</option>
@@ -1811,7 +1811,7 @@ export function ProductEditorForm({
             aria-label={t('Product title')}
             placeholder={isPhysical ? t('Name your product') : t('What are you selling?')}
             aria-invalid={Boolean(errors.title)}
-            className="block w-full border-0 bg-transparent p-0 text-[24px] font-semibold leading-tight sm:text-[26px] tracking-[-0.02em] text-[#111111] outline-none placeholder:text-neutral-300 dark:text-white dark:placeholder:text-neutral-600"
+            className="block w-full border-0 bg-transparent p-0 text-[24px] font-semibold leading-tight sm:text-[26px] tracking-[-0.02em] text-[#111111] outline-hidden placeholder:text-neutral-300 dark:text-white dark:placeholder:text-neutral-600"
             {...register('title')}
           />
           {errors.title ? <p className={ERROR}>{errors.title.message}</p> : null}
@@ -1821,7 +1821,7 @@ export function ProductEditorForm({
             maxLength={DESCRIPTION_MAX}
             aria-label={t('Description')}
             placeholder={t('What buyers get, who it’s for, and why it’s worth it.')}
-            className="mt-3 block min-h-[3.5rem] w-full resize-none border-0 bg-transparent p-0 text-[16px] leading-relaxed text-[#111111] outline-none [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+            className="mt-3 block min-h-[3.5rem] w-full resize-none border-0 bg-transparent p-0 text-[16px] leading-relaxed text-[#111111] outline-hidden [field-sizing:content] placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
             {...register('description')}
           />
           {errors.description ? <p className={ERROR}>{errors.description.message}</p> : null}

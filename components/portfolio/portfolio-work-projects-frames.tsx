@@ -20,6 +20,7 @@ import type {
   PortfolioWorkPresentationSettings,
   PortfolioWorkProjectsFramesCardGap,
   PortfolioWorkProjectsFramesSettings,
+  PortfolioWorkProjectsFramesThumbnailSize,
 } from '@/components/portfolio/portfolio-work-settings';
 import {
   DEFAULT_PROJECTS_FRAMES_SETTINGS,
@@ -75,19 +76,58 @@ function framesCardGapClass(gap: PortfolioWorkProjectsFramesCardGap): string {
   return 'gap-16 sm:gap-24 lg:gap-28 xl:gap-32';
 }
 
+/** Desktop (≥1024px) image / copy columns per "Thumbnail size" — `xl` is the original
+ * 7/4 split. Literal class strings so Tailwind keeps them. */
+const FRAMES_DESKTOP_COLUMNS: Record<
+  PortfolioWorkProjectsFramesThumbnailSize,
+  { imageLeft: string; copyRight: string; imageRight: string; copyLeft: string }
+> = {
+  md: {
+    imageLeft: 'lg:col-span-5 lg:col-start-1',
+    copyRight: 'lg:col-span-5 lg:col-start-8',
+    imageRight: 'lg:col-span-5 lg:col-start-8',
+    copyLeft: 'lg:col-span-5 lg:col-start-1',
+  },
+  lg: {
+    imageLeft: 'lg:col-span-6 lg:col-start-1',
+    copyRight: 'lg:col-span-5 lg:col-start-8',
+    imageRight: 'lg:col-span-6 lg:col-start-7',
+    copyLeft: 'lg:col-span-5 lg:col-start-1',
+  },
+  xl: {
+    imageLeft: 'lg:col-span-7 lg:col-start-1',
+    copyRight: 'lg:col-span-4 lg:col-start-9',
+    imageRight: 'lg:col-span-7 lg:col-start-6',
+    copyLeft: 'lg:col-span-4 lg:col-start-1',
+  },
+  xxl: {
+    imageLeft: 'lg:col-span-8 lg:col-start-1',
+    copyRight: 'lg:col-span-4 lg:col-start-9',
+    imageRight: 'lg:col-span-8 lg:col-start-5',
+    copyLeft: 'lg:col-span-4 lg:col-start-1',
+  },
+  half: {
+    imageLeft: 'lg:col-span-6 lg:col-start-1',
+    copyRight: 'lg:col-span-6 lg:col-start-7',
+    imageRight: 'lg:col-span-6 lg:col-start-7',
+    copyLeft: 'lg:col-span-6 lg:col-start-1',
+  },
+};
+
 /** Tablet (768–1023px): an even 50/50 split with the two columns pulled close
- * together — no leftover gap column. Desktop (≥1024px) keeps the original,
- * more generous 7/4 split with breathing room between image and copy. */
-function framesImageColumnClass(imageOnRight: boolean): string {
+ * together — no leftover gap column. Desktop follows the Thumbnail size setting. */
+function framesImageColumnClass(imageOnRight: boolean, size: PortfolioWorkProjectsFramesThumbnailSize): string {
+  const cols = FRAMES_DESKTOP_COLUMNS[size] ?? FRAMES_DESKTOP_COLUMNS.xl;
   return imageOnRight
-    ? 'md:col-span-6 md:col-start-7 lg:col-span-7 lg:col-start-6'
-    : 'md:col-span-6 md:col-start-1 lg:col-span-7 lg:col-start-1';
+    ? `md:col-span-6 md:col-start-7 ${cols.imageRight}`
+    : `md:col-span-6 md:col-start-1 ${cols.imageLeft}`;
 }
 
-function framesCopyColumnClass(imageOnRight: boolean): string {
+function framesCopyColumnClass(imageOnRight: boolean, size: PortfolioWorkProjectsFramesThumbnailSize): string {
+  const cols = FRAMES_DESKTOP_COLUMNS[size] ?? FRAMES_DESKTOP_COLUMNS.xl;
   return imageOnRight
-    ? 'md:col-span-6 md:col-start-1 lg:col-span-4 lg:col-start-1'
-    : 'md:col-span-6 md:col-start-7 lg:col-span-4 lg:col-start-9';
+    ? `md:col-span-6 md:col-start-1 ${cols.copyLeft}`
+    : `md:col-span-6 md:col-start-7 ${cols.copyRight}`;
 }
 
 function getScrollParent(node: HTMLElement | null): HTMLElement | Window {
@@ -192,9 +232,8 @@ function useFramesGalleryMotion(itemsKey: string): {
           title.style.transform = `translate3d(0, ${(clamped * FRAMES_PARALLAX_TRAVEL * FRAMES_TITLE_PARALLAX).toFixed(2)}px, 0)`;
         }
         if (copy) {
+          // Depth only: the old scroll fade (down to 0.48) dimmed readable copy away from center.
           copy.style.transform = `translate3d(0, ${(clamped * FRAMES_PARALLAX_TRAVEL * FRAMES_COPY_PARALLAX).toFixed(2)}px, 0)`;
-          const fade = Math.max(0.48, 1 - Math.max(0, Math.abs(clamped) - 0.22) * 0.85);
-          copy.style.opacity = fade.toFixed(3);
         }
       }
     };
@@ -227,29 +266,23 @@ function useFramesGalleryMotion(itemsKey: string): {
   return { rootRef, revealed };
 }
 
-/** Tools as one quiet uppercase line, dot-separated — each word animates on hover without
- * shifting its neighbors (transform/opacity only), and scrolls sideways if it overflows. */
+/** Tools as quiet uppercase labels that wrap (the old hidden-scrollbar line cut tools off
+ * with no cue). Spacing replaces the dots; no hover scale/tracking on non-interactive text. */
 function FramesStackList({ tools, ink }: { tools: string[]; ink: string }) {
   const t = useT();
   if (tools.length === 0) return null;
   return (
     <ul
-      className="m-0 flex list-none items-center gap-x-2.5 overflow-x-auto whitespace-nowrap p-0 [-ms-overflow-style:none] [scrollbar-width:none] [&::-webkit-scrollbar]:hidden"
+      className="m-0 flex list-none flex-wrap items-baseline gap-x-4 gap-y-2 p-0"
       aria-label={t('Stack')}
     >
-      {tools.map((tool, index) => (
-        <li key={tool} className="flex shrink-0 items-center gap-x-2.5">
-          <span
-            className="inline-block text-[10px] font-medium uppercase leading-none tracking-[0.2em] opacity-70 transition-[transform,opacity,letter-spacing] duration-300 ease-out hover:scale-110 hover:tracking-[0.3em] hover:opacity-100 sm:text-[11px]"
-            style={{ color: ink }}
-          >
-            {tool}
-          </span>
-          {index < tools.length - 1 ? (
-            <span aria-hidden className="text-[10px] leading-none sm:text-[11px]" style={{ color: ink, opacity: 0.35 }}>
-              •
-            </span>
-          ) : null}
+      {tools.map((tool) => (
+        <li
+          key={tool}
+          className="whitespace-nowrap text-[11px] font-medium uppercase leading-none tracking-[0.18em]"
+          style={{ color: `color-mix(in srgb, ${ink} 85%, transparent)` }}
+        >
+          {tool}
         </li>
       ))}
     </ul>
@@ -428,9 +461,11 @@ function FramesCard({
   const showMeta = showRole || showCategory;
   const showDescription = board.showDescription && Boolean(description);
   const showStack = board.showStack && tools.length > 0;
+  // "Case study link": the floating cursor pill over the image; off = a plain link.
+  const consultCursor = board.showConsult !== false;
+  const consultLabel = board.consultLabel.trim() || t('View');
 
   const corner: 'a' | 'b' = index % 2 === 0 ? 'a' : 'b';
-  const floatDelay = `${(index % 4) * 0.55}s`;
 
   const linkRef = useRef<HTMLAnchorElement>(null);
   const [cursorAnchor, setCursorAnchor] = useState<{ x: number; y: number } | null>(null);
@@ -454,7 +489,11 @@ function FramesCard({
       style={{ '--pf-frames-ink': titleColor } as CSSProperties}
     >
       {titleWords.map((word, wordIndex) => (
-        <span key={`${wordIndex}-${word}`} className="inline-block overflow-hidden align-top">
+        // pb/-mb: the reveal mask clipped descenders (the "g" of "booking") at leading 0.92.
+        <span
+          key={`${wordIndex}-${word}`}
+          className="-mb-[0.16em] inline-block overflow-hidden pb-[0.16em] align-top"
+        >
           <span
             className="pf-frames-word inline-block will-change-transform"
             data-revealed={revealed ? 'true' : 'false'}
@@ -485,7 +524,10 @@ function FramesCard({
         alt={item.title}
         fill
         sizes="(max-width: 768px) 100vw, 60vw"
-        className="object-cover object-center transition-transform duration-[1.2s] ease-out group-hover/frame:scale-[1.06]"
+        className="object-cover object-center transition-transform duration-[1.2s] ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/frame:scale-[1.035]"
+        // Without it the theme color-crossfade rule rewrites transition-property and the
+        // zoom snapped instantly instead of easing.
+        data-pf-no-color-transition=""
       />
     </div>
   ) : (
@@ -511,15 +553,17 @@ function FramesCard({
 
   const stageChildren = (
     <>
-      <div data-frames-float="" style={{ animationDelay: floatDelay, animationDuration: '7s' }}>
+      {/* No idle float loop (it bobbed every image and title forever): scroll parallax
+          already gives the depth, and a still frame reads calmer. */}
+      <div>
         <div data-frames-media-shift="" className="will-change-transform">
           {mediaNode}
         </div>
       </div>
       <div
-        data-frames-float=""
-        style={{ animationDelay: floatDelay, animationDuration: '9.5s' }}
-        className="relative z-10 -mt-[clamp(0.85rem,5vw,1.5rem)] md:-mt-[clamp(1rem,3vw,1.75rem)] lg:-mt-[clamp(1.25rem,2.4vw,2.5rem)]"
+        /* Overlap kept to the top of the caps (~20px at desktop): at ~35 % of the first line
+           a white title vanished into bright photos. */
+        className="relative z-10 -mt-[clamp(0.6rem,3vw,1rem)] md:-mt-[clamp(0.75rem,1.8vw,1.1rem)] lg:-mt-[clamp(0.9rem,1.4vw,1.35rem)]"
       >
         {mobileMeta}
         <div data-frames-title-shift="" className="will-change-transform">
@@ -534,9 +578,9 @@ function FramesCard({
       ref={linkRef}
       href={href}
       ariaLabel={item.title || t('Project')}
-      className="group/frame block cursor-none focus:outline-none"
-      onMouseEnter={handleEnter}
-      onMouseLeave={dismissCursor}
+      className={`group/frame block focus:outline-hidden ${consultCursor ? 'cursor-none' : ''}`}
+      onMouseEnter={consultCursor ? handleEnter : undefined}
+      onMouseLeave={consultCursor ? dismissCursor : undefined}
     >
       {stageChildren}
     </FramesProjectLink>
@@ -564,19 +608,22 @@ function FramesCard({
       ) : null}
 
       <div className="md:grid md:grid-cols-12 md:gap-x-4 lg:gap-x-6">
-        <div className={framesImageColumnClass(imageOnRight)}>{stage}</div>
+        <div className={framesImageColumnClass(imageOnRight, board.thumbnailSize)}>{stage}</div>
 
         {showDescription || showStack ? (
           <div
             data-frames-copy=""
             className={`mt-5 will-change-transform sm:mt-6 md:mt-0 md:self-end ${framesCopyColumnClass(
-              imageOnRight
+              imageOnRight,
+              board.thumbnailSize
             )}`}
           >
             {showDescription ? (
+              // Was 12–14px light at 0.85 opacity against a 94px black-weight title: the copy
+              // read as an orphan. Regular weight, full color, a size that answers the title.
               <p
-                className="max-w-xs text-[12px] font-light leading-[1.55] line-clamp-2 sm:text-[13px] md:text-sm md:leading-[1.9] md:line-clamp-none"
-                style={{ color: muted, opacity: 0.85 }}
+                className="max-w-sm text-[0.9375rem] font-normal leading-[1.6] line-clamp-3 md:line-clamp-none lg:text-base lg:leading-[1.7]"
+                style={{ color: muted }}
               >
                 {description}
               </p>
@@ -590,8 +637,13 @@ function FramesCard({
         ) : null}
       </div>
 
-      {href ? (
-        <FramesViewCursor anchor={cursorAnchor} containerRef={linkRef} onDismiss={dismissCursor} />
+      {href && consultCursor ? (
+        <FramesViewCursor
+          anchor={cursorAnchor}
+          containerRef={linkRef}
+          onDismiss={dismissCursor}
+          label={consultLabel}
+        />
       ) : null}
     </article>
   );
@@ -619,18 +671,10 @@ export function ProjectsFramesGallery({
     <div
       ref={rootRef}
       data-frames-gallery=""
+      data-frames-radius={board.radius}
       className={`flex w-full flex-col ${framesCardGapClass(board.cardGap)}`}
     >
       <style>{`
-        @keyframes pf-frames-float {
-          0%, 100% { transform: translate3d(0, 0, 0); }
-          50% { transform: translate3d(0, -14px, 0); }
-        }
-        [data-frames-gallery] [data-frames-float] {
-          animation-name: pf-frames-float;
-          animation-timing-function: ease-in-out;
-          animation-iteration-count: infinite;
-        }
         [data-frames-gallery] [data-frames-media-frame] {
           border-radius: 0px;
           transition: border-radius 0.6s cubic-bezier(0.22, 1, 0.36, 1);
@@ -641,6 +685,15 @@ export function ProjectsFramesGallery({
           }
           [data-frames-gallery] [data-frames-media-frame][data-frames-corner='b'] {
             border-radius: 0px clamp(1.75rem, 7vw, 5rem) 0px clamp(1.75rem, 7vw, 5rem);
+          }
+          [data-frames-gallery][data-frames-radius='md'] [data-frames-media-frame][data-frames-corner='a'] {
+            border-radius: clamp(1rem, 3vw, 2rem) 0px clamp(1rem, 3vw, 2rem) 0px;
+          }
+          [data-frames-gallery][data-frames-radius='md'] [data-frames-media-frame][data-frames-corner='b'] {
+            border-radius: 0px clamp(1rem, 3vw, 2rem) 0px clamp(1rem, 3vw, 2rem);
+          }
+          [data-frames-gallery][data-frames-radius='none'] [data-frames-media-frame] {
+            border-radius: 0px;
           }
         }
         [data-frames-gallery] .pf-frames-word {
@@ -655,9 +708,6 @@ export function ProjectsFramesGallery({
             opacity: 1 !important;
             transform: none !important;
             transition: none !important;
-          }
-          [data-frames-gallery] [data-frames-float] {
-            animation: none !important;
           }
           [data-frames-gallery] [data-frames-media-shift] > div {
             transition: none !important;

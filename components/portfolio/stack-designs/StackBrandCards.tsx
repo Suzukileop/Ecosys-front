@@ -8,12 +8,11 @@ import { resolveToolLevelPercent } from '@/components/creator/studio/creator-too
 import type { ProfileStrengthToolLevel } from '@/types/profile';
 import {
   resolveSkillCategory,
-  resolveSkillDescription,
+  resolveSkillCustomDescription,
   resolveSkillIconUrl,
   resolveSkillLevel,
   resolveSkillLevelLabel,
   resolveSkillName,
-  resolveSkillUseCases,
   type PortfolioSkillRef,
 } from '@/components/portfolio/skill-usage-descriptions';
 import {
@@ -22,24 +21,28 @@ import {
   resolveToolsShowLevel,
   toolsBrandCardLogoPx,
   toolsBrandCardLogoTilePx,
-  toolsBrandCardsGapClass,
-  toolsBrandGridLargeColumnsClass,
   toolsLabelColorStyle,
   toolsShowcaseLogoPx,
+  type PortfolioToolsCardGap,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import { toolDisplayName } from '@/components/portfolio/stack-designs/tool-display-name';
+import { mixInk, readableAccent, readableMix } from '@/components/portfolio/stack-designs/readable-ink';
 
 type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
   presentation: PortfolioToolsPresentationSettings;
 };
 
-const LEVEL_MICRO_INDEX: Record<ProfileStrengthToolLevel, string> = {
-  beginner: '01',
-  intermediate: '02',
-  advanced: '03',
-  expert: '04',
-};
+type BrandCardDensity = 'rich' | 'minimal';
+
+/** Grid gutter — a CSS length (not a Tailwind class) so the column formula can subtract it. */
+function brandCardsGap(gap: PortfolioToolsCardGap | undefined): string {
+  if (gap === 'medium') return 'clamp(1.5rem, 2.2vw, 2rem)';
+  if (gap === 'large') return 'clamp(2rem, 3.2vw, 3rem)';
+  if (gap === 'xlarge') return 'clamp(2.5rem, 4.4vw, 4rem)';
+  return 'clamp(1rem, 1.6vw, 1.5rem)';
+}
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -89,47 +92,38 @@ function toolsLogosGrayscaleEnabled(presentation: PortfolioToolsPresentationSett
   return presentation.logosGrayscale === true;
 }
 
-function mixInk(color: string, percent: number, surface: string): string {
-  return `color-mix(in srgb, ${color} ${percent}%, ${surface})`;
-}
-
+/** Level spelled out ("Advanced") over a 4-step bar — readable without hover or a legend. */
 function BrandCardLevelIndex({
   level,
   label,
-  ink,
-  accent,
-  surface,
+  labelInk,
+  track,
+  fill,
 }: {
   level: ProfileStrengthToolLevel;
   label: string;
-  ink: string;
-  accent: string;
-  surface: string;
+  labelInk: string;
+  track: string;
+  fill: string;
 }) {
-  const index = LEVEL_MICRO_INDEX[level];
   const percent = resolveToolLevelPercent(level);
 
   return (
-    <span className="pf-stack-brand-cards-index" title={label}>
-      <span className="sr-only">{label}</span>
+    <span className="pf-stack-brand-cards-index">
       <span
-        aria-hidden="true"
-        className="text-[0.75rem] font-semibold tabular-nums leading-none tracking-[0.14em]"
-        style={{ color: mixInk(ink, 52, surface) }}
+        className="text-[0.6875rem] font-semibold uppercase leading-none tracking-[0.14em]"
+        style={{ color: labelInk }}
       >
-        {index}
+        {label}
       </span>
       <span
         aria-hidden="true"
         className="pf-stack-brand-cards-bar"
-        style={{ backgroundColor: mixInk(ink, 12, surface) }}
+        style={{ backgroundColor: track }}
       >
         <span
           className="pf-stack-brand-cards-bar-fill"
-          style={{
-            width: `${percent}%`,
-            backgroundColor: accent,
-          }}
+          style={{ width: `${percent}%`, backgroundColor: fill }}
         />
       </span>
     </span>
@@ -137,7 +131,8 @@ function BrandCardLevelIndex({
 }
 
 /**
- * Editorial brand dossier cards — quiet wash, shared left axis, micro level index.
+ * Editorial brand dossier cards — quiet wash, shared left axis, spelled-out level.
+ * Cards without a description of their own collapse to a compact row.
  */
 export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryProps) {
   const listRef = useRef<HTMLUListElement>(null);
@@ -156,7 +151,6 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
   const logoColorMode = toolsLogoColorMode(presentation);
   const framePx = showIconBg ? tilePx : logoPx;
   const showDescription = presentation.showDescription !== false;
-  const showUseCases = presentation.showUseCases !== false;
   const showCategory = presentation.showCategory !== false;
   const showLevel = resolveToolsShowLevel(presentation);
   const showName = presentation.showLabels !== false;
@@ -166,14 +160,20 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
   const ink = presentation.labelColor?.trim() || surface;
   const border = presentation.cardBorderColor?.trim() || ink;
   const accent = presentation.levelAccentColor?.trim() || ink;
-  const chipInk = presentation.chipTextColor?.trim() || ink;
   const wash = mixInk(ink, 4, surface);
   const washHover = mixInk(ink, 7, surface);
   const hairline = `color-mix(in srgb, ${border} 58%, transparent)`;
   const hairlineHover = mixInk(ink, 34, border);
-  const descInk = presentation.descriptionColor?.trim() || mixInk(ink, 64, surface);
-  const kickerInk = mixInk(ink, 46, surface);
-  const useInk = mixInk(chipInk, 76, surface);
+  const descInk = presentation.descriptionColor?.trim() || readableMix(ink, 64, surface);
+  const kickerInk = readableMix(ink, 46, surface);
+  const levelInk = readableMix(ink, 60, surface);
+  const levelTrack = mixInk(ink, 16, surface);
+  const levelFill = readableAccent(accent, ink, surface);
+
+  const densityOf = (tool: PortfolioSkillRef): BrandCardDensity =>
+    showDescription && resolveSkillCustomDescription(tool) ? 'rich' : 'minimal';
+  // Short-content grids can hold narrower cards (3-up from ~1200px); dossiers need ~320px.
+  const minCardWidth = tools.some((tool) => densityOf(tool) !== 'minimal') ? '20rem' : '16.25rem';
   const logoHairline = showIconBg ? `color-mix(in srgb, ${ink} 10%, transparent)` : 'transparent';
   const logoWash = showIconBg ? mixInk(ink, 4, tileBg === 'transparent' ? surface : tileBg) : 'transparent';
 
@@ -221,14 +221,24 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
   return (
     <ul
       ref={listRef}
-      className={`pf-stack-brand-cards grid w-full list-none grid-cols-1 p-0 ${toolsBrandGridLargeColumnsClass(columnsPerRow)} ${toolsBrandCardsGapClass(presentation.cardGap)}`}
+      className="pf-stack-brand-cards w-full list-none p-0"
       data-icon={isHorizontal ? 'left' : 'top'}
+      data-columns={columnsPerRow > 1 ? 'multi' : '1'}
       role="list"
+      style={
+        {
+          '--pf-stack-brand-cards-cols': columnsPerRow,
+          '--pf-stack-brand-cards-min': minCardWidth,
+          '--pf-stack-brand-cards-gap': brandCardsGap(presentation.cardGap),
+          '--pf-stack-brand-cards-accent': levelFill,
+        } as CSSProperties
+      }
     >
       {tools.map((tool) => {
         const name = resolveSkillName(tool);
-        const description = resolveSkillDescription(tool);
-        const useCases = resolveSkillUseCases(tool);
+        const displayName = toolDisplayName(name);
+        const density = densityOf(tool);
+        const description = resolveSkillCustomDescription(tool);
         const level = resolveSkillLevel(tool);
         const levelLabel = resolveSkillLevelLabel(tool);
         const category = resolveSkillCategory(tool);
@@ -239,9 +249,9 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
             <BrandCardLevelIndex
               level={level}
               label={levelLabel}
-              ink={ink}
-              accent={accent}
-              surface={surface}
+              labelInk={levelInk}
+              track={levelTrack}
+              fill={levelFill}
             />
           ) : null;
 
@@ -278,7 +288,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
                     className="pf-stack-brand-cards-name min-w-0 text-[1.0625rem] font-medium leading-[1.2] tracking-[-0.022em] sm:text-[1.125rem]"
                     style={toolsLabelColorStyle(presentation.labelColor)}
                   >
-                    {name}
+                    {displayName}
                   </h3>
                 ) : (
                   <span />
@@ -290,7 +300,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
                 className="pf-stack-brand-cards-name text-[1.0625rem] font-medium leading-[1.2] tracking-[-0.022em] sm:text-[1.125rem]"
                 style={toolsLabelColorStyle(presentation.labelColor)}
               >
-                {name}
+                {displayName}
               </h3>
             ) : null}
 
@@ -311,25 +321,6 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
                 {description}
               </p>
             ) : null}
-
-            {showUseCases && useCases.length > 0 ? (
-              <ul className="pf-stack-brand-cards-uses mt-auto flex list-none flex-wrap items-baseline p-0">
-                {useCases.map((useCase, index) => (
-                  <li
-                    key={useCase}
-                    className="text-[0.75rem] font-medium leading-[1.5] tracking-[0.015em]"
-                    style={{ color: useInk }}
-                  >
-                    {index > 0 ? (
-                      <span className="px-1.5" aria-hidden="true">
-                        ·
-                      </span>
-                    ) : null}
-                    {useCase}
-                  </li>
-                ))}
-              </ul>
-            ) : null}
           </div>
         );
 
@@ -337,6 +328,7 @@ export function EditorialToolsBrandCards({ tools, presentation }: ToolsGalleryPr
           <li
             key={key}
             className="pf-stack-brand-cards-item min-w-0"
+            data-density={density}
             data-pf-no-color-transition=""
             style={
               {

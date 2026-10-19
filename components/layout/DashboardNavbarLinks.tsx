@@ -26,7 +26,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 const EASE_CLS = 'ease-[cubic-bezier(0.16,1,0.3,1)]';
 
 const LINK_CLS =
-  'group/link relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap py-1 text-[0.9rem] font-medium tracking-[-0.005em] transition-none focus-visible:outline-none';
+  'group/link relative inline-flex shrink-0 items-center gap-1.5 whitespace-nowrap py-1 text-[0.9rem] font-medium tracking-[-0.005em] transition-none focus-visible:outline-hidden';
 /*
  * One flat value, at rest and under the pointer alike: `#222222` in light, `neutral-300` in dark —
  * the bar's glyphs sit on exactly that pair, so every label and every icon in the row is one ink.
@@ -144,7 +144,7 @@ function NavbarGroup({
       <div
         role="menu"
         aria-label={label}
-        className={`absolute left-0 top-[calc(100%+0.85rem)] z-50 min-w-[12rem] overflow-hidden rounded-xl border border-neutral-900/[0.07] bg-white/95 p-1.5 shadow-xl backdrop-blur-md transition-[opacity,transform] duration-[420ms] ${EASE_CLS} dark:border-white/[0.08] dark:bg-black/80 ${
+        className={`absolute left-0 top-[calc(100%+0.85rem)] z-50 min-w-[12rem] overflow-hidden rounded-xl border border-neutral-900/[0.07] bg-white/95 p-1.5 shadow-xl backdrop-blur-md transition-[opacity,transform,translate,scale,rotate] duration-[420ms] ${EASE_CLS} dark:border-white/[0.08] dark:bg-black/80 ${
           open ? 'translate-y-0 opacity-100' : 'pointer-events-none -translate-y-1 opacity-0'
         }`}
       >

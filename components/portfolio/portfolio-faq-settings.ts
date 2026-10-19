@@ -709,37 +709,37 @@ export const PORTFOLIO_FAQ_DESIGN_OPTIONS: {
   {
     value: 'editorial-masonry',
     label: msg('Editorial masonry'),
-    description: msg('Paper-white, boxless: an asymmetric offset two-column grid — hover isolates one question, blurs the rest.'),
+    description: msg('Paper-white, boxless: an asymmetric offset two-column grid — hover highlights one question while keeping every answer readable.'),
   },
   {
     value: 'prism-cards',
     label: msg('Prism cards'),
-    description: msg('Big white accordion cards — the open card liquid-fades to a violet-electric fill from the click point.'),
+    description: msg('Refined accordion cards with subtle prism shading, smooth answers and a discreet accent.'),
   },
   {
     value: 'star-scroll',
     label: msg('Star scroll'),
-    description: msg('Giant title left, an 8-point star right that spins with page scroll — bars melt into the stage until hovered.'),
+    description: msg('An editorial title and a discreet star that follows section scroll — calm rows with smooth answers.'),
   },
   {
     value: 'tri-grid',
     label: msg('Tri grid'),
-    description: msg('Iconless, borderless: three parallax columns (center offset and slower) — hover isolates one block, blurs the rest.'),
+    description: msg('An airy responsive grid with every answer visible — clear typography and a discreet accent.'),
   },
   {
     value: 'split-index',
     label: msg('Split index'),
-    description: msg('Giant title, a narrow index rail beside a hairline-divided list with filled 01/02/03 badges.'),
+    description: msg('A compact index rail beside a clear numbered list — lightweight markers and smooth answers.'),
   },
   {
     value: 'centered-focus',
     label: msg('Centered focus'),
-    description: msg('Borderless, centered list resting at low opacity — hover snaps one question into focus and a soft zoom.'),
+    description: msg('A clear centered list with discreet opening signs, gentle emphasis and smoothly revealed answers.'),
   },
   {
     value: 'bento-dual',
     label: msg('Bento dual'),
-    description: msg('Vivid bento cards that flip on hover — the question slides away as a contrasting answer panel rises in.'),
+    description: msg('Two-surface bento cards — click to unfold a contrasting answer while keeping the question visible.'),
   },
 ];
 
@@ -921,7 +921,7 @@ export function faqFrameClass(p: PortfolioFaqPresentationSettings): string {
   const parts = [servicesCardRadiusClass(p.cardBorderRadius), servicesCardPaddingClass(p.cardPadding)];
   if (p.cardBorder !== 'none') {
     parts.push(faqCardBorderWidthClass(p.cardBorder));
-    if (p.cardBorder === 'soft') parts.push('shadow-sm');
+    if (p.cardBorder === 'soft') parts.push('shadow-xs');
   }
   return parts.filter(Boolean).join(' ');
 }
@@ -953,7 +953,7 @@ export function faqSeparatedCardFrameClass(
           ? ''
           : design === 'bordered' || design === 'accent'
             ? 'shadow-[0_8px_30px_-12px_rgba(15,23,42,0.12)]'
-            : 'shadow-sm'
+            : 'shadow-xs'
       );
     }
   }

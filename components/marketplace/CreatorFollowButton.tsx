@@ -24,7 +24,7 @@ type CreatorFollowButtonProps = {
 
 /** Secondary action — social follow, never competes with Discuss. */
 const secondaryBaseClass =
-  'inline-flex items-center justify-center gap-2 rounded-none border font-semibold transition-colors duration-200 ease-out focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
+  'inline-flex items-center justify-center gap-2 rounded-none border font-semibold transition-colors duration-200 ease-out focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/15 disabled:pointer-events-none dark:focus-visible:ring-white/25';
 
 /* X secondary button: 1px outline, ink text. Following = the same outline on a soft tone. */
 const secondaryIdleClass = `${secondaryBaseClass} border-[#CFD9DE] bg-transparent text-[#0F1419] hover:bg-[rgba(15,20,25,0.06)] dark:border-[#536471] dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)]`;

@@ -50,3 +50,23 @@ export function resolveCreatorToolTechIconUrl(label: string): string | null {
 export function creatorToolHasTechIcon(label: string): boolean {
   return resolveCreatorToolTechIconUrl(label) != null;
 }
+
+/**
+ * Bundled marks that are black / near-black with no light areas (measured from the PNGs:
+ * mean luminance < 0.16, under 8% light pixels). They vanish on a dark surface.
+ */
+const DARK_TECH_ICON_FILES = new Set([
+  'Apache-Kafka.png', 'Apple.png', 'Awk.png', 'CodePen.png', 'Core-js.png', 'Crystal.png',
+  'Deno.png', 'Django.png', 'Express.png', 'Flask.png', 'Ghost.png', 'GitHub.png', 'Gitter.png',
+  'Gradle.png', 'Handlebars.png', 'Helm.png', 'IFTTT.png', 'InfluxDB.png', 'LaTeX.png', 'Lua.png',
+  'Markdown.png', 'Microsoft-SQL-Server.png', 'Mongoose.js.png', 'Next.js.png', 'Pandas.png',
+  'pfSense.png', 'PureScript.png', 'Rust.png', 'Sema-Software.png', 'Socket.io.png',
+  'Solidity.png', 'Splunk.png', 'SSH.png', 'Symfony.png', 'TeX.png', 'Three.js.png',
+  'Unreal-Engine.png', 'Vercel.png', 'Vyper.png', 'YAML.png',
+]);
+
+/** Whether a bundled TechIcons URL is a dark mark that needs lifting on dark surfaces. */
+export function creatorToolTechIconIsDark(url: string): boolean {
+  const file = decodeURIComponent(url.split('/').pop() ?? '');
+  return DARK_TECH_ICON_FILES.has(file);
+}

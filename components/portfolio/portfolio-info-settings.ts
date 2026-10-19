@@ -140,6 +140,7 @@ export {
   type PortfolioInfoHeaderTitleSize,
   type PortfolioInfoHeaderTitleWeight,
 } from '@/components/portfolio/portfolio-info-header-settings';
+import { infoHeaderPaletteTokenColor as infoPaletteTokenColor } from '@/components/portfolio/portfolio-info-header-settings';
 
 export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettings & {
   design: PortfolioInfoDesign;
@@ -171,6 +172,8 @@ export type PortfolioInfoPresentationSettings = PortfolioSectionBackgroundSettin
   aboutMeTraitHeadlineCustomText: string;
   /** All Info designs — labels, lists, block titles, education, etc. */
   premiumFontSize: PortfolioInfoPremiumFontSize;
+  /** Color of the in-section block labels (Education, Skills, Languages…) — not the header. */
+  blockLabelColor: PortfolioInfoBlockLabelColor;
   /**
    * @deprecated About · value removed — kept for saved settings migration.
    * Split (title left / list right) or grid-2 for secondary blocks.
@@ -447,6 +450,7 @@ export const DEFAULT_INFO_PRESENTATION: PortfolioInfoPresentationSettings = {
   aboutMeTraitHeadlineEnabled: true,
   aboutMeTraitHeadlineCustomText: DEFAULT_ABOUT_ME_TRAIT_HEADLINE,
   premiumFontSize: 'medium',
+  blockLabelColor: 'muted',
   aboutValueBlocksLayout: 'split',
   aboutValueValuesLayout: 'editorial',
   aboutValueListMarkerStyle: 'dot',
@@ -1075,6 +1079,64 @@ export function portfolioInfoDesignHasPortrait(design: PortfolioInfoDesign | und
   );
 }
 
+/**
+ * Content blocks each design draws (skills and strengths: all of them). The settings panel only
+ * offers the switches a design honours, and the header count only counts what is on the page.
+ * About · portrait skills draws interests and languages together behind its own meta switch.
+ */
+export type PortfolioInfoDesignContent = {
+  education: boolean;
+  interests: boolean;
+  languages: boolean;
+  systemsTools: boolean;
+};
+
+const INFO_DESIGN_CONTENT: Record<PortfolioInfoDesign, PortfolioInfoDesignContent> = {
+  'about-me': { education: true, interests: false, languages: true, systemsTools: true },
+  'about-me-trait': { education: true, interests: false, languages: true, systemsTools: false },
+  'about-split': { education: true, interests: false, languages: true, systemsTools: true },
+  'about-banner': { education: true, interests: true, languages: false, systemsTools: false },
+  'about-platform': { education: true, interests: true, languages: true, systemsTools: false },
+  'about-portrait-skills': { education: true, interests: true, languages: true, systemsTools: false },
+  'about-manifesto': { education: true, interests: true, languages: true, systemsTools: true },
+  'about-terminal': { education: true, interests: true, languages: true, systemsTools: true },
+  'about-index': { education: true, interests: true, languages: true, systemsTools: true },
+  'about-value-steps': { education: true, interests: true, languages: true, systemsTools: true },
+};
+
+export function portfolioInfoDesignContent(design: PortfolioInfoDesign | undefined): PortfolioInfoDesignContent {
+  return INFO_DESIGN_CONTENT[resolveInfoDesign(design)];
+}
+
+/** Which blocks are switched on for the current design (data presence is the caller's concern). */
+export function resolveInfoVisibleBlocks(
+  presentation: Pick<
+    PortfolioInfoPresentationSettings,
+    | 'design'
+    | 'showEducation'
+    | 'showSkills'
+    | 'showStrengths'
+    | 'showInterests'
+    | 'showLanguages'
+    | 'showSystemsTools'
+    | 'aboutPortraitSkillsMetaEnabled'
+  >
+): PortfolioInfoDesignContent & { skills: boolean; strengths: boolean } {
+  const design = resolveInfoDesign(presentation.design);
+  const content = INFO_DESIGN_CONTENT[design];
+  const resolved = { ...presentation, design };
+  const portraitMeta =
+    design === 'about-portrait-skills' ? resolveAboutPortraitSkillsMetaEnabled(presentation) : null;
+  return {
+    skills: presentation.showSkills !== false,
+    strengths: resolveInfoShowStrengths(resolved),
+    education: content.education && resolveInfoShowEducation(resolved),
+    interests: content.interests && (portraitMeta ?? resolveInfoShowInterests(resolved)),
+    languages: content.languages && (portraitMeta ?? resolveInfoShowLanguages(resolved)),
+    systemsTools: content.systemsTools && resolveInfoShowSystemsTools(resolved),
+  };
+}
+
 export function resolveInfoEducationDisplayStyle(
   presentation: Pick<PortfolioInfoPresentationSettings, 'educationDisplayStyle'>
 ): PortfolioInfoEducationDisplayStyle {
@@ -1243,19 +1305,39 @@ export function infoContentEducationMetaSizeClass(size: PortfolioInfoPremiumFont
 }
 
 /** About · portrait skills — large skill rail (title only). */
-export function aboutPortraitSkillsListSizeClass(size: PortfolioInfoPremiumFontSize): string {
+export function aboutPortraitSkillsListSizeClass(
+  size: PortfolioInfoPremiumFontSize,
+  compact = false
+): string {
+  // Compact: 4+ skills or sentence-long titles — a smaller display size that fits the rail
+  // (a 64px sentence wrapped to 3 lines each and pushed the bio out of the viewport).
+  if (compact) {
+    switch (size) {
+      case 'small':
+        return 'text-xl leading-[1.2] sm:text-2xl lg:text-[1.75rem] xl:text-[2rem]';
+      case 'large':
+        return 'text-3xl leading-[1.2] sm:text-4xl lg:text-[2.75rem] xl:text-[3rem]';
+      case 'xlarge':
+        return 'text-4xl leading-[1.18] sm:text-5xl lg:text-[3.25rem] xl:text-[3.75rem]';
+      case 'xxlarge':
+        return 'text-5xl leading-[1.16] sm:text-6xl lg:text-[3.75rem] xl:text-[4.5rem]';
+      case 'medium':
+      default:
+        return 'text-2xl leading-[1.2] sm:text-3xl lg:text-4xl xl:text-[2.5rem]';
+    }
+  }
   switch (size) {
     case 'small':
-      return 'text-xl leading-[1.16] sm:text-2xl lg:text-3xl';
+      return 'text-2xl leading-[1.14] sm:text-3xl lg:text-4xl xl:text-5xl';
     case 'large':
-      return 'text-3xl leading-[1.12] sm:text-4xl lg:text-5xl xl:text-[3.25rem]';
+      return 'text-4xl leading-[1.1] sm:text-5xl lg:text-6xl xl:text-[5rem]';
     case 'xlarge':
-      return 'text-4xl leading-[1.10] sm:text-5xl lg:text-6xl xl:text-[3.75rem]';
+      return 'text-5xl leading-[1.08] sm:text-6xl lg:text-7xl xl:text-[6rem]';
     case 'xxlarge':
-      return 'text-5xl leading-[1.08] sm:text-6xl lg:text-7xl xl:text-[4.25rem]';
+      return 'text-6xl leading-[1.06] sm:text-7xl lg:text-8xl xl:text-[7rem]';
     case 'medium':
     default:
-      return 'text-2xl leading-[1.14] sm:text-3xl lg:text-4xl xl:text-[2.75rem]';
+      return 'text-3xl leading-[1.12] sm:text-4xl lg:text-5xl xl:text-[4rem]';
   }
 }
 
@@ -1265,65 +1347,65 @@ export function aboutPortraitSkillsBioSizeClass(size: PortfolioInfoPremiumFontSi
     case 'small':
       return 'text-base sm:text-lg leading-[1.65]';
     case 'large':
-      return 'text-xl sm:text-2xl leading-[1.62]';
+      return 'text-xl sm:text-[1.625rem] leading-[1.6]';
     case 'xlarge':
-      return 'text-2xl sm:text-3xl leading-[1.6]';
+      return 'text-2xl sm:text-[1.875rem] leading-[1.58]';
     case 'xxlarge':
-      return 'text-3xl sm:text-4xl leading-[1.58]';
+      return 'text-[1.625rem] sm:text-[2.125rem] leading-[1.55]';
     case 'medium':
     default:
-      return 'text-lg sm:text-xl leading-[1.65]';
+      return 'text-lg sm:text-[1.375rem] leading-[1.6]';
   }
 }
 
-/** About · portrait skills — centered strengths section title. */
+/** About · portrait skills — in-page block titles (What I bring, Education): below the skill rail. */
 export function aboutPortraitSkillsStrengthsTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-3xl sm:text-4xl';
+      return 'text-2xl sm:text-3xl';
     case 'large':
-      return 'text-5xl sm:text-6xl lg:text-[4rem]';
+      return 'text-4xl sm:text-5xl lg:text-[3.25rem]';
     case 'xlarge':
-      return 'text-6xl sm:text-7xl lg:text-[4.5rem]';
+      return 'text-5xl sm:text-6xl lg:text-[4rem]';
     case 'xxlarge':
-      return 'text-7xl sm:text-8xl lg:text-[5rem]';
+      return 'text-6xl sm:text-7xl lg:text-[4.75rem]';
     case 'medium':
     default:
-      return 'text-4xl sm:text-5xl lg:text-[3.5rem]';
+      return 'text-3xl sm:text-4xl lg:text-[2.5rem]';
   }
 }
 
-/** About · portrait skills — centered strengths list items. */
+/** About · portrait skills — list items (strengths, diplomas): below the bio. */
 export function aboutPortraitSkillsStrengthsItemSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-lg sm:text-xl';
+      return 'text-base sm:text-lg';
     case 'large':
-      return 'text-2xl sm:text-[1.75rem]';
+      return 'text-xl sm:text-2xl';
     case 'xlarge':
-      return 'text-3xl sm:text-[2rem]';
+      return 'text-2xl sm:text-[1.75rem]';
     case 'xxlarge':
-      return 'text-4xl sm:text-[2.25rem]';
+      return 'text-3xl sm:text-[2rem]';
     case 'medium':
     default:
-      return 'text-xl sm:text-2xl';
+      return 'text-lg sm:text-xl';
   }
 }
 
-/** About · portrait skills — interests + languages paragraph. */
+/** About · portrait skills — interests paragraph. */
 export function aboutPortraitSkillsMetaSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-lg sm:text-xl leading-[1.55]';
+      return 'text-base sm:text-lg leading-[1.55]';
     case 'large':
-      return 'text-2xl sm:text-[1.7rem] leading-[1.5]';
+      return 'text-xl sm:text-2xl leading-[1.5]';
     case 'xlarge':
-      return 'text-3xl sm:text-[1.95rem] leading-[1.48]';
+      return 'text-2xl sm:text-[1.75rem] leading-[1.48]';
     case 'xxlarge':
-      return 'text-4xl sm:text-[2.2rem] leading-[1.46]';
+      return 'text-3xl sm:text-[2rem] leading-[1.46]';
     case 'medium':
     default:
-      return 'text-xl sm:text-2xl leading-[1.55]';
+      return 'text-lg sm:text-xl leading-[1.55]';
   }
 }
 
@@ -1411,37 +1493,54 @@ export function aboutPlatformHeadlineSizeClass(size: PortfolioInfoPremiumFontSiz
   }
 }
 
-/** About · platform — bio + strength lines (below hero headline scale). */
+/** About · platform — bio (lead). One step below the hero headline, well above list items. */
 export function aboutPlatformLeadSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-[1.5rem] sm:text-[1.75rem]';
+      return 'text-[1.25rem] sm:text-[1.375rem]';
     case 'large':
-      return 'text-[1.875rem] sm:text-[2.25rem] lg:text-[2.5rem]';
+      return 'text-[1.5rem] sm:text-[1.75rem] lg:text-[2rem]';
     case 'xlarge':
-      return 'text-[2.125rem] sm:text-[2.5rem] lg:text-[2.75rem]';
+      return 'text-[1.75rem] sm:text-[2rem] lg:text-[2.25rem]';
     case 'xxlarge':
-      return 'text-[2.375rem] sm:text-[2.75rem] lg:text-[3rem]';
+      return 'text-[2rem] sm:text-[2.25rem] lg:text-[2.5rem]';
     case 'medium':
     default:
-      return 'text-[1.75rem] sm:text-[1.875rem] lg:text-[2.25rem]';
+      return 'text-[1.375rem] sm:text-[1.5rem] lg:text-[1.75rem]';
   }
 }
 
-/** About · platform — full-width skills section title. */
+/** About · platform — list items (cards' titles, diplomas, interests): between lead and body. */
+export function aboutPlatformItemSizeClass(size: PortfolioInfoPremiumFontSize): string {
+  switch (size) {
+    case 'small':
+      return 'text-lg sm:text-xl';
+    case 'large':
+      return 'text-2xl sm:text-[1.75rem]';
+    case 'xlarge':
+      return 'text-[1.75rem] sm:text-3xl';
+    case 'xxlarge':
+      return 'text-3xl sm:text-4xl';
+    case 'medium':
+    default:
+      return 'text-xl sm:text-2xl';
+  }
+}
+
+/** About · platform — in-page block titles (What I bring, I speak…): below the headline. */
 export function aboutPlatformSkillsTitleSizeClass(size: PortfolioInfoPremiumFontSize): string {
   switch (size) {
     case 'small':
-      return 'text-4xl sm:text-5xl';
+      return 'text-2xl sm:text-3xl';
     case 'large':
-      return 'text-6xl sm:text-7xl lg:text-[5rem]';
+      return 'text-4xl sm:text-5xl lg:text-[3.25rem]';
     case 'xlarge':
-      return 'text-7xl sm:text-8xl lg:text-[5.75rem]';
+      return 'text-5xl sm:text-6xl lg:text-[4rem]';
     case 'xxlarge':
-      return 'text-8xl sm:text-9xl lg:text-[6.5rem]';
+      return 'text-6xl sm:text-7xl lg:text-[4.75rem]';
     case 'medium':
     default:
-      return 'text-5xl sm:text-6xl lg:text-[4.25rem]';
+      return 'text-3xl sm:text-4xl lg:text-[2.5rem]';
   }
 }
 
@@ -1473,7 +1572,7 @@ export function manifestoStatementSecondarySizeClass(size: PortfolioInfoPremiumF
       return 'text-3xl sm:text-4xl';
     case 'medium':
     default:
-      return 'text-lg sm:text-xl';
+      return 'text-lg sm:text-[1.375rem]';
   }
 }
 
@@ -1632,35 +1731,37 @@ export function noirHeadingSizeClass(size: PortfolioInfoPremiumFontSize): string
 
 /** About · noir — bio paragraph size. */
 export function noirBodySizeClass(size: PortfolioInfoPremiumFontSize): string {
+  // One step below the name: the bio supports the name instead of competing with it.
   switch (size) {
     case 'small':
-      return 'text-lg leading-relaxed sm:text-xl md:text-2xl';
+      return 'text-base leading-relaxed sm:text-lg md:text-xl';
     case 'large':
-      return 'text-xl leading-relaxed sm:text-2xl md:text-4xl';
+      return 'text-xl leading-relaxed sm:text-2xl md:text-[1.75rem]';
     case 'xlarge':
-      return 'text-xl leading-relaxed sm:text-2xl md:text-5xl';
+      return 'text-xl leading-relaxed sm:text-2xl md:text-[2.125rem]';
     case 'xxlarge':
-      return 'text-2xl leading-relaxed sm:text-3xl md:text-6xl';
+      return 'text-2xl leading-relaxed sm:text-3xl md:text-[2.5rem]';
     case 'medium':
     default:
-      return 'text-xl leading-relaxed sm:text-2xl md:text-3xl';
+      return 'text-lg leading-relaxed sm:text-xl md:text-2xl';
   }
 }
 
 /** About · noir — massive language acronym size. */
 export function noirLanguageAcronymSizeClass(size: PortfolioInfoPremiumFontSize): string {
+  // A display accent for the language codes — below the name, never the heaviest thing on the page.
   switch (size) {
     case 'small':
-      return 'text-4xl sm:text-5xl';
+      return 'text-2xl sm:text-3xl';
     case 'large':
-      return 'text-5xl sm:text-6xl md:text-7xl';
+      return 'text-4xl sm:text-5xl md:text-[3.25rem]';
     case 'xlarge':
-      return 'text-5xl sm:text-6xl md:text-8xl';
+      return 'text-5xl sm:text-6xl md:text-[4rem]';
     case 'xxlarge':
-      return 'text-6xl sm:text-7xl md:text-9xl';
+      return 'text-6xl sm:text-7xl md:text-[4.75rem]';
     case 'medium':
     default:
-      return 'text-5xl sm:text-6xl';
+      return 'text-3xl sm:text-4xl md:text-[2.5rem]';
   }
 }
 
@@ -1675,6 +1776,35 @@ export function resolveInfoLanguageLevelDisplayStyle(
   }
   return 'stars';
 }
+
+/** Block label tones: a quiet tint of the strong ink (default) or one of the palette tokens. */
+export type PortfolioInfoBlockLabelColor = 'muted' | 'principal' | 'secondaire' | 'texteFort';
+
+export const INFO_BLOCK_LABEL_COLORS = ['muted', 'principal', 'secondaire', 'texteFort'] as const;
+
+export const PORTFOLIO_INFO_BLOCK_LABEL_COLOR_OPTIONS: {
+  value: PortfolioInfoBlockLabelColor;
+  label: string;
+}[] = [
+  { value: 'muted', label: msg('Subtle') },
+  { value: 'principal', label: msg('Principal') },
+  { value: 'secondaire', label: msg('Secondary') },
+  { value: 'texteFort', label: msg('Strong text') },
+];
+
+/** CSS color for a block label tone. Palette tokens go through the `--pf-palette-*` vars so they
+ *  follow the section's light/dark mode; 'muted' keeps each design's own quiet tint. */
+export function infoBlockLabelColor(token: PortfolioInfoBlockLabelColor | undefined, muted: string): string {
+  return !token || token === 'muted' ? muted : infoPaletteTokenColor(token);
+}
+
+/** Swatch shown in the editor for each tone ('muted' previewed as a 62% tint of the strong ink). */
+export function infoBlockLabelSwatchColor(token: PortfolioInfoBlockLabelColor): string {
+  return infoBlockLabelColor(token, 'color-mix(in srgb, var(--pf-palette-texte-fort, #f5f5f5) 62%, transparent)');
+}
+
+/** Designs whose block labels honor `blockLabelColor` — grows as each design is wired. */
+export const INFO_DESIGNS_WITH_BLOCK_LABEL_COLOR: readonly PortfolioInfoDesign[] = ['about-me', 'about-me-trait', 'about-split', 'about-banner', 'about-platform', 'about-portrait-skills', 'about-manifesto', 'about-terminal', 'about-index', 'about-value-steps'];
 
 export const PORTFOLIO_INFO_DESIGN_OPTIONS: {
   value: PortfolioInfoDesign;
@@ -1970,6 +2100,7 @@ export function resolveInfoSectionSubtitle(settings: PortfolioInfoSectionSetting
     settings.design === 'about-terminal' ||
     settings.design === 'about-value-steps' ||
     settings.design === 'about-portrait-skills' ||
+    settings.design === 'about-manifesto' ||
     settings.design === 'about-index'
   ) {
     return hasRealCustomSubtitle ? (custom as string) : '';
@@ -2212,6 +2343,7 @@ export function mergeInfoPresentation(
         base.premiumFontSize ??
         'medium'
     ),
+    blockLabelColor: pick(record.blockLabelColor, INFO_BLOCK_LABEL_COLORS, base.blockLabelColor ?? 'muted'),
     aboutValueBlocksLayout: isPortfolioInfoAboutValueBlocksLayout(record.aboutValueBlocksLayout)
       ? record.aboutValueBlocksLayout
       : base.aboutValueBlocksLayout,

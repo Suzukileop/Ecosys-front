@@ -204,7 +204,7 @@ export function ProfileLanguagesField({
                   type="button"
                   onClick={() => removeLanguage(language.value)}
                   aria-label={t('Remove {value}', { value: language.value })}
-                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                  className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                 >
                   <svg className="h-4 w-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
                     <path d="M6 6l12 12M18 6 6 18" />
@@ -222,7 +222,7 @@ export function ProfileLanguagesField({
                 key={language}
                 type="button"
                 onClick={() => togglePreset(language)}
-                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-medium text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]"
+                className="inline-flex h-9 items-center gap-1.5 rounded-full px-3.5 text-[14px] font-medium text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]"
               >
                 <span aria-hidden className="text-[16px] leading-none text-[color:var(--gn-ink2)]">+</span>
                 {language}

@@ -596,7 +596,7 @@ function TeamFloatChevron({
       onClick={onClick}
       disabled={disabled}
       aria-label={direction === -1 ? t('Previous member') : t('Next member')}
-      className={`group/nav flex h-12 w-12 shrink-0 items-center justify-center rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+      className={`group/nav flex h-12 w-12 shrink-0 items-center justify-center rounded-full border focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
         disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
       }`}
       data-pf-no-color-transition=""
@@ -829,7 +829,7 @@ export function TeamFloatCardsGallery({
                   role="tab"
                   aria-selected={active}
                   onClick={() => setView(option.value)}
-                  className={`${META_CLS} relative pb-2.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-current`}
+                  className={`${META_CLS} relative pb-2.5 focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current`}
                   data-pf-no-color-transition=""
                   style={{
                     color: active ? readable.strong : readable.muted,

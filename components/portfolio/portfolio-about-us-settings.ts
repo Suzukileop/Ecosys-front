@@ -1,4 +1,9 @@
 import type { CSSProperties } from 'react';
+import {
+  isPortfolioListMarkerStyle,
+  PORTFOLIO_LIST_MARKER_STYLE_OPTIONS,
+  type PortfolioListMarkerStyle,
+} from '@/components/portfolio/portfolio-list-marker';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import { portfolioSectionTitleSentenceCase } from '@/components/portfolio/portfolio-section-title';
 import { mergeUseHeroPalette } from '@/components/portfolio/portfolio-section-palette';
@@ -28,7 +33,8 @@ export type PortfolioAboutUsDesign =
   | 'split-founder'
   | 'split-media-left'
   | 'split-card'
-  | 'split-quote';
+  | 'split-quote'
+  | 'editorial';
 export type PortfolioAboutUsContentPlacement = 'left' | 'center' | 'right';
 export type PortfolioAboutUsMediaSide = 'left' | 'right';
 export type PortfolioAboutUsImageFrame = 'layered' | 'slab' | 'duo' | 'ring';
@@ -36,6 +42,66 @@ export type PortfolioAboutUsCardRadius = 'none' | 'sm' | 'md' | 'lg' | 'xl';
 export type PortfolioAboutUsCardShadow = 'none' | 'soft' | 'medium' | 'strong';
 export type PortfolioAboutUsCardBorder = 'none' | 'thin' | 'medium';
 export type PortfolioAboutUsQuoteMedia = 'image' | 'svg';
+
+export const ABOUT_US_EDITORIAL_TITLE_PX_MIN = 32;
+export const ABOUT_US_EDITORIAL_TITLE_PX_MAX = 160;
+/** The size the automatic headline reaches on a wide screen (shown as the slider's starting point). */
+export const ABOUT_US_EDITORIAL_TITLE_AUTO_PX = 80;
+
+/** General → Text size: one scale for every type size in the section's content, whatever the design. */
+export type PortfolioAboutUsTextSize = 'small' | 'medium' | 'large' | 'xlarge';
+
+export const PORTFOLIO_ABOUT_US_TEXT_SIZE_OPTIONS: { value: PortfolioAboutUsTextSize; label: string }[] = [
+  { value: 'small', label: msg('Small') },
+  { value: 'medium', label: msg('Medium') },
+  { value: 'large', label: msg('Large') },
+  { value: 'xlarge', label: msg('Extra Large') },
+];
+
+const ABOUT_US_TEXT_SCALE: Record<PortfolioAboutUsTextSize, number> = {
+  small: 0.85,
+  medium: 1,
+  large: 1.12,
+  xlarge: 1.25,
+};
+
+/** Multiplier behind `--pf-about-scale` (see the .pf-about-scale rule in globals.css). */
+export function aboutUsTextScale(size: PortfolioAboutUsTextSize | undefined): number {
+  return (size && ABOUT_US_TEXT_SCALE[size]) || 1;
+}
+
+/** Bullets offered for the task list: the shared marker vocabulary, trimmed to what suits this section. */
+const ABOUT_US_TASK_BULLET_STYLES: PortfolioListMarkerStyle[] = [
+  'disc', 'dot', 'dash', 'arrow', 'chevron', 'check', 'check-circle', 'bullseye', 'square', 'number', 'roman', 'none',
+];
+export const PORTFOLIO_ABOUT_US_TASK_BULLET_OPTIONS = PORTFOLIO_LIST_MARKER_STYLE_OPTIONS.filter((option) =>
+  ABOUT_US_TASK_BULLET_STYLES.includes(option.value)
+).sort((a, b) => ABOUT_US_TASK_BULLET_STYLES.indexOf(a.value) - ABOUT_US_TASK_BULLET_STYLES.indexOf(b.value));
+
+/** The look of the About us button. `solid` is the filled pill the section always had. */
+export type PortfolioAboutUsCtaStyle = 'solid' | 'link' | 'outline' | 'circle' | 'underline';
+
+export const PORTFOLIO_ABOUT_US_CTA_STYLE_OPTIONS: {
+  value: PortfolioAboutUsCtaStyle;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'solid', label: msg('Solid'), description: msg('Filled pill in the accent colour.') },
+  { value: 'link', label: msg('Arrow link'), description: msg('Text, a fine accent rule and an arrow.') },
+  { value: 'outline', label: msg('Outline'), description: msg('Hairline pill that fills on hover.') },
+  { value: 'circle', label: msg('Round arrow'), description: msg('Label and a small circle with an arrow.') },
+  { value: 'underline', label: msg('Underline'), description: msg('Plain text; an accent line draws across.') },
+];
+
+const ABOUT_US_CTA_STYLES = PORTFOLIO_ABOUT_US_CTA_STYLE_OPTIONS.map((option) => option.value);
+
+/** Saved style, or this design's own default: the overlap design has always led with the arrow link. */
+export function resolveAboutUsCtaStyle(
+  presentation: Pick<PortfolioAboutUsPresentationSettings, 'ctaStyle' | 'design'>
+): PortfolioAboutUsCtaStyle {
+  if (presentation.ctaStyle && ABOUT_US_CTA_STYLES.includes(presentation.ctaStyle)) return presentation.ctaStyle;
+  return presentation.design === 'split-overlap' || presentation.design === 'editorial' ? 'link' : 'solid';
+}
 
 export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSettings & {
   design: PortfolioAboutUsDesign;
@@ -68,6 +134,17 @@ export type PortfolioAboutUsPresentationSettings = PortfolioSectionBackgroundSet
   showTasks: boolean;
   showCta: boolean;
   ctaLabel: string;
+  /** Unset = the design's default (see resolveAboutUsCtaStyle). */
+  ctaStyle?: PortfolioAboutUsCtaStyle;
+  /** Unset = medium. */
+  textSize?: PortfolioAboutUsTextSize;
+  /** Editorial headline only. Unset = follow the section's title colour / palette. */
+  editorialTitleColor?: string;
+  /** Editorial headline only: exact size in px on a desktop screen (it steps down on small screens).
+   *  Unset = the design's automatic responsive size. */
+  editorialTitleSizePx?: number;
+  /** Bullet of the task list. Unset = the design's own (a disc in Classique, an accent check elsewhere). */
+  taskBulletStyle?: PortfolioListMarkerStyle;
   quoteMedia: PortfolioAboutUsQuoteMedia;
   quoteSvgId: AboutUsQuoteSvgId;
   quoteSvgUrls: [string, string, string, string];
@@ -155,6 +232,11 @@ export const PORTFOLIO_ABOUT_US_DESIGN_OPTIONS: {
     label: msg('Split quote'),
     description: msg('Texte et carte citation d’un côté, quatre illustrations SVG de l’autre.'),
   },
+  {
+    value: 'editorial',
+    label: msg('Editorial'),
+    description: msg('Huge headline, a wide photo with the quote, a numbered list set between hairlines.'),
+  },
 ];
 
 function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAboutUsDesign {
@@ -164,7 +246,8 @@ function isPortfolioAboutUsDesign(value: unknown): value is PortfolioAboutUsDesi
     value === 'split-founder' ||
     value === 'split-media-left' ||
     value === 'split-card' ||
-    value === 'split-quote'
+    value === 'split-quote' ||
+    value === 'editorial'
   );
 }
 
@@ -194,9 +277,56 @@ export function aboutUsDesignEmbedsHeader(design: PortfolioAboutUsDesign | undef
     design === 'split-founder' ||
     design === 'split-media-left' ||
     design === 'split-card' ||
-    design === 'split-quote'
+    design === 'split-quote' ||
+    design === 'editorial'
   );
 }
+
+/**
+ * The three "Split" layouts share one structure (copy on one side, visuals on the other) and differ
+ * by how the visuals are treated. The panel presents them as ONE design with a style switch; the
+ * saved `design` value stays the variant's own id, so existing portfolios render unchanged.
+ */
+export type PortfolioAboutUsSplitVariant = 'split-overlap' | 'split-founder' | 'split-media-left';
+
+export const PORTFOLIO_ABOUT_US_SPLIT_VARIANT_OPTIONS: {
+  value: PortfolioAboutUsSplitVariant;
+  label: string;
+  description: string;
+}[] = [
+  { value: 'split-overlap', label: msg('Offset'), description: msg('One large photo, or two set offset.') },
+  { value: 'split-founder', label: msg('Frames'), description: msg('Several framed images, founder under the button.') },
+  { value: 'split-media-left', label: msg('Large photo'), description: msg('One big rounded photo, text and list beside it.') },
+];
+
+export function isAboutUsSplitVariant(
+  design: PortfolioAboutUsDesign | undefined
+): design is PortfolioAboutUsSplitVariant {
+  return design === 'split-overlap' || design === 'split-founder' || design === 'split-media-left';
+}
+
+/** What the design picker lists: the three split variants collapse into a single "Split" entry. */
+export const PORTFOLIO_ABOUT_US_DESIGN_CATALOG: {
+  value: PortfolioAboutUsDesign;
+  label: string;
+  description: string;
+}[] = (() => {
+  const out: { value: PortfolioAboutUsDesign; label: string; description: string }[] = [];
+  let splitAdded = false;
+  for (const option of PORTFOLIO_ABOUT_US_DESIGN_OPTIONS) {
+    if (!isAboutUsSplitVariant(option.value)) {
+      out.push(option);
+    } else if (!splitAdded) {
+      splitAdded = true;
+      out.push({
+        value: 'split-overlap',
+        label: msg('Split'),
+        description: msg('Text on one side, photos on the other. Switch between offset, framed and large-photo styles.'),
+      });
+    }
+  }
+  return out;
+})();
 
 export function aboutUsDesignUsesSplitChrome(design: PortfolioAboutUsDesign | undefined): boolean {
   return aboutUsDesignEmbedsHeader(design);
@@ -264,6 +394,18 @@ export function defaultsForAboutUsDesign(
       cardBorder: 'thin',
       cardBorderColor: '#e5e7eb',
       cardBackgroundColor: '#ffffff',
+    };
+  }
+  if (design === 'editorial') {
+    return {
+      design,
+      mediaSide: 'left',
+      showQuote: true,
+      showFounder: true,
+      showFounderRating: false,
+      showCta: true,
+      ctaLabel: 'Contact',
+      showTasks: true,
     };
   }
   if (design === 'split-quote') {
@@ -356,6 +498,21 @@ export function aboutUsChrome(dark: boolean) {
   };
 }
 
+/** Near-black or near-white, whichever has the higher WCAG contrast on `hex` — the button and
+ *  quote mark sit on the accent, which the owner (or the palette) can make light. */
+export function aboutUsReadableInk(hex: string): string {
+  const match = /^#?([0-9a-f]{6})$/i.exec(hex.trim());
+  if (!match) return '#ffffff';
+  const value = parseInt(match[1], 16);
+  const [r, g, b] = [(value >> 16) & 255, (value >> 8) & 255, value & 255].map((channel) => {
+    const c = channel / 255;
+    return c <= 0.03928 ? c / 12.92 : ((c + 0.055) / 1.055) ** 2.4;
+  });
+  const lum = 0.2126 * r + 0.7152 * g + 0.0722 * b;
+  // White vs #0a0a0a (luminance ~0.003): keep white unless black clearly reads better.
+  return 1.05 / (lum + 0.05) >= (lum + 0.05) / 0.053 ? '#ffffff' : '#0a0a0a';
+}
+
 export function aboutUsCardRadiusClass(radius: PortfolioAboutUsCardRadius | undefined): string {
   if (radius === 'none') return 'rounded-none';
   if (radius === 'sm') return 'rounded-xl';
@@ -369,7 +526,7 @@ export function aboutUsCardShadowClass(
   dark = false
 ): string {
   if (shadow === 'none') return '';
-  if (shadow === 'soft') return dark ? 'shadow-sm shadow-black/40' : 'shadow-sm shadow-black/10';
+  if (shadow === 'soft') return dark ? 'shadow-xs shadow-black/40' : 'shadow-xs shadow-black/10';
   if (shadow === 'strong') {
     return dark
       ? 'shadow-[0_28px_64px_-16px_rgba(0,0,0,0.65)]'
@@ -573,6 +730,28 @@ export function mergeAboutUsPresentation(
     showTasks: typeof record.showTasks === 'boolean' ? record.showTasks : (base.showTasks ?? true),
     showCta: typeof record.showCta === 'boolean' ? record.showCta : (base.showCta ?? false),
     ctaLabel: resolveAboutUsCtaLabel(record.ctaLabel, base.ctaLabel),
+    taskBulletStyle: isPortfolioListMarkerStyle(record.taskBulletStyle)
+      ? record.taskBulletStyle
+      : 'taskBulletStyle' in record
+        ? undefined // explicitly cleared: back to the design's own bullet
+        : base.taskBulletStyle,
+    editorialTitleColor:
+      typeof record.editorialTitleColor === 'string' && /^#([0-9A-Fa-f]{3}|[0-9A-Fa-f]{6})$/.test(record.editorialTitleColor.trim())
+        ? record.editorialTitleColor.trim()
+        : 'editorialTitleColor' in record
+          ? undefined // cleared: back to automatic
+          : base.editorialTitleColor,
+    editorialTitleSizePx:
+      typeof record.editorialTitleSizePx === 'number' && Number.isFinite(record.editorialTitleSizePx)
+        ? Math.min(ABOUT_US_EDITORIAL_TITLE_PX_MAX, Math.max(ABOUT_US_EDITORIAL_TITLE_PX_MIN, Math.round(record.editorialTitleSizePx)))
+        : 'editorialTitleSizePx' in record
+          ? undefined
+          : base.editorialTitleSizePx,
+    textSize: pick(record.textSize, ['small', 'medium', 'large', 'xlarge'] as const, base.textSize ?? 'medium'),
+    ctaStyle:
+      typeof record.ctaStyle === 'string' && (ABOUT_US_CTA_STYLES as string[]).includes(record.ctaStyle)
+        ? (record.ctaStyle as PortfolioAboutUsCtaStyle)
+        : base.ctaStyle,
     quoteMedia: record.quoteMedia === 'image' || record.quoteMedia === 'svg' ? record.quoteMedia : (base.quoteMedia ?? 'svg'),
     quoteSvgId: mergeQuoteSvgId(base.quoteSvgId, record),
     quoteSvgUrls: mergeQuoteSvgUrls(base.quoteSvgUrls, record.quoteSvgUrls),

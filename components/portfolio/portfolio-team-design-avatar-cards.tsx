@@ -276,7 +276,7 @@ function TeamAvatarCard({
         AVATAR_CARDS_SCALE.padding[presentation.cardPadding ?? 'md']
       } ${teamContentAlignClass(
         align
-      )} transition-[transform,box-shadow,border-color] duration-[760ms] ${AVATAR_EASE_CLS} hover:-translate-y-2 hover:![border-color:var(--team-avatar-border-lit)]`}
+      )} transition-[transform,translate,scale,rotate,box-shadow,border-color] duration-[760ms] ${AVATAR_EASE_CLS} hover:-translate-y-2 hover:![border-color:var(--team-avatar-border-lit)]`}
       data-pf-no-color-transition=""
       data-team-reveal=""
       style={{
@@ -303,7 +303,7 @@ function TeamAvatarCard({
             // Sized in percentages of the avatar, so every `Avatar size` step keeps the same halo.
             <span
               aria-hidden
-              className={`pointer-events-none absolute -inset-[30%] block rounded-full opacity-40 blur-2xl transition-[opacity,transform] duration-[1100ms] ${AVATAR_EASE_CLS} group-hover:scale-110 group-hover:opacity-90`}
+              className={`pointer-events-none absolute -inset-[30%] block rounded-full opacity-40 blur-2xl transition-[opacity,transform,translate,scale,rotate] duration-[1100ms] ${AVATAR_EASE_CLS} group-hover:scale-110 group-hover:opacity-90`}
               data-pf-no-color-transition=""
               style={{
                 backgroundImage: `radial-gradient(circle at 50% 50%, ${accent} 0%, color-mix(in srgb, ${accent} 35%, transparent) 46%, transparent 72%)`,
@@ -313,7 +313,7 @@ function TeamAvatarCard({
           <div
             className={`relative h-full w-full overflow-hidden rounded-full ${teamAvatarMorphClass(
               shape
-            )} transition-[border-radius,transform] duration-[980ms] ${AVATAR_EASE_CLS} group-hover:scale-[1.05]`}
+            )} transition-[border-radius,transform,translate,scale,rotate] duration-[980ms] ${AVATAR_EASE_CLS} group-hover:scale-[1.05]`}
             data-pf-no-color-transition=""
             data-team-reveal-media=""
           >
@@ -499,7 +499,7 @@ export function TeamAvatarCards({
                   type="button"
                   onClick={() => setView(option.value)}
                   aria-pressed={selected}
-                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 transition-[background-color,color,opacity] duration-[420ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 transition-[background-color,color,opacity] duration-[420ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
                     selected ? '' : 'opacity-55 hover:opacity-100'
                   }`}
                   data-pf-no-color-transition=""
@@ -527,7 +527,7 @@ export function TeamAvatarCards({
                     onClick={() => stepRail(direction)}
                     disabled={disabled}
                     aria-label={direction === -1 ? t('Previous members') : t('Next members')}
-                    className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+                    className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,translate,scale,rotate,opacity] duration-[520ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
                       disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
                     }`}
                     data-pf-no-color-transition=""

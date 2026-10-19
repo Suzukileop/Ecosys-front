@@ -23,7 +23,7 @@ function AuthHeaderShell({
     >
       <div className="overflow-hidden">
         <header
-          className={`sticky top-0 z-50 border-b border-gray-200 bg-white shadow-sm transition-opacity duration-300 ${
+          className={`sticky top-0 z-50 border-b border-gray-200 bg-white shadow-xs transition-opacity duration-300 ${
             collapsed ? 'opacity-0' : 'opacity-100'
           }`}
         >

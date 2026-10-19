@@ -50,7 +50,7 @@ export function CreatorPhysicalProductGallery({
       <button
         type="button"
         onClick={() => setLightboxOpen(true)}
-        className="group relative block aspect-[16/10] w-full cursor-pointer overflow-hidden bg-[#F7F9F9] focus:outline-none focus-visible:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#16181C] dark:focus-visible:shadow-[inset_0_0_0_2px_#E7E9EA]"
+        className="group relative block aspect-[16/10] w-full cursor-pointer overflow-hidden bg-[#F7F9F9] focus:outline-hidden focus-visible:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#16181C] dark:focus-visible:shadow-[inset_0_0_0_2px_#E7E9EA]"
         aria-label={`Enlarge photo ${activeIndex + 1} of ${title}`}
       >
         <ProductThumbnailMedia
@@ -65,7 +65,7 @@ export function CreatorPhysicalProductGallery({
           </span>
         )}
         {photos.length > 1 && (
-          <span className="absolute bottom-4 right-4 rounded-full bg-black/65 px-2.5 py-0.5 text-[13px] font-semibold text-white tabular-nums backdrop-blur-sm">
+          <span className="absolute bottom-4 right-4 rounded-full bg-black/65 px-2.5 py-0.5 text-[13px] font-semibold text-white tabular-nums backdrop-blur-xs">
             {activeIndex + 1} / {photos.length}
           </span>
         )}
@@ -80,7 +80,7 @@ export function CreatorPhysicalProductGallery({
                 onClick={() => setActive(index)}
                 aria-label={`Show photo ${index + 1}`}
                 aria-current={index === activeIndex}
-                className={`relative block aspect-square w-full cursor-pointer overflow-hidden bg-[#F7F9F9] transition focus:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419] dark:bg-[#16181C] dark:focus-visible:ring-[#E7E9EA] ${
+                className={`relative block aspect-square w-full cursor-pointer overflow-hidden bg-[#F7F9F9] transition focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419] dark:bg-[#16181C] dark:focus-visible:ring-[#E7E9EA] ${
                   index === activeIndex
                     ? 'ring-2 ring-[#0F1419] ring-offset-2 ring-offset-white dark:ring-[#E7E9EA] dark:ring-offset-black'
                     : 'opacity-60 hover:opacity-100'

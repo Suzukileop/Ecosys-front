@@ -1,19 +1,16 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { PortfolioElementStyleFields } from '@/components/portfolio/portfolio-element-style-fields';
 import {
   infoDesignSettingsPatch,
+  portfolioInfoDesignContent,
   portfolioInfoDesignHasPortrait,
   resolveInfoPortraitGrayscale,
   DEFAULT_ABOUT_PLATFORM_HEADLINE,
   DEFAULT_INFO_SUBTITLE,
+  DEFAULT_INFO_PRESENTATION,
   PORTFOLIO_INFO_ABOUT_MANIFESTO_PORTRAIT_FRAME_OPTIONS,
   PORTFOLIO_INFO_ABOUT_SPLIT_PORTRAIT_SIDE_OPTIONS,
   PORTFOLIO_INFO_ABOUT_VALUE_STEPS_VALUES_LAYOUT_OPTIONS,
@@ -26,6 +23,9 @@ import {
   INFO_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   INFO_HEADER_PALETTE_TOKEN_OPTIONS,
   infoHeaderPaletteTokenColor,
+  infoBlockLabelSwatchColor,
+  INFO_DESIGNS_WITH_BLOCK_LABEL_COLOR,
+  PORTFOLIO_INFO_BLOCK_LABEL_COLOR_OPTIONS,
   type PortfolioInfoDesign,
   type PortfolioInfoHeaderDesign,
   type PortfolioInfoSectionSettings,
@@ -43,20 +43,23 @@ import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/port
 import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
 import {
   HeaderBlock,
+  HeaderColorRow,
   HeaderStyleTargetsEditor,
   HeaderTextField,
 } from '@/components/portfolio/portfolio-header-style-controls';
-import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
 import {
-  FieldLabel,
-  PF_TEXT_INPUT,
-  SectionHiddenNotice,
-  SettingsGroup,
-  SettingsSwitchRow,
-  SettingsTabs,
-} from '@/components/portfolio/portfolio-settings-ui';
+  NpBackRow,
+  NpCollapsibleSection,
+  NpOptionCard,
+  NpOptionCardGroup,
+  NpPanelShell,
+  NpPickerRow,
+  NpSegmentedControl,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /** Same general / design / header / background pill-switcher mechanism as the Stack section settings panel.
  *  Header is one shared, GSAP-animated header (copied from the Portfolio/Work section's Header mechanism)
@@ -92,20 +95,17 @@ function InfoTextField({
   placeholder: string;
   onChange: (value: string) => void;
 }) {
-  const rows = useSettingsRows();
   return (
-    <SettingRow label={label} value={String(value ?? '')}>
-    <label className="block">
-      {rows ? null : <FieldLabel>{label}</FieldLabel>}
+    <label className="np-field block">
+      <span className="np-field-label">{label}</span>
       <input
         type="text"
         value={value}
         placeholder={placeholder}
         onChange={(event) => onChange(event.target.value)}
-        className={`mt-2 ${PF_TEXT_INPUT}`}
+        className="np-input"
       />
     </label>
-    </SettingRow>
   );
 }
 
@@ -133,13 +133,11 @@ function InfoPaletteSwatchPicker({
   onChange: (hex: string) => void;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
   const activeHex = value.trim().toLowerCase();
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
-    <div>
-      {rows ? null : <FieldLabel>{label}</FieldLabel>}
-      <div className="mt-2 flex flex-wrap gap-3">
+    <div className="np-field">
+      <p className="np-field-label">{label}</p>
+      <div className="flex flex-wrap gap-3">
         {tokens.map((token) => {
           const hex = resolveHeroPaletteColor(palette, token.value);
           const active = hex.toLowerCase() === activeHex;
@@ -151,21 +149,22 @@ function InfoPaletteSwatchPicker({
               aria-pressed={active}
               aria-label={t(token.label)}
               title={t(token.label)}
-              className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                active ? 'ring-2 ring-[color:var(--pf-palette-texte-fort)] ring-offset-2 ring-offset-[color:var(--pf-palette-fond)]' : 'hover:bg-[color:var(--pf-surface)]'
-              }`}
+              className="group flex min-w-[58px] flex-col items-center gap-1.5"
             >
               <span
-                className="h-9 w-9 rounded-full border border-[color:var(--pf-palette-bordure)] shadow-inner"
-                style={{ backgroundColor: hex }}
+                className="h-8 w-8 rounded-full border-2 shadow-inner transition"
+                style={{
+                  backgroundColor: hex,
+                  borderColor: active ? 'var(--np-accent)' : 'var(--np-border)',
+                  boxShadow: active ? '0 0 0 2px color-mix(in srgb, var(--np-accent) 22%, transparent)' : undefined,
+                }}
               />
-              <span className="text-[11px] font-medium text-[color:var(--pf-palette-texte-muted)]">{t(token.label)}</span>
+              <span className={`text-[11px] font-medium ${active ? 'text-[color:var(--np-text)]' : 'text-[color:var(--np-muted)]'}`}>{t(token.label)}</span>
             </button>
           );
         })}
       </div>
     </div>
-    </SettingRow>
   );
 }
 
@@ -207,85 +206,6 @@ function InfoMiniType({
   );
 }
 
-function InfoPickerCard({
-  active,
-  label,
-  onClick,
-  children,
-  compact,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  children: ReactNode;
-  /** Smaller padding/type for secondary preview-card grids (colors, styles, …). */
-  compact?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      aria-label={label}
-      title={label}
-      data-active={active ? 'true' : 'false'}
-      onClick={onClick}
-      className={`pf-stack-design-card rounded-2xl text-left ${compact ? 'pf-stack-preview-card' : 'px-3 pb-3 pt-2.5'}`}
-    >
-      {active ? (
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-        >
-          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-            <path
-              d="M4 10.5l3.5 3.5L16 6"
-              stroke="white"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      ) : null}
-      {children}
-      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
-        <span
-          className={`pf-stack-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
-        >
-          {label}
-        </span>
-      </span>
-    </button>
-  );
-}
-
-/** Same animated switch + row as the Stack section settings panel's design controls
- *  (StackSwitchTrack/StackToggleRow) — used for boolean settings inside the Design band,
- *  where the plain checkbox Toggle (General tab) would feel out of place. */
-function InfoSwitchTrack({ checked }: { checked: boolean }) {
-  return (
-    <span
-      className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-      style={{
-        backgroundColor: checked
-          ? 'var(--pf-palette-texte-fort, #171717)'
-          : 'color-mix(in srgb, var(--pf-palette-texte-fort, #171717) 22%, var(--pf-palette-fond, #ffffff))',
-      }}
-    >
-      <span
-        className="absolute top-0.5 h-4 w-4 rounded-full transition-[left,background-color] duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
-        style={{
-          left: checked ? '1.125rem' : '0.125rem',
-          backgroundColor: checked
-            ? 'var(--pf-palette-fond, #ffffff)'
-            : 'var(--pf-palette-texte-fort, #171717)',
-        }}
-      />
-    </span>
-  );
-}
-
 /** Small keyboard-accessible "i" tooltip — shows non-obvious info on hover or focus
  *  instead of a permanent line of text under a toggle. Same mechanism as Stack/Contact. */
 function InfoInfoTooltip({ text }: { text: string }) {
@@ -306,7 +226,7 @@ function InfoInfoTooltip({ text }: { text: string }) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--np-muted)] transition hover:text-[color:var(--np-text)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--np-accent)]"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -318,7 +238,7 @@ function InfoInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -342,27 +262,14 @@ function InfoToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full cursor-pointer flex-col gap-1 text-left"
-    >
-      <span className="flex items-center justify-between gap-4">
-        <span className="min-w-0">
-          <span className="flex min-w-0 items-center gap-1.5">
-            <span className="block truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
-            {info ? <InfoInfoTooltip text={info} /> : null}
-          </span>
-          {description ? <span className="mt-1 block text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</span> : null}
-        </span>
-        <InfoSwitchTrack checked={checked} />
-      </span>
-    </button>
+    <NpToggleRow
+      title={label}
+      description={description}
+      checked={checked}
+      onChange={onChange}
+      adornment={info ? <InfoInfoTooltip text={info} /> : undefined}
+    />
   );
 }
 
@@ -374,8 +281,8 @@ function InfoOptionGrid<T extends string>({
   options,
   value,
   onChange,
-  columns,
-  icons,
+  columns: _columns,
+  icons: _icons,
 }: {
   label: string;
   options: { value: T; label: string; description?: string }[];
@@ -385,43 +292,17 @@ function InfoOptionGrid<T extends string>({
   icons?: Partial<Record<string, ReactNode>>;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  const count = options.length;
-  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
-  const compact = cols === count && count >= 2 && count <= 5;
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid gap-[3px] p-[3px]"
-        data-compact={compact ? 'true' : 'false'}
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          const icon = icons?.[String(option.value)];
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.description)}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
-            >
-              {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
-              <span>{t(option.label)}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
+    <NpSegmentedControl
+      label={label}
+      value={value}
+      options={options.map((option) => ({
+        value: option.value,
+        label: t(option.label),
+        title: t(option.description),
+      }))}
+      onChange={onChange}
+    />
   );
 }
 
@@ -623,101 +504,53 @@ function InfoDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
-    <div>
-      <p className="pf-stack-block-label">{label}</p>
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
-        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
-      >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
-          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
-            {children}
-          </span>
+    <NpPickerRow
+      label={label}
+      value={name}
+      onClick={onOpen}
+      thumbnail={
+        <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
+          {children}
         </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
-          <path
-            d="M7.5 4.5l5 5.5-5 5.5"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
+      }
+    />
   );
 }
 
 function InfoDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioInfoDesign;
   onChange: (value: PortfolioInfoDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_INFO_DESIGN_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_INFO_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">{t('Design Info')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_INFO_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
-                key={option.value}
-                cardClassName="pf-stack-design-card"
-                labelClassName="pf-stack-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'info', design: option.value })}
-                settings={previewSource.settings}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_INFO_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <InfoPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <InfoDesignWireframe design={option.value} />
-              </InfoPickerCard>
-            );
-          })}
-        </div>
-        )}
+      <div className="np-stack">
+        <NpBackRow title={t('Info design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+          {PORTFOLIO_INFO_DESIGN_OPTIONS.map((option) => (
+            <NpOptionCard
+              key={option.value}
+              selected={option.value === value}
+              title={t(option.label)}
+              illustration={<InfoDesignWireframe design={option.value} />}
+              onClick={() => {
+                onChange(option.value);
+                setShowGrid(false);
+              }}
+            />
+          ))}
+        </NpOptionCardGroup>
       </div>
     );
   }
@@ -873,36 +706,23 @@ function InfoHeaderDesignChoiceGrid({
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">{t('Header design')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-                <InfoPickerCard
-                  active={active}
-                  label={t(option.label)}
-                  onClick={() => {
-                    onChange(option.value);
-                    setShowGrid(false);
-                  }}
-                >
-                  <InfoHeaderDesignWireframe design={option.value} />
-                </InfoPickerCard>
-              </PortfolioHeaderDesignOption>
-            );
-          })}
-        </div>
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
+          {PORTFOLIO_INFO_HEADER_DESIGN_OPTIONS.map((option) => (
+            <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+              <NpOptionCard
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<InfoHeaderDesignWireframe design={option.value} />}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            </PortfolioHeaderDesignOption>
+          ))}
+        </NpOptionCardGroup>
       </div>
     );
   }
@@ -915,26 +735,21 @@ function InfoHeaderDesignChoiceGrid({
 }
 
 function InfoLayoutSettingsBand({
-  flush = false,
   children,
   motionKey,
-  title = 'Design settings',
+  title,
 }: {
   children: ReactNode;
   motionKey: string;
   title?: string;
-  /** Drops the boxed frame so the fields use the dock's full width. */
-  flush?: boolean;
 }) {
+  const t = useT();
   return (
-    <section className={`pf-stack-layout-settings${flush ? ' pf-stack-layout-settings--flush' : ''}`} aria-labelledby="info-layout-settings-title">
-      <h3 id="info-layout-settings-title" className="pf-stack-layout-settings-title">
-        {title}
-      </h3>
-      <div key={motionKey} className={`pf-stack-layout-settings-body ${flush ? 'space-y-9' : 'space-y-6'}`}>
+    <NpCollapsibleSection title={title ?? t('Design settings')}>
+      <div key={motionKey} className="np-stack">
         {children}
       </div>
-    </section>
+    </NpCollapsibleSection>
   );
 }
 
@@ -1070,147 +885,209 @@ function InfoHeaderDesignFields({
   );
 }
 
+const DEFAULT_INFO_SECTION_SETTINGS: PortfolioInfoSectionSettings = {
+  enabled: true,
+  title: 'About me',
+  subtitle: 'Background, education and how I work.',
+  ...DEFAULT_INFO_PRESENTATION,
+};
+
+function infoSettingsModified(info: PortfolioInfoSectionSettings) {
+  const keys = Object.keys({ ...DEFAULT_INFO_SECTION_SETTINGS, ...info }) as (
+    keyof PortfolioInfoSectionSettings
+  )[];
+  return keys.some((key) => {
+    const current = info[key] === undefined ? DEFAULT_INFO_SECTION_SETTINGS[key] : info[key];
+    return JSON.stringify(current) !== JSON.stringify(DEFAULT_INFO_SECTION_SETTINGS[key]);
+  });
+}
+
+function InfoHiddenNotice({ onEnable }: { onEnable: () => void }) {
+  const t = useT();
+  return (
+    <div className="np-toggle-card flex-col !items-stretch gap-4">
+      <div>
+        <p className="np-card-title">{t('Info section is hidden')}</p>
+        <p className="np-subtle mt-1">{t('Enable it to edit this tab and show it in the portfolio.')}</p>
+      </div>
+      <button type="button" className="np-primary-btn" onClick={onEnable}>
+        {t('Show Info section')}
+      </button>
+    </div>
+  );
+}
+
 export function InfoSettingsPanel({
   info,
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
   heroPalette,
+  chrome,
 }: {
   info: PortfolioInfoSectionSettings;
   onChange: (patch: Partial<PortfolioInfoSectionSettings>) => void;
   subSection?: InfoSubSection;
   onSubSectionChange?: (value: InfoSubSection) => void;
   heroPalette?: PortfolioHeroPalette;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [uncontrolled, setUncontrolled] = useState<InfoSubSection>('general');
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const subSection = normalizeInfoSubSection(controlledSubSection ?? uncontrolled);
+  const design = info.design ?? 'about-me';
+  const designContent = portfolioInfoDesignContent(design);
   const setSubSection = (value: InfoSubSection) => {
     const next = normalizeInfoSubSection(value);
     onSubSectionChange?.(next);
     if (controlledSubSection == null) setUncontrolled(next);
   };
+  const modified = infoSettingsModified(info);
 
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={INFO_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell
+      title={t('Info')}
+      modified={modified}
+      tabs={INFO_SUB_SECTIONS.map((item) => ({ ...item, label: t(item.label) }))}
+      activeTab={subSection}
+      onTabChange={setSubSection}
+      onReset={() => onChange({ ...DEFAULT_INFO_SECTION_SETTINGS })}
+      chrome={chrome}
+    >
 
       {subSection === 'general' ? (
-        <div>
-          <SettingsSwitchRow
-            label={t('Show Info section')}
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={t('Show Info section')}
             description={info.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={info.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          {info.enabled ? (
-            <>
-              <SettingsGroup label={t('Education & interests')}>
-                <div className="space-y-3">
-                <InfoToggleRow
-                  label={t('Education')}
+          <div
+            className="np-dimmable"
+            data-disabled={info.enabled ? 'false' : 'true'}
+            aria-disabled={!info.enabled}
+            inert={!info.enabled}
+          >
+              {/* Section-wide, shared by every design — so they live with the other section switches. */}
+              <SectionColorModeControl
+                label={t('Color mode')}
+                value={info.colorModeOverride}
+                onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+              />
+              <InfoOptionGrid
+                label={t('Text size')}
+                value={info.premiumFontSize ?? 'medium'}
+                options={PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS}
+                onChange={(premiumFontSize) => onChange({ premiumFontSize })}
+                columns={3}
+              />
+              {INFO_DESIGNS_WITH_BLOCK_LABEL_COLOR.includes(design) ? (
+                <HeaderColorRow
+                  label={t('Block label color')}
+                  value={info.blockLabelColor ?? 'muted'}
+                  options={PORTFOLIO_INFO_BLOCK_LABEL_COLOR_OPTIONS.map((option) => ({
+                    ...option,
+                    label: t(option.label),
+                  }))}
+                  resolveColor={infoBlockLabelSwatchColor}
+                  onChange={(blockLabelColor) => onChange({ blockLabelColor })}
+                />
+              ) : null}
+              {/* Each design draws its own set of blocks: only the switches it honours are offered. */}
+              <NpCollapsibleSection title={t('Education & interests')}>
+                <NpToggleRow
+                  title={t('Education')}
                   checked={
-                    (info.design ?? 'about-me') === 'about-value-steps' ||
-                    (info.design ?? 'about-me') === 'about-manifesto'
+                    design === 'about-value-steps' || design === 'about-manifesto'
                       ? info.showEducation === true
                       : info.showEducation !== false
                   }
                   onChange={(showEducation) => onChange({ showEducation })}
                 />
-                {(info.design ?? 'about-me') === 'about-portrait-skills' ? (
-                  <InfoToggleRow
-                    label={t('Interests + languages')}
+                {design === 'about-portrait-skills' ? (
+                  <NpToggleRow
+                    title={t('Interests + languages')}
                     checked={info.aboutPortraitSkillsMetaEnabled !== false}
                     onChange={(aboutPortraitSkillsMetaEnabled) =>
                       onChange({ aboutPortraitSkillsMetaEnabled })
                     }
                   />
-                ) : (
-                  <InfoToggleRow
-                    label={t('Interests')}
+                ) : designContent.interests ? (
+                  <NpToggleRow
+                    title={t('Interests')}
                     checked={info.showInterests !== false}
                     onChange={(showInterests) => onChange({ showInterests })}
                   />
-                )}
-              </div>
-              </SettingsGroup>
-              <SettingsGroup label={t('Skills & tools')}>
-                <div className="space-y-3">
-                <InfoToggleRow
-                  label={t('Skills')}
+                ) : null}
+              </NpCollapsibleSection>
+              <NpCollapsibleSection title={t('Skills & tools')}>
+                <NpToggleRow
+                  title={t('Skills')}
                   checked={info.showSkills !== false}
                   onChange={(showSkills) => onChange({ showSkills })}
                 />
-                <InfoToggleRow
-                  label={t('Strengths')}
+                <NpToggleRow
+                  title={t('Strengths')}
                   checked={info.showStrengths !== false}
                   onChange={(showStrengths) => onChange({ showStrengths })}
                 />
-                {(info.design ?? 'about-me') !== 'about-portrait-skills' ? (
-                  <>
-                    <InfoToggleRow
-                      label={t('Languages')}
-                      checked={
-                        (info.design ?? 'about-me') === 'about-value-steps'
-                          ? info.showLanguages === true
-                          : info.showLanguages !== false
-                      }
-                      onChange={(showLanguages) => onChange({ showLanguages })}
-                    />
-                    <InfoToggleRow
-                      label={t('Systems & tools')}
-                      checked={
-                        (info.design ?? 'about-me') === 'about-value-steps'
-                          ? info.showSystemsTools === true
-                          : info.showSystemsTools !== false
-                      }
-                      onChange={(showSystemsTools) => onChange({ showSystemsTools })}
-                    />
-                  </>
+                {designContent.languages && design !== 'about-portrait-skills' ? (
+                  <NpToggleRow
+                    title={t('Languages')}
+                    checked={
+                      design === 'about-value-steps'
+                        ? info.showLanguages === true
+                        : info.showLanguages !== false
+                    }
+                    onChange={(showLanguages) => onChange({ showLanguages })}
+                  />
                 ) : null}
-              </div>
-              </SettingsGroup>
-            </>
-          ) : null}
+                {designContent.systemsTools ? (
+                  <NpToggleRow
+                    title={t('Systems & tools')}
+                    checked={
+                      design === 'about-value-steps'
+                        ? info.showSystemsTools === true
+                        : info.showSystemsTools !== false
+                    }
+                    onChange={(showSystemsTools) => onChange({ showSystemsTools })}
+                  />
+                ) : null}
+              </NpCollapsibleSection>
+          </div>
         </div>
       ) : null}
 
-      {subSection !== 'general' && !info.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection !== 'general' && !info.enabled ? <InfoHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
 
       {subSection === 'design' && info.enabled ? (
-        <div className="space-y-6">
+        designCatalogOpen ? (
           <InfoDesignChoiceGrid
             value={info.design ?? 'about-me'}
             onChange={(design) => onChange(infoDesignSettingsPatch(design))}
+            open
+            onOpenChange={setDesignCatalogOpen}
           />
-
-          <SettingsGroup label={t('Style')}>
-            <SectionColorModeControl
-              label={t('Color mode')}
-              value={info.colorModeOverride}
-              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+        ) : (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Presentation')}>
+            <InfoDesignChoiceGrid
+              value={info.design ?? 'about-me'}
+              onChange={(design) => onChange(infoDesignSettingsPatch(design))}
+              open={false}
+              onOpenChange={setDesignCatalogOpen}
             />
-            <InfoOptionGrid
-              label={t('Text size')}
-              value={info.premiumFontSize ?? 'medium'}
-              options={PORTFOLIO_INFO_PREMIUM_FONT_SIZE_OPTIONS}
-              onChange={(premiumFontSize) => onChange({ premiumFontSize })}
-              columns={3}
-            />
-          </SettingsGroup>
 
-          <InfoLayoutSettingsBand motionKey={info.design ?? 'about-me'}>
-<SettingsRowsScope title={t('Layout options')}>
-          {(info.design ?? 'about-me') !== 'about-manifesto' ? (
-            <InfoToggleRow
-              label={t('Language flags')}
-              checked={info.showLanguageFlags !== false}
-              onChange={(showLanguageFlags) => onChange({ showLanguageFlags })}
-            />
-          ) : null}
+          </NpCollapsibleSection>
 
+          {/* About me and Index have no options of their own (no design draws language flags, so that
+              switch is gone): no empty band. */}
+          {design === 'about-me' || design === 'about-index' ? null : (
+          <InfoLayoutSettingsBand motionKey={design}>
           {portfolioInfoDesignHasPortrait(info.design) ? (
             <InfoToggleRow
               label={t('Black & white portrait')}
@@ -1267,7 +1144,7 @@ export function InfoSettingsPanel({
                 onChange={(aboutSplitLabelsMode) => onChange({ aboutSplitLabelsMode })}
               />
               {info.aboutSplitLabelsMode === 'custom' ? (
-                <div className="mt-3 grid gap-2 sm:grid-cols-3">
+                <div className="mt-3 grid gap-3 sm:grid-cols-3">
                   <InfoTextField
                     label={t('Skills')}
                     value={info.aboutSplitCustomSkillsLabel ?? ''}
@@ -1298,11 +1175,9 @@ export function InfoSettingsPanel({
           ) : null}
 
           {(info.design ?? 'about-me') === 'about-platform' ? (
-            <div className="space-y-4">
-              <div>
-                <p className="text-xs font-bold uppercase tracking-[0.16em] text-[color:var(--pf-palette-texte-muted)]">
-                  {t('Main title (left)')}
-                </p>
+            <div className="np-stack">
+              <label className="np-field block">
+                <span className="np-field-label">{t('Main title (left)')}</span>
                 <textarea
                   value={info.aboutPlatformHeadlineCustomText ?? ''}
                   placeholder={DEFAULT_ABOUT_PLATFORM_HEADLINE}
@@ -1310,24 +1185,24 @@ export function InfoSettingsPanel({
                     onChange({ aboutPlatformHeadlineCustomText: event.target.value })
                   }
                   rows={3}
-                  className={`mt-2 ${PF_TEXT_INPUT}`}
+                  className="np-input min-h-24 resize-y"
                 />
-              </div>
+              </label>
             </div>
           ) : null}
 
           {(info.design ?? 'about-me') === 'about-manifesto' ? (
-            <div className="space-y-4">
-              <div>
-                <FieldLabel>{t('Statement text')}</FieldLabel>
+            <div className="np-stack">
+              <label className="np-field block">
+                <span className="np-field-label">{t('Statement text')}</span>
                 <textarea
                   value={info.subtitle}
                   placeholder={DEFAULT_INFO_SUBTITLE}
                   onChange={(event) => onChange({ subtitle: event.target.value })}
                   rows={3}
-                  className={`mt-2 ${PF_TEXT_INPUT}`}
+                  className="np-input min-h-24 resize-y"
                 />
-              </div>
+              </label>
 
               <InfoToggleRow
                 label={t('Customize statement typography')}
@@ -1382,7 +1257,7 @@ export function InfoSettingsPanel({
           ) : null}
 
           {(info.design ?? 'about-me') === 'about-value-steps' ? (
-            <div className="space-y-4">
+            <div className="np-stack">
               <InfoToggleRow
                 label={t('Show intro')}
                 checked={info.aboutValueStepsIntroEnabled !== false}
@@ -1390,8 +1265,8 @@ export function InfoSettingsPanel({
                   onChange({ aboutValueStepsIntroEnabled })
                 }
               />
-              <div>
-                <FieldLabel>{t('Intro text')}</FieldLabel>
+              <label className="np-field block">
+                <span className="np-field-label">{t('Intro text')}</span>
                 <textarea
                   value={[info.aboutValueStepsIntroParagraph1, info.aboutValueStepsIntroParagraph2]
                     .filter(Boolean)
@@ -1408,14 +1283,14 @@ export function InfoSettingsPanel({
                     });
                   }}
                   rows={6}
-                  className={`mt-2 resize-y leading-relaxed ${PF_TEXT_INPUT}`}
+                  className="np-input min-h-36 resize-y leading-relaxed"
                 />
-              </div>
+              </label>
             </div>
           ) : null}
 
             {(info.design ?? 'about-me') === 'about-me-trait' ? (
-              <div className="space-y-3">
+              <div className="np-stack">
                 <InfoToggleRow
                   label={t('Show large headline')}
                   checked={info.aboutMeTraitHeadlineEnabled !== false}
@@ -1423,20 +1298,23 @@ export function InfoSettingsPanel({
                     onChange({ aboutMeTraitHeadlineEnabled })
                   }
                 />
-                <textarea
-                  value={info.aboutMeTraitHeadlineCustomText ?? ''}
-                  placeholder={t('Turning Hard\nProblems Into\nSimple Software')}
-                  onChange={(event) =>
-                    onChange({ aboutMeTraitHeadlineCustomText: event.target.value })
-                  }
-                  rows={4}
-                  className={`resize-y leading-relaxed ${PF_TEXT_INPUT}`}
-                />
+                <label className="np-field block">
+                  <span className="np-field-label">{t('Headline text')}</span>
+                  <textarea
+                    value={info.aboutMeTraitHeadlineCustomText ?? ''}
+                    placeholder={t('Turning Hard\nProblems Into\nSimple Software')}
+                    onChange={(event) =>
+                      onChange({ aboutMeTraitHeadlineCustomText: event.target.value })
+                    }
+                    rows={4}
+                    className="np-input min-h-28 resize-y leading-relaxed"
+                  />
+                </label>
               </div>
             ) : null}
 
             {(info.design ?? 'about-me') === 'about-me-trait' && info.showEducation !== false ? (
-              <div className="space-y-4">
+              <div className="np-stack">
                 <InfoOptionGrid
                   label={t('Education design')}
                   value={info.educationDisplayStyle ?? 'editorial'}
@@ -1454,31 +1332,40 @@ export function InfoSettingsPanel({
                 ) : null}
               </div>
             ) : null}
-          </SettingsRowsScope>
 </InfoLayoutSettingsBand>
+          )}
         </div>
+        )
       ) : null}
 
       {subSection === 'header' && info.enabled ? (
-        <div className="space-y-6">
+        headerCatalogOpen ? (
           <InfoHeaderDesignChoiceGrid
             value={info.headerDesign ?? 'editorial'}
             onChange={(headerDesign) => onChange({ headerDesign })}
-            open={headerCatalogOpen}
+            open
             onOpenChange={setHeaderCatalogOpen}
           />
-
-          {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
-          {headerCatalogOpen ? null : (
-            <InfoLayoutSettingsBand motionKey={info.headerDesign ?? 'editorial'} title={t('Header settings')} flush>
+        ) : (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Header design')}>
+            <InfoHeaderDesignChoiceGrid
+              value={info.headerDesign ?? 'editorial'}
+              onChange={(headerDesign) => onChange({ headerDesign })}
+              open={false}
+              onOpenChange={setHeaderCatalogOpen}
+            />
+          </NpCollapsibleSection>
+            <InfoLayoutSettingsBand motionKey={info.headerDesign ?? 'editorial'} title={t('Header settings')}>
               <InfoHeaderDesignFields info={info} onChange={onChange} />
             </InfoLayoutSettingsBand>
-          )}
         </div>
+        )
       ) : null}
 
       {subSection === 'background' && info.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={info}
             onChange={(patch) => onChange(patch)}
@@ -1492,8 +1379,9 @@ export function InfoSettingsPanel({
               />
             )}
           />
+          </NpCollapsibleSection>
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

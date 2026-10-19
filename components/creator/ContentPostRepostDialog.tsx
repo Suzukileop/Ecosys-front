@@ -79,7 +79,7 @@ export function ContentPostRepostDialog({
           rows={2}
           autoFocus
           placeholder={t('Add your thoughts (optional)')}
-          className="block w-full resize-none bg-transparent py-1 text-[17px] leading-6 text-[#0F1419] caret-current outline-none placeholder:text-[#536471] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
+          className="block w-full resize-none bg-transparent py-1 text-[17px] leading-6 text-[#0F1419] caret-current outline-hidden placeholder:text-[#536471] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B]"
         />
 
         <div className="mt-3 flex gap-3 overflow-hidden rounded-2xl border border-[#CFD9DE] p-3 dark:border-[#2F3336]">

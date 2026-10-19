@@ -6,10 +6,7 @@ import { formatPhoneDisplay } from '@/lib/phone';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import {
   portfolioEditorialGutterX,
   DEFAULT_CONTENT_GUTTER,
@@ -109,7 +106,7 @@ function SplitFormField({
   }, [elevated, focused, ink, muted]);
 
   const sharedClassName =
-    'w-full origin-left border-0 border-b bg-transparent pb-2.5 pt-6 text-base outline-none transition placeholder:text-transparent focus:outline-none focus:ring-0';
+    'w-full origin-left border-0 border-b bg-transparent pb-2.5 pt-6 text-base outline-hidden transition placeholder:text-transparent focus:outline-hidden focus:ring-0';
 
   return (
     <div className="relative" data-pf-no-color-transition="">
@@ -226,7 +223,7 @@ function SplitFormSelect({
         aria-haspopup="listbox"
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className="flex w-full items-center justify-between border-0 border-b bg-transparent pb-2.5 pt-6 text-left text-base outline-none"
+        className="flex w-full items-center justify-between border-0 border-b bg-transparent pb-2.5 pt-6 text-left text-base outline-hidden"
         style={{ color: ink, borderColor: hairline, transition: MODE_TRANSITION }}
         data-pf-no-color-transition=""
       >
@@ -458,14 +455,14 @@ export function FooterDesignSplitForm({
       className="relative left-1/2 isolate w-screen -translate-x-1/2 overflow-hidden"
       style={{ ...backgroundStyle, transition: MODE_TRANSITION, '--pf-footer-font-scale': fontSizeScale } as CSSProperties}
     >
-      <div className={`relative z-[1] flex w-full flex-col py-20 sm:py-24 lg:py-28 ${portfolioEditorialGutterX(contentGutter)}`}>
-        <div className="grid grid-cols-1 gap-y-16 lg:grid-cols-2 lg:gap-x-16 xl:gap-x-24">
+      <div className={`relative z-[1] flex w-full flex-col py-16 sm:py-20 lg:py-24 ${portfolioEditorialGutterX(contentGutter)}`}>
+        <div className="grid grid-cols-1 gap-y-12 lg:grid-cols-2 lg:gap-x-16 xl:gap-x-24">
           {/* Left column — identity & info. Reordered after the form on mobile (order-2)
               per the "headline + form first" conversion rule, restored to the true left
               column at lg. */}
           <div className="order-2 flex min-w-0 flex-col lg:order-1">
             {showPortrait ? (
-              <div className="relative aspect-[4/5] w-full max-w-sm overflow-hidden" data-pf-no-color-transition="">
+              <div className="relative aspect-[4/5] w-full max-w-[16rem] overflow-hidden lg:max-w-[18rem]" data-pf-no-color-transition="">
                 {avatarUrl ? (
                   <img
                     src={avatarUrl}
@@ -512,9 +509,9 @@ export function FooterDesignSplitForm({
               </div>
             ) : null}
 
-            {/* Immense breathing gap — the whole point of purifying this column down to
-                photo + name + contact. */}
-            <div className={showPortrait || showName ? 'mt-20 sm:mt-28 lg:mt-36' : ''}>
+            {/* A generous breathing gap — the column is only photo + name + contact — kept in
+                proportion so the footer doesn't run past a screen and a half. */}
+            <div className={showPortrait || showName ? 'mt-12 sm:mt-16 lg:mt-24' : ''}>
               {contactHeading ? (
                 <p
                   className="mb-3 font-light uppercase tracking-[0.12em]"
@@ -658,11 +655,11 @@ export function FooterDesignSplitForm({
         </div>
 
         <div
-          className="order-3 mt-20 h-px w-full lg:mt-28"
+          className="order-3 mt-14 h-px w-full lg:mt-20"
           style={{ backgroundColor: hairline, transition: MODE_TRANSITION }}
         />
 
-        <div className="order-3 mt-14 grid grid-cols-1 gap-12 sm:grid-cols-2 lg:mt-16">
+        <div className="order-3 mt-10 grid grid-cols-1 gap-10 sm:grid-cols-2 lg:mt-12">
           <div>
             {navHeading ? (
               <p

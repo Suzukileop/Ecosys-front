@@ -53,7 +53,7 @@ const PUBLIC_INFO_SECTION_DOM_ID: Record<PublicInfoNavId, string> = {
 };
 
 const NAV_BUTTON_BASE =
-  'flex items-center gap-3 px-3 text-left text-[15px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/15 dark:focus-visible:ring-white/25';
+  'flex items-center gap-3 px-3 text-left text-[15px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/15 dark:focus-visible:ring-white/25';
 /* Black & white selection, as the News rail: the active row is bold ink, never a colour. */
 const NAV_BUTTON_ACTIVE = 'font-bold text-[#0F1419] dark:text-[#E7E9EA]';
 const NAV_BUTTON_INACTIVE =

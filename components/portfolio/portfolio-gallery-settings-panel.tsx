@@ -1,11 +1,9 @@
 'use client';
 
 import { useState, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
+import { usePortfolioDesignPreviewSource } from '@/components/portfolio/PortfolioDesignLivePreview';
+import { MediaImage } from '@/components/ui/MediaImage';
+import type { ProfileGalleryItem } from '@/types/profile';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -21,6 +19,7 @@ import {
   patchGalleryColorBinding,
 } from '@/components/portfolio/portfolio-gallery-palette-settings';
 import {
+  DEFAULT_GALLERY_PRESENTATION,
   galleryDesignUsesCarouselNav,
   galleryDesignUsesCaptionCardWidth,
   PORTFOLIO_GALLERY_DESIGN_OPTIONS,
@@ -48,7 +47,7 @@ import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -139,40 +138,6 @@ function GalleryToggleRow({
         <GallerySwitchTrack checked={checked} />
       </span>
     </button>
-  );
-}
-
-/** One-per-line visibility row (hairline divider), same pattern as the Footer's General tab. */
-function GalleryVisibilityRow({
-  label,
-  checked,
-  onChange,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
-  return (
-    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--pf-palette-bordure)] py-3.5 last:border-b-0">
-      <span
-        className="min-w-0 flex-1 cursor-pointer truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]"
-        onClick={() => onChange(!checked)}
-      >
-        {label}
-      </span>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className="shrink-0"
-      >
-        <GallerySwitchTrack checked={checked} />
-      </button>
-    </div>
   );
 }
 
@@ -335,7 +300,7 @@ function GalleryBackgroundColorField({
         onChange={(event) =>
           onChange(patchGalleryColorBinding(gallery, 'sectionBackground', event.target.value as HeroPaletteTokenId))
         }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-hidden"
         aria-label={t('{label} palette token', { label })}
       >
         {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
@@ -355,7 +320,7 @@ function GalleryBackgroundColorField({
 
 /** Expanded-grid card: wireframe + name only, no description paragraph (Settings design
  *  standard, text-reduction rule). See `.pf-gallery-design-card` in globals.css. */
-function GalleryPickerCard({
+function _GalleryPickerCard({
   active,
   label,
   onClick,
@@ -385,7 +350,7 @@ function GalleryPickerCard({
 }
 
 /** Collapsed-state row: a compact thumbnail, the selected design's name, a trailing chevron. */
-function GalleryDesignSummaryRow({
+function _GalleryDesignSummaryRow({
   label,
   name,
   onOpen,
@@ -396,14 +361,13 @@ function GalleryDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
     <div>
       <GallerySectionLabel>{label}</GallerySectionLabel>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        aria-label={`Change ${label.toLowerCase()}`}
         className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
@@ -439,6 +403,21 @@ function GalleryMiniStage({ children }: { children: ReactNode }) {
  *  (the thumbnail convention the Footer/Work/Services pickers already follow). */
 function GalleryDesignWireframe({ design }: { design: PortfolioGalleryDesign }) {
   switch (design) {
+    case 'contact-sheet':
+      return <GalleryMiniStage>{[8, 43, 78].flatMap((x) => [10, 39].map((y) => <g key={`${x}-${y}`}>
+        <rect className="pf-stack-mini-ink" x={x} y={y} width="30" height="21" rx="1" />
+        <rect className="pf-stack-mini-mute" x={x} y={y + 24} width="19" height="2" />
+      </g>))}</GalleryMiniStage>;
+    case 'visual-index':
+      return <GalleryMiniStage>
+        <rect className="pf-stack-mini-ink" x="8" y="10" width="67" height="45" rx="1" />
+        <rect className="pf-stack-mini-mute" x="8" y="59" width="40" height="3" />
+        {[10, 28, 46].map((y) => <g key={y}>
+          <rect className="pf-stack-mini-mute" x="82" y={y} width="14" height="12" rx="1" />
+          <rect className="pf-stack-mini-ink" x="100" y={y + 3} width="12" height="2" />
+          <rect className="pf-stack-mini-mute" x="100" y={y + 8} width="9" height="2" />
+        </g>)}
+      </GalleryMiniStage>;
     case 'framed-grid':
       return (
         <GalleryMiniStage>
@@ -536,65 +515,30 @@ function GalleryDesignChoiceGrid({
   const selected =
     PORTFOLIO_GALLERY_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_GALLERY_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
-
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <GallerySectionLabel>{t('Section design')}</GallerySectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
-                key={option.value}
-                cardClassName="pf-gallery-design-card"
-                labelClassName="pf-gallery-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'gallery', design: option.value })}
-                settings={previewSource.settings}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Gallery design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
           {PORTFOLIO_GALLERY_DESIGN_OPTIONS.map((option) => (
-            <GalleryPickerCard
+            <NpOptionCard
               key={option.value}
-              active={option.value === value}
-              label={t(option.label)}
+              selected={option.value === value}
+              title={t(option.label)}
+              illustration={<GalleryDesignWireframe design={option.value} />}
               onClick={() => {
                 onChange(option.value);
                 setShowGrid(false);
               }}
-            >
-              <GalleryDesignWireframe design={option.value} />
-            </GalleryPickerCard>
+            />
           ))}
-        </div>
-        )}
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <GalleryDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <GalleryDesignWireframe design={value} />
-    </GalleryDesignSummaryRow>
+    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<GalleryDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -714,41 +658,29 @@ function GalleryHeaderDesignGrid({
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <GallerySectionLabel>{t('Header design')}</GallerySectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
           {PORTFOLIO_GALLERY_HEADER_DESIGN_OPTIONS.map((option) => (
             <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-              <GalleryPickerCard
-                active={option.value === value}
-                label={t(option.label)}
+              <NpOptionCard
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<GalleryHeaderWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
-              >
-                <GalleryHeaderWireframe design={option.value} />
-              </GalleryPickerCard>
+              />
             </PortfolioHeaderDesignOption>
           ))}
-        </div>
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <GalleryDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <GalleryHeaderWireframe design={value} />
-    </GalleryDesignSummaryRow>
+    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<GalleryHeaderWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -843,9 +775,19 @@ function GalleryLayoutSettingsBand({
   const isCaptionCarousel = gallery.design === 'caption-carousel';
   const hasComposition = usesCardWidth;
   const hasNavigation = usesCarouselNav || isCaptionCarousel;
+  // Caption cards drive their chevrons from "Carousel controls" alone — a second arrows switch
+  // that could never hide them on its own would only contradict it.
+  const showArrowsSwitch = usesCarouselNav && !isCaptionCarousel;
   const isHeroMosaic = gallery.design === 'hero-mosaic';
   const isFramedGrid = gallery.design === 'framed-grid';
   const isFloatingCanvas = gallery.design === 'floating-canvas';
+
+  if (gallery.design === 'visual-index') {
+    return <GallerySettingsBand id="gallery-layout-settings-title" title={t('Layout settings')} motionKey={gallery.design}>
+      <NpToggleRow title={t('Smart thumbnail fit')} description={t('Fit every thumbnail to the main image height on desktop, without scrolling.')}
+        checked={gallery.visualIndexSmartFit !== false} onChange={(visualIndexSmartFit) => onChange({ visualIndexSmartFit })} />
+    </GallerySettingsBand>;
+  }
 
   if (!hasComposition && !hasNavigation && !isHeroMosaic && !isFramedGrid && !isFloatingCanvas) {
     return (
@@ -953,7 +895,7 @@ function GalleryLayoutSettingsBand({
 
       {hasNavigation ? (
         <GalleryBandGroup title={t('Navigation')}>
-          {usesCarouselNav ? (
+          {showArrowsSwitch ? (
             <div className="space-y-1.5">
               <GalleryToggleRow
                 label={t('Navigation arrows')}
@@ -993,16 +935,58 @@ function GalleryLayoutSettingsBand({
 
 /* ---------------------------------------------------------------------- */
 
+function GalleryMediaOrder({ gallery, onChange }: { gallery: PortfolioGallerySectionSettings; onChange: GalleryPatch }) {
+  const t = useT();
+  const source = usePortfolioDesignPreviewSource();
+  const ranks = new Map((gallery.mediaOrder ?? []).map((id, index) => [id, index]));
+  const items = [...(source?.availableGallery ?? [])].sort((a, b) =>
+    (ranks.get(a.id) ?? Infinity) - (ranks.get(b.id) ?? Infinity) || a.sortOrder - b.sortOrder);
+  const move = (from: number, to: number) => {
+    if (from < 0 || to < 0 || from >= items.length || to >= items.length || from === to) return;
+    const next = [...items];
+    const [item] = next.splice(from, 1);
+    next.splice(to, 0, item);
+    onChange({ mediaOrder: next.map((media) => media.id) });
+  };
+  if (items.length < 2) return null;
+  return (
+    <NpCollapsibleSection title={t('Media order')}>
+      <p className="text-xs leading-relaxed text-[color:var(--np-muted)]">{t('Drag photos or use the arrows to change their order.')}</p>
+      <ol className="m-0 flex list-none flex-col gap-2 p-0">
+        {items.map((item: ProfileGalleryItem, index) => (
+          <li key={item.id} draggable
+            onDragStart={(event) => { event.dataTransfer.setData('application/x-gallery-media', item.id); event.dataTransfer.effectAllowed = 'move'; }}
+            onDragOver={(event) => { if (event.dataTransfer.types.includes('application/x-gallery-media')) event.preventDefault(); }}
+            onDrop={(event) => { event.preventDefault(); move(items.findIndex((media) => media.id === event.dataTransfer.getData('application/x-gallery-media')), index); }}
+            className="flex items-center gap-3 rounded-lg border border-[color:var(--np-border)] p-2">
+            <span aria-hidden="true" className="text-xs tabular-nums text-[color:var(--np-muted)]">{index + 1}</span>
+            <div className="h-12 w-12 shrink-0 overflow-hidden rounded bg-[color:var(--np-surface)]">
+              {item.mediaType === 'VIDEO' ? <span className="flex h-full items-center justify-center text-xs">▶</span> : <MediaImage src={item.mediaUrl} width={48} className="h-full w-full object-cover" />}
+            </div>
+            <span className="min-w-0 flex-1 truncate text-sm text-[color:var(--np-text)]">{item.title?.trim() || t('Gallery media')}</span>
+            <div className="flex shrink-0">
+              <button type="button" disabled={index === 0} onClick={() => move(index, index - 1)} aria-label={t('Move up')} className="h-10 w-9 rounded disabled:opacity-25 focus-visible:outline-2">↑</button>
+              <button type="button" disabled={index === items.length - 1} onClick={() => move(index, index + 1)} aria-label={t('Move down')} className="h-10 w-9 rounded disabled:opacity-25 focus-visible:outline-2">↓</button>
+            </div>
+          </li>
+        ))}
+      </ol>
+    </NpCollapsibleSection>
+  );
+}
+
 export function GallerySettingsPanel({
   gallery,
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  chrome,
 }: {
   gallery: PortfolioGallerySectionSettings;
   onChange: GalleryPatch;
   subSection?: GallerySubSection;
   onSubSectionChange?: (value: GallerySubSection) => void;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
@@ -1015,56 +999,49 @@ export function GallerySettingsPanel({
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
 
+  const defaults: PortfolioGallerySectionSettings = { enabled: true, title: 'Gallery', subtitle: 'Images, films, and chosen moments.', ...DEFAULT_GALLERY_PRESENTATION };
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={GALLERY_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell title={t('Gallery')} modified={JSON.stringify(gallery) !== JSON.stringify(defaults)} tabs={GALLERY_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
       {subSection === 'general' ? (
-        <div className="space-y-8">
-          <SettingsSwitchRow
-            label={t('Show Gallery section')}
-            description={gallery.enabled !== false ? undefined : t('Visitors go straight to the next section.')}
-            checked={gallery.enabled !== false}
-            onChange={(enabled) => onChange({ enabled })}
-          />
-          {gallery.enabled !== false ? (
-          <SettingsGroup label={t('Content shown')}>
-            <div>
-              <GalleryVisibilityRow
-                label={t('Media titles')}
+        <div className="np-stack"><NpToggleRow card title={t('Show Gallery section')} description={gallery.enabled !== false ? undefined : t('Visitors go straight to the next section.')} checked={gallery.enabled !== false} onChange={(enabled) => onChange({ enabled })} /><div className="np-dimmable" data-disabled={gallery.enabled !== false ? 'false' : 'true'} inert={gallery.enabled === false}>
+          <NpCollapsibleSection title={t('Content shown')}>
+              <NpToggleRow
+                title={t('Media titles')}
                 checked={gallery.showTitle}
                 onChange={(showTitle) => onChange({ showTitle })}
               />
-              <GalleryVisibilityRow
-                label={t('Lightbox')}
+              <NpToggleRow
+                title={t('Lightbox')}
                 checked={gallery.lightboxEnabled}
                 onChange={(lightboxEnabled) => onChange({ lightboxEnabled })}
               />
-              <GalleryVisibilityRow
-                label={t('Hover zoom')}
-                checked={gallery.hoverZoom}
-                onChange={(hoverZoom) => onChange({ hoverZoom })}
-              />
-            </div>
-          </SettingsGroup>
-          ) : null}
-        </div>
+              {/* Cinema strip never zooms on hover (its frames scroll as a film strip). */}
+              {gallery.design === 'cinema-strip' ? null : (
+                <NpToggleRow
+                  title={t('Hover zoom')}
+                  checked={gallery.hoverZoom}
+                  onChange={(hoverZoom) => onChange({ hoverZoom })}
+                />
+              )}
+          </NpCollapsibleSection>
+          <GalleryMediaOrder gallery={gallery} onChange={onChange} />
+        </div></div>
       ) : null}
 
-      {subSection !== 'general' && !(gallery.enabled !== false) ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection !== 'general' && gallery.enabled === false ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
 
       {subSection === 'design' && gallery.enabled !== false ? (
-        <div className="space-y-6">
+        <div className="np-stack">
           <GalleryDesignChoiceGrid
             showGrid={designCatalogOpen}
             setShowGrid={setDesignCatalogOpen}
             value={gallery.design}
             onChange={(design) => onChange({ design })}
           />
-          {designCatalogOpen ? null : <GalleryLayoutSettingsBand gallery={gallery} onChange={onChange} />}
+          {designCatalogOpen ? null : <NpCollapsibleSection title={t('Layout options')}><GalleryLayoutSettingsBand gallery={gallery} onChange={onChange} /></NpCollapsibleSection>}
           {designCatalogOpen ? null : (
-          <div>
-          <SettingsGroup label={t('Style')}>
+          <NpCollapsibleSection title={t('Style')}>
 
           <SectionColorModeControl
             label={t('Color mode')}
@@ -1079,14 +1056,13 @@ export function GallerySettingsPanel({
             onChange={(premiumFontSize) => onChange({ premiumFontSize })}
             columns={3}
           />
-          </SettingsGroup>
-          </div>
+          </NpCollapsibleSection>
           )}
         </div>
       ) : null}
 
       {subSection === 'background' && gallery.enabled !== false ? (
-        <div className="space-y-4">
+        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={gallery}
             onChange={onChange}
@@ -1099,11 +1075,11 @@ export function GallerySettingsPanel({
               return <GalleryManualColorField label={label} value={value} onChange={onColorChange} />;
             }}
           />
-        </div>
+        </NpCollapsibleSection></div>
       ) : null}
 
       {subSection === 'header' && gallery.enabled !== false ? (
-        <div className="space-y-6">
+        <div className="np-stack">
           <GalleryHeaderDesignGrid
             value={gallery.headerDesign ?? 'editorial'}
             onChange={(headerDesign) => onChange({ headerDesign })}
@@ -1113,12 +1089,12 @@ export function GallerySettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <GallerySettingsBand id="gallery-header-settings-title" title={t('Header settings')} motionKey={gallery.headerDesign ?? 'editorial'} flush>
+            <NpCollapsibleSection title={t('Header settings')}>
               <GalleryHeaderDesignFields gallery={gallery} onChange={onChange} />
-            </GallerySettingsBand>
+            </NpCollapsibleSection>
           )}
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

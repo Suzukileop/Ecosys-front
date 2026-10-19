@@ -1773,7 +1773,7 @@ function CreatorStudioProfileTabContent({
             type="button"
             onClick={() => handleSectionChange(section.id)}
             aria-current={active ? 'true' : undefined}
-            className={`relative inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[15px] leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`relative inline-flex h-10 shrink-0 items-center whitespace-nowrap text-[15px] leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
                 ? 'font-bold text-[color:var(--gn-ink)]'
                 : 'font-medium text-[color:var(--gn-ink2)] hover:text-[color:var(--gn-ink)]'
@@ -1857,7 +1857,7 @@ function CreatorStudioProfileTabContent({
             }}
             aria-current={active ? 'true' : undefined}
             data-pf-no-color-transition
-            className={`inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`inline-flex h-10 shrink-0 items-center whitespace-nowrap rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
                 ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                 : 'bg-[color:var(--gn-inset)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover)]'
@@ -1910,7 +1910,7 @@ function CreatorStudioProfileTabContent({
                   aria-pressed={showAllSections}
                   title={showAllSections ? t('Show {navTitle} sections only', { navTitle }) : t('Show all sections')}
                   aria-label={showAllSections ? t('Show {navTitle} sections only', { navTitle }) : t('Show all sections')}
-                  className={`-mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                  className={`-mr-2 inline-flex h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                     showAllSections
                       ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                       : 'text-[color:var(--gn-ink)] hover:bg-[color:var(--gn-hover)]'
@@ -1944,7 +1944,7 @@ function CreatorStudioProfileTabContent({
                         aria-current={active ? 'true' : undefined}
                         title={extra ? t('Not part of the {navTitle} format', { navTitle }) : undefined}
                         data-pf-no-color-transition
-                        className={`flex w-full items-center gap-3 px-6 py-2.5 text-left text-[15px] leading-5 transition-colors duration-150 hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
+                        className={`flex w-full items-center gap-3 px-6 py-2.5 text-left text-[15px] leading-5 transition-colors duration-150 hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] ${
                           active ? 'font-bold' : 'font-medium'
                         } ${extra && !active ? 'text-[color:var(--gn-ink2)]' : 'text-[color:var(--gn-ink)]'}`}
                       >
@@ -5008,7 +5008,7 @@ function CreatorStudioProfileTabContent({
                 : isPortfolioLayout
                 ? `grid items-start gap-5 md:gap-8 lg:gap-10 ${
                     portfolioNavSide === 'right'
-                      ? `md:grid-cols-[minmax(0,1fr)_auto]${actionsColumn ? ' xl:grid-cols-[auto_minmax(0,1fr)_auto]' : ''}`
+                      ? `md:grid-cols-[minmax(0,1fr)_auto] ${actionsColumn ? ' xl:grid-cols-[auto_minmax(0,1fr)_auto]' : ''}`
                       : 'md:grid-cols-[auto_minmax(0,1fr)]'
                   }`
                 : 'grid items-start gap-5 md:grid-cols-[minmax(0,1fr)_15rem] md:gap-6'
@@ -5028,7 +5028,7 @@ function CreatorStudioProfileTabContent({
               overviewSections ? null : renderSectionPills()
             ) : isPortfolioLayout ? (
               <ProfileSectionStickyAside
-                className={`w-[16.5rem] lg:w-[300px]${
+                className={`w-[16.5rem] lg:w-[300px] ${
                   portfolioNavSide === 'right'
                     ? ` md:col-start-2 md:row-start-1${actionsColumn ? ' xl:col-start-3' : ''}`
                     : ''

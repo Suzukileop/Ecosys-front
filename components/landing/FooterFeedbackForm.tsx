@@ -6,7 +6,7 @@ import { getApiErrorMessage } from '@/lib/api-error';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const FIELD =
-  'w-full rounded-lg border border-white/[0.14] bg-white/[0.03] px-4 text-[15px] text-white outline-none transition-[border-color,box-shadow] placeholder:text-white/35 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)]';
+  'w-full rounded-lg border border-white/[0.14] bg-white/[0.03] px-4 text-[15px] text-white outline-hidden transition-[border-color,box-shadow] placeholder:text-white/35 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)]';
 
 export function FooterFeedbackForm() {
   const t = useT();

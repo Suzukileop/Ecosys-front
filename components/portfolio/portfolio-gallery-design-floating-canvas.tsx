@@ -108,14 +108,14 @@ const CANVAS_SIDE_ALIGN = {
  * transition on either of those would lag the tween that owns it; here nothing else competes.
  */
 const CANVAS_FLOAT =
-  `group relative block w-full transition-[transform,box-shadow] duration-[620ms] ${CANVAS_EASE} ` +
-  'shadow-[0_30px_60px_-32px_rgba(0,0,0,0.62),0_4px_18px_-10px_rgba(0,0,0,0.38)] ' +
-  'hover:-translate-y-1.5 hover:shadow-[0_52px_92px_-38px_rgba(0,0,0,0.78),0_10px_28px_-14px_rgba(0,0,0,0.5)] ' +
-  'focus-within:-translate-y-1.5 focus-within:shadow-[0_52px_92px_-38px_rgba(0,0,0,0.78),0_10px_28px_-14px_rgba(0,0,0,0.5)]';
+  `group relative block w-full transition-[transform,translate,scale,rotate,box-shadow] duration-[620ms] ${CANVAS_EASE} ` +
+  'shadow-[0_8px_24px_-16px_rgba(0,0,0,0.24)] ' +
+  'hover:-translate-y-1 hover:shadow-[0_16px_36px_-20px_rgba(0,0,0,0.3)] ' +
+  'focus-within:-translate-y-1';
 
 /** Badge geometry, shared by the titled pill and the bare index. */
 const CANVAS_BADGE_BASE =
-  `pointer-events-none absolute bottom-0 left-1/2 z-[4] -translate-x-1/2 translate-y-1/2 rounded-full border backdrop-blur-md transition-[transform,background-color,border-color,opacity] duration-[620ms] ${CANVAS_EASE} group-hover:translate-y-[30%] group-focus-within:translate-y-[30%]`;
+  `pointer-events-none absolute bottom-0 left-1/2 z-[4] -translate-x-1/2 translate-y-1/2 rounded-full border backdrop-blur-md transition-[transform,translate,scale,rotate,background-color,border-color,opacity] duration-[620ms] ${CANVAS_EASE} group-hover:translate-y-[30%] group-focus-within:translate-y-[30%]`;
 
 /* ---------------------------------------------------------------------- */
 /* One card                                                                */
@@ -128,7 +128,6 @@ function FloatingCanvasCard({
   eager,
   onOpen,
   showTitle,
-  ink,
   hairline,
   badgeDark,
 }: {
@@ -138,7 +137,6 @@ function FloatingCanvasCard({
   eager: boolean;
   onOpen?: (item: ProfileGalleryItem) => void;
   showTitle: boolean;
-  ink: string;
   hairline: string;
   badgeDark: boolean;
 }) {
@@ -154,7 +152,7 @@ function FloatingCanvasCard({
       ? { aspectRatio: `${step.ratio}` }
       : galleryAspectStyle(presentation.imageAspect);
   // Generous corners are part of the look; the section's own radius can only go further.
-  const radius = `${Math.max(presentation.radius, 18)}px`;
+  const radius = `${Math.max(presentation.radius, 0)}px`;
   const badgeSkin: CSSProperties = badgeDark
     ? {
         backgroundColor: 'rgba(10,10,10,0.62)',
@@ -177,13 +175,13 @@ function FloatingCanvasCard({
         data-gallery-reveal=""
         className={`relative block w-full ${
           isInteractive
-            ? 'cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-orange-500'
+            ? 'cursor-zoom-in focus:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500'
             : ''
         }`}
         style={{ borderRadius: radius }}
         role={isInteractive ? 'button' : undefined}
         tabIndex={isInteractive ? 0 : undefined}
-        aria-label={isInteractive ? `Open ${title || 'this media'}` : undefined}
+        aria-label={isInteractive ? t('Open {title}', { title: title || t('Gallery media') }) : undefined}
         onClick={activate}
         onKeyDown={(event) => {
           if (!isInteractive) return;
@@ -203,7 +201,9 @@ function FloatingCanvasCard({
               scale on the media node itself is what the shared entrance already animates, and a
               scale on the frame would take the hairline and the badge with it. */}
           <div
-            className={`relative h-full w-full transition-transform duration-[2500ms] ${CANVAS_EASE} will-change-transform group-hover:scale-[1.075] group-focus-within:scale-[1.075]`}
+            className={`relative h-full w-full transition-transform duration-[2500ms] ${CANVAS_EASE} will-change-transform ${
+              presentation.hoverZoom !== false ? 'group-hover:scale-[1.075] group-focus-within:scale-[1.075]' : ''
+            }`}
             data-pf-no-color-transition=""
           >
             <PortfolioDeferredMedia
@@ -235,28 +235,13 @@ function FloatingCanvasCard({
             a margin here would change the lane's flow height. */}
         {withTitle ? (
           <span
-            className={`${CANVAS_BADGE_BASE} max-w-[86%] truncate px-4 py-[0.4rem] text-center text-[calc(0.72rem*var(--pf-gallery-font-scale,1))] font-medium uppercase leading-[1.35] tracking-[0.14em] opacity-90 group-hover:opacity-100 group-focus-within:opacity-100`}
+            className={`${CANVAS_BADGE_BASE} max-w-[90%] px-4 py-2 text-center text-[calc(0.9375rem*var(--pf-gallery-font-scale,1))] font-medium leading-[1.4] tracking-normal opacity-100`}
             data-pf-no-color-transition=""
             style={badgeSkin}
           >
-            <span className="opacity-45">{String(index + 1).padStart(2, '0')}</span>
-            <span aria-hidden className="mx-2 opacity-30">
-              /
-            </span>
-            {title}
+            <span className="pf-canvas-caption">{title}</span>
           </span>
-        ) : (
-          /* Titles off: the bottom edge still needs a mark, otherwise a card dropped 130px down
-             its lane reads as a mistake rather than a choice. */
-          <span
-            aria-hidden
-            className={`${CANVAS_BADGE_BASE} px-3 py-[0.3rem] text-[calc(0.64rem*var(--pf-gallery-font-scale,1))] font-medium tabular-nums tracking-[0.14em] opacity-70 group-hover:opacity-100 group-focus-within:opacity-100`}
-            data-pf-no-color-transition=""
-            style={badgeDark ? badgeSkin : { ...badgeSkin, color: ink }}
-          >
-            {String(index + 1).padStart(2, '0')}
-          </span>
-        )}
+        ) : null}
       </article>
     </div>
   );
@@ -325,6 +310,16 @@ export function GalleryFloatingCanvas({
 
     const layers = Array.from(root.querySelectorAll<HTMLElement>('[data-canvas-depth]'));
     if (layers.length < 2) return undefined;
+    let scroller: HTMLElement | undefined;
+    let parent = root.parentElement;
+    while (parent && parent !== document.body) {
+      if (/(auto|scroll|overlay)/.test(getComputedStyle(parent).overflowY) &&
+        parent.scrollHeight > parent.clientHeight + 1) {
+        scroller = parent;
+        break;
+      }
+      parent = parent.parentElement;
+    }
 
     let media: ReturnType<typeof gsap.matchMedia> | undefined;
     try {
@@ -333,7 +328,7 @@ export function GalleryFloatingCanvas({
       // sit in a single flow, where drifting them at different speeds only opens ragged holes.
       media.add(CANVAS_DESKTOP_QUERY, () => {
         const timeline = gsap.timeline({
-          scrollTrigger: { trigger: root, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
+          scrollTrigger: { trigger: root, scroller, start: 'top bottom', end: 'bottom top', scrub: 0.6 },
         });
         layers.forEach((layer) => {
           const raw = Number(layer.getAttribute('data-canvas-depth'));
@@ -375,9 +370,9 @@ export function GalleryFloatingCanvas({
   return (
     /* `overflow-visible` everywhere down this tree: the badge hangs past its card's bottom edge
        and the float shadows bleed past their frames. */
-    <div ref={rootRef} className="w-full overflow-visible">
+    <div ref={rootRef} className="pf-floating-canvas w-full overflow-visible">
       <div
-        className="flex flex-col items-stretch overflow-visible md:flex-row md:items-start"
+        className="pf-canvas-lanes flex flex-col items-stretch overflow-visible md:flex-row md:items-start"
         style={{ columnGap: `${hGap}px`, rowGap: `${vGap}px` }}
       >
         {lanes.map((lane, laneIndex) => (
@@ -417,7 +412,6 @@ export function GalleryFloatingCanvas({
                     eager={lane[0]?.index === index}
                     onOpen={onOpen}
                     showTitle={showTitle}
-                    ink={ink}
                     hairline={hairline}
                     badgeDark={badgeDark}
                   />

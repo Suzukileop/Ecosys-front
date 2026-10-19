@@ -211,7 +211,7 @@ export function ViewSwitch({
             aria-label={option.label[rail]}
             title={option.label[rail]}
             onClick={() => onChange(option.id)}
-            className={`${option.id === 'large' ? LARGE_BUTTON_CLASS[rail] : 'inline-flex'} h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`${option.id === 'large' ? LARGE_BUTTON_CLASS[rail] : 'inline-flex'} h-8 w-8 items-center justify-center rounded-full transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
                 ? 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)]'
                 : 'text-[color:var(--gn-ink2)] hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)]'
@@ -294,7 +294,7 @@ export const GRID_GLYPH = (
 );
 
 const MENU_ITEM_CLASS =
-  'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[14px] leading-5 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:bg-[color:var(--gn-hover)]';
+  'flex w-full min-w-0 items-center justify-between gap-2 rounded-lg px-2.5 py-2 text-left text-[14px] leading-5 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:bg-[color:var(--gn-hover)]';
 
 /** "Sort by: Popularity ▾" at the right of the section line — Providers' quiet text control. */
 export function SortMenu<T extends string>({
@@ -338,7 +338,7 @@ export function SortMenu<T extends string>({
         aria-haspopup="listbox"
         aria-expanded={open}
         aria-label={t('Sort by: {current}', { current })}
-        className="inline-flex h-8 items-center gap-1.5 rounded-full text-[13px] leading-5 text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+        className="inline-flex h-8 items-center gap-1.5 rounded-full text-[13px] leading-5 text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
       >
         <span className="hidden text-[color:var(--gn-ink2)] sm:inline">{t('Sort by')}</span>
         <span className="font-semibold">{current}</span>
@@ -376,4 +376,4 @@ export function SortMenu<T extends string>({
 }
 
 export const railRoundButtonClass =
-  'relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'relative inline-flex h-11 w-11 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink)] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';

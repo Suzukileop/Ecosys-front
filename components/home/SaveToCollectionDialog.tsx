@@ -176,7 +176,7 @@ export function SaveToCollectionDialog({
                 onChange={(e) => setDraft(e.target.value.slice(0, SAVED_COLLECTION_NAME_MAX))}
                 placeholder={t('Collection name')}
                 autoComplete="off"
-                className="h-11 min-w-0 flex-1 rounded-full bg-black/[0.05] px-4 text-[15px] text-[#111111] outline-none placeholder:text-neutral-500 focus:ring-2 focus:ring-black/20 dark:bg-white/[0.08] dark:text-white dark:placeholder:text-neutral-400 dark:focus:ring-white/30"
+                className="h-11 min-w-0 flex-1 rounded-full bg-black/[0.05] px-4 text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-500 focus:ring-2 focus:ring-black/20 dark:bg-white/[0.08] dark:text-white dark:placeholder:text-neutral-400 dark:focus:ring-white/30"
               />
               <button type="submit" disabled={!draft.trim() || createBusy} className={DIALOG_PRIMARY_BUTTON}>
                 {createBusy ? (

@@ -257,7 +257,7 @@ export function CreatorProductGroupModal({
                 }
               }}
               placeholder={t('e.g. Summer collection, Starter pack')}
-              className={`mt-2 block w-full rounded-lg border bg-transparent px-3.5 py-2.5 text-[15px] text-[#111111] outline-none transition-[border-color,box-shadow] placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:text-white dark:placeholder:text-neutral-500 ${
+              className={`mt-2 block w-full rounded-lg border bg-transparent px-3.5 py-2.5 text-[15px] text-[#111111] outline-hidden transition-[border-color,box-shadow] placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:text-white dark:placeholder:text-neutral-500 ${
                 nameError ? 'border-[#FF5722]/70' : 'border-black/[0.12] hover:border-black/25 dark:border-white/[0.14] dark:hover:border-white/25'
               }`}
             />
@@ -289,7 +289,7 @@ export function CreatorProductGroupModal({
                     onChange={(e) => setQuery(e.target.value)}
                     placeholder={t('Search products')}
                     aria-label={t('Search products')}
-                    className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
+                    className="min-w-0 flex-1 bg-transparent text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-400 dark:text-white dark:placeholder:text-neutral-500"
                   />
                 </label>
                 {showFormatFilter ? (
@@ -340,7 +340,7 @@ export function CreatorProductGroupModal({
                 role="checkbox"
                 aria-checked={allVisibleSelected ? true : visibleSelectedCount > 0 ? 'mixed' : false}
                 onClick={toggleAllVisible}
-                className="sticky top-0 z-[1] flex w-full items-center gap-4 border-b border-black/[0.06] bg-white/95 px-6 py-2.5 text-left backdrop-blur-sm dark:border-white/[0.06] dark:bg-[#0A0A0A]/95"
+                className="sticky top-0 z-[1] flex w-full items-center gap-4 border-b border-black/[0.06] bg-white/95 px-6 py-2.5 text-left backdrop-blur-xs dark:border-white/[0.06] dark:bg-[#0A0A0A]/95"
               >
                 <Checkbox checked={allVisibleSelected} indeterminate={!allVisibleSelected && visibleSelectedCount > 0} />
                 <span className="text-[13px] font-medium text-neutral-500 dark:text-neutral-400">

@@ -109,7 +109,7 @@ export const PORTFOLIO_NAV_LABEL_PRESETS: Record<
     { value: 'About', label: msg('About') },
     { value: 'Profile', label: msg('Profile') },
     { value: 'Story', label: msg('Story') },
-    { value: 'Background', label: msg('Background') },
+    { value: 'Background', label: msg('Career background') },
     { value: 'Who I am', label: msg('Who I am') },
   ],
   aboutUs: [

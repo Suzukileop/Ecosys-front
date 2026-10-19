@@ -19,6 +19,8 @@ import dynamic from 'next/dynamic';
 import {
   useCallback,
   useEffect,
+  useId,
+  useLayoutEffect,
   useRef,
   useState,
   useSyncExternalStore,
@@ -49,10 +51,8 @@ import {
   type PortfolioTeamRailColumns,
 } from '@/components/portfolio/portfolio-team-settings';
 import {
-  TEAM_CLEAR_PROPS,
   teamIndexLabel,
   teamPrefersReducedMotion,
-  teamPremiumEase,
   useTeamEntrance,
   useTeamSwipe,
 } from '@/components/portfolio/portfolio-team-design-motion';
@@ -67,6 +67,7 @@ import {
   TeamSocialLinks,
 } from '@/components/portfolio/portfolio-team-design-primitives';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { readableMix } from '@/components/portfolio/stack-designs/readable-ink';
 
 /** The section renders one Team design, so each design is its own chunk. */
 const TeamProfileCardsGallery = dynamic(() =>
@@ -222,30 +223,12 @@ function teamRailCardWidthClass(width: PortfolioTeamPresentationSettings['cardMa
 }
 
 function teamShadowClass(shadow: PortfolioTeamPresentationSettings['cardShadow']): string {
-  if (shadow === 'soft') return 'shadow-sm';
+  if (shadow === 'soft') return 'shadow-xs';
   if (shadow === 'medium') return 'shadow-lg shadow-black/10';
   if (shadow === 'strong') return 'shadow-2xl shadow-black/20';
   return '';
 }
 
-/**
- * Spotlight frame. What actually keeps the panel rigid is that no dimension depends on the member
- * on screen: the name and role boxes below reserve a fixed number of lines, so the copy measures
- * the same whoever is selected. The desktop height is therefore a `min-h` with a floor, not a hard
- * `h`: the frame still never moves between members, but a short viewport grows it instead of
- * clipping the counter off the top (measured: a hard height cut 23px at a 760px viewport).
- * Below `lg` the *image* carries the fixed height and the stacked copy flows underneath.
- */
-const TEAM_SPOTLIGHT_PANEL_CLASS = 'lg:min-h-[clamp(34rem,62vh,44rem)]';
-/** The portrait fills its half of that locked frame — never the other way round. */
-const TEAM_SPOTLIGHT_PORTRAIT_CLASS = 'aspect-[4/5] sm:aspect-auto sm:h-[22rem] lg:h-full';
-/**
- * Two lines of the name are reserved at every breakpoint (`1.88 = 2 × the 0.94 line-height`), so a
- * one-word name and a two-line one occupy exactly the same box and everything below them — role,
- * links, navigation — keeps its position when you switch member.
- */
-const TEAM_SPOTLIGHT_NAME_BOX_CLASS =
-  'h-[calc(1.88*clamp(2.5rem,5.4vw,5rem))] overflow-hidden';
 
 /** Hairline that draws itself left-to-right under the copy on hover. */
 function TeamHoverRule({ color, align }: { color: string; align: PortfolioTeamListAlign }) {
@@ -305,14 +288,14 @@ function TeamStandardCard({
  * for both the resting tilt and the entrance's starting offset.
  */
 const POLAROID_ROTATIONS = [
-  '-rotate-[3deg]',
-  'rotate-[2.25deg]',
-  '-rotate-[1.5deg]',
-  'rotate-[3.5deg]',
-  '-rotate-[2.75deg]',
-  'rotate-[1.25deg]',
-  '-rotate-[4deg]',
-  'rotate-[1.75deg]',
+  '[transform:rotate(-3deg)]',
+  '[transform:rotate(2.25deg)]',
+  '[transform:rotate(-1.5deg)]',
+  '[transform:rotate(3.5deg)]',
+  '[transform:rotate(-2.75deg)]',
+  '[transform:rotate(1.25deg)]',
+  '[transform:rotate(-4deg)]',
+  '[transform:rotate(1.75deg)]',
 ];
 /** Grid view only: a per-card vertical offset so the rows read as loosely thrown, not ruled. */
 const POLAROID_LIFTS = [
@@ -364,7 +347,7 @@ function TeamPolaroidCard({
         : 'grayscale-[0.9] contrast-[1.05] saturate-[0.85] group-hover:grayscale-0 group-hover:contrast-100 group-hover:saturate-100';
   return (
     <article
-      className={`group relative shrink-0 ${gridded ? 'w-full' : `w-[72vw] ${teamRailCardWidthClass(presentation.cardMaxWidth)}`} ${rotation} ${lift} shadow-[0_1px_2px_rgba(0,0,0,0.35),0_10px_20px_-6px_rgba(0,0,0,0.45),0_32px_56px_-18px_rgba(0,0,0,0.55)] transition-[transform,box-shadow] duration-[820ms] ${POLAROID_EASE_CLS} hover:z-20 hover:translate-y-0 hover:rotate-0 hover:scale-[1.055] hover:shadow-[0_2px_4px_rgba(0,0,0,0.4),0_20px_36px_-8px_rgba(0,0,0,0.5),0_48px_80px_-16px_rgba(0,0,0,0.6)]`}
+      className={`group relative shrink-0 ${gridded ? 'w-full' : `w-[72vw] ${teamRailCardWidthClass(presentation.cardMaxWidth)}`} ${rotation} ${lift} shadow-[0_1px_2px_rgba(0,0,0,0.35),0_10px_20px_-6px_rgba(0,0,0,0.45),0_32px_56px_-18px_rgba(0,0,0,0.55)] transition-[transform,translate,scale,rotate,box-shadow] duration-[820ms] ${POLAROID_EASE_CLS} hover:z-20 hover:translate-y-0 hover:[transform:rotate(0deg)] hover:scale-[1.055] hover:shadow-[0_2px_4px_rgba(0,0,0,0.4),0_20px_36px_-8px_rgba(0,0,0,0.5),0_48px_80px_-16px_rgba(0,0,0,0.6)]`}
       data-pf-no-color-transition=""
       data-team-reveal=""
       style={{ backgroundColor: presentation.cardBackgroundColor }}
@@ -594,7 +577,7 @@ function TeamPolaroidWall({
                     onClick={() => stepWall(direction)}
                     disabled={disabled}
                     aria-label={direction === -1 ? t('Previous member') : t('Next member')}
-                    className={`group/nav flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${POLAROID_EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+                    className={`group/nav flex h-11 w-11 items-center justify-center rounded-full border transition-[transform,translate,scale,rotate,opacity] duration-[520ms] ${POLAROID_EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
                       disabled ? 'cursor-default opacity-30' : 'hover:-translate-y-0.5'
                     }`}
                     data-pf-no-color-transition=""
@@ -650,72 +633,73 @@ function TeamRailCard({
   /** `Show all` navigation: the column governs the size, so the portrait uses a ratio, not vh. */
   gridded?: boolean;
 }) {
-  const readable = teamReadableCardText(presentation);
+  const surface = presentation.sectionBackgroundEnabled && presentation.sectionBackgroundFill === 'solid'
+    ? presentation.sectionBackgroundColor
+    : presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#ffffff');
+  const readable = {
+    strong: readableMix(presentation.nameColor, 100, surface),
+    muted: readableMix(presentation.responsibilityColor, 100, surface),
+  };
+  const hasSocials = presentation.showSocials && member.socialLinks?.some(link => link.url.trim());
+  const socialSurface = presentation.socialIconStyle === 'minimal' || presentation.socialIconStyle === 'outline'
+    ? surface : presentation.socialBackgroundColor;
+  const socialPresentation = {
+    ...presentation,
+    socialIconColor: readableMix(presentation.socialIconColor, 100, socialSurface),
+  };
+  const mediaWidth = { xs: 320, sm: 400, md: 464, lg: 544, xl: 640, full: 736 }[presentation.cardMaxWidth ?? 'sm'];
   const align = presentation.listAlign ?? 'center';
   const height = presentation.railImageHeight ?? 'tall';
   const radius = teamCornerRadiusClass(presentation.railImageRadius ?? 'md');
   return (
-    <article className="group relative flex h-full w-full flex-col" data-team-reveal="">
+    <article className="team-rail-card group relative flex h-full w-full min-w-0 flex-col" data-team-reveal="">
       {presentation.showImage ? (
         <div
-          className={`relative w-full overflow-hidden ${radius} ${teamShadowClass(presentation.cardShadow)} ${
+          className={`team-rail-portrait relative w-full overflow-hidden ${radius} ${teamShadowClass(presentation.cardShadow)} ${
             gridded ? teamRailPortraitAspectClass(height) : teamRailPortraitClass(height)
           }`}
           data-team-reveal-media=""
+          data-rail-height={height}
+          data-rail-grid={gridded}
         >
           <TeamMemberImage
             member={member}
             presentation={{ ...presentation, imageAspect: 'portrait' }}
             fill
             zoom
+            sizes={gridded ? '(max-width: 640px) 100vw, (max-width: 1280px) 50vw, 33vw' : `(max-width: 640px) 84vw, ${mediaWidth}px`}
           />
-          {/* Deep scrim + index: the numeral belongs on the image, where it reads as a plate
-              number rather than a label floating above the copy. */}
-          <span
-            aria-hidden
-            className={`pointer-events-none absolute inset-x-0 bottom-0 block h-1/3 opacity-0 transition-opacity duration-[760ms] ${EASE_CLS} group-hover:opacity-100`}
-            data-pf-no-color-transition=""
-            style={{
-              backgroundImage:
-                'linear-gradient(to top, rgba(0,0,0,0.55) 0%, rgba(0,0,0,0.18) 55%, rgba(0,0,0,0) 100%)',
-            }}
-          />
-          <span
-            className={`${META_CLS} pointer-events-none absolute left-6 top-6 font-semibold tabular-nums text-white drop-shadow-[0_1px_8px_rgba(0,0,0,0.6)]`}
+          {presentation.railShowNumbers !== false ? <span
+            className="team-rail-index pointer-events-none absolute left-4 top-4 tabular-nums"
             data-pf-no-color-transition=""
             aria-hidden
           >
             {teamIndexLabel(index)}
-          </span>
+          </span> : null}
         </div>
       ) : null}
       <div
-        className={`${gridded ? 'mt-6' : 'mt-8'} flex flex-1 flex-col ${
+        className={`team-rail-copy ${presentation.showImage ? 'mt-5' : ''} flex min-w-0 flex-1 flex-col ${
           align === 'right' ? 'items-end text-right' : align === 'center' ? 'items-center text-center' : 'items-start text-left'
         }`}
       >
         {presentation.showName ? (
           <h3
-            className={`${
-              gridded ? 'text-[calc(clamp(1.35rem,1.9vw,1.95rem)*var(--pf-team-font-scale,1))]' : 'text-[calc(clamp(1.75rem,2.6vw,2.6rem)*var(--pf-team-font-scale,1))]'
-            } font-semibold leading-[1.02] tracking-[-0.035em] transition-transform duration-[760ms] ${EASE_CLS} group-hover:-translate-y-0.5`}
+            className="team-rail-name"
             data-pf-no-color-transition=""
             style={{ color: readable.strong }}
           >
             {member.name}
           </h3>
         ) : null}
-        {presentation.showResponsibility ? (
-          <p className={`${META_CLS} mt-4`} style={{ color: readable.muted }}>
-            {member.responsibility.trim() || ' '}
+        {presentation.showResponsibility && member.responsibility.trim() ? (
+          <p className="team-rail-role" style={{ color: readable.muted }}>
+            {member.responsibility}
           </p>
         ) : null}
-        {presentation.showSocials ? (
-          <div className="mt-auto w-full">
-            <TeamHoverRule color={presentation.cardBorderColor} align={align} />
-            <div className="pt-6">
-              <TeamSocialLinks member={member} presentation={presentation} align={teamSocialAlignClass(align)} />
-            </div>
+        {hasSocials ? (
+          <div className="team-rail-socials mt-auto w-full pt-4">
+            <TeamSocialLinks member={member} presentation={socialPresentation} align={teamSocialAlignClass(align)} />
           </div>
         ) : null}
       </div>
@@ -737,9 +721,15 @@ function TeamPortraitRail({
   const scrubbing = useRef(false);
   const [progress, setProgress] = useState(0);
   const [active, setActive] = useState(0);
-  const [bounds, setBounds] = useState({ atStart: true, atEnd: false });
-  const readable = teamReadableCardText(presentation);
-  const accent = presentation.socialIconColor;
+  const [bounds, setBounds] = useState({ atStart: true, atEnd: true, overflowing: false });
+  const surface = presentation.sectionBackgroundEnabled && presentation.sectionBackgroundFill === 'solid'
+    ? presentation.sectionBackgroundColor
+    : presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#ffffff');
+  const readable = {
+    strong: readableMix(presentation.nameColor, 100, surface),
+    muted: readableMix(presentation.responsibilityColor, 100, surface),
+  };
+  const accent = 'var(--pf-palette-principal, currentColor)';
   const navigation = presentation.railNavigation ?? 'drag';
   const arrows = navigation === 'chevrons';
   // Centering through auto margins on the edge children, never `justify-center`: a centered flex
@@ -764,8 +754,16 @@ function TeamPortraitRail({
     const travel = scroller.scrollWidth - scroller.clientWidth;
     const ratio = travel > 4 ? Math.min(1, Math.max(0, scroller.scrollLeft / travel)) : 0;
     setProgress(ratio);
-    setActive(members.length > 1 ? Math.round(ratio * (members.length - 1)) : 0);
-    setBounds({ atStart: scroller.scrollLeft <= 2, atEnd: travel <= 4 || scroller.scrollLeft >= travel - 2 });
+    const atEnd = travel <= 4 || scroller.scrollLeft >= travel - 2;
+    const origin = scroller.getBoundingClientRect().left;
+    let nearest = 0;
+    let distance = Infinity;
+    Array.from(scroller.children).forEach((card, index) => {
+      const delta = Math.abs(card.getBoundingClientRect().left - origin);
+      if (delta < distance) { distance = delta; nearest = index; }
+    });
+    setActive(travel <= 4 ? 0 : atEnd ? members.length - 1 : nearest);
+    setBounds({ atStart: scroller.scrollLeft <= 2, atEnd, overflowing: travel > 4 });
   }, [members.length]);
 
   useEffect(() => {
@@ -774,13 +772,15 @@ function TeamPortraitRail({
     if (!scroller || typeof ResizeObserver === 'undefined') return;
     const observer = new ResizeObserver(syncProgress);
     observer.observe(scroller);
+    Array.from(scroller.children).forEach(card => observer.observe(card));
     return () => observer.disconnect();
-  }, [syncProgress]);
+  }, [syncProgress, navigation, presentation.cardMaxWidth]);
 
   const onPointerDown = (event: ReactPointerEvent<HTMLDivElement>) => {
     const scroller = scrollerRef.current;
     // Mouse only — touch and pen keep the native, momentum-preserving scroll.
     if (!scroller || event.pointerType !== 'mouse' || event.button !== 0) return;
+    if ((event.target as HTMLElement).closest('a, button, input')) return;
     dragState.current = {
       pointerId: event.pointerId,
       startX: event.clientX,
@@ -796,6 +796,7 @@ function TeamPortraitRail({
     const delta = event.clientX - drag.startX;
     if (!drag.moved && Math.abs(delta) > 4) {
       drag.moved = true;
+      scroller.style.scrollSnapType = 'none';
       scroller.setPointerCapture?.(event.pointerId);
     }
     if (!drag.moved) return;
@@ -805,7 +806,9 @@ function TeamPortraitRail({
   const endDrag = (event: ReactPointerEvent<HTMLDivElement>) => {
     const drag = dragState.current;
     if (!drag || drag.pointerId !== event.pointerId) return;
-    scrollerRef.current?.releasePointerCapture?.(event.pointerId);
+    const scroller = scrollerRef.current;
+    if (scroller?.hasPointerCapture?.(event.pointerId)) scroller.releasePointerCapture(event.pointerId);
+    if (scroller) scroller.style.scrollSnapType = '';
     // Keep the flag one frame longer so the click that ends a drag never opens a social link.
     if (drag.moved) window.setTimeout(() => { dragState.current = null; }, 0);
     else dragState.current = null;
@@ -820,14 +823,17 @@ function TeamPortraitRail({
     if (rect.width <= 0) return;
     const ratio = Math.min(1, Math.max(0, (clientX - rect.left) / rect.width));
     const travel = scroller.scrollWidth - scroller.clientWidth;
-    scroller.scrollTo({ left: ratio * travel, behavior: smooth ? 'smooth' : 'auto' });
+    scroller.scrollTo({ left: ratio * travel, behavior: smooth && !teamPrefersReducedMotion() ? 'smooth' : 'auto' });
   };
 
   const scrollToIndex = (index: number) => {
     const scroller = scrollerRef.current;
     if (!scroller || members.length < 2) return;
     const travel = scroller.scrollWidth - scroller.clientWidth;
-    scroller.scrollTo({ left: (index / (members.length - 1)) * travel, behavior: 'smooth' });
+    const card = scroller.children[index] as HTMLElement | undefined;
+    if (!card) return;
+    const target = card.getBoundingClientRect().left - scroller.getBoundingClientRect().left + scroller.scrollLeft;
+    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: teamPrefersReducedMotion() ? 'auto' : 'smooth' });
   };
 
   /** Arrow navigation: land on the next portrait's own edge, never a fixed pixel amount — the
@@ -846,14 +852,16 @@ function TeamPortraitRail({
         : [...cards].reverse().find((card) => leftOf(card) < current - 4);
     const travel = scroller.scrollWidth - scroller.clientWidth;
     const target = next ? leftOf(next) : direction === 1 ? travel : 0;
-    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: 'smooth' });
+    scroller.scrollTo({ left: Math.max(0, Math.min(travel, target)), behavior: teamPrefersReducedMotion() ? 'auto' : 'smooth' });
   };
 
   // `Show all` — no traversal at all: every portrait laid out in rows, sized by its column.
   if (navigation === 'show-all') {
-    const columns = presentation.railColumns ?? 3;
+    const columns = Math.min(presentation.railColumns ?? 3, members.length);
     const columnClass =
-      columns === 2
+      columns === 1
+        ? 'grid-cols-1'
+        : columns === 2
         ? 'sm:grid-cols-2'
         : columns === 4
           ? 'sm:grid-cols-2 xl:grid-cols-4'
@@ -873,7 +881,7 @@ function TeamPortraitRail({
             ? 'gap-x-16 gap-y-24'
             : 'gap-x-12 gap-y-20';
     return (
-      <div className={`grid w-full grid-cols-1 items-stretch ${columnClass} ${gaps} ${justify}`}>
+      <div className={`team-portrait-rail team-rail-grid grid w-full grid-cols-1 items-stretch ${columnClass} ${gaps} ${justify} ${members.length === 1 ? `max-w-md ${teamListAlignClass(presentation.listAlign)}` : ''}`}>
         {members.map((member, index) => (
           <TeamRailCard key={member.id} member={member} presentation={presentation} index={index} gridded />
         ))}
@@ -885,9 +893,23 @@ function TeamPortraitRail({
     // `min-w-0` on both the rail and its scroller: a horizontally scrollable flex row otherwise
     // reports its full content width to an `auto`-sized grid/flex parent and stretches the whole
     // page instead of scrolling inside it.
-    <div className="w-full min-w-0">
+    <div className="team-portrait-rail w-full min-w-0" style={{ color: readable.strong }}>
       <div
         ref={scrollerRef}
+        data-member-count={members.length}
+        role="region"
+        aria-label={t('Scroll through the team')}
+        tabIndex={0}
+        onKeyDown={(event) => {
+          if (event.target !== event.currentTarget) return;
+          if (event.key === 'Home' || event.key === 'End') {
+            event.preventDefault();
+            scrollToIndex(event.key === 'Home' ? 0 : members.length - 1);
+          } else if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            stepRail(event.key === 'ArrowRight' ? 1 : -1);
+          }
+        }}
         onScroll={syncProgress}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
@@ -902,7 +924,7 @@ function TeamPortraitRail({
             event.stopPropagation();
           }
         }}
-        className={`flex min-w-0 max-w-full snap-x snap-mandatory items-stretch gap-8 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:gap-14 sm:cursor-grab sm:active:cursor-grabbing ${railAlign}`}
+        className={`team-rail-scroller flex min-w-0 max-w-full snap-x snap-mandatory items-stretch gap-6 overflow-x-auto pb-2 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden sm:gap-8 sm:cursor-grab sm:active:cursor-grabbing ${railAlign}`}
       >
         {members.map((member, index) => (
           <div
@@ -910,25 +932,25 @@ function TeamPortraitRail({
             // `snap-start`, not `snap-center`: the arrows step by aligning the next portrait to the
             // rail's leading edge, and with centre snapping the browser pulled that target back to
             // its own nearest snap point — pressing "previous" simply did nothing.
-            className={`flex w-[84vw] shrink-0 snap-start self-stretch ${teamRailCardWidthClass(presentation.cardMaxWidth)}`}
+            className={`flex w-[min(84vw,100%)] max-w-full shrink-0 snap-start self-stretch ${teamRailCardWidthClass(presentation.cardMaxWidth)}`}
           >
             <TeamRailCard member={member} presentation={presentation} index={index} />
           </div>
         ))}
       </div>
-      {members.length > 1 ? (
-        <div className={`mt-14 flex flex-wrap items-end gap-x-10 gap-y-6 ${footerAlign}`}>
+      {members.length > 1 && bounds.overflowing ? (
+        <div className={`team-rail-footer mt-7 flex flex-wrap items-center gap-x-6 gap-y-4 ${footerAlign}`}>
           <p className="flex items-baseline gap-3" aria-live="polite">
             <TeamOdometer
               value={teamIndexLabel(active)}
-              className="text-[calc(clamp(2.25rem,4vw,3.5rem)*var(--pf-team-font-scale,1))] font-semibold leading-none tracking-[-0.04em]"
+              className="text-[calc(1rem*var(--pf-team-font-scale,1))] font-medium leading-none"
               style={{ color: readable.strong }}
             />
-            <span className={`${META_CLS}`} style={{ color: readable.muted, opacity: 0.6 }}>
+            <span className="team-rail-total" style={{ color: readable.muted }}>
               / {teamIndexLabel(members.length - 1)}
             </span>
           </p>
-          <div className="flex min-w-[12rem] flex-1 items-center gap-6 sm:min-w-[18rem]">
+          <div className="flex min-w-0 flex-1 items-center gap-4">
             <div
               ref={trackRef}
               role={arrows ? undefined : 'slider'}
@@ -937,6 +959,7 @@ function TeamPortraitRail({
               aria-valuemin={arrows ? undefined : 1}
               aria-valuemax={arrows ? undefined : members.length}
               aria-valuenow={arrows ? undefined : active + 1}
+              aria-valuetext={arrows ? undefined : members[active]?.name}
               aria-hidden={arrows ? true : undefined}
               onPointerDown={
                 arrows
@@ -944,7 +967,7 @@ function TeamPortraitRail({
                   : (event) => {
                       scrubbing.current = true;
                       event.currentTarget.setPointerCapture?.(event.pointerId);
-                      scrubTo(event.clientX, true);
+                      scrubTo(event.clientX, false);
                     }
               }
               onPointerMove={
@@ -973,17 +996,19 @@ function TeamPortraitRail({
                 arrows
                   ? undefined
                   : (event) => {
-                      if (event.key !== 'ArrowLeft' && event.key !== 'ArrowRight') return;
+                      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
                       event.preventDefault();
-                      scrollToIndex(
-                        Math.min(members.length - 1, Math.max(0, active + (event.key === 'ArrowRight' ? 1 : -1)))
-                      );
+                      if (event.key === 'Home' || event.key === 'End') {
+                        scrollToIndex(event.key === 'Home' ? 0 : members.length - 1);
+                      } else {
+                        stepRail(event.key === 'ArrowRight' ? 1 : -1);
+                      }
                     }
               }
               // With arrows the line is a read-only progress bar — the buttons are the control, and
               // two competing controls for one rail is exactly the ambiguity this setting removes.
-              className={`group/track relative w-full py-4 ${
-                arrows ? '' : 'cursor-pointer touch-none focus:outline-none focus-visible:ring-2 focus-visible:ring-current'
+              className={`team-rail-track group/track relative w-full py-4 ${
+                arrows ? '' : 'cursor-pointer touch-none focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current'
               }`}
             >
               <span
@@ -995,7 +1020,7 @@ function TeamPortraitRail({
                 aria-hidden
               />
               <span
-                className={`absolute left-0 top-1/2 block h-[2px] -translate-y-1/2 transition-[height] duration-[420ms] ${EASE_CLS} ${
+                className={`absolute left-0 top-1/2 block h-[2px] [transform:translateY(-50%)] transition-[height] duration-[420ms] ${EASE_CLS} ${
                   arrows ? '' : 'group-hover/track:h-[3px]'
                 }`}
                 data-pf-no-color-transition=""
@@ -1019,7 +1044,7 @@ function TeamPortraitRail({
                       onClick={() => stepRail(direction)}
                       disabled={disabled}
                       aria-label={direction === -1 ? t('Previous member') : t('Next member')}
-                      className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+                      className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,translate,scale,rotate,opacity] duration-[520ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
                         disabled ? 'cursor-default opacity-30' : 'hover:-translate-y-0.5'
                       }`}
                       data-pf-no-color-transition=""
@@ -1056,358 +1081,181 @@ function TeamPortraitRail({
 }
 
 /**
- * Spotlight — one monumental portrait, every member reachable from a thumbnail strip. Switching
- * is choreographed with GSAP: the portrait wipes up out of an inset clip while the name and role
- * rise behind it, so the swap reads as a page turn rather than an instant image replacement.
+ * Spotlight keeps a single portrait prominent, with untruncated copy and keyboard-operable tabs.
  */
 function TeamSpotlight({
-  members,
-  presentation,
+  members, presentation,
 }: {
   members: ProfileTeamMember[];
   presentation: PortfolioTeamPresentationSettings;
 }) {
   const t = useT();
-  const [activeId, setActiveId] = useState(members[0]?.id ?? '');
-  const active = members.find((member) => member.id === activeId) ?? members[0];
+  const prefix = useId();
+  const [memberOrder, setMemberOrder] = useState(() => members.map(member => member.id));
+  const orderedIds = [...memberOrder.filter(id => members.some(member => member.id === id)),
+    ...members.filter(member => !memberOrder.includes(member.id)).map(member => member.id)];
+  const active = members.find(member => member.id === orderedIds[0]);
+  const queuedMembers = orderedIds.slice(1).map(id => members.find(member => member.id === id)!);
+  const activeIndex = Math.max(0, members.findIndex(member => member.id === active?.id));
   const portraitRef = useRef<HTMLDivElement | null>(null);
-  const veilRef = useRef<HTMLSpanElement | null>(null);
   const copyRef = useRef<HTMLDivElement | null>(null);
-  const firstRender = useRef(true);
-  const hoverIntent = useRef<number | undefined>(undefined);
-  const activeIndex = Math.max(0, members.findIndex((member) => member.id === active?.id));
-  const previousIndex = useRef(activeIndex);
+  const thumbRefs = useRef<(HTMLButtonElement | null)[]>([]);
+  const navigation = presentation.spotlightNavigation ?? 'thumbnails';
+  const hasTabs = members.length > 1 && navigation !== 'arrows';
+  const thumbnailPositions = useRef(new Map<string, number>());
+  const capturePositions = useCallback(() => {
+    thumbnailPositions.current = new Map(thumbRefs.current.filter(node => node !== null)
+      .map(node => [node!.id, node!.getBoundingClientRect().left]));
+  }, []);
 
-  /** Wraps, so a swipe (or a keyboard step) never dead-ends on the first or last member. */
-  const step = useCallback(
-    (direction: 1 | -1) => {
-      if (members.length < 2) return;
-      setActiveId((current) => {
-        const index = members.findIndex((member) => member.id === current);
-        const from = index < 0 ? 0 : index;
-        return members[(from + direction + members.length) % members.length].id;
-      });
-    },
-    [members]
-  );
+  useLayoutEffect(() => {
+    const positions = thumbnailPositions.current;
+    if (!positions.size || teamPrefersReducedMotion()) return;
+    for (const node of thumbRefs.current) {
+      if (!node) continue;
+      gsap.killTweensOf(node);
+      gsap.set(node, { clearProps: 'transform' });
+      const oldLeft = positions.get(node.id);
+      if (oldLeft !== undefined) gsap.fromTo(node, { x: oldLeft - node.getBoundingClientRect().left },
+        { x: 0, duration: 0.45, ease: 'power3.out', clearProps: 'transform' });
+    }
+    positions.clear();
+  }, [active?.id]);
 
-  // Mobile: the panel is one immersive card you swipe through.
+  const select = (id: string) => {
+    if (id === active?.id) return;
+    capturePositions();
+    const focusedIndex = thumbRefs.current.findIndex(node => node === document.activeElement);
+    setMemberOrder([id, ...orderedIds.slice(1).filter(queuedId => queuedId !== id), orderedIds[0]]);
+    if (focusedIndex >= 0) requestAnimationFrame(() => thumbRefs.current[Math.min(focusedIndex, queuedMembers.length - 1)]?.focus());
+  };
+  const step = useCallback((direction: 1 | -1) => {
+    if (members.length < 2) return;
+    capturePositions();
+    setMemberOrder(current => {
+      const order = [...current.filter(id => members.some(member => member.id === id)),
+        ...members.filter(member => !current.includes(member.id)).map(member => member.id)];
+      return direction === 1 ? [...order.slice(1), order[0]] : [order[order.length - 1], ...order.slice(0, -1)];
+    });
+  }, [members, capturePositions]);
   useTeamSwipe(portraitRef, step, members.length < 2);
 
-  useEffect(() => () => window.clearTimeout(hoverIntent.current), []);
-
   useEffect(() => {
-    const direction = activeIndex >= previousIndex.current ? 1 : -1;
-    previousIndex.current = activeIndex;
-    if (firstRender.current) {
-      firstRender.current = false;
-      return;
+    const tab = thumbRefs.current[0];
+    const strip = tab?.parentElement;
+    if (!tab || !strip) return;
+    const rect = tab.getBoundingClientRect();
+    const bounds = strip.getBoundingClientRect();
+    if (rect.left < bounds.left || rect.right > bounds.right) {
+      strip.scrollTo({
+        left: strip.scrollLeft + rect.left - bounds.left - (strip.clientWidth - rect.width) / 2,
+        behavior: teamPrefersReducedMotion() ? 'auto' : 'smooth',
+      });
     }
-    const portrait = portraitRef.current;
-    const copy = copyRef.current;
-    if (!portrait || !copy || teamPrefersReducedMotion()) return;
-    const ease = teamPremiumEase();
-    const veil = veilRef.current;
-    const words = copy.querySelectorAll<HTMLElement>('[data-spotlight-word]');
-    const lines = copy.querySelectorAll<HTMLElement>('[data-spotlight-line]');
-    let tween: gsap.core.Timeline | undefined;
-    try {
-      tween = gsap.timeline();
-      // Directional curtain: the new portrait is uncovered from the side you moved towards, with a
-      // slight counter-slide, so the swap carries the direction of the choice.
-      tween.fromTo(
-        portrait,
-        {
-          clipPath: direction === 1 ? 'inset(0% 0% 0% 100%)' : 'inset(0% 100% 0% 0%)',
-          scale: 1.08,
-          xPercent: direction * 3,
-        },
-        {
-          clipPath: 'inset(0% 0% 0% 0%)',
-          scale: 1,
-          xPercent: 0,
-          duration: 1.05,
-          ease,
-          clearProps: TEAM_CLEAR_PROPS,
-        }
-      );
-      if (veil) {
-        // A veil that lifts off the new portrait rather than a crossfade: the image arrives already
-        // in place and simply clears, which is what makes the swap read as one move, not two.
-        tween.fromTo(
-          veil,
-          { opacity: 0.55 },
-          { opacity: 0, duration: 1.15, ease, clearProps: 'opacity' },
-          0
-        );
-      }
-      if (words.length > 0) {
-        // Per-word mask: each word rides up out of its own overflow-hidden slot, so a name that
-        // wraps still reveals cleanly line by line.
-        tween.fromTo(
-          words,
-          { yPercent: 115 },
-          { yPercent: 0, duration: 0.95, ease, stagger: 0.055, clearProps: 'transform' },
-          0.08
-        );
-      }
-      if (lines.length > 0) {
-        tween.fromTo(
-          lines,
-          { autoAlpha: 0, y: 22 },
-          { autoAlpha: 1, y: 0, duration: 0.8, ease, stagger: 0.08, clearProps: TEAM_CLEAR_PROPS },
-          0.14
-        );
-      }
-    } catch (error) {
-      console.error('[Team spotlight] GSAP swap failed', error);
-      gsap.set([portrait, ...(veil ? [veil] : []), ...words, ...lines], { clearProps: TEAM_CLEAR_PROPS });
-    }
-    return () => {
-      tween?.kill();
-    };
-  }, [activeId, activeIndex]);
+  }, [activeIndex, hasTabs]);
 
   if (!active) return null;
-  const readable = teamReadableCardText(presentation);
-  const portraitRight = (presentation.spotlightPortraitSide ?? 'left') === 'right';
-  const navigation = presentation.spotlightNavigation ?? 'thumbnails';
-  /** The prev/next pair, shared by `arrows` and `both`. `sm` is the size it takes when it sits
-   *  above the thumbnails, where it must stay secondary to them. */
-  const arrowPair = (size: 'sm' | 'lg') =>
-    ([-1, 1] as const).map((direction) => (
-      <button
-        key={direction}
-        type="button"
-        onClick={() => step(direction)}
-        aria-label={direction === -1 ? t('Previous member') : t('Next member')}
-        className={`group/nav flex items-center justify-center rounded-full border transition-transform duration-[520ms] ${EASE_CLS} hover:-translate-y-0.5 focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
-          size === 'lg' ? 'h-12 w-12 sm:h-14 sm:w-14' : 'h-10 w-10 sm:h-11 sm:w-11'
-        }`}
-        data-pf-no-color-transition=""
-        style={{ borderColor: presentation.cardBorderColor, color: readable.strong }}
-      >
-        <svg
-          viewBox="0 0 24 24"
-          fill="none"
-          stroke="currentColor"
-          strokeWidth={1.4}
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          aria-hidden
-          className={`h-[38%] w-[38%] transition-transform duration-[520ms] ${EASE_CLS} ${
-            direction === -1 ? 'rotate-180 group-hover/nav:-translate-x-1' : 'group-hover/nav:translate-x-1'
-          }`}
-          data-pf-no-color-transition=""
-        >
-          <path d="M4 12h15" />
-          <path d="m13 6 6 6-6 6" />
-        </svg>
-      </button>
-    ));
-  // The panel's own frame, drawn without the settings padding: the portrait has to bleed to the
-  // panel edge for the composition to read as monumental, so the copy column carries the padding.
-  const panelFrame = `${teamCornerRadiusClass(presentation.spotlightPanelRadius ?? 'md')} ${teamShadowClass(presentation.cardShadow)} ${
-    presentation.cardBorder === 'none' ? 'border-0' : presentation.cardBorder === 'medium' ? 'border-2' : 'border'
-  } overflow-hidden`;
-  const copyPad =
-    presentation.cardPadding === 'lg'
-      ? 'px-8 py-12 lg:px-16 lg:py-20'
-      : presentation.cardPadding === 'none' || presentation.cardPadding === 'sm'
-        ? 'px-6 py-8 lg:px-10 lg:py-12'
-        : 'px-7 py-10 lg:px-12 lg:py-16';
-  // Socials one step up: at this scale the default icons read as an afterthought.
-  const socialPresentation = {
-    ...presentation,
-    socialIconSize:
-      presentation.socialIconSize === 'sm'
-        ? ('md' as const)
-        : presentation.socialIconSize === 'md'
-          ? ('lg' as const)
-          : ('xl' as const),
+  const surface = presentation.cardBackgroundEnabled !== false
+    ? presentation.cardBackgroundColor
+    : presentation.teamPalette?.fond ?? (presentation.activeColorMode === 'dark' ? '#0a0a0a' : '#ffffff');
+  const readable = {
+    strong: readableMix(presentation.nameColor, 100, surface),
+    muted: readableMix(presentation.responsibilityColor, 100, surface),
   };
+  const socialSurface = presentation.socialIconStyle === 'minimal' || presentation.socialIconStyle === 'outline'
+    ? surface : presentation.socialBackgroundColor;
+  const socialPresentation = {
+    ...presentation, socialIconColor: readableMix(presentation.socialIconColor, 100, socialSurface),
+  };
+  const portraitRight = presentation.spotlightPortraitSide === 'right';
+  const panelId = `${prefix}-member`;
+  const hasSocials = presentation.showSocials && active.socialLinks?.some(link => link.url.trim());
+  const frame = `${teamCornerRadiusClass(presentation.spotlightPanelRadius ?? 'md')} ${teamShadowClass(presentation.cardShadow)} ${
+    presentation.cardBorder === 'none' ? 'border-0' : presentation.cardBorder === 'medium' ? 'border-2' : 'border'
+  }`;
+
   return (
     <article
-      /* The panel's height is LOCKED per breakpoint, never derived from the member currently
-         shown: a one-line name next to a two-line one would otherwise resize the whole frame on
-         every switch. Mobile keeps an aspect-ratio card (fixed for a given width), tablet and
-         desktop get explicit heights. */
-      className={`grid w-full gap-0 ${panelFrame} ${teamSpotlightMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)} ${
-        portraitRight
-          ? 'lg:grid-cols-[minmax(0,0.95fr)_minmax(0,1.05fr)]'
-          : 'lg:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]'
-      } ${TEAM_SPOTLIGHT_PANEL_CLASS} lg:items-stretch`}
-      data-team-reveal=""
-      style={teamCardStyle(presentation)}
+      className={`team-spotlight w-full ${frame} ${teamSpotlightMaxWidthClass(presentation.cardMaxWidth)} ${teamListAlignClass(presentation.listAlign)}`}
+      data-team-reveal="" data-portrait-right={portraitRight} data-with-image={presentation.showImage}
+      data-padding={presentation.cardPadding} style={teamCardStyle(presentation)}
     >
-      {/* Order, not source order: stacked on small screens the portrait always comes first, so the
-          side setting can only apply from `lg` up, where the two columns actually exist. */}
-      <div
-        ref={portraitRef}
-        className={`relative w-full shrink-0 overflow-hidden ${
-          portraitRight ? 'lg:order-2' : 'lg:order-1'
-        } ${TEAM_SPOTLIGHT_PORTRAIT_CLASS}`}
-        data-team-reveal-media=""
-      >
-        {/* `cover` is forced, not read from the settings: this frame is fixed, so a `contain` fit
-            would letterbox a landscape photo inside it instead of filling it. */}
-        <TeamMemberImage
-          member={active}
-          presentation={{ ...presentation, imageAspect: 'portrait', imageFit: 'cover' }}
-          fill
-        />
-        <span
-          ref={veilRef}
-          aria-hidden
-          className="pointer-events-none absolute inset-0 z-[2] block opacity-0"
-          data-pf-no-color-transition=""
-          style={{ backgroundColor: '#0a0a0a' }}
-        />
-      </div>
-      {/* `overflow-hidden` guards the locked frame: whatever a member's copy measures, it can never
-          push the panel taller than the height set above. */}
-      <div
-        className={`flex min-h-0 min-w-0 flex-col justify-center overflow-hidden ${copyPad} ${
-          portraitRight ? 'lg:order-1' : 'lg:order-2'
-        }`}
-      >
-        <div ref={copyRef} className="text-left">
-          {/* Mechanical counter + a rule running to the far edge: the width beside a short name
-              becomes a deliberate measure instead of a gap. */}
-          <span className="flex items-baseline gap-5" data-spotlight-line="">
-            <TeamOdometer
-              value={teamIndexLabel(activeIndex)}
-              className="text-[calc(clamp(1.5rem,2.4vw,2.25rem)*var(--pf-team-font-scale,1))] font-semibold leading-none tracking-[-0.04em]"
-              style={{ color: readable.strong }}
-            />
-            <span className={`${META_CLS} shrink-0`} style={{ color: readable.muted, opacity: 0.6 }}>
-              / {teamIndexLabel(members.length - 1)}
-            </span>
-            <span
-              className="h-px flex-1 translate-y-[-0.35em]"
-              style={{ backgroundColor: presentation.cardBorderColor }}
-              aria-hidden
-            />
-          </span>
-          {presentation.showName ? (
-            // One mask per word so a wrapping name still reveals line by line; the heading keeps an
-            // aria-label and the slots are hidden, so it is read as one name, not a pile of words.
-            <h3
-              className={`mt-8 font-serif text-[calc(clamp(2.5rem,5.4vw,5rem)*var(--pf-team-font-scale,1))] font-semibold leading-[0.94] tracking-[-0.04em] lg:mt-10 ${TEAM_SPOTLIGHT_NAME_BOX_CLASS}`}
-              style={{ color: readable.strong }}
-              aria-label={active.name}
-            >
-              {active.name.split(/\s+/).filter(Boolean).map((word, index, all) => (
-                <span
-                  key={`${activeId}-${index}`}
-                  aria-hidden
-                  className="inline-block overflow-hidden align-bottom"
-                >
-                  <span data-spotlight-word="" className="inline-block">
-                    {word}
-                    {index < all.length - 1 ? ' ' : ''}
-                  </span>
-                </span>
-              ))}
-            </h3>
-          ) : null}
-          {presentation.showResponsibility ? (
-            // Two lines reserved here too, for the same reason as the name box above.
-            <p
-              className="mt-6 h-[2.8em] overflow-hidden text-[calc(0.8rem*var(--pf-team-font-scale,1))] font-medium uppercase leading-[1.4] tracking-[0.24em] sm:text-[calc(0.9rem*var(--pf-team-font-scale,1))] lg:mt-8"
-              style={{ color: readable.muted }}
-              data-spotlight-line=""
-            >
-              {active.responsibility}
-            </p>
-          ) : null}
-          <div className="mt-10 lg:mt-14" data-spotlight-line="">
-            <TeamSocialLinks
-              member={active}
-              presentation={socialPresentation}
-              align="justify-start"
-              spacing="wide"
-            />
-          </div>
+      {presentation.showImage && (
+        <div ref={portraitRef} className="team-spotlight-portrait" data-pf-no-color-transition>
+          {members.map(member => (
+            <div key={member.id} className="team-spotlight-image-layer" data-pf-no-color-transition
+              data-active={member.id === active.id} aria-hidden={member.id !== active.id}>
+              <TeamMemberImage member={member} presentation={presentation} fill
+                sizes="(max-width: 1023px) 100vw, 50vw" />
+            </div>
+          ))}
         </div>
-        {/* `mt-auto` pins the navigation to the bottom of the column, so a tall panel reads as a
-            composition that fills its height instead of a centred block floating in a void. */}
-        {members.length > 1 && navigation === 'arrows' ? (
-          <div className="mt-12 flex shrink-0 items-center gap-3 lg:mt-auto lg:pt-16">{arrowPair('lg')}</div>
-        ) : null}
-        {/* `both`: the pair sits above the strip, aligned right — a header for the thumbnails
-            rather than a second control competing with them, so they read as one block. */}
-        {members.length > 1 && navigation === 'both' ? (
-          <div className="mt-12 flex shrink-0 justify-end gap-3 lg:mt-auto lg:pt-16">{arrowPair('sm')}</div>
-        ) : null}
-        {members.length > 1 && (navigation === 'thumbnails' || navigation === 'both') ? (
-          <div
-            // Past four members the strip scrolls; the fade tells you so, instead of leaving a
-            // thumbnail looking accidentally guillotined by the panel edge.
-            className={`flex shrink-0 gap-4 overflow-x-auto pb-1 [scrollbar-width:none] [-ms-overflow-style:none] [&::-webkit-scrollbar]:hidden ${
-              // In `both` the arrows above already carry the top spacing and the `mt-auto`.
-              navigation === 'both' ? 'mt-5' : 'mt-12 lg:mt-auto lg:pt-16'
-            } ${
-              members.length > 4
-                ? '[mask-image:linear-gradient(to_right,black_84%,transparent_100%)] [-webkit-mask-image:linear-gradient(to_right,black_84%,transparent_100%)]'
-                : ''
-            }`}
-            role="tablist"
-            aria-label={t('Choose a team member')}
-          >
-            {members.map((member, index) => {
-              const isActive = member.id === active.id;
-              return (
-                <button
-                  key={member.id}
-                  type="button"
-                  role="tab"
-                  aria-selected={isActive}
-                  onClick={() => setActiveId(member.id)}
-                  // Hover is a trigger too, not just a highlight — but only after a short intent
-                  // delay, so sweeping the pointer across the strip does not fire every portrait.
-                  onPointerEnter={(event) => {
-                    if (event.pointerType !== 'mouse' || presentation.spotlightHoverSwitch === false) return;
-                    window.clearTimeout(hoverIntent.current);
-                    hoverIntent.current = window.setTimeout(() => setActiveId(member.id), 140);
-                  }}
-                  onPointerLeave={() => window.clearTimeout(hoverIntent.current)}
-                  /* Fixed size, scrolling strip: shrinking thumbnails to fit a large team turned
-                     them into specks — at this scale they have to stay legible triggers. */
-                  className={`group relative aspect-[3/4] w-[4.25rem] shrink-0 overflow-hidden rounded-xl transition-[transform,opacity] duration-[520ms] ${EASE_CLS} sm:w-[5.25rem] ${
-                    isActive ? 'scale-100 opacity-100' : 'scale-[0.94] opacity-50 hover:scale-100 hover:opacity-100'
-                  } focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
-                  data-pf-no-color-transition=""
-                >
-                  <TeamMemberImage
-                    member={member}
-                    presentation={{ ...presentation, imageAspect: 'portrait', showImage: true }}
-                    fill
-                  />
-                  {/* Hairline frame on the selected thumbnail — a 1px inset line reads as "this one"
-                      without the heaviness of a border that would shift the image inside it. */}
-                  <span
-                    aria-hidden
-                    className={`pointer-events-none absolute inset-0 z-[2] block rounded-xl border transition-opacity duration-[520ms] ${EASE_CLS} ${
-                      isActive ? 'opacity-100' : 'opacity-0'
-                    }`}
-                    data-pf-no-color-transition=""
-                    style={{ borderColor: readable.strong }}
-                  />
-                  <span
-                    aria-hidden
-                    className={`absolute inset-x-0 bottom-0 z-[3] block h-[3px] origin-left transition-transform duration-[520ms] ${EASE_CLS} ${
-                      isActive ? 'scale-x-100' : 'scale-x-0'
-                    }`}
-                    data-pf-no-color-transition=""
-                    style={{ backgroundColor: presentation.socialIconColor }}
-                  />
-                  <span className="sr-only">{`${teamIndexLabel(index)} — ${member.name}`}</span>
-                </button>
-              );
-            })}
+      )}
+      <div className="team-spotlight-copy" style={{ color: readable.strong }}>
+        {members.length > 1 && (
+          <div className="team-spotlight-navigation">
+            {(navigation === 'arrows' || navigation === 'both') && (
+              <div className="team-spotlight-arrows">
+                {([-1, 1] as const).map(direction => (
+                  <button key={direction} type="button" onClick={() => step(direction)}
+                    aria-controls={panelId}
+                    aria-label={direction === -1 ? t('Previous member') : t('Next member')}
+                    className="team-spotlight-arrow" data-pf-no-color-transition
+                    style={{ borderColor: presentation.cardBorderColor }}>
+                    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={1.5}
+                      strokeLinecap="round" strokeLinejoin="round" aria-hidden
+                      style={{ transform: direction === -1 ? 'rotate(180deg)' : undefined }}>
+                      <path d="M4 12h15M13 6l6 6-6 6" />
+                    </svg>
+                  </button>
+                ))}
+              </div>
+            )}
+            {hasTabs && (
+              <div className="team-spotlight-tabs" role="group" aria-label={t('Choose a team member')}>
+                {queuedMembers.map((member, index) => (
+                  <button key={member.id} id={`${prefix}-tab-${member.id}`}
+                    ref={node => { thumbRefs.current[index] = node; }}
+                    type="button"
+                    aria-controls={panelId} aria-label={member.name}
+                    className="team-spotlight-tab" data-pf-no-color-transition
+                    data-with-image={presentation.showImage}
+                    onClick={() => select(member.id)}
+                    onKeyDown={event => {
+                      if (!['ArrowLeft', 'ArrowRight', 'Home', 'End'].includes(event.key)) return;
+                      event.preventDefault();
+                      const nextIndex = event.key === 'Home' ? 0 : event.key === 'End' ? queuedMembers.length - 1 :
+                        (index + (event.key === 'ArrowRight' ? 1 : -1) + queuedMembers.length) % queuedMembers.length;
+                      thumbRefs.current[nextIndex]?.focus();
+                    }}
+                    >
+                    {presentation.showImage ? (
+                      <TeamMemberImage member={member} presentation={presentation} fill sizes="(min-width: 1024px) 104px, 88px" />
+                    ) : <span>{member.name}</span>}
+                  </button>
+                ))}
+              </div>
+            )}
           </div>
-        ) : null}
+        )}
+        <div ref={copyRef} id={panelId} className="team-spotlight-content"
+          data-pf-no-color-transition>
+          {members.length > 1 && (
+            <p className="team-spotlight-count" role="status" aria-live="polite" aria-atomic="true">
+              {teamIndexLabel(activeIndex)} <span style={{ color: readable.muted }}>/ {teamIndexLabel(members.length - 1)}</span>
+              <span className="sr-only"> — {active.name}</span>
+            </p>
+          )}
+          {presentation.showName && <h3 className="team-spotlight-name">{active.name}</h3>}
+          {presentation.showResponsibility && active.responsibility.trim() && (
+            <p className="team-spotlight-role" style={{ color: readable.muted }}>{active.responsibility}</p>
+          )}
+          {hasSocials && (
+            <div className="team-spotlight-socials">
+              <TeamSocialLinks member={active} presentation={socialPresentation} align="justify-start" />
+            </div>
+          )}
+        </div>
       </div>
     </article>
   );
@@ -1538,7 +1386,7 @@ function TeamDirectoryRow({
       {/* Socials stay out of the name's way until the row is addressed, then arrive from the right;
           on a pointer that cannot hover they are simply always there. */}
       <div
-        className={`shrink-0 transition-[opacity,transform] duration-[620ms] ${EASE_CLS} sm:min-w-[6rem] ${
+        className={`shrink-0 transition-[opacity,transform,translate,scale,rotate] duration-[620ms] ${EASE_CLS} sm:min-w-[6rem] ${
           side ? 'mt-1 sm:mt-0' : ''
         } ${
           socialsOnHover
@@ -1780,7 +1628,7 @@ function TeamCoverCard({
   const align = presentation.listAlign ?? 'center';
   const overlayAlign =
     align === 'left' ? 'items-start text-left' : align === 'right' ? 'items-end text-right' : 'items-center text-center';
-  const riseCls = `translate-y-5 opacity-0 transition-[transform,opacity] duration-[640ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 ${TOUCH_REVEAL_CLS}`;
+  const riseCls = `translate-y-5 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-[640ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 ${TOUCH_REVEAL_CLS}`;
   return (
     <article
       className={`group relative h-full w-full ${teamCardMaxWidthClass(presentation.cardMaxWidth)} ${teamCardFrameClass(presentation)} ${teamHoverPhotoClass(presentation.avatarSize)}`}

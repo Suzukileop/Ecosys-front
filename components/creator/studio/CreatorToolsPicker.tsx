@@ -321,7 +321,7 @@ export function CreatorToolsPicker({
                 }
               }}
               placeholder={t('Nom de l’outil…')}
-              className="min-w-0 flex-1 rounded-full bg-neutral-100/80 px-3.5 py-2 text-sm font-medium text-neutral-900 outline-none transition placeholder:text-neutral-400 focus:bg-neutral-100 focus:ring-2 focus:ring-[#F97316]/25 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-neutral-500 dark:focus:bg-white/[0.08]"
+              className="min-w-0 flex-1 rounded-full bg-neutral-100/80 px-3.5 py-2 text-sm font-medium text-neutral-900 outline-hidden transition placeholder:text-neutral-400 focus:bg-neutral-100 focus:ring-2 focus:ring-[#F97316]/25 dark:bg-white/[0.06] dark:text-white dark:placeholder:text-neutral-500 dark:focus:bg-white/[0.08]"
             />
             <button
               type="button"

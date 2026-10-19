@@ -33,13 +33,13 @@ function StyleToggleRow({
   onChange: (checked: boolean) => void;
 }) {
   return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="text-sm font-semibold text-neutral-950">{label}</span>
+    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-[color:var(--np-card-border)] bg-[color:var(--np-card)] px-4 py-3.5">
+      <span className="text-sm font-semibold text-[color:var(--np-text)]">{label}</span>
       <input
         type="checkbox"
         checked={checked}
         onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
+        className="mt-1 h-4 w-4 shrink-0 rounded accent-[color:var(--np-accent)]"
       />
     </label>
   );
@@ -58,7 +58,7 @@ function StyleOptionGrid<T extends string>({
 }) {
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">{label}</p>
       <div className="mt-3 grid gap-2 sm:grid-cols-2">
         {options.map((option) => {
           const active = value === option.value;
@@ -69,12 +69,12 @@ function StyleOptionGrid<T extends string>({
               onClick={() => onChange(option.value)}
               className={`rounded-2xl border px-4 py-3 text-left transition ${
                 active
-                  ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                  : 'border-neutral-200/80 bg-white hover:border-neutral-300'
+                  ? 'border-[color:var(--np-accent)] bg-[color:var(--np-card)] ring-2 ring-[color:var(--np-accent-soft)]'
+                  : 'border-[color:var(--np-card-border)] bg-[color:var(--np-card)] hover:border-[color:var(--np-illus-strong)]'
               }`}
             >
-              <p className="text-sm font-semibold text-neutral-950">{option.label}</p>
-              <p className="mt-1 text-xs leading-relaxed text-neutral-500">{option.description}</p>
+              <p className="text-sm font-semibold text-[color:var(--np-text)]">{option.label}</p>
+              <p className="mt-1 text-xs leading-relaxed text-[color:var(--np-muted)]">{option.description}</p>
             </button>
           );
         })}
@@ -99,19 +99,19 @@ function StyleColorField({
   }
   return (
     <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">{label}</p>
       <div className="mt-2 flex items-center gap-3">
         <input
           type="color"
           value={isValidProfileHexColor(value) ? value : '#525252'}
           onChange={(event) => onChange(event.target.value)}
-          className="h-10 w-12 cursor-pointer rounded-lg border border-neutral-200 bg-white p-1"
+          className="h-10 w-12 cursor-pointer rounded-lg border border-[color:var(--np-well-border)] bg-[color:var(--np-well)] p-1"
         />
         <input
           type="text"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="w-28 rounded-xl border border-neutral-200 bg-white px-3 py-2.5 font-mono text-sm text-neutral-900"
+          className="w-28 rounded-xl border border-[color:var(--np-well-border)] bg-[color:var(--np-well)] px-3 py-2.5 font-mono text-sm text-[color:var(--np-text)]"
         />
       </div>
     </div>
@@ -180,13 +180,13 @@ export function PortfolioElementStyleFields({
     <div className="space-y-6">
       {title ? (
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{title}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">{title}</p>
         </div>
       ) : null}
 
       {!hideTargetPicker ? (
         <div>
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{t('Element')}</p>
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">{t('Element')}</p>
           <div className="mt-3 grid gap-2 sm:grid-cols-2">
             {targets.map((target) => {
               const active = activeTarget === target.value;
@@ -197,12 +197,12 @@ export function PortfolioElementStyleFields({
                   onClick={() => onTargetChange(target.value)}
                   className={`rounded-2xl border px-4 py-3 text-left transition ${
                     active
-                      ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                      : 'border-neutral-200/80 bg-white hover:border-neutral-300'
+                      ? 'border-[color:var(--np-accent)] bg-[color:var(--np-card)] ring-2 ring-[color:var(--np-accent-soft)]'
+                      : 'border-[color:var(--np-card-border)] bg-[color:var(--np-card)] hover:border-[color:var(--np-illus-strong)]'
                   }`}
                 >
-                  <p className="text-sm font-semibold text-neutral-950">{target.label}</p>
-                  <p className="mt-1 text-xs leading-relaxed text-neutral-500">{target.description}</p>
+                  <p className="text-sm font-semibold text-[color:var(--np-text)]">{target.label}</p>
+                  <p className="mt-1 text-xs leading-relaxed text-[color:var(--np-muted)]">{target.description}</p>
                 </button>
               );
             })}
@@ -253,14 +253,14 @@ export function PortfolioElementStyleFields({
       ) : null}
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">
             {t('Manual size (px)')}
           </p>
-          <span className="tabular-nums text-sm font-semibold text-neutral-700">
+          <span className="tabular-nums text-sm font-semibold text-[color:var(--np-label)]">
             {t('{resolvedSizePx}px', { resolvedSizePx })}
           </span>
         </div>
-        <p className="mt-1 text-sm text-neutral-500">
+        <p className="mt-1 text-sm text-[color:var(--np-muted)]">
           {t('Taille exacte du texte en pixels — titre et description réglables indépendamment.')}
         </p>
         <input
@@ -273,10 +273,10 @@ export function PortfolioElementStyleFields({
             const px = clampElementTextSizePx(Number(event.target.value), sizePresets.md);
             onStyleChange({ size: 'custom', sizePx: px });
           }}
-          className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
+          className="mt-3 h-2 w-full cursor-pointer accent-[color:var(--np-accent)]"
           aria-label={t('Manual text size in pixels')}
         />
-        <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
+        <div className="mt-1 flex justify-between text-[11px] text-[color:var(--np-muted)]">
           <span>{t('{ELEMENTTEXTSIZEPXMIN}px', { ELEMENTTEXTSIZEPXMIN: ELEMENT_TEXT_SIZE_PX_MIN })}</span>
           <span>{t('{ELEMENTTEXTSIZEPXMAX}px', { ELEMENTTEXTSIZEPXMAX: ELEMENT_TEXT_SIZE_PX_MAX })}</span>
         </div>
@@ -301,14 +301,14 @@ export function PortfolioElementStyleFields({
       ) : null}
       <div>
         <div className="flex items-center justify-between gap-3">
-          <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">
             {t('Manual weight')}
           </p>
-          <span className="tabular-nums text-sm font-semibold text-neutral-700">
+          <span className="tabular-nums text-sm font-semibold text-[color:var(--np-label)]">
             {resolvedWeightAmount}
           </span>
         </div>
-        <p className="mt-1 text-sm text-neutral-500">{t('Graisse exacte du texte (100–900).')}</p>
+        <p className="mt-1 text-sm text-[color:var(--np-muted)]">{t('Graisse exacte du texte (100–900).')}</p>
         <input
           type="range"
           min={ELEMENT_TEXT_WEIGHT_AMOUNT_MIN}
@@ -323,10 +323,10 @@ export function PortfolioElementStyleFields({
               bold: amount >= 600,
             });
           }}
-          className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
+          className="mt-3 h-2 w-full cursor-pointer accent-[color:var(--np-accent)]"
           aria-label={t('Manual text weight')}
         />
-        <div className="mt-1 flex justify-between text-[11px] text-neutral-400">
+        <div className="mt-1 flex justify-between text-[11px] text-[color:var(--np-muted)]">
           <span>{t('Fin')}</span>
           <span>{t('Épais')}</span>
         </div>

@@ -55,7 +55,7 @@ function formatDate(value: string): string {
 
 function MediaBadge({ children }: { children: ReactNode }) {
   return (
-    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[12px] font-semibold leading-4 text-white backdrop-blur-sm">
+    <span className="inline-flex items-center gap-1.5 rounded-full bg-black/60 px-2.5 py-1 text-[12px] font-semibold leading-4 text-white backdrop-blur-xs">
       {children}
     </span>
   );
@@ -158,7 +158,7 @@ export function SearchContentCard({ post }: { post: PublicContentFeedItem }) {
         onMouseEnter={playPreview}
         onMouseLeave={stopPreview}
         aria-label={title ? t('Open “{title}”', { title }) : t('Open post')}
-        className="relative block aspect-[4/3] w-full overflow-hidden bg-[#EFF3F4] text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] dark:bg-[#202327]"
+        className="relative block aspect-[4/3] w-full overflow-hidden bg-[#EFF3F4] text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)] dark:bg-[#202327]"
       >
         <span
           className="absolute inset-0 transition-transform duration-[700ms] ease-[cubic-bezier(0.22,1,0.36,1)] will-change-transform group-hover/card:scale-[1.04]"
@@ -208,7 +208,7 @@ export function SearchContentCard({ post }: { post: PublicContentFeedItem }) {
         </span>
 
         {kind === 'video' ? (
-          <span className="pointer-events-none absolute bottom-3 left-3 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-sm transition-transform duration-300 group-hover/card:scale-110">
+          <span className="pointer-events-none absolute bottom-3 left-3 flex h-10 w-10 items-center justify-center rounded-full bg-black/60 text-white backdrop-blur-xs transition-transform duration-300 group-hover/card:scale-110">
             <PlayIcon className="ml-0.5 h-4 w-4" />
           </span>
         ) : null}
@@ -231,7 +231,7 @@ export function SearchContentCard({ post }: { post: PublicContentFeedItem }) {
             <button
               type="button"
               onClick={() => setOpen(true)}
-              className="line-clamp-2 text-left underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-none"
+              className="line-clamp-2 text-left underline-offset-2 hover:underline focus-visible:underline focus-visible:outline-hidden"
             >
               {title}
             </button>

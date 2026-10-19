@@ -6,10 +6,9 @@ import { useLayoutEffect, useRef, type CSSProperties } from 'react';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
 import {
   resolveSkillCategory,
-  resolveSkillDescription,
+  resolveSkillCustomDescription,
   resolveSkillIconUrl,
   resolveSkillName,
-  resolveSkillUseCases,
   type PortfolioSkillRef,
 } from '@/components/portfolio/skill-usage-descriptions';
 import {
@@ -19,7 +18,7 @@ import {
   type PortfolioToolsCardGap,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
-import { useT } from '@/lib/i18n/I18nProvider';
+import { toolDisplayName } from '@/components/portfolio/stack-designs/tool-display-name';
 
 type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
@@ -91,7 +90,6 @@ function toolRowKey(tool: PortfolioSkillRef): string {
  * Hairlines sit on the type axis, flush to the name’s first letter.
  */
 export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryProps) {
-  const t = useT();
   const rootRef = useRef<HTMLDivElement>(null);
   const motionKey = tools.map(toolRowKey).join('\u001f');
 
@@ -169,7 +167,6 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
   const logoColorMode = toolsLogoColorMode(presentation);
   const framePx = showIconBg ? tilePx : logoPx;
   const showDescription = presentation.showDescription !== false;
-  const showUseCases = presentation.showUseCases !== false;
   const showCategory = presentation.showCategory !== false;
   const showName = presentation.showLabels !== false;
   const rule = presentation.cardBorderColor;
@@ -179,8 +176,7 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
     '--pf-stack-brand-index-ink': presentation.labelColor,
     '--pf-stack-brand-index-muted': presentation.descriptionColor,
     '--pf-stack-brand-index-rule': rule,
-    '--pf-stack-brand-index-chip-fill': presentation.chipBackgroundColor,
-    '--pf-stack-brand-index-chip-ink': presentation.chipTextColor,
+    '--pf-stack-brand-index-accent': presentation.levelAccentColor,
   } as CSSProperties;
 
   return (
@@ -191,15 +187,19 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
       style={rootStyle}
     >
       <ul className="pf-stack-brand-index-list m-0 w-full list-none p-0" role="list">
-        {tools.map((tool) => {
+        {tools.map((tool, index) => {
           const name = resolveSkillName(tool);
-          const description = resolveSkillDescription(tool);
+          // Creator's own copy only — never the generic fallback sentence.
+          const description = resolveSkillCustomDescription(tool);
           const category = resolveSkillCategory(tool);
-          const useCases = resolveSkillUseCases(tool);
           const key = toolRowKey(tool);
           const hasCategory = showCategory && Boolean(category);
+          // Rows arrive sorted by category: print it once at the head of each group
+          // (a real index heading) and keep it for screen readers on the rest.
+          const previousCategory = index > 0 ? resolveSkillCategory(tools[index - 1]) : '';
+          const continuesGroup =
+            hasCategory && previousCategory.toLocaleLowerCase() === category.toLocaleLowerCase();
           const hasDescription = showDescription && Boolean(description);
-          const hasChips = showUseCases && useCases.length > 0;
 
           return (
             <li
@@ -210,7 +210,7 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
               <article className="pf-stack-brand-index-article">
                 <div className={`pf-stack-brand-index-mark ${rowPad}`}>
                   <div
-                    className="flex shrink-0 items-center justify-center rounded-[8px]"
+                    className="pf-stack-brand-index-logo flex shrink-0 items-center justify-center rounded-[8px]"
                     style={{
                       width: framePx,
                       height: framePx,
@@ -236,13 +236,17 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
                         className="pf-stack-brand-index-name text-2xl font-semibold tracking-[-0.03em] sm:text-3xl lg:text-[2.15rem] lg:leading-[1.12]"
                         data-pf-no-color-transition=""
                       >
-                        {name}
+                        {toolDisplayName(name)}
                       </h3>
                     ) : (
                       <span className="pf-stack-brand-index-name pf-stack-brand-index-slot" aria-hidden />
                     )}
 
-                    {hasCategory ? (
+                    {hasCategory && continuesGroup ? (
+                      <p className="pf-stack-brand-index-category" data-continues="true">
+                        <span className="sr-only">{category}</span>
+                      </p>
+                    ) : hasCategory ? (
                       <p className="pf-stack-brand-index-category">{category}</p>
                     ) : (
                       <span className="pf-stack-brand-index-category pf-stack-brand-index-slot" aria-hidden />
@@ -256,19 +260,6 @@ export function EditorialToolsBrandIndex({ tools, presentation }: ToolsGalleryPr
                         aria-hidden
                       />
                     )}
-
-                    {hasChips ? (
-                      <ul
-                        className="pf-stack-brand-index-chips m-0 flex list-none flex-wrap p-0"
-                        aria-label={t('Use cases')}
-                      >
-                        {useCases.map((useCase) => (
-                          <li key={useCase} className="pf-stack-brand-index-chip">
-                            {useCase}
-                          </li>
-                        ))}
-                      </ul>
-                    ) : null}
                   </div>
                   <div
                     className="pf-stack-brand-index-rule"

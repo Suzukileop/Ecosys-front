@@ -50,7 +50,7 @@ export function CountryFlag({ iso2, className = '', size = 'md' }: CountryFlagPr
       loading="lazy"
       decoding="async"
       referrerPolicy="no-referrer"
-      className={`inline-block shrink-0 rounded-[2px] object-cover shadow-sm ring-1 ring-black/15 ${dim.className} ${className}`}
+      className={`inline-block shrink-0 rounded-[2px] object-cover shadow-xs ring-1 ring-black/15 ${dim.className} ${className}`}
       onError={() => {
         setSourceIndex((prev) => {
           const next = prev + 1;

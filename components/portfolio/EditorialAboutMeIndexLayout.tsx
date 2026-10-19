@@ -5,9 +5,11 @@ import { useReducedMotion } from 'framer-motion';
 import gsap from 'gsap';
 import type { LanguageProficiencyLevel, ProfileEducationEntry, ProfileSkillEntry } from '@/types/profile';
 import {
+  infoBlockLabelColor,
   noirBodySizeClass,
   noirHeadingSizeClass,
   noirLanguageAcronymSizeClass,
+  type PortfolioInfoBlockLabelColor,
   type PortfolioInfoPremiumFontSize,
 } from '@/components/portfolio/portfolio-info-settings';
 import { terminalLanguageCode } from '@/components/portfolio/EditorialAboutMeNoirLayouts';
@@ -135,7 +137,7 @@ function IndexTag({ index, label, bodyColor }: { index: number; label: string; b
   return (
     <span
       className="pf-about-index-tag block font-mono text-xs font-medium uppercase tracking-[0.28em] sm:text-sm"
-      style={{ color: bodyColor, opacity: 0.55 }}
+      style={{ color: bodyColor }}
     >
       [ <span className="pf-about-index-tag-num" data-target={index}>{String(index).padStart(2, '0')}</span>{' '}
       / {label} ]
@@ -179,17 +181,15 @@ function KeywordRow({
   items,
   bodyColor,
   subtitleColor,
-  cardBorder,
 }: {
   items: string[];
   bodyColor: string;
   subtitleColor: string;
-  cardBorder: string;
 }) {
   if (items.length === 0) return null;
   return (
     <p
-      className="pf-about-index-keywords text-xl font-light leading-relaxed sm:text-2xl"
+      className="pf-about-index-keywords text-xl font-normal leading-relaxed sm:text-2xl"
       style={
         {
           '--pf-about-index-muted': bodyColor,
@@ -201,7 +201,11 @@ function KeywordRow({
         <Fragment key={`${item}-${index}`}>
           <span className="pf-about-index-keyword cursor-default">{item}</span>
           {index < items.length - 1 ? (
-            <span className="mx-2" style={{ color: cardBorder }}>
+            <span
+              aria-hidden
+              className="mx-2"
+              style={{ color: `color-mix(in srgb, ${bodyColor} 55%, transparent)` }}
+            >
               /
             </span>
           ) : null}
@@ -227,13 +231,13 @@ function LanguageBlock({
   const code = terminalLanguageCode(name);
   const levelLabel = level ? resolveSpokenLanguageLevelLabel(level) : null;
   return (
-    <div className="pf-about-index-lang flex items-baseline gap-3">
-      <span className={`font-black tracking-tighter ${acronymClass}`} style={{ color: subtitleColor }}>
+    <div className="pf-about-index-lang flex min-w-0 flex-wrap items-baseline gap-x-3 gap-y-1">
+      <span className={`font-semibold tracking-tight ${acronymClass}`} style={{ color: subtitleColor }}>
         {code}
       </span>
       <span
-        className="whitespace-nowrap text-xs uppercase tracking-[0.22em] sm:text-sm"
-        style={{ color: bodyColor, opacity: 0.65 }}
+        className="text-xs uppercase tracking-[0.16em] sm:text-sm"
+        style={{ color: bodyColor }}
       >
         {name}
         {levelLabel ? ` / ${levelLabel}` : ''}
@@ -263,7 +267,7 @@ function CatalogRow({
     >
       <span
         className="col-span-12 text-base sm:col-span-4 sm:text-lg"
-        style={{ color: bodyColor, opacity: 0.65 }}
+        style={{ color: bodyColor }}
       >
         {left}
       </span>
@@ -298,6 +302,7 @@ export function AboutIndexEditorialLayout({
   bodyColor,
   cardBorder,
   className,
+  blockLabelColor = 'muted',
 }: {
   title: string;
   subtitle?: string | null;
@@ -321,8 +326,10 @@ export function AboutIndexEditorialLayout({
   bodyColor: string;
   cardBorder: string;
   className?: string;
+  blockLabelColor?: PortfolioInfoBlockLabelColor;
 }) {
   const t = useT();
+  const labelColor = infoBlockLabelColor(blockLabelColor, bodyColor);
   const rootRef = useRef<HTMLDivElement>(null);
   const reduceMotion = Boolean(useReducedMotion());
   useIndexGsapReveal(rootRef, reduceMotion);
@@ -346,7 +353,6 @@ export function AboutIndexEditorialLayout({
   const showLanguagesBlock = showLanguages && languageItems.length > 0;
   const showToolsBlock = showSystemsTools && visibleTools.length > 0;
   const showEducationBlock = showEducation && visibleEducation.length > 0;
-  const showIndexSection = showEducationBlock || showToolsBlock;
 
   const headingClass = noirHeadingSizeClass(contentSize);
   const bodyClass = noirBodySizeClass(contentSize);
@@ -356,10 +362,10 @@ export function AboutIndexEditorialLayout({
 
   return (
     <div ref={rootRef} className={`pf-about-index relative w-full${className ? ` ${className}` : ''}`}>
-      <IndexRow indexNumber={sectionIndex++} label={t('Profile')} bodyColor={bodyColor}>
+      <IndexRow indexNumber={sectionIndex++} label={t('Profile')} bodyColor={labelColor}>
         <div className="space-y-6">
           <div>
-            <h2 className={`font-light tracking-tight ${headingClass}`} style={{ color: subtitleColor }}>
+            <h2 className={`font-normal tracking-tight ${headingClass}`} style={{ color: subtitleColor }}>
               <span className="pf-about-index-name-mask block overflow-hidden">
                 <span className="pf-about-index-name-inner block">{headerLabel}</span>
               </span>
@@ -375,8 +381,8 @@ export function AboutIndexEditorialLayout({
           </div>
           {bioText ? (
             <p
-              className={`pf-about-index-reveal font-light ${bodyClass}`}
-              style={{ color: bodyColor, opacity: 0.88 }}
+              className={`pf-about-index-reveal font-normal ${bodyClass}`}
+              style={{ color: bodyColor }}
             >
               {bioText}
             </p>
@@ -387,13 +393,13 @@ export function AboutIndexEditorialLayout({
       {showSkillsSection ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label={t('Skills')} bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Skills')} bodyColor={labelColor}>
             <div className="space-y-8">
               {showSkillsBlock ? (
                 <div className="space-y-3">
                   <p
                     className="text-sm font-semibold uppercase tracking-[0.18em]"
-                    style={{ color: bodyColor, opacity: 0.5 }}
+                    style={{ color: labelColor }}
                   >
                     {t('Core skills')}
                   </p>
@@ -401,7 +407,6 @@ export function AboutIndexEditorialLayout({
                     items={visibleSkills}
                     bodyColor={bodyColor}
                     subtitleColor={subtitleColor}
-                    cardBorder={cardBorder}
                   />
                 </div>
               ) : null}
@@ -409,7 +414,7 @@ export function AboutIndexEditorialLayout({
                 <div className="space-y-3">
                   <p
                     className="text-sm font-semibold uppercase tracking-[0.18em]"
-                    style={{ color: bodyColor, opacity: 0.5 }}
+                    style={{ color: labelColor }}
                   >
                     {t('Strengths')}
                   </p>
@@ -417,7 +422,6 @@ export function AboutIndexEditorialLayout({
                     items={visibleStrengths}
                     bodyColor={bodyColor}
                     subtitleColor={subtitleColor}
-                    cardBorder={cardBorder}
                   />
                 </div>
               ) : null}
@@ -429,8 +433,8 @@ export function AboutIndexEditorialLayout({
       {showLanguagesBlock ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label={t('Languages')} bodyColor={bodyColor}>
-            <div className="flex flex-wrap items-baseline gap-x-12 gap-y-8">
+          <IndexRow indexNumber={sectionIndex++} label={t('Languages')} bodyColor={labelColor}>
+            <div className="grid grid-cols-[repeat(auto-fill,minmax(14rem,1fr))] items-baseline gap-x-8 gap-y-6">
               {languageItems.map((lang) => (
                 <LanguageBlock
                   key={lang.name}
@@ -446,33 +450,35 @@ export function AboutIndexEditorialLayout({
         </>
       ) : null}
 
-      {showIndexSection ? (
+      {showEducationBlock ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label={t('Index')} bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Education')} bodyColor={labelColor}>
             <div>
-              {showEducationBlock
-                ? visibleEducation.map((entry) => (
-                    <CatalogRow
-                      key={entry.id || `${entry.schoolYear}-${entry.title}-${entry.institution}`}
-                      left={entry.schoolYear?.trim() || '—'}
-                      right={[entry.title?.trim(), entry.institution?.trim()].filter(Boolean).join(' — ')}
-                      bodyColor={bodyColor}
-                      subtitleColor={subtitleColor}
-                      cardBorder={cardBorder}
-                    />
-                  ))
-                : null}
-              {showToolsBlock ? (
+              {visibleEducation.map((entry) => (
                 <CatalogRow
-                  left="Systems & tools"
-                  right={visibleTools.join(' · ')}
+                  key={entry.id || `${entry.schoolYear}-${entry.title}-${entry.institution}`}
+                  left={entry.schoolYear?.trim() || '—'}
+                  right={[entry.title?.trim(), entry.institution?.trim()].filter(Boolean).join(' — ')}
                   bodyColor={bodyColor}
                   subtitleColor={subtitleColor}
                   cardBorder={cardBorder}
                 />
-              ) : null}
+              ))}
             </div>
+          </IndexRow>
+        </>
+      ) : null}
+
+      {showToolsBlock ? (
+        <>
+          <IndexDivider cardBorder={cardBorder} />
+          <IndexRow indexNumber={sectionIndex++} label={t('Tools')} bodyColor={labelColor}>
+            <KeywordRow
+              items={visibleTools}
+              bodyColor={bodyColor}
+              subtitleColor={subtitleColor}
+            />
           </IndexRow>
         </>
       ) : null}
@@ -480,10 +486,10 @@ export function AboutIndexEditorialLayout({
       {showInterestsBlock ? (
         <>
           <IndexDivider cardBorder={cardBorder} />
-          <IndexRow indexNumber={sectionIndex++} label={t('Notes')} bodyColor={bodyColor}>
+          <IndexRow indexNumber={sectionIndex++} label={t('Interests')} bodyColor={labelColor}>
             <p
               className="pf-about-index-reveal max-w-2xl font-serif text-xl italic leading-relaxed sm:text-2xl"
-              style={{ color: bodyColor, opacity: 0.85 }}
+              style={{ color: bodyColor }}
             >
               {t('Also into {joinWithAnd}.', { joinWithAnd: joinWithAnd(visibleInterests) })}
             </p>

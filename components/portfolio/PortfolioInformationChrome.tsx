@@ -19,9 +19,9 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The site's two buttons (News, Providers, search): a solid ink pill and an outlined pill. */
 export const PORTFOLIO_PRIMARY_PILL =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary,#0F1419)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink,#FFFFFF)] transition-colors hover:bg-[color:var(--gn-primary-hover,#272C30)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary,#0F1419)] px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-primary-ink,#FFFFFF)] transition-colors hover:bg-[color:var(--gn-primary-hover,#272C30)] disabled:opacity-60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 export const PORTFOLIO_SECONDARY_PILL =
-  'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-ink,#0F1419)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] disabled:opacity-60 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
+  'inline-flex h-10 items-center justify-center gap-2 rounded-full px-5 text-[15px] font-semibold leading-5 text-[color:var(--gn-ink,#0F1419)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] disabled:opacity-60 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
 
 /** One glyph per visibility level, so the setting reads at a glance: a globe, two people, a lock. */
 function VisibilityGlyph({ level, className = 'h-3.5 w-3.5' }: { level: ContactVisibilityLevel; className?: string }) {
@@ -137,7 +137,7 @@ export function PortfolioFieldVisibilityMenu({
         aria-label={t('Who can see this: {label}', { label })}
         aria-expanded={open}
         onClick={() => setOpen((prev) => !prev)}
-        className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold leading-4 text-[color:var(--gn-ink,#0F1419)] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+        className={`inline-flex h-7 shrink-0 items-center gap-1.5 rounded-full px-2.5 text-[12px] font-semibold leading-4 text-[color:var(--gn-ink,#0F1419)] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
           open ? 'bg-[color:var(--gn-hover)]' : 'bg-[color:var(--gn-inset,#EFF3F4)] hover:bg-[color:var(--gn-hover)]'
         }`}
       >

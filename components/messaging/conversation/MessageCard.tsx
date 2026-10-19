@@ -69,7 +69,7 @@ export function MessageCard({
 
       <div
         tabIndex={0}
-        className={`flex min-w-0 max-w-[min(100%,520px)] flex-col outline-none ${mine ? 'items-end' : 'items-start'}`}
+        className={`flex min-w-0 max-w-[min(100%,520px)] flex-col outline-hidden ${mine ? 'items-end' : 'items-start'}`}
       >
         {media ? (
           <div

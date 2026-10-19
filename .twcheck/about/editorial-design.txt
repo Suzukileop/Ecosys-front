@@ -1,0 +1,205 @@
+/**
+ * Editorial — a magazine spread. A very large headline under a one-line eyebrow / meta rail, then two
+ * columns: a wide photograph with the quote and its author under it, and beside it the lead
+ * paragraph, a numbered list set between hairlines, and a text link. Nothing is boxed or filled; the
+ * hierarchy is carried by size and weight alone, and the accent appears only on the eyebrow, the
+ * numerals and the link.
+ */
+function AboutUsEditorialDesign({
+  aboutUs,
+  presentation,
+  sectionTitle,
+  sectionSubtitle,
+}: {
+  aboutUs: ProfileAboutUs;
+  presentation: PortfolioAboutUsPresentationSettings;
+  sectionTitle: string;
+  sectionSubtitle: string;
+}) {
+  const t = useT();
+  const title = aboutUs.title?.trim() ?? '';
+  const description = aboutUs.description?.trim() ?? '';
+  const tasks = (aboutUs.tasks ?? []).map((item) => item.trim()).filter(Boolean);
+  const src = filledImages(aboutUs.imageUrls)[0];
+  const quote = aboutUs.quote?.trim() ?? '';
+  const founderName = aboutUs.founder?.name?.trim() ?? '';
+  const founderFunction = aboutUs.founder?.function?.trim() ?? '';
+  const founderLogo = aboutUs.founder?.logoUrl?.trim() ?? '';
+  const eyebrow = sectionTitle.trim();
+  const meta =
+    sectionSubtitle.trim() && sectionSubtitle.trim() !== DEFAULT_ABOUT_US_SUBTITLE ? sectionSubtitle.trim() : '';
+  const ctaLabel = presentation.ctaLabel.trim() || t('Contact');
+  const ctaLink = useAboutUsCtaLinkProps();
+  const accent = presentation.accentColor;
+  const dark = aboutUsIsDarkMode(presentation);
+  const chrome = aboutUsChrome(dark);
+  const mediaLeft = aboutUsMediaIsLeft(presentation);
+  const showTasks = presentation.showTasks && tasks.length > 0;
+  const showQuote = presentation.showQuote && Boolean(quote);
+  const showFounder = presentation.showFounder && Boolean(founderName || founderFunction || founderLogo);
+  const hasVisualColumn = Boolean(src) || showQuote || showFounder;
+  const hasTextColumn = Boolean(description) || showTasks || presentation.showCta;
+  const twoColumns = hasVisualColumn && hasTextColumn;
+  // Numerals are the design's own list marker; any other bullet picked under List bullets replaces them.
+  const numerals = !presentation.taskBulletStyle || presentation.taskBulletStyle === 'number';
+
+  const gridCols = !twoColumns
+    ? ''
+    : mediaLeft
+      ? 'lg:grid-cols-[minmax(0,1.5fr)_minmax(0,1fr)]'
+      : 'lg:grid-cols-[minmax(0,1fr)_minmax(0,1.5fr)]';
+  // On a phone the reading order is headline → lead + list → photo → quote; the side only applies from lg.
+  const visualOrder = mediaLeft ? 'max-lg:order-2 lg:order-1' : 'max-lg:order-2 lg:order-2';
+  const textOrder = mediaLeft ? 'max-lg:order-1 lg:order-2' : 'max-lg:order-1 lg:order-1';
+
+  return (
+    <div className="w-full">
+      {eyebrow || meta ? (
+        <div className="flex items-baseline justify-between gap-6">
+          {eyebrow ? (
+            <p className="text-[13px] font-bold uppercase tracking-[0.18em]" style={{ color: accent }}>
+              {eyebrow}
+            </p>
+          ) : (
+            <span />
+          )}
+          {meta ? (
+            <p className="max-w-[60%] text-right text-[13px] leading-snug sm:text-sm" style={{ color: presentation.descriptionColor }}>
+              {meta}
+            </p>
+          ) : null}
+        </div>
+      ) : null}
+
+      {title ? (
+        <h3
+          className={`max-w-[13em] text-balance text-[clamp(2.5rem,8.2vw,6.25rem)] font-medium leading-[0.98] tracking-[-0.035em] ${
+            eyebrow || meta ? 'mt-5 sm:mt-6' : ''
+          }`}
+          style={{ color: presentation.titleColor } satisfies CSSProperties}
+        >
+          {title}
+        </h3>
+      ) : null}
+
+      {twoColumns || hasVisualColumn || hasTextColumn ? (
+        <div className={`grid gap-12 lg:gap-14 xl:gap-20 ${title || eyebrow ? 'mt-10 sm:mt-12 lg:mt-14' : ''} ${gridCols}`}>
+          {hasVisualColumn ? (
+            <div className={`min-w-0 ${visualOrder}`}>
+              {src ? (
+                // eslint-disable-next-line @next/next/no-img-element
+                <img
+                  {...mediaImageResponsive(src, ABOUT_MEDIA_WIDTHS)}
+                  sizes="(min-width: 1024px) 58vw, 92vw"
+                  alt=""
+                  loading="lazy"
+                  className="aspect-[4/3] w-full rounded-sm object-cover sm:aspect-[16/9] lg:aspect-[2.45/1]"
+                />
+              ) : null}
+
+              {showQuote ? (
+                <blockquote
+                  className={`max-w-[44rem] text-pretty text-[1.375rem] font-light leading-snug sm:text-[1.75rem] ${src ? 'mt-8 sm:mt-9' : ''}`}
+                  style={{ color: presentation.quoteColor }}
+                >
+                  {'“'}
+                  {quote}
+                  {'”'}
+                </blockquote>
+              ) : null}
+
+              {showFounder ? (
+                <div className={`flex items-center gap-4 ${showQuote || src ? 'mt-6' : ''}`}>
+                  {founderLogo ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      {...mediaImageResponsive(founderLogo, ABOUT_MEDIA_WIDTHS)}
+                      sizes="72px"
+                      alt=""
+                      loading="lazy"
+                      className="h-[4.25rem] w-[4.25rem] shrink-0 rounded-full object-cover"
+                    />
+                  ) : (
+                    <span
+                      className={`flex h-[4.25rem] w-[4.25rem] shrink-0 items-center justify-center rounded-full text-lg font-medium ${chrome.avatar}`}
+                      aria-hidden
+                    >
+                      {(founderName || '?').slice(0, 1).toUpperCase()}
+                    </span>
+                  )}
+                  <div className="min-w-0">
+                    {founderName ? (
+                      <p className="text-base font-medium sm:text-[1.0625rem]" style={{ color: presentation.founderNameColor }}>
+                        {founderName}
+                      </p>
+                    ) : null}
+                    {founderFunction ? (
+                      <p className="mt-0.5 text-sm sm:text-[15px]" style={{ color: presentation.founderFunctionColor }}>
+                        {founderFunction}
+                      </p>
+                    ) : null}
+                  </div>
+                </div>
+              ) : null}
+            </div>
+          ) : null}
+
+          {hasTextColumn ? (
+            <div className={`min-w-0 ${textOrder}`}>
+              {description ? (
+                <p
+                  className="max-w-[32rem] text-pretty text-lg font-light leading-[1.5] sm:text-[1.3rem]"
+                  style={{ color: presentation.descriptionColor }}
+                >
+                  {description}
+                </p>
+              ) : null}
+
+              {showTasks ? (
+                <ol className={`${description ? 'mt-9 sm:mt-10' : ''}`}>
+                  {tasks.map((task, index) => (
+                    <li
+                      key={`${index}-${task}`}
+                      className={`flex items-baseline gap-5 border-b py-5 first:pt-0 last:border-b-0 sm:gap-6 sm:py-6 sm:first:pt-0 ${chrome.divider}`}
+                    >
+                      {numerals ? (
+                        <span
+                          className="w-7 shrink-0 text-[13px] font-medium tabular-nums tracking-wide"
+                          style={{ color: accent }}
+                          aria-hidden
+                        >
+                          {String(index + 1).padStart(2, '0')}
+                        </span>
+                      ) : (
+                        <span className="flex w-7 shrink-0 justify-start self-start pt-1.5">
+                          <AboutUsTaskMarker presentation={presentation} index={index} />
+                        </span>
+                      )}
+                      <span
+                        className="min-w-0 text-xl font-light leading-tight sm:text-[1.65rem]"
+                        style={{ color: presentation.taskColor }}
+                      >
+                        {task}
+                      </span>
+                    </li>
+                  ))}
+                </ol>
+              ) : null}
+
+              {presentation.showCta ? (
+                <AboutUsCta
+                  presentation={presentation}
+                  label={ctaLabel}
+                  linkProps={ctaLink}
+                  className={description || showTasks ? 'mt-9 sm:mt-10' : ''}
+                  solidClassName="inline-flex w-fit items-center justify-center rounded-full px-8 py-3.5 text-base font-semibold transition hover:opacity-90"
+                />
+              ) : null}
+            </div>
+          ) : null}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+

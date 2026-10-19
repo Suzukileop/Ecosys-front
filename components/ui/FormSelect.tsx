@@ -112,7 +112,7 @@ export function FormSelect({
           open
             ? 'border-[#111111] dark:border-white/70'
             : 'border-black/[0.1] hover:border-black/20 focus-visible:border-[#111111] dark:border-white/[0.12] dark:hover:border-white/25 dark:focus-visible:border-white/70'
-        } focus:outline-none`}
+        } focus:outline-hidden`}
       >
         <span className={`truncate ${selected ? 'text-[#111111] dark:text-white' : 'text-neutral-400 dark:text-neutral-500'}`}>
           {selected?.label ?? placeholder}

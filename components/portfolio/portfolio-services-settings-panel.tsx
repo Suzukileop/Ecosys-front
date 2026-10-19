@@ -2,11 +2,6 @@
 
 import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
 import { createContext, useContext, useId, useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -103,6 +98,7 @@ import {
   PORTFOLIO_SERVICES_PRICING_AURORA_COLUMNS_OPTIONS,
   PORTFOLIO_SERVICES_PRICING_AURORA_FEATURED_POSITION_OPTIONS,
   DEFAULT_SERVICES_PRICING_TOGGLE_SETTINGS,
+  DEFAULT_SERVICES_PRESENTATION,
   PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS,
   SERVICES_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
   SERVICES_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
@@ -149,7 +145,16 @@ import {
 } from '@/components/portfolio/portfolio-settings-variants';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import {
+  NpBackRow,
+  NpCollapsibleSection,
+  NpOptionCard,
+  NpOptionCardGroup,
+  NpPanelShell,
+  NpPickerRow,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /** Top-level settings entry: kept for API compatibility with callers, though only
  *  'services' is currently wired up anywhere in the app (no live 'skills' entry point). */
@@ -234,7 +239,7 @@ function ServicesInfoTooltip({ text }: { text: string }) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -246,7 +251,7 @@ function ServicesInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -601,68 +606,33 @@ function ServicesDesignChoiceGrid({
   const selected =
     PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
-
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <ServicesSectionLabel>{t('Section design')}</ServicesSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
+      <div className="np-stack">
+        <NpBackRow title={t('Services design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+          {PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.map((option) => {
+            return (
+              <NpOptionCard
                 key={option.value}
-                cardClassName="pf-services-design-card"
-                labelClassName="pf-services-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'services', design: option.value })}
-                settings={previewSource.settings}
+                selected={option.value === value}
+                title={t(option.label)}
+                subtitle={t(option.description)}
+                illustration={<ServicesDesignWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
               />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_SERVICES_SECTION_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <ServicesPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <ServicesDesignWireframe design={option.value} />
-              </ServicesPickerCard>
             );
           })}
-        </div>
-        )}
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <ServicesDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <ServicesDesignWireframe design={value} />
-    </ServicesDesignSummaryRow>
+    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<ServicesDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -748,7 +718,7 @@ function ServicesColorField({
         onChange={(event) =>
           onChange(asServicesPatch(patchServicesColorBinding(services, slot, event.target.value as HeroPaletteTokenId)))
         }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-hidden"
         aria-label={t('{label} palette token', { label })}
       >
         {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
@@ -811,7 +781,7 @@ function ServicesMiniType({
 /** Expandable picker card — the Footer/Gallery/Team chrome: no visible border at rest, a
  *  hover brighten + 1px lift, and the selected card signalled only by its label turning the
  *  accent color (see `.pf-services-design-card` in globals.css). */
-function ServicesPickerCard({
+function _ServicesPickerCard({
   active,
   label,
   onClick,
@@ -838,7 +808,7 @@ function ServicesPickerCard({
       {children}
       <span
         className={`pf-services-card-label block font-semibold leading-tight ${
-          compact ? 'mt-2 text-xs' : 'mt-3 text-[13.5px]'
+          compact ? 'mt-2 text-xs' : 'mt-3 text-[14px]'
         }`}
       >
         {label}
@@ -1144,7 +1114,7 @@ function servicesIndexListTasksGlyph(style: PortfolioServicesIndexListTasksStyle
 /** Collapsed-state row shared by the Header design choice grid: a compact scaled-down
  *  thumbnail, the selected design's name, and a trailing chevron — the whole row opens
  *  the grid. Same mechanism as Stack/Contact's own design summary row. */
-function ServicesDesignSummaryRow({
+function _ServicesDesignSummaryRow({
   label,
   name,
   onOpen,
@@ -1155,14 +1125,13 @@ function ServicesDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
     <div>
       <ServicesSectionLabel>{label}</ServicesSectionLabel>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        aria-label={`Change ${label.toLowerCase()}`}
         className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
@@ -1748,44 +1717,31 @@ function ServicesHeaderChoiceGrid({
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <ServicesSectionLabel>{t('Header design')}</ServicesSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
           {PORTFOLIO_SERVICES_HEADER_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
             return (
               <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-                <ServicesPickerCard
-                  active={active}
-                  label={t(option.label)}
+                <NpOptionCard
+                  selected={option.value === value}
+                  title={t(option.label)}
+                  illustration={<ServicesHeaderDesignWireframe design={option.value} />}
                   onClick={() => {
                     onChange(option.value);
                     setShowGrid(false);
                   }}
-                >
-                  <ServicesHeaderDesignWireframe design={option.value} />
-                </ServicesPickerCard>
+                />
               </PortfolioHeaderDesignOption>
             );
           })}
-        </div>
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <ServicesDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <ServicesHeaderDesignWireframe design={value} />
-    </ServicesDesignSummaryRow>
+    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<ServicesHeaderDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -4120,6 +4076,7 @@ export function ServicesSettingsPanel({
   subSection: controlledSubSection,
   onSubSectionChange,
   availableServices = [],
+  chrome,
 }: {
   services: PortfolioServicesSectionSettings;
   onChange: (patch: Partial<PortfolioServicesSectionSettings>) => void;
@@ -4129,6 +4086,7 @@ export function ServicesSettingsPanel({
   /** Real service items (id + title) from the live preview — powers the "Featured card"
    *  picker below so the creator picks by actual title instead of a bare index. */
   availableServices?: { id: string; title: string }[];
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
@@ -4173,56 +4131,51 @@ export function ServicesSettingsPanel({
     services.sectionDesign === 'services-pricing' ||
     services.sectionDesign === 'services-pricing-aurora' ||
     services.sectionDesign === 'services-pricing-toggle';
+  const defaults: PortfolioServicesSectionSettings = {
+    enabled: true,
+    title: 'Services',
+    subtitle: 'Tailored services — built to take your ideas from brief to something you’re proud to share.',
+    ...DEFAULT_SERVICES_PRESENTATION,
+  };
+  const modified = JSON.stringify(services) !== JSON.stringify(defaults);
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={SERVICES_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell
+      title={t('Services')}
+      modified={modified}
+      tabs={SERVICES_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))}
+      activeTab={subSection}
+      onTabChange={setSubSection}
+      onReset={() => onChange(defaults)}
+      chrome={chrome}
+    >
 
       {subSection === 'general' ? (
-        <div className="space-y-8">
-          <SettingsSwitchRow
-            label={t('Show Services section')}
-            description={servicesShown ? undefined : t('Visitors go straight to the next section.')}
-            checked={servicesShown}
-            onChange={(showServices) =>
+        <div className="np-stack">
+          <NpToggleRow card title={t('Show Services section')} description={servicesShown ? undefined : t('Visitors go straight to the next section.')} checked={servicesShown} onChange={(showServices) =>
               onChange({
                 showServices,
                 enabled: showServices || services.showSkills !== false,
                 sectionOrganization: 'distinct',
                 layoutMode: 'separated',
               })
-            }
-          />
-          {servicesShown ? (
-          <>
-          <SettingsGroup label={t('Section heading')}>
-            <div>
-              <ServicesVisibilityRow
-                label={t('Subheading')}
-                checked={services.showServicesSubheading !== false}
-                onChange={(showServicesSubheading) => onChange({ showServicesSubheading })}
-              />
-              <ServicesVisibilityRow
-                label={t('Response time')}
-                info="Typically replies label in the section header."
-                checked={services.showResponseTime}
-                onChange={(showResponseTime) => onChange({ showResponseTime })}
-              />
-            </div>
-          </SettingsGroup>
-          <SettingsGroup label={t('Card elements')}>
-            <div>
-              <ServicesVisibilityRow
-                label={t('Title')}
+            } />
+          <div className="np-dimmable" data-disabled={servicesShown ? 'false' : 'true'} inert={!servicesShown}>
+          {/* No "Section heading" toggles here: `showServicesSubheading` / `showResponseTime` are
+              combined-mode leftovers that mergeServicesPresentation forces off, so a switch for them
+              could never stay on. The heading's own elements live in Header → visible elements. */}
+          <NpCollapsibleSection title={t('Card elements')}>
+              <NpToggleRow
+                title={t('Title')}
                 checked={services.showServiceTitle !== false}
                 onChange={(showServiceTitle) => onChange({ showServiceTitle })}
               />
-              <ServicesVisibilityRow
-                label={t('Description')}
+              <NpToggleRow
+                title={t('Description')}
                 checked={services.showServiceDescription !== false}
                 onChange={(showServiceDescription) => onChange({ showServiceDescription })}
               />
-              <ServicesVisibilityRow
-                label={t('Price')}
+              <NpToggleRow
+                title={t('Price')}
                 checked={
                   priceOptIn
                     ? optInShown('price', services.showServicePrice)
@@ -4243,8 +4196,8 @@ export function ServicesSettingsPanel({
                   )
                 }
               />
-              <ServicesVisibilityRow
-                label={t('Delivery time')}
+              <NpToggleRow
+                title={t('Delivery time')}
                 checked={deliveryShown}
                 onChange={(next) => onChange(optInPatch('delivery', 'showServiceDelivery', next))}
               />
@@ -4264,27 +4217,25 @@ export function ServicesSettingsPanel({
                   </p>
                 </div>
               ) : null}
-              <ServicesVisibilityRow
-                label={t('Tasks checklist')}
+              <NpToggleRow
+                title={t('Tasks checklist')}
                 checked={optInShown('tasks', services.showServiceTasks)}
                 onChange={(next) => onChange(optInPatch('tasks', 'showServiceTasks', next))}
               />
-              <ServicesVisibilityRow
-                label={t('Order / contact button')}
+              <NpToggleRow
+                title={t('Order / contact button')}
                 checked={optInShown('cta', services.showServiceCta)}
                 onChange={(next) => onChange(optInPatch('cta', 'showServiceCta', next))}
               />
-            </div>
-          </SettingsGroup>
-          </>
-          ) : null}
+          </NpCollapsibleSection>
+          </div>
         </div>
       ) : null}
 
-      {subSection !== 'general' && !servicesShown ? <SectionHiddenNotice onEnable={() => onChange({ showServices: true, enabled: true, sectionOrganization: 'distinct', layoutMode: 'separated' })} /> : null}
+      {subSection !== 'general' && !servicesShown ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ showServices: true, enabled: true, sectionOrganization: 'distinct', layoutMode: 'separated' })} /></div> : null}
 
       {subSection === 'design' && servicesShown ? (
-        <div className="space-y-6">
+        <div className="np-stack">
           <ServicesDesignChoiceGrid
             showGrid={designCatalogOpen}
             setShowGrid={setDesignCatalogOpen}
@@ -4323,8 +4274,8 @@ export function ServicesSettingsPanel({
           )}
 
           {designCatalogOpen ? null : (
-            <div>
-          <SettingsGroup label={t('Style')}>
+            <>
+          <NpCollapsibleSection title={t('Style')}>
           <SectionColorModeControl
             label={t('Color mode')}
             value={services.colorModeOverride}
@@ -4338,8 +4289,8 @@ export function ServicesSettingsPanel({
             onChange={(premiumFontSize) => onChange({ premiumFontSize })}
             columns={3}
           />
-          </SettingsGroup>
-          <SettingsGroup label={t('List bullet')}>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('List bullet')}>
             <p className="-mt-2 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
               {t('The mark in front of each task. Applies to')} {Object.values(SERVICES_LIST_BULLET_DESIGNS).join(', ')}.
               {SERVICES_LIST_BULLET_DESIGNS[services.sectionDesign ?? '']
@@ -4389,30 +4340,31 @@ export function ServicesSettingsPanel({
                 </div>
               </div>
             ) : null}
-          </SettingsGroup>
-          <SettingsGroup label={t('Price text')}>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Price text')}>
             <p className="-mt-2 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
               {t('What every design shows instead of a figure. Leave empty to keep each design\'s own wording.')}
             </p>
             <div className="mt-4">
               <ServicesPriceTextFields services={services} onChange={onChange} />
             </div>
-          </SettingsGroup>
-          <SettingsGroup label={t('Order button')}>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Order button')}>
             <p className="-mt-2 text-[13px] leading-5 text-[color:var(--pf-palette-texte-muted)]">
               {t('One button setup for every design — label, look, shape and where it leads.')}
             </p>
             <div className="mt-4">
               <ServicesOrderButtonFields services={services} onChange={onChange} />
             </div>
-          </SettingsGroup>
-            </div>
+          </NpCollapsibleSection>
+            </>
           )}
         </div>
       ) : null}
 
       {subSection === 'background' && servicesShown ? (
-        <div className="space-y-4">
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={services}
             onChange={onChange}
@@ -4426,31 +4378,29 @@ export function ServicesSettingsPanel({
               );
             }}
           />
+          </NpCollapsibleSection>
         </div>
       ) : null}
 
       {subSection === 'header' && servicesShown ? (
-        <div className="space-y-6">
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Header design')}>
           <ServicesHeaderChoiceGrid
             value={services.headerDesign ?? 'editorial'}
             onChange={(headerDesign) => onChange({ headerDesign })}
             open={headerCatalogOpen}
             onOpenChange={setHeaderCatalogOpen}
           />
+          </NpCollapsibleSection>
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <ServicesLayoutSettingsBand
-              motionKey={services.headerDesign ?? 'editorial'}
-              id="services-header-settings-title"
-              title={t('Header settings')}
-              flush
-            >
+            <NpCollapsibleSection title={t('Header settings')}>
               <ServicesHeaderDesignFields services={services} onChange={onChange} />
-            </ServicesLayoutSettingsBand>
+            </NpCollapsibleSection>
           )}
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

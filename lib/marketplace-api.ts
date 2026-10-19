@@ -1,6 +1,7 @@
 import { tr } from '@/lib/i18n/active';
 import { normalizeProductStatusLabels } from '@/lib/product-status-labels';
 import api from '@/lib/api';
+import { API_BASE } from '@/lib/api-base';
 import { formatMoney } from '@/lib/money';
 import { UserFacingError } from '@/lib/api-error';
 import { parseAboutSkills } from '@/lib/about-skills';
@@ -12,7 +13,7 @@ import { normalizeStorageUrlsDeep, resolveStorageMediaUrl } from '@/lib/storage-
 import {
   parseProductWhyBlocks,
   serializeProductWhyBlocks,
-} from '@/components/marketplace/product-why-block-schema';
+} from '@/components/marketplace/product-why-blocks';
 import type { PagedResponse, SpringPageRaw, CreatorStarStats } from '@/types/profile';
 import type { ContentReport, MarketplaceBundleSummary, MarketplaceProductGroup, MarketplaceProductGroupRequest, MarketplaceComment, MarketplaceContentDetail, MarketplaceContentItem, PublicContentFeedItem, PublicContentFeedPage, MarketplaceCreatorPublicProfile, MarketplaceCreatorSummary, MarketplaceProductDetail, MarketplaceProductRequest, MarketplaceProductSummary, MarketplacePurchase, MarketplacePurchaseResponse, ProductInitData, ProductReview, ProductReviewComposerStatus, ProductReviewRequest, ProductReviewSummary, ProductOwnership, OwnedProductRaw, PurchaseAccessMode, PurchaseAccessResponse, ReactionCounts, ReactionType, ReportUpdateRequest, ReportReason, ReportStatus, SocialTargetType } from '@/types/marketplace';
 
@@ -815,7 +816,8 @@ function mapProfileMediaBlock(raw: RawRecord, index: number): import('@/types/pr
   };
 }
 
-const MARKETPLACE_API_BASE = process.env.NEXT_PUBLIC_API_URL ?? 'http://localhost:8080';
+/* Server-side fetches: NEXT_PUBLIC_API_URL, else the backend's internal address (lib/api-base). */
+const MARKETPLACE_API_BASE = API_BASE;
 
 type ServerFetchOptions = {
   refreshToken?: string;

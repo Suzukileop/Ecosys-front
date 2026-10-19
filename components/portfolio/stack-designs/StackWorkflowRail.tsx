@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef } from 'react';
+import { useEffect, useLayoutEffect, useRef, type RefObject } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import { CreatorToolLogo } from '@/components/creator/studio/CreatorToolLogo';
@@ -17,6 +17,7 @@ import {
   toolsWorkflowRailGapClass,
   type PortfolioToolsPresentationSettings,
 } from '@/components/portfolio/portfolio-tools-settings';
+import { toolDisplayName } from '@/components/portfolio/stack-designs/tool-display-name';
 
 type ToolsGalleryProps = {
   tools: PortfolioSkillRef[];
@@ -75,12 +76,27 @@ function stackRailScrollParent(el: HTMLElement | null): HTMLElement | undefined 
   return undefined;
 }
 
-function stackRailDockClass(
-  alignment: ReturnType<typeof resolveToolsDesignContentAlignment>
-): string {
-  if (alignment === 'left') return 'mr-auto';
-  if (alignment === 'right') return 'ml-auto';
-  return 'mx-auto';
+/**
+ * Flags the rail while tools remain hidden past its inline end, so CSS can fade
+ * that edge — the scrollbar is hidden, this is the only overflow cue.
+ */
+function useRailOverflowCue(ref: RefObject<HTMLUListElement | null>, signature: string) {
+  useEffect(() => {
+    const rail = ref.current;
+    if (!rail) return;
+    const update = () => {
+      const more = rail.scrollWidth - rail.clientWidth - rail.scrollLeft > 4;
+      rail.dataset.pfStackRailMore = more ? 'true' : 'false';
+    };
+    update();
+    rail.addEventListener('scroll', update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(rail);
+    return () => {
+      rail.removeEventListener('scroll', update);
+      observer.disconnect();
+    };
+  }, [ref, signature]);
 }
 
 /**
@@ -101,17 +117,21 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
   const lockedGray = toolsLogosGrayscaleEnabled(presentation);
   const alignment = resolveToolsDesignContentAlignment('workflow-rail', presentation);
   const labelInk = presentation.labelColor?.trim() || '#171717';
+  const railSurface = presentation.cardBackgroundColor?.trim() || 'transparent';
+  const railLine = presentation.cardBorderColor?.trim() || labelInk;
+  const logoTreatment = presentation.workflowRailLogoTreatment === 'soft' ? 'soft' : 'vivid';
 
   const toolSignature = tools
     .map((tool) => (typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`))
     .join('|');
+
+  useRailOverflowCue(railRef, `${toolSignature}|${tilePx}`);
 
   useLayoutEffect(() => {
     const root = railRef.current;
     if (!root || prefersReducedMotion()) return;
 
     gsap.registerPlugin(ScrollTrigger);
-    let ctx: gsap.Context | undefined;
     let refreshA = 0;
     let refreshB = 0;
 
@@ -121,7 +141,7 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
     );
     if (laidOut.length === 0) return;
 
-    ctx = gsap.context(() => {
+    const ctx = gsap.context(() => {
       // Hide immediately (pre-paint) — a timeline's own .set() only runs once the
       // scroll-gated timeline plays, which flashed items visible until then.
       gsap.set(laidOut, { opacity: 0, y: 10 });
@@ -162,18 +182,26 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
   return (
     <ul
       ref={railRef}
-      className={`pf-stack-rail ${stackRailDockClass(alignment)} ${toolsWorkflowRailGapClass(presentation.cardGap)}`}
+      className={`pf-stack-rail ${toolsWorkflowRailGapClass(presentation.cardGap)}`}
       role="list"
+      data-pf-stack-rail-align={alignment}
+      data-pf-stack-rail-more="false"
       data-pf-stack-rail-locked-gray={lockedGray ? 'true' : 'false'}
+      data-pf-stack-rail-logo-treatment={logoTreatment}
       data-pf-no-color-transition=""
       style={{
-        ['--pf-stack-rail-col' as string]: `${framePx}px`,
+        // Column width follows the tile size even when the icon frame is off — sizing it
+        // from the bare logo (56px) squeezed names into ~75px and split "JavaScript".
+        ['--pf-stack-rail-col' as string]: `${tilePx}px`,
         ['--pf-stack-rail-mark' as string]: `${framePx}px`,
         ['--pf-stack-rail-ink' as string]: labelInk,
+        ['--pf-stack-rail-surface' as string]: railSurface,
+        ['--pf-stack-rail-line' as string]: railLine,
       }}
     >
-      {tools.map((tool) => {
+      {tools.map((tool, index) => {
         const name = resolveSkillName(tool);
+        const displayName = toolDisplayName(name);
         const key = typeof tool === 'string' ? tool : `${tool.name}-${tool.iconUrl ?? ''}`;
         return (
           <li
@@ -181,6 +209,9 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
             className="pf-stack-rail-item"
             data-pf-no-color-transition=""
           >
+            <span className="pf-stack-rail-index" aria-hidden>
+              {String(index + 1).padStart(2, '0')}
+            </span>
             <div
               className="pf-stack-rail-mark"
               data-pf-no-color-transition=""
@@ -202,7 +233,7 @@ export function EditorialToolsWorkflow({ tools, presentation }: ToolsGalleryProp
             </div>
             {showLabels ? (
               <span className="pf-stack-rail-name" data-pf-no-color-transition="">
-                {name}
+                {displayName}
               </span>
             ) : null}
           </li>

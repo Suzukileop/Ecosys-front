@@ -12,11 +12,11 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 /** The panel's one text field: card tone, hairline, a heavier ring on focus. */
 export const PF_TEXT_INPUT =
-  'w-full rounded-xl bg-[color:var(--pf-surface)] px-3 py-2.5 text-[14px] text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] outline-none transition-shadow focus:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)]';
+  'w-full rounded-xl bg-[color:var(--pf-surface)] px-3 py-2.5 text-[14px] text-[color:var(--pf-palette-texte-fort)] placeholder:text-[color:var(--pf-palette-texte-muted)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] outline-hidden transition-shadow focus:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)]';
 
 /** A pill the user toggles (tools, suggestions…): ink when on, hairline when off. */
 export function pfChipClass(active: boolean) {
-  return `inline-flex min-h-8 items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] disabled:cursor-not-allowed disabled:opacity-40 ${
+  return `inline-flex min-h-8 items-center gap-2 rounded-full px-3 py-1.5 text-[13px] font-medium transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] disabled:cursor-not-allowed disabled:opacity-40 ${
     active
       ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
       : 'text-[color:var(--pf-palette-texte-fort)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] hover:bg-[color:var(--pf-surface)]'
@@ -45,7 +45,7 @@ export function SettingsTabs<T extends string>({
             role="tab"
             aria-selected={active}
             onClick={() => onChange(tab.id)}
-            className={`h-8 rounded-full px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
+            className={`h-8 rounded-full px-3.5 text-[13px] font-semibold transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)] ${
               active
                 ? 'bg-[color:var(--pf-palette-texte-fort)] text-[color:var(--pf-palette-fond)]'
                 : 'bg-[color:var(--pf-surface)] text-[color:var(--pf-palette-texte-fort)] hover:bg-[color:var(--pf-palette-neutre)]'
@@ -112,7 +112,7 @@ export function SettingsSwitchRow({
         role="switch"
         aria-checked={checked}
         onClick={() => onChange(!checked)}
-        className="flex w-full items-center justify-between gap-4 py-1 text-start focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
+        className="flex w-full items-center justify-between gap-4 py-1 text-start focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="min-w-0 text-[14px] font-medium text-[color:var(--pf-palette-texte-fort)]">{label}</span>
         <SettingsSwitch checked={checked} />
@@ -132,7 +132,7 @@ export function SectionHiddenNotice({ onEnable }: { onEnable: () => void }) {
       <button
         type="button"
         onClick={onEnable}
-        className="mt-4 inline-flex h-9 items-center rounded-full bg-[color:var(--pf-palette-texte-fort)] px-4 text-[13px] font-semibold text-[color:var(--pf-palette-fond)] transition-opacity hover:opacity-90 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
+        className="mt-4 inline-flex h-9 items-center rounded-full bg-[color:var(--pf-palette-texte-fort)] px-4 text-[13px] font-semibold text-[color:var(--pf-palette-fond)] transition-opacity hover:opacity-90 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--pf-palette-texte-muted)]"
       >
         {t('Show section')}
       </button>

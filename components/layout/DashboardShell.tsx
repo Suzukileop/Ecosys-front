@@ -146,7 +146,7 @@ function SessionErrorScreen({
                   type="button"
                   onClick={() => void retry()}
                   disabled={retrying}
-                  className="inline-flex h-11 flex-1 items-center justify-center gap-2.5 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:focus-visible:ring-white/30"
+                  className="inline-flex h-11 flex-1 items-center justify-center gap-2.5 rounded-lg bg-[#111111] px-5 text-[15px] font-medium text-white transition-opacity hover:opacity-85 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/20 disabled:opacity-60 dark:bg-white dark:text-[#111111] dark:focus-visible:ring-white/30"
                 >
                   <svg
                     className={`h-4 w-4 ${retrying ? 'animate-spin' : ''}`}

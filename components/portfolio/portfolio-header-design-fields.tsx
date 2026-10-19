@@ -49,7 +49,7 @@ export function HeaderSharedControls({
   const titleSize = (record.headerTitleSize as HeaderTextSize | undefined) ?? 'md';
   const titleWeight = (record.headerTitleWeight as HeaderTextWeight | undefined) ?? 'regular';
   return (
-    <div className="pf-exp-centered-config space-y-8 border-t border-neutral-200/70 pt-9">
+    <div className="pf-exp-centered-config space-y-8 border-t border-[color:var(--pf-palette-bordure)] pt-9">
       {hideAlignment ? null : (
         <HeaderOptionGrid
           label={t('Header alignment')}
@@ -168,7 +168,8 @@ export function HeaderDesignFields({
             {...colorProps}
           />
         </HeaderBlock>
-        {shared({ hideTitleControls: true })}
+        {/* The index layout (counter | rule | title) is always left-aligned. */}
+        {shared({ hideAlignment: true, hideTitleControls: true })}
       </>
     );
   }

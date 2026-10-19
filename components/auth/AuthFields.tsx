@@ -6,11 +6,14 @@ import { LoadingSpinner } from '@/components/ui/LoadingSpinner';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 const FIELD =
-  'block h-12 w-full rounded-xl border bg-white px-4 text-[15px] text-[#111111] outline-none transition-[border-color,box-shadow] placeholder:text-neutral-400 dark:bg-[#111111] dark:text-white dark:placeholder:text-neutral-500';
+  'block h-12 w-full rounded-xl border bg-white px-4 text-[15px] text-[#111111] outline-hidden transition-[border-color,box-shadow] placeholder:text-neutral-400 dark:bg-[#111111] dark:text-white dark:placeholder:text-neutral-500';
 const FIELD_OK =
   'border-black/[0.12] hover:border-black/25 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:border-white/[0.14] dark:hover:border-white/25 dark:focus:border-[#FF5722]';
 const FIELD_ERROR =
   'border-[#E0431A] focus:shadow-[0_0_0_3px_rgba(224,67,26,0.16)] dark:border-[#FF7A52]';
+
+/** The field skin, for inputs that aren't wired to react-hook-form (e.g. the e-mail code boxes). */
+export const AUTH_FIELD_CLASSES = { base: FIELD, ok: FIELD_OK, error: FIELD_ERROR } as const;
 
 export function FieldError({ children }: { children?: ReactNode }) {
   if (!children) return null;
@@ -115,7 +118,7 @@ export function AuthSubmitButton({
     <button
       type="submit"
       disabled={busy}
-      className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-[15px] font-medium text-white transition-[opacity,transform] hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#111111]"
+      className="group inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[#111111] px-5 text-[15px] font-medium text-white transition-[opacity,transform,translate,scale,rotate] hover:opacity-90 active:scale-[0.99] disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-[#111111]"
     >
       {busy ? (
         <>

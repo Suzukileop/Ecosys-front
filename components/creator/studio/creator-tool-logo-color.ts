@@ -1,7 +1,7 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { resolveCreatorToolSimpleIcon } from '@/components/creator/studio/creator-tool-simple-icons';
+import { useCreatorToolSimpleIcons } from '@/components/creator/studio/creator-tool-simple-icons-lazy';
 import {
   creatorToolHasTechIcon,
   resolveCreatorToolTechIconUrl,
@@ -21,13 +21,16 @@ export function resolveToolLevelPercent(level: ProfileStrengthToolLevel | null |
 }
 
 /** Upload, TechIcons PNG, or Simple Icons match — letter-only tools return false. */
+type SimpleIconsTable = ReturnType<typeof useCreatorToolSimpleIcons>;
+
 function hasToolLogoBrandSource(
   label: string,
-  iconUrl: string | null | undefined
+  iconUrl: string | null | undefined,
+  simpleIcons: SimpleIconsTable
 ): boolean {
   if (iconUrl?.trim()) return true;
   if (creatorToolHasTechIcon(label)) return true;
-  return resolveCreatorToolSimpleIcon(label) != null;
+  return simpleIcons?.resolveCreatorToolSimpleIcon(label) != null;
 }
 
 function rgbToHex(r: number, g: number, b: number): string {
@@ -119,8 +122,8 @@ function pickToolLevelBrandColor(
 }
 
 /** Official brand hex — skip unusable near-black registry colors (e.g. OpenJDK). */
-function resolveCreatorToolBrandHex(label: string): string | null {
-  const resolved = resolveCreatorToolSimpleIcon(label);
+function resolveCreatorToolBrandHex(label: string, simpleIcons: SimpleIconsTable): string | null {
+  const resolved = simpleIcons?.resolveCreatorToolSimpleIcon(label) ?? null;
   if (!resolved) return null;
   if (resolved.matchedName === 'Java' && hexLuminance(resolved.hex) < 0.07) {
     return '#5382A1';
@@ -203,12 +206,15 @@ export function useToolLevelBarColor(
   labelColor: string,
   surfaceColor?: string
 ): { barColor: string; fromLogo: boolean } {
+  /* The Simple Icons table loads on demand: its registry colour is the fallback tint of any tool
+     without an uploaded logo (bundled PNG or not), as before. */
+  const simpleIcons = useCreatorToolSimpleIcons(!iconUrl?.trim());
   const hasLogoBrand = useMemo(
-    () => hasToolLogoBrandSource(label, iconUrl),
-    [label, iconUrl]
+    () => hasToolLogoBrandSource(label, iconUrl, simpleIcons),
+    [label, iconUrl, simpleIcons]
   );
 
-  const registryHex = useMemo(() => resolveCreatorToolBrandHex(label), [label]);
+  const registryHex = useMemo(() => resolveCreatorToolBrandHex(label, simpleIcons), [label, simpleIcons]);
   const surfaceHex = useMemo(() => {
     const candidate = surfaceColor?.trim();
     if (candidate && parseHexColor(candidate)) return candidate;

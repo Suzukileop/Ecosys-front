@@ -69,7 +69,7 @@ const SKILL_VIEWS: Array<{ id: SkillView; label: string; icon: IconDefinition }>
 
 const UNCATEGORIZED = 'Other';
 const TILE_CLASS =
-  'border border-black/[0.06] transition-colors duration-200 hover:border-black/25 focus-visible:border-[#0F1419] dark:focus-visible:border-[#E7E9EA] focus-visible:outline-none dark:border-white/[0.08] dark:hover:border-white/30';
+  'border border-black/[0.06] transition-colors duration-200 hover:border-black/25 focus-visible:border-[#0F1419] dark:focus-visible:border-[#E7E9EA] focus-visible:outline-hidden dark:border-white/[0.08] dark:hover:border-white/30';
 
 function subscribeTheme(onChange: () => void) {
   const observer = new MutationObserver(onChange);
@@ -279,7 +279,7 @@ function SkillLogo({
         disabled={uploading}
         title={error ?? t('Replace logo')}
         aria-label={`Replace logo for ${name || 'item'}`}
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-transform duration-300 hover:scale-110 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
+        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md transition-transform duration-300 hover:scale-110 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
       >
         {uploading ? (
           <LoadingSpinner size="sm" />
@@ -540,7 +540,7 @@ function SkillOverview({
                   <button
                     type="button"
                     aria-label={t('Edit {displayName}', { displayName: displayName(row) })}
-                    className="flex items-center gap-3 text-left focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
+                    className="flex items-center gap-3 text-left focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40"
                   >
                     <CreatorToolLogo label={displayName(row)} iconUrl={row.iconUrl} size={24} colorMode={colorMode} />
                     <span className={VALUE_CLASS}>{displayName(row)}</span>

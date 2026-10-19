@@ -321,7 +321,7 @@ export function ServicesCapabilitiesSection({
                 label={ctaLabel}
                 ink={ink}
                 surface={isLight ? '#fafafa' : '#0a0a0a'}
-                className="group/cta inline-flex w-fit items-center gap-2 border-b border-current pb-1 text-[0.88rem] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                className="group/cta inline-flex w-fit items-center gap-2 border-b border-current pb-1 text-[0.88rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                 autoContent={
                   <>
                     {ctaLabel}

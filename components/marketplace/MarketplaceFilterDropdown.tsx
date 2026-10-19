@@ -139,7 +139,7 @@ export function MarketplaceFilterDropdown({
           aria-haspopup="listbox"
           aria-expanded={open}
           onClick={() => (open ? setOpen(false) : openMenu())}
-          className={`inline-flex h-full items-center gap-2 outline-none ${
+          className={`inline-flex h-full items-center gap-2 outline-hidden ${
             plain ? 'text-[15px]' : `text-[14px] ${size === 'sm' ? 'pl-3.5 pr-3' : 'pl-4 pr-3.5'}`
           } ${stretch ? 'min-w-0 flex-1 justify-center sm:flex-none sm:justify-start' : ''}`}
         >

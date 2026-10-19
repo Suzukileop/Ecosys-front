@@ -1,9 +1,7 @@
 'use client';
 
 import { useState, type FormEvent, type KeyboardEvent } from 'react';
-import { useForm } from 'react-hook-form';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { z } from 'zod';
+import { useForm, type FieldErrors, type Resolver } from 'react-hook-form';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
@@ -16,20 +14,45 @@ import {
 } from '@/components/portfolio/portfolio-contact-settings';
 import { useT } from '@/lib/i18n/I18nProvider';
 
-const contactMessageSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(120, 'Name is too long'),
-  email: z.string().trim().email('Enter a valid email').max(254, 'Email is too long'),
-  subject: z.string().trim().max(160, 'Subject is too long'),
-  phone: z.string().trim().max(40, 'Phone is too long'),
-  company: z.string().trim().max(120, 'Company is too long'),
-  message: z
-    .string()
-    .trim()
-    .min(10, 'Message must be at least 10 characters')
-    .max(4000, 'Message is too long'),
-});
+type ContactMessageFormValues = {
+  name: string;
+  email: string;
+  subject: string;
+  phone: string;
+  company: string;
+  message: string;
+};
 
-type ContactMessageFormValues = z.infer<typeof contactMessageSchema>;
+/*
+ * The rules zod used to check (same order, same messages, values trimmed), written out by hand:
+ * zod + @hookform/resolvers weighed ~95 KB gzipped in every public portfolio for six string checks.
+ */
+const EMAIL_PATTERN = /^(?!\.)(?!.*\.\.)[A-Za-z0-9_'+\-.]*[A-Za-z0-9_+-]@(?:[A-Za-z0-9][A-Za-z0-9-]*\.)+[A-Za-z]{2,}$/;
+
+const contactMessageResolver: Resolver<ContactMessageFormValues> = async (raw) => {
+  const values: ContactMessageFormValues = {
+    name: (raw.name ?? '').trim(),
+    email: (raw.email ?? '').trim(),
+    subject: (raw.subject ?? '').trim(),
+    phone: (raw.phone ?? '').trim(),
+    company: (raw.company ?? '').trim(),
+    message: (raw.message ?? '').trim(),
+  };
+  const errors: FieldErrors<ContactMessageFormValues> = {};
+  const check = (field: keyof ContactMessageFormValues, failed: boolean, message: string) => {
+    if (failed && !errors[field]) errors[field] = { type: 'validate', message };
+  };
+  check('name', values.name.length < 1, 'Name is required');
+  check('name', values.name.length > 120, 'Name is too long');
+  check('email', !EMAIL_PATTERN.test(values.email), 'Enter a valid email');
+  check('email', values.email.length > 254, 'Email is too long');
+  check('subject', values.subject.length > 160, 'Subject is too long');
+  check('phone', values.phone.length > 40, 'Phone is too long');
+  check('company', values.company.length > 120, 'Company is too long');
+  check('message', values.message.length < 10, 'Message must be at least 10 characters');
+  check('message', values.message.length > 4000, 'Message is too long');
+  return Object.keys(errors).length > 0 ? { values: {}, errors } : { values, errors: {} };
+};
 
 const EMPTY_FORM: ContactMessageFormValues = {
   name: '',
@@ -55,7 +78,7 @@ type ContactFormChannelsMeta = {
 };
 
 const fieldClassName =
-  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none ring-0 transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-none focus:ring-0';
+  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-hidden ring-0 transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-hidden focus:ring-0';
 
 const labelClassName =
   'mb-2 block text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--contact-muted,#737373)]';
@@ -64,23 +87,23 @@ const inquiryLabelClassName =
   'mb-2 block text-base font-semibold text-[color:var(--contact-ink,#0a0a0a)]';
 
 const inquiryFieldClassName =
-  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none ring-0 transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-none focus:ring-0';
+  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-hidden ring-0 transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-hidden focus:ring-0';
 
 const deskLabelClassName =
   'mb-2 block text-xs font-semibold uppercase tracking-[0.16em] text-[color:var(--contact-muted,#737373)]';
 
 const deskFieldClassName =
-  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none ring-0 transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-none focus:ring-0';
+  'w-full rounded-xl border border-[color:var(--contact-border,#e5e5e5)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-hidden ring-0 transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-hidden focus:ring-0';
 
 const infoPanelFieldLightClassName =
-  'w-full rounded-xl border border-[color:color-mix(in_srgb,#ffffff_55%,transparent)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3.5 text-base font-medium text-neutral-900 outline-none ring-0 transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:outline-none focus:ring-0 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
+  'w-full rounded-xl border border-[color:color-mix(in_srgb,#ffffff_55%,transparent)] bg-[color:var(--contact-page,#ffffff)] px-4 py-3.5 text-base font-medium text-neutral-900 outline-hidden ring-0 transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:outline-hidden focus:ring-0 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
 
 /** Dark portfolios — page-fill fields with a visible border. */
 const infoPanelFieldDarkClassName =
-  'w-full rounded-xl border border-white/35 bg-[color:var(--contact-page,#ffffff)] px-4 py-3.5 text-base font-medium text-neutral-900 outline-none ring-0 transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:outline-none focus:ring-0 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
+  'w-full rounded-xl border border-white/35 bg-[color:var(--contact-page,#ffffff)] px-4 py-3.5 text-base font-medium text-neutral-900 outline-hidden ring-0 transition placeholder:font-normal placeholder:text-neutral-400 focus:border-white focus:outline-hidden focus:ring-0 [&:-webkit-autofill]:shadow-[inset_0_0_0_1000px_#ffffff] [&:-webkit-autofill]:[-webkit-text-fill-color:#171717]';
 
 const underlineFieldClassName =
-  'w-full rounded-none border-0 border-b-2 border-[color:var(--contact-border,#e5e5e5)] bg-transparent px-0 py-2.5 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none ring-0 transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-none focus:ring-0';
+  'w-full rounded-none border-0 border-b-2 border-[color:var(--contact-border,#e5e5e5)] bg-transparent px-0 py-2.5 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-hidden ring-0 transition placeholder:text-[color:var(--contact-muted,#737373)] focus:border-[color:var(--contact-accent,#ea580c)] focus:outline-hidden focus:ring-0';
 
 const underlineLabelClassName =
   'mb-1.5 block text-xs font-semibold uppercase tracking-[0.14em] text-[color:var(--contact-muted,#737373)]';
@@ -264,7 +287,7 @@ export function ContactMessageForm({
     trigger,
     formState: { errors, isSubmitting },
   } = useForm<ContactMessageFormValues>({
-    resolver: zodResolver(contactMessageSchema),
+    resolver: contactMessageResolver,
     defaultValues: EMPTY_FORM,
   });
 
@@ -523,7 +546,7 @@ export function ContactMessageForm({
     const swissLabel =
       'mb-2 block text-[16px] font-semibold tracking-[-0.01em] text-[color:var(--contact-ink,#0a0a0a)]';
     const swissField =
-      'w-full rounded-md border border-[color:var(--contact-border,#e5e5e5)] bg-transparent px-3.5 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-none transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#1E4FD6)] focus:outline-none focus:ring-0';
+      'w-full rounded-md border border-[color:var(--contact-border,#e5e5e5)] bg-transparent px-3.5 py-3 text-base text-[color:var(--contact-ink,#0a0a0a)] outline-hidden transition placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:border-[color:var(--contact-accent,#1E4FD6)] focus:outline-hidden focus:ring-0';
 
     return (
       <div className="relative z-[1] w-full">
@@ -789,7 +812,7 @@ export function ContactMessageForm({
             <button
               type="submit"
               disabled={isSubmitting || !creatorId.trim()}
-              className={`inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-sm font-bold shadow-sm transition disabled:cursor-not-allowed disabled:opacity-60 ${
+              className={`inline-flex items-center justify-center rounded-xl px-7 py-3.5 text-sm font-bold shadow-xs transition disabled:cursor-not-allowed disabled:opacity-60 ${
                 darkChrome
                   ? 'bg-white text-neutral-950 hover:bg-white/90'
                   : 'bg-neutral-950 text-white hover:bg-neutral-800'
@@ -1189,7 +1212,7 @@ export function ContactMessageForm({
                   type={field.type}
                   autoComplete={field.autoComplete}
                   placeholder={field.placeholder}
-                  className="w-full border-0 bg-transparent p-0 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:ring-0"
+                  className="w-full border-0 bg-transparent p-0 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-hidden placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:ring-0"
                   aria-invalid={Boolean(errors[field.name])}
                   {...register(field.name)}
                 />
@@ -1210,7 +1233,7 @@ export function ContactMessageForm({
                   ? t('Describe the project scope, timeline, and goals…')
                   : t('Write your message…')
               }
-              className="mt-1 min-h-[10rem] w-full resize-y border-0 bg-transparent p-0 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-none placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:ring-0"
+              className="mt-1 min-h-[10rem] w-full resize-y border-0 bg-transparent p-0 text-sm text-[color:var(--contact-ink,#0a0a0a)] outline-hidden placeholder:text-[color:var(--contact-muted,#a3a3a3)] focus:ring-0"
               aria-invalid={Boolean(errors.message)}
               {...register('message')}
             />

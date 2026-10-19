@@ -35,11 +35,7 @@ import {
   experienceLinkButtonPalette,
   PortfolioLinkButton,
 } from '@/components/portfolio/portfolio-link-buttons';
-import {
-  SERIF,
-  getScrollParent,
-  usePortfolioFinePointerDesktop,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { SERIF, getScrollParent, usePortfolioFinePointerDesktop } from '@/components/portfolio/portfolio-section-primitives';
 import { useT } from '@/lib/i18n/I18nProvider';
 
 function splitExperienceText(text: string): { title: string | null; body: string | null } {
@@ -2931,13 +2927,13 @@ function CardsRepoLink({
       {...anchorProps}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className="group/repo inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-none focus-visible:opacity-70"
+      className="group/repo inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-hidden focus-visible:opacity-70"
       style={{ color: ink }}
       data-pf-no-color-transition=""
     >
       <span className="relative inline-block h-[1.2em] overflow-hidden">
         <span className="block">{label}</span>
-        <span ref={textCloneRef} className="absolute inset-x-0 top-full block">
+        <span ref={textCloneRef} className="absolute inset-x-0 top-full block" aria-hidden>
           {label}
         </span>
       </span>
@@ -3038,6 +3034,7 @@ function CardsExperienceEntry({
     : { backgroundColor: '#ffffff' };
   const spacing = experienceCardsElementSpacingClasses(presentation.cardsElementSpacing);
   const radiusClass = experienceCardsBorderRadiusClass(presentation.cardsBorderRadius);
+  const linkVariant = resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'cards');
   const hasContent = Boolean(description) || tasks.length > 0 || tools.length > 0;
 
   // Entrance, once per card: the title slides up out of its mask, the description
@@ -3197,31 +3194,45 @@ function CardsExperienceEntry({
           ) : null}
 
           {tools.length > 0 ? (
-            <ul className="flex flex-wrap gap-x-5 gap-y-2" aria-label={t('Stack')}>
-              {tools.map((tool) => (
-                <li
-                  key={tool}
-                  className="text-[0.62rem] font-medium uppercase"
-                  style={{ color: mutedColor, opacity: 0.5, letterSpacing: '0.16em' }}
-                >
-                  {tool}
-                </li>
-              ))}
-            </ul>
+            <ExperienceToolsDisplay
+              tools={tools}
+              style={presentation.toolsBadgeStyle}
+              ink={titleColor}
+              muted={mutedColor}
+              background={sectionBg}
+              isDark={isDark}
+              size="sm"
+            />
           ) : null}
         </div>
       ) : null}
 
       {links.length > 0 ? (
         <div className={`${spacing.linksGap} flex flex-col items-start gap-3`}>
-          {links.map((link) => (
-            <CardsRepoLink
-              key={link.id}
-              href={link.url}
-              label={link.label || t('View repository')}
-              ink={titleColor}
-            />
-          ))}
+          {links.map((link) =>
+            linkVariant === 'cards' ? (
+              <CardsRepoLink
+                key={link.id}
+                href={link.url}
+                label={link.label || t('View repository')}
+                ink={titleColor}
+              />
+            ) : (
+              <PortfolioLinkButton
+                key={link.id}
+                variant={linkVariant}
+                href={link.url}
+                label={link.label || t('View repository')}
+                palette={experienceLinkButtonPalette({
+                  ink: titleColor,
+                  muted: mutedColor,
+                  accent,
+                  background: sectionBg,
+                  border: isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+                })}
+              />
+            )
+          )}
         </div>
       ) : null}
     </article>
@@ -3839,6 +3850,117 @@ function reelTwoToneTitle(title: string, titleColor: string, mutedColor: string)
   );
 }
 
+/** Organization · location · employment type, each gated by its own Content shown toggle. */
+function reelMetaLine(
+  content: ReturnType<typeof resolveExperienceContent>,
+  flags: Pick<DuotoneContentFlags, 'showOrganization' | 'showMeta'>
+): string {
+  return [
+    flags.showOrganization ? content.organization : null,
+    flags.showMeta ? content.location : null,
+    flags.showMeta ? employmentTypeLabel(content.employmentType) || null : null,
+  ]
+    .filter((part): part is string => Boolean(part))
+    .join('  ·  ');
+}
+
+/** Reel bento card body (both scroll modes): description, tasks, tools and proof link, styled
+ * by the shared Details settings — task display, tools badges, link button — like every
+ * other design. `leadSteps` tags the pieces for the lead-card reveal of the first role. */
+function ReelDetailCardBody({
+  description,
+  tasks,
+  tools,
+  repoLink,
+  flags,
+  accent,
+  titleColor,
+  mutedColor,
+  bodyColor,
+  hairline,
+  background,
+  leadSteps = false,
+}: {
+  description: string | null;
+  tasks: string[];
+  tools: string[];
+  repoLink: ExperienceProofLink | null;
+  flags: DuotoneContentFlags;
+  accent: string;
+  titleColor: string;
+  mutedColor: string;
+  bodyColor: string;
+  hairline: string;
+  background: string;
+  leadSteps?: boolean;
+}) {
+  const t = useT();
+  const leadStep = (step: number) => (leadSteps ? { 'data-pf-lead-step': String(step) } : {});
+  const hasCopy = Boolean(description) || tasks.length > 0;
+
+  return (
+    <>
+      {description ? (
+        <p
+          className={`${leadSteps ? 'pf-exp-lead-reveal ' : ''}m-0 p-0 text-left text-[1.05rem] leading-[1.85]`}
+          style={{ color: bodyColor, fontFamily: REEL_SANS }}
+          data-pf-no-color-transition=""
+          {...leadStep(2)}
+        >
+          {description}
+        </p>
+      ) : null}
+
+      {tasks.length > 0 ? (
+        <div className={description ? 'mt-9' : undefined} data-pf-no-color-transition="" {...leadStep(4)}>
+          <ExperienceTasksDisplay
+            tasks={tasks}
+            display={flags.tasksDisplay}
+            bodyColor={bodyColor}
+            mutedColor={mutedColor}
+            isDark={flags.isDark}
+            label=""
+            size="lg"
+          />
+        </div>
+      ) : null}
+
+      {tools.length > 0 ? (
+        <div className={hasCopy ? 'mt-12 border-t pt-8' : undefined} style={{ borderColor: hairline }}>
+          <ExperienceToolsDisplay
+            tools={tools}
+            style={flags.toolsBadgeStyle}
+            ink={titleColor}
+            muted={mutedColor}
+            background={background}
+            isDark={flags.isDark}
+          />
+        </div>
+      ) : null}
+
+      {repoLink ? (
+        <div
+          className={`flex justify-end ${tools.length > 0 ? 'mt-8' : hasCopy ? 'mt-12 border-t pt-8' : ''}`}
+          style={tools.length > 0 ? undefined : { borderColor: hairline }}
+        >
+          <PortfolioLinkButton
+            variant={flags.repoLinkButtonStyle}
+            href={repoLink.url}
+            label={repoLink.label || t('View repository')}
+            palette={experienceLinkButtonPalette({
+              ink: titleColor,
+              muted: mutedColor,
+              accent,
+              background,
+              border: hairline,
+            })}
+          />
+        </div>
+      ) : null}
+    </>
+  );
+}
+
 function ReelExperienceEntry({
   index,
   block,
@@ -3851,9 +3973,7 @@ function ReelExperienceEntry({
   statusStyle,
   scrollMotion,
   background,
-  repoLinkButtonStyle = 'icon',
-  showProof = true,
-  showTools = true,
+  flags,
 }: {
   index: number;
   block: ProfileMediaBlock;
@@ -3866,27 +3986,26 @@ function ReelExperienceEntry({
   statusStyle: PortfolioExperienceReelStatusStyle;
   scrollMotion: PortfolioExperienceReelScrollMotion;
   background: string;
-  repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
-  showProof?: boolean;
-  showTools?: boolean;
-  isDark?: boolean;
+  /** General → Content shown + Details settings, same contract as the other designs. */
+  flags: DuotoneContentFlags;
 }) {
-  const t = useT();
   const sectionRef = useRef<HTMLElement | null>(null);
   const reduceMotion = useReducedMotion();
   const fadeReveal = scrollMotion === 'fade-reveal' && !reduceMotion;
   const indexDistort = scrollMotion === 'index-distort';
 
-  const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
-    resolveExperienceContent(block);
-  const displayTools = showTools ? tools : [];
+  const content = resolveExperienceContent(block);
+  const { status, links } = content;
+  const title = flags.showTitle ? content.title : null;
+  const period = flags.showPeriod ? content.period : null;
+  const description = flags.showDescription ? content.description : null;
+  const tasks = flags.showTasks ? content.tasks : [];
+  const displayTools = flags.showTools ? content.tools : [];
 
-  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
-    .filter((part): part is string => Boolean(part))
-    .join('  ·  ');
+  const metaLine = reelMetaLine(content, flags);
 
-  const hasStatus = status === 'ONGOING' || status === 'FINISHED';
-  const repoLink = showProof ? (links[0] ?? null) : null;
+  const hasStatus = flags.showMeta && (status === 'ONGOING' || status === 'FINISHED');
+  const repoLink = flags.showProof ? (links[0] ?? null) : null;
   const cardBackground = `color-mix(in srgb, ${titleColor} 4%, transparent)`;
 
   const SectionTag = fadeReveal ? motion.section : 'section';
@@ -3966,84 +4085,33 @@ function ReelExperienceEntry({
           ) : null}
         </ReelRevealItem>
 
+        {/* Hidden rather than unmounted when empty: a reveal item mounted after its section
+            already played stays stuck at its hidden variant. */}
         <ReelRevealItem
           enabled={fadeReveal}
           className="pf-reel-bento-card"
-          style={{ backgroundColor: cardBackground, borderColor: hairline }}
+          style={{
+            backgroundColor: cardBackground,
+            borderColor: hairline,
+            ...(description || tasks.length > 0 || displayTools.length > 0 || repoLink
+              ? null
+              : { display: 'none' }),
+          }}
         >
-          {description ? (
-            <p
-              className="pf-exp-lead-reveal m-0 p-0 text-left text-[1.05rem] leading-[1.85]"
-              style={{ color: bodyColor, fontFamily: REEL_SANS }}
-              data-pf-lead-step="2"
-              data-pf-no-color-transition=""
-            >
-              {description}
-            </p>
-          ) : null}
-
-          {tasks.length > 0 ? (
-            <div
-              className={`pf-reel-timeline ${description ? 'mt-9' : ''}`}
-              data-pf-lead-step="4"
-              data-pf-no-color-transition=""
-            >
-              <span className="pf-reel-timeline-rule" style={{ backgroundColor: hairline }} aria-hidden />
-              <div className="pf-reel-timeline-rows">
-                {tasks.map((task, taskIndex) => (
-                  <div key={taskIndex} className="pf-reel-timeline-row">
-                    <span
-                      className="pf-reel-timeline-index font-mono text-[0.72rem] font-semibold"
-                      style={{ color: titleColor }}
-                    >
-                      {String(taskIndex + 1).padStart(2, '0')}
-                    </span>
-                    <span
-                      className="text-[0.98rem] leading-snug"
-                      style={{ color: bodyColor, fontFamily: REEL_SANS }}
-                    >
-                      {task}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
-          ) : null}
-
-          {displayTools.length > 0 ? (
-            <div className="pf-reel-tools-row mt-12 border-t pt-8" style={{ borderColor: hairline }}>
-              {displayTools.map((tool, toolIndex) => (
-                <span
-                  key={toolIndex}
-                  data-pf-no-color-transition=""
-                  className="pf-reel-tools-item text-xs font-semibold uppercase tracking-[0.18em]"
-                  style={{ color: titleColor }}
-                >
-                  {tool}
-                </span>
-              ))}
-            </div>
-          ) : null}
-
-          {repoLink ? (
-            <div
-              className={`flex justify-end ${displayTools.length > 0 ? 'mt-8' : 'mt-12 border-t pt-8'}`}
-              style={displayTools.length > 0 ? undefined : { borderColor: hairline }}
-            >
-              <PortfolioLinkButton
-                variant={repoLinkButtonStyle}
-                href={repoLink.url}
-                label={repoLink.label || t('View repository')}
-                palette={experienceLinkButtonPalette({
-                  ink: titleColor,
-                  muted: mutedColor,
-                  accent,
-                  background,
-                  border: hairline,
-                })}
-              />
-            </div>
-          ) : null}
+          <ReelDetailCardBody
+            description={description}
+            tasks={tasks}
+            tools={displayTools}
+            repoLink={repoLink}
+            flags={flags}
+            accent={accent}
+            titleColor={titleColor}
+            mutedColor={mutedColor}
+            bodyColor={bodyColor}
+            hairline={hairline}
+            background={background}
+            leadSteps
+          />
         </ReelRevealItem>
       </ReelRevealGroup>
     </SectionTag>
@@ -4061,9 +4129,7 @@ function ReelStickyVerticalExperience({
   hairline,
   background,
   statusStyle,
-  repoLinkButtonStyle = 'icon',
-  showProof = true,
-  showTools = true,
+  flags,
 }: {
   blocks: ProfileMediaBlock[];
   accent: string;
@@ -4074,12 +4140,8 @@ function ReelStickyVerticalExperience({
   hairline: string;
   background: string;
   statusStyle: PortfolioExperienceReelStatusStyle;
-  repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
-  showProof?: boolean;
-  showTools?: boolean;
-  isDark?: boolean;
+  flags: DuotoneContentFlags;
 }) {
-  const t = useT();
   const reduceMotion = useReducedMotion();
   const trackRef = useRef<HTMLDivElement | null>(null);
   const titleRef = useRef<HTMLHeadingElement | null>(null);
@@ -4100,19 +4162,15 @@ function ReelStickyVerticalExperience({
   );
 
   const active = entries[displayIndex] ?? entries[0];
-  const metaLine = active
-    ? [active.organization, active.location, employmentTypeLabel(active.employmentType) || null]
-        .filter((part): part is string => Boolean(part))
-        .join('  ·  ')
-    : '';
-  const hasStatus = active?.status === 'ONGOING' || active?.status === 'FINISHED';
-  const repoLink = showProof ? (active?.links[0] ?? null) : null;
-  const title = active?.title ?? '';
-  const period = active?.period ?? null;
-  const description = active?.description ?? null;
-  const tasks = active?.tasks ?? [];
-  const tools = active?.tools ?? [];
-  const displayTools = showTools ? tools : [];
+  const metaLine = active ? reelMetaLine(active, flags) : '';
+  const hasStatus = flags.showMeta && (active?.status === 'ONGOING' || active?.status === 'FINISHED');
+  const repoLink = flags.showProof ? (active?.links[0] ?? null) : null;
+  const title = flags.showTitle ? (active?.title ?? '') : '';
+  const period = flags.showPeriod ? (active?.period ?? null) : null;
+  const description = flags.showDescription ? (active?.description ?? null) : null;
+  const tasks = flags.showTasks ? (active?.tasks ?? []) : [];
+  const displayTools = flags.showTools ? (active?.tools ?? []) : [];
+  const hasCard = Boolean(description) || tasks.length > 0 || displayTools.length > 0 || Boolean(repoLink);
 
   useLayoutEffect(() => {
     if (typeof window === 'undefined' || blocks.length === 0) return;
@@ -4407,78 +4465,29 @@ function ReelStickyVerticalExperience({
                 ) : null}
               </div>
 
-              <div
-                className="pf-reel-bento-card"
-                style={{
-                  backgroundColor: `color-mix(in srgb, ${titleColor} 4%, transparent)`,
-                  borderColor: hairline,
-                }}
-              >
-                {description ? (
-                  <p className="text-[1.05rem] leading-[1.85]" style={{ color: bodyColor, fontFamily: REEL_SANS }}>
-                    {description}
-                  </p>
-                ) : null}
-
-                {tasks.length > 0 ? (
-                  <div className={`pf-reel-timeline ${description ? 'mt-9' : ''}`}>
-                    <span className="pf-reel-timeline-rule" style={{ backgroundColor: hairline }} aria-hidden />
-                    <div className="pf-reel-timeline-rows">
-                      {tasks.map((task, taskIndex) => (
-                        <div key={taskIndex} className="pf-reel-timeline-row">
-                          <span
-                            className="pf-reel-timeline-index font-mono text-[0.72rem] font-semibold"
-                            style={{ color: titleColor }}
-                          >
-                            {String(taskIndex + 1).padStart(2, '0')}
-                          </span>
-                          <span
-                            className="text-[0.98rem] leading-snug"
-                            style={{ color: bodyColor, fontFamily: REEL_SANS }}
-                          >
-                            {task}
-                          </span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-                ) : null}
-
-                {displayTools.length > 0 ? (
-                  <div className="pf-reel-tools-row mt-12 border-t pt-8" style={{ borderColor: hairline }}>
-                    {displayTools.map((tool, toolIndex) => (
-                      <span
-                        key={toolIndex}
-                        data-pf-no-color-transition=""
-                        className="pf-reel-tools-item text-xs font-semibold uppercase tracking-[0.18em]"
-                        style={{ color: titleColor }}
-                      >
-                        {tool}
-                      </span>
-                    ))}
-                  </div>
-                ) : null}
-
-                {repoLink ? (
-                  <div
-                    className={`flex justify-end ${displayTools.length > 0 ? 'mt-8' : 'mt-12 border-t pt-8'}`}
-                    style={displayTools.length > 0 ? undefined : { borderColor: hairline }}
-                  >
-                    <PortfolioLinkButton
-                      variant={repoLinkButtonStyle}
-                      href={repoLink.url}
-                      label={repoLink.label || t('View repository')}
-                      palette={experienceLinkButtonPalette({
-                        ink: titleColor,
-                        muted: mutedColor,
-                        accent,
-                        background,
-                        border: hairline,
-                      })}
-                    />
-                  </div>
-                ) : null}
-              </div>
+              {hasCard ? (
+                <div
+                  className="pf-reel-bento-card"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${titleColor} 4%, transparent)`,
+                    borderColor: hairline,
+                  }}
+                >
+                  <ReelDetailCardBody
+                    description={description}
+                    tasks={tasks}
+                    tools={displayTools}
+                    repoLink={repoLink}
+                    flags={flags}
+                    accent={accent}
+                    titleColor={titleColor}
+                    mutedColor={mutedColor}
+                    bodyColor={bodyColor}
+                    hairline={hairline}
+                    background={background}
+                  />
+                </div>
+              ) : null}
             </div>
           </div>
       </div>
@@ -4525,6 +4534,7 @@ export function ReelExperienceList({
   const background = presentation.sectionBackgroundColor?.trim() || DEFAULT_SECTION_BACKGROUND_COLOR;
   const statusStyle = presentation.reelStatusStyle ?? 'badge';
   const scrollMotion = presentation.reelScrollMotion ?? 'fade-reveal';
+  const flags = experienceContentFlags(presentation, isDark, 'reel');
 
   if (scrollMotion === 'sticky-vertical') {
     return (
@@ -4538,10 +4548,7 @@ export function ReelExperienceList({
         hairline={hairline}
         background={background}
         statusStyle={statusStyle}
-        repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'reel')}
-        showProof={presentation.showProof !== false}
-        showTools={presentation.showTools !== false}
-        isDark={isDark}
+        flags={flags}
       />
     );
   }
@@ -4562,10 +4569,7 @@ export function ReelExperienceList({
           statusStyle={statusStyle}
           scrollMotion={scrollMotion}
           background={background}
-          repoLinkButtonStyle={resolveExperienceRepoLinkStyle(presentation.repoLinkButtonStyle, 'reel')}
-          showProof={presentation.showProof !== false}
-          showTools={presentation.showTools !== false}
-          isDark={isDark}
+          flags={flags}
         />
       ))}
     </div>
@@ -4687,6 +4691,7 @@ function DuotoneLeftPanel({
   registerRef,
   showTitle = true,
   showPeriod = true,
+  showOrganization = true,
   showMeta = true,
   showEntryMedia = true,
   naturalHeight = false,
@@ -4714,6 +4719,7 @@ function DuotoneLeftPanel({
   /** General → Content visibility toggles — respected here the same way Cards/Editorial do. */
   showTitle?: boolean;
   showPeriod?: boolean;
+  showOrganization?: boolean;
   showMeta?: boolean;
   showEntryMedia?: boolean;
   /** Size to content instead of forcing min-h-screen — for the Slide frame, whose own height
@@ -4749,13 +4755,17 @@ function DuotoneLeftPanel({
   const t = useT();
   const { period, title, organization, status, location, employmentType } = resolveExperienceContent(block);
 
-  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
+  const metaLine = [
+    showOrganization ? organization : null,
+    showMeta ? location : null,
+    showMeta ? employmentTypeLabel(employmentType) || null : null,
+  ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
 
   const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
   const displayPeriod = showPeriod ? period : null;
-  const displayMetaLine = showMeta ? metaLine : '';
+  const displayMetaLine = metaLine;
   const displayStatusLabel = showMeta ? statusLabel : null;
   const metaContent = displayPeriod || displayMetaLine || displayStatusLabel;
   const mediaUrl =
@@ -4992,6 +5002,7 @@ function DuotoneRightPanel({
   showTools = true,
   showProof = true,
   showPeriod = true,
+  showOrganization = true,
   showMeta = true,
   repoLinkButtonStyle = 'icon',
   premium = false,
@@ -5033,6 +5044,7 @@ function DuotoneRightPanel({
   showProof?: boolean;
   /** Premium (sticky-mode) meta row only. */
   showPeriod?: boolean;
+  showOrganization?: boolean;
   showMeta?: boolean;
   /** General → Link button setting — harvested from each Experience design. */
   repoLinkButtonStyle?: PortfolioExperienceRepoLinkStyle;
@@ -5060,12 +5072,16 @@ function DuotoneRightPanel({
   const displayDescription = showDescription ? description : null;
   const displayTasks = showTasks ? tasks : [];
   const displayTools = showTools ? tools : [];
-  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
+  const metaLine = [
+    showOrganization ? organization : null,
+    showMeta ? location : null,
+    showMeta ? employmentTypeLabel(employmentType) || null : null,
+  ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Finished') : null;
   const displayPeriod = showPeriod ? period : null;
-  const displayMetaLine = showMeta ? metaLine : '';
+  const displayMetaLine = metaLine;
   const displayStatusLabel = showMeta ? statusLabel : null;
   const hasMetaRow = premium && Boolean(displayPeriod || displayMetaLine || displayStatusLabel);
   // Card surface a shade off the page background — the tools badges derive their own tone
@@ -5277,6 +5293,7 @@ function DuotoneRightPanel({
 type DuotoneContentFlags = {
   showTitle: boolean;
   showPeriod: boolean;
+  showOrganization: boolean;
   showMeta: boolean;
   showDescription: boolean;
   showTasks: boolean;
@@ -5499,7 +5516,7 @@ function DuotoneSlideNav({
         aria-label={t('Previous role')}
         disabled={activeIndex === 0}
         onClick={() => onNavigate(activeIndex - 1)}
-        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
+        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform,translate,scale,rotate] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
         data-pf-no-color-transition=""
         style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
         onMouseEnter={(event) => {
@@ -5516,7 +5533,7 @@ function DuotoneSlideNav({
         aria-label={t('Next role')}
         disabled={activeIndex === blocks.length - 1}
         onClick={() => onNavigate(activeIndex + 1)}
-        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
+        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform,translate,scale,rotate] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
         data-pf-no-color-transition=""
         style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
         onMouseEnter={(event) => {
@@ -6017,6 +6034,7 @@ export function DuotoneExperienceList({
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
+    showOrganization: presentation.showOrganization !== false,
     showMeta: presentation.showMeta !== false,
     showDescription: presentation.showDescription !== false,
     showTasks: presentation.showTasks !== false,
@@ -6176,14 +6194,18 @@ function GalleryDetailContent({
   const t = useT();
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
+  const metaLine = [
+    flags.showOrganization ? organization : null,
+    flags.showMeta ? location : null,
+    flags.showMeta ? employmentTypeLabel(employmentType) || null : null,
+  ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const repoLink = flags.showProof ? (links[0] ?? null) : null;
   const displayTasks = flags.showTasks ? tasks : [];
   const displayTools = flags.showTools ? tools : [];
   const showBadge = flags.showMeta && (status === 'ONGOING' || status === 'FINISHED');
-  const combinedMeta = [flags.showPeriod ? period : null, flags.showMeta ? metaLine : null]
+  const combinedMeta = [flags.showPeriod ? period : null, metaLine || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
 
@@ -6295,7 +6317,11 @@ function GalleryExperienceCard({
   const t = useT();
   const { period, title, organization, status, tools, location, employmentType } =
     resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
+  const metaLine = [
+    flags.showOrganization ? organization : null,
+    flags.showMeta ? location : null,
+    flags.showMeta ? employmentTypeLabel(employmentType) || null : null,
+  ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const mediaUrl = typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
@@ -6420,7 +6446,7 @@ function GalleryExperienceCard({
             secondaryColor={secondaryColor}
           />
         </div>
-        {flags.showMeta && metaLine ? (
+        {metaLine ? (
           <p className="text-[0.88rem]" style={{ color: mutedColor }}>
             {metaLine}
           </p>
@@ -6524,7 +6550,7 @@ function GalleryExperienceModal({
       role="presentation"
     >
       <div
-        className={`relative flex max-h-[88vh] w-full max-w-7xl flex-col overflow-hidden ${experienceCardsBorderRadiusClass(thumbnailRadius)} ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row`}
+        className={`relative flex max-h-[88vh] w-full max-w-7xl flex-col overflow-hidden ${experienceCardsBorderRadiusClass(thumbnailRadius)} ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform,translate,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)] sm:flex-row`}
         style={{
           borderColor: isDark ? border : 'transparent',
           backgroundColor: cardBg,
@@ -6814,6 +6840,7 @@ export function GalleryExperienceList({
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
+    showOrganization: presentation.showOrganization !== false,
     showMeta: presentation.showMeta !== false,
     showDescription: presentation.showDescription !== false,
     showTasks: presentation.showTasks !== false,
@@ -7112,10 +7139,14 @@ function LoftExperienceModal({
 
   const { period, title, organization, description, status, tasks, tools, links, location, employmentType } =
     resolveExperienceContent(block);
-  const metaLine = [organization, location, employmentTypeLabel(employmentType) || null]
+  const metaLine = [
+    flags.showOrganization ? organization : null,
+    flags.showMeta ? location : null,
+    flags.showMeta ? employmentTypeLabel(employmentType) || null : null,
+  ]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
-  const combinedMeta = [flags.showPeriod ? period : null, flags.showMeta ? metaLine : null]
+  const combinedMeta = [flags.showPeriod ? period : null, metaLine || null]
     .filter((part): part is string => Boolean(part))
     .join('  ·  ');
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
@@ -7135,7 +7166,7 @@ function LoftExperienceModal({
       role="presentation"
     >
       <div
-        className={`relative flex h-full w-full flex-col overflow-hidden rounded-none ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]`}
+        className={`relative flex h-full w-full flex-col overflow-hidden rounded-none ${isDark ? 'border' : 'border-0'} shadow-2xl transition-[opacity,transform,translate,scale,rotate] duration-300 ease-[cubic-bezier(0.22,1,0.36,1)]`}
         style={{
           borderColor: isDark ? border : 'transparent',
           backgroundColor: cardBg,
@@ -7337,6 +7368,7 @@ export function LoftExperienceList({
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
+    showOrganization: presentation.showOrganization !== false,
     showMeta: presentation.showMeta !== false,
     showDescription: presentation.showDescription !== false,
     showTasks: presentation.showTasks !== false,
@@ -7444,7 +7476,7 @@ function PressExperienceRow({
   const { period, title, organization, description, tasks, tools, links } = resolveExperienceContent(block);
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
-  const label = flags.showMeta ? organization : null;
+  const label = flags.showOrganization ? organization : null;
   const date = flags.showPeriod ? period : null;
   const displayDescription = flags.showDescription ? description : null;
   const displayTasks = flags.showTasks ? tasks.slice(0, 3) : [];
@@ -7568,6 +7600,24 @@ function PressExperienceRow({
             />
           </div>
         ) : null}
+
+        {/* The thumbnail is normally the link; with media hidden, keep the proof reachable. */}
+        {repoLink && !media ? (
+          <div className="mt-6">
+            <PortfolioLinkButton
+              variant={flags.repoLinkButtonStyle}
+              href={repoLink.url}
+              label={repoLink.label || t('View repository')}
+              palette={experienceLinkButtonPalette({
+                ink,
+                muted,
+                accent,
+                background,
+                border: flags.isDark ? 'rgba(255,255,255,0.12)' : 'rgba(0,0,0,0.1)',
+              })}
+            />
+          </div>
+        ) : null}
       </div>
     </div>
   );
@@ -7613,6 +7663,7 @@ export function PressExperienceList({
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
+    showOrganization: presentation.showOrganization !== false,
     showMeta: presentation.showMeta !== false,
     showDescription: presentation.showDescription !== false,
     showTasks: presentation.showTasks !== false,
@@ -7841,20 +7892,23 @@ function LegacyExperienceCard({
   const mediaUrl = flags.showEntryMedia && typeof block.mediaUrl === 'string' ? block.mediaUrl.trim() : '';
   const initial = (title || organization || '•').trim().charAt(0).toUpperCase();
   const repoLink = flags.showProof ? (links[0] ?? null) : null;
-  const badgeText = flags.showMeta ? organization || '' : '';
+  const badgeText = flags.showOrganization ? organization || '' : '';
   const reverse = alternateSides ? index % 2 === 1 : fixedSide === 'right';
   const hoverTasks = flags.showTasks && showTasksLegacy ? tasks.slice(0, 5) : [];
   const stackTools = flags.showTools ? tools : [];
-  const statusLabel = status === 'ONGOING' ? t('Ongoing') : status === 'FINISHED' ? t('Completed') : null;
+  const displayStatus = flags.showMeta ? status : null;
+  const displayPeriod = flags.showPeriod ? period : null;
+  const statusLabel =
+    displayStatus === 'ONGOING' ? t('Ongoing') : displayStatus === 'FINISHED' ? t('Completed') : null;
   const statusColor = status === 'ONGOING' ? accent : secondary;
-  const showFooter = flags.showMeta && Boolean(statusLabel || period || badgeText);
+  const showFooter = Boolean(statusLabel || displayPeriod || badgeText);
   // A native CSS `cursor: url(...)` can't lag behind the pointer — it's a static image the
   // OS/browser snaps to the mouse position instantly, with no way to hook a requestAnimationFrame
   // loop into it. The floaty, liquid-inertia pointer Awwwards sites do needs a real DOM element
   // instead: hide the native cursor over the thumbnail and portal a custom pill that lerps
   // toward the tracked mouse position every frame. See LegacyStatusCursor below.
   const statusCursorLabel: 'FINISHED' | 'ONGOING' | null =
-    status === 'FINISHED' ? 'FINISHED' : status === 'ONGOING' ? 'ONGOING' : null;
+    displayStatus === 'FINISHED' ? 'FINISHED' : displayStatus === 'ONGOING' ? 'ONGOING' : null;
   const [cursorAnchor, setCursorAnchor] = useState<{ x: number; y: number } | null>(null);
   const thumbRef = useRef<HTMLDivElement>(null);
   const dismissCursor = useCallback(() => setCursorAnchor(null), []);
@@ -8038,15 +8092,15 @@ function LegacyExperienceCard({
           ) : (
             <span aria-hidden />
           )}
-          {period || badgeText ? (
+          {displayPeriod || badgeText ? (
             <span className="inline-flex items-center gap-2.5 text-[0.85rem]" style={{ color: muted }}>
               <span
                 className="inline-block h-[7px] w-[7px] shrink-0 rotate-45"
                 style={{ backgroundColor: accent }}
                 aria-hidden
               />
-              {period}
-              {period && badgeText ? <span aria-hidden>|</span> : null}
+              {displayPeriod}
+              {displayPeriod && badgeText ? <span aria-hidden>|</span> : null}
               {badgeText}
             </span>
           ) : null}
@@ -8098,6 +8152,7 @@ export function LegacyExperienceList({
   const flags: DuotoneContentFlags = {
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
+    showOrganization: presentation.showOrganization !== false,
     showMeta: presentation.showMeta !== false,
     showDescription: presentation.showDescription !== false,
     showTasks: presentation.showTasks !== false,
@@ -8162,6 +8217,7 @@ function experienceContentFlags(
   return {
     showTitle: presentation.showTitle !== false,
     showPeriod: presentation.showPeriod !== false,
+    showOrganization: presentation.showOrganization !== false,
     showMeta: presentation.showMeta !== false,
     showDescription: presentation.showDescription !== false,
     showTasks: presentation.showTasks !== false,
@@ -8233,7 +8289,7 @@ function KineticExperienceRow({
       ) : null}
       <div className="mt-10 grid grid-cols-1 gap-10 sm:mt-14 sm:grid-cols-[minmax(0,1.1fr)_minmax(0,0.9fr)] sm:items-end">
         <div>
-          {flags.showMeta && organization ? (
+          {flags.showOrganization && organization ? (
             <p className="text-[0.95rem]" style={{ color: muted }}>
               {organization}
             </p>

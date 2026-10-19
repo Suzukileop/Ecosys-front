@@ -36,7 +36,24 @@ function resolveSection(target: EventTarget | null): { element: HTMLElement; id:
   return null;
 }
 
-export function usePortfolioStudioInspect(enabled: boolean) {
+function sectionById(id: string | null): { element: HTMLElement; id: string } | null {
+  if (!id) return null;
+  if (id === 'navigation') {
+    const element = document.querySelector<HTMLElement>(NAV_SELECTOR);
+    return element ? { element, id } : null;
+  }
+  if (!BLOCK_SECTION_IDS.has(id)) return null;
+  const element = document.getElementById(id);
+  return element ? { element, id } : null;
+}
+
+export function usePortfolioStudioInspect({
+  enabled,
+  activeSectionId,
+}: {
+  enabled: boolean;
+  activeSectionId?: string | null;
+}) {
   useEffect(() => {
     if (!enabled || typeof document === 'undefined') return;
 
@@ -48,7 +65,7 @@ export function usePortfolioStudioInspect(enabled: boolean) {
       pointerEvents: 'none',
       display: 'none',
       boxShadow: `inset 0 0 0 2px ${OUTLINE}`,
-      background: 'rgba(29, 155, 240, 0.06)',
+      background: 'rgba(29, 155, 240, 0.025)',
       transition: 'top 120ms ease, left 120ms ease, width 120ms ease, height 120ms ease',
     } satisfies Partial<CSSStyleDeclaration>);
     const tag = document.createElement('div');
@@ -65,7 +82,7 @@ export function usePortfolioStudioInspect(enabled: boolean) {
     box.appendChild(tag);
     document.body.appendChild(box);
 
-    let current: { element: HTMLElement; id: string } | null = null;
+    let current: { element: HTMLElement; id: string } | null = sectionById(activeSectionId ?? null);
 
     const place = () => {
       if (!current || !current.element.isConnected) {
@@ -85,17 +102,17 @@ export function usePortfolioStudioInspect(enabled: boolean) {
       box.style.width = `${Math.min(window.innerWidth, rect.right) - Math.max(0, rect.left)}px`;
       box.style.height = `${bottom - top}px`;
       tag.style.top = '0';
-      tag.textContent = `${SECTION_LABELS.get(current.id) ?? current.id} — click to edit`;
+      tag.textContent = SECTION_LABELS.get(current.id) ?? current.id;
     };
 
     const onMove = (event: MouseEvent) => {
-      const hit = resolveSection(event.target);
+      const hit = resolveSection(event.target) ?? sectionById(activeSectionId ?? null);
       if (hit?.element === current?.element) return;
       current = hit;
       place();
     };
     const onLeave = () => {
-      current = null;
+      current = sectionById(activeSectionId ?? null);
       place();
     };
     const onClick = (event: MouseEvent) => {
@@ -114,6 +131,7 @@ export function usePortfolioStudioInspect(enabled: boolean) {
     document.addEventListener('click', onClick, true);
     window.addEventListener('scroll', place, { passive: true });
     window.addEventListener('resize', place);
+    requestAnimationFrame(place);
     return () => {
       document.removeEventListener('mousemove', onMove);
       document.documentElement.removeEventListener('mouseleave', onLeave);
@@ -122,5 +140,5 @@ export function usePortfolioStudioInspect(enabled: boolean) {
       window.removeEventListener('resize', place);
       box.remove();
     };
-  }, [enabled]);
+  }, [enabled, activeSectionId]);
 }

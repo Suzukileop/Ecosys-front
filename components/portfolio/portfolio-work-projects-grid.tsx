@@ -28,6 +28,15 @@ const GRID_HIDDEN: CSSProperties = {
   transform: 'translate3d(0, 28px, 0)',
 };
 
+/** True when the card title ink is light, i.e. the section reads as dark. */
+function gridInkIsLight(hex: string): boolean {
+  const m = hex.trim().match(/^#?([0-9a-f]{3}|[0-9a-f]{6})$/i);
+  if (!m) return true;
+  const full = m[1].length === 3 ? m[1].replace(/./g, (c) => c + c) : m[1];
+  const [r, g, b] = [0, 2, 4].map((i) => parseInt(full.slice(i, i + 2), 16) / 255);
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b > 0.5;
+}
+
 function gridRadiusClass(radius: PortfolioWorkProjectsGridRadius): string {
   if (radius === 'none') return 'rounded-none';
   if (radius === 'sm') return 'rounded-lg';
@@ -412,28 +421,23 @@ function GridMediaLink({
   );
 }
 
-/** Tools as one quiet uppercase line, dot-separated — scrolls sideways if it overflows on phones. */
+/** Tools as quiet uppercase labels that wrap — the old hidden-scrollbar line cut tools off on
+ *  phones with no cue. Spacing replaces the dots (no orphan dot at a line start). */
 function GridTagsRow({ tools, color }: { tools: string[]; color: string }) {
   const t = useT();
   if (tools.length === 0) return null;
   return (
     <ul
-      className="m-0 mt-5 flex list-none items-center gap-x-2.5 overflow-x-auto whitespace-nowrap p-0 [-ms-overflow-style:none] [scrollbar-width:none] sm:mt-6 [&::-webkit-scrollbar]:hidden"
+      className="m-0 mt-5 flex list-none flex-wrap items-baseline gap-x-4 gap-y-2 p-0 sm:mt-6"
       aria-label={t('Stack')}
     >
-      {tools.map((tool, index) => (
-        <li key={tool} className="flex shrink-0 items-center gap-x-2.5">
-          <span
-            className="text-[10px] font-medium uppercase leading-none tracking-[0.2em] sm:text-[11px]"
-            style={{ color, opacity: 0.78 }}
-          >
-            {tool}
-          </span>
-          {index < tools.length - 1 ? (
-            <span aria-hidden className="text-[10px] leading-none sm:text-[11px]" style={{ color, opacity: 0.4 }}>
-              •
-            </span>
-          ) : null}
+      {tools.map((tool) => (
+        <li
+          key={tool}
+          className="whitespace-nowrap text-[11px] font-medium uppercase leading-none tracking-[0.18em]"
+          style={{ color: `color-mix(in srgb, ${color} 85%, transparent)` }}
+        >
+          {tool}
         </li>
       ))}
     </ul>
@@ -450,7 +454,7 @@ function GridConsultLink({
   const t = useT();
   const external = /^https?:\/\//i.test(href);
   const className =
-    'group/grid-cta mt-6 inline-flex items-center gap-2.5 bg-transparent text-[11px] font-medium uppercase tracking-[0.2em] transition-opacity duration-300 hover:opacity-60 focus:outline-none focus-visible:opacity-60 sm:mt-7';
+    'group/grid-cta mt-6 inline-flex items-center gap-2.5 bg-transparent text-[11px] font-medium uppercase tracking-[0.2em] transition-opacity duration-300 hover:opacity-60 focus:outline-hidden focus-visible:opacity-60 sm:mt-7';
   const body = (
     <>
       <span
@@ -511,7 +515,7 @@ function ProjectsGridNavButtons({
 }) {
   const t = useT();
   const ghostClass =
-    'bg-transparent px-0 py-1 text-[11px] font-medium uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-60 focus:outline-none focus-visible:opacity-60 disabled:pointer-events-none disabled:opacity-28';
+    'bg-transparent px-0 py-1 text-[11px] font-medium uppercase tracking-[0.22em] transition-opacity duration-300 hover:opacity-60 focus:outline-hidden focus-visible:opacity-60 disabled:pointer-events-none disabled:opacity-28';
 
   return (
     <div className="flex shrink-0 items-center gap-5 sm:gap-6">
@@ -590,7 +594,12 @@ function GridCard({
         alt={title || t('Project')}
         fill
         sizes={gridImageSizes(columns, forceSingleColumn)}
-        className="object-cover object-center transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/grid-card:scale-[1.045]"
+        className={`object-cover object-center ${
+          // Zoom only on cards that link somewhere: otherwise it promises a click.
+          href
+            ? 'transition-transform duration-700 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/grid-card:scale-[1.045]'
+            : ''
+        }`}
         data-pf-no-color-transition=""
       />
     </div>
@@ -615,8 +624,14 @@ function GridCard({
     >
       {/* One indivisible shell: image and copy live inside the same glass panel so the
           thumbnail is never read as detached from its own text, or from its neighbor's. */}
+      {/* Glass follows the section: the fixed dark glass turned a light section's cards
+          muddy grey (description ~3:1). Light ink → dark glass, dark ink → light glass. */}
       <div
-        className={`flex flex-col overflow-hidden border border-neutral-900/50 bg-neutral-950/30 p-3 backdrop-blur-sm sm:p-4 ${radiusClass}`}
+        className={`flex flex-col overflow-hidden border p-3 backdrop-blur-xs sm:p-4 ${
+          gridInkIsLight(titleColor)
+            ? 'border-neutral-900/50 bg-neutral-950/30'
+            : 'border-black/[0.06] bg-white/45'
+        } ${radiusClass}`}
       >
         <div
           className={`relative w-full shrink-0 overflow-hidden ${aspectClass} ${radiusClass}`}
@@ -634,7 +649,7 @@ function GridCard({
           {href && mediaUrl ? (
             <GridMediaLink
               href={href}
-              className="absolute inset-0 block focus:outline-none focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
+              className="absolute inset-0 block focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current focus-visible:ring-offset-2"
               ariaLabel={title || t('Project')}
             >
               {mediaInner}
@@ -647,8 +662,9 @@ function GridCard({
         <div data-grid-copy className="flex min-w-0 flex-col pt-6 sm:pt-8">
           <div className="flex items-center gap-3">
             <p
+              aria-hidden
               className="text-[10px] font-medium tracking-[0.22em] tabular-nums sm:text-[11px]"
-              style={{ color: muted, opacity: 0.48 }}
+              style={{ color: muted, opacity: 0.7 }}
             >
               {formatGridIndex(index)}
             </p>
@@ -664,7 +680,7 @@ function GridCard({
               {href ? (
                 <GridMediaLink
                   href={href}
-                  className="rounded-sm text-inherit no-underline outline-none transition-opacity duration-300 hover:opacity-70 focus-visible:opacity-70"
+                  className="rounded-xs text-inherit no-underline outline-hidden transition-opacity duration-300 hover:opacity-70 focus-visible:opacity-70"
                   ariaLabel={title}
                 >
                   <EditorialTitleText text={title} />
@@ -680,7 +696,7 @@ function GridCard({
               className={`max-w-[36em] text-[0.92rem] font-normal leading-[1.7] sm:text-[0.98rem] sm:leading-[1.72] ${
                 title ? 'mt-3 sm:mt-3.5' : 'mt-3'
               }`}
-              style={{ color: muted, opacity: 0.82 }}
+              style={{ color: muted }}
             >
               {description}
             </p>

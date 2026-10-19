@@ -66,15 +66,15 @@ export function PortfolioBackgroundImageUpload({
   return (
     <div className="space-y-3">
       <div className="flex flex-wrap items-end justify-between gap-2">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
+        <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">{label}</p>
         {libraryEnabled ? (
-          <p className="text-[11px] font-semibold tabular-nums text-neutral-400">
+          <p className="text-[11px] font-semibold tabular-nums text-[color:var(--np-muted)]">
             {t('Library {imagesLength}/{MAXPORTFOLIOBACKGROUNDIMAGES}', { imagesLength: images.length, MAXPORTFOLIOBACKGROUNDIMAGES: MAX_PORTFOLIO_BACKGROUND_IMAGES })}
           </p>
         ) : null}
       </div>
 
-      {helperText ? <p className="text-sm text-neutral-500">{helperText}</p> : null}
+      {helperText ? <p className="text-sm text-[color:var(--np-muted)]">{helperText}</p> : null}
 
       {libraryEnabled && images.length > 0 ? (
         <div className="grid grid-cols-3 gap-2 sm:grid-cols-5">
@@ -85,10 +85,10 @@ export function PortfolioBackgroundImageUpload({
                 <button
                   type="button"
                   onClick={() => selectFromLibrary(item)}
-                  className={`block w-full overflow-hidden rounded-xl border bg-neutral-100 transition ${
+                  className={`block w-full overflow-hidden rounded-xl border bg-[color:var(--np-well)] transition ${
                     selected
-                      ? 'border-neutral-900 ring-2 ring-neutral-900/15'
-                      : 'border-neutral-200 hover:border-neutral-400'
+                      ? 'border-[color:var(--np-accent)] ring-2 ring-[color:var(--np-accent-soft)]'
+                      : 'border-[color:var(--np-card-border)] hover:border-[color:var(--np-illus-strong)]'
                   }`}
                   aria-pressed={selected}
                   aria-label={selected ? t('Selected background image') : t('Use this background image')}
@@ -99,7 +99,7 @@ export function PortfolioBackgroundImageUpload({
                 <button
                   type="button"
                   onClick={() => removeFromLibrary(item)}
-                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-neutral-600 shadow-sm ring-1 ring-neutral-200 transition hover:text-neutral-950"
+                  className="absolute right-1 top-1 inline-flex h-6 w-6 items-center justify-center rounded-full bg-white/95 text-neutral-600 shadow-xs ring-1 ring-neutral-200 transition hover:text-neutral-950"
                   aria-label={t('Remove from library')}
                 >
                   <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} aria-hidden>
@@ -113,15 +113,15 @@ export function PortfolioBackgroundImageUpload({
       ) : null}
 
       {hasImage && (!libraryEnabled || images.length === 0) ? (
-        <div className="overflow-hidden rounded-xl border border-neutral-200 bg-neutral-100">
+        <div className="overflow-hidden rounded-xl border border-[color:var(--np-card-border)] bg-[color:var(--np-well)]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img src={url} alt="" className="max-h-40 w-full object-cover" />
         </div>
       ) : null}
 
       {!hasImage && (!libraryEnabled || images.length === 0) ? (
-        <div className="flex min-h-[7.5rem] flex-col items-center justify-center rounded-xl border-2 border-dashed border-neutral-200 bg-white px-4 text-center">
-          <p className="text-sm font-semibold text-neutral-700">{t('No image yet — click to upload')}</p>
+        <div className="flex min-h-[7.5rem] flex-col items-center justify-center rounded-xl border-2 border-dashed border-[color:var(--np-card-border)] bg-[color:var(--np-card)] px-4 text-center">
+          <p className="text-sm font-semibold text-[color:var(--np-label)]">{t('No image yet — click to upload')}</p>
         </div>
       ) : null}
 
@@ -141,7 +141,7 @@ export function PortfolioBackgroundImageUpload({
             pickFile();
           }}
           disabled={uploading}
-          className="inline-flex items-center gap-2 rounded-full border border-neutral-200 bg-white px-4 py-2 text-sm font-semibold text-neutral-800 transition hover:bg-neutral-50 disabled:opacity-60"
+          className="inline-flex items-center gap-2 rounded-full border border-[color:var(--np-card-border)] bg-[color:var(--np-card)] px-4 py-2 text-sm font-semibold text-[color:var(--np-text)] transition hover:bg-[color:var(--np-hover)] disabled:opacity-60"
         >
           {uploading ? <LoadingSpinner size="sm" /> : null}
           {uploading
@@ -159,17 +159,17 @@ export function PortfolioBackgroundImageUpload({
             type="button"
             onClick={() => onChange('')}
             disabled={uploading}
-            className="rounded-full px-3 py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900 disabled:opacity-60"
+            className="rounded-full px-3 py-2 text-sm font-medium text-[color:var(--np-muted)] transition hover:text-[color:var(--np-text)] disabled:opacity-60"
           >
             {t('Clear selection')}
           </button>
         ) : null}
         {fileName && !uploading ? (
-          <span className="max-w-[12rem] truncate text-xs text-neutral-500">{fileName}</span>
+          <span className="max-w-[12rem] truncate text-xs text-[color:var(--np-muted)]">{fileName}</span>
         ) : null}
       </div>
       {libraryEnabled && atCapacity ? (
-        <p className="text-xs text-neutral-500">
+        <p className="text-xs text-[color:var(--np-muted)]">
           {t('Library full ({MAXPORTFOLIOBACKGROUNDIMAGES}). New uploads replace the oldest image.', { MAXPORTFOLIOBACKGROUNDIMAGES: MAX_PORTFOLIO_BACKGROUND_IMAGES })}
         </p>
       ) : null}
@@ -226,7 +226,7 @@ export function PortfolioBackgroundLibrary({
                 onClick={() => onChange(item)}
                 aria-pressed={selected}
                 aria-label={selected ? t('Selected background image') : t('Use this background image')}
-                className={`block w-full overflow-hidden rounded-xl bg-[color:var(--pf-surface)] transition-shadow focus-visible:outline-none ${
+                className={`block w-full overflow-hidden rounded-xl bg-[color:var(--pf-surface)] transition-shadow focus-visible:outline-hidden ${
                   selected
                     ? 'shadow-[0_0_0_2px_var(--pf-palette-texte-fort)]'
                     : 'shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] hover:shadow-[0_0_0_1px_var(--pf-palette-texte-muted)] focus-visible:shadow-[0_0_0_2px_var(--pf-palette-texte-muted)]'
@@ -247,7 +247,7 @@ export function PortfolioBackgroundLibrary({
                 onClick={() => remove(item)}
                 aria-label={t('Remove from library')}
                 title={t('Remove from library')}
-                className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 backdrop-blur-sm transition-opacity hover:bg-black/80 focus-visible:opacity-100 focus-visible:outline-none group-hover/tile:opacity-100"
+                className="absolute right-1.5 top-1.5 inline-flex h-6 w-6 items-center justify-center rounded-full bg-black/60 text-white opacity-0 backdrop-blur-xs transition-opacity hover:bg-black/80 focus-visible:opacity-100 focus-visible:outline-hidden group-hover/tile:opacity-100"
               >
                 <svg className="h-3 w-3" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2.4} aria-hidden>
                   <path strokeLinecap="round" d="M6 6l12 12M18 6L6 18" />
@@ -271,7 +271,7 @@ export function PortfolioBackgroundLibrary({
           onClick={() => pickFile()}
           disabled={uploading}
           title={atCapacity ? t('Library full ({MAXPORTFOLIOBACKGROUNDIMAGES}). New uploads replace the oldest image.', { MAXPORTFOLIOBACKGROUNDIMAGES: MAX_PORTFOLIO_BACKGROUND_IMAGES }) : undefined}
-          className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1 rounded-xl text-[color:var(--pf-palette-texte-muted)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] transition-colors hover:bg-[color:var(--pf-surface)] hover:text-[color:var(--pf-palette-texte-fort)] focus-visible:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)] disabled:opacity-60"
+          className="flex aspect-[4/3] w-full flex-col items-center justify-center gap-1 rounded-xl text-[color:var(--pf-palette-texte-muted)] shadow-[inset_0_0_0_1px_var(--pf-palette-bordure)] transition-colors hover:bg-[color:var(--pf-surface)] hover:text-[color:var(--pf-palette-texte-fort)] focus-visible:outline-hidden focus-visible:shadow-[inset_0_0_0_2px_var(--pf-palette-texte-muted)] disabled:opacity-60"
         >
           {uploading ? (
             <LoadingSpinner size="sm" />
@@ -321,10 +321,10 @@ export function PortfolioHeroBannerMediaUpload({
 
   return (
     <div className="space-y-3">
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      {helperText ? <p className="text-sm text-neutral-500">{helperText}</p> : null}
+      <p className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--np-muted)]">{label}</p>
+      {helperText ? <p className="text-sm text-[color:var(--np-muted)]">{helperText}</p> : null}
 
-      <div className="overflow-hidden rounded-2xl border border-neutral-200 bg-neutral-100">
+      <div className="overflow-hidden rounded-2xl border border-[color:var(--np-card-border)] bg-[color:var(--np-well)]">
         {hasMedia ? (
           isVideo ? (
             <video
@@ -339,7 +339,7 @@ export function PortfolioHeroBannerMediaUpload({
             <img src={activeUrl} alt="" className="aspect-[16/9] w-full object-cover" />
           )
         ) : (
-          <div className="flex aspect-[16/9] items-center justify-center text-sm text-neutral-400">
+          <div className="flex aspect-[16/9] items-center justify-center text-sm text-[color:var(--np-muted)]">
             {t('No media selected')}
           </div>
         )}
@@ -361,7 +361,7 @@ export function PortfolioHeroBannerMediaUpload({
             pickFile();
           }}
           disabled={uploading}
-          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-neutral-300 bg-white px-4 text-sm font-semibold text-neutral-900 transition hover:bg-neutral-50 disabled:opacity-60"
+          className="inline-flex min-h-10 items-center gap-2 rounded-full border border-[color:var(--np-well-border)] bg-[color:var(--np-card)] px-4 text-sm font-semibold text-[color:var(--np-text)] transition hover:bg-[color:var(--np-hover)] disabled:opacity-60"
         >
           {uploading ? <LoadingSpinner size="sm" /> : null}
           {uploading ? t('Uploading…') : hasMedia ? t('Replace photo/video') : t('Upload photo/video')}
@@ -371,13 +371,13 @@ export function PortfolioHeroBannerMediaUpload({
             type="button"
             onClick={() => onChange('')}
             disabled={uploading}
-            className="rounded-full px-3 py-2 text-sm font-medium text-neutral-500 transition hover:text-neutral-900 disabled:opacity-60"
+            className="rounded-full px-3 py-2 text-sm font-medium text-[color:var(--np-muted)] transition hover:text-[color:var(--np-text)] disabled:opacity-60"
           >
             {t('Clear')}
           </button>
         ) : null}
         {fileName && !uploading ? (
-          <span className="max-w-[12rem] truncate text-xs text-neutral-500">{fileName}</span>
+          <span className="max-w-[12rem] truncate text-xs text-[color:var(--np-muted)]">{fileName}</span>
         ) : null}
       </div>
       {uploadError ? <p className="text-xs text-red-600">{uploadError}</p> : null}

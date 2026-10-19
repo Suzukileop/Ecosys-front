@@ -62,7 +62,7 @@ export function CreatorProductDeleteZone({
           <button
             type="button"
             onClick={() => setOpen(true)}
-            className="h-11 w-full rounded-full px-5 text-[15px] font-bold text-[#F4212E] shadow-[inset_0_0_0_1px_rgba(244,33,46,0.45)] transition hover:bg-[rgba(244,33,46,0.08)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F4212E]/40 sm:w-auto"
+            className="h-11 w-full rounded-full px-5 text-[15px] font-bold text-[#F4212E] shadow-[inset_0_0_0_1px_rgba(244,33,46,0.45)] transition hover:bg-[rgba(244,33,46,0.08)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[#F4212E]/40 sm:w-auto"
           >
             {t('Delete this product…')}
           </button>
@@ -83,7 +83,7 @@ export function CreatorProductDeleteZone({
             value={confirmText}
             onChange={(e) => setConfirmText(e.target.value)}
             placeholder={t('Product name')}
-            className="h-11 w-full rounded-full border-0 bg-[color:var(--gn-surface)] px-4 text-[15px] text-[color:var(--gn-ink)] outline-none transition placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_#F4212E]"
+            className="h-11 w-full rounded-full border-0 bg-[color:var(--gn-surface)] px-4 text-[15px] text-[color:var(--gn-ink)] outline-hidden transition placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_#F4212E]"
             autoComplete="off"
           />
           {error && <p className="text-[13px] font-medium text-[#F4212E]">{error}</p>}

@@ -104,7 +104,7 @@ export function CreatorProductGroupsExplorePanel({
                     )}
                     {count > 0 ? (
                       <div className="pointer-events-none absolute bottom-3 right-3">
-                        <span className="rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium tabular-nums text-white backdrop-blur-sm">
+                        <span className="rounded-md bg-black/60 px-2 py-1 text-[13px] font-medium tabular-nums text-white backdrop-blur-xs">
                           {count} {t('item')}{count !== 1 ? 's' : ''}
                         </span>
                       </div>

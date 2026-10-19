@@ -520,7 +520,7 @@ export function PortfolioCaseOverlayNav({
             aria-modal="true"
             aria-label={t('Navigation menu')}
             tabIndex={-1}
-            className="fixed inset-0 z-[228] flex flex-col focus:outline-none"
+            className="fixed inset-0 z-[228] flex flex-col focus:outline-hidden"
             initial={reduceMotion ? false : { opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={reduceMotion ? undefined : { opacity: 0 }}

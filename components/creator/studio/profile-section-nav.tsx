@@ -145,7 +145,7 @@ export const PROFILE_SECTION_GROUPS: ProfileSectionId[][] = [
  */
 export const PORTFOLIO_RAIL_GROUPS: ReadonlyArray<{ title: string; sections: readonly ProfileSectionId[] }> = [
   { title: msg('Profile'), sections: ['about', 'aboutPage', 'aboutUs'] },
-  { title: msg('Background'), sections: ['experience', 'strengths', 'tools'] },
+  { title: msg('Career background'), sections: ['experience', 'strengths', 'tools'] },
   { title: msg('Work'), sections: ['services', 'products', 'portfolio', 'team', 'gallery'] },
   { title: msg('Contact'), sections: ['faq', 'links', 'contact'] },
 ];

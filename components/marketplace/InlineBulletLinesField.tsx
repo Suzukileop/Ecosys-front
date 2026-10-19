@@ -80,7 +80,7 @@ export function InlineBulletLinesField<T extends FieldValues>({
           <li key={field.id} className="group/line flex items-center gap-3 py-2">
             <span className="h-1 w-1 shrink-0 rounded-full bg-neutral-400 dark:bg-neutral-500" aria-hidden />
             <input
-              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] leading-relaxed text-[#111111] placeholder:text-neutral-400 focus:outline-none focus:ring-0 dark:text-white dark:placeholder:text-neutral-500"
+              className="min-w-0 flex-1 border-0 bg-transparent p-0 text-[15px] leading-relaxed text-[#111111] placeholder:text-neutral-400 focus:outline-hidden focus:ring-0 dark:text-white dark:placeholder:text-neutral-500"
               placeholder={`${placeholderPrefix} ${index + 1}`}
               {...register(`${String(name)}.${index}.value` as Path<T>)}
               onKeyDown={(event) => {

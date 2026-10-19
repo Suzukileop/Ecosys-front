@@ -1,41 +1,20 @@
 'use client';
 
-import type { ReactNode } from 'react';
+import { useId, type ReactNode } from 'react';
 import { PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS, type PortfolioSectionBackgroundSettings } from '@/components/portfolio/portfolio-section-background-settings';
 import { PortfolioBackgroundImageUpload } from '@/components/portfolio/portfolio-background-image-upload';
 import {
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS,
   PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS,
 } from '@/components/portfolio/portfolio-global-settings';
+import { NpRangeField, NpSegmentedControl, NpToggleRow } from '@/components/portfolio/portfolio-nav-panel-ui';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
 
-function ToggleRow({
-  label,
-  description,
-  checked,
-  onChange,
-}: {
-  label: string;
-  description?: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-}) {
-  return (
-    <label className="flex cursor-pointer items-start justify-between gap-4 rounded-2xl border border-neutral-200/80 bg-white px-4 py-3.5">
-      <span className="min-w-0">
-        <span className="block text-sm font-semibold text-neutral-950">{label}</span>
-        {description ? <span className="mt-1 block text-sm text-neutral-500">{description}</span> : null}
-      </span>
-      <input
-        type="checkbox"
-        checked={checked}
-        onChange={(event) => onChange(event.target.checked)}
-        className="mt-1 h-4 w-4 shrink-0 rounded border-neutral-300 text-neutral-900"
-      />
-    </label>
-  );
-}
+/*
+ * Every section panel now sits in the Navigation-style frame (NpPanelShell), so these fields are
+ * drawn with its building blocks: switches, segmented choices, chips and the range slider.
+ */
 
 type BackgroundColorFieldRenderer = (props: {
   label: string;
@@ -69,6 +48,7 @@ const BACKGROUND_COLOR_PRESETS: { hex: string; label: string }[] = [
   { hex: '#0A0A0A', label: msg('Noir') },
 ];
 
+/** The presets as chips, each with its colour dot. */
 function DefaultColorField({
   label,
   value,
@@ -79,114 +59,77 @@ function DefaultColorField({
   onChange: (value: string) => void;
 }) {
   const t = useT();
+  const id = useId();
   const activeHex = value.trim().toLowerCase();
   return (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div className="mt-3 flex flex-wrap gap-3">
-        {BACKGROUND_COLOR_PRESETS.map((preset) => {
-          const active = preset.hex.toLowerCase() === activeHex;
-          return (
-            <button
-              key={preset.hex}
-              type="button"
-              onClick={() => onChange(preset.hex)}
-              aria-pressed={active}
-              aria-label={t(preset.label)}
-              title={t(preset.label)}
-              className={`flex flex-col items-center gap-1.5 rounded-xl p-1.5 transition ${
-                active ? 'ring-2 ring-neutral-900 ring-offset-2' : 'hover:bg-neutral-100'
-              }`}
-            >
-              <span
-                className="h-9 w-9 rounded-full border border-neutral-200/80 shadow-inner"
-                style={{ backgroundColor: preset.hex }}
-              />
-              <span className="text-[11px] font-medium text-neutral-500">{t(preset.label)}</span>
-            </button>
-          );
-        })}
+    <div className="np-field">
+      <p id={id} className="np-field-label">
+        {label}
+      </p>
+      <div role="group" aria-labelledby={id} className="np-chips">
+        {BACKGROUND_COLOR_PRESETS.map((preset) => (
+          <button
+            key={preset.hex}
+            type="button"
+            onClick={() => onChange(preset.hex)}
+            aria-pressed={preset.hex.toLowerCase() === activeHex}
+            className="np-chip"
+          >
+            <span
+              aria-hidden
+              className="h-3 w-3 shrink-0 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.18)]"
+              style={{ backgroundColor: preset.hex }}
+            />
+            {t(preset.label)}
+          </button>
+        ))}
       </div>
     </div>
   );
 }
 
+/** One-line segmented choice; five options or more wrap as chips instead. */
 function OptionGrid<T extends string>({
   label,
   options,
   value,
   onChange,
-  columns = 2,
-  compact = false,
 }: {
   label: string;
-  options: { value: T; label: string; description?: string }[];
+  options: { value: T; label: string }[];
   value: T;
   onChange: (value: T) => void;
-  columns?: 2 | 3;
-  /** Labels only, tight pill row — no per-option description text. */
-  compact?: boolean;
 }) {
   const t = useT();
-  return (
-    <div>
-      <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-      <div
-        className={
-          compact
-            ? 'mt-3 grid grid-cols-3 gap-2'
-            : `mt-3 grid gap-2 ${columns === 3 ? 'sm:grid-cols-2 lg:grid-cols-3' : 'sm:grid-cols-2'}`
-        }
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              onClick={() => onChange(option.value)}
-              className={
-                compact
-                  ? `rounded-xl border px-3 py-2.5 text-center text-sm font-semibold transition ${
-                      active
-                        ? 'border-neutral-900 bg-neutral-900 text-white'
-                        : 'border-neutral-200/80 bg-white text-neutral-700 hover:border-neutral-300'
-                    }`
-                  : `rounded-2xl border px-4 py-3 text-left transition ${
-                      active
-                        ? 'border-neutral-900 bg-neutral-50 ring-2 ring-neutral-900/10'
-                        : 'border-neutral-200/80 bg-white hover:border-neutral-300 hover:bg-neutral-50/80'
-                    }`
-              }
-            >
-              <p className={compact ? '' : 'text-sm font-semibold text-neutral-950'}>{t(option.label)}</p>
-              {!compact && option.description ? (
-                <p className="mt-1 text-xs leading-relaxed text-neutral-500">{t(option.description)}</p>
-              ) : null}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
-}
-
-function OpacitySlider({ label, value, onChange }: { label: string; value: number; onChange: (value: number) => void }) {
-  return (
-    <div>
-      <div className="flex items-center justify-between gap-4">
-        <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{label}</p>
-        <span className="text-sm font-semibold text-neutral-700">{value}%</span>
-      </div>
-      <input
-        type="range"
-        min={0}
-        max={100}
-        step={1}
+  const id = useId();
+  if (options.length < 5) {
+    return (
+      <NpSegmentedControl
+        label={label}
+        options={options.map((option) => ({ value: option.value, label: t(option.label) }))}
         value={value}
-        onChange={(event) => onChange(Number(event.target.value))}
-        className="mt-3 h-2 w-full cursor-pointer accent-neutral-900"
+        onChange={onChange}
       />
+    );
+  }
+  return (
+    <div className="np-field">
+      <p id={id} className="np-field-label">
+        {label}
+      </p>
+      <div role="group" aria-labelledby={id} className="np-chips">
+        {options.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+            className="np-chip"
+          >
+            {t(option.label)}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }
@@ -239,31 +182,28 @@ function SectionBackgroundFillControls({
 }) {
   const t = useT();
   return (
-    <div className="space-y-4 rounded-2xl border border-neutral-200/80 bg-neutral-50/40 p-4">
+    <>
       <OptionGrid
         label={t('Fill type')}
         options={PORTFOLIO_SECTION_BACKGROUND_FILL_OPTIONS}
         value={settings.sectionBackgroundFill}
         onChange={(sectionBackgroundFill) => onChange({ sectionBackgroundFill })}
-        compact
       />
 
       {settings.sectionBackgroundFill === 'gradient' ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ColorField
-              label={t('Gradient start')}
-              value={settings.sectionBackgroundGradientFrom}
-              onChange={(sectionBackgroundGradientFrom) => onChange({ sectionBackgroundGradientFrom })}
-              render={renderColorField}
-            />
-            <ColorField
-              label={t('Gradient end')}
-              value={settings.sectionBackgroundGradientTo}
-              onChange={(sectionBackgroundGradientTo) => onChange({ sectionBackgroundGradientTo })}
-              render={renderColorField}
-            />
-          </div>
+          <ColorField
+            label={t('Gradient start')}
+            value={settings.sectionBackgroundGradientFrom}
+            onChange={(sectionBackgroundGradientFrom) => onChange({ sectionBackgroundGradientFrom })}
+            render={renderColorField}
+          />
+          <ColorField
+            label={t('Gradient end')}
+            value={settings.sectionBackgroundGradientTo}
+            onChange={(sectionBackgroundGradientTo) => onChange({ sectionBackgroundGradientTo })}
+            render={renderColorField}
+          />
           <OptionGrid
             label={t('Orientation')}
             options={GRADIENT_ORIENTATION_OPTIONS}
@@ -271,31 +211,27 @@ function SectionBackgroundFillControls({
             onChange={(orientation) =>
               onChange({ sectionBackgroundGradientAngle: GRADIENT_ORIENTATION_ANGLE[orientation] })
             }
-            compact
           />
         </>
       ) : settings.sectionBackgroundFill === 'split' ? (
         <>
-          <div className="grid gap-4 sm:grid-cols-2">
-            <ColorField
-              label={t('Color A')}
-              value={settings.sectionBackgroundColorA}
-              onChange={(sectionBackgroundColorA) => onChange({ sectionBackgroundColorA })}
-              render={renderColorField}
-            />
-            <ColorField
-              label={t('Color B')}
-              value={settings.sectionBackgroundColorB}
-              onChange={(sectionBackgroundColorB) => onChange({ sectionBackgroundColorB })}
-              render={renderColorField}
-            />
-          </div>
+          <ColorField
+            label={t('Color A')}
+            value={settings.sectionBackgroundColorA}
+            onChange={(sectionBackgroundColorA) => onChange({ sectionBackgroundColorA })}
+            render={renderColorField}
+          />
+          <ColorField
+            label={t('Color B')}
+            value={settings.sectionBackgroundColorB}
+            onChange={(sectionBackgroundColorB) => onChange({ sectionBackgroundColorB })}
+            render={renderColorField}
+          />
           <OptionGrid
             label={t('Direction')}
             options={SPLIT_DIRECTION_OPTIONS}
             value={settings.sectionBackgroundSplitAxis}
             onChange={(sectionBackgroundSplitAxis) => onChange({ sectionBackgroundSplitAxis })}
-            compact
           />
         </>
       ) : settings.sectionBackgroundFill === 'image' ? (
@@ -310,14 +246,12 @@ function SectionBackgroundFillControls({
             options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_SIZE_OPTIONS}
             value={settings.sectionBackgroundImageSize}
             onChange={(sectionBackgroundImageSize) => onChange({ sectionBackgroundImageSize })}
-            compact
           />
           <OptionGrid
             label={t('Image position')}
             options={PORTFOLIO_GLOBAL_BACKGROUND_IMAGE_POSITION_OPTIONS}
             value={settings.sectionBackgroundImagePosition}
             onChange={(sectionBackgroundImagePosition) => onChange({ sectionBackgroundImagePosition })}
-            compact
           />
         </>
       ) : (
@@ -329,22 +263,27 @@ function SectionBackgroundFillControls({
         />
       )}
 
-      <OpacitySlider
+      <NpRangeField
         label={t('Opacity')}
         value={settings.sectionBackgroundOpacity}
+        min={0}
+        max={100}
+        unit="%"
         onChange={(sectionBackgroundOpacity) => onChange({ sectionBackgroundOpacity })}
       />
 
-      <ToggleRow
-        label={t('Top/bottom fade')}
+      <NpToggleRow
+        title={t('Top/bottom fade')}
         description={t('Softens the background into the next section instead of a hard cut.')}
         checked={settings.sectionBackgroundEdgeFade}
         onChange={(sectionBackgroundEdgeFade) => onChange({ sectionBackgroundEdgeFade })}
       />
-    </div>
+    </>
   );
 }
 
+/** The section's background: on/off, then the fill controls. Lays out as a flat column — the host
+ *  places it in a collapsible section. */
 export function SectionBackgroundSettingsFields({
   settings,
   onChange,
@@ -365,9 +304,9 @@ export function SectionBackgroundSettingsFields({
 }) {
   const t = useT();
   return (
-    <div className="space-y-4">
-      <ToggleRow
-        label={t('Enable section background')}
+    <div className="flex flex-col gap-[30px]">
+      <NpToggleRow
+        title={t('Enable section background')}
         checked={settings.sectionBackgroundEnabled}
         onChange={(sectionBackgroundEnabled) => onChange({ sectionBackgroundEnabled })}
       />

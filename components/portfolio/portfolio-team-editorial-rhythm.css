@@ -1,0 +1,22 @@
+/* Keep unequal portrait plates; use a common, readable caption system. */
+.team-rhythm .team-rhythm-name { margin: 0; font-weight: 500; line-height: 1.25; letter-spacing: -.02em; text-transform: none; overflow-wrap: anywhere; text-wrap: pretty; }
+.team-rhythm [data-featured='true'] .team-rhythm-name { font-size: calc(clamp(1.5rem, 2.5vw, 2.25rem) * var(--pf-team-font-scale, 1)); }
+.team-rhythm-role { margin: 8px 0 0; font-size: calc(clamp(.875rem, 1vw, 1rem) * var(--pf-team-font-scale, 1)); font-weight: 400; line-height: 1.55; letter-spacing: 0; overflow-wrap: anywhere; }
+.team-rhythm-card::before { content: ''; display: block; width: 22px; height: 2px; margin-bottom: 14px; background: var(--pf-palette-principal, currentColor); }
+.team-rhythm-link { display: inline-flex; justify-content: center; align-items: center; width: 44px; height: 44px; }
+.team-rhythm-card a { min-width: 44px; min-height: 44px; }
+.team-rhythm-card a:focus-visible { outline: 2px solid currentColor; outline-offset: 3px; }
+.team-rhythm-tone { filter: grayscale(1); transition: filter 500ms ease; }
+.team-rhythm-zoom { transition: transform 650ms cubic-bezier(.22, 1, .36, 1); }
+@media (hover: hover) and (pointer: fine) {
+  .team-rhythm-card:hover .team-rhythm-zoom { transform: scale(1.025); }
+  .team-rhythm-card:hover .team-rhythm-tone { filter: grayscale(0); }
+}
+@media (hover: none) { .team-rhythm-tone { filter: none; } }
+.team-rhythm-card:focus-within .team-rhythm-tone { filter: grayscale(0); }
+.team-rhythm[data-with-image='false'] { grid-template-columns: repeat(auto-fit, minmax(min(100%, 18rem), 1fr)); }
+.team-rhythm[data-with-image='false'] .team-rhythm-card { grid-column: auto; }
+@media (prefers-reduced-motion: reduce) {
+  .team-rhythm [data-pf-no-color-transition], .team-rhythm-tone { transition: none !important; }
+  .team-rhythm-card:hover .team-rhythm-zoom { transform: none; }
+}

@@ -1,11 +1,6 @@
 'use client';
 
 import { useId, useState, type CSSProperties, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
@@ -23,6 +18,7 @@ import {
   type TeamColorSlot,
 } from '@/components/portfolio/portfolio-team-palette-settings';
 import {
+  DEFAULT_TEAM_PRESENTATION,
   PORTFOLIO_TEAM_AVATAR_COLUMN_GAP_OPTIONS,
   PORTFOLIO_TEAM_AVATAR_COLUMN_OPTIONS,
   PORTFOLIO_TEAM_AVATAR_GRID_WIDTH_OPTIONS,
@@ -83,10 +79,10 @@ import {
 import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
 import { HeaderDesignFields, type HeaderCopy } from '@/components/portfolio/portfolio-header-design-fields';
 import type { HeaderPatch } from '@/components/portfolio/portfolio-header-style-controls';
-import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
+import { SettingRow, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /* ---------------------------------------------------------------------- */
 /* Sub-sections — the same four tabs, in the same order, with the same     */
@@ -362,7 +358,7 @@ function TeamColorField({
         onChange={(event) =>
           onChange(asTeamPatch(patchTeamColorBinding(team, slot, event.target.value as HeroPaletteTokenId)))
         }
-        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+        className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-hidden"
         aria-label={t('{label} palette token', { label })}
       >
         {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
@@ -412,7 +408,7 @@ function TeamPickerCard({
 }
 
 /** Collapsed-state row: a compact thumbnail, the selected design's name, a trailing chevron. */
-function TeamDesignSummaryRow({
+function _TeamDesignSummaryRow({
   label,
   name,
   onOpen,
@@ -423,14 +419,13 @@ function TeamDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
     <div>
       <TeamSectionLabel>{label}</TeamSectionLabel>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        aria-label={`Change ${label.toLowerCase()}`}
         className="mt-3 flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
@@ -628,65 +623,30 @@ function TeamLayoutChoiceGrid({
   const t = useT();
   const selected =
     PORTFOLIO_TEAM_LAYOUT_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_TEAM_LAYOUT_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
-
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <TeamSectionLabel>{t('Section design')}</TeamSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_TEAM_LAYOUT_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
-                key={option.value}
-                cardClassName="pf-team-design-card"
-                labelClassName="pf-team-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'team', design: option.value })}
-                settings={previewSource.settings}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Team design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
           {PORTFOLIO_TEAM_LAYOUT_OPTIONS.map((option) => (
-            <TeamPickerCard
+            <NpOptionCard
               key={option.value}
-              active={option.value === value}
-              label={t(option.label)}
+              selected={option.value === value}
+              title={t(option.label)}
+              illustration={<TeamLayoutWireframe layout={option.value} />}
               onClick={() => {
                 onChange(option.value);
                 setShowGrid(false);
               }}
-            >
-              <TeamLayoutWireframe layout={option.value} />
-            </TeamPickerCard>
+            />
           ))}
-        </div>
-        )}
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <TeamDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <TeamLayoutWireframe layout={value} />
-    </TeamDesignSummaryRow>
+    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<TeamLayoutWireframe layout={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -879,6 +839,11 @@ function TeamRailLayoutFields({
   const navigation = team.railNavigation ?? 'drag';
   return (
     <>
+      <TeamVisibilityRow
+        label={t('Show portrait numbers')}
+        checked={team.railShowNumbers !== false}
+        onChange={(railShowNumbers) => onChange({ railShowNumbers })}
+      />
       <div>
           <TeamSectionLabel>{t('Navigation')}</TeamSectionLabel>
           <div role="radiogroup" aria-label={t('Navigation')} className="mt-3 grid grid-cols-3 gap-3">
@@ -1250,13 +1215,6 @@ function TeamSpotlightLayoutFields({
           ))}
         </div>
       </div>
-      <div>
-        <TeamVisibilityRow
-          label={t('Switch on hover')}
-          checked={team.spotlightHoverSwitch !== false}
-          onChange={(spotlightHoverSwitch) => onChange({ spotlightHoverSwitch })}
-        />
-      </div>
     </>
   );
 }
@@ -1491,7 +1449,7 @@ function TeamInfoTooltip({ text }: { text: string }) {
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -1503,7 +1461,7 @@ function TeamInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -2088,6 +2046,13 @@ function TeamSplitScreenLayoutFields({
       </div>
       <div>
         <TeamVisibilityRow
+          label={t('Show numbering')}
+          checked={team.splitShowNumbers !== false}
+          onChange={(splitShowNumbers) => onChange({ splitShowNumbers })}
+        />
+      </div>
+      <div>
+        <TeamVisibilityRow
           label={t('Social links behind a button')}
           checked={team.splitSocialsReveal !== false}
           onChange={(splitSocialsReveal) => onChange({ splitSocialsReveal })}
@@ -2344,46 +2309,34 @@ function TeamHeaderDesignGrid({
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <TeamSectionLabel>{t('Header design')}</TeamSectionLabel>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
           {PORTFOLIO_TEAM_HEADER_DESIGN_OPTIONS.map((option) => (
             <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-              <TeamPickerCard
-                active={option.value === value}
-                label={t(option.label)}
+              <NpOptionCard
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<TeamHeaderWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
-              >
-                <TeamHeaderWireframe design={option.value} />
-              </TeamPickerCard>
+              />
             </PortfolioHeaderDesignOption>
           ))}
-        </div>
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <TeamDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <TeamHeaderWireframe design={value} />
-    </TeamDesignSummaryRow>
+    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<TeamHeaderWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
 /** The Footer's settings band — one titled card under a design picker. */
-function TeamSettingsBand({
+function _TeamSettingsBand({
   flush = false,
   id,
   title,
@@ -2455,11 +2408,13 @@ export function TeamSettingsPanel({
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  chrome,
 }: {
   team: PortfolioTeamSectionSettings;
   onChange: TeamPatch;
   subSection?: TeamSubSection;
   onSubSectionChange?: (value: TeamSubSection) => void;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
@@ -2472,51 +2427,47 @@ export function TeamSettingsPanel({
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
 
+  const defaults: PortfolioTeamSectionSettings = { enabled: true, title: 'Team', subtitle: 'The people who bring every project to life.', ...DEFAULT_TEAM_PRESENTATION };
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={TEAM_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell title={t('Team')} modified={JSON.stringify(team) !== JSON.stringify(defaults)} tabs={TEAM_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
       {subSection === 'general' ? (
-        <div className="space-y-8">
-          <SettingsSwitchRow
-            label={t('Show Team section')}
-            description={team.enabled !== false ? undefined : t('Visitors go straight to the next section.')}
-            checked={team.enabled !== false}
-            onChange={(enabled) => onChange({ enabled })}
-          />
-          {team.enabled !== false ? (
-          <SettingsGroup label={t('Content shown')}>
-            <div>
-              <TeamVisibilityRow
-                label={t('Member photo')}
-                checked={team.showImage}
-                onChange={(showImage) => onChange({ showImage })}
-              />
-              <TeamVisibilityRow
-                label={t('Member name')}
+        <div className="np-stack">
+          <NpToggleRow card title={t('Show Team section')} description={team.enabled !== false ? undefined : t('Visitors go straight to the next section.')} checked={team.enabled !== false} onChange={(enabled) => onChange({ enabled })} />
+          <div className="np-dimmable" data-disabled={team.enabled !== false ? 'false' : 'true'} inert={team.enabled === false}>
+          <NpCollapsibleSection title={t('Content shown')}>
+              {/* Split screen is built around the portrait — it always shows it. */}
+              {team.layout === 'split-screen' ? null : (
+                <NpToggleRow
+                  title={t('Member photo')}
+                  checked={team.showImage}
+                  onChange={(showImage) => onChange({ showImage })}
+                />
+              )}
+              <NpToggleRow
+                title={t('Member name')}
                 checked={team.showName}
                 onChange={(showName) => onChange({ showName })}
               />
-              <TeamVisibilityRow
-                label={t('Role')}
+              <NpToggleRow
+                title={t('Role')}
                 checked={team.showResponsibility}
                 onChange={(showResponsibility) => onChange({ showResponsibility })}
               />
-              <TeamVisibilityRow
-                label={t('Social links')}
+              <NpToggleRow
+                title={t('Social links')}
                 checked={team.showSocials}
                 onChange={(showSocials) => onChange({ showSocials })}
               />
-            </div>
-          </SettingsGroup>
-          ) : null}
+          </NpCollapsibleSection>
+          </div>
         </div>
       ) : null}
 
-      {subSection !== 'general' && !(team.enabled !== false) ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection !== 'general' && team.enabled === false ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
 
       {subSection === 'design' && team.enabled !== false ? (
-        <div className="space-y-6">
+        <div className="np-stack">
           <TeamLayoutChoiceGrid
             showGrid={designCatalogOpen}
             setShowGrid={setDesignCatalogOpen}
@@ -2526,14 +2477,13 @@ export function TeamSettingsPanel({
           {designCatalogOpen ? null : (
             <>
               <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
-                {t('Each design renders straight from your members — what shows on a card is set in General → Visibility.')}
+                {t('Each design renders straight from your members — what shows on a card is set in General → Content shown.')}
               </p>
-              <SettingsRowsScope title={t('Layout options')}><TeamLayoutSettingsBand team={team} onChange={onChange} /></SettingsRowsScope>
+              <NpCollapsibleSection title={t('Layout options')}><TeamLayoutSettingsBand team={team} onChange={onChange} /></NpCollapsibleSection>
             </>
           )}
           {designCatalogOpen ? null : (
-          <div>
-          <SettingsGroup label={t('Style')}>
+          <NpCollapsibleSection title={t('Style')}>
 
           <SectionColorModeControl
             label={t('Color mode')}
@@ -2548,14 +2498,13 @@ export function TeamSettingsPanel({
             onChange={(premiumFontSize) => onChange({ premiumFontSize })}
             columns={3}
           />
-          </SettingsGroup>
-          </div>
+          </NpCollapsibleSection>
           )}
         </div>
       ) : null}
 
       {subSection === 'background' && team.enabled !== false ? (
-        <div className="space-y-4">
+        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={team}
             onChange={onChange}
@@ -2569,11 +2518,11 @@ export function TeamSettingsPanel({
               return <TeamColorField team={team} onChange={onChange} slot={slot} label={label} />;
             }}
           />
-        </div>
+        </NpCollapsibleSection></div>
       ) : null}
 
       {subSection === 'header' && team.enabled !== false ? (
-        <div className="space-y-6">
+        <div className="np-stack">
           <TeamHeaderDesignGrid
             value={team.headerDesign ?? 'editorial'}
             onChange={(headerDesign) => onChange({ headerDesign })}
@@ -2583,12 +2532,12 @@ export function TeamSettingsPanel({
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
           {headerCatalogOpen ? null : (
-            <TeamSettingsBand id="team-header-settings-title" title={t('Header settings')} motionKey={team.headerDesign ?? 'editorial'} flush>
+            <NpCollapsibleSection title={t('Header settings')}>
               <TeamHeaderDesignFields team={team} onChange={onChange} />
-            </TeamSettingsBand>
+            </NpCollapsibleSection>
           )}
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

@@ -677,13 +677,13 @@ function CvVisibilityField({ shown, onChange }: { shown: boolean; onChange: (sho
           role="switch"
           aria-checked={shown}
           onClick={() => onChange(!shown)}
-          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40 ${
+          className={`relative inline-flex h-4 w-7 shrink-0 items-center rounded-full transition-colors duration-300 outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:focus-visible:ring-[#E7E9EA]/40 ${
             shown ? 'bg-[#0F1419] dark:bg-[#EFF3F4]' : 'bg-black/[0.12] dark:bg-white/[0.14]'
           }`}
         >
           <span
             aria-hidden
-            className={`inline-block h-3 w-3 rounded-full bg-white shadow-sm transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
+            className={`inline-block h-3 w-3 rounded-full bg-white shadow-xs transition-transform duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] ${
               shown ? 'translate-x-3.5 dark:bg-[#0F1419]' : 'translate-x-0.5'
             }`}
           />

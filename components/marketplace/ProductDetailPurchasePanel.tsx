@@ -43,9 +43,9 @@ type ProductDetailPurchasePanelProps = {
 const LABEL = 'text-[13px] leading-[18px] text-[color:var(--gn-ink2)]';
 /** X secondary button: 1px #CFD9DE / #536471 outline, ink text — a pill, like every action. */
 const OUTLINE_BUTTON =
-  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#CFD9DE] px-5 text-[15px] font-bold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus:outline-none focus-visible:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-60 dark:border-[#536471]';
+  'inline-flex h-11 w-full items-center justify-center gap-2 rounded-full border border-[#CFD9DE] px-5 text-[15px] font-bold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus:outline-hidden focus-visible:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-60 dark:border-[#536471]';
 const PRIMARY_BUTTON =
-  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-4 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--gn-surface)]';
+  'inline-flex h-12 w-full items-center justify-center gap-2 rounded-full bg-[color:var(--gn-primary)] px-4 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] focus-visible:ring-offset-2 focus-visible:ring-offset-[color:var(--gn-surface)]';
 
 const DELIVERY_LABELS: Record<DeliveryMode, string> = {
   STREAM_ONLY: msg('Instant streaming'),

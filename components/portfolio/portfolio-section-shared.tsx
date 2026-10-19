@@ -11,7 +11,7 @@ import { STUDIO_ICON_BUTTON_TONES } from '@/components/portfolio/PortfolioStudio
 import { useT } from '@/lib/i18n/I18nProvider';
 
 export const portfolioInlineInputClass =
-  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-none transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white';
+  'w-full rounded-lg border border-neutral-300 bg-white px-3 py-2 text-[15px] font-semibold text-neutral-900 outline-hidden transition focus:border-[#F97316] focus:ring-2 focus:ring-[#F97316]/20 dark:border-neutral-600 dark:bg-neutral-900 dark:text-white';
 
 function PortfolioSectionIconButton({
   label,

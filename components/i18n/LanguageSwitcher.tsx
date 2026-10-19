@@ -56,7 +56,7 @@ export function LanguageSwitcher({
         aria-expanded={open}
         aria-controls={listId}
         aria-label={t('Language: {language}', { language: LOCALE_NAMES[locale].native })}
-        className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-[13px] font-medium normal-case tracking-normal transition-colors focus-visible:outline-none focus-visible:ring-2 ${
+        className={`inline-flex h-9 items-center gap-2 rounded-full px-3 text-[13px] font-medium normal-case tracking-normal transition-colors focus-visible:outline-hidden focus-visible:ring-2 ${
           dark
             ? 'text-white/80 hover:bg-white/10 hover:text-white focus-visible:ring-white/40'
             : 'text-[color:var(--gn-ink,#0F1419)] hover:bg-black/[0.05] focus-visible:ring-black/20 dark:hover:bg-white/10 dark:focus-visible:ring-white/30'

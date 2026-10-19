@@ -1,5 +1,5 @@
 /**
- * Self-hosted copies of the families portfolios can pick by name (e.g. `font-family: 'Roboto'`).
+ * Imported by the portfolio route layouts (not the root layout). Self-hosted copies of the families portfolios can pick by name (e.g. `font-family: 'Roboto'`).
  * Served from our own origin so visitors' IP addresses are never sent to Google Fonts; @fontsource
  * keeps the original family names, which next/font would rename. Each file only declares
  * @font-face rules, so a weight is downloaded only when a page actually uses it.

@@ -403,7 +403,7 @@ function GroupCount({ count, limit }: { count: number; limit: number }) {
 
 /** An outlined "+ Add …" pill, the drawers' one way to add a row. */
 const ADD_PILL =
-  'inline-flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
+  'inline-flex h-10 items-center gap-2 rounded-full px-4 text-[14px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]';
 
 /**
  * General Info without the identity fields: name, bio, specialties, location and status are edited from
@@ -535,7 +535,7 @@ function GeneralInfoEditor({
                 <button
                   type="button"
                   onClick={() => applySchedule(null)}
-                  className="-mr-2 inline-flex h-8 items-center rounded-full px-2 text-[13px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[#F4212E] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                  className="-mr-2 inline-flex h-8 items-center rounded-full px-2 text-[13px] font-semibold text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[#F4212E] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                 >
                   {t('Remove')}
                 </button>
@@ -716,7 +716,7 @@ function ContactListField({
                       type="button"
                       onClick={() => remove(index)}
                       aria-label={`Remove ${copy.noun} ${index + 1}`}
-                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+                      className="inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
                     >
                       <FontAwesomeIcon icon={faXmark} className="h-3.5 w-3.5" />
                     </button>

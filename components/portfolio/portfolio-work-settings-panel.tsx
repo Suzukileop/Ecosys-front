@@ -2,13 +2,8 @@
 
 import { HeaderElementToggles } from '@/components/portfolio/portfolio-header-style-controls';
 import { useId, useState, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
-import { PORTFOLIO_WORK_CARD_BORDER_OPTIONS, PORTFOLIO_WORK_CARD_RADIUS_OPTIONS, PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS, PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_MARKER_OPTIONS, workSectionDesignSettingsPatch, DEFAULT_PROJECTS_BOARD_SETTINGS, DEFAULT_PROJECTS_ACCORDION_SETTINGS, DEFAULT_PROJECTS_FRAMES_SETTINGS, DEFAULT_PROJECTS_INDEX_SETTINGS, PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS, DEFAULT_PROJECTS_GRID_SETTINGS, DEFAULT_PROJECTS_SPLIT_SETTINGS, DEFAULT_PROJECTS_CAROUSEL_SETTINGS, DEFAULT_PROJECTS_SHOWCASE_SETTINGS, DEFAULT_PROJECTS_LEDGER_SETTINGS, DEFAULT_PROJECTS_SPEC_SETTINGS, DEFAULT_PROJECTS_CASE_SETTINGS, DEFAULT_PROJECTS_PRESS_SETTINGS, PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS, DEFAULT_PROJECTS_DUOTONE_SETTINGS, PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS, PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS, PORTFOLIO_WORK_SPEC_FRAME_OPTIONS, PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS, PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS, PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS, PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS, PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS, PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS, PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS, PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS, PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS, PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS, PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS, PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS, DEFAULT_PROJECTS_CASCADE_SETTINGS, PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS, PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS, PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS, WORK_PALETTE_TOKEN_OPTIONS, WORK_BILLBOARD_WORD_STYLE_OPTIONS, WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS, workPaletteTokenColor, type PortfolioWorkBillboardWordStyle, type PortfolioWorkHeaderDesign, type PortfolioWorkHeaderTitleSize, type PortfolioWorkPaletteToken, type PortfolioWorkProjectsSpecConsultDesign, type PortfolioWorkSectionDesign, type PortfolioWorkSectionSettings } from '@/components/portfolio/portfolio-work-settings';
+import { PORTFOLIO_WORK_CARD_BORDER_OPTIONS, PORTFOLIO_WORK_CARD_RADIUS_OPTIONS, PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS, PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_FRAMES_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_FRAMES_RADIUS_OPTIONS, PORTFOLIO_WORK_FRAMES_CARD_GAP_OPTIONS, PORTFOLIO_WORK_INDEX_MARKER_OPTIONS, workSectionDesignSettingsPatch, DEFAULT_WORK_PRESENTATION, DEFAULT_PROJECTS_BOARD_SETTINGS, DEFAULT_PROJECTS_ACCORDION_SETTINGS, DEFAULT_PROJECTS_FRAMES_SETTINGS, DEFAULT_PROJECTS_INDEX_SETTINGS, PORTFOLIO_WORK_GRID_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_COLUMNS_OPTIONS, PORTFOLIO_WORK_PROJECTS_BOARD_THUMBNAIL_SIZE_OPTIONS, DEFAULT_PROJECTS_GRID_SETTINGS, DEFAULT_PROJECTS_SPLIT_SETTINGS, DEFAULT_PROJECTS_CAROUSEL_SETTINGS, DEFAULT_PROJECTS_SHOWCASE_SETTINGS, DEFAULT_PROJECTS_LEDGER_SETTINGS, DEFAULT_PROJECTS_SPEC_SETTINGS, DEFAULT_PROJECTS_CASE_SETTINGS, DEFAULT_PROJECTS_PRESS_SETTINGS, PORTFOLIO_WORK_PRESS_EYEBROW_SIZE_OPTIONS, DEFAULT_PROJECTS_DUOTONE_SETTINGS, PORTFOLIO_WORK_DUOTONE_SCROLL_MODE_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_EFFECT_OPTIONS, PORTFOLIO_WORK_DUOTONE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_COLOR_OPTIONS, PORTFOLIO_WORK_DUOTONE_FRAME_RADIUS_OPTIONS, PORTFOLIO_WORK_DUOTONE_SLIDE_NAV_STYLE_OPTIONS, PORTFOLIO_WORK_DUOTONE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASE_THUMBNAIL_HEIGHT_OPTIONS, PORTFOLIO_WORK_SPEC_CONSULT_DESIGN_OPTIONS, PORTFOLIO_WORK_SPEC_COLUMNS_OPTIONS, PORTFOLIO_WORK_SPEC_FRAME_OPTIONS, PORTFOLIO_WORK_SPEC_SHEET_GAP_OPTIONS, PORTFOLIO_WORK_LEDGER_EXPAND_OPTIONS, PORTFOLIO_WORK_SPLIT_THUMBNAIL_SIZE_OPTIONS, PORTFOLIO_WORK_SPLIT_RADIUS_OPTIONS, PORTFOLIO_WORK_SPLIT_ROW_GAP_OPTIONS, PORTFOLIO_WORK_SPLIT_IMAGE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_SIDE_OPTIONS, PORTFOLIO_WORK_SPLIT_TITLE_VERTICAL_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_PLACEMENT_OPTIONS, PORTFOLIO_WORK_SPLIT_DESCRIPTION_VERTICAL_OPTIONS, PORTFOLIO_WORK_CAROUSEL_IMAGE_SIZE_OPTIONS, PORTFOLIO_WORK_CAROUSEL_RADIUS_OPTIONS, PORTFOLIO_WORK_CAROUSEL_ASPECT_OPTIONS, PORTFOLIO_WORK_CAROUSEL_GAP_OPTIONS, PORTFOLIO_WORK_SHOWCASE_MEDIA_SIDE_OPTIONS, PORTFOLIO_WORK_SHOWCASE_RADIUS_OPTIONS, PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS, DEFAULT_PROJECTS_CASCADE_SETTINGS, PORTFOLIO_WORK_CASCADE_CARD_WIDTH_OPTIONS, PORTFOLIO_WORK_CASCADE_VERTICAL_GAP_OPTIONS, PORTFOLIO_WORK_CASCADE_IMAGE_RADIUS_OPTIONS, PORTFOLIO_WORK_CASCADE_CARD_HEIGHT_OPTIONS, WORK_PALETTE_TOKEN_OPTIONS, WORK_BILLBOARD_WORD_STYLE_OPTIONS, WORK_ACCENT_COUNT_ALIGNMENT_OPTIONS, workPaletteTokenColor, resolveWorkSectionTitle, resolveWorkSectionSubtitle, type PortfolioWorkBillboardWordStyle, type PortfolioWorkHeaderDesign, type PortfolioWorkHeaderTitleSize, type PortfolioWorkPaletteToken, type PortfolioWorkProjectsSpecConsultDesign, type PortfolioWorkSectionDesign, type PortfolioWorkSectionSettings } from '@/components/portfolio/portfolio-work-settings';
 import { isValidProfileHexColor } from '@/components/portfolio/portfolio-hero-profile-settings';
 import {
   PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS,
@@ -27,10 +22,19 @@ import {
   type WorkColorSlot,
 } from '@/components/portfolio/portfolio-work-palette-settings';
 import { PortfolioHeaderDesignOption } from '@/components/portfolio/portfolio-header-design-lock';
-import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import {
+  NpBackRow,
+  NpCollapsibleSection,
+  NpOptionCard,
+  NpOptionCardGroup,
+  NpPanelShell,
+  NpPickerRow,
+  NpSegmentedControl,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
 
 export type WorkSettingsSubSection =
   | 'general'
@@ -125,7 +129,6 @@ function WorkColorField({
   allowManualHex?: boolean;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
   const paletteOn = work.useHeroPalette !== false;
   const isManualOverride =
     (slot === 'contentFrameBackground' && work.contentFrameBackgroundManual) ||
@@ -149,17 +152,16 @@ function WorkColorField({
   const resolved = resolveHeroPaletteColor(palette, token);
 
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
-    <div className="space-y-3">
-      <div className="space-y-2">
+    <div className="np-field">
+      <div className="np-stack !gap-3">
         <div className="flex items-start justify-between gap-3">
-          {rows ? null : (<div className="min-w-0">
-            <p className="pf-stack-block-label">{label}</p>
-            {description ? <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</p> : null}
-          </div>)}
+          <div className="min-w-0">
+            <p className="np-field-label !mb-0">{label}</p>
+            {description ? <p className="np-subtle mt-1">{description}</p> : null}
+          </div>
           <span
-            className="mt-0.5 h-7 w-7 shrink-0 rounded-full border border-[color:var(--pf-palette-bordure)]"
-            style={{ backgroundColor: isManualOverride ? value : resolved }}
+            className="mt-0.5 h-7 w-7 shrink-0 rounded-full border-2"
+            style={{ backgroundColor: isManualOverride ? value : resolved, borderColor: 'var(--np-accent)' }}
             title={isManualOverride ? value : resolved}
             aria-hidden
           />
@@ -173,7 +175,7 @@ function WorkColorField({
               )
             )
           }
-          className="w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] focus:border-[color:var(--pf-palette-texte-muted)] focus:outline-none"
+          className="np-input"
           aria-label={t('{label} palette token', { label })}
         >
           {PORTFOLIO_HERO_PALETTE_TOKEN_OPTIONS.map((option) => (
@@ -183,17 +185,15 @@ function WorkColorField({
           ))}
         </select>
         {!allowManualHex ? (
-          <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+          <p className="np-help">
             {t('Bound to token · edit hex under')}{' '}
-            <span className="font-semibold text-[color:var(--pf-palette-texte-muted)]">{t('Global → Theme')}</span>
+            <span className="font-semibold">{t('Global → Theme')}</span>
           </p>
         ) : (
-          <p className="text-xs text-[color:var(--pf-palette-texte-muted)]">
+          <p className="np-help">
             {t('Token palette')}{isManualOverride ? t('· manual override on') : ''} {t('· change the token to resync.')}
           </p>
         )}
-      </div>
-
       {allowManualHex ? (
         <WorkManualColorField
           label={t('Manual colour')}
@@ -203,7 +203,7 @@ function WorkColorField({
         />
       ) : null}
     </div>
-    </SettingRow>
+    </div>
   );
 }
 
@@ -218,18 +218,16 @@ function WorkManualColorField({
   value: string;
   onChange: (value: string) => void;
 }) {
-  const rows = useSettingsRows();
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-stack-block-label">{label}</p>)}
-      {description ? <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">{description}</p> : null}
+    <div className="np-field">
+      <p className="np-field-label">{label}</p>
+      {description ? <p className="np-subtle -mt-1 mb-3">{description}</p> : null}
       <div className="mt-3 flex flex-wrap items-center gap-3">
         <input
           type="color"
           value={value}
           onChange={(event) => onChange(event.target.value)}
-          className="h-11 w-14 cursor-pointer rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent p-1"
+          className="np-color-input h-11 w-14 cursor-pointer"
           aria-label={`${label} picker`}
         />
         <input
@@ -239,29 +237,16 @@ function WorkManualColorField({
             const next = event.target.value.trim();
             if (isValidProfileHexColor(next)) onChange(next);
           }}
-          className="w-28 rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2.5 text-sm font-mono text-[color:var(--pf-palette-texte-fort)]"
+          className="np-input w-28 font-mono"
           aria-label={`${label} hex`}
         />
         <span
-          className="h-11 w-20 rounded-xl border border-[color:var(--pf-palette-bordure)] shadow-inner"
+          className="h-11 w-20 rounded-xl border border-[color:var(--np-border)] shadow-inner"
           style={{ backgroundColor: value }}
           aria-hidden
         />
       </div>
     </div>
-    </SettingRow>
-  );
-}
-
-/** Premium switch track. The off-state fill is mixed toward `transparent` (not toward
- *  `--pf-palette-fond`) plus a visible border, so it never blends into a page whose
- *  background happens to be close to the same token — off-state contrast is guaranteed
- *  regardless of light/dark theme, not just on-state. */
-function WorkSwitchTrack({ checked }: { checked: boolean }) {
-  return (
-    <span className="pf-work-switch" data-checked={checked ? 'true' : 'false'}>
-      <span className="pf-work-switch-thumb" />
-    </span>
   );
 }
 
@@ -276,12 +261,12 @@ function WorkInfoTooltip({ text }: { text: string }) {
       <button
         type="button"
         aria-describedby={open ? tooltipId : undefined}
-        aria-label={t('More info: {text}', { text })}
+        aria-label={t('More info: {text}', { text: t(text) })}
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--np-muted)] transition hover:text-[color:var(--np-text)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--np-accent)]"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -293,9 +278,9 @@ function WorkInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
-          {text}
+          {t(text)}
         </span>
       ) : null}
     </span>
@@ -303,7 +288,7 @@ function WorkInfoTooltip({ text }: { text: string }) {
 }
 
 function WorkSectionLabel({ children }: { children: ReactNode }) {
-  return <p className="pf-stack-block-label">{children}</p>;
+  return <p className="np-field-label">{children}</p>;
 }
 
 function WorkToggleRow({
@@ -318,30 +303,13 @@ function WorkToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
   return (
-    <div className="flex items-center justify-between gap-4 border-b border-[color:var(--pf-palette-bordure)] py-3.5 last:border-b-0">
-      <div className="flex min-w-0 items-center gap-1.5">
-        <span
-          className="min-w-0 cursor-pointer truncate text-sm font-medium text-[color:var(--pf-palette-texte-fort)]"
-          onClick={() => onChange(!checked)}
-        >
-          {label}
-        </span>
-        {info ? <WorkInfoTooltip text={info} /> : null}
-      </div>
-      <button
-        type="button"
-        role="switch"
-        aria-checked={checked}
-        aria-label={label}
-        onClick={() => onChange(!checked)}
-        className="shrink-0"
-      >
-        <WorkSwitchTrack checked={checked} />
-      </button>
-    </div>
+    <NpToggleRow
+      title={label}
+      checked={checked}
+      onChange={onChange}
+      adornment={info ? <WorkInfoTooltip text={info} /> : undefined}
+    />
   );
 }
 
@@ -350,8 +318,8 @@ function WorkOptionGrid<T extends string | number>({
   options,
   value,
   onChange,
-  columns = 2,
-  icons,
+  columns: _columns = 2,
+  icons: _icons,
 }: {
   label: string;
   options: { value: T; label: string; description: string }[];
@@ -361,41 +329,16 @@ function WorkOptionGrid<T extends string | number>({
   icons?: Partial<Record<string, ReactNode>>;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  const compact = columns === options.length && options.length >= 2 && options.length <= 5;
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-work-block-label pf-work-option-label">{label}</p>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-work-segment grid gap-[3px] p-[3px]"
-        data-compact={compact ? 'true' : 'false'}
-        style={{ gridTemplateColumns: `repeat(${columns}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          const icon = icons?.[String(option.value)];
-          return (
-            <button
-              key={String(option.value)}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.description)}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-work-segment-btn flex items-center justify-center gap-1 px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
-            >
-              {icon ? <span className="pf-work-segment-icon">{icon}</span> : null}
-              <span>{t(option.label)}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
+    <NpSegmentedControl
+      label={label}
+      value={String(value)}
+      options={options.map((option) => ({ value: String(option.value), label: t(option.label), title: t(option.description) }))}
+      onChange={(next) => {
+        const option = options.find((item) => String(item.value) === next);
+        if (option) onChange(option.value);
+      }}
+    />
   );
 }
 
@@ -413,39 +356,27 @@ function WorkSlider<T extends string>({
   onChange: (value: T) => void;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  const index = Math.max(
-    0,
-    options.findIndex((option) => option.value === value)
-  );
-  const lastIndex = options.length - 1;
-  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
-  const current = options[index] ?? options[0];
+  if (options.length > 4) {
+    return (
+      <div className="np-field">
+        <p className="np-field-label">{label}</p>
+        <div className="np-chips" role="group" aria-label={label}>
+          {options.map((option) => (
+            <button key={option.value} type="button" className="np-chip" aria-pressed={option.value === value} onClick={() => onChange(option.value)}>
+              {t(option.label)}
+            </button>
+          ))}
+        </div>
+      </div>
+    );
+  }
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<div className="pf-work-slider-row">
-        <span className="pf-work-slider-label">{label}</span>
-        <span className="pf-work-slider-value">{t(current?.label)}</span>
-      </div>)}
-      <input
-        type="range"
-        min={0}
-        max={Math.max(lastIndex, 0)}
-        step={1}
-        value={index}
-        onChange={(event) => {
-          const next = options[Number(event.target.value)];
-          if (next) onChange(next.value);
-        }}
-        aria-label={label}
-        className="pf-work-slider-input"
-        style={{
-          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
-        }}
-      />
-    </div>
-    </SettingRow>
+    <NpSegmentedControl
+      label={label}
+      value={value}
+      options={options.map((option) => ({ value: option.value, label: t(option.label) }))}
+      onChange={onChange}
+    />
   );
 }
 
@@ -468,38 +399,13 @@ function WorkSizePill({
   onChange: (value: PortfolioWorkHeaderTitleSize) => void;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
   return (
-    <SettingRow label={label} value={String(value ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-work-block-label pf-work-option-label">{label}</p>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-work-segment grid grid-cols-4 gap-[3px] p-[3px]"
-        data-compact="true"
-      >
-        {WORK_SIZE_PILL_OPTIONS.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.label)}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-work-segment-btn flex items-center justify-center px-2.5 py-2 font-semibold leading-none"
-              style={{ fontSize: `${option.fontPx}px` }}
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
+    <NpSegmentedControl
+      label={label}
+      value={value}
+      options={WORK_SIZE_PILL_OPTIONS.map((option) => ({ value: option.value, label: t(option.label), sizePx: option.fontPx }))}
+      onChange={onChange}
+    />
   );
 }
 
@@ -509,59 +415,6 @@ function WorkMiniSlide({ children }: { children: ReactNode }) {
       <rect className="pf-work-mini-stage" x="1.25" y="1.25" width="117.5" height="69.5" rx="9" />
       {children}
     </svg>
-  );
-}
-
-function WorkPickerCard({
-  active,
-  label,
-  onClick,
-  children,
-  compact,
-}: {
-  active: boolean;
-  label: string;
-  onClick: () => void;
-  children: ReactNode;
-  /** Smaller padding/type for secondary preview-card grids. */
-  compact?: boolean;
-}) {
-  return (
-    <button
-      type="button"
-      aria-pressed={active}
-      aria-label={label}
-      title={label}
-      data-active={active ? 'true' : 'false'}
-      onClick={onClick}
-      className={`pf-work-design-card rounded-2xl text-left ${compact ? 'pf-work-preview-card' : 'px-3 pb-3 pt-2.5'}`}
-    >
-      {active ? (
-        <span
-          aria-hidden
-          className="absolute -right-1.5 -top-1.5 flex h-5 w-5 items-center justify-center rounded-full"
-          style={{ backgroundColor: 'var(--pf-palette-principal, #f97316)' }}
-        >
-          <svg viewBox="0 0 20 20" fill="none" className="h-2.5 w-2.5">
-            <path
-              d="M4 10.5l3.5 3.5L16 6"
-              stroke="white"
-              strokeWidth={2.5}
-              strokeLinecap="round"
-              strokeLinejoin="round"
-            />
-          </svg>
-        </span>
-      ) : null}
-      {children}
-      <span className={compact ? 'mt-1.5 block' : 'mt-2.5 block'}>
-        <span
-          className={`pf-work-card-label min-w-0 font-semibold leading-none tracking-tight ${compact ? 'text-xs' : 'text-sm'}`}
-        >
-          {label}
-        </span>
-      </span>
-    </button>
   );
 }
 
@@ -581,35 +434,23 @@ function WorkPreviewCardGrid<T extends string>({
   columns?: number;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  const cols = columns ?? Math.min(options.length, 4);
+  const cols = (columns ?? Math.min(options.length, 4)) as 2 | 3 | 4;
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-work-block-label pf-work-option-label">{label}</p>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="grid gap-2"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
+    <NpOptionCardGroup label={label} columns={cols}>
         {options.map((option) => (
-          <WorkPickerCard
+          <NpOptionCard
             key={option.value}
-            active={option.value === value}
-            label={t(option.label)}
+            selected={option.value === value}
+            title={t(option.label)}
             onClick={() => onChange(option.value)}
             compact
-          >
-            <svg viewBox="0 0 64 34" className="pf-work-mini h-full w-full" aria-hidden>
+            illustration={<svg viewBox="0 0 64 34" className="pf-work-mini h-full w-full" aria-hidden>
               <rect className="pf-work-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
               {option.glyph}
-            </svg>
-          </WorkPickerCard>
+            </svg>}
+          />
         ))}
-      </div>
-    </div>
-    </SettingRow>
+    </NpOptionCardGroup>
   );
 }
 
@@ -618,22 +459,21 @@ function WorkPreviewCardGrid<T extends string>({
 function WorkLayoutSettingsBand({
   children,
   motionKey,
-  title = 'Design settings',
+  title,
 }: {
   children: ReactNode;
   motionKey: string;
   title?: string;
 }) {
+  const t = useT();
   if (!children) return null;
+  const resolvedTitle = title ?? t('Design settings');
   return (
-    <section className="pf-work-layout-settings" aria-labelledby="work-layout-settings-title">
-      <h3 id="work-layout-settings-title" className="pf-work-layout-settings-title">
-        {title}
-      </h3>
-      <div key={motionKey} className="pf-work-layout-settings-body space-y-6">
+    <NpCollapsibleSection title={resolvedTitle}>
+      <div key={motionKey} className="np-stack">
         {children}
       </div>
-    </section>
+    </NpCollapsibleSection>
   );
 }
 
@@ -883,6 +723,15 @@ function workPaletteTokenGlyph(token: PortfolioWorkPaletteToken): ReactNode {
   );
 }
 
+/** Placeholders for the Editorial header's text fields — what shows when left empty. */
+function workSectionTitlePlaceholder(work: PortfolioWorkSectionSettings): string {
+  return resolveWorkSectionTitle(work) || 'Portfolio';
+}
+
+function workSectionSubtitlePlaceholder(work: PortfolioWorkSectionSettings): string {
+  return resolveWorkSectionSubtitle(work);
+}
+
 /** Mini wireframes for the 14 "Section design" picker cards. */
 function WorkDesignWireframe({ design }: { design: PortfolioWorkSectionDesign }) {
   switch (design) {
@@ -1087,33 +936,13 @@ function WorkDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
-    <div>
-      <p className="pf-work-block-label">{label}</p>
-      <button
-        type="button"
-        onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
-        className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
-      >
-        <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
-          <span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">
-            {children}
-          </span>
-        </span>
-        <span className="min-w-0 flex-1 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{name}</span>
-        <svg viewBox="0 0 20 20" fill="none" className="h-4 w-4 shrink-0 text-[color:var(--pf-palette-texte-muted)]" aria-hidden>
-          <path
-            d="M7.5 4.5l5 5.5-5 5.5"
-            stroke="currentColor"
-            strokeWidth={1.75}
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-        </svg>
-      </button>
-    </div>
+    <NpPickerRow
+      label={label}
+      value={name}
+      onClick={onOpen}
+      thumbnail={<span className="flex w-[116px] shrink-0 origin-center scale-[1.05] items-center justify-center">{children}</span>}
+    />
   );
 }
 
@@ -1121,69 +950,37 @@ function WorkDesignSummaryRow({
 function WorkDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioWorkSectionDesign;
   onChange: (value: PortfolioWorkSectionDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-work-block-label !mb-0">{t('Section design')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
-                key={option.value}
-                cardClassName="pf-work-design-card"
-                labelClassName="pf-work-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'work', design: option.value })}
-                settings={previewSource.settings}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <WorkPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <WorkDesignWireframe design={option.value} />
-              </WorkPickerCard>
-            );
-          })}
-        </div>
-        )}
+      <div className="np-stack">
+        <NpBackRow title={t('Portfolio design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+          {PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.map((option) => (
+            <NpOptionCard
+              key={option.value}
+              selected={option.value === value}
+              title={t(option.label)}
+              illustration={<WorkDesignWireframe design={option.value} />}
+              onClick={() => {
+                onChange(option.value);
+                setShowGrid(false);
+              }}
+            />
+          ))}
+        </NpOptionCardGroup>
       </div>
     );
   }
@@ -1295,48 +1092,38 @@ function WorkHeaderWireframe({ design }: { design: PortfolioWorkHeaderDesign }) 
 function WorkHeaderChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioWorkHeaderDesign;
   onChange: (value: PortfolioWorkHeaderDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS[0];
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-work-block-label !mb-0">{t('Header design')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-                <WorkPickerCard
-                  active={active}
-                  label={t(option.label)}
-                  onClick={() => {
-                    onChange(option.value);
-                    setShowGrid(false);
-                  }}
-                >
-                  <WorkHeaderWireframe design={option.value} />
-                </WorkPickerCard>
-              </PortfolioHeaderDesignOption>
-            );
-          })}
-        </div>
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
+          {PORTFOLIO_WORK_HEADER_DESIGN_OPTIONS.map((option) => (
+            <PortfolioHeaderDesignOption key={option.value} design={option.value}>
+              <NpOptionCard
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<WorkHeaderWireframe design={option.value} />}
+                onClick={() => {
+                  onChange(option.value);
+                  setShowGrid(false);
+                }}
+              />
+            </PortfolioHeaderDesignOption>
+          ))}
+        </NpOptionCardGroup>
       </div>
     );
   }
@@ -1389,6 +1176,7 @@ function WorkHeaderSharedAdvancedControls({
             { value: 'center' as const, label: t('Center'), description: t('Centered title and subtitle.') },
             { value: 'right' as const, label: t('Right'), description: t('Right-aligned title and subtitle.') },
           ]}
+          icons={WORK_ALIGNMENT_ICONS}
           value={work.headerAlignment}
           onChange={(headerAlignment) => onChange({ headerAlignment })}
           columns={3}
@@ -1435,8 +1223,8 @@ function WorkLayoutDisplayOptions({
   const layoutLabel =
     PORTFOLIO_WORK_SECTION_DESIGN_OPTIONS.find((option) => option.value === design)?.label ?? '';
   return (
-    <SettingsGroup label={t('{design} — what shows', { design: t(layoutLabel) })}>
-      <div key={design}>
+    <NpCollapsibleSection title={t('{design} — what shows', { design: t(layoutLabel) })}>
+      <div key={design} className="np-stack">
       {design === 'projects-board' ? (
         <>
           <WorkToggleRow
@@ -1670,22 +1458,6 @@ function WorkLayoutDisplayOptions({
       )
       : design === 'projects-frames' ? (
         <>
-          <WorkToggleRow
-            label={t('Image padding')}
-            info="Off = flush to edge, on = small gap"
-            checked={
-              (work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS).imagePadding !== false
-            }
-            onChange={(imagePadding) =>
-              onChange({
-                projectsFrames: {
-                  ...(work.projectsFrames ?? DEFAULT_PROJECTS_FRAMES_SETTINGS),
-                  imagePadding,
-                },
-              })
-            }
-          />
-
           <WorkToggleRow
             label={t('Alternate image sides')}
             info="Even cards flip left ↔ right"
@@ -1934,7 +1706,7 @@ function WorkLayoutDisplayOptions({
         <>
           <WorkToggleRow
             label={t('Hover reveal')}
-            info="Survol : zoom + assombrit + affiche la description"
+            info="On hover: zooms, darkens and shows the description"
             checked={
               (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverReveal !== false
             }
@@ -1950,7 +1722,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Focus blur')}
-            info="Floute les autres images au survol"
+            info="Blurs the other images on hover"
             checked={
               (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS)
                 .focusBlurSiblings !== false
@@ -1967,7 +1739,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Hover stack')}
-            info="Survol : stack sous l'image, sans bordure"
+            info="On hover: stack under the image, no border"
             checked={
               (work.projectsCarousel ?? DEFAULT_PROJECTS_CAROUSEL_SETTINGS).hoverStack !== false
             }
@@ -2041,7 +1813,7 @@ function WorkLayoutDisplayOptions({
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsShowcase ?? DEFAULT_PROJECTS_SHOWCASE_SETTINGS).categoryLabel ||
                   'Category'
@@ -2061,23 +1833,10 @@ function WorkLayoutDisplayOptions({
       )
       : design === 'projects-ledger' ? (
         <>
-          <WorkToggleRow
-            label={t('Count')}
-            info="Compteur à droite du titre"
-            checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showCount !== false}
-            onChange={(showCount) =>
-              onChange({
-                projectsLedger: {
-                  ...(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS),
-                  showCount,
-                },
-              })
-            }
-          />
 
           <WorkToggleRow
             label={t('Index')}
-            info="01, 02… à gauche de chaque ligne"
+            info="01, 02… on the left of each row"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showIndex !== false}
             onChange={(showIndex) =>
               onChange({
@@ -2091,7 +1850,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Role')}
-            info="Rôle/catégorie, aligné à droite (desktop)"
+            info="Role / category, right-aligned (desktop)"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showRole !== false}
             onChange={(showRole) =>
               onChange({
@@ -2105,7 +1864,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Description')}
-            info="Dans le panneau déplié"
+            info="Inside the expanded panel"
             checked={
               (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showDescription !== false
             }
@@ -2121,7 +1880,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Stack')}
-            info="Mono uppercase, sous la description"
+            info="Mono uppercase, under the description"
             checked={(work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showStack !== false}
             onChange={(showStack) =>
               onChange({
@@ -2135,7 +1894,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Consult')}
-            info="Lien texte + flèche, sous les détails"
+            info="Text link + arrow, under the details"
             checked={
               (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).showConsult !== false
             }
@@ -2156,7 +1915,7 @@ function WorkLayoutDisplayOptions({
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).consultLabel ||
                   'Consult this project'
@@ -2179,7 +1938,7 @@ function WorkLayoutDisplayOptions({
         <>
           <WorkToggleRow
             label={t('Thumbnail')}
-            info="Désactive auto « 2 par ligne »"
+            info="Turns off the automatic “2 per row”"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showThumbnail === true}
             onChange={(showThumbnail) =>
               onChange({
@@ -2194,7 +1953,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Category')}
-            info="À gauche, couleur CTA"
+            info="On the left, in the CTA color"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showCategory !== false}
             onChange={(showCategory) =>
               onChange({
@@ -2208,7 +1967,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Role')}
-            info="À droite du micro-header"
+            info="To the right of the micro-header"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showRole !== false}
             onChange={(showRole) =>
               onChange({
@@ -2222,7 +1981,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Field labels')}
-            info="Labels Summary / Stack / Link"
+            info="Summary / Stack / Link labels"
             checked={
               (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showFieldLabels !== false
             }
@@ -2238,7 +1997,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Description')}
-            info="Ligne Summary"
+            info="Summary row"
             checked={
               (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showDescription !== false
             }
@@ -2260,7 +2019,7 @@ function WorkLayoutDisplayOptions({
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).descriptionLabel ||
                   'Summary'
@@ -2280,7 +2039,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Stack')}
-            info="Tags, comme Projects board"
+            info="Tags, like Projects board"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showStack !== false}
             onChange={(showStack) =>
               onChange({
@@ -2300,7 +2059,7 @@ function WorkLayoutDisplayOptions({
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).stackLabel || 'Stack'}
                 placeholder={t('Stack')}
                 onChange={(event) =>
@@ -2317,7 +2076,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Consult')}
-            info="Plusieurs designs au choix, ci-dessous"
+            info="Several designs to choose from, below"
             checked={(work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).showConsult !== false}
             onChange={(showConsult) =>
               onChange({
@@ -2358,7 +2117,7 @@ function WorkLayoutDisplayOptions({
                 </p>
                 <input
                   type="text"
-                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={
                     (work.projectsSpec ?? DEFAULT_PROJECTS_SPEC_SETTINGS).consultLabel ||
                     'Consult this project'
@@ -2382,7 +2141,7 @@ function WorkLayoutDisplayOptions({
         <>
           <WorkToggleRow
             label={t('Thumbnail')}
-            info="~50% à gauche; désactivé = pleine largeur"
+            info="~50% on the left; off = full width"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showThumbnail !== false}
             onChange={(showThumbnail) =>
               onChange({
@@ -2396,7 +2155,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Category')}
-            info="À gauche, couleur CTA"
+            info="On the left, in the CTA color"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showCategory !== false}
             onChange={(showCategory) =>
               onChange({
@@ -2410,7 +2169,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Role')}
-            info="À droite du micro-header"
+            info="To the right of the micro-header"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showRole !== false}
             onChange={(showRole) =>
               onChange({
@@ -2424,7 +2183,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Field labels')}
-            info="Labels Summary / Stack / Link"
+            info="Summary / Stack / Link labels"
             checked={
               (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showFieldLabels !== false
             }
@@ -2440,7 +2199,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Description')}
-            info="Ligne Summary"
+            info="Summary row"
             checked={
               (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showDescription !== false
             }
@@ -2462,7 +2221,7 @@ function WorkLayoutDisplayOptions({
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={
                   (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).descriptionLabel ||
                   'Summary'
@@ -2482,7 +2241,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Stack')}
-            info="Tags, comme Projects board"
+            info="Tags, like Projects board"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showStack !== false}
             onChange={(showStack) =>
               onChange({
@@ -2502,7 +2261,7 @@ function WorkLayoutDisplayOptions({
               </p>
               <input
                 type="text"
-                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                 value={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).stackLabel || 'Stack'}
                 placeholder={t('Stack')}
                 onChange={(event) =>
@@ -2519,7 +2278,7 @@ function WorkLayoutDisplayOptions({
 
           <WorkToggleRow
             label={t('Consult')}
-            info="Plusieurs designs au choix, ci-dessous"
+            info="Several designs to choose from, below"
             checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).showConsult !== false}
             onChange={(showConsult) =>
               onChange({
@@ -2560,7 +2319,7 @@ function WorkLayoutDisplayOptions({
                 </p>
                 <input
                   type="text"
-                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={
                     (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).consultLabel ||
                     'Consult this project'
@@ -2585,7 +2344,7 @@ function WorkLayoutDisplayOptions({
                   </p>
                   <input
                     type="text"
-                    className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                    className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                     value={
                       (work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).linkLabel || 'Link'
                     }
@@ -2962,7 +2721,39 @@ function WorkLayoutDisplayOptions({
       )
       : null}
       </div>
-    </SettingsGroup>
+    </NpCollapsibleSection>
+  );
+}
+
+const DEFAULT_WORK_SECTION_SETTINGS: PortfolioWorkSectionSettings = {
+  enabled: true,
+  title: 'Portfolio',
+  subtitle: 'Selected projects.',
+  ...DEFAULT_WORK_PRESENTATION,
+};
+
+function workSettingsModified(work: PortfolioWorkSectionSettings) {
+  const keys = Object.keys({ ...DEFAULT_WORK_SECTION_SETTINGS, ...work }) as (
+    keyof PortfolioWorkSectionSettings
+  )[];
+  return keys.some((key) => {
+    const current = work[key] === undefined ? DEFAULT_WORK_SECTION_SETTINGS[key] : work[key];
+    return JSON.stringify(current) !== JSON.stringify(DEFAULT_WORK_SECTION_SETTINGS[key]);
+  });
+}
+
+function WorkHiddenNotice({ onEnable }: { onEnable: () => void }) {
+  const t = useT();
+  return (
+    <div className="np-toggle-card flex-col !items-stretch gap-4">
+      <div>
+        <p className="np-card-title">{t('Portfolio section is hidden')}</p>
+        <p className="np-subtle mt-1">{t('Enable it to edit this tab and show it in the portfolio.')}</p>
+      </div>
+      <button type="button" className="np-primary-btn" onClick={onEnable}>
+        {t('Show Portfolio section')}
+      </button>
+    </div>
   );
 }
 
@@ -2971,72 +2762,105 @@ export function WorkSettingsPanel({
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  chrome,
 }: {
   work: PortfolioWorkSectionSettings;
   onChange: (patch: Partial<PortfolioWorkSectionSettings>) => void;
   subSection?: WorkSettingsSubSection;
   onSubSectionChange?: (value: WorkSettingsSubSection) => void;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<WorkSettingsSubSection>('general');
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
+  const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const subSection = normalizeWorkSettingsSubSection(controlledSubSection ?? uncontrolledSubSection);
   const setSubSection = (value: WorkSettingsSubSection) => {
     const next = normalizeWorkSettingsSubSection(value);
     onSubSectionChange?.(next);
     if (controlledSubSection === undefined) setUncontrolledSubSection(next);
   };
+  const modified = workSettingsModified(work);
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={WORK_SETTINGS_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell
+      title={t('Portfolio')}
+      modified={modified}
+      tabs={WORK_SETTINGS_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))}
+      activeTab={subSection}
+      onTabChange={setSubSection}
+      onReset={() => onChange({ ...DEFAULT_WORK_SECTION_SETTINGS })}
+      chrome={chrome}
+    >
 
       {subSection === 'general' ? (
-        <div>
-          <SettingsSwitchRow
-            label={t('Show section')}
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={t('Show Portfolio section')}
             description={work.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={work.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          {work.enabled ? (
-          <SettingsGroup label={t('Content shown')}>
-            <div>
-              <WorkToggleRow
-                label={t('Marketplace link')}
+          <div className="np-dimmable" data-disabled={work.enabled ? 'false' : 'true'} aria-disabled={!work.enabled} inert={!work.enabled}>
+          {/* Section-wide, shared by every design — so it lives with the other section switches. */}
+          <SectionColorModeControl
+            label={t('Color mode')}
+            value={work.colorModeOverride}
+            onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+          />
+          <NpCollapsibleSection title={t('Content shown')}>
+              <NpToggleRow
+                title={t('Marketplace link')}
                 checked={work.showMarketplaceLink}
                 onChange={(showMarketplaceLink) => onChange({ showMarketplaceLink })}
               />
-              <WorkToggleRow
-                label={t('Subtitle')}
+              <NpToggleRow
+                title={t('Subtitle')}
                 checked={work.subtitlePreset !== 'minimal'}
-                onChange={(show) => onChange({ subtitlePreset: show ? 'default' : 'minimal' })}
+                onChange={(show) =>
+                  onChange({
+                    // Turning it back on restores a custom subtitle instead of the default copy.
+                    subtitlePreset: show ? (work.subtitleCustom?.trim() ? 'custom' : 'default') : 'minimal',
+                  })
+                }
               />
-              <WorkToggleRow
-                label={t('Project description')}
+              <NpToggleRow
+                title={t('Project description')}
                 checked={work.showCardDescription !== false}
                 onChange={(showCardDescription) => onChange({ showCardDescription })}
               />
-              <WorkToggleRow
-                label={t('Tools')}
+              <NpToggleRow
+                title={t('Tools')}
                 checked={work.showCardTools !== false}
                 onChange={(showCardTools) => onChange({ showCardTools })}
               />
-            </div>
-          </SettingsGroup>
-          ) : null}
+          </NpCollapsibleSection>
+          </div>
         </div>
       ) : null}
 
-      {subSection !== 'general' && !work.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection !== 'general' && !work.enabled ? <WorkHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
 
       {subSection === 'header' && work.enabled ? (
-        <div className="space-y-6">
-          <div>
+        headerCatalogOpen ? (
+          <WorkHeaderChoiceGrid
+            value={work.headerDesign ?? 'editorial'}
+            onChange={(headerDesign) => onChange({ headerDesign })}
+            open
+            onOpenChange={setHeaderCatalogOpen}
+          />
+        ) : (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Header design')}>
             <WorkHeaderChoiceGrid
               value={work.headerDesign ?? 'editorial'}
               onChange={(headerDesign) => onChange({ headerDesign })}
+              open={false}
+              onOpenChange={setHeaderCatalogOpen}
             />
+          </NpCollapsibleSection>
 
-            <WorkLayoutSettingsBand motionKey={work.headerDesign ?? 'editorial'}>
+            <WorkLayoutSettingsBand motionKey={work.headerDesign ?? 'editorial'} title={t('Header settings')}>
               <HeaderElementToggles
                 design={work.headerDesign ?? 'editorial'}
                 settings={work}
@@ -3614,34 +3438,152 @@ export function WorkSettingsPanel({
                 </>
               ) : (
                 <>
-                  <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} />
+                  {/* Editorial: every text is its own field — text, colour, size, weight —
+                      like the other sections' headers (Info, Tools…). Empty text = section copy. */}
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Label')}</WorkSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="pf-stack-block-label">{t('Text')}</p>
+                        <input
+                          type="text"
+                          value={work.editorialLabelText ?? ''}
+                          onChange={(event) => onChange({ editorialLabelText: event.target.value })}
+                          placeholder={t('Portfolio')}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
+                        />
+                      </div>
+                      <WorkPreviewCardGrid
+                        label={t('Color')}
+                        options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: workPaletteTokenGlyph(option.value),
+                        }))}
+                        value={work.editorialLabelColor ?? 'principal'}
+                        onChange={(editorialLabelColor) => onChange({ editorialLabelColor })}
+                        columns={3}
+                      />
+                      <WorkSizePill
+                        label={t('Size')}
+                        value={work.editorialLabelSize ?? 'md'}
+                        onChange={(editorialLabelSize) => onChange({ editorialLabelSize })}
+                      />
+                      <WorkOptionGrid
+                        label={t('Weight')}
+                        options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={work.editorialLabelWeight ?? 'regular'}
+                        onChange={(editorialLabelWeight) => onChange({ editorialLabelWeight })}
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Title')}</WorkSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="pf-stack-block-label">{t('Text')}</p>
+                        <input
+                          type="text"
+                          value={work.editorialTitleText ?? ''}
+                          onChange={(event) => onChange({ editorialTitleText: event.target.value })}
+                          placeholder={workSectionTitlePlaceholder(work)}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
+                        />
+                      </div>
+                      <WorkPreviewCardGrid
+                        label={t('Color')}
+                        options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: workPaletteTokenGlyph(option.value),
+                        }))}
+                        value={work.editorialTitleColor ?? 'principal'}
+                        onChange={(editorialTitleColor) => onChange({ editorialTitleColor })}
+                        columns={3}
+                      />
+                      <WorkSizePill
+                        label={t('Size')}
+                        value={work.headerTitleSize ?? 'md'}
+                        onChange={(headerTitleSize) => onChange({ headerTitleSize })}
+                      />
+                      <WorkOptionGrid
+                        label={t('Weight')}
+                        options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={work.headerTitleWeight ?? 'regular'}
+                        onChange={(headerTitleWeight) => onChange({ headerTitleWeight })}
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkSectionLabel>{t('Subtitle')}</WorkSectionLabel>
+                    <div className="mt-3 space-y-4">
+                      <div>
+                        <p className="pf-stack-block-label">{t('Text')}</p>
+                        <input
+                          type="text"
+                          value={work.editorialSubtitleText ?? ''}
+                          onChange={(event) => onChange({ editorialSubtitleText: event.target.value })}
+                          placeholder={workSectionSubtitlePlaceholder(work)}
+                          className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3.5 py-2.5 text-sm text-[color:var(--pf-palette-texte-fort)]"
+                        />
+                      </div>
+                      <WorkPreviewCardGrid
+                        label={t('Color')}
+                        options={WORK_PALETTE_TOKEN_OPTIONS.map((option) => ({
+                          ...option,
+                          glyph: workPaletteTokenGlyph(option.value),
+                        }))}
+                        value={work.editorialSubtitleColor ?? 'texteFort'}
+                        onChange={(editorialSubtitleColor) => onChange({ editorialSubtitleColor })}
+                        columns={3}
+                      />
+                      <WorkSizePill
+                        label={t('Size')}
+                        value={work.editorialSubtitleSize ?? 'md'}
+                        onChange={(editorialSubtitleSize) => onChange({ editorialSubtitleSize })}
+                      />
+                      <WorkOptionGrid
+                        label={t('Weight')}
+                        options={WORK_HEADER_TITLE_WEIGHT_OPTIONS}
+                        value={work.editorialSubtitleWeight ?? 'regular'}
+                        onChange={(editorialSubtitleWeight) => onChange({ editorialSubtitleWeight })}
+                        columns={4}
+                      />
+                    </div>
+                  </div>
+
+                  <div className="border-t border-[color:var(--pf-palette-bordure)] pt-6">
+                    <WorkHeaderSharedAdvancedControls work={work} onChange={onChange} hideTitleControls />
+                  </div>
                 </>
               )}
             </WorkLayoutSettingsBand>
-          </div>
         </div>
+        )
       ) : null}
 
       {subSection === 'design' && work.enabled ? (
-        <>
-        <div className="space-y-6">
+        designCatalogOpen ? (
           <WorkDesignChoiceGrid
             value={work.sectionDesign ?? 'projects-board'}
             onChange={(sectionDesign) => onChange(workSectionDesignSettingsPatch(sectionDesign))}
+            open
+            onOpenChange={setDesignCatalogOpen}
           />
-
-          <SettingsGroup label={t('Style')}>
-            <SectionColorModeControl
-              label={t('Color mode')}
-              value={work.colorModeOverride}
-              onChange={(colorModeOverride) => onChange({ colorModeOverride })}
+        ) : (
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Presentation')}>
+            <WorkDesignChoiceGrid
+              value={work.sectionDesign ?? 'projects-board'}
+              onChange={(sectionDesign) => onChange(workSectionDesignSettingsPatch(sectionDesign))}
+              open={false}
+              onOpenChange={setDesignCatalogOpen}
             />
-          </SettingsGroup>
+          </NpCollapsibleSection>
 
           <WorkLayoutDisplayOptions work={work} onChange={onChange} />
 
           <WorkLayoutSettingsBand motionKey={work.sectionDesign ?? 'projects-board'}>
-<SettingsRowsScope title={t('Layout options')}>
           {(work.sectionDesign ?? 'projects-board') === 'projects-board' ? (
             <div className="space-y-4">
 
@@ -3707,23 +3649,8 @@ export function WorkSettingsPanel({
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-accordion' ? (
             <div className="space-y-4">
-
-              <WorkOptionGrid
-                label={t('Title / subtitle alignment')}
-                options={PORTFOLIO_WORK_ACCORDION_ALIGN_OPTIONS}
-                icons={WORK_ALIGNMENT_ICONS}
-                value={(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS).headerAlign}
-                onChange={(headerAlign) =>
-                  onChange({
-                    projectsAccordion: {
-                      ...(work.projectsAccordion ?? DEFAULT_PROJECTS_ACCORDION_SETTINGS),
-                      headerAlign,
-                    },
-                  })
-                }
-                columns={3}
-              />
-
+              {/* Title / subtitle alignment lives in Header → alignment now that every layout
+                  shares one header; the old per-layout `headerAlign` had nothing left to align. */}
               <WorkOptionGrid
                 label={t('Preview placement')}
                 options={PORTFOLIO_WORK_ACCORDION_PREVIEW_SIDE_OPTIONS}
@@ -3817,23 +3744,9 @@ export function WorkSettingsPanel({
             <div className="space-y-4">
               <div>
                 <p className="mt-1 text-sm text-[color:var(--pf-palette-texte-muted)]">
-                  {t('Numbered rows with thin separators — narrow index, wide title + stack, description on the right. Content from Information → Portfolio.')}
+                  {t('Full-screen scenes — one project fills the screen at a time with its number, title, stack and description. Content from Information → Portfolio.')}
                 </p>
               </div>
-
-              <WorkSlider
-                label={t('Row spacing')}
-                options={PORTFOLIO_WORK_INDEX_ROW_GAP_OPTIONS}
-                value={(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS).rowGap ?? 'md'}
-                onChange={(rowGap) =>
-                  onChange({
-                    projectsIndex: {
-                      ...(work.projectsIndex ?? DEFAULT_PROJECTS_INDEX_SETTINGS),
-                      rowGap,
-                    },
-                  })
-                }
-              />
             </div>
           ) : (work.sectionDesign ?? 'projects-board') === 'projects-grid' ? (
             <div className="space-y-4">
@@ -4192,7 +4105,7 @@ export function WorkSettingsPanel({
 
               <WorkToggleRow
                 label={t('Striped rows')}
-                info="Fond légèrement teinté une ligne sur deux, comme un vrai registre comptable."
+                info="Lightly tinted background on every other row, like a real accounting ledger."
                 checked={
                   (work.projectsLedger ?? DEFAULT_PROJECTS_LEDGER_SETTINGS).stripedRows === true
                 }
@@ -4333,7 +4246,7 @@ export function WorkSettingsPanel({
 
               <WorkToggleRow
                 label={t('Zig-zag layout')}
-                info="Alterne le côté image/texte à chaque ligne. Désactivé = image toujours à gauche."
+                info="Alternates the image / text side on each row. Off = image always on the left."
                 checked={(work.projectsCase ?? DEFAULT_PROJECTS_CASE_SETTINGS).zigzagEnabled !== false}
                 onChange={(zigzagEnabled) =>
                   onChange({
@@ -4353,7 +4266,7 @@ export function WorkSettingsPanel({
                 </p>
                 <input
                   type="text"
-                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).eyebrowText}
                   placeholder={t('Project')}
                   onChange={(event) =>
@@ -4405,7 +4318,7 @@ export function WorkSettingsPanel({
                 </p>
                 <textarea
                   rows={3}
-                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-none focus:border-[color:var(--pf-palette-texte-muted)]"
+                  className="mt-2 w-full rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent px-3 py-2 text-sm text-[color:var(--pf-palette-texte-fort)] outline-hidden focus:border-[color:var(--pf-palette-texte-muted)]"
                   value={(work.projectsPress ?? DEFAULT_PROJECTS_PRESS_SETTINGS).introText}
                   placeholder={t('Optional left-column blurb, under the eyebrow.')}
                   onChange={(event) =>
@@ -4435,14 +4348,14 @@ export function WorkSettingsPanel({
               />
             </div>
           ) : null}
-          </SettingsRowsScope>
 </WorkLayoutSettingsBand>
         </div>
-        </>
+        )
       ) : null}
 
       {subSection === 'background' && work.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={work}
             onChange={onChange}
@@ -4468,8 +4381,9 @@ export function WorkSettingsPanel({
               );
             }}
           />
+          </NpCollapsibleSection>
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

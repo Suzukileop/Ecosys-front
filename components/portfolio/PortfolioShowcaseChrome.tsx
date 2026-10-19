@@ -137,7 +137,7 @@ function MediaAction({
       title={label}
       aria-label={label}
       disabled={disabled}
-      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-sm backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
+      className={`inline-flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-white/90 text-neutral-800 shadow-xs backdrop-blur transition-colors duration-200 disabled:pointer-events-none disabled:opacity-30 ${
         danger ? 'hover:bg-red-500 hover:text-white' : 'hover:bg-neutral-900 hover:text-white'
       }`}
     >
@@ -644,7 +644,7 @@ export function PortfolioShowcaseChrome({
                     {confirmingDelete ? (
                       <div
                         style={STUDIO_FLOAT_IN_STYLE}
-                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 p-6 text-center backdrop-blur-sm"
+                        className="absolute inset-0 z-20 flex flex-col items-center justify-center gap-4 bg-black/70 p-6 text-center backdrop-blur-xs"
                       >
                         <p className="text-[15px] font-semibold text-white">{t('Delete this work?')}</p>
                         <div className="flex items-center gap-2">

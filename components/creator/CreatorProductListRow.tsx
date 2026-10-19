@@ -95,7 +95,7 @@ export function CreatorProductListRow({
         <h3 className="mt-0.5 line-clamp-2 text-[16px] font-bold leading-[22px] tracking-[-0.01em] text-[color:var(--gn-ink)] sm:line-clamp-1 sm:text-[17px]">
           <Link
             href={viewHref}
-            className="outline-none after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[color:var(--gn-ring)]"
+            className="outline-hidden after:absolute after:inset-0 after:content-[''] focus-visible:after:ring-2 focus-visible:after:ring-inset focus-visible:after:ring-[color:var(--gn-ring)]"
           >
             {product.title}
           </Link>

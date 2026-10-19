@@ -2,10 +2,7 @@
 
 import gsap from 'gsap';
 import { useLayoutEffect, useRef, type CSSProperties } from 'react';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import {
   contactLightDarkTokens,

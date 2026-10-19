@@ -60,7 +60,7 @@ function ComposerIconButton({
       title={label}
       aria-label={label}
       aria-expanded={active || undefined}
-      className={`h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors duration-200 hover:bg-[var(--msg-wash)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:pointer-events-none disabled:opacity-30 ${className} ${
+      className={`h-10 w-10 shrink-0 items-center justify-center rounded-full text-[var(--msg-ink)] transition-colors duration-200 hover:bg-[var(--msg-wash)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:pointer-events-none disabled:opacity-30 ${className} ${
         active ? 'bg-[var(--msg-wash)]' : ''
       }`}
     >
@@ -375,14 +375,14 @@ export function MessageComposer({
             }
           }}
           placeholder={placeholder}
-          className="msg-scroll max-h-40 min-h-10 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[16px] leading-6 text-[var(--msg-ink)] outline-none ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-none focus:ring-0 disabled:opacity-50 lg:text-[15px]"
+          className="msg-scroll max-h-40 min-h-10 min-w-0 flex-1 resize-none border-0 bg-transparent px-2 py-2 text-[16px] leading-6 text-[var(--msg-ink)] outline-hidden ring-0 placeholder:text-[var(--msg-ink-faint)] focus:outline-hidden focus:ring-0 disabled:opacity-50 lg:text-[15px]"
         />
 
         <button
           type="button"
           onClick={onSend}
           disabled={!canSend}
-          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--msg-primary)] text-[var(--msg-primary-ink)] transition-[background-color,opacity] duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--msg-field)] ${
+          className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[var(--msg-primary)] text-[var(--msg-primary-ink)] transition-[background-color,opacity] duration-200 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] focus-visible:ring-offset-2 focus-visible:ring-offset-[var(--msg-field)] ${
             canSend ? 'hover:bg-[var(--msg-primary-hover)]' : 'cursor-not-allowed opacity-30'
           }`}
           title={canSend ? t('Send') : t('Write a message to send')}

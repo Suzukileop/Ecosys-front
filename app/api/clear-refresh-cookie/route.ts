@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 
 /**
- * Must mirror set-refresh-cookie attributes (path / sameSite / secure).
+ * Must mirror the attributes the API sets the cookie with (RefreshTokenCookies: path / sameSite).
  * A bare cookies.delete(name) can leave the path=/ cookie alive, so proxy
  * still sees refresh_token and bounces /login → /dashboard after logout.
  */

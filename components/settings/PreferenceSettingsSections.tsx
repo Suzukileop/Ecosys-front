@@ -197,7 +197,7 @@ export function AppearanceSettingsSection() {
                 aria-checked={active}
                 onClick={() => setTheme(option.value)}
                 data-pf-no-color-transition
-                className={`flex flex-col gap-3 bg-[color:var(--gn-field)] p-3 text-start transition-shadow duration-150 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+                className={`flex flex-col gap-3 bg-[color:var(--gn-field)] p-3 text-start transition-shadow duration-150 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
                   active ? 'shadow-[inset_0_0_0_2px_var(--gn-ink)]' : 'hover:shadow-[inset_0_0_0_1px_var(--gn-ink3)]'
                 }`}
               >

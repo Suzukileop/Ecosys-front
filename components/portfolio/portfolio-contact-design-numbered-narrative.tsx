@@ -9,10 +9,7 @@ import { useLayoutEffect, useRef, useState } from 'react';
 import { getApiErrorMessage } from '@/lib/api-error';
 import { sendCreatorContactMessage } from '@/lib/marketplace-api';
 import { pushFlashFeedback } from '@/stores/flashFeedbackStore';
-import {
-  FooterSocialLinkIcon,
-  type EditorialContactLink,
-} from '@/components/portfolio/portfolio-section-primitives';
+import { FooterSocialLinkIcon, type EditorialContactLink } from '@/components/portfolio/portfolio-contact-link-icons';
 import type { PortfolioContactPresentationSettings } from '@/components/portfolio/portfolio-contact-settings';
 import type { ContactDesignLayoutResolver } from '@/components/portfolio/portfolio-contact-design-layout';
 import {
@@ -26,13 +23,14 @@ import {
   runContactDesignMotion,
 } from '@/components/portfolio/portfolio-contact-design-motion';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { msg } from '@/lib/i18n/config';
 
 const DEFAULT_TITLE = "Let's start a project together";
 
 const narrativeMessageSchema = z.object({
-  name: z.string().trim().min(1, 'Name is required').max(120, 'Name is too long'),
-  email: z.string().trim().email('Enter a valid email').max(254, 'Email is too long'),
-  message: z.string().trim().min(10, 'Message must be at least 10 characters').max(4000, 'Message is too long'),
+  name: z.string().trim().min(1, msg('Name is required')).max(120, msg('Name is too long')),
+  email: z.string().trim().email(msg('Enter a valid email')).max(254, msg('Email is too long')),
+  message: z.string().trim().min(10, msg('Message must be at least 10 characters')).max(4000, msg('Message is too long')),
 });
 type NarrativeFormValues = z.infer<typeof narrativeMessageSchema>;
 const EMPTY_FORM: NarrativeFormValues = { name: '', email: '', message: '' };
@@ -69,7 +67,7 @@ function NumberedRow({
 }) {
   const [focused, setFocused] = useState(false);
   const numberRef = useRef<HTMLSpanElement>(null);
-  const questionRef = useRef<HTMLSpanElement>(null);
+  const questionRef = useRef<HTMLLabelElement>(null);
   const lineRef = useRef<HTMLSpanElement>(null);
 
   useLayoutEffect(() => {
@@ -94,7 +92,7 @@ function NumberedRow({
 
   const id = `pf-narrative-${registration.name}`;
   const fieldClassName =
-    'w-full border-0 bg-transparent pb-4 pt-2 text-[clamp(1.25rem,2vw,1.75rem)] outline-none ring-0 focus:outline-none focus:ring-0';
+    'w-full border-0 bg-transparent pb-4 pt-2 text-[clamp(1.25rem,2vw,1.75rem)] outline-hidden ring-0 focus:outline-hidden focus:ring-0';
 
   return (
     <div className="relative py-10 sm:py-12" data-pf-no-color-transition="">
@@ -102,9 +100,9 @@ function NumberedRow({
         <span ref={numberRef} className="text-sm font-semibold tabular-nums" style={{ color: muted }} data-pf-no-color-transition="">
           {index}
         </span>
-        <span ref={questionRef} className="text-base font-medium sm:text-lg" style={{ color: muted }} data-pf-no-color-transition="">
+        <label ref={questionRef} htmlFor={id} className="text-base font-medium sm:text-lg" style={{ color: muted }} data-pf-no-color-transition="">
           {question}
-        </span>
+        </label>
       </div>
       {multiline ? (
         <textarea
@@ -303,7 +301,7 @@ export function ContactDesignNumberedNarrative({
                 type={field.type}
                 multiline={field.multiline}
                 registration={register(field.name)}
-                error={errors[field.name]?.message}
+                error={errors[field.name]?.message ? t(errors[field.name]!.message!) : undefined}
                 ink={tokens.ink}
                 muted={tokens.muted}
                 accent={accent}

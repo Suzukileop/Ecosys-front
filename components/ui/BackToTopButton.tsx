@@ -25,7 +25,7 @@ export function BackToTopButton({ threshold = 480 }: { threshold?: number }) {
       title={t('Back to top')}
       tabIndex={visible ? 0 : -1}
       aria-hidden={!visible}
-      className={`fixed bottom-8 right-6 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#0F1419] shadow-[0_0_0_1px_rgba(15,20,25,0.06),0_8px_24px_-10px_rgba(15,20,25,0.35)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:bg-[#F7F9F9] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:bg-black dark:text-[#E7E9EA] dark:shadow-[0_0_0_1px_#2F3336] dark:hover:bg-[#16181C] dark:focus-visible:ring-[#E7E9EA]/45 sm:right-10 ${
+      className={`fixed bottom-8 right-6 z-40 inline-flex h-11 w-11 items-center justify-center rounded-full bg-white text-[#0F1419] shadow-[0_0_0_1px_rgba(15,20,25,0.06),0_8px_24px_-10px_rgba(15,20,25,0.35)] transition-all duration-300 ease-[cubic-bezier(0.16,1,0.3,1)] hover:-translate-y-0.5 hover:bg-[#F7F9F9] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:bg-black dark:text-[#E7E9EA] dark:shadow-[0_0_0_1px_#2F3336] dark:hover:bg-[#16181C] dark:focus-visible:ring-[#E7E9EA]/45 sm:right-10 ${
         visible ? 'translate-y-0 opacity-100' : 'pointer-events-none translate-y-3 opacity-0'
       }`}
     >

@@ -15,6 +15,7 @@ import { DESIGN_PREVIEW_VIEWPORT_WIDTH, isDesignPreviewMessage } from '@/lib/por
  */
 type DesignPreviewSource = {
   portfolioPath: string;
+  availableGallery?: import('@/types/profile').ProfileGalleryItem[];
   settings: PortfolioSettings;
 };
 
@@ -180,7 +181,8 @@ export function PortfolioDesignLivePreview({ src, settings }: { src: string; set
  * settings and placeholder content) full width, its name below — one per row so each preview is
  * big enough to read. `cardClassName` / `labelClassName` are the picker's own card chrome
  * (tinted card, accent label when selected — e.g. `.pf-footer-design-card`); the design in use
- * also gets an accent ring around its preview and a "Current" tag.
+ * can also get an accent ring around its preview and a "Current" tag. Pickers that already use
+ * their outer card as the selected state can disable both to avoid duplicate selection chrome.
  */
 export function PortfolioDesignLivePreviewCard({
   active,
@@ -190,6 +192,9 @@ export function PortfolioDesignLivePreviewCard({
   onClick,
   cardClassName,
   labelClassName,
+  showPreviewRing = true,
+  showCurrentBadge = true,
+  flush = false,
 }: {
   active: boolean;
   label: string;
@@ -198,6 +203,9 @@ export function PortfolioDesignLivePreviewCard({
   onClick: () => void;
   cardClassName: string;
   labelClassName: string;
+  showPreviewRing?: boolean;
+  showCurrentBadge?: boolean;
+  flush?: boolean;
 }) {
   const t = useT();
   return (
@@ -208,22 +216,24 @@ export function PortfolioDesignLivePreviewCard({
       title={label}
       data-active={active ? 'true' : 'false'}
       onClick={onClick}
-      className={`${cardClassName} block w-full rounded-2xl p-1.5 text-left`}
+      className={`${cardClassName} block w-full rounded-2xl text-left ${flush ? 'p-0' : 'p-1.5'}`}
     >
       <span className="relative block overflow-hidden rounded-xl">
         <PortfolioDesignLivePreview src={src} settings={settings} />
-        <span
-          aria-hidden
-          className={`pointer-events-none absolute inset-0 rounded-xl ring-inset ${
-            active
-              ? 'ring-2 ring-[color:var(--pf-palette-principal,#f97316)]'
-              : 'ring-1 ring-[color:var(--pf-palette-bordure)]'
-          }`}
-        />
+        {showPreviewRing ? (
+          <span
+            aria-hidden
+            className={`pointer-events-none absolute inset-0 rounded-xl ring-inset ${
+              active
+                ? 'ring-2 ring-[color:var(--pf-palette-principal,#f97316)]'
+                : 'ring-1 ring-[color:var(--pf-palette-bordure)]'
+            }`}
+          />
+        ) : null}
       </span>
       <span className="flex items-center justify-between gap-3 px-1.5 pb-1 pt-2.5">
         <span className={`${labelClassName} text-sm font-semibold leading-none tracking-tight`}>{label}</span>
-        {active ? (
+        {active && showCurrentBadge ? (
           <span className="text-[11px] font-semibold uppercase tracking-[0.12em] text-[color:var(--pf-palette-principal,#f97316)]">
             {t('Current')}
           </span>

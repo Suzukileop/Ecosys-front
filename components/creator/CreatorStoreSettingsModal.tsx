@@ -22,11 +22,11 @@ const subscribeNoop = () => () => {};
 /* The services drawer's vocabulary (ServiceFormDrawer): X ink, hairline fields, pill buttons. */
 const INK = 'text-[#0F1419] dark:text-[#E7E9EA]';
 const INK2 = 'text-[#536471] dark:text-[#71767B]';
-const INPUT_CLASS = `block w-full min-w-0 border-0 bg-transparent p-0 text-[15px] leading-6 ${INK} caret-[#0F1419] outline-none placeholder:text-[#8B98A5] focus:ring-0 disabled:opacity-60 dark:caret-[#E7E9EA] dark:placeholder:text-[#536471]`;
+const INPUT_CLASS = `block w-full min-w-0 border-0 bg-transparent p-0 text-[15px] leading-6 ${INK} caret-[#0F1419] outline-hidden placeholder:text-[#8B98A5] focus:ring-0 disabled:opacity-60 dark:caret-[#E7E9EA] dark:placeholder:text-[#536471]`;
 const LINE_CLASS =
   'border-b border-[#CFD9DE] py-2 transition-[border-color,box-shadow] duration-150 focus-within:border-[#0F1419] focus-within:shadow-[inset_0_-1px_0_#0F1419] dark:border-[#3E4144] dark:focus-within:border-[#E7E9EA] dark:focus-within:shadow-[inset_0_-1px_0_#E7E9EA]';
 const PRIMARY_BUTTON =
-  'inline-flex h-10 items-center justify-center rounded-full bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
+  'inline-flex h-10 items-center justify-center rounded-full bg-[#0F1419] px-5 text-[15px] font-bold text-white transition-colors hover:bg-[#272C30] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 disabled:cursor-not-allowed disabled:opacity-40 dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:hover:bg-[#D7DBDC]';
 const SECONDARY_BUTTON = `inline-flex h-10 items-center justify-center rounded-full px-5 text-[15px] font-bold shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] disabled:opacity-40 dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] ${INK}`;
 /** Glass chips over the cover (Change / Remove). */
 const COVER_NOTE = 'JPG, PNG, WebP, MP4 or WebM — wide works best. The cover is saved as soon as you pick it.';
@@ -58,7 +58,7 @@ function InfoTip({ text, tone = 'ink', align = 'left' }: { text: string; tone?: 
       <button
         type="button"
         aria-label={text}
-        className={`inline-flex items-center justify-center rounded-full text-[11px] font-extrabold leading-none transition-colors focus-visible:outline-none ${
+        className={`inline-flex items-center justify-center rounded-full text-[11px] font-extrabold leading-none transition-colors focus-visible:outline-hidden ${
           tone === 'glass'
             ? 'h-8 w-8 bg-black/55 text-white backdrop-blur-md hover:bg-black/70'
             : `h-4 w-4 shadow-[inset_0_0_0_1.5px_currentColor] ${INK2} hover:text-[#0F1419] focus-visible:text-[#0F1419] dark:hover:text-[#E7E9EA] dark:focus-visible:text-[#E7E9EA]`

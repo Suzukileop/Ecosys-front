@@ -78,7 +78,7 @@ export function SearchServiceProviderRow({ creator }: { creator: MarketplaceCrea
       </div>
 
       {profileHref ? (
-        <Link href={profileHref} className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471] sm:h-9">
+        <Link href={profileHref} className="inline-flex h-10 shrink-0 items-center justify-center rounded-full px-4 text-[14px] font-semibold leading-5 text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471] sm:h-9">
           {t('Portfolio')}
         </Link>
       ) : null}

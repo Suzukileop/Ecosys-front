@@ -170,7 +170,7 @@ function CascadeProjectLink({ href, label, ink }: { href: string; label: string;
       {...anchorProps}
       onMouseEnter={onEnter}
       onMouseLeave={onLeave}
-      className="group/cascade-link inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-none focus-visible:opacity-70"
+      className="group/cascade-link inline-flex items-center gap-2.5 text-[0.82rem] font-medium tracking-[0.02em] outline-hidden focus-visible:opacity-70"
       style={{ color: ink }}
       data-pf-no-color-transition=""
     >

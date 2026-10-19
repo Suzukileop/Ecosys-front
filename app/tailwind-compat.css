@@ -1,0 +1,224 @@
+/*
+ * Tailwind v3 behaviours kept under Tailwind v4.
+ *
+ * Each block below restores one place where v4 renders the same class differently. They are added
+ * to the built-in utilities of the same name (v4 emits both), so nothing changes in the markup.
+ * Dropping a block opts into the v4 behaviour — review the affected screens when you do.
+ */
+
+/*
+ * Gradients. v4's bg-gradient-to-* (the v3 names, still supported) and bg-linear-to-* blend in
+ * OKLab, and colour stops with an opacity modifier (from-black/50) are OKLab colours, which pull a
+ * plain `to right` into OKLab too. v3 blended in sRGB.
+ */
+@utility bg-gradient-to-t {
+  --tw-gradient-position: to top in srgb;
+}
+@utility bg-gradient-to-tr {
+  --tw-gradient-position: to top right in srgb;
+}
+@utility bg-gradient-to-r {
+  --tw-gradient-position: to right in srgb;
+}
+@utility bg-gradient-to-br {
+  --tw-gradient-position: to bottom right in srgb;
+}
+@utility bg-gradient-to-b {
+  --tw-gradient-position: to bottom in srgb;
+}
+@utility bg-gradient-to-bl {
+  --tw-gradient-position: to bottom left in srgb;
+}
+@utility bg-gradient-to-l {
+  --tw-gradient-position: to left in srgb;
+}
+@utility bg-gradient-to-tl {
+  --tw-gradient-position: to top left in srgb;
+}
+
+/*
+ * space-y-* and divide-*. v4 puts the gap / rule *below* every child but the last, through a
+ * zero-specificity :where(), so a child's own mt-* / border-* class now beats it and a trailing
+ * display:none child leaves a gap behind. v3 put it *above* every visible child but the first, at a
+ * specificity that beat the child's classes. Each utility below first cancels v4's rule —
+ * `:where(…):not(html)` weighs 0,0,1: above v4's 0,0,0, below any class on the child — then
+ * reapplies v3's.
+ */
+@utility space-y-* {
+  :where(& > :not(:last-child)):not(html) {
+    margin-block-start: 0;
+    margin-block-end: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(--spacing(--value(number)) * calc(1 - var(--tw-space-y-reverse)));
+    margin-top: calc(--value([length]) * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(--spacing(--value(number)) * var(--tw-space-y-reverse));
+    margin-bottom: calc(--value([length]) * var(--tw-space-y-reverse));
+  }
+}
+
+@utility -space-y-* {
+  :where(& > :not(:last-child)):not(html) {
+    margin-block-start: 0;
+    margin-block-end: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-y-reverse: 0;
+    margin-top: calc(--spacing(--value(number)) * -1 * calc(1 - var(--tw-space-y-reverse)));
+    margin-top: calc(--value([length]) * -1 * calc(1 - var(--tw-space-y-reverse)));
+    margin-bottom: calc(--spacing(--value(number)) * -1 * var(--tw-space-y-reverse));
+    margin-bottom: calc(--value([length]) * -1 * var(--tw-space-y-reverse));
+  }
+}
+@utility space-x-* {
+  :where(& > :not(:last-child)):not(html) {
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(--spacing(--value(number)) * var(--tw-space-x-reverse));
+    margin-right: calc(--value([length]) * var(--tw-space-x-reverse));
+    margin-left: calc(--spacing(--value(number)) * calc(1 - var(--tw-space-x-reverse)));
+    margin-left: calc(--value([length]) * calc(1 - var(--tw-space-x-reverse)));
+  }
+}
+@utility -space-x-* {
+  :where(& > :not(:last-child)):not(html) {
+    margin-inline-start: 0;
+    margin-inline-end: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-space-x-reverse: 0;
+    margin-right: calc(--spacing(--value(number)) * -1 * var(--tw-space-x-reverse));
+    margin-right: calc(--value([length]) * -1 * var(--tw-space-x-reverse));
+    margin-left: calc(--spacing(--value(number)) * -1 * calc(1 - var(--tw-space-x-reverse)));
+    margin-left: calc(--value([length]) * -1 * calc(1 - var(--tw-space-x-reverse)));
+  }
+}
+
+@utility divide-y {
+  :where(& > :not(:last-child)):not(html) {
+    border-top-width: 0;
+    border-bottom-width: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-divide-y-reverse: 0;
+    border-top-width: calc(1px * calc(1 - var(--tw-divide-y-reverse)));
+    border-bottom-width: calc(1px * var(--tw-divide-y-reverse));
+  }
+}
+@utility divide-y-* {
+  :where(& > :not(:last-child)):not(html) {
+    border-top-width: 0;
+    border-bottom-width: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-divide-y-reverse: 0;
+    border-top-width: calc(--value(integer) * 1px * calc(1 - var(--tw-divide-y-reverse)));
+    border-top-width: calc(--value([length]) * calc(1 - var(--tw-divide-y-reverse)));
+    border-bottom-width: calc(--value(integer) * 1px * var(--tw-divide-y-reverse));
+    border-bottom-width: calc(--value([length]) * var(--tw-divide-y-reverse));
+  }
+}
+@utility divide-x {
+  :where(& > :not(:last-child)):not(html) {
+    border-left-width: 0;
+    border-right-width: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-divide-x-reverse: 0;
+    border-right-width: calc(1px * var(--tw-divide-x-reverse));
+    border-left-width: calc(1px * calc(1 - var(--tw-divide-x-reverse)));
+  }
+}
+@utility divide-x-* {
+  :where(& > :not(:last-child)):not(html) {
+    border-left-width: 0;
+    border-right-width: 0;
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    --tw-divide-x-reverse: 0;
+    border-right-width: calc(--value(integer) * 1px * var(--tw-divide-x-reverse));
+    border-right-width: calc(--value([length]) * var(--tw-divide-x-reverse));
+    border-left-width: calc(--value(integer) * 1px * calc(1 - var(--tw-divide-x-reverse)));
+    border-left-width: calc(--value([length]) * calc(1 - var(--tw-divide-x-reverse)));
+  }
+}
+/* The rule colour follows the rule: on every visible child but the first. */
+@utility divide-* {
+  :where(& > :not(:last-child)):not(html) {
+    border-color: var(--color-gray-200, currentColor);
+  }
+  & > :not([hidden]) ~ :not([hidden]) {
+    border-color: --value(--color-*, [color]);
+    border-color: --alpha(--value(--color-*, [color]) / calc(--modifier(integer) * 1%));
+    border-color: --alpha(--value(--color-*, [color]) / calc(--modifier([number]) * 100%));
+  }
+}
+
+/*
+ * drop-shadow-md: v3's two layers (v4 redrew it as one, 0 3px 3px at 12%). A two-layer value cannot
+ * go in --drop-shadow-md: v4 wraps that variable in a single drop-shadow().
+ */
+@utility drop-shadow-md {
+  --tw-drop-shadow: drop-shadow(0 4px 3px rgb(0 0 0 / 0.07)) drop-shadow(0 2px 2px rgb(0 0 0 / 0.06));
+}
+
+/*
+ * Font size vs. leading-*. v4's text-sm … text-9xl take their line height from a leading-* class on
+ * the same element whatever the order, so `leading-relaxed sm:text-base` keeps 1.625. Under v3 the
+ * later rule won and sm:text-base brought its own 1.5rem. Clearing --tw-leading in each size utility
+ * restores that; a leading-* class still wins wherever it came last under v3 (it sets line-height
+ * itself).
+ */
+@utility text-xs {
+  --tw-leading: initial;
+}
+@utility text-sm {
+  --tw-leading: initial;
+}
+@utility text-base {
+  --tw-leading: initial;
+}
+@utility text-lg {
+  --tw-leading: initial;
+}
+@utility text-xl {
+  --tw-leading: initial;
+}
+@utility text-2xl {
+  --tw-leading: initial;
+}
+@utility text-3xl {
+  --tw-leading: initial;
+}
+@utility text-4xl {
+  --tw-leading: initial;
+}
+@utility text-5xl {
+  --tw-leading: initial;
+}
+@utility text-6xl {
+  --tw-leading: initial;
+}
+@utility text-7xl {
+  --tw-leading: initial;
+}
+@utility text-8xl {
+  --tw-leading: initial;
+}
+@utility text-9xl {
+  --tw-leading: initial;
+}
+
+/*
+ * transform-none. translate-* / rotate-* / scale-* are separate properties in v4, so transform: none
+ * no longer undoes them (motion-reduce:transform-none left the polaroid cards tilted).
+ */
+@utility transform-none {
+  translate: none;
+  rotate: none;
+  scale: none;
+}

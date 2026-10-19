@@ -254,7 +254,7 @@ function NotificationRow({
         type="button"
         onClick={() => onItemClick(n)}
         data-pf-no-color-transition
-        className={`xn-row flex w-full items-start gap-3 text-left transition-colors duration-150 focus-visible:outline-none ${
+        className={`xn-row flex w-full items-start gap-3 text-left transition-colors duration-150 focus-visible:outline-hidden ${
           dense ? 'min-h-[60px] px-5 py-3' : 'min-h-[76px] px-5 py-4 sm:gap-4 sm:px-6'
         }`}
       >
@@ -317,7 +317,7 @@ function EmptyNotifications({ empty, page }: { empty: NotificationEmptyState; pa
         <button
           type="button"
           onClick={empty.action.onClick}
-          className="mt-6 inline-flex h-10 items-center rounded-full px-5 text-[14px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]"
+          className="mt-6 inline-flex h-10 items-center rounded-full px-5 text-[14px] font-semibold text-[color:var(--gn-ink)] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] dark:shadow-[inset_0_0_0_1px_#536471]"
         >
           {t(empty.action.label)}
         </button>

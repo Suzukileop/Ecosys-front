@@ -310,7 +310,7 @@ function TeamProfileCard({
       <div
         className={
           panelOnHover
-            ? `translate-y-3 opacity-0 transition-[transform,opacity] duration-[240ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[60ms] group-hover:duration-[520ms] group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:duration-[520ms] ${TOUCH_REVEAL_CLS}`
+            ? `translate-y-3 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-[240ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-hover:delay-[60ms] group-hover:duration-[520ms] group-focus-within:translate-y-0 group-focus-within:opacity-100 group-focus-within:duration-[520ms] ${TOUCH_REVEAL_CLS}`
             : ''
         }
         data-pf-no-color-transition=""
@@ -449,7 +449,7 @@ function TeamProfileCard({
           />
           {overlay ? (
             <span
-              className={`${META_CLS} pointer-events-none absolute left-5 top-5 z-[15] font-semibold tabular-nums text-white/85 drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)] transition-opacity duration-[520ms] ${EASE_CLS} group-hover:opacity-0`}
+              className={`${META_CLS} pointer-events-none absolute left-5 top-5 z-[15] font-semibold tabular-nums text-[rgba(255,255,255,0.85)] drop-shadow-[0_1px_8px_rgba(0,0,0,0.65)] transition-opacity duration-[520ms] ${EASE_CLS} group-hover:opacity-0`}
               data-pf-no-color-transition=""
               aria-hidden
             >
@@ -516,7 +516,7 @@ function TeamProfileRevealPill({
       onPointerMove={magnetize}
       onPointerLeave={release}
       aria-expanded={expanded}
-      className={`group/pill relative inline-flex items-center gap-4 overflow-hidden rounded-full border px-8 py-4 transition-transform duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current`}
+      className={`group/pill relative inline-flex items-center gap-4 overflow-hidden rounded-full border px-8 py-4 transition-transform duration-[520ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current`}
       data-pf-no-color-transition=""
       style={
         {
@@ -703,7 +703,7 @@ export function TeamProfileCardsGallery({
                   type="button"
                   onClick={() => setView(option)}
                   aria-pressed={selected}
-                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 transition-[background-color,color,opacity] duration-[420ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+                  className={`${META_CLS} inline-flex items-center gap-2 rounded-full px-4 py-2.5 transition-[background-color,color,opacity] duration-[420ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
                     selected ? '' : 'opacity-55 hover:opacity-100'
                   }`}
                   data-pf-no-color-transition=""
@@ -731,7 +731,7 @@ export function TeamProfileCardsGallery({
                     onClick={() => stepRail(direction)}
                     disabled={disabled}
                     aria-label={direction === -1 ? t('Previous members') : t('Next members')}
-                    className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,opacity] duration-[520ms] ${EASE_CLS} focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+                    className={`group/nav flex h-12 w-12 items-center justify-center rounded-full border transition-[transform,translate,scale,rotate,opacity] duration-[520ms] ${EASE_CLS} focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
                       disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
                     }`}
                     data-pf-no-color-transition=""

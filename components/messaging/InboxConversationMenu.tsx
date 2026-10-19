@@ -194,7 +194,7 @@ export function InboxConversationMenu({
           setOpen((value) => !value);
         }}
         /* 40px touch target (always shown on touch screens, on hover / focus elsewhere). */
-        className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--msg-ink-faint)] transition-[color,opacity,background-color] duration-200 hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)] focus-visible:opacity-100 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:opacity-40 ${
+        className={`inline-flex h-10 w-10 items-center justify-center rounded-full text-[var(--msg-ink-faint)] transition-[color,opacity,background-color] duration-200 hover:bg-[var(--msg-wash)] hover:text-[var(--msg-ink)] focus-visible:opacity-100 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[var(--msg-ink)] disabled:opacity-40 ${
           open ? 'bg-[var(--msg-wash)] text-[var(--msg-ink)] opacity-100' : 'opacity-0 group-hover/row:opacity-100 [@media(hover:none)]:opacity-100'
         }`}
       >

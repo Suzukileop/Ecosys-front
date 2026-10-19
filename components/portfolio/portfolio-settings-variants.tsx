@@ -51,7 +51,7 @@ const CHIP_IDLE =
 const CHIP_ACTIVE =
   'border border-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_42%,transparent)] bg-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_8%,transparent)]';
 const FOCUS_RING =
-  'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)]';
+  'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)]';
 
 /* ------------------------------------------------------------------ shared controls */
 
@@ -254,7 +254,7 @@ export function SvSelect({
         aria-label={label}
         value={value}
         onChange={(event) => onChange(event.target.value)}
-        className={`h-8 w-full cursor-pointer appearance-none truncate rounded-lg pl-2.5 pr-7 text-[12.5px] font-semibold ${FOCUS_RING} ${CHIP_IDLE} ${SV_TEXT_STRONG}`}
+        className={`h-8 w-full cursor-pointer appearance-none truncate rounded-lg pl-2.5 pr-7 text-[13px] font-semibold ${FOCUS_RING} ${CHIP_IDLE} ${SV_TEXT_STRONG}`}
       >
         {options.map((option) => (
           <option key={option.value} value={option.value}>
@@ -320,8 +320,8 @@ export function SvTextInput({
         setDraft(event.target.value);
         if (allowEmpty || event.target.value.trim()) onCommit(event.target.value);
       }}
-      className={`w-full rounded-lg font-medium outline-none transition-colors placeholder:text-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_38%,transparent)] focus:border-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)] ${CHIP_IDLE} ${SV_TEXT_STRONG} ${
-        density === 'compact' ? 'h-8 px-2.5 text-[12.5px]' : 'h-11 px-3.5 text-[14px]'
+      className={`w-full rounded-lg font-medium outline-hidden transition-colors placeholder:text-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_38%,transparent)] focus:border-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_45%,transparent)] ${CHIP_IDLE} ${SV_TEXT_STRONG} ${
+        density === 'compact' ? 'h-8 px-2.5 text-[13px]' : 'h-11 px-3.5 text-[14px]'
       }`}
     />
   );
@@ -420,7 +420,7 @@ function SvInfo({ text }: { text: string }) {
       {open ? (
         <span
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -603,7 +603,7 @@ function FocusView({ groups }: { groups: SettingGroup[] }) {
                 return (
                   <div key={item.id} className="flex min-h-14 items-center justify-between gap-4">
                     <span className="flex min-w-0 items-center gap-1.5">
-                      <span className={`truncate text-[14.5px] font-medium ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
+                      <span className={`truncate text-[14px] font-medium ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                       {item.info ? <SvInfo text={item.info} /> : null}
                     </span>
                     <SvSwitch checked={item.toggle.checked} onChange={item.toggle.onChange} label={t(item.label)} />
@@ -620,7 +620,7 @@ function FocusView({ groups }: { groups: SettingGroup[] }) {
                     className={`flex min-h-14 w-full items-center gap-3 rounded-md text-left ${FOCUS_RING}`}
                   >
                     <span className="flex min-w-0 flex-1 items-center gap-1.5">
-                      <span className={`truncate text-[14.5px] font-medium ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
+                      <span className={`truncate text-[14px] font-medium ${SV_TEXT_STRONG}`}>{t(item.label)}</span>
                       {item.info ? <SvInfo text={item.info} /> : null}
                     </span>
                     {item.preview ? <span className={`flex shrink-0 items-center ${SV_TEXT_MUTED}`}>{item.preview}</span> : null}

@@ -97,7 +97,7 @@ function bucketBadge(bucket?: ContentPostBucket) {
 }
 
 const editInputClass =
-  'w-full rounded-none border-0 border-b border-black/[0.08] bg-transparent px-0 py-1.5 caret-[#FF5722] outline-none transition placeholder:text-neutral-400 focus:border-[#FF5722] dark:border-white/[0.1] dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]';
+  'w-full rounded-none border-0 border-b border-black/[0.08] bg-transparent px-0 py-1.5 caret-[#FF5722] outline-hidden transition placeholder:text-neutral-400 focus:border-[#FF5722] dark:border-white/[0.1] dark:placeholder:text-neutral-600 dark:focus:border-[#FF5722]';
 
 function ContentPostPriceEstimate({ priceInfo }: { priceInfo?: string | null }) {
   const t = useT();

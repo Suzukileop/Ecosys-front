@@ -60,7 +60,7 @@ export function ProductImageLightbox({
       <button
         type="button"
         aria-label={t('Close')}
-        className="absolute inset-0 bg-black/75 backdrop-blur-sm"
+        className="absolute inset-0 bg-black/75 backdrop-blur-xs"
         onClick={onClose}
       />
 

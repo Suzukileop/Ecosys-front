@@ -67,7 +67,7 @@ export function CreatorProductActionsMenu({
         aria-label={t('Actions for {title}', { title: product.title })}
         aria-haspopup="menu"
         aria-expanded={open}
-        className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-40 ${
+        className={`inline-flex h-9 w-9 items-center justify-center rounded-full text-[color:var(--gn-ink2)] transition-colors hover:bg-[color:var(--gn-hover)] hover:text-[color:var(--gn-ink)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-40 ${
           open ? 'bg-[color:var(--gn-hover)] text-[color:var(--gn-ink)]' : ''
         }`}
       >

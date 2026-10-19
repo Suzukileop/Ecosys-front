@@ -50,6 +50,7 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
   const principal = resolveHeroPaletteColor(palette, 'principal');
   const neutre = resolveHeroPaletteColor(palette, 'neutre');
   const imageBw = data.presentation.heroImageGrayscale === true;
+  const motif = data.presentation.heroBowlIntroMotif ?? 'bowl';
 
   // Refs for GSAP animations
   const sectionRef = useRef<HTMLElement>(null);
@@ -356,23 +357,62 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
       />
 
       <div
-        className={`relative z-[1] flex flex-col pt-[calc(5.25rem+env(safe-area-inset-top,0px))] pb-14 lg:min-h-[100dvh] lg:justify-center lg:pt-[calc(6.5rem+env(safe-area-inset-top,0px))] lg:pb-16 ${shellX}`}
+        className={`relative z-[1] flex flex-col pb-10 pt-[calc(4.5rem+env(safe-area-inset-top,0px))] sm:pb-14 sm:pt-[calc(5.25rem+env(safe-area-inset-top,0px))] lg:min-h-[100dvh] lg:justify-center lg:pb-14 lg:pt-[calc(5.75rem+env(safe-area-inset-top,0px))] ${shellX}`}
       >
         {/* ALIGNED GRID: Top of title aligns PRECISELY with top of portrait */}
         <div 
-          className="grid w-full grid-cols-1 gap-12 lg:grid-cols-[minmax(0,0.88fr)_minmax(0,1.12fr)] lg:gap-x-16 xl:gap-x-20"
+          className="grid w-full grid-cols-1 items-center gap-9 sm:gap-14 lg:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)] lg:gap-x-14 xl:gap-x-24"
           style={{ alignItems: 'start' }} // Critical: top alignment
         >
           {/* LEFT COLUMN — portrait + name (NO BOWL MOTIF - clean floating) */}
           <div 
             ref={leftColumnRef}
-            className="relative isolate z-0 mx-auto flex w-full max-w-[20rem] flex-col items-center lg:mx-0 lg:max-w-[24rem]"
+            className="relative isolate z-0 mx-auto flex w-full max-w-[15.5rem] flex-col items-center sm:max-w-[21rem] lg:mx-0 lg:max-w-[28rem]"
             data-gsap-left-column
           >
-            {/* Availability badge - above portrait */}
+            <div className="relative w-full px-[5%] pb-8 pt-5 lg:px-[8%]">
+              {motif === 'bowl' ? (
+                <span
+                  aria-hidden
+                  className="absolute inset-x-0 bottom-0 z-0 h-[47%] border"
+                  style={{
+                    backgroundColor: `color-mix(in srgb, ${principal} 12%, ${fond})`,
+                    borderColor: `color-mix(in srgb, ${principal} 34%, transparent)`,
+                    borderRadius: '50% 50% 16% 16% / 100% 100% 20% 20%',
+                  }}
+                />
+              ) : null}
+              {motif === 'hug' ? (
+                <span
+                  aria-hidden
+                  className="absolute inset-x-[1%] bottom-2 top-0 z-0 border"
+                  style={{
+                    borderColor: `color-mix(in srgb, ${principal} 46%, transparent)`,
+                    borderRadius: '2.75rem 2.75rem 48% 48% / 2.75rem 2.75rem 18% 18%',
+                  }}
+                />
+              ) : null}
+              {motif === 'orbs-top' ? (
+                <>
+                  <span aria-hidden className="absolute -left-[4%] top-[4%] z-0 size-[36%] rounded-full" style={{ backgroundColor: `color-mix(in srgb, ${principal} 28%, ${fond})` }} />
+                  <span aria-hidden className="absolute right-0 top-[15%] z-0 size-[22%] rounded-full border" style={{ borderColor: `color-mix(in srgb, ${principal} 54%, transparent)` }} />
+                </>
+              ) : null}
+              {motif === 'orbs-bottom' ? (
+                <span
+                  aria-hidden
+                  className="absolute -bottom-1 -left-[1%] z-0 aspect-[3/4] w-[86%] border"
+                  style={{
+                    borderColor: `color-mix(in srgb, ${principal} 45%, transparent)`,
+                    borderRadius: '2.25rem 2.25rem 45% 2.25rem',
+                  }}
+                />
+              ) : null}
+
+            {/* Availability badge - anchored to the portrait composition */}
             {showAvailability ? (
               <div
-                className="relative z-[2] mb-4 inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5"
+                className="absolute left-[10%] top-0 z-[4] inline-flex items-center gap-2 rounded-full border px-3.5 py-1.5 shadow-sm"
                 style={{
                   backgroundColor: isAvailable ? AVAILABLE_PILL_BG : UNAVAILABLE_PILL_BG,
                   borderColor: isAvailable
@@ -396,12 +436,19 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
               </div>
             ) : null}
 
-            {/* Portrait - NO BOWL MOTIF, floats cleanly on background */}
+            {/* Portrait held by the selected sculptural motif. */}
             <div
               ref={portraitRef}
-              className="relative z-[2] aspect-[3/4] w-full overflow-hidden rounded-[1.65rem] lg:rounded-[1.85rem]"
+              className="relative z-[2] aspect-[3/4] w-full overflow-hidden border"
               style={{ 
                 backgroundColor: neutre,
+                borderColor: `color-mix(in srgb, ${ink} 14%, transparent)`,
+                borderRadius:
+                  motif === 'bowl' || motif === 'hug'
+                    ? '2rem 2rem 42% 42% / 2rem 2rem 16% 16%'
+                    : motif === 'orbs-bottom'
+                      ? '2rem 2rem 46% 2rem'
+                      : '2rem',
                 // INITIAL HIDDEN STATE - micro-scale
                 opacity: 0,
                 transform: 'scale(0.92)',
@@ -426,11 +473,12 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
                 </div>
               )}
             </div>
+            </div>
 
             {/* Name - CORRECTED: closer to portrait, larger, with letter-spacing */}
             <p
               ref={nameRef}
-              className="relative z-[2] mt-4 m-0 text-center font-sans font-bold"
+              className="relative z-[2] m-0 mt-1 text-center font-sans font-bold"
               style={{
                 color: ink,
                 fontSize: 'clamp(1.25rem, 1.8vw, 1.5rem)', // INCREASED size
@@ -446,25 +494,20 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
             </p>
           </div>
 
-          {/* RIGHT COLUMN — specialty title, bio, ghost CTAs */}
-          {/* TOP ALIGNED with portrait top edge - compensate for availability badge height */}
+          {/* RIGHT COLUMN — oversized specialty, editorial bio, restrained CTAs */}
           <div 
             ref={rightColumnRef}
-            className="relative z-[2] flex min-w-0 flex-col items-start text-left"
-            style={{
-              // PIXEL-PERFECT ALIGNMENT: compensate for badge height above portrait
-              marginTop: showAvailability ? 'calc(1.5rem + 1rem)' : '0', // badge height + mb-4
-            }}
+            className="relative z-[2] flex min-w-0 flex-col items-start text-left lg:-mt-8 lg:min-h-[clamp(31rem,62vh,37rem)]"
             data-gsap-right-column
           >
             {/* Title - split into lines for animation */}
             <h1
               ref={titleRef}
-              className="m-0 w-full max-w-[38rem] font-sans font-bold tracking-[-0.045em]"
+              className="m-0 w-full max-w-[42rem] font-sans font-bold tracking-[-0.065em]"
               style={{
                 color: principal,
-                fontSize: 'clamp(2.75rem, 6.5vw, 5.25rem)',
-                lineHeight: 1.02,
+                fontSize: 'clamp(2.75rem, 7vw, 7rem)',
+                lineHeight: 0.92,
               }}
             >
               {specialtyLines.map((line, index) => (
@@ -486,9 +529,20 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
               ))}
             </h1>
 
+            <span
+              aria-hidden
+              className="pointer-events-none absolute bottom-[4.5rem] right-0 hidden h-[clamp(9rem,18vh,12rem)] w-[min(100%,38rem)] border border-b-0 lg:block"
+              style={{
+                borderColor: `color-mix(in srgb, ${principal} 24%, transparent)`,
+                borderRadius: '50% 50% 0 0 / 100% 100% 0 0',
+              }}
+            />
+
+            <div className="relative z-[1] mt-6 w-full lg:mt-auto">
+
             {/* Bio - line-height 1.6 for editorial magazine feel */}
             <p
-              className="m-0 mt-7 max-w-[34rem] font-sans font-normal tracking-[-0.01em] [text-wrap:pretty]"
+              className="m-0 max-w-[35rem] font-sans font-normal tracking-[-0.01em] [text-wrap:pretty]"
               style={{
                 color: muted,
                 fontSize: 'clamp(1.08rem, 1.35vw, 1.25rem)',
@@ -503,10 +557,10 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
             </p>
 
             {/* CTAs - PREMIUM GHOST STYLE */}
-            <div className="mt-8 flex w-full flex-wrap items-center justify-start gap-3 sm:gap-4">
+            <div className="mt-6 flex w-full flex-wrap items-center justify-start gap-3 sm:mt-8 sm:gap-4">
               {/* Primary CTA - Ghost: transparent, WHITE text, 1px RED border */}
               {/* Hover: fills RED, text turns BLACK */}
-              <a
+              {data.showWorkCta !== false ? <a
                 href={workHref}
                 onClick={onNavClick(workHref)}
                 className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.92rem] font-semibold tracking-[-0.01em] transition-all duration-300"
@@ -529,9 +583,9 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
                 data-gsap-cta="primary"
               >
                 {t('View my work')}
-              </a>
+              </a> : null}
               {/* Secondary CTA - Ghost style with subtle ink border */}
-              <a
+              {data.showContactCta !== false ? <a
                 href={contactHref}
                 onClick={onNavClick(contactHref)}
                 className="inline-flex h-12 items-center justify-center rounded-full px-7 font-sans text-[0.92rem] font-semibold tracking-[-0.01em] transition-all duration-300"
@@ -554,7 +608,8 @@ export function PortfolioHeroBowlIntro({ data }: { data: PortfolioHeroData }) {
                 data-gsap-cta="secondary"
               >
                 {t('Contact me')}
-              </a>
+              </a> : null}
+            </div>
             </div>
           </div>
         </div>

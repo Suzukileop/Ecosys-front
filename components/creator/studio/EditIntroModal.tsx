@@ -45,7 +45,7 @@ const subscribeNoop = () => () => {};
 const FOCUSABLE =
   'a[href], button:not([disabled]), input:not([disabled]), textarea:not([disabled]), select:not([disabled]), [tabindex]:not([tabindex="-1"])';
 
-const FOCUS_RING = 'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+const FOCUS_RING = 'focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 type Coords = { lat: number; lng: number; timezoneId: string };
 
@@ -362,7 +362,7 @@ function EditIntroDialog({ onClose, onSaved, returnFocusRef }: Omit<EditIntroMod
         aria-modal="true"
         aria-labelledby={titleId}
         tabIndex={-1}
-        className="relative flex h-[100dvh] w-full flex-col bg-[#FFFFFF] text-[color:var(--gn-ink)] outline-none dark:bg-[#000000] sm:h-auto sm:max-h-[min(88dvh,820px)] sm:max-w-[560px] sm:rounded-2xl sm:shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)] sm:dark:shadow-[0_0_0_1px_#2F3336]"
+        className="relative flex h-[100dvh] w-full flex-col bg-[#FFFFFF] text-[color:var(--gn-ink)] outline-hidden dark:bg-[#000000] sm:h-auto sm:max-h-[min(88dvh,820px)] sm:max-w-[560px] sm:rounded-2xl sm:shadow-[0_24px_80px_-24px_rgba(0,0,0,0.35)] sm:dark:shadow-[0_0_0_1px_#2F3336]"
       >
         <header className="flex shrink-0 items-center gap-3 border-b border-[color:var(--gn-line)] px-4 pb-3 pt-[max(0.75rem,env(safe-area-inset-top))] sm:px-6 sm:pt-4">
           <h2 id={titleId} className="min-w-0 flex-1 text-[20px] font-extrabold leading-6 tracking-[-0.01em]">
@@ -463,7 +463,7 @@ function EditIntroDialog({ onClose, onSaved, returnFocusRef }: Omit<EditIntroMod
                     patch({ bio: e.target.value });
                     if (fieldErrors.bio) setFieldErrors((prev) => ({ ...prev, bio: undefined }));
                   }}
-                  className={`min-h-[120px] w-full resize-y rounded-md bg-[color:var(--gn-field)] px-3.5 py-3 text-[15px] leading-5 text-[color:var(--gn-ink)] outline-none transition-shadow duration-150 placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-70 ${
+                  className={`min-h-[120px] w-full resize-y rounded-md bg-[color:var(--gn-field)] px-3.5 py-3 text-[15px] leading-5 text-[color:var(--gn-ink)] outline-hidden transition-shadow duration-150 placeholder:text-[color:var(--gn-ink3)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink)] disabled:opacity-70 ${
                     fieldErrors.bio ? 'shadow-[inset_0_0_0_1px_#F4212E]' : ''
                   }`}
                 />

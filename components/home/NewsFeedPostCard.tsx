@@ -468,7 +468,7 @@ export function NewsFeedPostCard({
         {canHire ? (
           <Link
             href={profileHref}
-            className="inline-flex h-8 shrink-0 items-center rounded-full bg-[color:var(--gn-inset)] px-3.5 text-[13px] font-semibold leading-4 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-accent-fill)] hover:text-white focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
+            className="inline-flex h-8 shrink-0 items-center rounded-full bg-[color:var(--gn-inset)] px-3.5 text-[13px] font-semibold leading-4 text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-accent-fill)] hover:text-white focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]"
           >
             {t('Hire')}
           </Link>

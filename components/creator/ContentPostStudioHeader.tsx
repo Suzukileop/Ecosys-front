@@ -105,7 +105,7 @@ export function ContentPostStudioHeader({
   return (
     <Link
       href={profileHref}
-      className="flex items-center gap-3 rounded-xl outline-none transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-orange-500/60"
+      className="flex items-center gap-3 rounded-xl outline-hidden transition hover:opacity-90 focus-visible:ring-2 focus-visible:ring-orange-500/60"
     >
       {content}
     </Link>

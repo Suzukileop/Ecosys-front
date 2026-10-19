@@ -1,6 +1,5 @@
 import { z } from 'zod';
-import { inferProfileMediaType } from '@/components/creator/studio/profile-form-schema';
-import type { ProductWhyBlock } from '@/types/marketplace';
+import type { ProductWhyBlockForm } from '@/components/marketplace/product-why-blocks';
 
 const opinionItemSchema = z.object({
   value: z.string().max(500),
@@ -16,109 +15,14 @@ export const productWhyBlockSchema = z.object({
   opinions: z.array(opinionItemSchema).max(10),
 });
 
-export type ProductWhyBlockForm = z.infer<typeof productWhyBlockSchema>;
+/* The form type lives with the zod-free helpers; this keeps the schema in step with it. */
+const schemaMatchesForm: z.ZodType<ProductWhyBlockForm> = productWhyBlockSchema;
+void schemaMatchesForm;
 
-export function createEmptyProductWhyBlock(
-  sortOrder: number,
-  kind: 'media' | 'text' = 'media'
-): ProductWhyBlockForm {
-  return {
-    id: crypto.randomUUID(),
-    sortOrder,
-    kind,
-    mediaUrl: '',
-    mediaType: null,
-    opinions: [{ value: '' }],
-  };
-}
+export {
+  createEmptyProductWhyBlock,
+  parseProductWhyBlocks,
+  serializeProductWhyBlocks,
+  type ProductWhyBlockForm,
+} from '@/components/marketplace/product-why-blocks';
 
-function parseOpinionStrings(raw: unknown): string[] {
-  if (!Array.isArray(raw)) return [];
-  return raw
-    .map((item) => {
-      if (typeof item === 'string') return item.trim();
-      if (item && typeof item === 'object' && 'value' in item) {
-        return String((item as { value: unknown }).value).trim();
-      }
-      return '';
-    })
-    .filter(Boolean);
-}
-
-function mergeLegacyIntoOpinions(block: Record<string, unknown>): Array<{ value: string }> {
-  const merged: string[] = [];
-
-  for (const opinion of parseOpinionStrings(block.opinions)) {
-    merged.push(opinion);
-  }
-
-  const legacyText = block.text != null ? String(block.text).trim() : '';
-  if (legacyText) {
-    merged.push(legacyText);
-  }
-
-  for (const subtitle of parseOpinionStrings(block.subtitles)) {
-    merged.push(subtitle);
-  }
-
-  return merged.map((value) => ({ value }));
-}
-
-export function parseProductWhyBlocks(raw: unknown): ProductWhyBlockForm[] {
-  if (!Array.isArray(raw)) return [];
-
-  const blocks: ProductWhyBlockForm[] = [];
-  raw.forEach((item, index) => {
-    if (!item || typeof item !== 'object') return;
-    const block = item as Record<string, unknown>;
-    const mediaUrl = block.mediaUrl != null ? String(block.mediaUrl) : '';
-    const mediaTypeRaw = block.mediaType != null ? String(block.mediaType).toUpperCase() : null;
-    const mediaType = mediaTypeRaw === 'VIDEO' ? 'VIDEO' : mediaTypeRaw === 'IMAGE' ? 'IMAGE' : null;
-    const kindRaw = block.kind != null ? String(block.kind).toLowerCase() : null;
-    const kind: 'media' | 'text' =
-      kindRaw === 'text' ? 'text' : kindRaw === 'media' ? 'media' : mediaUrl.trim() ? 'media' : 'text';
-
-    blocks.push({
-      id: block.id != null ? String(block.id) : crypto.randomUUID(),
-      sortOrder: typeof block.sortOrder === 'number' ? block.sortOrder : index,
-      kind,
-      mediaUrl,
-      mediaType: mediaUrl ? mediaType ?? inferProfileMediaType(mediaUrl) : null,
-      opinions: mergeLegacyIntoOpinions(block),
-    });
-  });
-
-  return blocks.sort((a, b) => a.sortOrder - b.sortOrder);
-}
-
-export function serializeProductWhyBlocks(blocks: ProductWhyBlockForm[]): ProductWhyBlock[] {
-  const result: ProductWhyBlock[] = [];
-
-  for (const block of blocks) {
-    const opinions = block.opinions.map((item) => item.value.trim()).filter(Boolean);
-    const mediaUrl = block.mediaUrl?.trim() ?? '';
-    const kind = block.kind === 'text' || !mediaUrl ? 'text' : 'media';
-
-    if (opinions.length === 0) continue;
-    if (kind === 'media' && !mediaUrl) continue;
-
-    if (kind === 'text') {
-      result.push({
-        id: block.id,
-        sortOrder: result.length,
-        opinions,
-      });
-      continue;
-    }
-
-    result.push({
-      id: block.id,
-      sortOrder: result.length,
-      mediaUrl,
-      mediaType: block.mediaType ?? inferProfileMediaType(mediaUrl),
-      opinions,
-    });
-  }
-
-  return result;
-}

@@ -290,7 +290,7 @@ export function ServicesMediaColumnsSection({
                 label={ctaLabel}
                 ink={ink}
                 surface={inverse}
-                className="group/cta mt-5 inline-flex items-center gap-2 border-b border-current pb-1 text-[0.85rem] font-medium focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                className="group/cta mt-5 inline-flex items-center gap-2 border-b border-current pb-1 text-[0.85rem] font-medium focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                 autoContent={
                   <>
                     {ctaLabel}

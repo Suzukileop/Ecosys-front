@@ -147,7 +147,7 @@ export default function AdminUsersPage() {
 
   return (
     <div className="min-h-screen bg-white">
-      <header className="bg-white border-b border-gray-200 shadow-sm">
+      <header className="bg-white border-b border-gray-200 shadow-xs">
         <div className="max-w-6xl mx-auto px-4 py-4 flex items-center justify-between">
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg bg-indigo-600 flex items-center justify-center text-white text-sm font-bold">
@@ -179,7 +179,7 @@ export default function AdminUsersPage() {
           </div>
         )}
 
-        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-xs overflow-hidden">
           {isLoading ? (
             <div className="py-20">
               <LoadingSpinner size="lg" />
@@ -304,7 +304,7 @@ export default function AdminUsersPage() {
       {/* Role edit modal */}
       {editingUser && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="modal-title"
@@ -371,7 +371,7 @@ export default function AdminUsersPage() {
       {/* Toggle confirmation modal */}
       {confirmToggle && (
         <div
-          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-sm"
+          className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/40 backdrop-blur-xs"
           role="dialog"
           aria-modal="true"
           aria-labelledby="confirm-title"

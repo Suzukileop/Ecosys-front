@@ -685,7 +685,7 @@ function WorkDuotoneSlideNav({
         aria-label={t('Previous project')}
         disabled={activeIndex === 0}
         onClick={() => onNavigate(activeIndex - 1)}
-        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
+        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform,translate,scale,rotate] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
         data-pf-no-color-transition=""
         style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
         onMouseEnter={(event) => {
@@ -702,7 +702,7 @@ function WorkDuotoneSlideNav({
         aria-label={t('Next project')}
         disabled={activeIndex === items.length - 1}
         onClick={() => onNavigate(activeIndex + 1)}
-        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
+        className="flex h-11 w-11 items-center justify-center rounded-full transition-[background-color,opacity,transform,translate,scale,rotate] duration-200 hover:scale-110 active:scale-95 disabled:opacity-30 disabled:hover:scale-100"
         data-pf-no-color-transition=""
         style={{ color: accent, backgroundColor: `color-mix(in srgb, ${accent} 12%, transparent)` }}
         onMouseEnter={(event) => {

@@ -145,7 +145,7 @@ export function ContentPostActionsMenu({
                   role="menuitem"
                   disabled={item.disabled}
                   onClick={() => run(item)}
-                  className={`flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-black/[0.04] focus-visible:bg-black/[0.04] focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-45 dark:hover:bg-white/[0.06] dark:focus-visible:bg-white/[0.06] ${
+                  className={`flex w-full items-start gap-3 px-4 py-2.5 text-left transition-colors hover:bg-black/[0.04] focus-visible:bg-black/[0.04] focus-visible:outline-hidden disabled:cursor-not-allowed disabled:opacity-45 dark:hover:bg-white/[0.06] dark:focus-visible:bg-white/[0.06] ${
                     item.tone === 'danger' ? 'text-red-600 dark:text-red-400' : 'text-[#111111] dark:text-white'
                   }`}
                 >
@@ -191,7 +191,7 @@ export function ContentPostActionsMenu({
         aria-expanded={open}
         aria-controls={open ? menuId : undefined}
         data-pf-no-color-transition
-        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-black/20 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:ring-white/30"
+        className="inline-flex h-9 w-9 items-center justify-center rounded-full text-neutral-500 transition-colors hover:bg-black/[0.05] hover:text-[#111111] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-black/20 dark:text-neutral-400 dark:hover:bg-white/[0.08] dark:hover:text-white dark:focus-visible:ring-white/30"
       >
         <svg className="h-[18px] w-[18px]" fill="currentColor" viewBox="0 0 24 24" aria-hidden>
           <circle cx="5" cy="12" r="1.7" />

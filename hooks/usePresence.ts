@@ -1,10 +1,9 @@
 'use client';
 
 import { useEffect, useMemo, useState } from 'react';
-import { Client, IMessage } from '@stomp/stompjs';
-import { getAccessToken, onAccessTokenChange } from '@/lib/accessToken';
-import { fetchPresenceStatuses, type PresenceStatus } from '@/lib/presence-api';
-import { createStompWebSocket } from '@/lib/ws-url';
+import { getAccessToken, hasSessionHint, onAccessTokenChange } from '@/lib/accessToken';
+import { fetchPresenceStatusesBatched, type PresenceStatus } from '@/lib/presence-api';
+import { subscribeShared } from '@/lib/presence-stomp';
 
 type PresenceMap = Record<string, PresenceStatus>;
 
@@ -42,7 +41,9 @@ function normalizeStatus(raw: Partial<PresenceStatus> & { userId?: string }): Pr
  * Unknown users default to offline (never assumed online).
  */
 export function usePresence(userIds: string[], options: UsePresenceOptions = {}) {
-  const { enabled = true, live = true, pollIntervalMs = 15_000 } = options;
+  const { enabled: enabledOption = true, live = true, pollIntervalMs = 15_000 } = options;
+  /* Presence is members-only on the API: a guest's lookups were all 401s. */
+  const enabled = enabledOption && (hasSessionHint() || getAccessToken() != null);
   const [presenceByUserId, setPresenceByUserId] = useState<PresenceMap>({});
   const [loading, setLoading] = useState(false);
   const [reconnectNonce, setReconnectNonce] = useState(0);
@@ -64,7 +65,7 @@ export function usePresence(userIds: string[], options: UsePresenceOptions = {})
     const load = async (showLoading: boolean) => {
       if (showLoading) setLoading(true);
       try {
-        const statuses = await fetchPresenceStatuses(stableIds);
+        const statuses = await fetchPresenceStatusesBatched(stableIds);
         if (cancelled) return;
         const next: PresenceMap = {};
         for (const id of stableIds) {
@@ -93,7 +94,7 @@ export function usePresence(userIds: string[], options: UsePresenceOptions = {})
     const poll =
       pollIntervalMs > 0
         ? window.setInterval(() => {
-            void load(false);
+            if (document.visibilityState === 'visible') void load(false);
           }, pollIntervalMs)
         : null;
 
@@ -109,34 +110,23 @@ export function usePresence(userIds: string[], options: UsePresenceOptions = {})
     const token = getAccessToken();
     if (!token) return;
 
-    const stomp = new Client({
-      reconnectDelay: 5000,
-      heartbeatIncoming: 4000,
-      heartbeatOutgoing: 4000,
-      connectHeaders: { Authorization: `Bearer ${token}` },
-      webSocketFactory: () => createStompWebSocket(),
-      onConnect: () => {
-        for (const userId of stableIds) {
-          stomp.subscribe(`/topic/presence/${userId}`, (frame: IMessage) => {
-            try {
-              const raw = JSON.parse(frame.body) as Partial<PresenceStatus>;
-              const normalized = normalizeStatus(raw);
-              if (!normalized) return;
-              setPresenceByUserId((prev) => ({
-                ...prev,
-                [normalized.userId]: normalized,
-              }));
-            } catch {
-              /* ignore malformed */
-            }
-          });
-        }
-      },
-    });
-
-    stomp.activate();
+    const onFrame = (body: string) => {
+      try {
+        const raw = JSON.parse(body) as Partial<PresenceStatus>;
+        const normalized = normalizeStatus(raw);
+        if (!normalized) return;
+        setPresenceByUserId((prev) => ({
+          ...prev,
+          [normalized.userId]: normalized,
+        }));
+      } catch {
+        /* ignore malformed */
+      }
+    };
+    /* All hooks share one connection (lib/presence-stomp). */
+    const unsubscribers = stableIds.map((userId) => subscribeShared(`/topic/presence/${userId}`, token, onFrame));
     return () => {
-      void stomp.deactivate();
+      unsubscribers.forEach((unsubscribe) => unsubscribe());
     };
   }, [enabled, live, idsKey, reconnectNonce, stableIds]);
 

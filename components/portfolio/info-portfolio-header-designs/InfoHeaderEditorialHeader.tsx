@@ -51,9 +51,9 @@ const TITLE_SIZE_CLASS: Record<PortfolioInfoHeaderTitleSize, string> = {
 
 /** Kicker — small uppercase label; "regular" keeps the prior semibold default. */
 const LABEL_SIZE: Record<PortfolioInfoHeaderTitleSize, string> = {
-  sm: '0.625rem',
-  md: '0.68rem',
-  lg: '0.8rem',
+  sm: '0.6875rem',
+  md: '0.75rem',
+  lg: '0.8125rem',
   xl: '0.92rem',
 };
 const LABEL_WEIGHT: Record<PortfolioInfoHeaderTitleWeight, number> = {
@@ -115,7 +115,8 @@ export function InfoHeaderEditorialHeader({
   const labelInk = infoHeaderPaletteTokenColor(presentation.headerEditorialLabelColor ?? 'texteFort');
   const titleInk = infoHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
   const subtitleInk = infoHeaderPaletteTokenColor(presentation.headerEditorialSubtitleColor ?? 'texteFort');
-  const kickerInk = `color-mix(in srgb, ${labelInk} 38%, transparent)`;
+  // Small caps label: 65% keeps it quiet yet above 4.5:1 on light and dark (38% read at ~3:1).
+  const kickerInk = `color-mix(in srgb, ${labelInk} 65%, transparent)`;
 
   const headerRef = useRef<HTMLElement>(null);
 

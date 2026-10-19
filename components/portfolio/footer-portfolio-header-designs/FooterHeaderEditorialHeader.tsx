@@ -69,7 +69,7 @@ export function FooterHeaderEditorialHeader({
     >
       <div
         className={`pf-footer-header-editorial-stage flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${
-          align === 'center' ? 'items-center sm:flex-col' : align === 'right' ? 'items-end sm:flex-row-reverse' : ''
+          align === 'center' ? 'items-center sm:flex-col sm:items-center' : align === 'right' ? 'items-end sm:flex-row-reverse' : ''
         }`}
       >
         <div className="min-w-0 max-w-4xl">

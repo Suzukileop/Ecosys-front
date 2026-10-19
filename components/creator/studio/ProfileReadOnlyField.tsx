@@ -35,7 +35,7 @@ export function ProfileReadOnlyField({
               href={href}
               target="_blank"
               rel="noopener noreferrer"
-              className="mt-3 block text-base font-semibold text-[#111111] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-white"
+              className="mt-3 block text-base font-semibold text-[#111111] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-white"
             >
               {display}
             </a>
@@ -60,7 +60,7 @@ export function ProfileReadOnlyField({
             href={href}
             target="_blank"
             rel="noopener noreferrer"
-            className={`${profileSectionValueClass} block text-[#111111] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-white`}
+            className={`${profileSectionValueClass} block text-[#111111] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-orange-500/40 dark:text-white`}
           >
             {display}
           </a>

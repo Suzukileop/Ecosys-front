@@ -12,11 +12,11 @@ export const X_MENU_PANEL =
 
 /** Menu item: 15px bold ink, hover tint, ≥ 44px tall. */
 export const X_MENU_ITEM =
-  'flex min-h-11 w-full items-center gap-3 px-4 py-2.5 text-left text-[15px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none disabled:opacity-50 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:bg-[rgba(231,233,234,0.1)]';
+  'flex min-h-11 w-full items-center gap-3 px-4 py-2.5 text-left text-[15px] font-bold text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden disabled:opacity-50 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:bg-[rgba(231,233,234,0.1)]';
 
 /** Destructive menu item (X red). */
 export const X_MENU_ITEM_DANGER =
-  'flex min-h-11 w-full items-center gap-3 px-4 py-2.5 text-left text-[15px] font-bold text-[#F4212E] transition-colors hover:bg-[rgba(244,33,46,0.08)] focus-visible:bg-[rgba(244,33,46,0.08)] focus-visible:outline-none disabled:opacity-50';
+  'flex min-h-11 w-full items-center gap-3 px-4 py-2.5 text-left text-[15px] font-bold text-[#F4212E] transition-colors hover:bg-[rgba(244,33,46,0.08)] focus-visible:bg-[rgba(244,33,46,0.08)] focus-visible:outline-hidden disabled:opacity-50';
 
 /**
  * Search pill on a dialog ground — News's: #EFF3F4 / #202327 at rest, the ground with a 2px inset
@@ -24,7 +24,7 @@ export const X_MENU_ITEM_DANGER =
  * phones so iOS does not zoom the page on focus.
  */
 export const X_SEARCH_PILL =
-  'h-11 w-full rounded-full border-0 bg-[#EFF3F4] pl-11 pr-4 text-[16px] text-[#0F1419] outline-none ring-0 transition-[background-color,box-shadow] placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_2px_#0F1419] focus:ring-0 dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA] sm:text-[15px] [&::-webkit-search-cancel-button]:appearance-none';
+  'h-11 w-full rounded-full border-0 bg-[#EFF3F4] pl-11 pr-4 text-[16px] text-[#0F1419] outline-hidden ring-0 transition-[background-color,box-shadow] placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_2px_#0F1419] focus:ring-0 dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#71767B] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA] sm:text-[15px] [&::-webkit-search-cancel-button]:appearance-none';
 
 /** Magnifier glyph positioned inside `X_SEARCH_PILL`. */
 export const X_SEARCH_ICON =
@@ -32,7 +32,7 @@ export const X_SEARCH_ICON =
 
 /** A person / conversation row in a dialog list: full-bleed, the fill tone under the pointer, ≥ 56px. */
 export const X_LIST_ROW =
-  'flex min-h-14 w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-[#F7F9F9] active:bg-[#EFF3F4] focus-visible:bg-[#EFF3F4] focus-visible:outline-none disabled:opacity-60 dark:hover:bg-[#16181C] dark:active:bg-[#202327] dark:focus-visible:bg-[#202327]';
+  'flex min-h-14 w-full items-center gap-3 px-5 py-2.5 text-left transition-colors hover:bg-[#F7F9F9] active:bg-[#EFF3F4] focus-visible:bg-[#EFF3F4] focus-visible:outline-hidden disabled:opacity-60 dark:hover:bg-[#16181C] dark:active:bg-[#202327] dark:focus-visible:bg-[#202327]';
 
 export const X_ROW_NAME = 'truncate text-[15px] font-bold leading-5 text-[#0F1419] dark:text-[#E7E9EA]';
 export const X_ROW_META = 'truncate text-[13px] leading-[18px] text-[#536471] dark:text-[#71767B]';

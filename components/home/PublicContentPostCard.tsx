@@ -93,7 +93,7 @@ export function PublicContentPostCard({
       } ${className}`}
     >
       <article
-        className={`flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-sm transition-[flex-basis,max-width,width] ${EASE} dark:border-neutral-800 dark:bg-neutral-900 ${
+        className={`flex w-full flex-col overflow-hidden rounded-2xl border border-neutral-200 bg-white shadow-xs transition-[flex-basis,max-width,width] ${EASE} dark:border-neutral-800 dark:bg-neutral-900 ${
           isSplit ? 'lg:w-1/2 lg:shrink-0 lg:grow-0' : 'max-w-xl xl:max-w-2xl'
         }`}
       >

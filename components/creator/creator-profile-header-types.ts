@@ -11,7 +11,7 @@ export const CREATOR_PROFILE_VISITS_LABEL = 'Visits';
  * grey secondaries, a square icon button for "more". Filled tones read calmer than outlines.
  */
 const PROFILE_MOBILE_BUTTON_BASE =
-  'inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg text-[14px] transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-white/30';
+  'inline-flex h-10 min-w-0 items-center justify-center gap-1.5 rounded-lg text-[14px] transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:focus-visible:ring-white/30';
 export const PROFILE_MOBILE_PRIMARY_BUTTON = `${PROFILE_MOBILE_BUTTON_BASE} flex-1 px-3 font-bold bg-[#0F1419] text-white active:bg-[#272C30] dark:bg-[#EFF3F4] dark:text-[#0F1419] dark:active:bg-[#D7DBDC]`;
 export const PROFILE_MOBILE_SOFT_BUTTON = `${PROFILE_MOBILE_BUTTON_BASE} flex-1 px-3 font-semibold bg-[#EFF3F4] text-[#0F1419] active:bg-[#E1E8ED] dark:bg-[#202327] dark:text-[#E7E9EA] dark:active:bg-[#2F3336]`;
 export const PROFILE_MOBILE_ICON_BUTTON = `${PROFILE_MOBILE_BUTTON_BASE} w-10 shrink-0 bg-[#EFF3F4] text-[#0F1419] active:bg-[#E1E8ED] dark:bg-[#202327] dark:text-[#E7E9EA] dark:active:bg-[#2F3336]`;

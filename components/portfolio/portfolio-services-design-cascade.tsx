@@ -339,7 +339,7 @@ function CascadeServiceCard({
               label={ctaLabel}
               ink={ink}
               surface={isLight ? '#fafafa' : '#0a0a0a'}
-              className="group/cta inline-flex items-center gap-3 rounded-full py-2 pl-5 pr-2 text-[0.85rem] font-medium transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+              className="group/cta inline-flex items-center gap-3 rounded-full py-2 pl-5 pr-2 text-[0.85rem] font-medium transition-transform duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] hover:-translate-y-0.5 focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
               style={{ backgroundColor: ink, color: isLight ? '#fafafa' : '#0a0a0a' }}
               autoContent={
                 <>

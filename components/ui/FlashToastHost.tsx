@@ -70,7 +70,7 @@ function FlashToastItem({ toast, onDismiss }: { toast: Toast; onDismiss: (id: st
   }, [toast.id, durationMs]);
 
   const actionClass =
-    'shrink-0 rounded-md px-2 py-1 text-[14px] font-bold leading-5 underline-offset-4 transition-opacity hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current';
+    'shrink-0 rounded-md px-2 py-1 text-[14px] font-bold leading-5 underline-offset-4 transition-opacity hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current';
 
   return (
     <motion.div

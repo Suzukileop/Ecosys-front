@@ -23,7 +23,7 @@ import {
   mergeHeroMetaSettings,
   type PortfolioHeroMetaSettings,
 } from '@/components/portfolio/portfolio-hero-meta-settings';
-import { isPortfolioHeroBowlIntroMotif, normalizePortfolioHeroBannerDesign, DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN, type PortfolioHeroBannerDesign, type PortfolioHeroBowlIntroMotif, type PortfolioHeroIdentityIndexPortraitRadius, type PortfolioHeroPortraitIdentityBottomGap, type PortfolioHeroSelectedWorksIdentityLayout } from '@/components/portfolio/portfolio-hero-banner-settings';
+import { isPortfolioHeroBowlIntroMotif, normalizePortfolioHeroBannerDesign, DEFAULT_PORTFOLIO_HERO_BANNER_DESIGN, type PortfolioHeroBannerDesign, type PortfolioHeroBowlIntroMotif, type PortfolioHeroIdentityIndexPortraitRadius, type PortfolioHeroPortraitIdentityBottomGap, type PortfolioHeroSelectedWorksIdentityLayout, type PortfolioHeroStudioSplitFrameStyle } from '@/components/portfolio/portfolio-hero-banner-settings';
 import {
   DEFAULT_HERO_LEFT_MOTIF_SETTINGS,
   mergeHeroLeftMotifSettings,
@@ -492,11 +492,15 @@ export type PortfolioHeroPresentationSettings = {
    * Studio split only: media frame width (medium / large / full).
    */
   heroStudioSplitMediaWidth: 'medium' | 'large' | 'full';
+  /** Studio split only: geometry of the configured media frame. */
+  heroStudioSplitFrameStyle: PortfolioHeroStudioSplitFrameStyle;
   /**
    * Work duo only: up to 2 portfolio post IDs for the Selected work cards.
    * Empty = first 2 posts with media.
    */
   heroWorkDuoSelectedWorkIds: string[];
+  /** Work duo only: supporting label displayed beside the years counter. */
+  heroWorkDuoExperienceLabel: string;
   /**
    * Bowl intro only: decorative motif behind the portrait.
    */
@@ -867,7 +871,9 @@ export const DEFAULT_HERO_PRESENTATION: PortfolioHeroPresentationSettings = {
   heroStudioSplitMediaUrl: '',
   heroStudioSplitMediaCaption: 'Selected work',
   heroStudioSplitMediaWidth: 'full',
+  heroStudioSplitFrameStyle: 'circle-center',
   heroWorkDuoSelectedWorkIds: [],
+  heroWorkDuoExperienceLabel: 'Experience built through real projects',
   heroBowlIntroMotif: 'bowl',
   heroImageGrayscale: false,
   heroLayoutFlipped: false,
@@ -1506,6 +1512,13 @@ export function mergeHeroPresentation(
       record.heroStudioSplitMediaWidth === 'full'
         ? record.heroStudioSplitMediaWidth
         : base.heroStudioSplitMediaWidth ?? 'full',
+    heroStudioSplitFrameStyle:
+      record.heroStudioSplitFrameStyle === 'circle-center' ||
+      record.heroStudioSplitFrameStyle === 'panorama' ||
+      record.heroStudioSplitFrameStyle === 'portrait' ||
+      record.heroStudioSplitFrameStyle === 'offset-square'
+        ? record.heroStudioSplitFrameStyle
+        : base.heroStudioSplitFrameStyle ?? 'circle-center',
     heroWorkDuoSelectedWorkIds: (() => {
       const raw = Array.isArray(record.heroWorkDuoSelectedWorkIds)
         ? record.heroWorkDuoSelectedWorkIds
@@ -1521,6 +1534,10 @@ export function mergeHeroPresentation(
       }
       return out;
     })(),
+    heroWorkDuoExperienceLabel:
+      typeof record.heroWorkDuoExperienceLabel === 'string'
+        ? record.heroWorkDuoExperienceLabel.trim()
+        : base.heroWorkDuoExperienceLabel ?? 'Experience built through real projects',
     heroBowlIntroMotif: isPortfolioHeroBowlIntroMotif(record.heroBowlIntroMotif)
       ? record.heroBowlIntroMotif
       : base.heroBowlIntroMotif ?? 'bowl',

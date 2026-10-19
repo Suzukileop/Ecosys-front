@@ -42,7 +42,7 @@ export async function HeroSection() {
               </PrimaryCta>
               <Link
                 href="#templates"
-                className="text-[15px] font-medium text-white underline decoration-white/30 underline-offset-[6px] transition-colors hover:decoration-white"
+                className="inline-flex min-h-11 items-center text-[15px] font-medium text-white underline decoration-white/30 underline-offset-[6px] transition-colors hover:decoration-white"
               >
                 {t('See the designs')}
               </Link>

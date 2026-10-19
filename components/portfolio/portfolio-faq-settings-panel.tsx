@@ -1,11 +1,6 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -18,6 +13,7 @@ import {
 } from '@/components/portfolio/portfolio-faq-palette-settings';
 import { resolveHeroPaletteColor, type HeroPaletteTokenId } from '@/components/portfolio/portfolio-hero-palette-settings';
 import {
+  DEFAULT_FAQ_PRESENTATION,
   PORTFOLIO_FAQ_DESIGN_OPTIONS,
   PORTFOLIO_FAQ_BENTO_DUAL_CARD_COLOR_OPTIONS,
   PORTFOLIO_FAQ_BENTO_DUAL_CARD_RADIUS_OPTIONS,
@@ -68,7 +64,7 @@ import {
 import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import { NpBackRow, NpCollapsibleSection, NpOptionCard, NpOptionCardGroup, NpPanelShell, NpPickerRow, NpToggleRow, type NpPanelChrome } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 export type FaqSubSection = 'general' | 'design' | 'background' | 'header';
 
@@ -166,7 +162,7 @@ function FaqInfoTooltip({ text }: { text: string }) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -178,7 +174,7 @@ function FaqInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -196,7 +192,7 @@ function FaqMiniSlide({ children }: { children: ReactNode }) {
   );
 }
 
-function FaqPickerCard({
+function _FaqPickerCard({
   active,
   label,
   onClick,
@@ -240,7 +236,7 @@ function FaqPickerCard({
   );
 }
 
-function FaqDesignSummaryRow({
+function _FaqDesignSummaryRow({
   label,
   name,
   onOpen,
@@ -251,14 +247,13 @@ function FaqDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        aria-label={`Change ${label.toLowerCase()}`}
         className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
@@ -557,71 +552,43 @@ function FaqDesignWireframe({ design }: { design: PortfolioFaqDesign }) {
 function FaqDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioFaqDesign;
   onChange: (value: PortfolioFaqDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected = PORTFOLIO_FAQ_DESIGN_OPTIONS.find((option) => option.value === value) ?? PORTFOLIO_FAQ_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">{t('Design')}</p>
-          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]">
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
+      <div className="np-stack">
+        <NpBackRow title={t('FAQ design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+          {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => {
+            return (
+              <NpOptionCard
                 key={option.value}
-                cardClassName="pf-stack-design-card"
-                labelClassName="pf-stack-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'faq', design: option.value })}
-                settings={previewSource.settings}
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<FaqDesignWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
               />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_FAQ_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <FaqPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <FaqDesignWireframe design={option.value} />
-              </FaqPickerCard>
             );
           })}
-        </div>
-        )}
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <FaqDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <FaqDesignWireframe design={value} />
-    </FaqDesignSummaryRow>
+    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<FaqDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -707,39 +674,31 @@ function FaqHeaderChoiceGrid({
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">{t('Header')}</p>
-          <button type="button" onClick={() => setShowGrid(false)} className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]">
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('FAQ header')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
           {PORTFOLIO_FAQ_HEADER_DESIGN_SELECTABLE_OPTIONS.map((option) => {
             const active = option.value === value;
             return (
-              <FaqPickerCard
+              <NpOptionCard
                 key={option.value}
-                active={active}
-                label={t(option.label)}
+                selected={active}
+                title={t(option.label)}
+                illustration={<FaqHeaderDesignWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
-              >
-                <FaqHeaderDesignWireframe design={option.value} />
-              </FaqPickerCard>
+              />
             );
           })}
-        </div>
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <FaqDesignSummaryRow label={t('Header')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <FaqHeaderDesignWireframe design={selected.value} />
-    </FaqDesignSummaryRow>
+    <NpPickerRow label={t('Header')} value={t(selected.label)} thumbnail={<FaqHeaderDesignWireframe design={selected.value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -1211,13 +1170,16 @@ export function FaqSettingsPanel({
   onChange,
   subSection: controlledSubSection,
   onSubSectionChange,
+  chrome,
 }: {
   faq: PortfolioFaqSectionSettings;
   onChange: (patch: Partial<PortfolioFaqSectionSettings>) => void;
   subSection?: FaqSubSection;
   onSubSectionChange?: (value: FaqSubSection) => void;
+  chrome?: NpPanelChrome;
 }) {
   const t = useT();
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const [uncontrolledSubSection, setUncontrolledSubSection] = useState<FaqSubSection>('design');
   const subSection = normalizeFaqSubSection(controlledSubSection ?? uncontrolledSubSection);
@@ -1229,24 +1191,25 @@ export function FaqSettingsPanel({
 
   const faqPalette = mergeFaqPalette(DEFAULT_FAQ_PALETTE, faq.faqPalette);
   const faqBindings = mergeFaqColorBindings(DEFAULT_FAQ_COLOR_BINDINGS, faq.faqColorBindings);
+  const defaults: PortfolioFaqSectionSettings = { enabled: true, title: 'FAQ', subtitle: 'Quick answers to common questions before we start working together.', ...DEFAULT_FAQ_PRESENTATION };
 
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={FAQ_SUB_SECTIONS} value={subSection} onChange={setSubSection} />
+    <NpPanelShell title={t('FAQ')} modified={JSON.stringify(faq) !== JSON.stringify(defaults)} tabs={FAQ_SUB_SECTIONS.map((item) => ({ id: item.id, label: t(item.label) }))} activeTab={subSection} onTabChange={setSubSection} onReset={() => onChange(defaults)} chrome={chrome}>
 
       {subSection === 'design' ? (
-        <div className="space-y-4">
-          <SettingsSwitchRow
-            label={t('Show FAQ section')}
+        <div className="np-stack">
+          <NpToggleRow card
+            title={t('Show FAQ section')}
             description={faq.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={faq.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
           {faq.enabled ? (
           <>
-          <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} />
+          <FaqDesignChoiceGrid value={faq.design} onChange={(design) => onChange(defaultsForFaqDesign(design))} open={designCatalogOpen} onOpenChange={setDesignCatalogOpen} />
 
-          <FaqLayoutSettingsBand motionKey={faq.design}>
+          {designCatalogOpen ? null : <>
+          <NpCollapsibleSection title={t('Layout options')}>
 <SettingsRowsScope title={t('Layout options')}>
             {faq.design === 'bento-dual' ? (
               <div className="space-y-6">
@@ -1280,22 +1243,22 @@ export function FaqSettingsPanel({
                   : faq.design === 'editorial-masonry'
                     ? t('an asymmetric offset grid are')
                     : faq.design === 'prism-cards'
-                      ? t('a violet-electric color flip are')
+                      ? t('a subtle prism surface are')
                       : faq.design === 'star-scroll'
                         ? t('a scroll-driven spinning star are')
                         : faq.design === 'tri-grid'
-                          ? t('an asynchronous three-column parallax are')
+                          ? t('an airy responsive question-and-answer grid are')
                           : faq.design === 'split-index'
-                            ? t('a filled index badge on every row are')
+                            ? t('a lightweight index marker on every row are')
                             : faq.design === 'centered-focus'
-                              ? t('a soft hover zoom are')
+                              ? t('a gentle centered hover emphasis are')
                               : t('a line-by-line reveal are')}{' '}
                 {t('all built in. It doesn’t expose extra styling controls.')}
               </p>
             )}
           </SettingsRowsScope>
-</FaqLayoutSettingsBand>
-          <SettingsGroup label={t('Style')}>
+</NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Style')}>
             <SectionColorModeControl label={t('Color mode')} value={faq.colorModeOverride} onChange={(colorModeOverride) => onChange({ colorModeOverride })} />
             <FaqOptionGrid
               label={t('Text size')}
@@ -1306,28 +1269,29 @@ export function FaqSettingsPanel({
             />
             <FaqTextColorsGroup faq={faq} onChange={onChange} palette={faqPalette} />
             <FaqFrameGroup faq={faq} onChange={onChange} palette={faqPalette} />
-          </SettingsGroup>
+          </NpCollapsibleSection>
+          </>}
           </>
           ) : null}
         </div>
       ) : null}
 
-      {subSection !== 'design' && !faq.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {subSection !== 'design' && !faq.enabled ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
 
       {subSection === 'header' && faq.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack">
           <FaqHeaderChoiceGrid
             value={faq.headerDesign}
             onChange={(headerDesign) => onChange({ headerDesign })}
             showGrid={headerCatalogOpen}
             setShowGrid={setHeaderCatalogOpen}
           />
-          {headerCatalogOpen ? null : <FaqHeaderLayoutSettingsBand faq={faq} onChange={onChange} />}
+          {headerCatalogOpen ? null : <NpCollapsibleSection title={t('Header settings')}><FaqHeaderLayoutSettingsBand faq={faq} onChange={onChange} /></NpCollapsibleSection>}
         </div>
       ) : null}
 
       {subSection === 'background' && faq.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack"><NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={faq}
             onChange={onChange}
@@ -1335,8 +1299,8 @@ export function FaqSettingsPanel({
               <FaqBackgroundColorField faq={faq} onChange={onChange} palette={faqPalette} bindings={faqBindings} label={label} value={value} />
             )}
           />
-        </div>
+        </NpCollapsibleSection></div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

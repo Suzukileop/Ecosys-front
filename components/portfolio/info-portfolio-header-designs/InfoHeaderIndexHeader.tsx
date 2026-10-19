@@ -90,13 +90,15 @@ export function InfoHeaderIndexHeader({
   const label = (presentation.headerIndexLabelText || DEFAULT_LABEL_TEXT).trim();
   const count = Math.max(0, itemCount ?? 0);
   const countLabelCustom = presentation.headerIndexCountLabelText?.trim();
-  const countLabel = countLabelCustom || (count === 1 ? t('Channel') : t('Channels'));
+  // The count is the Info blocks on the page (skills, education…), not contact channels.
+  const countLabel = countLabelCustom || (count === 1 ? t('Topic') : t('Topics'));
 
   const labelTone = infoHeaderPaletteTokenColor(presentation.headerIndexLabelColor ?? 'texteFort');
   const numberTone = infoHeaderPaletteTokenColor(presentation.headerIndexNumberColor ?? 'principal');
   const titleTone = infoHeaderPaletteTokenColor(presentation.headerIndexTitleColor ?? 'texteFort');
   const subtitleTone = infoHeaderPaletteTokenColor(presentation.headerIndexSubtitleColor ?? 'texteFort');
-  const labelMuted = `color-mix(in srgb, ${labelTone} 55%, transparent)`;
+  // Small caps labels: 65% keeps them above 4.5:1 on light and dark.
+  const labelMuted = `color-mix(in srgb, ${labelTone} 65%, transparent)`;
   const ruleTone = `color-mix(in srgb, ${titleTone} 16%, transparent)`;
   const ruleToneSoft = `color-mix(in srgb, ${titleTone} 12%, transparent)`;
 

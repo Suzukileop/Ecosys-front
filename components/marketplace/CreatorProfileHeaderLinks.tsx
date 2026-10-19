@@ -13,7 +13,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 
 /** 36px round icon link, X palette: ink glyph, soft disc on hover, tooltip = what it opens. */
 const ICON_LINK =
-  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-white/30';
+  'inline-flex h-9 w-9 shrink-0 items-center justify-center rounded-full text-[#0F1419] shadow-[inset_0_0_0_1px_#CFD9DE] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/30 dark:text-[#E7E9EA] dark:shadow-[inset_0_0_0_1px_#536471] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-white/30';
 
 function StrokeGlyph({ children }: { children: ReactNode }) {
   return (
@@ -39,7 +39,7 @@ export function creatorHasContactChannels(profile: MarketplaceCreatorPublicProfi
 const KICKER = 'text-[11px] font-semibold uppercase leading-4 tracking-[0.12em] text-[#536471] dark:text-[#71767B]';
 
 const RAIL_ROW =
-  'flex min-h-10 w-full min-w-0 items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium leading-5 text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black/15 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-white/25';
+  'flex min-h-10 w-full min-w-0 items-center gap-3 rounded-md px-3 py-2 text-[15px] font-medium leading-5 text-[#0F1419] transition-colors hover:bg-[rgba(15,20,25,0.06)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-black/15 dark:text-[#E7E9EA] dark:hover:bg-[rgba(231,233,234,0.1)] dark:focus-visible:ring-white/25';
 
 /**
  * Desktop right rail of the public profile: the creator's contact channels as two short lists —

@@ -221,7 +221,8 @@ export function InfoHeaderSerifLeadHeader({
               ref={labelRef}
               className="mb-0 uppercase leading-[1.2] tracking-[0.1em]"
               style={{
-                color: `color-mix(in srgb, ${labelTone} 40%, transparent)`,
+                // 65%: above 4.5:1 on light and dark (40% read at ~3:1).
+                color: `color-mix(in srgb, ${labelTone} 65%, transparent)`,
                 fontSize: labelFontSize,
                 fontWeight: labelFontWeight,
               }}
@@ -251,7 +252,9 @@ export function InfoHeaderSerifLeadHeader({
                       lineRefs.current[index] = node;
                     }}
                     className="block"
-                    style={{ paddingBottom: '0.04em' }}
+                    // A forced line still re-wraps on narrow screens — balance it so it
+                    // never leaves a one-word orphan ("…who I / am").
+                    style={{ paddingBottom: '0.04em', textWrap: 'balance' }}
                   >
                     {line}
                   </span>

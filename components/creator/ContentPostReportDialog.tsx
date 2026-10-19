@@ -129,7 +129,7 @@ export function ContentPostReportDialog({
                 maxLength={2000}
                 rows={3}
                 placeholder={t('Anything that helps us understand the problem')}
-                className="block w-full resize-none rounded-xl border border-black/[0.14] bg-transparent px-3.5 py-2.5 text-[15px] text-[#111111] caret-[#FF5722] outline-none transition-[border-color,box-shadow] duration-150 placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:border-white/[0.16] dark:text-white dark:placeholder:text-neutral-600"
+                className="block w-full resize-none rounded-xl border border-black/[0.14] bg-transparent px-3.5 py-2.5 text-[15px] text-[#111111] caret-[#FF5722] outline-hidden transition-[border-color,box-shadow] duration-150 placeholder:text-neutral-400 focus:border-[#FF5722] focus:shadow-[0_0_0_3px_rgba(255,87,34,0.16)] dark:border-white/[0.16] dark:text-white dark:placeholder:text-neutral-600"
               />
             </div>
           ) : null}

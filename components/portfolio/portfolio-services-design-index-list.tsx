@@ -120,7 +120,7 @@ function TasksLedger({ tasks }: { tasks: string[] }) {
           </span>
           <span
             aria-hidden
-            className="-translate-x-2 opacity-0 transition-[transform,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/task:translate-x-0 group-hover/task:opacity-100"
+            className="-translate-x-2 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] group-hover/task:translate-x-0 group-hover/task:opacity-100"
           >
             ↗
           </span>
@@ -418,7 +418,7 @@ export function ServicesIndexListSection({
                   label={ctaLabel}
                   ink={ink}
                   surface={inverse}
-                  className="group/cta mt-8 inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium transition-[background-color,color] duration-500 hover:bg-[color:var(--il-ink)] hover:text-[color:var(--il-inv)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-current"
+                  className="group/cta mt-8 inline-flex items-center gap-2 rounded-full border border-current px-5 py-2.5 text-[0.85rem] font-medium transition-[background-color,color] duration-500 hover:bg-[color:var(--il-ink)] hover:text-[color:var(--il-inv)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-current"
                   autoContent={
                     <>
                       {ctaLabel}

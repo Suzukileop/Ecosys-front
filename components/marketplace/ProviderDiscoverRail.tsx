@@ -83,7 +83,7 @@ export function specialtyIcon(label: string): ReactNode {
 const VISIBLE_SPECIALTIES = 6;
 
 const ROW =
-  'flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
+  'flex w-full items-center gap-3 px-6 py-3.5 text-left text-[15px] leading-5 text-[color:var(--gn-ink)] transition-colors duration-150 hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]';
 
 function CheckMark() {
   return (
@@ -183,7 +183,7 @@ function AllSpecialtiesDialog({
               onChange={(event) => setQuery(event.target.value)}
               placeholder={t('Search a specialty')}
               aria-label={t('Search a specialty')}
-              className="h-11 w-full rounded-full border-0 bg-[#EFF3F4] pl-11 pr-4 text-[15px] text-[#0F1419] outline-none placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#8B98A5] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]"
+              className="h-11 w-full rounded-full border-0 bg-[#EFF3F4] pl-11 pr-4 text-[15px] text-[#0F1419] outline-hidden placeholder:text-[#536471] focus:bg-white focus:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#202327] dark:text-[#E7E9EA] dark:placeholder:text-[#8B98A5] dark:focus:bg-black dark:focus:shadow-[inset_0_0_0_2px_#E7E9EA]"
             />
           </div>
         </div>
@@ -210,7 +210,7 @@ function AllSpecialtiesDialog({
                           setQuery('');
                           onPick(label);
                         }}
-                        className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[15px] leading-5 text-[#0F1419] transition-colors hover:bg-[#EFF3F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:text-[#E7E9EA] dark:hover:bg-[#16181C] dark:focus-visible:ring-white/40 ${
+                        className={`flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-[15px] leading-5 text-[#0F1419] transition-colors hover:bg-[#EFF3F4] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/40 dark:text-[#E7E9EA] dark:hover:bg-[#16181C] dark:focus-visible:ring-white/40 ${
                           active ? 'font-bold' : ''
                         }`}
                       >
@@ -366,7 +366,7 @@ export function ProviderSpecialtyChips({
             aria-pressed={active}
             onClick={() => onChange(active && chip.value ? undefined : chip.value)}
             data-pf-no-color-transition
-            className={`inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
+            className={`inline-flex h-9 shrink-0 items-center rounded-full px-4 text-[14px] font-semibold leading-5 transition-colors focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] ${
               active
                 ? 'bg-[color:var(--gn-ink)] text-[color:var(--gn-surface)]'
                 : 'bg-[color:var(--gn-surface)] text-[color:var(--gn-ink)] active:bg-[color:var(--gn-hover-strong,var(--gn-hover))]'

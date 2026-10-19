@@ -171,7 +171,7 @@ export function StudioPersonRow({
       {href ? (
         <Link
           href={href}
-          className={`${rowClass} transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]`}
+          className={`${rowClass} transition-colors hover:bg-[color:var(--gn-hover-strong,var(--gn-hover))] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-inset focus-visible:ring-[color:var(--gn-ring)]`}
         >
           {body}
         </Link>
@@ -242,8 +242,8 @@ export function StudioEmptyBlock({
 
 /** Square page-level primary (News' "Publish a post"). */
 export const STUDIO_PRIMARY_BUTTON =
-  'inline-flex h-10 items-center justify-center gap-2 bg-[color:var(--gn-primary)] px-5 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
+  'inline-flex h-10 items-center justify-center gap-2 bg-[color:var(--gn-primary)] px-5 text-[15px] font-bold text-[color:var(--gn-primary-ink)] transition-colors hover:bg-[color:var(--gn-primary-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50';
 
 /** Square secondary: X's hairline outline. */
 export const STUDIO_SECONDARY_BUTTON =
-  'inline-flex h-10 items-center justify-center gap-2 border border-[#CFD9DE] px-4 text-[14px] font-bold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50 dark:border-[#536471]';
+  'inline-flex h-10 items-center justify-center gap-2 border border-[#CFD9DE] px-4 text-[14px] font-bold text-[color:var(--gn-ink)] transition-colors hover:bg-[color:var(--gn-hover)] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)] disabled:opacity-50 dark:border-[#536471]';

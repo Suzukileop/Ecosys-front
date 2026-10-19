@@ -12,7 +12,7 @@ const SPEEDS = [1, 1.5, 2] as const;
 const HIDE_DELAY_MS = 2200;
 const SEEK_STEP_S = 5;
 const CONTROL_BUTTON =
-  'inline-flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80';
+  'inline-flex h-9 w-9 items-center justify-center rounded-full text-white/90 transition hover:bg-white/10 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/80';
 
 function formatTime(seconds: number): string {
   if (!Number.isFinite(seconds) || seconds < 0) return '0:00';
@@ -138,7 +138,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
       onKeyDown={onKeyDown}
       onMouseMove={wake}
       onMouseLeave={() => setPointerActive(false)}
-      className={`group/player relative w-full overflow-hidden rounded-lg bg-black focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80 ${
+      className={`group/player relative w-full overflow-hidden rounded-lg bg-black focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/80 ${
         controlsVisible ? '' : 'cursor-none'
       } ${className}`}
     >
@@ -170,7 +170,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
           type="button"
           onClick={togglePlay}
           aria-label={t('Play video')}
-          className="absolute inset-0 flex items-center justify-center bg-black/20 transition hover:bg-black/30 focus:outline-none"
+          className="absolute inset-0 flex items-center justify-center bg-black/20 transition hover:bg-black/30 focus:outline-hidden"
         >
           <span className="flex h-16 w-16 items-center justify-center rounded-full bg-white/95 text-[#111111] shadow-[0_12px_40px_-10px_rgba(0,0,0,0.6)] transition-transform duration-300 group-hover/player:scale-105 sm:h-20 sm:w-20">
             <svg className="ml-1 h-6 w-6 sm:h-7 sm:w-7" viewBox="0 0 24 24" fill="currentColor" aria-hidden>
@@ -256,7 +256,7 @@ export function ProductVideoPlayer({ src, className = '' }: ProductVideoPlayerPr
               type="button"
               onClick={cycleSpeed}
               aria-label={t('Playback speed {value}x', { value: SPEEDS[speedIndex] })}
-              className="inline-flex h-9 min-w-[2.75rem] items-center justify-center rounded-full px-2 text-[13px] font-semibold text-white/90 tabular-nums transition hover:bg-white/10 hover:text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-white/80"
+              className="inline-flex h-9 min-w-[2.75rem] items-center justify-center rounded-full px-2 text-[13px] font-semibold text-white/90 tabular-nums transition hover:bg-white/10 hover:text-white focus:outline-hidden focus-visible:ring-2 focus-visible:ring-white/80"
             >
               {t('{value}×', { value: SPEEDS[speedIndex] })}
             </button>

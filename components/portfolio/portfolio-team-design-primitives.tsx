@@ -53,6 +53,7 @@ export function TeamMemberImage({
   fill = false,
   zoom = false,
   reveal = false,
+  sizes,
 }: {
   member: ProfileTeamMember;
   presentation: PortfolioTeamPresentationSettings;
@@ -62,6 +63,8 @@ export function TeamMemberImage({
   zoom?: boolean;
   /** Marks the portrait as the node the shared entrance settles out of its over-scale. */
   reveal?: boolean;
+  /** Override the default thumbnail hint for immersive portraits. */
+  sizes?: string;
 }) {
   const t = useT();
   if (!presentation.showImage) return null;
@@ -83,7 +86,7 @@ export function TeamMemberImage({
           src={member.imageUrl}
           alt={t('Portrait de {name}', { name: member.name })}
           className={`h-full w-full ${fit} ${position}`}
-          sizes="(max-width: 768px) 50vw, 280px"
+          sizes={sizes ?? '(max-width: 768px) 50vw, 280px'}
           objectFit={presentation.imageFit === 'contain' ? 'contain' : 'cover'}
           objectPosition={presentation.imagePosition}
         />
@@ -170,7 +173,7 @@ export function TeamSocialLinks({
     ? 'group-hover:![border-color:color-mix(in_srgb,var(--team-float-hover-ink)_30%,transparent)] group-hover:![background-color:var(--team-float-hover-icon-bg)] group-hover:![color:var(--team-float-hover-ink)]'
     : '';
   const revealCls = revealOnHover
-    ? `translate-y-3 opacity-0 transition-[transform,opacity] duration-[620ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 ${TOUCH_REVEAL_CLS}`
+    ? `translate-y-3 opacity-0 transition-[transform,translate,scale,rotate,opacity] duration-[620ms] ${EASE_CLS} group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 ${TOUCH_REVEAL_CLS}`
     : '';
   return (
     <div
@@ -191,7 +194,7 @@ export function TeamSocialLinks({
             aria-label={link.label?.trim() || `${link.platform} — ${member.name}`}
             className={`inline-flex shrink-0 items-center justify-center border ${size} ${chrome} ${hoverTone} ${revealCls} ${
               revealOnHover ? '' : `transition-transform duration-[420ms] ${EASE_CLS}`
-            } hover:-translate-y-1 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2`}
+            } hover:-translate-y-1 focus-visible:outline-solid focus-visible:outline-2 focus-visible:outline-offset-2`}
             data-pf-no-color-transition=""
             style={{
               color: presentation.socialIconColor,

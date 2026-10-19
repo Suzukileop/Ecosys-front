@@ -141,7 +141,7 @@ function ImageSlot({
             type="button"
             onClick={() => onChange('')}
             disabled={disabled || uploading}
-            className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-600 shadow-sm"
+            className="absolute right-2 top-2 inline-flex h-8 w-8 items-center justify-center rounded-full bg-white/90 text-neutral-600 shadow-xs"
             aria-label={t('Remove {label}', { label })}
           >
             <FontAwesomeIcon icon={faTrash} className="h-3.5 w-3.5" fixedWidth />

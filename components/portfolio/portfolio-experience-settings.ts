@@ -389,6 +389,13 @@ export const MARQUEE_WEIGHT: Record<PortfolioExperienceMarqueeWeight, number> = 
   semibold: 600,
 };
 
+/** Marquee header loop speed (px/s) for the panel's Slow / Cruise / Fast steps. */
+export const MARQUEE_SPEED_PX: Record<PortfolioExperienceMarqueeSpeed, number> = {
+  slow: 28,
+  cruise: 44,
+  fast: 72,
+};
+
 // Spotlight Marquee Premium constant mappings
 export const SPOTLIGHT_MARQUEE_SPEED_PX: Record<PortfolioExperienceSpotlightMarqueeSpeed, number> = {
   slow: 28,

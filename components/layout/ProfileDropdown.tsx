@@ -59,7 +59,7 @@ function MoonIcon({ className }: { className?: string }) {
  * progress bar. `transition-none` so the tone lands with the pointer.
  */
 const menuItemClass =
-  'group/mi relative flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-[#222222] transition-none hover:bg-black/[0.05] focus-visible:bg-black/[0.05] focus-visible:outline-none dark:text-neutral-200 dark:hover:bg-white/[0.07] dark:focus-visible:bg-white/[0.07]';
+  'group/mi relative flex h-11 w-full items-center gap-3 rounded-xl px-3 text-left text-sm font-medium text-[#222222] transition-none hover:bg-black/[0.05] focus-visible:bg-black/[0.05] focus-visible:outline-hidden dark:text-neutral-200 dark:hover:bg-white/[0.07] dark:focus-visible:bg-white/[0.07]';
 const menuIconClass = 'h-[1.05rem] w-[1.05rem] shrink-0';
 
 export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
@@ -97,7 +97,7 @@ export function ProfileDropdown({ open, onClose }: ProfileDropdownProps) {
        * (below) — without it, the cursor crosses bare page on the way down and the hover path
        * closes the card it is travelling to.
        */
-      className={`absolute right-0 top-[calc(100%+0.65rem)] z-50 w-[19rem] origin-top-right rounded-2xl border border-neutral-900/[0.07] bg-white/85 shadow-[0_28px_70px_-32px_rgba(15,23,42,0.5)] backdrop-blur-2xl transition-[opacity,transform] duration-[480ms] ${EASE_CLS} dark:border-white/[0.08] dark:bg-black/70 dark:shadow-[0_28px_70px_-26px_rgba(0,0,0,0.95)] ${
+      className={`absolute right-0 top-[calc(100%+0.65rem)] z-50 w-[19rem] origin-top-right rounded-2xl border border-neutral-900/[0.07] bg-white/85 shadow-[0_28px_70px_-32px_rgba(15,23,42,0.5)] backdrop-blur-2xl transition-[opacity,transform,translate,scale,rotate] duration-[480ms] ${EASE_CLS} dark:border-white/[0.08] dark:bg-black/70 dark:shadow-[0_28px_70px_-26px_rgba(0,0,0,0.95)] ${
         open ? 'translate-y-0 scale-100 opacity-100' : 'pointer-events-none -translate-y-2 scale-[0.96] opacity-0'
       }`}
       role="menu"

@@ -173,7 +173,7 @@ export function ServiceProviderCategoriesPanel({
                               onSelect(item);
                               onClose();
                             }}
-                            className={`inline-flex min-h-8 items-center gap-2 text-left text-[15px] underline-offset-4 transition-colors duration-200 hover:text-[#0F1419] hover:underline focus-visible:underline focus-visible:outline-none dark:hover:text-[#E7E9EA] ${
+                            className={`inline-flex min-h-8 items-center gap-2 text-left text-[15px] underline-offset-4 transition-colors duration-200 hover:text-[#0F1419] hover:underline focus-visible:underline focus-visible:outline-hidden dark:hover:text-[#E7E9EA] ${
                               active
                                 ? `font-bold ${PROVIDER_INK_CLASS}`
                                 : PROVIDER_BODY_CLASS

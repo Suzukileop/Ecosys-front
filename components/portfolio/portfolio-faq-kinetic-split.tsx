@@ -1,6 +1,6 @@
 'use client';
 
-import { useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
+import { useId, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react';
 import gsap from 'gsap';
 import { ScrollTrigger } from 'gsap/ScrollTrigger';
 import type { FaqItem } from '@/types/profile';
@@ -40,6 +40,8 @@ export function FaqKineticSplitDesign({
   const itemRefs = useRef<(HTMLLIElement | null)[]>([]);
   const answerRefs = useRef<(HTMLParagraphElement | null)[]>([]);
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  // Ties each question button to its answer panel (aria-controls) for screen readers.
+  const answerIdPrefix = useId();
 
   useLayoutEffect(() => {
     const list = listRef.current;
@@ -161,6 +163,7 @@ export function FaqKineticSplitDesign({
                 type="button"
                 className="pf-faq-kinetic-trigger"
                 aria-expanded={openIndex === index}
+                aria-controls={`${answerIdPrefix}-answer-${index}`}
                 onClick={() => handleToggle(index)}
               >
                 <span className="pf-faq-kinetic-index">{String(index + 1).padStart(2, '0')}</span>
@@ -168,7 +171,7 @@ export function FaqKineticSplitDesign({
                   {item.question}
                 </span>
               </button>
-              <div className="pf-faq-kinetic-panel">
+              <div id={`${answerIdPrefix}-answer-${index}`} className="pf-faq-kinetic-panel">
                 <div className="pf-faq-kinetic-panel-inner">
                   <p
                     className="pf-faq-kinetic-answer"

@@ -14,7 +14,7 @@ type ProfileStrengthMeterProps = {
 };
 
 const ACTION_CLASS =
-  'rounded-sm font-semibold text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
+  'rounded-xs font-semibold text-[color:var(--gn-ink)] underline-offset-4 hover:underline focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[color:var(--gn-ring)]';
 
 /*
  * The track takes --gn-line, not --gn-field: under `.news-feed` in light mode --gn-field is #FFF (fields

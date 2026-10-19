@@ -1,5 +1,4 @@
 import { AxiosError } from 'axios';
-import { ZodError } from 'zod';
 import { ApiError } from '@/types/auth';
 import { msg } from '@/lib/i18n/config';
 import { tr } from '@/lib/i18n/I18nProvider';
@@ -64,6 +63,14 @@ const CODE_MESSAGES: Record<string, string> = {
   ALREADY_PURCHASED: msg('You already own this product.'),
   PRODUCT_GROUP_NAME_TAKEN: msg('A group with this name already exists.'),
   RATE_LIMIT_EXCEEDED: msg('Too many requests. Please try again in a minute.'),
+  EMAIL_NOT_VERIFIED: msg('Please confirm your email address to continue.'),
+  EMAIL_ALREADY_VERIFIED: msg('This email is already verified. You can log in.'),
+  INVALID_VERIFICATION_CODE: msg('This code is incorrect. Check it and try again.'),
+  VERIFICATION_CODE_EXPIRED: msg('This code has expired. Request a new one.'),
+  VERIFICATION_TOO_MANY_ATTEMPTS: msg('Too many incorrect attempts. Request a new code.'),
+  TOO_MANY_VERIFICATION_EMAILS: msg('You’ve requested too many codes. Please try again later.'),
+  VERIFICATION_CODE_REQUIRED: msg('Enter the code we emailed you.'),
+  PASSWORD_ALREADY_SET: msg('Your account already has a password.'),
   FORBIDDEN: NO_PERMISSION,
   COMMENT_FORBIDDEN: NO_PERMISSION,
   EXPIRED_REFRESH_TOKEN: SESSION_EXPIRED,
@@ -126,6 +133,13 @@ function isAxiosLike(error: unknown): error is AxiosError<ApiErrorBody> {
   return typeof error === 'object' && error !== null && 'isAxiosError' in error;
 }
 
+/** The server's machine-readable error code (e.g. `EMAIL_NOT_VERIFIED`), when there is one. */
+export function getApiErrorCode(error: unknown): string | null {
+  if (!isAxiosLike(error)) return null;
+  const code = error.response?.data?.code;
+  return typeof code === 'string' && code.length > 0 ? code.toUpperCase() : null;
+}
+
 /**
  * Converts any thrown value into a message that is safe to show to users.
  * Technical details (stack traces, raw server messages, JS errors) are logged, never returned.
@@ -135,10 +149,24 @@ export function getApiErrorMessage(error: unknown, fallback: string = msg('Somet
   return tr(resolveApiErrorMessage(error, fallback));
 }
 
+/*
+ * A zod validation error, recognised by shape: `import { ZodError } from 'zod'` for one instanceof
+ * pulled the whole zod library (~95 KB gzipped) into every page that shows an API error — public
+ * portfolios included, which never validate anything with zod.
+ */
+function isZodErrorLike(error: unknown): error is { issues: Array<{ message?: unknown }> } {
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    (error as { name?: unknown }).name === 'ZodError' &&
+    Array.isArray((error as { issues?: unknown }).issues)
+  );
+}
+
 function resolveApiErrorMessage(error: unknown, fallback: string): string {
   if (error instanceof UserFacingError) return error.message;
 
-  if (error instanceof ZodError) {
+  if (isZodErrorLike(error)) {
     const first = error.issues[0];
     return isDisplayableMessage(first?.message) ? first.message : msg('Some fields are invalid. Please check your input.');
   }

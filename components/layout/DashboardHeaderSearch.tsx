@@ -77,7 +77,7 @@ function HeaderSearchButton({
         aria-label={hasQuery ? t('Search: {label}', { label }) : t('Open search')}
         title={hasQuery ? label : t('Search')}
         /* 40px target; the live-query dot is ink, like every other mark in the bar (no accent hue). */
-        className="group/search relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0F1419] transition-colors duration-150 hover:bg-[#EFF3F4] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:hover:bg-[#2A2D32] dark:focus-visible:ring-[#E7E9EA]/45"
+        className="group/search relative inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full text-[#0F1419] transition-colors duration-150 hover:bg-[#EFF3F4] focus-visible:outline-hidden focus-visible:ring-2 focus-visible:ring-[#0F1419]/35 dark:text-[#E7E9EA] dark:hover:bg-[#2A2D32] dark:focus-visible:ring-[#E7E9EA]/45"
       >
         <SearchIcon className="h-[1.3rem] w-[1.3rem]" />
         {hasQuery ? (
@@ -104,7 +104,7 @@ function HeaderSearchButton({
          * `fluid` is the bar's form: it fills its wrapper (the row on phones, a bounded 256 / 384px
          * slot pushed right from lg). Phones get the full 40px height as a touch target.
          */
-        className={`flex h-10 items-center gap-2 rounded-full py-0 pl-10 pr-3 text-left text-[15px] transition-[background-color,box-shadow] duration-150 bg-[#F7F9F9] hover:bg-[#EFF3F4] focus:outline-none focus-visible:bg-white focus-visible:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#16181C] dark:hover:bg-[#2A2D32] dark:focus-visible:bg-black dark:focus-visible:shadow-[inset_0_0_0_2px_#E7E9EA] ${
+        className={`flex h-10 items-center gap-2 rounded-full py-0 pl-10 pr-3 text-left text-[15px] transition-[background-color,box-shadow] duration-150 bg-[#F7F9F9] hover:bg-[#EFF3F4] focus:outline-hidden focus-visible:bg-white focus-visible:shadow-[inset_0_0_0_2px_#0F1419] dark:bg-[#16181C] dark:hover:bg-[#2A2D32] dark:focus-visible:bg-black dark:focus-visible:shadow-[inset_0_0_0_2px_#E7E9EA] ${
           fluid
             ? 'w-full'
             : compact
@@ -177,7 +177,7 @@ function SidebarSearchButton({
       aria-label={hasQuery ? t('Search: {label}', { label }) : t('Open search')}
       /* A rule, not a box. The old filled slab was the heaviest object in the rail and it sat
          directly above a nav that has just lost every one of its rectangles. */
-      className="group/search relative flex w-full items-center gap-2.5 border-b border-neutral-200/80 pb-2.5 text-left text-sm transition-colors duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-neutral-400 focus:outline-none focus-visible:border-neutral-900 dark:border-white/10 dark:hover:border-white/30 dark:focus-visible:border-white"
+      className="group/search relative flex w-full items-center gap-2.5 border-b border-neutral-200/80 pb-2.5 text-left text-sm transition-colors duration-[520ms] ease-[cubic-bezier(0.16,1,0.3,1)] hover:border-neutral-400 focus:outline-hidden focus-visible:border-neutral-900 dark:border-white/10 dark:hover:border-white/30 dark:focus-visible:border-white"
     >
       <SearchIcon className="h-[0.9rem] w-[0.9rem] shrink-0 text-[#222222] transition-colors duration-[520ms] dark:text-neutral-200" />
       <span

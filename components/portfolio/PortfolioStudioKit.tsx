@@ -15,7 +15,7 @@ import { useT } from '@/lib/i18n/I18nProvider';
 export const STUDIO_LABEL_CLASS =
   'block text-[13px] font-medium leading-[18px] text-[color:var(--gn-ink2,#536471)]';
 export const STUDIO_INLINE_TEXT_CLASS =
-  'block w-full rounded-none bg-[color:var(--gn-field,#EFF3F4)] px-3.5 py-2.5 text-[15px] font-normal text-[color:var(--gn-ink,#0F1419)] caret-[color:var(--gn-ink,#0F1419)] shadow-[inset_0_0_0_1px_var(--gn-line,#EFF3F4)] outline-none transition-[box-shadow] duration-150 placeholder:font-normal placeholder:text-[color:var(--gn-ink3,#8B98A5)] hover:shadow-[inset_0_0_0_1px_var(--gn-ink3,#8B98A5)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink,#0F1419)] focus-visible:shadow-[inset_0_0_0_2px_var(--gn-ink,#0F1419)] disabled:opacity-60';
+  'block w-full rounded-none bg-[color:var(--gn-field,#EFF3F4)] px-3.5 py-2.5 text-[15px] font-normal text-[color:var(--gn-ink,#0F1419)] caret-[color:var(--gn-ink,#0F1419)] shadow-[inset_0_0_0_1px_var(--gn-line,#EFF3F4)] outline-hidden transition-[box-shadow] duration-150 placeholder:font-normal placeholder:text-[color:var(--gn-ink3,#8B98A5)] hover:shadow-[inset_0_0_0_1px_var(--gn-ink3,#8B98A5)] focus:shadow-[inset_0_0_0_2px_var(--gn-ink,#0F1419)] focus-visible:shadow-[inset_0_0_0_2px_var(--gn-ink,#0F1419)] disabled:opacity-60';
 /**
  * Read-only value: no box at all — the text alone under its label, on the editable fields' 40px
  * line so a row of mixed fields stays level. Only what can be edited is drawn as a field.
@@ -30,7 +30,7 @@ export const STUDIO_BLOCK_CLASS =
 export const STUDIO_GLASS_PANEL_CLASS =
   'overflow-hidden rounded-2xl bg-[#FEFEFE] shadow-[0_0_0_1px_#E1E8ED,0_8px_20px_-14px_rgba(15,20,25,0.18)] dark:bg-[#000000] dark:shadow-[0_0_0_1px_#2F3336]';
 export const STUDIO_BARE_INPUT_CLASS =
-  'block w-full bg-transparent p-0 pb-1.5 caret-current outline-none placeholder:font-normal placeholder:not-italic placeholder:text-[#8B98A5] disabled:opacity-60 dark:placeholder:text-[#536471]';
+  'block w-full bg-transparent p-0 pb-1.5 caret-current outline-hidden placeholder:font-normal placeholder:not-italic placeholder:text-[#8B98A5] disabled:opacity-60 dark:placeholder:text-[#536471]';
 export const STUDIO_VALUE_CLASS = 'text-[15px] font-normal text-[#0F1419] dark:text-[#E7E9EA]';
 export const STUDIO_SECONDARY_CLASS = 'text-[14px] text-[#536471] dark:text-[#71767B]';
 export const STUDIO_EMPTY_CLASS = 'text-[15px] text-[#8B98A5] dark:text-[#536471]';

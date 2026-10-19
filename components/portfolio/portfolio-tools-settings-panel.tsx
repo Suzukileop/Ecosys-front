@@ -1,11 +1,6 @@
 'use client';
 
 import { useId, useState, type ReactNode } from 'react';
-import {
-  PortfolioDesignLivePreviewCard,
-  usePortfolioDesignPreviewSource,
-} from '@/components/portfolio/PortfolioDesignLivePreview';
-import { withDesignPreview } from '@/lib/portfolio-design-preview';
 import { SectionBackgroundSettingsFields } from '@/components/portfolio/portfolio-section-background-controls';
 import { SectionColorModeControl } from '@/components/portfolio/portfolio-section-color-mode-control';
 import {
@@ -33,6 +28,7 @@ import {
   TOOLS_HEADER_ACCENT_COUNT_ALIGNMENT_OPTIONS,
   TOOLS_HEADER_BILLBOARD_WORD_STYLE_OPTIONS,
   TOOLS_HEADER_PALETTE_TOKEN_OPTIONS,
+  DEFAULT_TOOLS_PRESENTATION,
   toolsHeaderPaletteTokenColor,
   type PortfolioToolsDesign,
   type PortfolioToolsBrandCardsIconPlacement,
@@ -89,10 +85,19 @@ import {
   HeaderTextStyleEditor,
   type HeaderPatch,
 } from '@/components/portfolio/portfolio-header-style-controls';
-import { SettingRow, SettingsRowsScope, useSettingsRows } from '@/components/portfolio/portfolio-settings-rows';
 import { useT } from '@/lib/i18n/I18nProvider';
 import { msg } from '@/lib/i18n/config';
-import { SectionHiddenNotice, SettingsGroup, SettingsSwitchRow, SettingsTabs } from '@/components/portfolio/portfolio-settings-ui';
+import {
+  NpCollapsibleSection,
+  NpBackRow,
+  NpOptionCard,
+  NpOptionCardGroup,
+  NpPanelShell,
+  NpPickerRow,
+  NpSegmentedControl,
+  NpToggleRow,
+  type NpPanelChrome,
+} from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /** Same general / design / header mechanism as the Stack section settings panel, plus its own Background tab. */
 export type ToolsSubSection = 'general' | 'design' | 'header' | 'background';
@@ -217,7 +222,7 @@ function ToolsBackgroundColorField({
   const mapping = TOOLS_BACKGROUND_LABEL_SLOTS[label] ?? TOOLS_BACKGROUND_LABEL_SLOTS.Color;
   const usingPalette = tools.useHeroPalette !== false;
   return (
-    <SettingRow label={label} value={typeof value === 'string' && value.startsWith('#') ? value.toUpperCase() : String(value ?? '')}>
+    <div className="np-field">
     <ToolsQuickColorPicker
       label={label}
       palette={palette}
@@ -232,7 +237,7 @@ function ToolsBackgroundColorField({
         )
       }
     />
-    </SettingRow>
+    </div>
   );
 }
 
@@ -274,7 +279,7 @@ function ToolsMiniType({
   );
 }
 
-function ToolsPickerCard({
+function _ToolsPickerCard({
   active,
   label,
   onClick,
@@ -589,7 +594,7 @@ function ToolsDesignWireframe({ design }: { design: PortfolioToolsDesign }) {
 }
 
 /** Same animated switch + segmented option grid as Stack's layout settings (StackSwitchTrack/StackOptionGrid). */
-function ToolsSwitchTrack({ checked }: { checked: boolean }) {
+function _ToolsSwitchTrack({ checked }: { checked: boolean }) {
   return (
     <span
       className="relative h-5 w-9 shrink-0 rounded-full transition-colors duration-200 ease-[cubic-bezier(0.22,1,0.36,1)]"
@@ -624,25 +629,7 @@ function ToolsToggleRow({
   checked: boolean;
   onChange: (checked: boolean) => void;
 }) {
-  const rows = useSettingsRows();
-  if (rows) return <SettingRow label={label} toggle={{ checked, onChange }} />;
-  return (
-    <button
-      type="button"
-      role="switch"
-      aria-checked={checked}
-      onClick={() => onChange(!checked)}
-      className="flex w-full cursor-pointer flex-col gap-1 text-left"
-    >
-      <span className="flex items-center justify-between gap-4">
-        <span className="flex min-w-0 items-center gap-1.5">
-          <span className="min-w-0 truncate text-sm font-semibold text-[color:var(--pf-palette-texte-fort)]">{label}</span>
-          {info ? <ToolsInfoTooltip text={info} /> : null}
-        </span>
-        <ToolsSwitchTrack checked={checked} />
-      </span>
-    </button>
-  );
+  return <NpToggleRow title={label} adornment={info ? <ToolsInfoTooltip text={info} /> : undefined} checked={checked} onChange={onChange} />;
 }
 
 function ToolsOptionGrid<T extends string | number>({
@@ -661,51 +648,9 @@ function ToolsOptionGrid<T extends string | number>({
   icons?: Partial<Record<string, ReactNode>>;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  const count = options.length;
-  const cols = columns ?? (count <= 4 ? Math.max(count, 1) : 2);
-  const compact = cols === count && count >= 2 && count <= 5;
-  return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="pf-stack-segment grid gap-[3px] p-[3px]"
-        data-compact={compact ? 'true' : 'false'}
-        style={{
-          gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))`,
-        }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          const icon = icons?.[String(option.value)];
-          return (
-            <button
-              key={String(option.value)}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              title={t(option.description)}
-              onClick={() => onChange(option.value)}
-              data-active={active ? 'true' : 'false'}
-              className="pf-stack-segment-btn flex items-center justify-center px-2.5 py-1.5 text-center text-[13px] font-medium tracking-tight"
-              style={
-                active
-                  ? undefined
-                  : { color: '#c4c4c4', WebkitTextFillColor: '#c4c4c4' }
-              }
-            >
-              {icon ? <span className="pf-stack-segment-icon">{icon}</span> : null}
-              <span>{t(option.label)}</span>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-    </SettingRow>
-  );
+  void columns;
+  void icons;
+  return <NpSegmentedControl label={label} value={String(value)} options={options.map((option) => ({ value: String(option.value), label: t(option.label), title: t(option.description) }))} onChange={(next) => { const match = options.find((option) => String(option.value) === next); if (match) onChange(match.value); }} />;
 }
 
 /**
@@ -724,40 +669,7 @@ function ToolsSlider<T extends string>({
   onChange: (value: T) => void;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
-  const index = Math.max(
-    0,
-    options.findIndex((option) => option.value === value)
-  );
-  const lastIndex = options.length - 1;
-  const percent = lastIndex > 0 ? (index / lastIndex) * 100 : 0;
-  const current = options[index] ?? options[0];
-  return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<div className="pf-stack-slider-row">
-        <span className="pf-stack-slider-label">{label}</span>
-        <span className="pf-stack-slider-value">{t(current?.label)}</span>
-      </div>)}
-      <input
-        type="range"
-        min={0}
-        max={Math.max(lastIndex, 0)}
-        step={1}
-        value={index}
-        onChange={(event) => {
-          const next = options[Number(event.target.value)];
-          if (next) onChange(next.value);
-        }}
-        aria-label={label}
-        className="pf-stack-slider-input"
-        style={{
-          background: `linear-gradient(to right, var(--pf-palette-texte-fort, #f5f5f5) ${percent}%, color-mix(in srgb, var(--pf-palette-texte-fort, #ffffff) 16%, var(--pf-palette-fond, #0a0a0a)) ${percent}%)`,
-        }}
-      />
-    </div>
-    </SettingRow>
-  );
+  return <NpSegmentedControl label={label} value={value} options={options.map((option) => ({ value: option.value, label: t(option.label) }))} onChange={onChange} />;
 }
 
 /**
@@ -778,35 +690,23 @@ function ToolsPreviewCardGrid<T extends string>({
   columns?: number;
 }) {
   const t = useT();
-  const rows = useSettingsRows();
   const cols = columns ?? Math.min(options.length, 4);
   return (
-    <SettingRow label={label} value={String(options.find((option) => option.value === value)?.label ?? '')}>
-    <div>
-      {rows ? null : (<p className="pf-stack-block-label pf-stack-option-label">{label}</p>)}
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="grid gap-2"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
+    <NpOptionCardGroup label={label} columns={Math.min(Math.max(cols, 2), 4) as 2 | 3 | 4}>
         {options.map((option) => (
-          <ToolsPickerCard
+          <NpOptionCard
             key={option.value}
-            active={option.value === value}
-            label={t(option.label)}
+            selected={option.value === value}
+            title={t(option.label)}
             onClick={() => onChange(option.value)}
             compact
-          >
-            <svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
+            illustration={<svg viewBox="0 0 64 34" className="pf-stack-mini h-full w-full" aria-hidden>
               <rect className="pf-stack-mini-stage" x="0.75" y="0.75" width="62.5" height="32.5" rx="6" />
               {option.glyph}
-            </svg>
-          </ToolsPickerCard>
+            </svg>}
+          />
         ))}
-      </div>
-    </div>
-    </SettingRow>
+    </NpOptionCardGroup>
   );
 }
 
@@ -1044,7 +944,7 @@ const TOOLS_ALIGNMENT_ICONS: Partial<Record<string, ReactNode>> = {
  *  grid. The thumbnail wraps whatever wireframe is passed (sized for a full-width card) in a
  *  fixed 128×80 box and scales it down, instead of the old wide preview box that left a lot of
  *  empty space on both sides of the much narrower mini-schema it centered. */
-function ToolsDesignSummaryRow({
+function _ToolsDesignSummaryRow({
   label,
   name,
   onOpen,
@@ -1055,14 +955,13 @@ function ToolsDesignSummaryRow({
   onOpen: () => void;
   children: ReactNode;
 }) {
-  const t = useT();
   return (
     <div>
       <p className="pf-stack-block-label">{label}</p>
       <button
         type="button"
         onClick={onOpen}
-        aria-label={t('Change {toLowerCase}', { toLowerCase: label.toLowerCase() })}
+        aria-label={`Change ${label.toLowerCase()}`}
         className="flex w-full items-center gap-3 rounded-2xl border border-[color:var(--pf-palette-bordure)] px-3 py-2.5 text-left transition hover:border-[color:var(--pf-palette-texte-muted)]"
       >
         <span className="flex h-20 w-32 shrink-0 items-center justify-center overflow-hidden rounded-xl border border-[color:var(--pf-palette-bordure)] bg-transparent">
@@ -1088,77 +987,44 @@ function ToolsDesignSummaryRow({
 function ToolsDesignChoiceGrid({
   value,
   onChange,
+  open: showGrid,
+  onOpenChange: setShowGrid,
 }: {
   value: PortfolioToolsDesign;
   onChange: (value: PortfolioToolsDesign) => void;
+  open: boolean;
+  onOpenChange: (open: boolean) => void;
 }) {
   const t = useT();
-  const [showGrid, setShowGrid] = useState(false);
   const selected =
     PORTFOLIO_TOOLS_DESIGN_OPTIONS.find((option) => option.value === value) ??
     PORTFOLIO_TOOLS_DESIGN_OPTIONS[0];
-  const previewSource = usePortfolioDesignPreviewSource();
-
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">{t('Design')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        {previewSource ? (
-          /* In the studio: every design rendered for real, one per row. */
-          <div className="mt-3 flex flex-col gap-3">
-            {PORTFOLIO_TOOLS_DESIGN_OPTIONS.map((option) => (
-              <PortfolioDesignLivePreviewCard
+      <div className="np-stack">
+        <NpBackRow title={t('Tools design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a design')} columns={2}>
+          {PORTFOLIO_TOOLS_DESIGN_OPTIONS.map((option) => {
+            return (
+              <NpOptionCard
                 key={option.value}
-                cardClassName="pf-stack-design-card"
-                labelClassName="pf-stack-card-label"
-                active={option.value === value}
-                label={t(option.label)}
-                src={withDesignPreview(previewSource.portfolioPath, { section: 'tools', design: option.value })}
-                settings={previewSource.settings}
+                selected={option.value === value}
+                title={t(option.label)}
+                illustration={<ToolsDesignWireframe design={option.value} />}
                 onClick={() => {
                   onChange(option.value);
                   setShowGrid(false);
                 }}
               />
-            ))}
-          </div>
-        ) : (
-        <div className="mt-3 grid grid-cols-2 gap-4">
-          {PORTFOLIO_TOOLS_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
-            return (
-              <ToolsPickerCard
-                key={option.value}
-                active={active}
-                label={t(option.label)}
-                onClick={() => {
-                  onChange(option.value);
-                  setShowGrid(false);
-                }}
-              >
-                <ToolsDesignWireframe design={option.value} />
-              </ToolsPickerCard>
             );
           })}
-        </div>
-        )}
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <ToolsDesignSummaryRow label={t('Design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <ToolsDesignWireframe design={value} />
-    </ToolsDesignSummaryRow>
+    <NpPickerRow label={t('Design')} value={t(selected.label)} thumbnail={<ToolsDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -1183,7 +1049,7 @@ function ToolsInfoTooltip({ text }: { text: string }) {
         onFocus={() => setOpen(true)}
         onBlur={() => setOpen(false)}
         onClick={(event) => event.stopPropagation()}
-        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
+        className="inline-flex h-3.5 w-3.5 items-center justify-center rounded-full text-[color:var(--pf-palette-texte-muted)] transition hover:text-[color:var(--pf-palette-texte-fort)] focus:outline-hidden focus-visible:ring-2 focus-visible:ring-neutral-400"
       >
         <svg viewBox="0 0 14 14" width="14" height="14" fill="none" aria-hidden="true">
           <circle cx="7" cy="7" r="6.1" stroke="currentColor" strokeWidth="1.15" />
@@ -1195,7 +1061,7 @@ function ToolsInfoTooltip({ text }: { text: string }) {
         <span
           id={tooltipId}
           role="tooltip"
-          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-neutral-900 px-2.5 py-1.5 text-xs font-medium leading-snug text-white shadow-lg"
+          className="pointer-events-none absolute left-1/2 top-full z-20 mt-1.5 w-max max-w-[220px] -translate-x-1/2 rounded-lg bg-[color:var(--np-primary-bg,#171717)] px-2.5 py-1.5 text-xs font-medium leading-snug text-[color:var(--np-primary-ink,#ffffff)] shadow-lg"
         >
           {text}
         </span>
@@ -1320,44 +1186,31 @@ function ToolsHeaderDesignChoiceGrid({
 
   if (showGrid) {
     return (
-      <div>
-        <div className="flex items-center justify-between gap-3">
-          <p className="pf-stack-block-label !mb-0">{t('Header design')}</p>
-          <button
-            type="button"
-            onClick={() => setShowGrid(false)}
-            className="text-sm font-semibold text-[color:var(--pf-palette-texte-muted)] hover:text-[color:var(--pf-palette-texte-fort)]"
-          >
-            {t('← Back')}
-          </button>
-        </div>
-        <div className="mt-3 grid grid-cols-2 gap-4">
+      <div className="np-stack">
+        <NpBackRow title={t('Header design')} onBack={() => setShowGrid(false)} />
+        <NpOptionCardGroup label={t('Choose a header')} columns={2}>
           {PORTFOLIO_TOOLS_HEADER_DESIGN_OPTIONS.map((option) => {
-            const active = option.value === value;
             return (
               <PortfolioHeaderDesignOption key={option.value} design={option.value}>
-                <ToolsPickerCard
-                  active={active}
-                  label={t(option.label)}
+                <NpOptionCard
+                  selected={option.value === value}
+                  title={t(option.label)}
+                  illustration={<ToolsHeaderDesignWireframe design={option.value} />}
                   onClick={() => {
                     onChange(option.value);
                     setShowGrid(false);
                   }}
-                >
-                  <ToolsHeaderDesignWireframe design={option.value} />
-                </ToolsPickerCard>
+                />
               </PortfolioHeaderDesignOption>
             );
           })}
-        </div>
+        </NpOptionCardGroup>
       </div>
     );
   }
 
   return (
-    <ToolsDesignSummaryRow label={t('Header design')} name={selected.label} onOpen={() => setShowGrid(true)}>
-      <ToolsHeaderDesignWireframe design={value} />
-    </ToolsDesignSummaryRow>
+    <NpPickerRow label={t('Header design')} value={t(selected.label)} thumbnail={<ToolsHeaderDesignWireframe design={value} />} onClick={() => setShowGrid(true)} />
   );
 }
 
@@ -1430,33 +1283,6 @@ function ToolsHeaderSharedAdvancedControls({
   );
 }
 
-function ToolsLayoutSettingsBand({
-  children,
-  motionKey,
-  title = 'Design settings',
-  flush = false,
-}: {
-  children: ReactNode;
-  motionKey: string;
-  title?: string;
-  /** Drops the boxed frame so the fields use the dock's full width. */
-  flush?: boolean;
-}) {
-  return (
-    <section
-      className={`pf-stack-layout-settings${flush ? ' pf-stack-layout-settings--flush' : ''}`}
-      aria-labelledby="tools-layout-settings-title"
-    >
-      <h3 id="tools-layout-settings-title" className="pf-stack-layout-settings-title">
-        {title}
-      </h3>
-      <div key={motionKey} className={`pf-stack-layout-settings-body ${flush ? 'space-y-9' : 'space-y-6'}`}>
-        {children}
-      </div>
-    </section>
-  );
-}
-
 /**
  * The Header tab's per-design fields: the design's texts first, then one style editor (pick the text,
  * set only the color / size / weight it has), then the controls every design shares.
@@ -1523,7 +1349,8 @@ function ToolsHeaderDesignFields({
             {...colorProps}
           />
         </HeaderBlock>
-        {shared({ hideTitleControls: true })}
+        {/* The index layout (counter | rule | title) is always left-aligned. */}
+        {shared({ hideAlignment: true, hideTitleControls: true })}
       </>
     );
   }
@@ -1863,6 +1690,14 @@ type ToolsSettingsPanelProps = {
   designOptions?: { value: PortfolioToolsDesign; label: string; description: string }[];
   designOptionsFilter?: (design: PortfolioToolsDesign) => boolean;
   sectionToggleLabel?: string;
+  chrome?: NpPanelChrome;
+};
+
+const DEFAULT_TOOLS_SECTION_SETTINGS: PortfolioToolsSectionSettings = {
+  enabled: true,
+  title: 'Workflow & Tools',
+  subtitle: '',
+  ...DEFAULT_TOOLS_PRESENTATION,
 };
 
 export function ToolsSettingsPanel({
@@ -1873,11 +1708,13 @@ export function ToolsSettingsPanel({
   designOptions: designOptionsProp,
   designOptionsFilter,
   sectionToggleLabel,
+  chrome,
 }: ToolsSettingsPanelProps) {
   const t = useT();
   const palette = mergeToolsPalette(DEFAULT_TOOLS_PALETTE, tools.toolsPalette);
   const bindings = mergeToolsColorBindings(DEFAULT_TOOLS_COLOR_BINDINGS, tools.toolsColorBindings);
   const current = normalizeToolsSubSection(subSection);
+  const [designCatalogOpen, setDesignCatalogOpen] = useState(false);
   const [headerCatalogOpen, setHeaderCatalogOpen] = useState(false);
   const isRichToolsDesign =
     tools.design === 'brand-cards' ||
@@ -1898,23 +1735,37 @@ export function ToolsSettingsPanel({
     : designOptionsFilter
       ? PORTFOLIO_TOOLS_DESIGN_OPTIONS.filter((item) => designOptionsFilter(item.value))
       : PORTFOLIO_TOOLS_DESIGN_OPTIONS;
+  const modified = JSON.stringify(tools) !== JSON.stringify(DEFAULT_TOOLS_SECTION_SETTINGS);
 
   return (
-    <div className="space-y-6">
-      <SettingsTabs tabs={SUBSECTIONS.map((item) => ({ id: item.value, label: item.label }))} value={current} onChange={(value) => onSubSectionChange?.(value)} />
+    <NpPanelShell
+      title={t('Tools')}
+      modified={modified}
+      tabs={SUBSECTIONS.map((item) => ({ id: item.value, label: t(item.label) }))}
+      activeTab={current}
+      onTabChange={(value) => onSubSectionChange?.(value)}
+      onReset={() => onChange({ ...DEFAULT_TOOLS_SECTION_SETTINGS })}
+      chrome={chrome}
+    >
 
       {current === 'general' ? (
-        <div className="space-y-4">
-          <SettingsSwitchRow
-            label={sectionToggleLabel ?? t('Show section')}
+        <div className="np-stack">
+          <NpToggleRow
+            card
+            title={sectionToggleLabel ?? t('Show Tools section')}
             description={tools.enabled ? undefined : t('Visitors go straight to the next section.')}
             checked={tools.enabled}
             onChange={(enabled) => onChange({ enabled })}
           />
-          {tools.enabled ? (
-          <SettingsGroup label={t('Content shown')}>
-            <ToolsToggleRow
-              label={
+          <div
+            className="np-dimmable"
+            data-disabled={tools.enabled ? 'false' : 'true'}
+            aria-disabled={!tools.enabled}
+            inert={!tools.enabled}
+          >
+          <NpCollapsibleSection title={t('Content shown')}>
+            <NpToggleRow
+              title={
                 isLevelIndicatorDesign
                   ? t('Show the name')
                   : isRichToolsDesign
@@ -1924,69 +1775,74 @@ export function ToolsSettingsPanel({
               checked={tools.showLabels !== false}
               onChange={(showLabels) => onChange({ showLabels })}
             />
-            <ToolsToggleRow
-              label={t('Show the icon background')}
+            <NpToggleRow
+              title={t('Show the icon background')}
               checked={resolveToolsIconBackgroundEnabled(tools)}
               onChange={(iconBackgroundEnabled) =>
                 onChange({ iconBackgroundEnabled, iconBackgroundOptIn: true })
               }
             />
-            <ToolsToggleRow
-              label={t('Black & white logos')}
+            <NpToggleRow
+              title={t('Black & white logos')}
               checked={tools.logosGrayscale === true}
               onChange={(logosGrayscale) => onChange({ logosGrayscale })}
             />
             {isRichToolsDesign ? (
               <>
-                <ToolsToggleRow
-                  label={t('Show the description')}
+                <NpToggleRow
+                  title={t('Show the description')}
                   checked={tools.showDescription !== false}
                   onChange={(showDescription) => onChange({ showDescription })}
                 />
-                <ToolsToggleRow
-                  label={t('Show use cases')}
-                  checked={tools.showUseCases !== false}
-                  onChange={(showUseCases) => onChange({ showUseCases })}
-                />
                 {tools.design !== 'brand-index' ? (
-                  <ToolsToggleRow
-                    label={t('Show the level')}
+                  <NpToggleRow
+                    title={t('Show the level')}
                     checked={resolveToolsShowLevel(tools)}
                     onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
                   />
                 ) : null}
               </>
             ) : isLevelIndicatorDesign ? (
-              <ToolsToggleRow
-                label={t('Show the level indicator')}
+              <NpToggleRow
+                title={t('Show the level indicator')}
                 checked={resolveToolsShowLevel(tools)}
                 onChange={(showLevel) => onChange({ showLevel, showLevelOptIn: showLevel })}
               />
             ) : null}
-          </SettingsGroup>
-          ) : null}
+          </NpCollapsibleSection>
+          </div>
         </div>
       ) : null}
 
-      {current !== 'general' && !tools.enabled ? <SectionHiddenNotice onEnable={() => onChange({ enabled: true })} /> : null}
+      {current !== 'general' && !tools.enabled ? <div className="np-stack"><NpToggleRow card title={t('This section is hidden')} description={t('Enable it to edit its settings and make it visible on the portfolio.')} checked={false} onChange={() => onChange({ enabled: true })} /></div> : null}
 
       {current === 'design' && tools.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack">
+          {designCatalogOpen ? (
+            <ToolsDesignChoiceGrid
+              value={tools.design}
+              onChange={(design) => handleToolsDesignChange(tools, design, onChange)}
+              open
+              onOpenChange={setDesignCatalogOpen}
+            />
+          ) : (
+          <>
+          <NpCollapsibleSection title={t('Presentation')}>
           {designOptions.length > 1 ? (
             <ToolsDesignChoiceGrid
               value={tools.design}
               onChange={(design) => handleToolsDesignChange(tools, design, onChange)}
+              open={designCatalogOpen}
+              onOpenChange={setDesignCatalogOpen}
             />
           ) : null}
-          <SettingsGroup label={t('Style')}>
             <SectionColorModeControl
               label={t('Color mode')}
               value={tools.colorModeOverride}
               onChange={(colorModeOverride) => onChange({ colorModeOverride })}
             />
-          </SettingsGroup>
-          <ToolsLayoutSettingsBand motionKey={tools.design}>
-<SettingsRowsScope title={t('Layout options')}>
+          </NpCollapsibleSection>
+          <NpCollapsibleSection title={t('Layout options')}>
             <ToolsSlider
               label={t('Logo size')}
               value={tools.tileSize}
@@ -2286,7 +2142,7 @@ export function ToolsSettingsPanel({
                 />
                 <ToolsPreviewCardGrid
                   label={t('Columns (wide screen)')}
-                  value={String(tools.brandCardsColumnsPerRow ?? 1) as '1' | '2' | '3'}
+                  value={String(Math.min(tools.brandCardsColumnsPerRow ?? 1, 3)) as '1' | '2' | '3'}
                   options={PORTFOLIO_TOOLS_BRAND_GRID_COLUMNS_OPTIONS.filter(
                     (item) => item.value !== '4'
                   ).map((option) => ({
@@ -2507,31 +2363,39 @@ export function ToolsSettingsPanel({
                 }
               />
             ) : null}
-          </SettingsRowsScope>
-</ToolsLayoutSettingsBand>
+          </NpCollapsibleSection>
+          </>
+          )}
         </div>
       ) : null}
 
       {current === 'header' && tools.enabled ? (
-        <div className="space-y-6">
+        <div className="np-stack">
+          {headerCatalogOpen ? (
+            <ToolsHeaderDesignChoiceGrid value={tools.headerDesign ?? 'editorial'} onChange={(headerDesign) => onChange({ headerDesign })} open onOpenChange={setHeaderCatalogOpen} />
+          ) : (
+          <>
+          <NpCollapsibleSection title={t('Header design')}>
           <ToolsHeaderDesignChoiceGrid
             value={tools.headerDesign ?? 'editorial'}
             onChange={(headerDesign) => onChange({ headerDesign })}
             open={headerCatalogOpen}
             onOpenChange={setHeaderCatalogOpen}
           />
+          </NpCollapsibleSection>
 
           {/* Browsing the catalog is a different task from tuning the chosen design: no settings below it. */}
-          {headerCatalogOpen ? null : (
-            <ToolsLayoutSettingsBand motionKey={tools.headerDesign ?? 'editorial'} title={t('Header settings')} flush>
+            <NpCollapsibleSection title={t('Header settings')}>
               <ToolsHeaderDesignFields tools={tools} onChange={onChange} />
-            </ToolsLayoutSettingsBand>
+            </NpCollapsibleSection>
+          </>
           )}
         </div>
       ) : null}
 
       {current === 'background' && tools.enabled ? (
-        <div className="space-y-4">
+        <div className="np-stack">
+          <NpCollapsibleSection title={t('Background')}>
           <SectionBackgroundSettingsFields
             settings={tools}
             onChange={onChange}
@@ -2546,8 +2410,9 @@ export function ToolsSettingsPanel({
               />
             )}
           />
+          </NpCollapsibleSection>
         </div>
       ) : null}
-    </div>
+    </NpPanelShell>
   );
 }

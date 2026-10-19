@@ -119,7 +119,7 @@ export function ProductHashtagsField({ value, onChange, boxClassName }: ProductH
             onPaste={handlePaste}
             onBlur={commitDraft}
             placeholder={full ? t('Limit reached') : value.length === 0 ? t('Add a hashtag and press Enter') : t('Add another')}
-            className="h-8 min-w-0 flex-1 bg-transparent px-0.5 text-[15px] text-[#111111] outline-none placeholder:text-neutral-400 disabled:cursor-not-allowed dark:text-white dark:placeholder:text-neutral-500"
+            className="h-8 min-w-0 flex-1 bg-transparent px-0.5 text-[15px] text-[#111111] outline-hidden placeholder:text-neutral-400 disabled:cursor-not-allowed dark:text-white dark:placeholder:text-neutral-500"
           />
           {value.length > 0 ? (
             <span className="shrink-0 pr-1.5 text-[12px] tabular-nums text-neutral-400 dark:text-neutral-500">

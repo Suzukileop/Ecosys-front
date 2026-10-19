@@ -16,6 +16,7 @@ import {
 } from '@/components/portfolio/portfolio-team-header-settings';
 import { usePortfolioHeaderMotionOff } from '@/components/portfolio/portfolio-motion-off';
 import { headerElementVisibility } from '@/components/portfolio/portfolio-header-elements';
+import { useT } from '@/lib/i18n/I18nProvider';
 
 function prefersReducedMotion(): boolean {
   return window.matchMedia('(prefers-reduced-motion: reduce)').matches;
@@ -100,12 +101,13 @@ export function TeamHeaderEditorialHeader({
   presentation?: PortfolioTeamPresentationSettings;
   trailing?: ReactNode;
 }) {
+  const t = useT();
   const presentation = presentationProp ?? DEFAULT_TEAM_PRESENTATION;
   const centered = presentation.headerDesignAlignment === 'center';
   const motionOff = usePortfolioHeaderMotionOff();
   const animationEnabled = presentation.headerAnimationEnabled !== false && !motionOff;
   /* Each text is the design's own setting; empty falls back to the section-level value. */
-  const labelText = presentation.headerEditorialLabelText?.trim() || 'Team';
+  const labelText = presentation.headerEditorialLabelText?.trim() || t('Team');
   const titleText = presentation.headerEditorialTitleText?.trim() || title.trim();
   const subtitleText = presentation.headerEditorialSubtitleText?.trim() || subtitle?.trim() || '';
   const show = headerElementVisibility(presentation.headerHiddenElements, 'editorial');
@@ -115,7 +117,8 @@ export function TeamHeaderEditorialHeader({
   const labelInk = teamHeaderPaletteTokenColor(presentation.headerEditorialLabelColor ?? 'texteFort');
   const titleInk = teamHeaderPaletteTokenColor(presentation.headerEditorialTitleColor ?? 'texteFort');
   const subtitleInk = teamHeaderPaletteTokenColor(presentation.headerEditorialSubtitleColor ?? 'texteFort');
-  const kickerInk = `color-mix(in srgb, ${labelInk} 38%, transparent)`;
+  // Small caps eyebrow: 65% reads above 4.5:1 in both modes (38% measured ~2.3:1 in light).
+  const kickerInk = `color-mix(in srgb, ${labelInk} 65%, transparent)`;
 
   const headerRef = useRef<HTMLElement>(null);
 

@@ -7,7 +7,7 @@ const SHOWN = 6;
 
 /**
  * Screenshot per design, keyed by design value — drop the file in /public and add it here, e.g.
- * 'cinematic-reveal': '/landing/templates/cinematic-reveal.jpg'. Designs without one show an empty frame.
+ * 'swiss-editorial': '/landing/templates/swiss-editorial.jpg'. Designs without one show an empty frame.
  */
 const IMAGES: Partial<Record<string, string>> = {};
 

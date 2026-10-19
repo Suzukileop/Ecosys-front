@@ -7,11 +7,13 @@ import {
   toggleHeaderElement,
 } from '@/components/portfolio/portfolio-header-elements';
 import { useT } from '@/lib/i18n/I18nProvider';
+import { NpSegmentedControl, NpToggleRow } from '@/components/portfolio/portfolio-nav-panel-ui';
 
 /**
  * Controls shared by the Header tab of the portfolio sections (Tools today; Services carries its own
  * copies of the same pieces). They are settings-agnostic: a section hands over the keys it stores
- * each value under and receives plain `{ key: value }` patches back.
+ * each value under and receives plain `{ key: value }` patches back. Drawn with the Navigation
+ * panel's building blocks (np-* classes), since every section panel sits in that frame.
  */
 
 export type HeaderPaletteToken = 'principal' | 'secondaire' | 'texteFort';
@@ -19,25 +21,19 @@ export type HeaderTextSize = 'sm' | 'md' | 'lg' | 'xl';
 export type HeaderTextWeight = 'light' | 'regular' | 'semibold' | 'bold';
 export type HeaderPatch = Record<string, string | boolean | number | string[]>;
 
-/** Chosen option: a light border and a faint tint instead of a solid fill — reads the same in light and dark. */
-const PILL_ACTIVE =
-  'border border-[color:color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_40%,transparent)] bg-[color-mix(in_srgb,var(--pf-palette-texte-fort,#171717)_7%,transparent)] text-[color:var(--pf-palette-texte-fort,#171717)]';
-const PILL_IDLE = 'border border-transparent bg-neutral-100 text-neutral-600 hover:bg-neutral-200';
-
-export const HEADER_INPUT_CLASS =
-  'w-full rounded-xl border border-neutral-200 bg-white px-3.5 py-2.5 text-sm text-neutral-900 placeholder:text-neutral-400';
+export const HEADER_INPUT_CLASS = 'np-input';
 
 export function HeaderGroupLabel({ children }: { children: string }) {
-  return <p className="text-[11px] font-semibold uppercase tracking-[0.14em] text-neutral-400">{children}</p>;
+  return <p className="np-field-label !mb-0">{children}</p>;
 }
 
 function HeaderFieldLabel({ children }: { children: string }) {
-  return <p className="text-xs font-bold uppercase tracking-[0.16em] text-neutral-500">{children}</p>;
+  return <p className="np-field-label !mb-0">{children}</p>;
 }
 
 /** Hairline-separated block under a design's text fields. */
 export function HeaderBlock({ children }: { children: ReactNode }) {
-  return <div className="border-t border-neutral-200/70 pt-9">{children}</div>;
+  return <div className="border-t border-[color:var(--np-sep)] pt-9">{children}</div>;
 }
 
 export function HeaderTextField({
@@ -63,7 +59,7 @@ export function HeaderTextField({
           placeholder={placeholder}
           rows={2}
           aria-label={label}
-          className={`mt-2 ${HEADER_INPUT_CLASS} resize-none`}
+          className={`mt-2 ${HEADER_INPUT_CLASS}`}
         />
       ) : (
         <input
@@ -94,33 +90,25 @@ export function HeaderOptionGrid<T extends string>({
   columns?: number;
 }) {
   const t = useT();
-  const cols = columns ?? Math.min(Math.max(options.length, 1), 4);
+  const translated = options.map((option) => ({ value: option.value, label: t(option.label) }));
+  if (options.length <= (columns ?? 4)) {
+    return <NpSegmentedControl label={label} options={translated} value={value} onChange={onChange} />;
+  }
   return (
-    <div>
+    <div className="np-field">
       <HeaderGroupLabel>{label}</HeaderGroupLabel>
-      <div
-        role="radiogroup"
-        aria-label={label}
-        className="mt-3 grid gap-1.5"
-        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
-      >
-        {options.map((option) => {
-          const active = option.value === value;
-          return (
-            <button
-              key={option.value}
-              type="button"
-              role="radio"
-              aria-checked={active}
-              onClick={() => onChange(option.value)}
-              className={`rounded-lg px-2.5 py-2 text-center text-xs font-semibold transition ${
-                active ? PILL_ACTIVE : PILL_IDLE
-              }`}
-            >
-              {t(option.label)}
-            </button>
-          );
-        })}
+      <div role="group" aria-label={label} className="np-chips mt-3">
+        {translated.map((option) => (
+          <button
+            key={option.value}
+            type="button"
+            aria-pressed={option.value === value}
+            onClick={() => onChange(option.value)}
+            className="np-chip"
+          >
+            {option.label}
+          </button>
+        ))}
       </div>
     </div>
   );
@@ -163,7 +151,7 @@ export function HeaderSteppedSlider<T extends string>({
     <div>
       <div className="pf-exp-centered-slider-head">
         <HeaderGroupLabel>{label}</HeaderGroupLabel>
-        <span className="text-[13px] font-medium text-neutral-600" style={stepStyle ? stepStyle(current) : undefined}>
+        <span className="np-value-badge" style={stepStyle ? stepStyle(current) : undefined}>
           {currentName}
         </span>
       </div>
@@ -203,7 +191,7 @@ export function HeaderSteppedSlider<T extends string>({
 }
 
 /** Palette token picker: equal buttons with the dot centered, the chosen name on the right of the label. */
-export function HeaderColorRow({
+export function HeaderColorRow<T extends string = HeaderPaletteToken>({
   label = 'Color',
   value,
   options,
@@ -211,22 +199,22 @@ export function HeaderColorRow({
   onChange,
 }: {
   label?: string;
-  value: HeaderPaletteToken;
-  options: readonly { value: HeaderPaletteToken; label: string }[];
-  resolveColor: (token: HeaderPaletteToken) => string;
-  onChange: (value: HeaderPaletteToken) => void;
+  value: T;
+  options: readonly { value: T; label: string }[];
+  resolveColor: (token: T) => string;
+  onChange: (value: T) => void;
 }) {
   const t = useT();
   return (
     <div>
       <div className="pf-exp-centered-slider-head">
         <HeaderGroupLabel>{label}</HeaderGroupLabel>
-        <span className="text-[13px] font-medium text-neutral-600">
+        <span className="np-value-badge">
           {options.find((option) => option.value === value)?.label}
         </span>
       </div>
       <div
-        role="radiogroup"
+        role="group"
         aria-label={label}
         className="mt-3 grid gap-2"
         style={{ gridTemplateColumns: `repeat(${options.length}, minmax(0, 1fr))` }}
@@ -237,18 +225,15 @@ export function HeaderColorRow({
             <button
               key={option.value}
               type="button"
-              role="radio"
-              aria-checked={active}
               aria-label={t(option.label)}
               title={t(option.label)}
               onClick={() => onChange(option.value)}
-              className={`flex h-10 w-full items-center justify-center rounded-lg transition ${
-                active ? PILL_ACTIVE : PILL_IDLE
-              }`}
+              aria-pressed={active}
+              className="np-chip w-full justify-center"
             >
               <span
                 aria-hidden
-                className="h-4 w-4 rounded-full border border-black/10"
+                className="h-4 w-4 rounded-full shadow-[inset_0_0_0_1px_rgb(0_0_0/0.15)]"
                 style={{ backgroundColor: resolveColor(option.value) }}
               />
             </button>
@@ -304,7 +289,7 @@ export function HeaderStyleTargetsEditor({
     (target.weight && weight !== target.weight.fallback);
 
   return (
-    <div className="pf-exp-centered-config space-y-8">
+    <div className="pf-exp-centered-config flex flex-col gap-[30px]">
       <div className="flex items-center justify-between gap-3">
         <HeaderGroupLabel>{title}</HeaderGroupLabel>
         {styled ? (
@@ -317,7 +302,7 @@ export function HeaderStyleTargetsEditor({
               }
               onPatch(patch);
             }}
-            className="text-xs font-medium text-neutral-400 underline-offset-2 transition hover:text-neutral-700 hover:underline"
+            className="np-link-btn"
           >
             {t('Reset')}
           </button>
@@ -328,7 +313,7 @@ export function HeaderStyleTargetsEditor({
         <div
           role="radiogroup"
           aria-label={t('Text to style')}
-          className="grid gap-2"
+          className="np-seg"
           style={{ gridTemplateColumns: `repeat(${targets.length}, minmax(0, 1fr))` }}
         >
           {targets.map((item) => {
@@ -340,19 +325,9 @@ export function HeaderStyleTargetsEditor({
                 role="radio"
                 aria-checked={on}
                 onClick={() => setTargetId(item.id)}
-                className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg px-2 text-[13px] font-semibold transition ${
-                  on ? PILL_ACTIVE : PILL_IDLE
-                }`}
+                className="np-seg-btn"
               >
-                <span
-                  aria-hidden
-                  className={`flex h-4 w-4 shrink-0 items-center justify-center rounded-full border ${
-                    on ? 'border-current' : 'border-neutral-400'
-                  }`}
-                >
-                  {on ? <span className="h-2 w-2 rounded-full bg-current" /> : null}
-                </span>
-                <span className="truncate">{t(item.label)}</span>
+                <span className="relative truncate">{t(item.label)}</span>
               </button>
             );
           })}
@@ -464,7 +439,7 @@ export function HeaderMarqueeWords({
                     onPatch({ [key]: '' });
                     setCount(count - 1);
                   }}
-                  className="flex h-5 w-5 items-center justify-center rounded-full text-neutral-400 transition hover:bg-neutral-100 hover:text-neutral-700"
+                  className="flex h-5 w-5 items-center justify-center rounded-full text-[color:var(--np-muted)] transition hover:bg-[color:var(--np-hover)] hover:text-[color:var(--np-text)]"
                 >
                   <svg viewBox="0 0 24 24" className="h-3.5 w-3.5" fill="none" stroke="currentColor" strokeWidth={2.2} strokeLinecap="round" aria-hidden>
                     <path d="M6 6l12 12M18 6L6 18" />
@@ -489,7 +464,7 @@ export function HeaderMarqueeWords({
           <button
             type="button"
             onClick={() => setCount(count + 1)}
-            className="mt-2 flex min-h-[2.75rem] flex-1 items-center justify-center gap-2 rounded-xl border border-dashed border-neutral-300 text-sm font-medium text-neutral-500 transition hover:border-neutral-500 hover:text-neutral-800"
+            className="np-add-btn mt-2 flex-1"
           >
             <svg viewBox="0 0 24 24" className="h-4 w-4" fill="none" stroke="currentColor" strokeWidth={2} strokeLinecap="round" aria-hidden>
               <path d="M12 5v14M5 12h14" />
@@ -522,38 +497,20 @@ export function HeaderElementToggles({
   const show = headerElementVisibility(hidden, design);
 
   return (
-    <div>
+    <div className="np-field">
       <HeaderGroupLabel>{t('Visible elements')}</HeaderGroupLabel>
-      <ul className="mt-3 space-y-3">
-        {options.map((option) => {
-          const visible = show(option.key);
-          return (
-            <li key={option.key} className="flex items-center justify-between gap-4">
-              <span className="min-w-0 truncate text-sm font-medium text-neutral-900">{t(option.label)}</span>
-              <button
-                type="button"
-                role="switch"
-                aria-checked={visible}
-                aria-label={t('Show {label}', { label: option.label })}
-                onClick={() =>
-                  onPatch({ headerHiddenElements: toggleHeaderElement(hidden, design, option.key, !visible) })
-                }
-                className="relative inline-block h-5 w-9 shrink-0 rounded-full transition-colors duration-200 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-neutral-400"
-                style={{
-                  backgroundColor: visible
-                    ? 'var(--pf-palette-texte-fort,#171717)'
-                    : 'color-mix(in srgb, var(--pf-palette-texte-fort,#171717) 20%, transparent)',
-                }}
-              >
-                <span
-                  className="absolute top-0.5 h-4 w-4 rounded-full transition-[left] duration-200 ease-[cubic-bezier(0.34,1.4,0.64,1)]"
-                  style={{ left: visible ? '1.125rem' : '0.125rem', backgroundColor: 'var(--pf-palette-fond,#ffffff)' }}
-                />
-              </button>
-            </li>
-          );
-        })}
-      </ul>
+      <div className="mt-1 flex flex-col">
+        {options.map((option) => (
+          <NpToggleRow
+            key={option.key}
+            title={t(option.label)}
+            checked={show(option.key)}
+            onChange={(next) =>
+              onPatch({ headerHiddenElements: toggleHeaderElement(hidden, design, option.key, next) })
+            }
+          />
+        ))}
+      </div>
     </div>
   );
 }

@@ -26,7 +26,7 @@ function MessageIcon({ className }: { className?: string }) {
 }
 
 /** Primary CTA — highest-intent action on a public creator profile: the ink primary button, as Discuss in the directory. */
-const primaryButtonClass = `inline-flex h-11 items-center justify-center gap-2 rounded-none px-5 text-[15px] font-bold transition-colors focus-visible:outline-none ${PROVIDER_ACCENT_BUTTON_CLASS}`;
+const primaryButtonClass = `inline-flex h-11 items-center justify-center gap-2 rounded-none px-5 text-[15px] font-bold transition-colors focus-visible:outline-hidden ${PROVIDER_ACCENT_BUTTON_CLASS}`;
 
 const compactButtonClass = `${PROFILE_MOBILE_PRIMARY_BUTTON} w-full`;
 

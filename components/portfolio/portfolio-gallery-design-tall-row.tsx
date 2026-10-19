@@ -55,11 +55,11 @@ const TALL_ROW_SCALE = {
    */
   offsets: [0, 40, 18],
   /** The title's per-letter stagger and the outline line's extra delay, in ms. */
-  letterStagger: 26,
+  letterStagger: 0,
   outlineDelay: 90,
   /** The push-in: long enough to read as the image breathing rather than as a hover state. */
-  zoomMs: 2800,
-  zoomScale: 1.09,
+  zoomMs: 600,
+  zoomScale: 1.025,
 } as const;
 
 /** One curve for the whole design. */
@@ -169,11 +169,12 @@ function TallRowTitleLine({
           className={`inline-block will-change-transform ${
             revealed
               ? 'translate-y-0 opacity-100'
-              : 'translate-y-[110%] opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100'
+              : // Touch screens have no hover to reveal it: the title simply stays up there.
+                'translate-y-1 opacity-0 group-hover:translate-y-0 group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100 [@media(hover:none)]:translate-y-0 [@media(hover:none)]:opacity-100'
           }`}
           data-pf-no-color-transition=""
           style={{
-            transition: `transform 760ms ${TALL_EASE} ${baseDelay + index * TALL_ROW_SCALE.letterStagger}ms, opacity 520ms ${TALL_EASE} ${
+            transition: `transform 900ms cubic-bezier(0.25,0.1,0.25,1) ${baseDelay + index * TALL_ROW_SCALE.letterStagger}ms, opacity 800ms ease ${
               baseDelay + index * TALL_ROW_SCALE.letterStagger
             }ms`,
             ...(outline
@@ -214,6 +215,7 @@ function TallRowCard({
   alwaysOnTitle: boolean;
   offset: number;
 }) {
+  const t = useT();
   const title = (item.title ?? '').trim();
   const interactive = Boolean(onOpen);
   const radius = `${presentation.radius}px`;
@@ -237,16 +239,16 @@ function TallRowCard({
         borderColor: hairline,
         // Diffuse and low-lying, never a hard drop: the point is depth against the page, not a
         // box around the card.
-        boxShadow: '0 34px 90px -46px rgba(0,0,0,0.95), 0 2px 10px -6px rgba(0,0,0,0.6)',
+        boxShadow: '0 12px 32px -24px rgba(0,0,0,0.3)',
       }}
-      className={`group relative isolate flex aspect-[3/4] shrink-0 snap-start flex-col overflow-hidden border ${TALL_ROW_SCALE.height} ${
+      className={`pf-gallery-tall-card group relative isolate flex aspect-[3/4] shrink-0 snap-start flex-col overflow-hidden border ${TALL_ROW_SCALE.height} ${
         interactive
-          ? 'cursor-zoom-in focus:outline-none focus-visible:ring-2 focus-visible:ring-current'
+          ? 'cursor-zoom-in focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current'
           : ''
       }`}
       role={interactive ? 'button' : undefined}
       tabIndex={interactive ? 0 : undefined}
-      aria-label={interactive ? `Open ${title || 'this media'}` : undefined}
+      aria-label={interactive ? t('Open {title}', { title: title || t('Gallery media') }) : undefined}
       onClick={onOpen}
       onKeyDown={(event) => {
         if (!interactive) return;
@@ -259,12 +261,13 @@ function TallRowCard({
       {/* The push-in lives on its own layer inside the card's clip, so it can never blur the copy
           above it and never collides with the entrance's own transform on the media node. */}
       <div
-        className="absolute inset-0 z-0 group-hover:scale-[var(--pf-tall-zoom)] group-focus-within:scale-[var(--pf-tall-zoom)]"
+        className="pf-gallery-tall-zoom absolute inset-0 z-0"
         data-pf-no-color-transition=""
         style={
           {
-            '--pf-tall-zoom': TALL_ROW_SCALE.zoomScale,
-            transition: `transform ${TALL_ROW_SCALE.zoomMs}ms ${TALL_EASE}`,
+            // General → Hover zoom off keeps the photo still (scale 1) — the title reveal stays.
+            '--pf-tall-zoom': presentation.hoverZoom !== false ? TALL_ROW_SCALE.zoomScale : 1,
+            transition: `transform ${TALL_ROW_SCALE.zoomMs}ms cubic-bezier(0.25,0.1,0.25,1)`,
           } as CSSProperties
         }
       >
@@ -279,29 +282,21 @@ function TallRowCard({
           className={`pointer-events-none absolute inset-x-0 top-0 z-[5] block h-[38%] ${
             alwaysOnTitle
               ? ''
-              : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100'
+              : 'opacity-0 group-hover:opacity-100 group-focus-within:opacity-100 [@media(hover:none)]:opacity-100'
           }`}
           data-pf-no-color-transition=""
           style={{
             backgroundImage:
               'linear-gradient(to bottom, rgba(0,0,0,0.66) 0%, rgba(0,0,0,0.28) 52%, rgba(0,0,0,0) 100%)',
-            transition: `opacity 620ms ${TALL_EASE}`,
+            transition: 'opacity 900ms ease',
           }}
         />
       ) : null}
 
       {showTitle && title ? (
         <div className="pointer-events-none absolute inset-x-0 top-0 z-10 px-6 pt-6 sm:px-7 sm:pt-7">
-          <h3 className="text-[clamp(1.1rem,1.1vw+0.85rem,1.6rem)] font-semibold uppercase leading-[1.05] tracking-[-0.02em]">
+          <h3 aria-label={title} className="pf-gallery-tall-title m-0 text-[calc(clamp(1rem,1.1vw+0.7rem,1.4rem)*var(--pf-gallery-font-scale,1))] font-medium leading-[1.35] tracking-normal">
             <TallRowTitleLine text={title} color={ink} revealed={alwaysOnTitle} baseDelay={0} />
-            {/* The same words again, in outline — the second line is the effect, not a repeat. */}
-            <TallRowTitleLine
-              text={title}
-              color={ink}
-              outline
-              revealed={alwaysOnTitle}
-              baseDelay={TALL_ROW_SCALE.outlineDelay}
-            />
           </h3>
         </div>
       ) : null}
@@ -333,7 +328,7 @@ function TallRowChevron({
       onClick={onClick}
       disabled={disabled}
       aria-label={direction === -1 ? t('Previous') : t('Next')}
-      className={`group/nav flex h-14 w-14 shrink-0 items-center justify-center rounded-full border focus:outline-none focus-visible:ring-2 focus-visible:ring-current ${
+      className={`group/nav flex h-14 w-14 shrink-0 items-center justify-center rounded-full border focus:outline-hidden focus-visible:ring-2 focus-visible:ring-current ${
         disabled ? 'cursor-default opacity-25' : 'hover:-translate-y-0.5'
       }`}
       data-pf-no-color-transition=""
@@ -386,6 +381,7 @@ export function GalleryTallRow({
   reduceMotion: boolean;
   showTitle: boolean;
 }) {
+  const t = useT();
   const { ref, glideTo, glideBy, stop, isAnimating } = useInertiaScroll(!reduceMotion);
   const [bounds, setBounds] = useState({ atStart: true, atEnd: false, scrollable: false });
   // The chevrons live on the page, not on an image, so their ink is read off the section's own
@@ -470,7 +466,7 @@ export function GalleryTallRow({
   if (items.length === 0) return null;
 
   return (
-    <div className="w-full min-w-0">
+    <div className="pf-gallery-tall-root w-full min-w-0">
       {header || showNav ? (
         <div className="mb-10 flex w-full flex-wrap items-end justify-between gap-6">
           <div className="min-w-0 flex-1">{header}</div>
@@ -497,6 +493,15 @@ export function GalleryTallRow({
 
       <div
         ref={ref}
+        tabIndex={0}
+        role="region"
+        aria-label={t('Gallery')}
+        onKeyDown={(event) => {
+          if (event.key === 'ArrowLeft' || event.key === 'ArrowRight') {
+            event.preventDefault();
+            step(event.key === 'ArrowLeft' ? -1 : 1);
+          }
+        }}
         onScroll={syncBounds}
         // A native touch drag owns the scroll position outright; cancelling the glide on contact
         // stops the loop from fighting the finger.
